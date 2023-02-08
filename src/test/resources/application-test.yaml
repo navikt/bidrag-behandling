@@ -1,0 +1,21 @@
+BIDRAG_PERSON_URL: http://localhost:${wiremock.server.port}/person
+AZURE_OPENID_CONFIG_ISSUER: http://localhost:${mock-oauth2-server.port}/aad
+AZURE_APP_TENANT_ID: 12321321-123213-3213123
+AZURE_APP_CLIENT_ID: asdasd-sadas-ddas-qwe
+AZURE_APP_CLIENT_SECRET: asdasdsad214123sadas
+NAIS_APP_NAME: bidrag-template-spring
+no.nav.security.jwt:
+  client:
+    registration:
+      bidrag-person:
+        resource-url: ${BIDRAG_PERSON_URL}
+        token-endpoint-url: http://localhost:${mock-oauth2-server.port:1234}/aad/token
+        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
+        scope: api://123/.default
+        authentication:
+          client-id: 123
+          client-secret: 123
+          client-auth-method: client_secret_basic
+  issuer.aad:
+    discovery_url: http://localhost:${mock-oauth2-server.port:0}/aad/.well-known/openid-configuration
+    accepted_audience: ${AZURE_APP_CLIENT_ID}, api://${AZURE_APP_CLIENT_ID}

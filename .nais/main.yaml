@@ -1,0 +1,6 @@
+name: bidrag-template-spring
+ingresses:
+  - https://bidrag-template-spring.dev.intern.nav.no
+azure:
+  person: bidrag-person.dev-fss-pub.nais.io
+  person_clientid: dev-fss.bidrag.bidrag-person
