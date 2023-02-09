@@ -3,7 +3,7 @@ AZURE_OPENID_CONFIG_ISSUER: http://localhost:${mock-oauth2-server.port}/aad
 AZURE_APP_TENANT_ID: 12321321-123213-3213123
 AZURE_APP_CLIENT_ID: asdasd-sadas-ddas-qwe
 AZURE_APP_CLIENT_SECRET: asdasdsad214123sadas
-NAIS_APP_NAME: bidrag-template-spring
+NAIS_APP_NAME: bidrag-behandling
 no.nav.security.jwt:
   client:
     registration:
