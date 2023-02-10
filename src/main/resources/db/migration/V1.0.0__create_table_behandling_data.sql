@@ -4,4 +4,4 @@ CREATE TABLE IF NOT EXISTS behandling_data
     fri_text       text
 );
 
-INSERT INTO behandling_data (fri_text) VALUES ("blablabla");
+INSERT INTO behandling_data (fri_text) VALUES ('blablabla');

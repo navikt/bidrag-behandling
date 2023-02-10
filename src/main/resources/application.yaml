@@ -37,7 +37,7 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 1
   flyway:
-    enabled: false
+    enabled: true
     locations: classpath:/db/migration
   jpa:
     database: postgresql
