@@ -6,7 +6,6 @@ import org.springframework.data.repository.CrudRepository
 
 interface BehandlingDataRepository : CrudRepository<BehandlingData, Long> {
 
-    @Query("select d from BehandlingData d where d.id = :id")
+    @Query("select d from behandling_data d where d.id = :id")
     fun hentBidrgaDataById(id: Long): List<BehandlingData>
-
 }
