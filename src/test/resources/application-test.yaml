@@ -19,3 +19,12 @@ no.nav.security.jwt:
   issuer.aad:
     discovery_url: http://localhost:${mock-oauth2-server.port:0}/aad/.well-known/openid-configuration
     accepted_audience: ${AZURE_APP_CLIENT_ID}, api://${AZURE_APP_CLIENT_ID}
+
+---
+spring.config.activate.on-profile: "!testcontainer"
+
+spring:
+  flyway.enabled: false
+  datasource.type: com.zaxxer.hikari.HikariDataSource
+  datasource.url: jdbc:h2:mem:testdb;MODE=PostgreSQL;INIT=RUNSCRIPT FROM 'classpath:db/init.sql'
+  jpa.hibernate.hbmddl-auto: create-drop

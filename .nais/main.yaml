@@ -4,3 +4,7 @@ ingresses:
 azure:
   person: bidrag-person.dev-fss-pub.nais.io
   person_clientid: dev-fss.bidrag.bidrag-person
+database:
+  dbname: bidrag-behandling
+  autoResize: false
+  tier: db-f1-micro

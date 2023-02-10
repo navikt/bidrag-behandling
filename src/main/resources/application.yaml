@@ -25,3 +25,19 @@ no.nav.security.jwt:
   issuer.aad:
     discovery_url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/v2.0/.well-known/openid-configuration
     accepted_audience: ${AZURE_APP_CLIENT_ID}, api://${AZURE_APP_CLIENT_ID}
+
+spring:
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}?user=${DB_USERNAME}&password=${DB_PASSWORD}
+    hikari:
+      idle-timeout: 10001
+      max-lifetime: 30001
+      connectionTimeout: 1000
+      maximum-pool-size: 10
+      minimum-idle: 1
+  flyway:
+    enabled: false
+    locations: classpath:/db/migration
+  jpa:
+    database: postgresql

@@ -20,7 +20,7 @@ Når du starter applikasjon må derfor følgende miljøvariabl(er) settes:
 ```
 Disse kan hentes ved å kjøre kan hentes ved å kjøre 
 ```bash
-kubectl exec --tty deployment/bidrag-dialog-feature -- printenv | grep -e AZURE_APP_CLIENT_ID -e AZURE_APP_CLIENT_SECRET
+kubectl exec --tty deployment/bidrag-behandling-feature -- printenv | grep -e AZURE_APP_CLIENT_ID -e AZURE_APP_CLIENT_SECRET
 ```
 
 ### Live reload

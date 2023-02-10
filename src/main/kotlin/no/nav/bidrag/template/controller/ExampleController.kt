@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.template.model.HentPersonResponse
-import no.nav.bidrag.template.service.ExampleService
+import no.nav.bidrag.template.service.BidargDataService
 import no.nav.domain.ident.PersonIdent
 import no.nav.security.token.support.core.api.Protected
 import org.springframework.web.bind.annotation.PostMapping
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @Protected
-class ExampleController(val exampleService: ExampleService) {
+class ExampleController(val bidargDataService: BidargDataService) {
 
     @PostMapping("/person")
     @Operation(
@@ -33,6 +33,6 @@ class ExampleController(val exampleService: ExampleService) {
         ]
     )
     fun hentDialog(@RequestBody personIdent: PersonIdent): HentPersonResponse {
-        return exampleService.hentDialogerForPerson(personIdent)
+        return bidargDataService.hentDialogerForPerson(personIdent)
     }
 }

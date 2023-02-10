@@ -26,6 +26,7 @@
 		<kotest.version>5.5.4</kotest.version>
 		<mockk.version>4.0.0</mockk.version>
 		<kotlin-logging-jvm.version>3.0.2</kotlin-logging-jvm.version>
+		<flyway.version>9.11.0</flyway.version>
 	</properties>
 
 	<repositories>
@@ -41,6 +42,10 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -83,6 +88,26 @@
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+			<version>2.1.214</version>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+			<version>${flyway.version}</version>
 		</dependency>
 
 		<!--SpringDoc-->
@@ -315,11 +340,11 @@
 					</execution>
 				</executions>
 				<dependencies>
-					<dependency>
-						<groupId>com.pinterest</groupId>
-						<artifactId>ktlint</artifactId>
-						<version>0.47.1</version>
-					</dependency>
+<!--					<dependency>-->
+<!--						<groupId>com.pinterest</groupId>-->
+<!--						<artifactId>ktlint</artifactId>-->
+<!--						<version>0.47.1</version>-->
+<!--					</dependency>-->
 					<!-- additional 3rd party ruleset(s) can be specified here -->
 				</dependencies>
 			</plugin>
