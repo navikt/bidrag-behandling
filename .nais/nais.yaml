@@ -9,6 +9,19 @@ spec:
   azure:
     application:
       enabled: true
+      allowAllUsers: true
+      claims:
+        extra:
+          - "NAVident"
+          - "azp_name"
+  accessPolicy:
+    inbound:
+      rules:
+      {{#each azure_access_inbound}}
+          - application: {{this.application}}
+            namespace: {{this.namespace}}
+            cluster: {{this.cluster}}
+      {{/each}}
   secureLogs:
     enabled: true
   image: {{ image }}
@@ -37,8 +50,16 @@ spec:
     - {{url}}
   {{/each}}
   env:
-    - name: BIDRAG_PERSON_URL
-      value: https://{{ azure.person }}
-    - name: BIDRAG_PERSON_SCOPE
-      value: {{ azure.person_clientid }}
-
+  {{#each env}}
+     - name: {{@key}}
+       value: "{{this}}"
+  {{/each}}
+  gcp:
+    sqlInstances:
+      - name: {{ database.dbname }}
+        type: POSTGRES_14
+        diskAutoresize: {{ database.autoResize }}
+        tier: {{ database.tier }}
+        databases:
+          - name: bidrag-behandling
+            envVarPrefix: DB
