@@ -1,6 +1,14 @@
 name: bidrag-behandling
 ingresses:
   - https://bidrag-behandling.intern.nav.no
-azure:
-  person: bidrag-person.prod-fss-pub.nais.io
-  person_clientid: prod-fss.bidrag.bidrag-person
+env:
+  BIDRAG_PERSON_URL: https://bidrag-person.prod-fss-pub.nais.io/bidrag-person
+  BIDRAG_PERSON_SCOPE: prod-fss.bidrag.bidrag-person
+azure_access_inbound:
+  - application: bidrag-ui
+    namespace: bidrag
+    cluster: prod-fss
+database:
+  dbname: bidrag-behandling
+  autoResize: false
+  tier: db-custom-1-3840
