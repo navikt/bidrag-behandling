@@ -4,5 +4,5 @@ enum class RolleType {
     BIDRAGS_PLIKTIG,
     BIDRAGS_MOTTAKER,
     BARN,
-    REELL_MOTTAKER,
+    REELL_MOTTAKER
 }
