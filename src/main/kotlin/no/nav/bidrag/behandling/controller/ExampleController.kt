@@ -19,7 +19,7 @@ class ExampleController(val bidargDataService: BidargDataService) {
     @PostMapping("/person")
     @Operation(
         description = "Henter person data",
-        security = [SecurityRequirement(name = "bearer-key")]
+        security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
         value = [
@@ -28,9 +28,9 @@ class ExampleController(val bidargDataService: BidargDataService) {
             ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
             ApiResponse(
                 responseCode = "403",
-                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)"
-            )
-        ]
+                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
+            ),
+        ],
     )
     fun hentDialog(@RequestBody personIdent: PersonIdent): HentPersonResponse {
         return bidargDataService.hentDialogerForPerson(personIdent)

@@ -16,5 +16,5 @@ enum class SoknadType {
     BEGR_REVURD,
     REVURDERING,
     KONVERTERT,
-    MANEDLIG_PALOP
+    MANEDLIG_PALOP,
 }

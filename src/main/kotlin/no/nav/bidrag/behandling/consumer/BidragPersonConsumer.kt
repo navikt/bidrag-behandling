@@ -17,7 +17,7 @@ import java.net.URI
 @Service
 class BidragPersonConsumer(
     @Value("\${BIDRAG_PERSON_URL}") bidragPersonUrl: URI,
-    @Qualifier("azure") restTemplate: RestTemplate
+    @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-person") {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

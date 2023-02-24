@@ -25,8 +25,8 @@ class RestConfig {
                     .addDeserializer(
                         YearMonth::class.java,
                         // Denne trengs for å parse år over 9999 riktig.
-                        YearMonthDeserializer(DateTimeFormatter.ofPattern("u-MM"))
-                    )
+                        YearMonthDeserializer(DateTimeFormatter.ofPattern("u-MM")),
+                    ),
             )
             .failOnUnknownProperties(false)
             .serializationInclusion(JsonInclude.Include.NON_NULL)

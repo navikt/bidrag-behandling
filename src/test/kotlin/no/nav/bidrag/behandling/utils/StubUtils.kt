@@ -26,8 +26,8 @@ class StubUtils {
                 WireMock.post("/person/informasjon").willReturn(
                     aClosedJsonResponse()
                         .withStatus(HttpStatus.OK.value())
-                        .withBody(ObjectMapper().writeValueAsString(personResponse))
-                )
+                        .withBody(ObjectMapper().writeValueAsString(personResponse)),
+                ),
             )
         } catch (e: JsonProcessingException) {
             Assert.fail(e.message)

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class BidargDataService(
-    val bidragPersonConsumer: BidragPersonConsumer
+    val bidragPersonConsumer: BidragPersonConsumer,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

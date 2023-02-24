@@ -1,7 +1,12 @@
 package no.nav.bidrag.behandling.database.datamodell
 
-import java.util.*
-import javax.persistence.*
+import java.util.Date
+import javax.persistence.Entity
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
+import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
+import javax.persistence.Id
 
 @Entity(name = "rolle")
 data class Rolle(
@@ -16,5 +21,5 @@ data class Rolle(
 
     val opprettetDato: Date,
 
-    val navn: String
+    val navn: String,
 )
