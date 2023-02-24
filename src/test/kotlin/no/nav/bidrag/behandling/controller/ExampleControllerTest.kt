@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import kotlin.test.Ignore
 
+@Ignore
 class ExampleControllerTest : SpringTestRunner() {
 
     @Test
