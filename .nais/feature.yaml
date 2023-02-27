@@ -8,6 +8,9 @@ azure_access_inbound:
   - application: bidrag-ui-feature
     namespace: bidrag
     cluster: dev-fss
+  - application: bisys
+    namespace: bidrag
+    cluster: dev-fss
 database:
   dbname: bidrag-behandling-feature
   autoResize: false
