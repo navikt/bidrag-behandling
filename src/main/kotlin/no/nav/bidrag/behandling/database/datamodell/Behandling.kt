@@ -1,12 +1,15 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import java.util.Date
+import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.EnumType
 import javax.persistence.Enumerated
+import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
+import javax.persistence.OneToOne
 
 @Entity(name = "behandling")
 data class Behandling(
@@ -20,6 +23,9 @@ data class Behandling(
     @Enumerated(EnumType.STRING)
     val soknadType: SoknadType,
 
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    val soktFra: Rolle,
+
     val datoFom: Date,
 
     val datoTom: Date,
@@ -27,4 +33,15 @@ data class Behandling(
     val saksnummer: String,
 
     val behandlerEnhet: String,
+
+    val virkningsDato: Date? = null,
+
+    @Enumerated(EnumType.STRING)
+    val aarsak: ForskuddBeregningKodeAarsakType? = null,
+
+    val avslag: String? = null,
+
+    val begrunnelseMedIVedtakNotat: String? = null,
+
+    val begrunnelseKunINotat: String? = null,
 )

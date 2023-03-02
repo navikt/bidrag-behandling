@@ -15,6 +15,7 @@ class BehandlingService(
                 null,
                 createBehandlingRequest.behandlingType,
                 createBehandlingRequest.soknadType,
+                createBehandlingRequest.rolle,
                 createBehandlingRequest.datoFom,
                 createBehandlingRequest.datoTom,
                 createBehandlingRequest.saksnummer,
