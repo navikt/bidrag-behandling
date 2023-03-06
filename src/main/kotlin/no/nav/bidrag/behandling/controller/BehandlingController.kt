@@ -7,16 +7,13 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.model.CreateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.security.token.support.core.api.Protected
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
 
-@RestController
-@Protected
-class BehandligController(val behandlingService: BehandlingService) {
+@BehandlingRestController
+class BehandlingController(val behandlingService: BehandlingService) {
 
     @PostMapping("/behandling")
     @Operation(
