@@ -5,4 +5,5 @@ enum class RolleType {
     BIDRAGS_MOTTAKER,
     BARN,
     REELL_MOTTAKER,
+    //FEILREGISTRERT
 }

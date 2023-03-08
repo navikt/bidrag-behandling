@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import java.util.Date
 import javax.persistence.CascadeType
+import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.EnumType
 import javax.persistence.Enumerated
@@ -41,7 +42,9 @@ data class Behandling(
 
     val avslag: String? = null,
 
+    @Column(name = "BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
     val begrunnelseMedIVedtakNotat: String? = null,
 
+    @Column(name = "BEGRUNNELSE_KUN_I_NOTAT")
     val begrunnelseKunINotat: String? = null,
 )
