@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.controller
 
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.SpringTestRunner
-import no.nav.bidrag.behandling.model.HentPersonResponse
+import no.nav.bidrag.behandling.dto.HentPersonResponse
 import no.nav.domain.ident.PersonIdent
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity

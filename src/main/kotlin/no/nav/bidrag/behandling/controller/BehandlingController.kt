@@ -5,7 +5,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.model.CreateBehandlingRequest
+import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
+import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -31,8 +33,29 @@ class BehandlingController(val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun createBehandling(@RequestBody createBehandling: CreateBehandlingRequest): Behandling {
-        return behandlingService.createBehandling(createBehandling)
+    fun createBehandling(@RequestBody createBehandling: CreateBehandlingRequest): CreateBehandlingResponse {
+        val behandling = Behandling(
+            createBehandling.behandlingType,
+            createBehandling.soknadType,
+            createBehandling.datoFom,
+            createBehandling.datoTom,
+            createBehandling.saksnummer,
+            createBehandling.behandlerEnhet,
+        )
+        val roller = HashSet(
+            createBehandling.roller.map {
+                Rolle(
+                    behandling,
+                    it.rolleType,
+                    it.ident,
+                    it.opprettetDato,
+                )
+            },
+        )
+
+        behandling.roller.addAll(roller)
+
+        return CreateBehandlingResponse(behandlingService.createBehandling(behandling).id!!)
     }
 
     @GetMapping("/behandling/{behandlingId}")

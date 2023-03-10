@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
-import java.util.Date
+import java.time.LocalDateTime
 import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -10,32 +10,25 @@ import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
-import javax.persistence.OneToOne
+import javax.persistence.OneToMany
 
 @Entity(name = "behandling")
 data class Behandling(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-
     @Enumerated(EnumType.STRING)
     val behandlingType: BehandlingType,
 
     @Enumerated(EnumType.STRING)
     val soknadType: SoknadType,
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    val soktFra: Rolle,
+    val datoFom: LocalDateTime,
 
-    val datoFom: Date,
-
-    val datoTom: Date,
+    val datoTom: LocalDateTime,
 
     val saksnummer: String,
 
     val behandlerEnhet: String,
 
-    val virkningsDato: Date? = null,
+    val virkningsDato: LocalDateTime? = null,
 
     @Enumerated(EnumType.STRING)
     val aarsak: ForskuddBeregningKodeAarsakType? = null,
@@ -47,4 +40,11 @@ data class Behandling(
 
     @Column(name = "BEGRUNNELSE_KUN_I_NOTAT")
     val begrunnelseKunINotat: String? = null,
-)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null,
+) {
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val roller: MutableSet<Rolle> = mutableSetOf()
+}

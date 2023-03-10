@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
-import no.nav.bidrag.behandling.model.HentPersonResponse
+import no.nav.bidrag.behandling.dto.HentPersonResponse
 import no.nav.domain.ident.PersonIdent
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
