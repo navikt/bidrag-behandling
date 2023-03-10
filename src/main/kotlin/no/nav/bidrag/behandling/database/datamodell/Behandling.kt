@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
-import java.time.LocalDateTime
+import java.util.Date
 import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -20,15 +20,15 @@ data class Behandling(
     @Enumerated(EnumType.STRING)
     val soknadType: SoknadType,
 
-    val datoFom: LocalDateTime,
+    val datoFom: Date,
 
-    val datoTom: LocalDateTime,
+    val datoTom: Date,
 
     val saksnummer: String,
 
     val behandlerEnhet: String,
 
-    val virkningsDato: LocalDateTime? = null,
+    val virkningsDato: Date? = null,
 
     @Enumerated(EnumType.STRING)
     val aarsak: ForskuddBeregningKodeAarsakType? = null,

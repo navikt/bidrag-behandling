@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
-import java.time.LocalDateTime
+import java.util.Date
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.EnumType
@@ -22,7 +22,7 @@ data class Rolle(
 
     val ident: String,
 
-    val opprettetDato: LocalDateTime,
+    val opprettetDato: Date,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
