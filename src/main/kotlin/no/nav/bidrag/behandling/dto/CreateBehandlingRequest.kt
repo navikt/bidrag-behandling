@@ -5,11 +5,11 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import java.util.Date
 
 data class CreateBehandlingRequest(
-        val behandlingType: BehandlingType,
-        val soknadType: SoknadType,
-        val datoFom: Date,
-        val datoTom: Date,
-        val saksnummer: String,
-        val behandlerEnhet: String,
-        val roller: Set<CreateRolleDto>,
+    val behandlingType: BehandlingType,
+    val soknadType: SoknadType,
+    val datoFom: Date,
+    val datoTom: Date,
+    val saksnummer: String,
+    val behandlerEnhet: String,
+    val roller: Set<CreateRolleDto>,
 )

@@ -4,18 +4,24 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.dto.BehandlingDto
 import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.RolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.domain.ident.PersonIdent
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
-class BehandlingController(val behandlingService: BehandlingService) {
+class BehandlingController(val behandlingService: BehandlingService, val bidragPersonConsumer: BidragPersonConsumer) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     @PostMapping("/behandling")
     @Operation(
@@ -74,8 +80,32 @@ class BehandlingController(val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun hentBehandling(@PathVariable behandlingId: Long): Behandling {
-        return behandlingService.hentBehandlingById(behandlingId)
+    fun hentBehandling(@PathVariable behandlingId: Long): BehandlingDto {
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        return BehandlingDto(
+            behandlingId,
+            behandling.behandlingType,
+            behandling.soknadType,
+            behandling.datoFom,
+            behandling.datoTom,
+            behandling.saksnummer,
+            behandling.behandlerEnhet,
+            behandling.roller.map {
+                val navn = try {
+                    val person = bidragPersonConsumer.hentPerson(PersonIdent(it.ident))
+                    person.navn
+                } catch (e: Exception) {
+                    logger.error("Kunne ikke hente data for en person ", e)
+                    "UKJENT"
+                }
+                RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato, navn)
+            }.toSet(),
+            behandling.virkningsDato,
+            behandling.aarsak,
+            behandling.avslag,
+            behandling.begrunnelseMedIVedtakNotat,
+            behandling.begrunnelseKunINotat,
+        )
     }
 
     @GetMapping("/behandling")

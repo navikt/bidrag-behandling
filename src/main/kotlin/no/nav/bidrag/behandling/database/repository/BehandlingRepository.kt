@@ -6,7 +6,6 @@ import org.springframework.data.repository.CrudRepository
 
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
 
-//    @Query("select b from behandling d where d.id = :id limit 1")
     fun findBehandlingById(id: Long): Behandling
 
     @Query("select b from behandling b")
