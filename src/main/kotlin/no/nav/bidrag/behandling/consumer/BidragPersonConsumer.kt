@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.PERSON_CACHE
+import no.nav.bidrag.behandling.dto.HentPersonRequest
 import no.nav.bidrag.behandling.dto.HentPersonResponse
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
@@ -29,6 +30,6 @@ class BidragPersonConsumer(
     fun hentPerson(personIdent: PersonIdent): HentPersonResponse {
         SECURE_LOGGER.info("Henter person med id $personIdent")
         logger.info("Henter person")
-        return postForNonNullEntity(hentPersonUri, personIdent)
+        return postForNonNullEntity(hentPersonUri, HentPersonRequest(personIdent.verdi))
     }
 }
