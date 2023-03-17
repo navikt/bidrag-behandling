@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
@@ -45,8 +46,10 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             createBehandling.soknadType,
             createBehandling.datoFom,
             createBehandling.datoTom,
+            createBehandling.mottatDato,
             createBehandling.saksnummer,
             createBehandling.behandlerEnhet,
+            createBehandling.soknadFra,
         )
         val roller = HashSet(
             createBehandling.roller.map {
@@ -81,6 +84,10 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
         ],
     )
     fun hentBehandling(@PathVariable behandlingId: Long): BehandlingDto {
+        return findBehandlingById(behandlingId)
+    }
+
+    private fun findBehandlingById(behandlingId: Long): BehandlingDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         return BehandlingDto(
             behandlingId,
@@ -106,6 +113,26 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandling.begrunnelseMedIVedtakNotat,
             behandling.begrunnelseKunINotat,
         )
+    }
+
+    @PutMapping("/behandling/{behandlingId}")
+    @Operation(
+        description = "Oppdaterer en behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Lagret behandling"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
+            ApiResponse(
+                responseCode = "403",
+                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
+            ),
+        ],
+    )
+    fun oppdaterBehandling(@PathVariable behandlingId: Long): BehandlingDto {
+        return findBehandlingById(behandlingId)
     }
 
     @GetMapping("/behandling")

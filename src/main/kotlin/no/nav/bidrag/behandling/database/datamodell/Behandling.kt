@@ -24,9 +24,13 @@ data class Behandling(
 
     val datoTom: Date,
 
+    val mottatDato: Date,
+
     val saksnummer: String,
 
     val behandlerEnhet: String,
+
+    val soknadFra: SoknadFraType,
 
     val virkningsDato: Date? = null,
 

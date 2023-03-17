@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
+import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.CreateRolleDto
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -30,8 +31,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             SoknadType.SOKNAD,
             Calendar.getInstance().time,
             Calendar.getInstance().time,
+            Calendar.getInstance().time,
             "1234",
             "1234",
+            SoknadFraType.BM,
         )
         val roller = HashSet(
             createRoller.map {
