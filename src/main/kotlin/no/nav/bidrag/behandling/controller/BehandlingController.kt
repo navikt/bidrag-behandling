@@ -95,6 +95,8 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandling.soknadType,
             behandling.datoFom,
             behandling.datoTom,
+            behandling.mottatDato,
+            behandling.soknadFra,
             behandling.saksnummer,
             behandling.behandlerEnhet,
             behandling.roller.map {
