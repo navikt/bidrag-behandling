@@ -30,6 +30,7 @@ data class Behandling(
 
     val behandlerEnhet: String,
 
+    @Enumerated(EnumType.STRING)
     val soknadFra: SoknadFraType,
 
     val virkningsDato: Date? = null,
