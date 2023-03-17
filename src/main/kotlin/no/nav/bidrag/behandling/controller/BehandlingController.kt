@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import java.time.LocalDate
+import java.time.ZoneId
 
 @BehandlingRestController
 class BehandlingController(val behandlingService: BehandlingService, val bidragPersonConsumer: BidragPersonConsumer) {
@@ -93,9 +95,9 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandlingId,
             behandling.behandlingType,
             behandling.soknadType,
-            behandling.datoFom,
-            behandling.datoTom,
-            behandling.mottatDato,
+            LocalDate.ofInstant(behandling.datoFom.toInstant(), ZoneId.systemDefault()),
+            LocalDate.ofInstant(behandling.datoTom.toInstant(), ZoneId.systemDefault()),
+            LocalDate.ofInstant(behandling.mottatDato.toInstant(), ZoneId.systemDefault()),
             behandling.soknadFra,
             behandling.saksnummer,
             behandling.behandlerEnhet,
@@ -109,7 +111,9 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
                 }
                 RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato, navn)
             }.toSet(),
-            behandling.virkningsDato,
+            if (behandling.virkningsDato != null) {
+                LocalDate.ofInstant(behandling.virkningsDato.toInstant(), ZoneId.systemDefault())
+            } else null,
             behandling.aarsak,
             behandling.avslag,
             behandling.begrunnelseMedIVedtakNotat,
