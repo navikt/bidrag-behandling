@@ -12,8 +12,17 @@ class BehandlingService(
         return behandlingRepository.save(behandling)
     }
 
+    fun oppdaterBehandling(behandlingId: Long, begrunnelseKunINotat: String?, begrunnelseMedIVedtakNotat: String?): Behandling {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+        val updatedBehandling = behandling.copy(
+            begrunnelseKunINotat = begrunnelseKunINotat,
+            begrunnelseMedIVedtakNotat = begrunnelseMedIVedtakNotat,
+        )
+        return behandlingRepository.save(updatedBehandling)
+    }
+
     fun hentBehandlingById(behandlingId: Long): Behandling {
-        return behandlingRepository.findBehandlingById(behandlingId)
+        return behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
     }
 
     fun hentBehandlinger(): List<Behandling> {

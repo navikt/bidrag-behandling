@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.BehandlingDto
 import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.RolleDto
+import no.nav.bidrag.behandling.dto.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.domain.ident.PersonIdent
 import org.slf4j.LoggerFactory
@@ -26,6 +27,7 @@ import java.time.ZoneId
 class BehandlingController(val behandlingService: BehandlingService, val bidragPersonConsumer: BidragPersonConsumer) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    @Suppress("unused")
     @PostMapping("/behandling")
     @Operation(
         description = "Legger til en ny behandling",
@@ -69,6 +71,7 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
         return CreateBehandlingResponse(behandlingService.createBehandling(behandling).id!!)
     }
 
+    @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}")
     @Operation(
         description = "Henter en behandling",
@@ -91,7 +94,11 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
 
     private fun findBehandlingById(behandlingId: Long): BehandlingDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        return BehandlingDto(
+        return behandlingDto(behandlingId, behandling)
+    }
+
+    private fun behandlingDto(behandlingId: Long, behandling: Behandling) =
+        BehandlingDto(
             behandlingId,
             behandling.behandlingType,
             behandling.soknadType,
@@ -113,14 +120,16 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             }.toSet(),
             if (behandling.virkningsDato != null) {
                 LocalDate.ofInstant(behandling.virkningsDato.toInstant(), ZoneId.systemDefault())
-            } else null,
+            } else {
+                null
+            },
             behandling.aarsak,
             behandling.avslag,
             behandling.begrunnelseMedIVedtakNotat,
             behandling.begrunnelseKunINotat,
         )
-    }
 
+    @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}")
     @Operation(
         description = "Oppdaterer en behandling",
@@ -137,10 +146,14 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             ),
         ],
     )
-    fun oppdaterBehandling(@PathVariable behandlingId: Long): BehandlingDto {
-        return findBehandlingById(behandlingId)
+    fun oppdaterBehandling(@PathVariable behandlingId: Long, @RequestBody updateBehandling: UpdateBehandlingRequest): BehandlingDto {
+        return behandlingDto(
+            behandlingId,
+            behandlingService.oppdaterBehandling(behandlingId, updateBehandling.begrunnelseKunINotat, updateBehandling.begrunnelseMedIVedtakNotat),
+        )
     }
 
+    @Suppress("unused")
     @GetMapping("/behandling")
     @Operation(
         description = "Henter en behandlinger",
