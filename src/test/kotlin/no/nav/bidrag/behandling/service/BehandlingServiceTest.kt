@@ -100,7 +100,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, NOTAT, MED_I_VEDTAK)
 
-        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id)
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
         assertEquals(3, hentBehandlingById.roller.size)
 
