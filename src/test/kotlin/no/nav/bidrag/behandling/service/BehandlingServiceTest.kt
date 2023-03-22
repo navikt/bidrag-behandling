@@ -26,9 +26,15 @@ class BehandlingServiceTest : TestContainerRunner() {
         val behandling = prepareBehandling(createRoller)
 
         val actualBehandling = behandlingService.createBehandling(behandling)
+
         assertNotNull(actualBehandling.id)
         assertEquals(BehandlingType.FORSKUDD, actualBehandling.behandlingType)
         assertEquals(3, actualBehandling.roller.size)
+
+        val actualBehandlingFetched = behandlingService.hentBehandlingById(actualBehandling.id!!)
+
+        assertEquals(BehandlingType.FORSKUDD, actualBehandlingFetched.behandlingType)
+        assertEquals(3, actualBehandlingFetched.roller.size)
     }
 
     private fun prepareRoles(): Set<CreateRolleDto> {
@@ -93,6 +99,10 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertNotNull(createdBehandling.id)
 
         val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, NOTAT, MED_I_VEDTAK)
+
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id)
+
+        assertEquals(3, hentBehandlingById.roller.size)
 
         assertEquals(NOTAT, oppdatertBehandling.begrunnelseKunINotat)
         assertEquals(MED_I_VEDTAK, oppdatertBehandling.begrunnelseMedIVedtakNotat)

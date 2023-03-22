@@ -18,6 +18,7 @@ class BehandlingService(
             begrunnelseKunINotat = begrunnelseKunINotat,
             begrunnelseMedIVedtakNotat = begrunnelseMedIVedtakNotat,
         )
+        updatedBehandling.roller = behandling.roller
         return behandlingRepository.save(updatedBehandling)
     }
 

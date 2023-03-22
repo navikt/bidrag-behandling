@@ -50,6 +50,6 @@ data class Behandling(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 ) {
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val roller: MutableSet<Rolle> = mutableSetOf()
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var roller: MutableSet<Rolle> = mutableSetOf()
 }
