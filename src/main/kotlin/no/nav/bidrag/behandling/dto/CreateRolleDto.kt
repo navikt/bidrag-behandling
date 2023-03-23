@@ -5,6 +5,6 @@ import java.util.Date
 
 data class CreateRolleDto(
     val rolleType: RolleType,
-    val ident: String,
+    val ident: String? = "UKJENT",
     val opprettetDato: Date,
 )
