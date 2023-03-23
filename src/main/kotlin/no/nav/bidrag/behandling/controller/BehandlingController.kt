@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.UKJENT
 import no.nav.bidrag.behandling.dto.BehandlingDto
 import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
@@ -60,7 +61,7 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
                 Rolle(
                     behandling,
                     it.rolleType,
-                    it.ident ?: "UKJENT",
+                    it.ident ?: UKJENT,
                     it.opprettetDato,
                 )
             },
@@ -109,12 +110,16 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandling.saksnummer,
             behandling.behandlerEnhet,
             behandling.roller.map {
-                val navn = try {
-                    val person = bidragPersonConsumer.hentPerson(PersonIdent(it.ident))
-                    person.navn
-                } catch (e: Exception) {
-                    logger.info("Kunne ikke hente data for en person ", e)
-                    "UKJENT"
+                val navn = if (it.ident == UKJENT) {
+                    it.ident
+                } else {
+                    try {
+                        val person = bidragPersonConsumer.hentPerson(PersonIdent(it.ident))
+                        person.navn
+                    } catch (e: Exception) {
+                        logger.info("Kunne ikke hente data for en person ", e)
+                        UKJENT
+                    }
                 }
                 RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato, navn)
             }.toSet(),

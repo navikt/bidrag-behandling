@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.database.datamodell.UKJENT
 import no.nav.bidrag.behandling.dto.CreateRolleDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -62,7 +63,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 Rolle(
                     behandling,
                     it.rolleType,
-                    it.ident ?: "UKJENT",
+                    it.ident ?: UKJENT,
                     it.opprettetDato,
                 )
             },

@@ -11,6 +11,8 @@ import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
 
+const val UKJENT = "UKJENT"
+
 @Entity(name = "rolle")
 data class Rolle(
     @ManyToOne(fetch = FetchType.LAZY)
