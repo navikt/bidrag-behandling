@@ -82,7 +82,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Test
     fun `skal caste 404 exception hvis behandlingen ikke er der - oppdater`() {
         Assertions.assertThrows(HttpClientErrorException::class.java) {
-            behandlingService.oppdaterBehandling(1234, "New Notat", "Med i Vedtak")
+            behandlingService.oppdaterBehandling(1234, "New Notat", "Med i Vedtak"/*, Calendar.getInstance().time*/)
         }
     }
 

@@ -14,9 +14,11 @@ class BehandlingService(
 
     fun oppdaterBehandling(behandlingId: Long, begrunnelseKunINotat: String?, begrunnelseMedIVedtakNotat: String?): Behandling {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+        // val updatedVirkningDato = if (virkningsDato != null) Date.from(virkningsDato.atStartOfDay(ZoneId.systemDefault()).toInstant()) else null
         val updatedBehandling = behandling.copy(
             begrunnelseKunINotat = begrunnelseKunINotat,
             begrunnelseMedIVedtakNotat = begrunnelseMedIVedtakNotat,
+            virkningsDato = behandling.virkningsDato, // IN PROGRESS
         )
         updatedBehandling.roller = behandling.roller
         return behandlingRepository.save(updatedBehandling)

@@ -149,7 +149,12 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
     fun oppdaterBehandling(@PathVariable behandlingId: Long, @RequestBody updateBehandling: UpdateBehandlingRequest): BehandlingDto {
         return behandlingDto(
             behandlingId,
-            behandlingService.oppdaterBehandling(behandlingId, updateBehandling.begrunnelseKunINotat, updateBehandling.begrunnelseMedIVedtakNotat),
+            behandlingService.oppdaterBehandling(
+                behandlingId,
+                updateBehandling.begrunnelseKunINotat,
+                updateBehandling.begrunnelseMedIVedtakNotat,
+                // updateBehandling.virkningsDato,
+            ),
         )
     }
 
@@ -170,7 +175,7 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             ),
         ],
     )
-    fun hentBehandlinger(): List<Behandling> {
-        return behandlingService.hentBehandlinger()
+    fun hentBehandlinger(): List<BehandlingDto> {
+        return behandlingService.hentBehandlinger().map { behandlingDto(it.id!!, it) }
     }
 }
