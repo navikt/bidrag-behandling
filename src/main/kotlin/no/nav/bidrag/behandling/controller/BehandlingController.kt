@@ -60,7 +60,7 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
                 Rolle(
                     behandling,
                     it.rolleType,
-                    it.ident,
+                    it.ident ?: "UKJENT",
                     it.opprettetDato,
                 )
             },

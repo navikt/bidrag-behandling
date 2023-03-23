@@ -62,7 +62,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 Rolle(
                     behandling,
                     it.rolleType,
-                    it.ident,
+                    it.ident ?: "UKJENT",
                     it.opprettetDato,
                 )
             },
