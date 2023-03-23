@@ -113,7 +113,7 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
                     val person = bidragPersonConsumer.hentPerson(PersonIdent(it.ident))
                     person.navn
                 } catch (e: Exception) {
-                    logger.error("Kunne ikke hente data for en person ", e)
+                    logger.info("Kunne ikke hente data for en person ", e)
                     "UKJENT"
                 }
                 RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato, navn)
