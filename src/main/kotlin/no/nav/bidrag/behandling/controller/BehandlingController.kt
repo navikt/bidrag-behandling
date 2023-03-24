@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.UKJENT
 import no.nav.bidrag.behandling.dto.BehandlingDto
 import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import java.time.LocalDate
 import java.time.ZoneId
+import javax.validation.Valid
 
 @BehandlingRestController
 class BehandlingController(val behandlingService: BehandlingService, val bidragPersonConsumer: BidragPersonConsumer) {
@@ -45,7 +45,11 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             ),
         ],
     )
-    fun createBehandling(@RequestBody createBehandling: CreateBehandlingRequest): CreateBehandlingResponse {
+    fun createBehandling(
+        @Valid
+        @RequestBody(required = true)
+        createBehandling: CreateBehandlingRequest,
+    ): CreateBehandlingResponse {
         val behandling = Behandling(
             createBehandling.behandlingType,
             createBehandling.soknadType,
@@ -61,7 +65,7 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
                 Rolle(
                     behandling,
                     it.rolleType,
-                    it.ident ?: UKJENT,
+                    it.ident,
                     it.opprettetDato,
                 )
             },
@@ -110,16 +114,12 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandling.saksnummer,
             behandling.behandlerEnhet,
             behandling.roller.map {
-                val navn = if (it.ident == UKJENT) {
-                    it.ident
-                } else {
-                    try {
-                        val person = bidragPersonConsumer.hentPerson(PersonIdent(it.ident))
-                        person.navn
-                    } catch (e: Exception) {
-                        logger.info("Kunne ikke hente data for en person ", e)
-                        UKJENT
-                    }
+                val navn = try {
+                    val person = bidragPersonConsumer.hentPerson(PersonIdent(it.ident))
+                    person.navn
+                } catch (e: Exception) {
+                    logger.info("Kunne ikke hente data for en person ", e)
+                    "UKJENT"
                 }
                 RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato, navn)
             }.toSet(),
