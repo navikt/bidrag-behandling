@@ -38,7 +38,8 @@ data class Behandling(
     @Enumerated(EnumType.STRING)
     val aarsak: ForskuddBeregningKodeAarsakType? = null,
 
-    val avslag: String? = null,
+    @Enumerated(EnumType.STRING)
+    val avslag: AvslagType? = null,
 
     @Column(name = "BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
     val begrunnelseMedIVedtakNotat: String? = null,

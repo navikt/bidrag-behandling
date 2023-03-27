@@ -12,6 +12,8 @@ import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.RolleDto
 import no.nav.bidrag.behandling.dto.UpdateBehandlingRequest
+import no.nav.bidrag.behandling.ext.toDate
+import no.nav.bidrag.behandling.ext.toLocalDate
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.domain.ident.PersonIdent
 import org.slf4j.LoggerFactory
@@ -20,8 +22,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import java.time.LocalDate
-import java.time.ZoneId
 import javax.validation.Valid
 
 @BehandlingRestController
@@ -107,9 +107,9 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandlingId,
             behandling.behandlingType,
             behandling.soknadType,
-            LocalDate.ofInstant(behandling.datoFom.toInstant(), ZoneId.systemDefault()),
-            LocalDate.ofInstant(behandling.datoTom.toInstant(), ZoneId.systemDefault()),
-            LocalDate.ofInstant(behandling.mottatDato.toInstant(), ZoneId.systemDefault()),
+            behandling.datoFom.toLocalDate(),
+            behandling.datoTom.toLocalDate(),
+            behandling.mottatDato.toLocalDate(),
             behandling.soknadFra,
             behandling.saksnummer,
             behandling.behandlerEnhet,
@@ -123,11 +123,7 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
                 }
                 RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato, navn)
             }.toSet(),
-            if (behandling.virkningsDato != null) {
-                LocalDate.ofInstant(behandling.virkningsDato.toInstant(), ZoneId.systemDefault())
-            } else {
-                null
-            },
+            behandling.virkningsDato?.toLocalDate(),
             behandling.aarsak,
             behandling.avslag,
             behandling.begrunnelseMedIVedtakNotat,
@@ -158,7 +154,9 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
                 behandlingId,
                 updateBehandling.begrunnelseKunINotat,
                 updateBehandling.begrunnelseMedIVedtakNotat,
-                // updateBehandling.virkningsDato,
+                updateBehandling.avslag,
+                updateBehandling.aarsak,
+                updateBehandling.virkningsDato?.toDate(),
             ),
         )
     }

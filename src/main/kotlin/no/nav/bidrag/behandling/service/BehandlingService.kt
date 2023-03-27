@@ -1,8 +1,11 @@
 package no.nav.bidrag.behandling.service
 
+import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import org.springframework.stereotype.Service
+import java.util.Date
 
 @Service
 class BehandlingService(
@@ -12,13 +15,21 @@ class BehandlingService(
         return behandlingRepository.save(behandling)
     }
 
-    fun oppdaterBehandling(behandlingId: Long, begrunnelseKunINotat: String?, begrunnelseMedIVedtakNotat: String?): Behandling {
+    fun oppdaterBehandling(
+        behandlingId: Long,
+        begrunnelseKunINotat: String? = null,
+        begrunnelseMedIVedtakNotat: String? = null,
+        avslag: AvslagType? = null,
+        aarsak: ForskuddBeregningKodeAarsakType? = null,
+        virkningsDato: Date? = null,
+    ): Behandling {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
-        // val updatedVirkningDato = if (virkningsDato != null) Date.from(virkningsDato.atStartOfDay(ZoneId.systemDefault()).toInstant()) else null
         val updatedBehandling = behandling.copy(
             begrunnelseKunINotat = begrunnelseKunINotat,
             begrunnelseMedIVedtakNotat = begrunnelseMedIVedtakNotat,
-            virkningsDato = behandling.virkningsDato, // IN PROGRESS
+            avslag = avslag,
+            aarsak = aarsak,
+            virkningsDato = virkningsDato,
         )
         updatedBehandling.roller = behandling.roller
         return behandlingRepository.save(updatedBehandling)

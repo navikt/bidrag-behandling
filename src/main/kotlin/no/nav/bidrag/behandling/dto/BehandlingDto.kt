@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
@@ -35,7 +36,7 @@ data class BehandlingDto(
     val virkningsDato: LocalDate? = null,
 
     val aarsak: ForskuddBeregningKodeAarsakType? = null,
-    val avslag: String? = null,
+    val avslag: AvslagType? = null,
     val begrunnelseMedIVedtakNotat: String? = null,
     val begrunnelseKunINotat: String? = null,
 )

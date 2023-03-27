@@ -1,14 +1,20 @@
 package no.nav.bidrag.behandling.controller
 
+import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
+import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.dto.BehandlingDto
+import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Date
 
 data class CreateBehandlingRequestTest(
@@ -29,6 +35,14 @@ data class CreateRolleDtoTest(
     val opprettetDato: Date,
 )
 
+data class UpdateBehandlingRequestTest(
+    val begrunnelseMedIVedtakNotat: String? = null,
+    val begrunnelseKunINotat: String? = null,
+    val avslag: AvslagType? = null,
+    val aarsak: ForskuddBeregningKodeAarsakType? = null,
+    val virkningsDato: String? = null,
+)
+
 class BehandlingControllerTest : KontrollerTestRunner() {
 
     @Test
@@ -41,6 +55,27 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+    }
+
+    @Test
+    fun `skal opprette og oppdatere en behandling`() {
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
+
+        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), CreateBehandlingResponse::class.java)
+        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+
+        val updateReq = UpdateBehandlingRequestTest(avslag = AvslagType.MANGL_DOK, virkningsDato = "01.02.2023")
+        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${responseMedNull.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), BehandlingDto::class.java)
+
+        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+        assertEquals(AvslagType.MANGL_DOK, updatedBehandling.body!!.avslag)
+
+        val expectedDate = LocalDate.parse("01.02.2023", DateTimeFormatter.ofPattern("dd.MM.uuuu"))
+        assertEquals(expectedDate, updatedBehandling.body!!.virkningsDato)
     }
 
     @Test

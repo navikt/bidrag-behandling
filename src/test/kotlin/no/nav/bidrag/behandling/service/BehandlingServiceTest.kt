@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.TestContainerRunner
+import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -11,6 +12,7 @@ import no.nav.bidrag.behandling.dto.CreateRolleDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.client.HttpClientErrorException
@@ -82,7 +84,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Test
     fun `skal caste 404 exception hvis behandlingen ikke er der - oppdater`() {
         Assertions.assertThrows(HttpClientErrorException::class.java) {
-            behandlingService.oppdaterBehandling(1234, "New Notat", "Med i Vedtak"/*, Calendar.getInstance().time*/)
+            behandlingService.oppdaterBehandling(1234, "New Notat", "Med i Vedtak")
         }
     }
 
@@ -97,12 +99,14 @@ class BehandlingServiceTest : TestContainerRunner() {
         val createdBehandling = behandlingService.createBehandling(behandling)
 
         assertNotNull(createdBehandling.id)
+        assertNull(createdBehandling.avslag)
 
-        val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, NOTAT, MED_I_VEDTAK)
+        val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, NOTAT, MED_I_VEDTAK, AvslagType.MANGL_DOK)
 
         val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
         assertEquals(3, hentBehandlingById.roller.size)
+        assertEquals(AvslagType.MANGL_DOK, hentBehandlingById.avslag)
 
         assertEquals(NOTAT, oppdatertBehandling.begrunnelseKunINotat)
         assertEquals(MED_I_VEDTAK, oppdatertBehandling.begrunnelseMedIVedtakNotat)
