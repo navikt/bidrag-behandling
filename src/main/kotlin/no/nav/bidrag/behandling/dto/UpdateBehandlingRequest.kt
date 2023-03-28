@@ -12,7 +12,7 @@ data class UpdateBehandlingRequest(
     val avslag: AvslagType? = null,
     val aarsak: ForskuddBeregningKodeAarsakType? = null,
 
-    @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @Schema(type = "string", format = "date", example = "1.12.2025")
+    @JsonFormat(pattern = "d.MM.yyyy")
     val virkningsDato: LocalDate? = null,
 )
