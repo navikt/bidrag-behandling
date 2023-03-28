@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
@@ -38,8 +37,8 @@ data class CreateRolleDtoTest(
 data class UpdateBehandlingRequestTest(
     val begrunnelseMedIVedtakNotat: String? = null,
     val begrunnelseKunINotat: String? = null,
-    val avslag: AvslagType? = null,
-    val aarsak: ForskuddBeregningKodeAarsakType? = null,
+    val avslag: String? = null,
+    val aarsak: String? = null,
     val virkningsDato: String? = null,
 )
 
@@ -68,7 +67,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), CreateBehandlingResponse::class.java)
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
 
-        val updateReq = UpdateBehandlingRequestTest(avslag = AvslagType.MANGL_DOK, virkningsDato = "01.02.2023")
+        val updateReq = UpdateBehandlingRequestTest(avslag = AvslagType.MANGL_DOK.name, virkningsDato = "01.02.2023")
         val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${responseMedNull.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), BehandlingDto::class.java)
 
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
@@ -76,6 +75,30 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val expectedDate = LocalDate.parse("01.02.2023", DateTimeFormatter.ofPattern("dd.MM.uuuu"))
         assertEquals(expectedDate, updatedBehandling.body!!.virkningsDato)
+    }
+
+    @Test
+    fun `skal validere datoer`() {
+        val updateReq = UpdateBehandlingRequestTest(avslag = AvslagType.MANGL_DOK.name, virkningsDato = "1.2.2023")
+        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/123", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
+
+        assertEquals(HttpStatus.BAD_REQUEST, updatedBehandling.statusCode)
+    }
+
+    @Test
+    fun `skal validere avlag type not blank`() {
+        val updateReq = UpdateBehandlingRequestTest(avslag = " ")
+        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/123", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
+
+        assertEquals(HttpStatus.BAD_REQUEST, updatedBehandling.statusCode)
+    }
+
+    @Test
+    fun `skal validere aarsak type not blank`() {
+        val updateReq = UpdateBehandlingRequestTest(aarsak = "")
+        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/123", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
+
+        assertEquals(HttpStatus.BAD_REQUEST, updatedBehandling.statusCode)
     }
 
     @Test

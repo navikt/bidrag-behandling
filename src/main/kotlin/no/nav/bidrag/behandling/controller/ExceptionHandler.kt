@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -33,6 +34,19 @@ class ExceptionHandler {
     @ExceptionHandler(MissingKotlinParameterException::class)
     fun missingKotlinParameterException(ex: MissingKotlinParameterException): Error? {
         return createMissingKotlinParameterViolation(ex)
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    @ExceptionHandler(InvalidFormatException::class)
+    fun invalidParameterException(ex: InvalidFormatException): Error? {
+        val error = Error(HttpStatus.BAD_REQUEST.value(), "validation error")
+
+        ex.path.forEach {
+            error.addFieldError(it.from.toString(), it.fieldName, ex.message.toString())
+        }
+
+        return error
     }
 
     private fun createMissingKotlinParameterViolation(ex: MissingKotlinParameterException): Error {
