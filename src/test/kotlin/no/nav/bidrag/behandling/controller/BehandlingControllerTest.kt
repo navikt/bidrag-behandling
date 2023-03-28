@@ -68,7 +68,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), CreateBehandlingResponse::class.java)
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
 
-        val updateReq = UpdateBehandlingRequestTest(avslag = AvslagType.MANGL_DOK, virkningsDato = "1.02.2023")
+        val updateReq = UpdateBehandlingRequestTest(avslag = AvslagType.MANGL_DOK, virkningsDato = "01.02.2023")
         val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${responseMedNull.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), BehandlingDto::class.java)
 
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
