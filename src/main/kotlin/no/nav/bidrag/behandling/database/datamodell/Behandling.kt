@@ -41,11 +41,23 @@ data class Behandling(
     @Enumerated(EnumType.STRING)
     val avslag: AvslagType? = null,
 
-    @Column(name = "BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
-    val begrunnelseMedIVedtakNotat: String? = null,
+    @Column(name = "VIRKNINGS_TIDSPUNKT_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
+    val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
 
-    @Column(name = "BEGRUNNELSE_KUN_I_NOTAT")
-    val begrunnelseKunINotat: String? = null,
+    @Column(name = "VIRKNINGS_TIDSPUNKT_BEGRUNNELSE_KUN_I_NOTAT")
+    val virkningsTidspunktBegrunnelseKunINotat: String? = null,
+
+    @Column(name = "BOFORHOLD_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
+    val boforholdBegrunnelseMedIVedtakNotat: String? = null,
+
+    @Column(name = "BOFORHOLD_BEGRUNNELSE_KUN_I_NOTAT")
+    val boforholdBegrunnelseKunINotat: String? = null,
+
+    @Column(name = "INNTEKT_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
+    val inntektBegrunnelseMedIVedtakNotat: String? = null,
+
+    @Column(name = "INNTEKT_BEGRUNNELSE_KUN_I_NOTAT")
+    val inntektBegrunnelseKunINotat: String? = null,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

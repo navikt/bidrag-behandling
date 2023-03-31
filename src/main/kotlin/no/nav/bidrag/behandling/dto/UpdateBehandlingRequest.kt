@@ -7,8 +7,13 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakT
 import java.time.LocalDate
 
 data class UpdateBehandlingRequest(
-    val begrunnelseMedIVedtakNotat: String? = null,
-    val begrunnelseKunINotat: String? = null,
+    val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
+    val virkningsTidspunktBegrunnelseKunINotat: String? = null,
+    val boforholdBegrunnelseMedIVedtakNotat: String? = null,
+    val boforholdBegrunnelseKunINotat: String? = null,
+    val inntektBegrunnelseMedIVedtakNotat: String? = null,
+    val inntektBegrunnelseKunINotat: String? = null,
+
     val avslag: AvslagType? = null,
     val aarsak: ForskuddBeregningKodeAarsakType? = null,
 

@@ -101,14 +101,14 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertNotNull(createdBehandling.id)
         assertNull(createdBehandling.avslag)
 
-        val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, NOTAT, MED_I_VEDTAK, AvslagType.MANGL_DOK)
+        val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, AvslagType.MANGL_DOK)
 
         val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
         assertEquals(3, hentBehandlingById.roller.size)
         assertEquals(AvslagType.MANGL_DOK, hentBehandlingById.avslag)
 
-        assertEquals(NOTAT, oppdatertBehandling.begrunnelseKunINotat)
-        assertEquals(MED_I_VEDTAK, oppdatertBehandling.begrunnelseMedIVedtakNotat)
+        assertEquals(NOTAT, oppdatertBehandling.virkningsTidspunktBegrunnelseKunINotat)
+        assertEquals(MED_I_VEDTAK, oppdatertBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat)
     }
 }

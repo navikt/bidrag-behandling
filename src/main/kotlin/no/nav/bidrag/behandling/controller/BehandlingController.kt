@@ -126,8 +126,12 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandling.virkningsDato?.toLocalDate(),
             behandling.aarsak,
             behandling.avslag,
-            behandling.begrunnelseMedIVedtakNotat,
-            behandling.begrunnelseKunINotat,
+            behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
+            behandling.virkningsTidspunktBegrunnelseKunINotat,
+            behandling.boforholdBegrunnelseMedIVedtakNotat,
+            behandling.boforholdBegrunnelseKunINotat,
+            behandling.inntektBegrunnelseMedIVedtakNotat,
+            behandling.inntektBegrunnelseKunINotat,
         )
 
     @Suppress("unused")
@@ -152,8 +156,12 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandlingId,
             behandlingService.oppdaterBehandling(
                 behandlingId,
-                updateBehandling.begrunnelseKunINotat,
-                updateBehandling.begrunnelseMedIVedtakNotat,
+                updateBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
+                updateBehandling.virkningsTidspunktBegrunnelseKunINotat,
+                updateBehandling.boforholdBegrunnelseMedIVedtakNotat,
+                updateBehandling.boforholdBegrunnelseKunINotat,
+                updateBehandling.inntektBegrunnelseMedIVedtakNotat,
+                updateBehandling.inntektBegrunnelseKunINotat,
                 updateBehandling.avslag,
                 updateBehandling.aarsak,
                 updateBehandling.virkningsDato?.toDate(),

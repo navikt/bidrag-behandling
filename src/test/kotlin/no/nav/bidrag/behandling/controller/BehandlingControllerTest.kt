@@ -35,11 +35,14 @@ data class CreateRolleDtoTest(
 )
 
 data class UpdateBehandlingRequestTest(
-    val begrunnelseMedIVedtakNotat: String? = null,
-    val begrunnelseKunINotat: String? = null,
     val avslag: String? = null,
     val aarsak: String? = null,
     val virkningsDato: String? = null,
+)
+
+data class UpdateBehandlingRequestNonExistingFieldTest(
+    val begrunnelseMedIVedtakNotat: String? = null,
+    val avslag: String? = null,
 )
 
 class BehandlingControllerTest : KontrollerTestRunner() {
@@ -83,6 +86,23 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/123", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
 
         assertEquals(HttpStatus.BAD_REQUEST, updatedBehandling.statusCode)
+    }
+
+    @Test
+    fun `skal ignorere felt som ikke eksisterer i backend`() {
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val createBehandling = createBehandlingRequestTest("sak123", "en12", roller)
+
+        val behandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(createBehandling), CreateBehandlingResponse::class.java)
+        assertEquals(HttpStatus.OK, behandling.statusCode)
+
+        val updateReq = UpdateBehandlingRequestNonExistingFieldTest(avslag = AvslagType.MANGL_DOK.name, begrunnelseMedIVedtakNotat = "Some text")
+        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
+
+        assertEquals(HttpStatus.OK, updatedBehandling.statusCode)
     }
 
     @Test

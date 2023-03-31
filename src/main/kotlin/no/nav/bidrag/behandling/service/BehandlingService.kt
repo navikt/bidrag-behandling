@@ -17,16 +17,24 @@ class BehandlingService(
 
     fun oppdaterBehandling(
         behandlingId: Long,
-        begrunnelseKunINotat: String? = null,
-        begrunnelseMedIVedtakNotat: String? = null,
+        virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
+        virkningsTidspunktBegrunnelseKunINotat: String? = null,
+        boforholdBegrunnelseMedIVedtakNotat: String? = null,
+        boforholdBegrunnelseKunINotat: String? = null,
+        inntektBegrunnelseMedIVedtakNotat: String? = null,
+        inntektBegrunnelseKunINotat: String? = null,
         avslag: AvslagType? = null,
         aarsak: ForskuddBeregningKodeAarsakType? = null,
         virkningsDato: Date? = null,
     ): Behandling {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
         val updatedBehandling = behandling.copy(
-            begrunnelseKunINotat = begrunnelseKunINotat,
-            begrunnelseMedIVedtakNotat = begrunnelseMedIVedtakNotat,
+            virkningsTidspunktBegrunnelseMedIVedtakNotat = virkningsTidspunktBegrunnelseMedIVedtakNotat,
+            virkningsTidspunktBegrunnelseKunINotat = virkningsTidspunktBegrunnelseKunINotat,
+            boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat,
+            boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat,
+            inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat,
+            inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat,
             avslag = avslag,
             aarsak = aarsak,
             virkningsDato = virkningsDato,
