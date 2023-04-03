@@ -14,7 +14,7 @@ data class UpdateBehandlingRequestExtended(
     val soknadType: SoknadType,
 
     @Enumerated(EnumType.STRING)
-    val soknadFra: SoknadFraType,
+    val soknadFraType: SoknadFraType,
 
     @Schema(type = "string", format = "date", example = "01.02.2025")
     @JsonFormat(pattern = "dd.MM.yyyy")

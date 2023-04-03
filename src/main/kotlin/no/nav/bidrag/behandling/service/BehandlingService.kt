@@ -50,7 +50,7 @@ class BehandlingService(
     ): Behandling {
         val existingBehandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
         val updatedBehandling = existingBehandling.copy(
-            soknadFra = behandlingRequest.soknadFra,
+            soknadFra = behandlingRequest.soknadFraType,
             soknadType = behandlingRequest.soknadType,
             mottatDato = behandlingRequest.mottatDato,
             datoFom = behandlingRequest.datoFom,
