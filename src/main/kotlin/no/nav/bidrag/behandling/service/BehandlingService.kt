@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.UpdateBehandlingRequestExtended
 import org.springframework.stereotype.Service
 import java.util.Date
 
@@ -40,6 +41,21 @@ class BehandlingService(
             virkningsDato = virkningsDato,
         )
         updatedBehandling.roller = behandling.roller
+        return behandlingRepository.save(updatedBehandling)
+    }
+
+    fun oppdaterBehandlingExtended(
+        behandlingId: Long,
+        behandlingRequest: UpdateBehandlingRequestExtended,
+    ): Behandling {
+        val existingBehandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+        val updatedBehandling = existingBehandling.copy(
+            soknadFra = behandlingRequest.soknadFra,
+            soknadType = behandlingRequest.soknadType,
+            mottatDato = behandlingRequest.mottatDato,
+            datoFom = behandlingRequest.datoFom,
+        )
+        updatedBehandling.roller = existingBehandling.roller
         return behandlingRepository.save(updatedBehandling)
     }
 
