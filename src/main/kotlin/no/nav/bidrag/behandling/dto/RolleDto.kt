@@ -8,5 +8,4 @@ data class RolleDto(
     val rolleType: RolleType,
     val ident: String,
     val opprettetDato: Date,
-    val navn: String,
 )

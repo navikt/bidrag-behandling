@@ -4,10 +4,12 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
+import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.dto.BehandlingBarnDto
 import no.nav.bidrag.behandling.dto.CreateRolleDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -40,12 +42,11 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     private fun prepareRoles(): Set<CreateRolleDto> {
-        val createRoller = setOf<CreateRolleDto>(
+        return setOf(
             CreateRolleDto(RolleType.BIDRAGS_MOTTAKER, "123344", Calendar.getInstance().time),
             CreateRolleDto(RolleType.BIDRAGS_PLIKTIG, "44332211", Calendar.getInstance().time),
             CreateRolleDto(RolleType.BARN, "1111", Calendar.getInstance().time),
         )
-        return createRoller
     }
 
     private fun prepareBehandling(createRoller: Set<CreateRolleDto>): Behandling {
@@ -84,7 +85,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Test
     fun `skal caste 404 exception hvis behandlingen ikke er der - oppdater`() {
         Assertions.assertThrows(HttpClientErrorException::class.java) {
-            behandlingService.oppdaterBehandling(1234, "New Notat", "Med i Vedtak")
+            behandlingService.oppdaterBehandling(1234, emptySet(), "New Notat", "Med i Vedtak")
         }
     }
 
@@ -101,7 +102,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertNotNull(createdBehandling.id)
         assertNull(createdBehandling.avslag)
 
-        val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, AvslagType.MANGL_DOK)
+        val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, emptySet(), MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, AvslagType.MANGL_DOK)
 
         val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
@@ -110,5 +111,30 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         assertEquals(NOTAT, oppdatertBehandling.virkningsTidspunktBegrunnelseKunINotat)
         assertEquals(MED_I_VEDTAK, oppdatertBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat)
+    }
+
+    @Test
+    fun `skal oppdatere en behandling med barn`() {
+        val createRoller = prepareRoles()
+        val behandling = prepareBehandling(createRoller)
+
+        val NOTAT = "New Notat"
+        val MED_I_VEDTAK = "med i vedtak"
+
+        val createdBehandling = behandlingService.createBehandling(behandling)
+
+        assertNotNull(createdBehandling.id)
+        assertNull(createdBehandling.avslag)
+
+        val behandlingBarn = setOf(BehandlingBarnDto(null, true, Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE, "Manuelt", "ident!"))
+
+        val oppdatertBehandling = behandlingService.oppdaterBehandling(
+            createdBehandling.id!!,
+            behandlingBarn, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, AvslagType.MANGL_DOK,
+        )
+
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
+
+        assertEquals(1, hentBehandlingById.behandlingBarn.size)
     }
 }

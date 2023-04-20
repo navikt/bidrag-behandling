@@ -2,8 +2,10 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingBarn
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.BehandlingBarnDto
 import no.nav.bidrag.behandling.dto.UpdateBehandlingRequestExtended
 import org.springframework.stereotype.Service
 import java.util.Date
@@ -18,6 +20,7 @@ class BehandlingService(
 
     fun oppdaterBehandling(
         behandlingId: Long,
+        behandlingBarn: Set<BehandlingBarnDto>,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
         virkningsTidspunktBegrunnelseKunINotat: String? = null,
         boforholdBegrunnelseMedIVedtakNotat: String? = null,
@@ -41,6 +44,12 @@ class BehandlingService(
             virkningsDato = virkningsDato,
         )
         updatedBehandling.roller = behandling.roller
+
+        val updatedBehandlingBarn = behandlingBarn.map {
+            BehandlingBarn(behandling, it.medISaken, it.fraDao, it.tilDato, it.boStatus, it.kilde, it.id, it.ident, it.navn, it.foedselsDato)
+        }.toMutableSet()
+
+        updatedBehandling.behandlingBarn = updatedBehandlingBarn
         return behandlingRepository.save(updatedBehandling)
     }
 

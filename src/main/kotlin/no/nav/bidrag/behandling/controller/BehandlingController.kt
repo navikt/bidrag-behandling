@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.dto.BehandlingBarnDto
 import no.nav.bidrag.behandling.dto.BehandlingDto
 import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
@@ -16,7 +16,6 @@ import no.nav.bidrag.behandling.dto.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.ext.toDate
 import no.nav.bidrag.behandling.ext.toLocalDate
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.domain.ident.PersonIdent
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -26,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import javax.validation.Valid
 
 @BehandlingRestController
-class BehandlingController(val behandlingService: BehandlingService, val bidragPersonConsumer: BidragPersonConsumer) {
+class BehandlingController(val behandlingService: BehandlingService) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Suppress("unused")
@@ -115,14 +114,10 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandling.saksnummer,
             behandling.behandlerEnhet,
             behandling.roller.map {
-                val navn = try {
-                    val person = bidragPersonConsumer.hentPerson(PersonIdent(it.ident))
-                    person.navn
-                } catch (e: Exception) {
-                    logger.info("Kunne ikke hente data for en person ", e)
-                    "UKJENT"
-                }
-                RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato, navn)
+                RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato)
+            }.toSet(),
+            behandling.behandlingBarn.map {
+                BehandlingBarnDto(it.id!!, it.medISaken, it.fraDato, it.tilDato, it.boStatus, it.kilde, it.ident, it.navn, it.foedselsDato)
             }.toSet(),
             behandling.virkningsDato?.toLocalDate(),
             behandling.aarsak,
@@ -157,6 +152,7 @@ class BehandlingController(val behandlingService: BehandlingService, val bidragP
             behandlingId,
             behandlingService.oppdaterBehandling(
                 behandlingId,
+                updateBehandling.behandlingBarn,
                 updateBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
                 updateBehandling.virkningsTidspunktBegrunnelseKunINotat,
                 updateBehandling.boforholdBegrunnelseMedIVedtakNotat,
