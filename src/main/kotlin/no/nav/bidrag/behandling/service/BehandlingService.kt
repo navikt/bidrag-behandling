@@ -20,7 +20,7 @@ class BehandlingService(
 
     fun oppdaterBehandling(
         behandlingId: Long,
-        behandlingBarn: Set<BehandlingBarnDto>,
+        behandlingBarn: Set<BehandlingBarnDto>?,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
         virkningsTidspunktBegrunnelseKunINotat: String? = null,
         boforholdBegrunnelseMedIVedtakNotat: String? = null,
@@ -45,11 +45,26 @@ class BehandlingService(
         )
         updatedBehandling.roller = behandling.roller
 
-        val updatedBehandlingBarn = behandlingBarn.map {
-            BehandlingBarn(behandling, it.medISaken, it.fraDao, it.tilDato, it.boStatus, it.kilde, it.id, it.ident, it.navn, it.foedselsDato)
-        }.toMutableSet()
+        if (behandlingBarn != null) {
+            val updatedBehandlingBarn = behandlingBarn.map {
+                BehandlingBarn(
+                    behandling,
+                    it.medISaken,
+                    it.fraDao,
+                    it.tilDato,
+                    it.boStatus,
+                    it.kilde,
+                    it.id,
+                    it.ident,
+                    it.navn,
+                    it.foedselsDato,
+                )
+            }.toMutableSet()
 
-        updatedBehandling.behandlingBarn = updatedBehandlingBarn
+            updatedBehandling.behandlingBarn = updatedBehandlingBarn
+        } else {
+            updatedBehandling.behandlingBarn = behandling.behandlingBarn
+        }
         return behandlingRepository.save(updatedBehandling)
     }
 

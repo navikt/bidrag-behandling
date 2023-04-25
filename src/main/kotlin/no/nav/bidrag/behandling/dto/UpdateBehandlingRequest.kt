@@ -7,7 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakT
 import java.time.LocalDate
 
 data class UpdateBehandlingRequest(
-    val behandlingBarn: Set<BehandlingBarnDto> = emptySet(),
+    val behandlingBarn: Set<BehandlingBarnDto>? = emptySet(),
     val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
     val virkningsTidspunktBegrunnelseKunINotat: String? = null,
     val boforholdBegrunnelseMedIVedtakNotat: String? = null,
