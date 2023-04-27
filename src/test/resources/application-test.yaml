@@ -17,8 +17,8 @@ no.nav.security.jwt:
           client-secret: 123
           client-auth-method: client_secret_basic
   issuer.aad:
-    discovery_url: http://localhost:${mock-oauth2-server.port:0}/aad/.well-known/openid-configuration
-    accepted_audience: ${AZURE_APP_CLIENT_ID}, api://${AZURE_APP_CLIENT_ID}
+    discovery_url: http://localhost:${mock-oauth2-server.port:1234}/aad/.well-known/openid-configuration
+    accepted_audience: ${AZURE_APP_CLIENT_ID}, api://${AZURE_APP_CLIENT_ID}, aud-localhost
 
 ---
 spring.config.activate.on-profile: "!testcontainer"

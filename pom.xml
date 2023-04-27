@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.7.8</version>
+		<version>3.0.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>no.nav</groupId>
@@ -14,19 +14,18 @@
 	<name>bidrag-behandling</name>
 	<properties>
 		<java.version>17</java.version>
-		<kotlin.version>1.8.0</kotlin.version>
-		<bidrag-commons.version>0.7.42</bidrag-commons.version>
+		<kotlin.version>1.8.21</kotlin.version>
+		<bidrag-commons.version>20230427084654_4121ef0</bidrag-commons.version>
 		<bidrag-domain.version>1.20230123120404_c8f3f00</bidrag-domain.version>
-		<logback-encoder.version>7.2</logback-encoder.version>
-		<token-support.version>2.1.9</token-support.version>
-		<springdoc.version>1.6.13</springdoc.version>
-		<springframework-cloud.version>3.1.5</springframework-cloud.version>
-		<token-support.version>2.0.14</token-support.version>
+		<logback-encoder.version>7.3</logback-encoder.version>
+		<token-support.version>3.0.11</token-support.version>
+		<springdoc.version>1.6.15</springdoc.version>
+		<springframework-cloud.version>4.0.2</springframework-cloud.version>
 		<bidrag-commons-test.version>0.2.2</bidrag-commons-test.version>
-		<kotest.version>5.5.4</kotest.version>
-		<mockk.version>4.0.0</mockk.version>
-		<kotlin-logging-jvm.version>3.0.2</kotlin-logging-jvm.version>
-		<flyway.version>9.11.0</flyway.version>
+		<kotest.version>5.5.5</kotest.version>
+		<mockk.version>4.0.2</mockk.version>
+		<kotlin-logging-jvm.version>3.0.5</kotlin-logging-jvm.version>
+		<flyway.version>9.16.0</flyway.version>
 	</properties>
 
 	<repositories>
@@ -35,6 +34,16 @@
 			<url>https://maven.pkg.github.com/navikt/bidrag-commons</url>
 		</repository>
 	</repositories>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.yaml</groupId>
+				<artifactId>snakeyaml</artifactId>
+				<version>2.0</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<dependencies>
 
@@ -229,6 +238,16 @@
 			<artifactId>spring-cloud-starter-contract-stub-runner</artifactId>
 			<version>${springframework-cloud.version}</version>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-collections</groupId>
+					<artifactId>commons-collections</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>no.nav.security</groupId>
