@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import no.nav.bidrag.domain.ident.PersonIdent
 import no.nav.bidrag.template.model.HentPersonResponse
 import no.nav.bidrag.template.service.BidargDataService
-import no.nav.domain.ident.PersonIdent
 import no.nav.security.token.support.core.api.Protected
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

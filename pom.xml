@@ -16,16 +16,16 @@
 		<java.version>17</java.version>
 		<kotlin.version>1.8.21</kotlin.version>
 		<bidrag-commons.version>20230427084654_4121ef0</bidrag-commons.version>
-		<bidrag-domain.version>1.20230123120404_c8f3f00</bidrag-domain.version>
+		<bidrag-domain.version>20230419124722_86ea018</bidrag-domain.version>
 		<logback-encoder.version>7.3</logback-encoder.version>
 		<token-support.version>3.0.11</token-support.version>
-		<springdoc.version>1.6.15</springdoc.version>
+		<springdoc.version>1.7.0</springdoc.version>
 		<springframework-cloud.version>4.0.2</springframework-cloud.version>
-		<bidrag-commons-test.version>0.2.2</bidrag-commons-test.version>
-		<kotest.version>5.5.5</kotest.version>
+		<bidrag-commons-test.version>1.20230217164307_1ec9d3f</bidrag-commons-test.version>
+		<kotest.version>5.6.1</kotest.version>
 		<mockk.version>4.0.2</mockk.version>
 		<kotlin-logging-jvm.version>3.0.5</kotlin-logging-jvm.version>
-		<flyway.version>9.16.0</flyway.version>
+		<flyway.version>9.16.3</flyway.version>
 	</properties>
 
 	<repositories>
