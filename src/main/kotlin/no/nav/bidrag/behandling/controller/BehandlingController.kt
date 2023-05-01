@@ -11,11 +11,13 @@ import no.nav.bidrag.behandling.dto.BehandlingDto
 import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.RolleDto
+import no.nav.bidrag.behandling.dto.UpdateBehandlingBarnRequest
 import no.nav.bidrag.behandling.dto.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.dto.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.ext.toDate
 import no.nav.bidrag.behandling.ext.toLocalDate
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.transformers.toDto
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -116,9 +118,7 @@ class BehandlingController(val behandlingService: BehandlingService) {
             behandling.roller.map {
                 RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato)
             }.toSet(),
-            behandling.behandlingBarn.map {
-                BehandlingBarnDto(it.id!!, it.medISaken, it.fraDato, it.tilDato, it.boStatus, it.kilde, it.ident, it.navn, it.foedselsDato)
-            }.toSet(),
+            behandling.behandlingBarn.toDto(),
             behandling.virkningsDato?.toLocalDate(),
             behandling.aarsak,
             behandling.avslag,
@@ -164,6 +164,29 @@ class BehandlingController(val behandlingService: BehandlingService) {
                 updateBehandling.virkningsDato?.toDate(),
             ),
         )
+    }
+
+    @Suppress("unused")
+    @PutMapping("/behandling/{behandlingId}/barn")
+    @Operation(
+        description = "Oppdaterer en behandling barn",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Lagret behandling barn"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
+            ApiResponse(
+                responseCode = "403",
+                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
+            ),
+        ],
+    )
+    fun oppdaterBehandlingBarn(@PathVariable behandlingId: Long, @RequestBody updateBehandlingBarn: UpdateBehandlingBarnRequest): Set<BehandlingBarnDto> {
+        val updatedBehandling =
+            behandlingService.oppdaterBehandlingBarn(behandlingId, updateBehandlingBarn.behandlingBarn)
+        return updatedBehandling.behandlingBarn.toDto()
     }
 
     @Suppress("unused")

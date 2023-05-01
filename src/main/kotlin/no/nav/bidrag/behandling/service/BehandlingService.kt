@@ -18,6 +18,27 @@ class BehandlingService(
         return behandlingRepository.save(behandling)
     }
 
+    fun oppdaterBehandlingBarn(behandlingId: Long, behandlingBarn: Set<BehandlingBarnDto>): Behandling {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+        val nyBehandling = behandling.copy()
+        nyBehandling.behandlingBarn = behandlingBarn.map {
+            BehandlingBarn(
+                behandling,
+                it.medISaken,
+                it.fraDao,
+                it.tilDato,
+                it.boStatus,
+                it.kilde,
+                it.id,
+                it.ident,
+                it.navn,
+                it.foedselsDato,
+            )
+        }.toMutableSet()
+
+        return behandlingRepository.save(nyBehandling)
+    }
+
     fun oppdaterBehandling(
         behandlingId: Long,
         behandlingBarn: Set<BehandlingBarnDto>?,
