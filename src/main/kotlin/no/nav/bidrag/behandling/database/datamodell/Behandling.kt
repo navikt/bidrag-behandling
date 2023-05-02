@@ -68,4 +68,7 @@ data class Behandling(
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var behandlingBarn: MutableSet<BehandlingBarn> = mutableSetOf()
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var sivilstand: MutableSet<Sivilstand> = mutableSetOf()
 }

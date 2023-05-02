@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakT
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.BehandlingBarnDto
 import no.nav.bidrag.behandling.dto.UpdateBehandlingRequestExtended
+import no.nav.bidrag.behandling.transformers.toDomain
 import org.springframework.stereotype.Service
 import java.util.Date
 
@@ -21,21 +22,7 @@ class BehandlingService(
     fun oppdaterBehandlingBarn(behandlingId: Long, behandlingBarn: Set<BehandlingBarnDto>): Behandling {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
         val nyBehandling = behandling.copy()
-        nyBehandling.behandlingBarn = behandlingBarn.map {
-            BehandlingBarn(
-                behandling,
-                it.medISaken,
-                it.fraDato,
-                it.tilDato,
-                it.boStatus,
-                it.kilde,
-                it.id,
-                it.ident,
-                it.navn,
-                it.foedselsDato,
-            )
-        }.toMutableSet()
-
+        nyBehandling.behandlingBarn = behandlingBarn.toDomain(behandling)
         return behandlingRepository.save(nyBehandling)
     }
 
@@ -71,10 +58,6 @@ class BehandlingService(
                 BehandlingBarn(
                     behandling,
                     it.medISaken,
-                    it.fraDato,
-                    it.tilDato,
-                    it.boStatus,
-                    it.kilde,
                     it.id,
                     it.ident,
                     it.navn,

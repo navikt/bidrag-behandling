@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
@@ -16,7 +15,6 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
 import java.util.Date
 
 data class CreateBehandlingRequestTest(
@@ -74,7 +72,8 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), CreateBehandlingResponse::class.java)
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
 
-        val behandlingBarn = setOf(BehandlingBarnDto(null, true, Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE, "Manuelt", "ident!"))
+        // Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE,
+        val behandlingBarn = setOf(BehandlingBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
 
         val updateReq = UpdateBehandlingRequestTest(
             avslag = AvslagType.MANGL_DOK.name,
@@ -101,7 +100,8 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val response = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandling), CreateBehandlingResponse::class.java)
         assertEquals(HttpStatus.OK, response.statusCode)
 
-        val behandlingBarn = setOf(BehandlingBarnDto(null, true, Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE, "Manuelt", "ident!"))
+        // Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE
+        val behandlingBarn = setOf(BehandlingBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
 
         val updateReq = UpdateBehandlingRequestTest(
             avslag = AvslagType.MANGL_DOK.name,
@@ -134,7 +134,8 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val response = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandling), CreateBehandlingResponse::class.java)
         assertEquals(HttpStatus.OK, response.statusCode)
 
-        val behandlingBarn = setOf(BehandlingBarnDto(null, true, Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE, "Manuelt", "ident!"))
+        // Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE
+        val behandlingBarn = setOf(BehandlingBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
 
         val updateReq = UpdateBehandlingRequestTest(
             avslag = AvslagType.MANGL_DOK.name,
@@ -166,9 +167,10 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val response = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandling), CreateBehandlingResponse::class.java)
         assertEquals(HttpStatus.OK, response.statusCode)
 
+        // Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE
         val behandlingBarn = setOf(
-            BehandlingBarnDto(null, true, Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE, "Manuelt", "ident1"),
-            BehandlingBarnDto(null, true, Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE, "Manuelt", "ident2"),
+            BehandlingBarnDto(null, true, emptySet(), "ident1", "Manuelt"),
+            BehandlingBarnDto(null, true, emptySet(), "ident2", "Manuelt"),
         )
 
         val updateReq = UpdateBehandlingRequestTest(

@@ -17,7 +17,8 @@ import no.nav.bidrag.behandling.dto.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.ext.toDate
 import no.nav.bidrag.behandling.ext.toLocalDate
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.transformers.toDto
+import no.nav.bidrag.behandling.transformers.toBehandlingBarnDto
+import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -118,7 +119,8 @@ class BehandlingController(val behandlingService: BehandlingService) {
             behandling.roller.map {
                 RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato)
             }.toSet(),
-            behandling.behandlingBarn.toDto(),
+            behandling.behandlingBarn.toBehandlingBarnDto(),
+            behandling.sivilstand.toSivilstandDto(),
             behandling.virkningsDato?.toLocalDate(),
             behandling.aarsak,
             behandling.avslag,
@@ -186,7 +188,7 @@ class BehandlingController(val behandlingService: BehandlingService) {
     fun oppdaterBehandlingBarn(@PathVariable behandlingId: Long, @RequestBody updateBehandlingBarn: UpdateBehandlingBarnRequest): Set<BehandlingBarnDto> {
         val updatedBehandling =
             behandlingService.oppdaterBehandlingBarn(behandlingId, updateBehandlingBarn.behandlingBarn)
-        return updatedBehandling.behandlingBarn.toDto()
+        return updatedBehandling.behandlingBarn.toBehandlingBarnDto()
     }
 
     @Suppress("unused")

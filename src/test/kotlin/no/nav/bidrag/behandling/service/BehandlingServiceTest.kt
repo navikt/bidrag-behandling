@@ -4,7 +4,6 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
@@ -126,7 +125,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertNotNull(createdBehandling.id)
         assertNull(createdBehandling.avslag)
 
-        val behandlingBarn = setOf(BehandlingBarnDto(null, true, Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE, "Manuelt", "ident!"))
+        val behandlingBarn = setOf(BehandlingBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
 
         val oppdatertBehandling = behandlingService.oppdaterBehandling(
             createdBehandling.id!!,

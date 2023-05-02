@@ -31,6 +31,7 @@ data class BehandlingDto(
     val behandlerEnhet: String,
     val roller: Set<RolleDto>,
     val behandlingBarn: Set<BehandlingBarnDto>,
+    val sivilstand: Set<SivilstandDto>,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "dd.MM.yyyy")
