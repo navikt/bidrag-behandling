@@ -1,11 +1,14 @@
 name: bidrag-behandling-feature
 ingresses:
-  - https://bidrag-behandling-feature.dev.intern.nav.no
+  - https://bidrag-behandling-feature.intern.dev.nav.no
 env:
   BIDRAG_PERSON_URL: https://bidrag-person-feature.dev-fss-pub.nais.io/bidrag-person
   BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
 azure_access_inbound:
   - application: bidrag-ui-feature
+    namespace: bidrag
+    cluster: dev-fss
+  - application: bisys
     namespace: bidrag
     cluster: dev-fss
 database:

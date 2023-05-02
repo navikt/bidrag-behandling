@@ -10,13 +10,13 @@ import org.springframework.stereotype.Service
 @Service
 class BidargDataService(
     val bidragPersonConsumer: BidragPersonConsumer,
-    val behandlingDataRepository: BehandlingDataRepository
+//    val behandlingDataRepository: BehandlingDataRepository
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun hentDialogerForPerson(personIdent: PersonIdent): HentPersonResponse {
-        behandlingDataRepository.hentBidrgaDataById(1)
+//        behandlingDataRepository.hentBidrgaDataById(1)
 
         return bidragPersonConsumer.hentPerson(personIdent)
     }

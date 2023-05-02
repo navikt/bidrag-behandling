@@ -5,10 +5,10 @@ import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
 
-@Entity(name = "behandling_data")
+//@Entity(name = "behandling_data")
 data class BehandlingData(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
     val fri_text: String ? = null
