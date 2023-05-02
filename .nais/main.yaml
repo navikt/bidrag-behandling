@@ -1,6 +1,6 @@
 name: bidrag-behandling
 ingresses:
-  - https://bidrag-behandling.dev.intern.nav.no
+  - https://bidrag-behandling.intern.dev.nav.no
 env:
   BIDRAG_PERSON_URL: https://bidrag-person.dev-fss-pub.nais.io/bidrag-person
   BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person
