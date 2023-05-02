@@ -25,7 +25,7 @@ class BehandlingService(
             BehandlingBarn(
                 behandling,
                 it.medISaken,
-                it.fraDao,
+                it.fraDato,
                 it.tilDato,
                 it.boStatus,
                 it.kilde,
@@ -71,7 +71,7 @@ class BehandlingService(
                 BehandlingBarn(
                     behandling,
                     it.medISaken,
-                    it.fraDao,
+                    it.fraDato,
                     it.tilDato,
                     it.boStatus,
                     it.kilde,

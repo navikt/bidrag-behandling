@@ -7,7 +7,7 @@ data class BehandlingBarnDto(
     val id: Long?,
     val medISaken: Boolean,
 
-    val fraDao: Date,
+    val fraDato: Date,
 
     val tilDato: Date,
 
