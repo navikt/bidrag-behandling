@@ -32,6 +32,26 @@ class BehandlingController(val behandlingService: BehandlingService) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Suppress("unused")
+    @PostMapping("/behandling/{behandlingId}/opplysninger")
+    @Operation(
+        description = "Legger til nye opplysninger til behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Lagret behandling"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
+            ApiResponse(
+                responseCode = "403",
+                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
+            ),
+        ],
+    )
+    fun addOpplysningerData() {
+    }
+
+    @Suppress("unused")
     @PostMapping("/behandling")
     @Operation(
         description = "Legger til en ny behandling",
