@@ -1,9 +1,9 @@
 name: Build and deploy
 on:
-  pull_request:
   push:
     branches:
-      - 'main'
+      - '**'
+      - '!release'
 
 env:
   GITHUB_USERNAME: x-access-token
