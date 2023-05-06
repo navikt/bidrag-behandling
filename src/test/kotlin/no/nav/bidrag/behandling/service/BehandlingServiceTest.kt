@@ -103,7 +103,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, emptySet(), MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, AvslagType.MANGL_DOK)
 
-        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id)
 
         assertEquals(3, hentBehandlingById.roller.size)
         assertEquals(AvslagType.MANGL_DOK, hentBehandlingById.avslag)
@@ -132,7 +132,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingBarn, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, AvslagType.MANGL_DOK,
         )
 
-        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id)
 
         assertEquals(1, hentBehandlingById.behandlingBarn.size)
     }
