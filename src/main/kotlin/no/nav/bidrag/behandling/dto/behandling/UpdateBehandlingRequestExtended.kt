@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.dto
+package no.nav.bidrag.behandling.dto.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema

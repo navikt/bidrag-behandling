@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.dto
+package no.nav.bidrag.behandling.dto.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.RolleType

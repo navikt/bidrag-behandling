@@ -3,7 +3,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import no.nav.bidrag.behandling.dto.HentPersonResponse
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -20,10 +19,10 @@ class StubUtils {
         }
     }
 
-    fun stubBidragPersonResponse(personResponse: HentPersonResponse) {
+    fun <R>stubResponse(url: String, personResponse: R) {
         try {
             WireMock.stubFor(
-                WireMock.post("/person/informasjon").willReturn(
+                WireMock.post(url).willReturn(
                     aClosedJsonResponse()
                         .withStatus(HttpStatus.OK.value())
                         .withBody(ObjectMapper().writeValueAsString(personResponse)),

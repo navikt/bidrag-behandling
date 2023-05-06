@@ -6,18 +6,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.dto.BehandlingBarnDto
-import no.nav.bidrag.behandling.dto.BehandlingDto
-import no.nav.bidrag.behandling.dto.CreateBehandlingRequest
-import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.RolleDto
-import no.nav.bidrag.behandling.dto.UpdateBehandlingBarnRequest
-import no.nav.bidrag.behandling.dto.UpdateBehandlingRequest
-import no.nav.bidrag.behandling.dto.UpdateBehandlingRequestExtended
-import no.nav.bidrag.behandling.ext.toDate
-import no.nav.bidrag.behandling.ext.toLocalDate
+import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
+import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
+import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toBehandlingBarnDto
+import no.nav.bidrag.behandling.transformers.toDate
+import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
@@ -28,28 +26,8 @@ import org.springframework.web.bind.annotation.RequestBody
 import javax.validation.Valid
 
 @BehandlingRestController
-class BehandlingController(val behandlingService: BehandlingService) {
+class BehandlingController(private val behandlingService: BehandlingService) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
-    @Suppress("unused")
-    @PostMapping("/behandling/{behandlingId}/opplysninger")
-    @Operation(
-        description = "Legger til nye opplysninger til behandling",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
-            ),
-        ],
-    )
-    fun addOpplysningerData() {
-    }
 
     @Suppress("unused")
     @PostMapping("/behandling")
@@ -186,29 +164,6 @@ class BehandlingController(val behandlingService: BehandlingService) {
                 updateBehandling.virkningsDato?.toDate(),
             ),
         )
-    }
-
-    @Suppress("unused")
-    @PutMapping("/behandling/{behandlingId}/barn")
-    @Operation(
-        description = "Oppdaterer en behandling barn",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling barn"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
-            ),
-        ],
-    )
-    fun oppdaterBehandlingBarn(@PathVariable behandlingId: Long, @RequestBody updateBehandlingBarn: UpdateBehandlingBarnRequest): Set<BehandlingBarnDto> {
-        val updatedBehandling =
-            behandlingService.oppdaterBehandlingBarn(behandlingId, updateBehandlingBarn.behandlingBarn)
-        return updatedBehandling.behandlingBarn.toBehandlingBarnDto()
     }
 
     @Suppress("unused")

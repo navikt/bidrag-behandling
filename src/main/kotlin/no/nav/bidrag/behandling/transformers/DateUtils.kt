@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.ext
+package no.nav.bidrag.behandling.transformers
 
 import java.time.LocalDate
 import java.time.ZoneId

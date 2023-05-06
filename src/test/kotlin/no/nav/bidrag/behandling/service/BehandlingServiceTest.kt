@@ -8,8 +8,8 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
-import no.nav.bidrag.behandling.dto.BehandlingBarnDto
-import no.nav.bidrag.behandling.dto.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -103,7 +103,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         val oppdatertBehandling = behandlingService.oppdaterBehandling(createdBehandling.id!!, emptySet(), MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, AvslagType.MANGL_DOK)
 
-        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id)
 
         assertEquals(3, hentBehandlingById.roller.size)
         assertEquals(AvslagType.MANGL_DOK, hentBehandlingById.avslag)
@@ -132,7 +132,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingBarn, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, MED_I_VEDTAK, NOTAT, AvslagType.MANGL_DOK,
         )
 
-        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id)
 
         assertEquals(1, hentBehandlingById.behandlingBarn.size)
     }

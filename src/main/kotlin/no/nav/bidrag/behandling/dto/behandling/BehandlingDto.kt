@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.dto
+package no.nav.bidrag.behandling.dto.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
 import java.time.LocalDate
 
 data class BehandlingDto(
