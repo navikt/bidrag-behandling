@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.service
+package no.nav.bidrag.behandling
 
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException

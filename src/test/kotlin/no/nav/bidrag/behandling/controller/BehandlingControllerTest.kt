@@ -5,9 +5,9 @@ import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
-import no.nav.bidrag.behandling.dto.BehandlingBarnDto
-import no.nav.bidrag.behandling.dto.BehandlingDto
-import no.nav.bidrag.behandling.dto.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -306,18 +306,24 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         assertEquals(HttpStatus.BAD_REQUEST, r.statusCode)
     }
 
-    private fun createBehandlingRequestTest(saksnummer: String?, enhet: String, roller: Set<CreateRolleDtoTest>): CreateBehandlingRequestTest {
-        val testBehandling = CreateBehandlingRequestTest(
-            BehandlingType.FORSKUDD,
-            SoknadType.SOKNAD,
-            Date(1),
-            Date(1),
-            Date(1),
-            SoknadFraType.BM,
-            saksnummer,
-            enhet,
-            roller,
-        )
-        return testBehandling
+    companion object {
+        fun createBehandlingRequestTest(
+            saksnummer: String?,
+            enhet: String,
+            roller: Set<CreateRolleDtoTest>,
+        ): CreateBehandlingRequestTest {
+            val testBehandling = CreateBehandlingRequestTest(
+                BehandlingType.FORSKUDD,
+                SoknadType.SOKNAD,
+                Date(1),
+                Date(1),
+                Date(1),
+                SoknadFraType.BM,
+                saksnummer,
+                enhet,
+                roller,
+            )
+            return testBehandling
+        }
     }
 }

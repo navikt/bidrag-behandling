@@ -1,19 +1,24 @@
 package no.nav.bidrag.behandling.service
 
+import no.nav.bidrag.behandling.`404`
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingBarn
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.BehandlingBarnDto
-import no.nav.bidrag.behandling.dto.UpdateBehandlingRequestExtended
+import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
+import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
+import no.nav.bidrag.behandling.dto.inntekt.InntektDto
+import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.transformers.toDomain
+import no.nav.bidrag.behandling.transformers.toInntektDomain
 import org.springframework.stereotype.Service
 import java.util.Date
 
 @Service
 class BehandlingService(
-    val behandlingRepository: BehandlingRepository,
+    private val behandlingRepository: BehandlingRepository,
 ) {
     fun createBehandling(behandling: Behandling): Behandling {
         return behandlingRepository.save(behandling)
@@ -52,6 +57,8 @@ class BehandlingService(
             virkningsDato = virkningsDato,
         )
         updatedBehandling.roller = behandling.roller
+        updatedBehandling.inntekter = behandling.inntekter
+        updatedBehandling.sivilstand = behandling.sivilstand
 
         if (behandlingBarn != null) {
             val updatedBehandlingBarn = behandlingBarn.map {
@@ -61,7 +68,7 @@ class BehandlingService(
                     it.id,
                     it.ident,
                     it.navn,
-                    it.foedselsDato,
+                    it.foedselsDato?.toDate(),
                 )
             }.toMutableSet()
 
@@ -84,6 +91,10 @@ class BehandlingService(
             datoFom = behandlingRequest.datoFom,
         )
         updatedBehandling.roller = existingBehandling.roller
+        updatedBehandling.inntekter = existingBehandling.inntekter
+        updatedBehandling.sivilstand = existingBehandling.sivilstand
+        updatedBehandling.behandlingBarn = existingBehandling.behandlingBarn
+
         return behandlingRepository.save(updatedBehandling)
     }
 
@@ -93,5 +104,19 @@ class BehandlingService(
 
     fun hentBehandlinger(): List<Behandling> {
         return behandlingRepository.hentBehandlinger()
+    }
+
+    fun oppdaterInntekter(behandlingId: Long, inntekter: Set<InntektDto>): Set<Inntekt> {
+        val existingBehandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+        val updatedBehandling = existingBehandling.copy()
+
+        updatedBehandling.inntekter = inntekter.toInntektDomain(existingBehandling)
+
+        updatedBehandling.roller = existingBehandling.roller
+        updatedBehandling.sivilstand = existingBehandling.sivilstand
+        updatedBehandling.behandlingBarn = existingBehandling.behandlingBarn
+
+        behandlingRepository.save(updatedBehandling)
+        return behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }.inntekter
     }
 }

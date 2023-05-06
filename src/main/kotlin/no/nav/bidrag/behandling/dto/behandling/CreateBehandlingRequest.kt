@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.dto
+package no.nav.bidrag.behandling.dto.behandling
 
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
