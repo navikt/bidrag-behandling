@@ -16,6 +16,10 @@ fun Set<Sivilstand>.toSivilstandDto() = this.map {
     SivilstandDto(it.id, it.gyldigFraOgMed.toLocalDate(), it.bekreftelsesdato.toLocalDate(), it.sivilstandType)
 }.toSet()
 
+fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) = this.map {
+    Sivilstand(behandling, it.gyldigFraOgMed.toDate(), it.bekreftelsesdato.toDate(), it.sivilstandType, it.id)
+}.toMutableSet()
+
 fun Set<BehandlingBarnPeriode>.toBehandlingBarnPeriodeDto() = this.map {
     BehandlingBarnPeriodeDto(it.id, it.fraDato.toLocalDate(), it.tilDato.toLocalDate(), it.boStatus, it.kilde)
 }.toSet()

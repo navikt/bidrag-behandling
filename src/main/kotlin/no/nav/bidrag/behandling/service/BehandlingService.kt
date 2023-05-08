@@ -6,13 +6,16 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingBarn
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toInntektDomain
+import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import org.springframework.stereotype.Service
 import java.util.Date
 
@@ -104,6 +107,19 @@ class BehandlingService(
 
     fun hentBehandlinger(): List<Behandling> {
         return behandlingRepository.hentBehandlinger()
+    }
+
+    fun oppdaterSivilstand(behandlingId: Long, sivilstand: Set<SivilstandDto>): Set<Sivilstand> {
+        val existingBehandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+        val updatedBehandling = existingBehandling.copy()
+
+        updatedBehandling.inntekter = existingBehandling.inntekter
+        updatedBehandling.roller = existingBehandling.roller
+        updatedBehandling.sivilstand = sivilstand.toSivilstandDomain(existingBehandling)
+        updatedBehandling.behandlingBarn = existingBehandling.behandlingBarn
+
+        behandlingRepository.save(updatedBehandling)
+        return behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }.sivilstand
     }
 
     fun oppdaterInntekter(behandlingId: Long, inntekter: Set<InntektDto>): Set<Inntekt> {

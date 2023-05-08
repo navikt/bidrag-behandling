@@ -15,20 +15,15 @@ class OpplysningerService(
     val behandlingRepository: BehandlingRepository,
 ) {
 
-    fun opprett(behandlingId: Long, aktiv: Boolean, opplysningerType: OpplysningerType, data: String, hentetDato: Date): Opplysninger {
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
-        return opplysningerRepository.save<Opplysninger>(Opplysninger(behandling, aktiv, opplysningerType, data, hentetDato))
-    }
-
-    fun settAktiv(opplysningerId: Long, behandlingId: Long) {
-        opplysningerRepository.findActiveByBehandlingId(behandlingId).ifPresent {
+    fun opprett(behandlingId: Long, opplysningerType: OpplysningerType, data: String, hentetDato: Date): Opplysninger {
+        // oppdater eksisterende opplysninger
+        opplysningerRepository.findActiveByBehandlingIdAndType(behandlingId, opplysningerType).ifPresent {
             // update aktiv to false
             updateAktivOpplysninger(it, false)
         }
 
-        val opp = opplysningerRepository.findById(opplysningerId).orElseThrow { `404`(opplysningerId) }
-        // update aktiv to true
-        updateAktivOpplysninger(opp, true)
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+        return opplysningerRepository.save<Opplysninger>(Opplysninger(behandling, true, opplysningerType, data, hentetDato))
     }
 
     fun updateAktivOpplysninger(opplysninger: Opplysninger, aktiv: Boolean) {
@@ -39,7 +34,7 @@ class OpplysningerService(
         )
     }
 
-    fun hentSistAktiv(behandlingId: Long): Optional<Opplysninger> {
-        return opplysningerRepository.findActiveByBehandlingId(behandlingId)
+    fun hentSistAktiv(behandlingId: Long, opplysningerType: OpplysningerType): Optional<Opplysninger> {
+        return opplysningerRepository.findActiveByBehandlingIdAndType(behandlingId, opplysningerType)
     }
 }
