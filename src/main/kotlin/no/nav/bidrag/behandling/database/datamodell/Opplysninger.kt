@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import java.util.Date
 import javax.persistence.Entity
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
 import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -17,7 +19,10 @@ data class Opplysninger(
     val behandling: Behandling,
 
     val aktiv: Boolean,
+
+    @Enumerated(EnumType.STRING)
     val opplysningerType: OpplysningerType,
+
     val data: String,
     val hentetDato: Date,
 
