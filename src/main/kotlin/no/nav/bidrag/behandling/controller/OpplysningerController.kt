@@ -36,8 +36,11 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
             ),
         ],
     )
-    fun addOpplysningerData(@RequestBody(required = true) addOpplysningerRequest: AddOpplysningerRequest): OpplysningerDto {
-        val (behandlingId, _, opplysningerType, data, hentetDato) = addOpplysningerRequest
+    fun addOpplysningerData(
+        @PathVariable behandlingId: Long,
+        @RequestBody(required = true) addOpplysningerRequest: AddOpplysningerRequest,
+    ): OpplysningerDto {
+        val (_, _, opplysningerType, data, hentetDato) = addOpplysningerRequest
         return opplysningerService.opprett(behandlingId, opplysningerType, data, hentetDato.toDate())
             .toDto()
     }
