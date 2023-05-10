@@ -1,20 +1,14 @@
 package no.nav.bidrag.behandling.controller
 
-import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.Date
 
 data class CreateBehandlingRequestTest(
@@ -39,7 +33,6 @@ data class UpdateBehandlingRequestTest(
     val avslag: String? = null,
     val aarsak: String? = null,
     val virkningsDato: String? = null,
-    val behandlingBarn: Set<BehandlingBarnDto>? = null,
 )
 
 data class UpdateBehandlingRequestNonExistingFieldTest(
@@ -59,179 +52,6 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
-    }
-
-    @Test
-    fun `skal opprette og oppdatere en behandling`() {
-        val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
-        )
-        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
-
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), CreateBehandlingResponse::class.java)
-        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
-
-        // Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE,
-        val behandlingBarn = setOf(BehandlingBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
-
-        val updateReq = UpdateBehandlingRequestTest(
-            avslag = AvslagType.MANGL_DOK.name,
-            virkningsDato = "01.02.2023",
-            behandlingBarn = behandlingBarn,
-        )
-        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${responseMedNull.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), BehandlingDto::class.java)
-
-        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
-        assertEquals(AvslagType.MANGL_DOK, updatedBehandling.body!!.avslag)
-
-        val expectedDate = LocalDate.parse("01.02.2023", DateTimeFormatter.ofPattern("dd.MM.uuuu"))
-        assertEquals(expectedDate, updatedBehandling.body!!.virkningsDato)
-    }
-
-    @Test
-    fun `skal opprette og slette behandling barn`() {
-        val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
-        )
-        val testBehandling = createBehandlingRequestTest("sak123", "en12", roller)
-
-        val response = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandling), CreateBehandlingResponse::class.java)
-        assertEquals(HttpStatus.OK, response.statusCode)
-
-        // Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE
-        val behandlingBarn = setOf(BehandlingBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
-
-        val updateReq = UpdateBehandlingRequestTest(
-            avslag = AvslagType.MANGL_DOK.name,
-            virkningsDato = "01.02.2023",
-            behandlingBarn = behandlingBarn,
-        )
-        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${response.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), BehandlingDto::class.java)
-
-        assertEquals(HttpStatus.OK, response.statusCode)
-        assertEquals(1, updatedBehandling.body!!.behandlingBarn.size)
-
-        val updateReq1 = UpdateBehandlingRequestTest(
-            avslag = AvslagType.MANGL_DOK.name,
-            virkningsDato = "01.02.2023",
-            behandlingBarn = emptySet(),
-        )
-        val updatedBehandling1 = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${response.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq1), BehandlingDto::class.java)
-
-        assertEquals(0, updatedBehandling1.body!!.behandlingBarn.size)
-    }
-
-    @Test
-    fun `skal opprette og ikke slette behandling barn`() {
-        val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
-        )
-        val testBehandling = createBehandlingRequestTest("sak123", "en12", roller)
-
-        val response = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandling), CreateBehandlingResponse::class.java)
-        assertEquals(HttpStatus.OK, response.statusCode)
-
-        // Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE
-        val behandlingBarn = setOf(BehandlingBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
-
-        val updateReq = UpdateBehandlingRequestTest(
-            avslag = AvslagType.MANGL_DOK.name,
-            virkningsDato = "01.02.2023",
-            behandlingBarn = behandlingBarn,
-        )
-        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${response.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), BehandlingDto::class.java)
-
-        assertEquals(HttpStatus.OK, response.statusCode)
-        assertEquals(1, updatedBehandling.body!!.behandlingBarn.size)
-
-        val updateReq1 = UpdateBehandlingRequestTest(
-            avslag = AvslagType.MANGL_DOK.name,
-            virkningsDato = "01.02.2023",
-        )
-        val updatedBehandling1 = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${response.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq1), BehandlingDto::class.java)
-
-        assertEquals(1, updatedBehandling1.body!!.behandlingBarn.size)
-    }
-
-    @Test
-    fun `skal opprette og ikke slette bare 1 behandling barn`() {
-        val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
-        )
-        val testBehandling = createBehandlingRequestTest("sak123", "en12", roller)
-
-        val response = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandling), CreateBehandlingResponse::class.java)
-        assertEquals(HttpStatus.OK, response.statusCode)
-
-        // Calendar.getInstance().time, Calendar.getInstance().time, BoStatusType.BARN_BOR_ALENE
-        val behandlingBarn = setOf(
-            BehandlingBarnDto(null, true, emptySet(), "ident1", "Manuelt"),
-            BehandlingBarnDto(null, true, emptySet(), "ident2", "Manuelt"),
-        )
-
-        val updateReq = UpdateBehandlingRequestTest(
-            avslag = AvslagType.MANGL_DOK.name,
-            virkningsDato = "01.02.2023",
-            behandlingBarn = behandlingBarn,
-        )
-        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${response.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), BehandlingDto::class.java)
-
-        assertEquals(HttpStatus.OK, response.statusCode)
-        assertEquals(2, updatedBehandling.body!!.behandlingBarn.size)
-
-        val updateReq1 = UpdateBehandlingRequestTest(
-            avslag = AvslagType.MANGL_DOK.name,
-            virkningsDato = "01.02.2023",
-            behandlingBarn = updatedBehandling.body!!.behandlingBarn.filter { it.ident != "ident1" }.toSet(),
-        )
-        val updatedBehandling1 = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${response.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq1), BehandlingDto::class.java)
-
-        assertEquals(1, updatedBehandling1.body!!.behandlingBarn.size)
-    }
-
-    @Test
-    fun `skal validere datoer`() {
-        val updateReq = UpdateBehandlingRequestTest(avslag = AvslagType.MANGL_DOK.name, virkningsDato = "1.2.2023")
-        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/123", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
-
-        assertEquals(HttpStatus.BAD_REQUEST, updatedBehandling.statusCode)
-    }
-
-    @Test
-    fun `skal ignorere felt som ikke eksisterer i backend`() {
-        val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
-        )
-        val createBehandling = createBehandlingRequestTest("sak123", "en12", roller)
-
-        val behandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(createBehandling), CreateBehandlingResponse::class.java)
-        assertEquals(HttpStatus.OK, behandling.statusCode)
-
-        val updateReq = UpdateBehandlingRequestNonExistingFieldTest(avslag = AvslagType.MANGL_DOK.name, begrunnelseMedIVedtakNotat = "Some text")
-        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.body!!.id}", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
-
-        assertEquals(HttpStatus.OK, updatedBehandling.statusCode)
-    }
-
-    @Test
-    fun `skal validere avlag type not blank`() {
-        val updateReq = UpdateBehandlingRequestTest(avslag = " ")
-        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/123", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
-
-        assertEquals(HttpStatus.BAD_REQUEST, updatedBehandling.statusCode)
-    }
-
-    @Test
-    fun `skal validere aarsak type not blank`() {
-        val updateReq = UpdateBehandlingRequestTest(aarsak = "")
-        val updatedBehandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/123", HttpMethod.PUT, HttpEntity(updateReq), Void::class.java)
-
-        assertEquals(HttpStatus.BAD_REQUEST, updatedBehandling.statusCode)
     }
 
     @Test

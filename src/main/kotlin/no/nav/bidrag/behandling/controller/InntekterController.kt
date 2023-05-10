@@ -36,6 +36,9 @@ class InntekterController(private val behandlingService: BehandlingService) {
         @PathVariable behandlingId: Long,
         @RequestBody request: UpdateBehandlingInntekterRequest,
     ): UpdateBehandlingInntekterResponse {
+        // TODO()
+        // val barnetillegg
+        // val utvidetBarnetrygd
         return UpdateBehandlingInntekterResponse(behandlingService.oppdaterInntekter(behandlingId, request.inntekter).toInntektDto())
     }
 }

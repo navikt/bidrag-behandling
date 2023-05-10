@@ -10,11 +10,9 @@ import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toBehandlingBarnDto
-import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import org.slf4j.LoggerFactory
@@ -129,42 +127,6 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandling.inntektBegrunnelseMedIVedtakNotat,
             behandling.inntektBegrunnelseKunINotat,
         )
-
-    @Suppress("unused")
-    @PutMapping("/behandling/{behandlingId}")
-    @Operation(
-        description = "Oppdaterer en behandling",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
-            ),
-        ],
-    )
-    fun oppdaterBehandling(@PathVariable behandlingId: Long, @RequestBody updateBehandling: UpdateBehandlingRequest): BehandlingDto {
-        return behandlingDto(
-            behandlingId,
-            behandlingService.oppdaterBehandling(
-                behandlingId,
-                updateBehandling.behandlingBarn,
-                updateBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
-                updateBehandling.virkningsTidspunktBegrunnelseKunINotat,
-                updateBehandling.boforholdBegrunnelseMedIVedtakNotat,
-                updateBehandling.boforholdBegrunnelseKunINotat,
-                updateBehandling.inntektBegrunnelseMedIVedtakNotat,
-                updateBehandling.inntektBegrunnelseKunINotat,
-                updateBehandling.avslag,
-                updateBehandling.aarsak,
-                updateBehandling.virkningsDato?.toDate(),
-            ),
-        )
-    }
 
     @Suppress("unused")
     @PutMapping("/behandling/ext/{behandlingId}")

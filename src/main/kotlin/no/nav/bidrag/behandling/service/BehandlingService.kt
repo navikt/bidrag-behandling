@@ -12,7 +12,6 @@ import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
-import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
@@ -36,7 +35,6 @@ class BehandlingService(
 
     fun oppdaterBehandling(
         behandlingId: Long,
-        behandlingBarn: Set<BehandlingBarnDto>?,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
         virkningsTidspunktBegrunnelseKunINotat: String? = null,
         boforholdBegrunnelseMedIVedtakNotat: String? = null,
@@ -62,23 +60,8 @@ class BehandlingService(
         updatedBehandling.roller = behandling.roller
         updatedBehandling.inntekter = behandling.inntekter
         updatedBehandling.sivilstand = behandling.sivilstand
+        updatedBehandling.behandlingBarn = behandling.behandlingBarn
 
-        if (behandlingBarn != null) {
-            val updatedBehandlingBarn = behandlingBarn.map {
-                BehandlingBarn(
-                    behandling,
-                    it.medISaken,
-                    it.id,
-                    it.ident,
-                    it.navn,
-                    it.foedselsDato?.toDate(),
-                )
-            }.toMutableSet()
-
-            updatedBehandling.behandlingBarn = updatedBehandlingBarn
-        } else {
-            updatedBehandling.behandlingBarn = behandling.behandlingBarn
-        }
         return behandlingRepository.save(updatedBehandling)
     }
 
@@ -134,5 +117,36 @@ class BehandlingService(
 
         behandlingRepository.save(updatedBehandling)
         return behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }.inntekter
+    }
+
+    fun updateVirkningsTidspunkt(
+        behandlingId: Long,
+        aarsak: ForskuddBeregningKodeAarsakType?,
+        avslag: AvslagType?,
+        virkningsDato: Date?,
+        virkningsTidspunktBegrunnelseKunINotat: String?,
+        virkningsTidspunktBegrunnelseMedIVedtakNotat: String?,
+    ) {
+        behandlingRepository.updateVirkningsTidspunkt(behandlingId, aarsak, avslag, virkningsDato, virkningsTidspunktBegrunnelseKunINotat, virkningsTidspunktBegrunnelseMedIVedtakNotat)
+    }
+
+    fun updateBoforhold(
+        behandlingId: Long,
+        behandlingBarn: MutableSet<BehandlingBarn>,
+        sivilstand: MutableSet<Sivilstand>,
+        boforholdBegrunnelseKunINotat: String?,
+        boforholdBegrunnelseMedIVedtakNotat: String?,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId)
+
+        val newBehandling = behandling.orElseThrow { `404`(behandlingId) }.copy(
+            boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat,
+            boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat,
+        )
+
+        newBehandling.behandlingBarn = behandlingBarn
+        newBehandling.sivilstand = sivilstand
+
+        behandlingRepository.save(newBehandling)
     }
 }
