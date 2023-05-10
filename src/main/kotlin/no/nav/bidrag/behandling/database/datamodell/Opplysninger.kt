@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import java.util.Date
+import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.EnumType
 import javax.persistence.Enumerated
@@ -23,7 +24,9 @@ data class Opplysninger(
     @Enumerated(EnumType.STRING)
     val opplysningerType: OpplysningerType,
 
+    @Column(name = "`data`")
     val data: String,
+
     val hentetDato: Date,
 
     @Id
