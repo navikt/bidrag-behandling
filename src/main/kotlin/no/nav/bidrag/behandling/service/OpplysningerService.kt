@@ -11,8 +11,8 @@ import java.util.Optional
 
 @Service
 class OpplysningerService(
-    val opplysningerRepository: OpplysningerRepository,
-    val behandlingRepository: BehandlingRepository,
+    private val opplysningerRepository: OpplysningerRepository,
+    private val behandlingRepository: BehandlingRepository,
 ) {
 
     fun opprett(behandlingId: Long, opplysningerType: OpplysningerType, data: String, hentetDato: Date): Opplysninger {
