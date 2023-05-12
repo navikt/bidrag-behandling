@@ -2,14 +2,13 @@ package no.nav.bidrag.template.service
 
 import no.nav.bidrag.domain.ident.PersonIdent
 import no.nav.bidrag.template.consumer.BidragPersonConsumer
-import no.nav.bidrag.template.database.repository.BehandlingDataRepository
 import no.nav.bidrag.template.model.HentPersonResponse
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
 class BidargDataService(
-    val bidragPersonConsumer: BidragPersonConsumer,
+    val bidragPersonConsumer: BidragPersonConsumer
 //    val behandlingDataRepository: BehandlingDataRepository
 ) {
 
