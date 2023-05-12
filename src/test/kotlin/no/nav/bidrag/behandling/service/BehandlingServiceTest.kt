@@ -2,14 +2,17 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
+import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.util.Calendar
 
 class BehandlingServiceTest : TestContainerRunner() {
@@ -78,6 +82,104 @@ class BehandlingServiceTest : TestContainerRunner() {
                 CreateRolleDto(RolleType.BARN, "1111", Calendar.getInstance().time),
             )
         }
+    }
+
+    @Test
+    fun `skal legge til inntekter`() {
+        val actualBehandling = createBehandling()
+
+        assertNotNull(actualBehandling.id)
+
+        assertEquals(0, actualBehandling.inntekter.size)
+        assertEquals(0, actualBehandling.barnetillegg.size)
+        assertEquals(0, actualBehandling.utvidetbarnetrygd.size)
+
+        behandlingService.oppdaterInntekter(
+            actualBehandling.id!!,
+            mutableSetOf(
+                Inntekt(
+                    actualBehandling,
+                    true,
+                    "",
+                    BigDecimal.valueOf(1.111),
+                    Calendar.getInstance().time,
+                    Calendar.getInstance().time,
+                    "ident",
+                ),
+            ),
+            mutableSetOf(
+                Barnetillegg(
+                    actualBehandling,
+                    "ident",
+                    BigDecimal.ONE,
+                    Calendar.getInstance().time,
+                    Calendar.getInstance().time,
+                ),
+            ),
+            mutableSetOf(
+                Utvidetbarnetrygd(
+                    actualBehandling,
+                    true,
+                    BigDecimal.TEN,
+                    Calendar.getInstance().time,
+                    Calendar.getInstance().time,
+                ),
+            ),
+        )
+
+        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
+
+        assertEquals(1, expectedBehandling.inntekter.size)
+        assertEquals(1, expectedBehandling.barnetillegg.size)
+        assertEquals(1, expectedBehandling.utvidetbarnetrygd.size)
+    }
+
+    @Test
+    fun `skal slette inntekter`() {
+        val actualBehandling = createBehandling()
+
+        assertNotNull(actualBehandling.id)
+
+        assertEquals(0, actualBehandling.inntekter.size)
+        assertEquals(0, actualBehandling.barnetillegg.size)
+        assertEquals(0, actualBehandling.utvidetbarnetrygd.size)
+
+        behandlingService.oppdaterInntekter(
+            actualBehandling.id!!,
+            mutableSetOf(
+                Inntekt(
+                    actualBehandling,
+                    true,
+                    "",
+                    BigDecimal.valueOf(1.111),
+                    Calendar.getInstance().time,
+                    Calendar.getInstance().time,
+                    "ident",
+                ),
+            ),
+            mutableSetOf(
+                Barnetillegg(
+                    actualBehandling,
+                    "ident",
+                    BigDecimal.ONE,
+                    Calendar.getInstance().time,
+                    Calendar.getInstance().time,
+                ),
+            ),
+            mutableSetOf(),
+        )
+
+        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
+
+        assertEquals(1, expectedBehandling.inntekter.size)
+        assertEquals(1, expectedBehandling.barnetillegg.size)
+
+        behandlingService.oppdaterInntekter(actualBehandling.id!!, mutableSetOf(), expectedBehandling.barnetillegg, mutableSetOf())
+
+        val expectedBehandlingWithoutInntekter = behandlingService.hentBehandlingById(actualBehandling.id!!)
+
+        assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
+        assertEquals(1, expectedBehandlingWithoutInntekter.barnetillegg.size)
     }
 
     @Test

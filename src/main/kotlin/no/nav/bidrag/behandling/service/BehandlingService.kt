@@ -2,19 +2,15 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.`404`
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
+import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingBarn
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
-import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
-import no.nav.bidrag.behandling.dto.inntekt.InntektDto
-import no.nav.bidrag.behandling.transformers.toDomain
-import no.nav.bidrag.behandling.transformers.toInntektDomain
-import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import org.springframework.stereotype.Service
 import java.util.Date
 
@@ -24,13 +20,6 @@ class BehandlingService(
 ) {
     fun createBehandling(behandling: Behandling): Behandling {
         return behandlingRepository.save(behandling)
-    }
-
-    fun oppdaterBehandlingBarn(behandlingId: Long, behandlingBarn: Set<BehandlingBarnDto>): Behandling {
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
-        val nyBehandling = behandling.copy()
-        nyBehandling.behandlingBarn = behandlingBarn.toDomain(behandling)
-        return behandlingRepository.save(nyBehandling)
     }
 
     fun oppdaterBehandling(
@@ -61,6 +50,8 @@ class BehandlingService(
         updatedBehandling.inntekter = behandling.inntekter
         updatedBehandling.sivilstand = behandling.sivilstand
         updatedBehandling.behandlingBarn = behandling.behandlingBarn
+        updatedBehandling.barnetillegg = behandling.barnetillegg
+        updatedBehandling.utvidetbarnetrygd = behandling.utvidetbarnetrygd
 
         return behandlingRepository.save(updatedBehandling)
     }
@@ -80,6 +71,8 @@ class BehandlingService(
         updatedBehandling.inntekter = existingBehandling.inntekter
         updatedBehandling.sivilstand = existingBehandling.sivilstand
         updatedBehandling.behandlingBarn = existingBehandling.behandlingBarn
+        updatedBehandling.barnetillegg = existingBehandling.barnetillegg
+        updatedBehandling.utvidetbarnetrygd = existingBehandling.utvidetbarnetrygd
 
         return behandlingRepository.save(updatedBehandling)
     }
@@ -92,31 +85,24 @@ class BehandlingService(
         return behandlingRepository.hentBehandlinger()
     }
 
-    fun oppdaterSivilstand(behandlingId: Long, sivilstand: Set<SivilstandDto>): Set<Sivilstand> {
+    fun oppdaterInntekter(
+        behandlingId: Long,
+        inntekter: MutableSet<Inntekt>,
+        barnetillegg: MutableSet<Barnetillegg>,
+        utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd>,
+    ) {
         val existingBehandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
         val updatedBehandling = existingBehandling.copy()
 
-        updatedBehandling.inntekter = existingBehandling.inntekter
-        updatedBehandling.roller = existingBehandling.roller
-        updatedBehandling.sivilstand = sivilstand.toSivilstandDomain(existingBehandling)
-        updatedBehandling.behandlingBarn = existingBehandling.behandlingBarn
-
-        behandlingRepository.save(updatedBehandling)
-        return behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }.sivilstand
-    }
-
-    fun oppdaterInntekter(behandlingId: Long, inntekter: Set<InntektDto>): Set<Inntekt> {
-        val existingBehandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
-        val updatedBehandling = existingBehandling.copy()
-
-        updatedBehandling.inntekter = inntekter.toInntektDomain(existingBehandling)
+        updatedBehandling.inntekter = inntekter
+        updatedBehandling.barnetillegg = barnetillegg
+        updatedBehandling.utvidetbarnetrygd = utvidetbarnetrygd
 
         updatedBehandling.roller = existingBehandling.roller
         updatedBehandling.sivilstand = existingBehandling.sivilstand
         updatedBehandling.behandlingBarn = existingBehandling.behandlingBarn
 
         behandlingRepository.save(updatedBehandling)
-        return behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }.inntekter
     }
 
     fun updateVirkningsTidspunkt(
@@ -137,15 +123,20 @@ class BehandlingService(
         boforholdBegrunnelseKunINotat: String?,
         boforholdBegrunnelseMedIVedtakNotat: String?,
     ) {
-        val behandling = behandlingRepository.findBehandlingById(behandlingId)
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
 
-        val newBehandling = behandling.orElseThrow { `404`(behandlingId) }.copy(
+        val newBehandling = behandling.copy(
             boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat,
             boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat,
         )
 
         newBehandling.behandlingBarn = behandlingBarn
         newBehandling.sivilstand = sivilstand
+
+        newBehandling.barnetillegg = behandling.barnetillegg
+        newBehandling.utvidetbarnetrygd = behandling.utvidetbarnetrygd
+        newBehandling.roller = behandling.roller
+        newBehandling.inntekter = behandling.inntekter
 
         behandlingRepository.save(newBehandling)
     }

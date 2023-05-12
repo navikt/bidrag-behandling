@@ -2,7 +2,9 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.inntekt.UpdateBehandlingInntekterResponse
+import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
+import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
+import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -13,6 +15,8 @@ import kotlin.test.assertEquals
 
 data class TestInntektRequest(
     val inntekter: Set<TestInntektDto>,
+    val barnetillegg: Set<BarnetilleggDto>,
+    val utvidetbarnetrygd: Set<UtvidetbarnetrygdDto>,
 )
 
 data class TestInntektDto(
@@ -27,7 +31,7 @@ data class TestInntektDto(
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Test
-    fun `skal opprette og oppdatere opplysninger`() {
+    fun `skal opprette og oppdatere inntekter`() {
         val roller = setOf(
             CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
             CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
@@ -51,8 +55,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
         val r = httpHeaderTestRestTemplate.exchange(
             "${rootUri()}/behandling/$behandlingId/inntekter",
             HttpMethod.PUT,
-            HttpEntity(TestInntektRequest(setOf(inn))),
-            UpdateBehandlingInntekterResponse::class.java,
+            HttpEntity(TestInntektRequest(setOf(inn), emptySet(), emptySet())),
+            InntekterResponse::class.java,
         )
 
         Assertions.assertEquals(HttpStatus.OK, r.statusCode)
@@ -62,8 +66,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
         val r1 = httpHeaderTestRestTemplate.exchange(
             "${rootUri()}/behandling/$behandlingId/inntekter",
             HttpMethod.PUT,
-            HttpEntity(TestInntektRequest(setOf(inn, inn.copy(id = r.body!!.inntekter.iterator().next().id)))),
-            UpdateBehandlingInntekterResponse::class.java,
+            HttpEntity(TestInntektRequest(setOf(inn, inn.copy(id = r.body!!.inntekter.iterator().next().id)), setOf(), setOf())),
+            InntekterResponse::class.java,
         )
 
         Assertions.assertEquals(HttpStatus.OK, r.statusCode)
@@ -73,8 +77,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
         val r2 = httpHeaderTestRestTemplate.exchange(
             "${rootUri()}/behandling/$behandlingId/inntekter",
             HttpMethod.PUT,
-            HttpEntity(TestInntektRequest(emptySet())),
-            UpdateBehandlingInntekterResponse::class.java,
+            HttpEntity(TestInntektRequest(emptySet(), emptySet(), emptySet())),
+            InntekterResponse::class.java,
         )
 
         Assertions.assertEquals(HttpStatus.OK, r.statusCode)

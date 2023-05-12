@@ -74,4 +74,10 @@ data class Behandling(
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var sivilstand: MutableSet<Sivilstand> = mutableSetOf()
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var barnetillegg: MutableSet<Barnetillegg> = mutableSetOf()
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd> = mutableSetOf()
 }
