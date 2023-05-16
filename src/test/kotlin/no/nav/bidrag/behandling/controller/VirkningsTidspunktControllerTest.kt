@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.controller
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
 import no.nav.bidrag.behandling.dto.virkningstidspunkt.UpdateVirkningsTidspunktRequest
+import no.nav.bidrag.behandling.dto.virkningstidspunkt.VirkningsTidspunktResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import org.junit.jupiter.api.Assertions
@@ -20,7 +21,7 @@ class VirkningsTidspunktControllerTest : KontrollerTestRunner() {
     fun `skal oppdatere virknings tidspunkt data`() {
         val behandling = behandlingService.createBehandling(BehandlingServiceTest.prepareBehandling())
 
-        val req: UpdateVirkningsTidspunktRequest = UpdateVirkningsTidspunktRequest(
+        val req = UpdateVirkningsTidspunktRequest(
             "MED I VEDTAK",
             "KUN I NOTAT",
             AvslagType.IKKE_OPPH_I_RIKET,
@@ -28,8 +29,10 @@ class VirkningsTidspunktControllerTest : KontrollerTestRunner() {
             null,
         )
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.id}/virkningstidspunkt", HttpMethod.PUT, HttpEntity(req), Void::class.java)
-        Assertions.assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+        val virknsRes = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.id}/virkningstidspunkt", HttpMethod.PUT, HttpEntity(req), VirkningsTidspunktResponse::class.java)
+        Assertions.assertEquals(HttpStatus.OK, virknsRes.statusCode)
+        Assertions.assertEquals("KUN I NOTAT", virknsRes.body!!.virkningsTidspunktBegrunnelseKunINotat)
+        Assertions.assertEquals("MED I VEDTAK", virknsRes.body!!.virkningsTidspunktBegrunnelseMedIVedtakNotat)
     }
 
 //    @Test

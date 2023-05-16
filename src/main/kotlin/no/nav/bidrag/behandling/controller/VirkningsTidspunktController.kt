@@ -51,7 +51,7 @@ class VirkningsTidspunktController(private val behandlingService: BehandlingServ
 
         return VirkningsTidspunktResponse(
             behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
-            behandling.boforholdBegrunnelseKunINotat,
+            behandling.virkningsTidspunktBegrunnelseKunINotat,
             behandling.avslag,
             behandling.aarsak,
             behandling.virkningsDato?.toLocalDate(),
@@ -81,7 +81,7 @@ class VirkningsTidspunktController(private val behandlingService: BehandlingServ
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         return VirkningsTidspunktResponse(
             behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
-            behandling.boforholdBegrunnelseKunINotat,
+            behandling.virkningsTidspunktBegrunnelseKunINotat,
             behandling.avslag,
             behandling.aarsak,
             behandling.virkningsDato?.toLocalDate(),
