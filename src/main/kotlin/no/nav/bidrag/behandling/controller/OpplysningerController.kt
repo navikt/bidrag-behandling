@@ -22,13 +22,13 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
     @Operation(
-        description = "Legger til nye opplysninger til behandling",
+        description = "Legge til nye opplysninger til behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "Lagret opplysninger"),
-            ApiResponse(responseCode = "404", description = "Fant ikke opplysninger"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
             ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
             ApiResponse(
                 responseCode = "403",
@@ -48,11 +48,12 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}/opplysninger/{opplysningerType}/aktiv")
     @Operation(
-        description = "Henter aktive opplysninger til behandling",
+        description = "Hente aktive opplysninger til behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
         value = [
+            ApiResponse(responseCode = "200"),
             ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
             ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
             ApiResponse(

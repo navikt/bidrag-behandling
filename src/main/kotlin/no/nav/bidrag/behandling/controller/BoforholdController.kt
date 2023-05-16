@@ -20,7 +20,7 @@ class BoforholdController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/boforhold")
     @Operation(
-        description = "Oppdaterer en behandling boforhold data",
+        description = "Oppdatere boforhold data",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun oppdatereBoforhold(
@@ -50,7 +50,7 @@ class BoforholdController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}/boforhold")
     @Operation(
-        description = "Oppdaterer en behandling boforhold data",
+        description = "Hente boforhold data",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun hentBoforhold(

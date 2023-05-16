@@ -22,7 +22,7 @@ data class Rolle(
 
     val ident: String,
 
-    val opprettetDato: Date,
+    val opprettetDato: Date?,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

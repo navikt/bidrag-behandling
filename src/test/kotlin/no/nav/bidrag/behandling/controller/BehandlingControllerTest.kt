@@ -10,6 +10,7 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.util.Date
+import kotlin.test.Ignore
 
 data class CreateBehandlingRequestTest(
     val behandlingType: BehandlingType,
@@ -26,21 +27,24 @@ data class CreateBehandlingRequestTest(
 data class CreateRolleDtoTest(
     val rolleType: RolleType,
     val ident: String?,
-    val opprettetDato: Date,
+    val opprettetDato: Date?,
 )
 
-data class UpdateBehandlingRequestTest(
-    val avslag: String? = null,
-    val aarsak: String? = null,
-    val virkningsDato: String? = null,
-)
-
-data class UpdateBehandlingRequestNonExistingFieldTest(
-    val begrunnelseMedIVedtakNotat: String? = null,
-    val avslag: String? = null,
-)
-
+@Suppress("NonAsciiCharacters")
 class BehandlingControllerTest : KontrollerTestRunner() {
+
+    @Test
+    fun `skal opprette en behandling med null opprettetDato`() {
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BARN, "1234", null),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val behandlingReq = createBehandlingRequestTest("sak123", "en12", roller)
+
+        val behandlingRes = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(behandlingReq), Void::class.java)
+        assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+    }
 
     @Test
     fun `skal opprette en behandling`() {
@@ -82,7 +86,8 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         assertEquals(HttpStatus.BAD_REQUEST, responseMedNull.statusCode)
     }
 
-    // @Test
+    @Ignore
+    @Test
     fun `skal ikke opprette en behandling med rolle med blank ident`() {
         val roller = setOf(
             CreateRolleDtoTest(RolleType.BARN, "   ", Date(1)),

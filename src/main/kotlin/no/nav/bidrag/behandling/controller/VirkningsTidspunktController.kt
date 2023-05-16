@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.dto.virkningstidspunkt.UpdateVirkningsTidspunktRequest
 import no.nav.bidrag.behandling.dto.virkningstidspunkt.VirkningsTidspunktResponse
@@ -18,8 +20,19 @@ class VirkningsTidspunktController(private val behandlingService: BehandlingServ
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/virkningstidspunkt")
     @Operation(
-        description = "Oppdaterer en behandling virkningstidspunkt data",
+        description = "Oppdatere virkningstidspunkt data",
         security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
+            ApiResponse(
+                responseCode = "403",
+                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
+            ),
+        ],
     )
     fun oppdaterVirkningsTidspunkt(
         @PathVariable behandlingId: Long,
@@ -48,8 +61,19 @@ class VirkningsTidspunktController(private val behandlingService: BehandlingServ
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}/virkningstidspunkt")
     @Operation(
-        description = "Henter en behandling virkningstidspunkt data",
+        description = "Hente virkningstidspunkt data",
         security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
+            ApiResponse(
+                responseCode = "403",
+                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
+            ),
+        ],
     )
     fun hentVirkningsTidspunkt(
         @PathVariable behandlingId: Long,

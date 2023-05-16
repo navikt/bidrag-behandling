@@ -24,12 +24,12 @@ class InntekterController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/inntekter")
     @Operation(
-        description = "Oppdaterer en behandling inntekter",
+        description = "Oppdatere inntekter data",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling inntekter"),
+            ApiResponse(responseCode = "200"),
             ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
             ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
             ApiResponse(
@@ -63,12 +63,12 @@ class InntekterController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}/inntekter")
     @Operation(
-        description = "Henter en behandling inntekter",
+        description = "Hente inntekter data",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling inntekter"),
+            ApiResponse(responseCode = "200"),
             ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
             ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
             ApiResponse(

@@ -14,6 +14,5 @@ data class CreateRolleDto(
     @field:NotBlank
     val ident: String,
 
-    @Schema(required = true)
-    val opprettetDato: Date,
+    val opprettetDato: Date?,
 )

@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toBehandlingBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
-import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -25,12 +24,11 @@ import javax.validation.Valid
 
 @BehandlingRestController
 class BehandlingController(private val behandlingService: BehandlingService) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Suppress("unused")
     @PostMapping("/behandling")
     @Operation(
-        description = "Legger til en ny behandling",
+        description = "Legge til en ny behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -78,7 +76,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}")
     @Operation(
-        description = "Henter en behandling",
+        description = "Hente en behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -131,7 +129,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
     @PutMapping("/behandling/ext/{behandlingId}")
     @Operation(
-        description = "Oppdaterer en behandling",
+        description = "Oppdatere en behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -145,14 +143,17 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun oppdaterBehandlingExtended(@PathVariable behandlingId: Long, @RequestBody updateBehandling: UpdateBehandlingRequestExtended): BehandlingDto {
+    fun oppdaterBehandlingExtended(
+        @PathVariable behandlingId: Long,
+        @RequestBody updateBehandling: UpdateBehandlingRequestExtended,
+    ): BehandlingDto {
         return behandlingDto(behandlingId, behandlingService.oppdaterBehandlingExtended(behandlingId, updateBehandling))
     }
 
     @Suppress("unused")
     @GetMapping("/behandling")
     @Operation(
-        description = "Henter en behandlinger",
+        description = "Hente en liste av alle behandlinger",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
