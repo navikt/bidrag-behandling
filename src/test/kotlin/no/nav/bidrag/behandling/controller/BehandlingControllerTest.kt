@@ -139,7 +139,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         ): CreateBehandlingRequestTest {
             val testBehandling = CreateBehandlingRequestTest(
                 BehandlingType.FORSKUDD,
-                SoknadType.SOKNAD,
+                SoknadType.FASTSETTELSE,
                 Date(1),
                 Date(1),
                 Date(1),

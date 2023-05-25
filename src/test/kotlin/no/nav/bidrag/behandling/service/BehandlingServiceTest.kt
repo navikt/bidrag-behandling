@@ -52,7 +52,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val createRoller = prepareRoles()
             val behandling = Behandling(
                 BehandlingType.FORSKUDD,
-                SoknadType.SOKNAD,
+                SoknadType.FASTSETTELSE,
                 Calendar.getInstance().time,
                 Calendar.getInstance().time,
                 Calendar.getInstance().time,
