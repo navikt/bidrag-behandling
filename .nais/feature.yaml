@@ -11,6 +11,9 @@ azure_access_inbound:
   - application: bisys
     namespace: bidrag
     cluster: dev-fss
+  - application: bidrag-dokument-forsendelse-feature
+    namespace: bidrag
+    cluster: dev-gcp
 database:
   dbname: bidrag-behandling-feature
   autoResize: false

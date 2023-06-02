@@ -8,6 +8,12 @@ azure_access_inbound:
   - application: bidrag-ui
     namespace: bidrag
     cluster: prod-fss
+  - application: bisys
+    namespace: bidrag
+    cluster: prod-fss
+  - application: bidrag-dokument-forsendelse
+    namespace: bidrag
+    cluster: prod-gcp
 database:
   dbname: bidrag-behandling
   autoResize: false
