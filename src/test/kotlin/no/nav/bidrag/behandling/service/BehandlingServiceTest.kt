@@ -58,7 +58,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 Calendar.getInstance().time,
                 "1234",
                 "1234",
-                SoknadFraType.BM,
+                SoknadFraType.BIDRAGSMOTTAKER,
             )
             val roller = HashSet(
                 createRoller.map {

@@ -12,4 +12,4 @@ import java.lang.annotation.Inherited
 @RestController
 @Protected
 @RequestMapping("/api")
-annotation class BehandlingRestController()
+annotation class BehandlingRestController

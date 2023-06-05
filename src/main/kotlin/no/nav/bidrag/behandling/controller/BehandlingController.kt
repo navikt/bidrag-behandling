@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import javax.validation.Valid
+private val LOGGER = KotlinLogging.logger {}
 
 @BehandlingRestController
 class BehandlingController(private val behandlingService: BehandlingService) {
@@ -70,7 +72,12 @@ class BehandlingController(private val behandlingService: BehandlingService) {
 
         behandling.roller.addAll(roller)
 
-        return CreateBehandlingResponse(behandlingService.createBehandling(behandling).id!!)
+        val behandlingDo = behandlingService.createBehandling(behandling)
+        LOGGER.info { "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
+                "soknadType ${createBehandling.soknadType} " +
+                "og soknadFra ${createBehandling.soknadFra} " +
+                "med id ${behandlingDo.id} " }
+        return CreateBehandlingResponse(behandlingDo.id!!)
     }
 
     @Suppress("unused")

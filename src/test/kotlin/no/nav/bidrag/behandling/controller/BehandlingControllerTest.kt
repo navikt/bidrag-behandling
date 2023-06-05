@@ -143,7 +143,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 Date(1),
                 Date(1),
                 Date(1),
-                SoknadFraType.BM,
+                SoknadFraType.BIDRAGSMOTTAKER,
                 saksnummer,
                 enhet,
                 roller,
