@@ -73,10 +73,12 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling.roller.addAll(roller)
 
         val behandlingDo = behandlingService.createBehandling(behandling)
-        LOGGER.info { "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
+        LOGGER.info {
+            "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
                 "soknadType ${createBehandling.soknadType} " +
                 "og soknadFra ${createBehandling.soknadFra} " +
-                "med id ${behandlingDo.id} " }
+                "med id ${behandlingDo.id} "
+        }
         return CreateBehandlingResponse(behandlingDo.id!!)
     }
 

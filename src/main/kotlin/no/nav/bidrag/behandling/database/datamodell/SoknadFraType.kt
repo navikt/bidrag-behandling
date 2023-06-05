@@ -17,5 +17,5 @@ enum class SoknadFraType {
     UTENLANDSKE_MYNDIGHET,
     VERGE,
     TRYGDEETATEN_INNKREVING,
-    KLAGE_ANKE; // FTK
+    KLAGE_ANKE,
 }

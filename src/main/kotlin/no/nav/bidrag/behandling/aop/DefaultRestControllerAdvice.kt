@@ -9,13 +9,11 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.MethodArgumentNotValidException
-import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
-import org.springframework.web.servlet.config.annotation.EnableWebMvc
 
 @RestControllerAdvice
 class DefaultRestControllerAdvice {
@@ -30,21 +28,21 @@ class DefaultRestControllerAdvice {
         val valideringsFeil =
             if (cause is MissingKotlinParameterException) {
                 createMissingKotlinParameterViolation(
-                    cause
+                    cause,
                 )
             } else {
                 null
             }
         LOGGER.warn(
             "Forespørselen inneholder ugyldig verdi: ${valideringsFeil ?: "ukjent feil"}",
-            exception
+            exception,
         )
 
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .header(
                 HttpHeaders.WARNING,
-                "Forespørselen inneholder ugyldig verdi: ${valideringsFeil ?: exception.message}"
+                "Forespørselen inneholder ugyldig verdi: ${valideringsFeil ?: exception.message}",
             )
             .build<Any>()
     }
