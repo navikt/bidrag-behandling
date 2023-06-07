@@ -14,7 +14,7 @@ data class SivilstandDto(
 
     @Schema(type = "string", format = "date", example = "01.02.2025")
     @JsonFormat(pattern = "dd.MM.yyyy")
-    val bekreftelsesdato: LocalDate,
+    val datoTom: LocalDate?,
 
     val sivilstandType: SivilstandType,
 )

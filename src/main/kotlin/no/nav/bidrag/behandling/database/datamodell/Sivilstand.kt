@@ -19,7 +19,7 @@ data class Sivilstand(
 
     val gyldigFraOgMed: Date,
 
-    val bekreftelsesdato: Date,
+    val datoTom: Date?,
 
     @Enumerated(EnumType.STRING)
     val sivilstandType: SivilstandType,
