@@ -4,6 +4,8 @@ ingresses:
 env:
   BIDRAG_PERSON_URL: https://bidrag-person.prod-fss-pub.nais.io/bidrag-person
   BIDRAG_PERSON_SCOPE: prod-fss.bidrag.bidrag-person
+  BIDRAG_BEREGN_FORSKUDD_URL: https://bidrag-beregn-forskudd-rest.nais.adeo.no
+  BIDRAG_BEREGN_FORSKUDD_SCOPE: prod-gcp.bidrag.bidrag-beregn-forskudd-rest
 azure_access_inbound:
   - application: bidrag-ui
     namespace: bidrag

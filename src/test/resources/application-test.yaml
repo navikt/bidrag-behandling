@@ -1,4 +1,5 @@
 BIDRAG_PERSON_URL: http://localhost:${wiremock.server.port}/person
+BIDRAG_BEREGN_FORSKUDD_URL: http://localhost:${wiremock.server.port}/beregn-forskudd
 AZURE_OPENID_CONFIG_ISSUER: http://localhost:${mock-oauth2-server.port}/aad
 AZURE_APP_TENANT_ID: 12321321-123213-3213123
 AZURE_APP_CLIENT_ID: asdasd-sadas-ddas-qwe
