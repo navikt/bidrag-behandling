@@ -22,7 +22,7 @@ class BidragPersonConsumer(
         UriComponentsBuilder.fromUri(bidragPersonUrl).pathSegment("beregn").pathSegment("forskudd").build().toUri()
 
     fun beregnForskudd(payload: BeregnForskuddPayload): ForskuddDto {
-        return postForNonNullEntity(beregnForskuddUri, 1 /*, todo payload*/)
+        return postForNonNullEntity(beregnForskuddUri, 1) // TODO
     }
 }
 
