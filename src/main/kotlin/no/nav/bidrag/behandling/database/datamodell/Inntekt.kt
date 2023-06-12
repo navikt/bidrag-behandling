@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.database.datamodell
 
-import no.nav.bidrag.behandling.consumer.Grunnlag
 import java.math.BigDecimal
 import java.util.Date
 import javax.persistence.Column
