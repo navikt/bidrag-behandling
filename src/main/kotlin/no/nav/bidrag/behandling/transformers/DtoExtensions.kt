@@ -66,11 +66,11 @@ fun Set<BehandlingBarnDto>.toDomain(behandling: Behandling) = this.map {
 }.toMutableSet()
 
 fun Set<InntektDto>.toInntektDomain(behandling: Behandling) = this.map {
-    Inntekt(behandling, it.taMed, it.beskrivelse, it.beløp, it.datoTom.toDate(), it.datoFom.toDate(), it.ident, it.id)
+    Inntekt(behandling, it.taMed, it.beskrivelse, it.beløp, it.datoTom.toDate(), it.datoFom.toDate(), it.ident, it.fraGrunnlag, it.id)
 }.toMutableSet()
 
 fun Set<Inntekt>.toInntektDto() = this.map {
-    InntektDto(it.id, it.taMed, it.beskrivelse, it.beløp, it.datoTom.toLocalDate(), it.datoFom.toLocalDate(), it.ident)
+    InntektDto(it.id, it.taMed, it.beskrivelse, it.beløp, it.datoTom.toLocalDate(), it.datoFom.toLocalDate(), it.ident, it.fraGrunnlag)
 }.toSet()
 
 fun Opplysninger.toDto(): OpplysningerDto {

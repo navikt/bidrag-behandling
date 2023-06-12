@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import no.nav.bidrag.behandling.consumer.Grunnlag
 import java.math.BigDecimal
 import java.util.Date
 import javax.persistence.Column
@@ -25,6 +26,7 @@ data class Inntekt(
     val datoTom: Date,
     val datoFom: Date,
     val ident: String,
+    val fraGrunnlag: Boolean,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

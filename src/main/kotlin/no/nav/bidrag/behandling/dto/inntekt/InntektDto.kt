@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.inntekt
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.consumer.Grunnlag
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -21,4 +22,6 @@ data class InntektDto(
     val datoFom: LocalDate,
 
     val ident: String,
+
+    val fraGrunnlag: Boolean,
 )
