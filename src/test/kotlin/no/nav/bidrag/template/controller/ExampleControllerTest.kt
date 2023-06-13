@@ -1,9 +1,9 @@
 package no.nav.bidrag.template.controller
 
 import io.kotest.matchers.shouldBe
+import no.nav.bidrag.domain.ident.PersonIdent
 import no.nav.bidrag.template.SpringTestRunner
 import no.nav.bidrag.template.model.HentPersonResponse
-import no.nav.domain.ident.PersonIdent
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
