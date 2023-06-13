@@ -5,8 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import java.util.Date
-import javax.persistence.EnumType
-import javax.persistence.Enumerated
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 
 data class UpdateBehandlingRequestExtended(
 

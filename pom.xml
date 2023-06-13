@@ -15,13 +15,12 @@
 	<properties>
 		<java.version>17</java.version>
 		<kotlin.version>1.8.21</kotlin.version>
-		<bidrag-commons.version>0.7.42</bidrag-commons.version>
+		<bidrag-commons.version>20230510130746_8b93e85</bidrag-commons.version>
 		<bidrag-domain.version>20230419124722_86ea018</bidrag-domain.version>
 		<logback-encoder.version>7.3</logback-encoder.version>
 		<token-support.version>3.0.11</token-support.version>
 		<springdoc.version>2.1.0</springdoc.version>
-		<springframework-cloud.version>4.0.2</springframework-cloud.version>
-		<token-support.version>2.0.14</token-support.version>
+		<springframework-cloud.version>4.0.3</springframework-cloud.version>
 		<bidrag-commons-test.version>1.20230217164307_1ec9d3f</bidrag-commons-test.version>
 		<kotest.version>5.6.1</kotest.version>
 		<mockk.version>4.0.2</mockk.version>
@@ -131,6 +130,10 @@
 			<artifactId>junit-jupiter</artifactId>
 			<version>${testcontainers.version}</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
 		</dependency>
 
 		<!--SpringDoc-->

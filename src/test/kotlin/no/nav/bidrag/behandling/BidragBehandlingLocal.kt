@@ -6,16 +6,14 @@ import org.springframework.boot.actuate.autoconfigure.security.servlet.Managemen
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
-import org.springframework.test.context.ActiveProfiles
 
-@ActiveProfiles("local")
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
 @EnableAspectJAutoProxy
 @EnableJwtTokenValidation(ignore = ["org.springframework", "org.springdoc"])
-class BidragSpringAppLocal
+class BidragBehandlingLocal
 
 fun main(args: Array<String>) {
-    val app = SpringApplication(BidragSpringAppLocal::class.java)
+    val app = SpringApplication(BidragBehandlingLocal::class.java)
     app.setAdditionalProfiles("local", "nais", "Lokal-nais-secrets")
     app.run(*args)
 }
