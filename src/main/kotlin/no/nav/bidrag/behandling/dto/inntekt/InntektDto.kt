@@ -9,8 +9,7 @@ data class InntektDto(
     val id: Long? = null,
     val taMed: Boolean,
     val beskrivelse: String,
-    @Suppress("NonAsciiCharacters")
-    val beløp: BigDecimal,
+    val belop: BigDecimal,
 
     @Schema(type = "string", format = "date", example = "01.02.2025")
     @JsonFormat(pattern = "dd.MM.yyyy")

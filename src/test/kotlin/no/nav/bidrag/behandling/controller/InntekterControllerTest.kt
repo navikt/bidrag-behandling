@@ -23,7 +23,7 @@ data class TestInntektDto(
     val id: Long?,
     val taMed: Boolean,
     val beskrivelse: String,
-    val beløp: String,
+    val belop: String,
     val datoTom: String,
     val datoFom: String,
     val ident: String,

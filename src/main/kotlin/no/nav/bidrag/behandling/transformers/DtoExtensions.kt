@@ -29,11 +29,11 @@ fun Set<Barnetillegg>.toBarnetilleggDto() = this.map {
 }.toSet()
 
 fun Set<UtvidetbarnetrygdDto>.toUtvidetbarnetrygdDomain(behandling: Behandling) = this.map {
-    Utvidetbarnetrygd(behandling, it.deltBoSted, it.beløp, it.datoFom.toDate(), it.datoTom.toDate())
+    Utvidetbarnetrygd(behandling, it.deltBoSted, it.belop, it.datoFom.toDate(), it.datoTom.toDate())
 }.toMutableSet()
 
 fun Set<Utvidetbarnetrygd>.toUtvidetbarnetrygdDto() = this.map {
-    UtvidetbarnetrygdDto(it.id, it.deltBoSted, it.beløp, it.datoFom.toLocalDate(), it.datoTom.toLocalDate())
+    UtvidetbarnetrygdDto(it.id, it.deltBoSted, it.belop, it.datoFom.toLocalDate(), it.datoTom.toLocalDate())
 }.toSet()
 
 fun Set<BarnetilleggDto>.toBarnetilleggDomain(behandling: Behandling) = this.map {
@@ -66,11 +66,11 @@ fun Set<BehandlingBarnDto>.toDomain(behandling: Behandling) = this.map {
 }.toMutableSet()
 
 fun Set<InntektDto>.toInntektDomain(behandling: Behandling) = this.map {
-    Inntekt(behandling, it.taMed, it.beskrivelse, it.beløp, it.datoTom.toDate(), it.datoFom.toDate(), it.ident, it.id)
+    Inntekt(behandling, it.taMed, it.beskrivelse, it.belop, it.datoTom.toDate(), it.datoFom.toDate(), it.ident, it.id)
 }.toMutableSet()
 
 fun Set<Inntekt>.toInntektDto() = this.map {
-    InntektDto(it.id, it.taMed, it.beskrivelse, it.beløp, it.datoTom.toLocalDate(), it.datoFom.toLocalDate(), it.ident)
+    InntektDto(it.id, it.taMed, it.beskrivelse, it.belop, it.datoTom.toLocalDate(), it.datoFom.toLocalDate(), it.ident)
 }.toSet()
 
 fun Opplysninger.toDto(): OpplysningerDto {

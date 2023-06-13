@@ -19,9 +19,7 @@ data class Inntekt(
 
     val taMed: Boolean,
     val beskrivelse: String,
-    @Suppress("NonAsciiCharacters")
-    @Column(name = "BELOP")
-    val beløp: BigDecimal,
+    val belop: BigDecimal,
     val datoTom: Date,
     val datoFom: Date,
     val ident: String,

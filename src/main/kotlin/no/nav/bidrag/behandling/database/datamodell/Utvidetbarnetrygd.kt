@@ -19,8 +19,7 @@ data class Utvidetbarnetrygd(
 
     val deltBoSted: Boolean,
 
-    @Column(name = "BELOP")
-    val beløp: BigDecimal,
+    val belop: BigDecimal,
     val datoFom: Date,
     val datoTom: Date,
 

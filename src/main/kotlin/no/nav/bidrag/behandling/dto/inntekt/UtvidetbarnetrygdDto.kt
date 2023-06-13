@@ -10,7 +10,7 @@ data class UtvidetbarnetrygdDto(
 
     val deltBoSted: Boolean,
 
-    val beløp: BigDecimal,
+    val belop: BigDecimal,
 
     @Schema(type = "string", format = "date", example = "01.02.2025")
     @JsonFormat(pattern = "dd.MM.yyyy")
