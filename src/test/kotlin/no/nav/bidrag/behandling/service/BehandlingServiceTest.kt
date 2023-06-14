@@ -105,6 +105,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Calendar.getInstance().time,
                     Calendar.getInstance().time,
                     "ident",
+                        true
                 ),
             ),
             mutableSetOf(
@@ -155,6 +156,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Calendar.getInstance().time,
                     Calendar.getInstance().time,
                     "ident",
+                        true
                 ),
             ),
             mutableSetOf(

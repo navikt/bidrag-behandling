@@ -23,6 +23,7 @@ data class Inntekt(
     val datoTom: Date,
     val datoFom: Date,
     val ident: String,
+    val fraGrunnlag: Boolean,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

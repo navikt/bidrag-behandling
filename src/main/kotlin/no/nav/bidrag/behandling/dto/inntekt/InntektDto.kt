@@ -20,4 +20,5 @@ data class InntektDto(
     val datoFom: LocalDate,
 
     val ident: String,
+    val fraGrunnlag: Boolean,
 )
