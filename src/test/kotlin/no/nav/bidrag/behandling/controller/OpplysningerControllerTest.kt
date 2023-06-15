@@ -138,7 +138,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
 
     private fun createOpplysninger(behandlingId: Long, data: String, aktiv: Boolean, opplysningerType: OpplysningerType): AddOpplysningerRequest {
         val opplysninger =
-            AddOpplysningerRequest(behandlingId, aktiv, opplysningerType, data, "01.02.2025")
+            AddOpplysningerRequest(behandlingId, aktiv, opplysningerType, data, "2025-02-01")
         return opplysninger
     }
 }

@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
-import no.nav.bidrag.behandling.dto.virkningstidspunkt.UpdateVirkningsTidspunktRequest
 import no.nav.bidrag.behandling.dto.virkningstidspunkt.VirkningsTidspunktResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
@@ -21,18 +20,21 @@ class VirkningsTidspunktControllerTest : KontrollerTestRunner() {
     fun `skal oppdatere virknings tidspunkt data`() {
         val behandling = behandlingService.createBehandling(BehandlingServiceTest.prepareBehandling())
 
-        val req = UpdateVirkningsTidspunktRequest(
+        val req = UpdateVirkningsTidspunktRequestTest(
             "MED I VEDTAK",
             "KUN I NOTAT",
             AvslagType.IKKE_OPPH_I_RIKET,
             ForskuddBeregningKodeAarsakType.KF,
-            null,
+            "2025-12-27",
         )
 
         val virknsRes = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.id}/virkningstidspunkt", HttpMethod.PUT, HttpEntity(req), VirkningsTidspunktResponse::class.java)
         Assertions.assertEquals(HttpStatus.OK, virknsRes.statusCode)
-        Assertions.assertEquals("KUN I NOTAT", virknsRes.body!!.virkningsTidspunktBegrunnelseKunINotat)
-        Assertions.assertEquals("MED I VEDTAK", virknsRes.body!!.virkningsTidspunktBegrunnelseMedIVedtakNotat)
+
+        val body = virknsRes.body!!
+        Assertions.assertEquals("KUN I NOTAT", body.virkningsTidspunktBegrunnelseKunINotat)
+        Assertions.assertEquals("MED I VEDTAK", body.virkningsTidspunktBegrunnelseMedIVedtakNotat)
+        Assertions.assertEquals("2025-12-27", body.virkningsDato.toString())
     }
 
 //    @Test
@@ -76,3 +78,11 @@ class VirkningsTidspunktControllerTest : KontrollerTestRunner() {
 //        Assertions.assertEquals(HttpStatus.BAD_REQUEST, updatedBehandling.statusCode)
 //    }
 }
+
+data class UpdateVirkningsTidspunktRequestTest(
+    val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
+    val virkningsTidspunktBegrunnelseKunINotat: String? = null,
+    val avslag: AvslagType? = null,
+    val aarsak: ForskuddBeregningKodeAarsakType? = null,
+    val virkningsDato: String? = null,
+)

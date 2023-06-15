@@ -11,12 +11,12 @@ data class InntektDto(
     val beskrivelse: String,
     val belop: BigDecimal,
 
-    @Schema(type = "string", format = "date", example = "01.02.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @Schema(type = "string", format = "date", example = "2025.01.25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate,
 
-    @Schema(type = "string", format = "date", example = "01.02.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @Schema(type = "string", format = "date", example = "2025.01.25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,
 
     val ident: String,

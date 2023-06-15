@@ -16,15 +16,15 @@ data class BehandlingDto(
     val soknadType: SoknadType,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val mottatDato: LocalDate,
 
     val soknadFraType: SoknadFraType,
@@ -35,7 +35,7 @@ data class BehandlingDto(
     val sivilstand: Set<SivilstandDto>,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningsDato: LocalDate? = null,
 
     val aarsak: ForskuddBeregningKodeAarsakType? = null,

@@ -13,6 +13,6 @@ data class OpplysningerDto(
     val data: String,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val hentetDato: LocalDate,
 )

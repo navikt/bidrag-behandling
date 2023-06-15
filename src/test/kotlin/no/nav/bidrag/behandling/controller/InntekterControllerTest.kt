@@ -49,7 +49,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
         val behandlingId = behandling.body!!.id
 
-        val inn = TestInntektDto(null, true, "some", "1.123", "10.10.2022", "10.10.2022", "blablabla")
+        val inn = TestInntektDto(null, true, "some", "1.123", "2022-10-10", "2022-10-10", "blablabla")
 
         // 2. Add inntekter
         val r = httpHeaderTestRestTemplate.exchange(

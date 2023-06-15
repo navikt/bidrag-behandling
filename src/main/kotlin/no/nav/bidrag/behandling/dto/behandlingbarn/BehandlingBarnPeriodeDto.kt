@@ -8,12 +8,12 @@ import java.time.LocalDate
 data class BehandlingBarnPeriodeDto(
     val id: Long?,
 
-    @Schema(type = "string", format = "date", example = "01.02.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @Schema(type = "string", format = "date", example = "2025.01.25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val fraDato: LocalDate,
 
-    @Schema(type = "string", format = "date", example = "01.02.2025")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @Schema(type = "string", format = "date", example = "2025.01.25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     val tilDato: LocalDate,
 
     val boStatus: BoStatusType,
