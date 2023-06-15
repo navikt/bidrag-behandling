@@ -27,14 +27,14 @@ class ExceptionHandler {
     @ExceptionHandler(value = [MethodArgumentNotValidException::class, InvalidFormatException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class])
     fun handleInvalidValueExceptions(exception: Exception): ResponseEntity<*> {
         val cause = exception.cause ?: exception
-        val validationError = when(cause){
+        val validationError = when (cause) {
             is JsonMappingException -> createMissingKotlinParameterViolation(cause)
             is MethodArgumentNotValidException -> parseMethodARgumentNotValidexception(cause)
             else -> null
         }
         val errorMessage =
             validationError?.fieldErrors?.joinToString(", ") { "${it.field}: ${it.message}" }
-            ?: "ukjent feil"
+                ?: "ukjent feil"
         log.warn(
             "Forespørselen inneholder ugyldig verdi: $errorMessage",
             exception,

@@ -7,5 +7,6 @@ data class RolleDto(
     val id: Long,
     val rolleType: RolleType,
     val ident: String,
+    val fodtDato: Date?,
     val opprettetDato: Date?,
 )

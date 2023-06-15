@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.database.datamodell
 
-import java.util.Date
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -11,6 +10,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import java.util.Date
 
 @Entity(name = "behandling_barn")
 data class BehandlingBarn(

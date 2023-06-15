@@ -45,6 +45,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         assertEquals(BehandlingType.FORSKUDD, actualBehandlingFetched.behandlingType)
         assertEquals(3, actualBehandlingFetched.roller.size)
+        assertNotNull(actualBehandlingFetched.roller.iterator().next().fodtDato)
     }
 
     companion object {
@@ -66,6 +67,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         behandling,
                         it.rolleType,
                         it.ident,
+                        it.fodtDato,
                         it.opprettetDato,
                     )
                 },
@@ -76,10 +78,11 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         fun prepareRoles(): Set<CreateRolleDto> {
+            val someDate = Calendar.getInstance().time
             return setOf(
-                CreateRolleDto(RolleType.BIDRAGS_MOTTAKER, "123344", Calendar.getInstance().time),
-                CreateRolleDto(RolleType.BIDRAGS_PLIKTIG, "44332211", Calendar.getInstance().time),
-                CreateRolleDto(RolleType.BARN, "1111", Calendar.getInstance().time),
+                CreateRolleDto(RolleType.BIDRAGS_MOTTAKER, "123344", someDate, someDate),
+                CreateRolleDto(RolleType.BIDRAGS_PLIKTIG, "44332211", someDate, someDate),
+                CreateRolleDto(RolleType.BARN, "1111", someDate, someDate),
             )
         }
     }
@@ -105,7 +108,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Calendar.getInstance().time,
                     Calendar.getInstance().time,
                     "ident",
-                        true
+                    true,
                 ),
             ),
             mutableSetOf(
@@ -156,7 +159,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Calendar.getInstance().time,
                     Calendar.getInstance().time,
                     "ident",
-                        true
+                    true,
                 ),
             ),
             mutableSetOf(

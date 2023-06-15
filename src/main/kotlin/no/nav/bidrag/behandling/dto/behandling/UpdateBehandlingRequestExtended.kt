@@ -2,11 +2,11 @@ package no.nav.bidrag.behandling.dto.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import java.util.Date
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 
 data class UpdateBehandlingRequestExtended(
 

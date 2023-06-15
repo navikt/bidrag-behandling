@@ -43,8 +43,8 @@ class TestRestTemplateConfiguration {
                 typeHeader = JOSEObjectType.JWT.type,
                 audience = listOf("aud-localhost"),
                 claims = mapOf("iss" to newIssuer.toString()),
-                3600
-            )
+                3600,
+            ),
         )
         return "Bearer " + token.serialize()
     }

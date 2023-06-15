@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import jakarta.validation.Valid
 private val LOGGER = KotlinLogging.logger {}
 
 @BehandlingRestController
@@ -65,6 +65,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                     behandling,
                     it.rolleType,
                     it.ident,
+                    it.fodtDato,
                     it.opprettetDato,
                 )
             },
@@ -120,7 +121,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandling.saksnummer,
             behandling.behandlerEnhet,
             behandling.roller.map {
-                RolleDto(it.id!!, it.rolleType, it.ident, it.opprettetDato)
+                RolleDto(it.id!!, it.rolleType, it.ident, it.fodtDato, it.opprettetDato)
             }.toSet(),
             behandling.behandlingBarn.toBehandlingBarnDto(),
             behandling.sivilstand.toSivilstandDto(),
