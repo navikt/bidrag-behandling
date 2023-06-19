@@ -8,16 +8,16 @@ import java.time.LocalDate
 data class InntektDto(
     val id: Long? = null,
     val taMed: Boolean,
-    val beskrivelse: String,
+    val beskrivelse: String?,
     val belop: BigDecimal,
 
     @Schema(type = "string", format = "date", example = "2025.01.25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoTom: LocalDate,
+    val datoFom: LocalDate,
 
     @Schema(type = "string", format = "date", example = "2025.01.25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoFom: LocalDate,
+    val datoTom: LocalDate,
 
     val ident: String,
     val fraGrunnlag: Boolean,

@@ -3,10 +3,12 @@ package no.nav.bidrag.behandling.controller
 import com.fasterxml.jackson.databind.node.POJONode
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import mu.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BeregnForskuddPayload
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.consumer.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.ForskuddDto
 import no.nav.bidrag.behandling.dto.behandling.Periode
 import no.nav.bidrag.behandling.dto.behandling.ResultatBeregning
@@ -16,12 +18,13 @@ import no.nav.bidrag.behandling.transformers.toLocalDate
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import java.math.BigDecimal
-import java.time.LocalDate
+
+private val LOGGER = KotlinLogging.logger {}
 
 @BehandlingRestController
 class BehandlingBeregnForskuddController(
     private val behandlingService: BehandlingService,
-    private val bidragPersonConsumer: BidragPersonConsumer,
+    private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
 ) {
 
     @Suppress("unused")
@@ -34,9 +37,10 @@ class BehandlingBeregnForskuddController(
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         try {
-            val beregnForskudd = bidragPersonConsumer.beregnForskudd(preparePayload(behandling))
+            val beregnForskudd = bidragBeregnForskuddConsumer.beregnForskudd(preparePayload(behandling))
+            return beregnForskudd
         } catch (e: Exception) {
-            //
+            LOGGER.warn { e }
         }
 
         // må returneres `beregnForskudd`
@@ -50,39 +54,86 @@ class BehandlingBeregnForskuddController(
         )
     }
 
-    fun prepareSøknadsBarn(behandling: Behandling): List<Grunnlag> {
-        // TODO
-        return emptyList()
-    }
+    fun prepareSoknadsBarn(behandling: Behandling): List<Grunnlag> =
+        behandling
+            .roller
+            .filter { it.rolleType == RolleType.BARN }
+            .map {
+                Grunnlag(
+                    referanse = "Mottatt_ref1", // TODO
+                    type = "SOKNADSBARN_INFO",
+                    innhold = POJONode(
+                        SoknadsBarnNode(
+                            soknadsbarnId = 1, // TODO
+                            fodselsdato = it.fodtDato?.toLocalDate().toString(),
+                        ),
+                    ),
+                )
+            }
 
-    fun prepareBostatus(behandling: Behandling): List<Grunnlag> {
-        // TODO
-        return emptyList()
-    }
+    fun prepareBostatus(behandling: Behandling): List<Grunnlag> =
+        behandling
+            .behandlingBarn
+            .filter { (behandling.roller.filter { r -> r.rolleType == RolleType.BARN }.map { r -> r.ident }).toSet().contains(it.ident) }
+            .flatMap { it.perioder }
+            .map {
+                Grunnlag(
+                    referanse = "Mottatt_ref1", // TODO
+                    type = "BOSTATUS",
+                    innhold = POJONode(
+                        BostatusNode(
+                            datoTil = it.fraDato.toString(),
+                            datoFom = it.tilDato.toString(),
+                            rolle = "SOKNADSBARN",
+                            bostatusKode = "BOR_MED_FORELDRE", // TODO boStatus -> bostatusKode
+                        ),
+                    ),
+                )
+            }
+
+    fun prepareBarnIHusstand(behandling: Behandling): List<Grunnlag> =
+        behandling
+            .behandlingBarn
+            .filter { it.medISaken }
+            .map {
+                Grunnlag(
+                    referanse = "Mottatt_ref1", // TODO
+                    type = "BARN_I_HUSSTAND",
+                    innhold = POJONode( // TODO
+                        BarnPeriodeNode(
+                            datoTil = behandling.virkningsDato.toString(), // TODO
+                            datoFom = behandling.datoTom.toString(), // TODO
+                            antall = BigDecimal.TEN,
+                        ),
+                    ),
+                )
+            }
 
     fun prepareInntekterForBeregning(behandling: Behandling): List<Grunnlag> =
-        behandling.inntekter.map {
-            Grunnlag(
-                referanse = "",
-                type = "INNTEKT",
-                innhold = POJONode(
-                    InntektNode(
-                        datoFom = it.datoTom.toLocalDate(),
-                        datoTil = it.datoTom.toLocalDate(),
-                        rolle = "BIDRAGSMOTTAKER",
-                        inntektType = "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO vi kanskje trenger flere typer her
-                        belop = it.belop,
+        behandling.inntekter
+            .filter { it.taMed }
+            .map {
+                Grunnlag(
+                    referanse = "Mottatt_ref1",
+                    type = "INNTEKT",
+                    innhold = POJONode(
+                        InntektNode(
+                            datoFom = it.datoFom.toLocalDate().toString(),
+                            datoTil = it.datoTom.toLocalDate().toString(),
+                            rolle = "BIDRAGSMOTTAKER",
+                            inntektType = "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO vi kanskje trenger flere typer her
+                            belop = it.belop,
+                        ),
                     ),
-                ),
-            )
-        } + behandling.barnetillegg.map {
+                )
+            } + behandling.barnetillegg.map {
             Grunnlag(
-                referanse = "",
+                referanse = "Mottatt_ref1",
                 type = "INNTEKT",
                 innhold = POJONode(
                     InntektNode(
-                        datoFom = it.datoTom.toLocalDate(),
-                        datoTil = it.datoTom.toLocalDate(),
+                        datoFom = it.datoFom.toLocalDate().toString(),
+                        datoTil = it.datoTom.toLocalDate().toString(),
                         rolle = "BIDRAGSMOTTAKER",
                         inntektType = "EKSTRA_SMAABARNSTILLEGG",
                         belop = it.barnetillegg,
@@ -91,12 +142,12 @@ class BehandlingBeregnForskuddController(
             )
         } + behandling.utvidetbarnetrygd.map {
             Grunnlag(
-                referanse = "",
+                referanse = "Mottatt_ref1",
                 type = "INNTEKT",
                 innhold = POJONode(
                     InntektNode(
-                        datoFom = it.datoTom.toLocalDate(),
-                        datoTil = it.datoTom.toLocalDate(),
+                        datoFom = it.datoFom.toLocalDate().toString(),
+                        datoTil = it.datoTom.toLocalDate().toString(),
                         rolle = "BIDRAGSMOTTAKER",
                         inntektType = "UTVIDET_BARNETRYGD",
                         belop = it.belop,
@@ -108,12 +159,12 @@ class BehandlingBeregnForskuddController(
     fun prepareSivilstand(behandling: Behandling): List<Grunnlag> =
         behandling.sivilstand.map {
             Grunnlag(
-                referanse = "",
+                referanse = "Mottatt_ref1",
                 type = "SIVILSTAND",
                 innhold = POJONode(
                     SivilstandNode(
-                        datoFom = it.gyldigFraOgMed.toLocalDate(),
-                        datoTil = it.datoTom?.toLocalDate(),
+                        datoFom = it.gyldigFraOgMed.toLocalDate().toString(),
+                        datoTil = it.datoTom?.toLocalDate().toString(),
                         rolle = "BIDRAGSMOTTAKER",
                         sivilstandKode = it.sivilstandType.name,
                     ),
@@ -123,9 +174,10 @@ class BehandlingBeregnForskuddController(
 
     fun preparePayload(behandling: Behandling): BeregnForskuddPayload {
         return BeregnForskuddPayload(
-            beregnDatoFra = behandling.virkningsDato?.toLocalDate(), // TODO kanskje behandling.datoFom?
-            beregnDatoTil = behandling.datoTom.toLocalDate(),
-            grunnlagListe = prepareSøknadsBarn(behandling) +
+            beregnDatoFra = behandling.virkningsDato?.toLocalDate().toString(), // TODO kanskje behandling.datoFom?
+            beregnDatoTil = behandling.datoTom.toLocalDate().toString(),
+            grunnlagListe = prepareSoknadsBarn(behandling) +
+                prepareBarnIHusstand(behandling) +
                 prepareBostatus(behandling) +
                 prepareInntekterForBeregning(behandling) +
                 prepareSivilstand(behandling),
@@ -134,17 +186,35 @@ class BehandlingBeregnForskuddController(
     }
 }
 
+data class BarnPeriodeNode(
+    val datoFom: String,
+    val datoTil: String,
+    val antall: BigDecimal,
+)
+
+data class BostatusNode(
+    val datoFom: String,
+    val datoTil: String,
+    val rolle: String,
+    val bostatusKode: String,
+)
+
+data class SoknadsBarnNode(
+    val soknadsbarnId: Int,
+    val fodselsdato: String?,
+)
+
 data class InntektNode(
-    val datoFom: LocalDate?,
-    val datoTil: LocalDate?,
+    val datoFom: String?,
+    val datoTil: String?,
     val rolle: String?,
     val inntektType: String?,
     val belop: BigDecimal?,
 )
 
 data class SivilstandNode(
-    val datoFom: LocalDate?,
-    val datoTil: LocalDate?,
+    val datoFom: String?,
+    val datoTil: String?,
     val rolle: String?,
     val sivilstandKode: String?,
 )

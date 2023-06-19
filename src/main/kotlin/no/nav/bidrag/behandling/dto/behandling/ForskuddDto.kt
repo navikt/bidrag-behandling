@@ -20,8 +20,6 @@ data class ResultatPeriode(
 data class Periode(
     @Schema(description = "Fra-og-med-dato") var datoFom: LocalDate? = null,
     @Schema(description = "Til-dato") var datoTil: LocalDate? = null,
-    @Schema(description = "Beregnet resultat periode") var periode: Periode = Periode(),
-    @Schema(description = "Beregnet resultat innhold") var resultat: ResultatBeregning = ResultatBeregning(),
 )
 
 @Schema(description = "Resultatet av en beregning")

@@ -17,10 +17,10 @@ data class Inntekt(
     val behandling: Behandling,
 
     val taMed: Boolean,
-    val beskrivelse: String,
+    val beskrivelse: String?,
     val belop: BigDecimal,
-    val datoTom: Date,
     val datoFom: Date,
+    val datoTom: Date,
     val ident: String,
     val fraGrunnlag: Boolean,
 
