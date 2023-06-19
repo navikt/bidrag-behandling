@@ -24,8 +24,8 @@ data class TestInntektDto(
     val taMed: Boolean,
     val beskrivelse: String?,
     val belop: String,
-    val datoTom: String,
-    val datoFom: String,
+    val datoTom: String?,
+    val datoFom: String?,
     val ident: String,
 )
 
@@ -63,7 +63,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         assertEquals(1, r.body!!.inntekter.size)
 
         // 3. Add some more inntekter
-        val inntekt2 = inn.copy(id = r.body!!.inntekter.iterator().next().id, beskrivelse = null)
+        val inntekt2 = inn.copy(id = r.body!!.inntekter.iterator().next().id, datoFom = null, beskrivelse = null)
 
         val r1 = httpHeaderTestRestTemplate.exchange(
             "${rootUri()}/behandling/$behandlingId/inntekter",

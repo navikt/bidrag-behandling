@@ -19,8 +19,8 @@ data class Inntekt(
     val taMed: Boolean,
     val beskrivelse: String?,
     val belop: BigDecimal,
-    val datoFom: Date,
-    val datoTom: Date,
+    val datoFom: Date?,
+    val datoTom: Date?,
     val ident: String,
     val fraGrunnlag: Boolean,
 

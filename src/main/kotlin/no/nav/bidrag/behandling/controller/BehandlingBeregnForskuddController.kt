@@ -118,8 +118,8 @@ class BehandlingBeregnForskuddController(
                     type = "INNTEKT",
                     innhold = POJONode(
                         InntektNode(
-                            datoFom = it.datoFom.toLocalDate().toString(),
-                            datoTil = it.datoTom.toLocalDate().toString(),
+                            datoFom = it.datoFom?.toLocalDate().toString(),
+                            datoTil = it.datoTom?.toLocalDate().toString(),
                             rolle = "BIDRAGSMOTTAKER",
                             inntektType = "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO vi kanskje trenger flere typer her
                             belop = it.belop,
