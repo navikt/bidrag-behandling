@@ -123,7 +123,7 @@ class BehandlingBeregnForskuddController(
                             datoFom = it.datoFom?.toLocalDate().toString(),
                             datoTil = it.datoTom?.toLocalDate().toString(),
                             rolle = "BIDRAGSMOTTAKER",
-                            inntektType = "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO vi kanskje trenger flere typer her
+                            inntektType = it.inntektType,
                             belop = it.belop,
                         ),
                     ),

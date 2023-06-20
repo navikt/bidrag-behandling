@@ -8,7 +8,7 @@ import java.time.LocalDate
 data class InntektDto(
     val id: Long? = null,
     val taMed: Boolean,
-    val beskrivelse: String?,
+    val inntektType: String?,
     val belop: BigDecimal,
 
     @Schema(type = "string", format = "date", example = "2025.01.25")
