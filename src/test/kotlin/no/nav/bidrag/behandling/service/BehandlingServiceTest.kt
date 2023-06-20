@@ -48,6 +48,23 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertNotNull(actualBehandlingFetched.roller.iterator().next().fodtDato)
     }
 
+    @Test
+    fun `skal opprette en behandling med inntekter`() {
+        val behandling = prepareBehandling()
+
+        behandling.inntekter = mutableSetOf(Inntekt(behandling, true, "", BigDecimal.valueOf(555.55), null, null, "ident", true))
+
+        val actualBehandling = behandlingService.createBehandling(behandling)
+
+        assertNotNull(actualBehandling.id)
+
+        val actualBehandlingFetched = behandlingService.hentBehandlingById(actualBehandling.id!!)
+
+        assertEquals(BehandlingType.FORSKUDD, actualBehandlingFetched.behandlingType)
+        assertEquals(1, actualBehandlingFetched.inntekter.size)
+        assertEquals(BigDecimal.valueOf(555.55), actualBehandlingFetched.inntekter.iterator().next().belop)
+    }
+
     companion object {
         fun prepareBehandling(): Behandling {
             val createRoller = prepareRoles()

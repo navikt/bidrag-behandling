@@ -28,4 +28,7 @@ data class Rolle(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
+
+    @Transient
+    val soknadsLinje: Int = 1,
 )

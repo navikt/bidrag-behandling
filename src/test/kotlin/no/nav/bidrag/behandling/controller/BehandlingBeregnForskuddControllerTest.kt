@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -19,7 +18,6 @@ import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.service.BehandlingService
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpEntity
 import java.math.BigDecimal
 import java.util.Calendar
 import kotlin.test.Ignore
@@ -106,12 +104,11 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Test
     @Ignore
     fun preparePayload() {
-        val c = BehandlingBeregnForskuddController(behandlingService, bidragBeregnForskuddConsumer)
-
-        val message = HttpEntity(c.preparePayload(prepareBehandling()))
-        val objectMapper = ObjectMapper()
-
-//        objectMapper.writeValue(File("./beregn.json"), message.body)
-        objectMapper.writeValue(System.out, message.body)
+//        val c = BehandlingBeregnForskuddController(behandlingService, bidragBeregnForskuddConsumer)
+//
+//        val message = HttpEntity(c.preparePayload(prepareBehandling(), R))
+//        val objectMapper = ObjectMapper()
+//
+//        objectMapper.writeValue(System.out, message.body)
     }
 }
