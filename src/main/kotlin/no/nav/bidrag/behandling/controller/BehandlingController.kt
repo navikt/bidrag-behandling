@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.transformers.toBehandlingBarnDto
+import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import org.springframework.web.bind.annotation.GetMapping
@@ -123,11 +123,10 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandling.roller.map {
                 RolleDto(it.id!!, it.rolleType, it.ident, it.fodtDato, it.opprettetDato)
             }.toSet(),
-            behandling.behandlingBarn.toBehandlingBarnDto(),
+            behandling.husstandsBarn.toHusstandsBarnDto(),
             behandling.sivilstand.toSivilstandDto(),
             behandling.virkningsDato?.toLocalDate(),
             behandling.aarsak,
-            behandling.avslag,
             behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
             behandling.virkningsTidspunktBegrunnelseKunINotat,
             behandling.boforholdBegrunnelseMedIVedtakNotat,

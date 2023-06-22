@@ -3,10 +3,10 @@ package no.nav.bidrag.behandling.controller
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingBarn
-import no.nav.bidrag.behandling.database.datamodell.BehandlingBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
+import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
+import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
@@ -56,11 +56,10 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             null,
             null,
             null,
-            null,
             1,
         )
 
-        val behandlingBarn = BehandlingBarn(
+        val husstandsBarn = HusstandsBarn(
             behandling = b,
             medISaken = true,
             null,
@@ -68,9 +67,9 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             null,
             datoFom,
         )
-        behandlingBarn.perioder = mutableSetOf(
-            BehandlingBarnPeriode(
-                behandlingBarn,
+        husstandsBarn.perioder = mutableSetOf(
+            HusstandsBarnPeriode(
+                husstandsBarn,
                 datoFom,
                 datoTom,
                 BoStatusType.DOKUMENTERT_BOENDE_HOS_BM,
@@ -78,8 +77,8 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             ),
         )
 
-        b.behandlingBarn = mutableSetOf(
-            behandlingBarn,
+        b.husstandsBarn = mutableSetOf(
+            husstandsBarn,
         )
         b.roller = mutableSetOf(
             Rolle(b, RolleType.BIDRAGS_MOTTAKER, "123", datoFom, null, null),

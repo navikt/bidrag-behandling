@@ -12,8 +12,8 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import java.util.Date
 
-@Entity(name = "behandling_barn")
-data class BehandlingBarn(
+@Entity(name = "barn_i_husstand")
+data class HusstandsBarn(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
@@ -28,6 +28,6 @@ data class BehandlingBarn(
     val navn: String? = null,
     val foedselsDato: Date? = null,
 ) {
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandlingBarn", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var perioder: MutableSet<BehandlingBarnPeriode> = mutableSetOf()
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "husstandsBarn", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var perioder: MutableSet<HusstandsBarnPeriode> = mutableSetOf()
 }

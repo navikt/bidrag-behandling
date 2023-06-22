@@ -72,12 +72,12 @@ class BehandlingBeregnForskuddController(
 
     fun prepareBostatus(behandling: Behandling, soknadsBarn: Rolle): List<Grunnlag> =
         behandling
-            .behandlingBarn
+            .husstandsBarn
             .filter { soknadsBarn.ident == it.ident }
             .flatMap { it.perioder }
             .map {
                 Grunnlag(
-                    referanse = "Mottatt_ref1", // TODO
+                    referanse = "Mottatt_ref1",
                     type = "BOSTATUS",
                     innhold = POJONode(
                         BostatusNode(
@@ -93,10 +93,9 @@ class BehandlingBeregnForskuddController(
     // TODO PERIODER!
     fun prepareBarnIHusstand(behandling: Behandling): List<Grunnlag> =
         behandling
-            .behandlingBarn
+            .husstandsBarn
             .filter { it.medISaken }
-            .map { it.perioder.filter { it.boStatus == BoStatusType.DOKUMENTERT_BOENDE_HOS_BM } }
-            .flatten()
+            .map { it.perioder.filter { it.boStatus == BoStatusType.DOKUMENTERT_BOENDE_HOS_BM } }.flatten()
             .map {
                 Grunnlag(
                     referanse = "Mottatt_ref1",

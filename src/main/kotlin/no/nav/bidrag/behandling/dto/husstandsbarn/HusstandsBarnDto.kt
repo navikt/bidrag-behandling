@@ -1,13 +1,13 @@
-package no.nav.bidrag.behandling.dto.behandlingbarn
+package no.nav.bidrag.behandling.dto.husstandsbarn
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
-data class BehandlingBarnDto(
+data class HusstandsBarnDto(
     val id: Long?,
     val medISaken: Boolean,
-    val perioder: Set<BehandlingBarnPeriodeDto>,
+    val perioder: Set<HusstandsBarnPeriodeDto>,
     val ident: String? = null,
     val navn: String? = null,
 

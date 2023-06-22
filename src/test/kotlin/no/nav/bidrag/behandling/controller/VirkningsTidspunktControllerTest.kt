@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
-import no.nav.bidrag.behandling.database.datamodell.AvslagType
-import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
+import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.dto.virkningstidspunkt.VirkningsTidspunktResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
@@ -23,8 +22,7 @@ class VirkningsTidspunktControllerTest : KontrollerTestRunner() {
         val req = UpdateVirkningsTidspunktRequestTest(
             "MED I VEDTAK",
             "KUN I NOTAT",
-            AvslagType.IKKE_OPPH_I_RIKET,
-            ForskuddBeregningKodeAarsakType.KF,
+            ForskuddAarsakType.KF,
             "2025-12-27",
         )
 
@@ -82,7 +80,6 @@ class VirkningsTidspunktControllerTest : KontrollerTestRunner() {
 data class UpdateVirkningsTidspunktRequestTest(
     val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
     val virkningsTidspunktBegrunnelseKunINotat: String? = null,
-    val avslag: AvslagType? = null,
-    val aarsak: ForskuddBeregningKodeAarsakType? = null,
+    val aarsak: ForskuddAarsakType? = null,
     val virkningsDato: String? = null,
 )

@@ -1,11 +1,10 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.TestContainerRunner
-import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
+import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
@@ -15,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
@@ -228,7 +227,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         val createdBehandling = behandlingService.createBehandling(behandling)
 
         assertNotNull(createdBehandling.id)
-        assertNull(createdBehandling.avslag)
+        assertNull(createdBehandling.aarsak)
 
         val oppdatertBehandling = behandlingService.oppdaterBehandling(
             createdBehandling.id!!,
@@ -238,13 +237,12 @@ class BehandlingServiceTest : TestContainerRunner() {
             NOTAT,
             MED_I_VEDTAK,
             NOTAT,
-            AvslagType.MANGL_DOK,
         )
 
         val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
         assertEquals(3, hentBehandlingById.roller.size)
-        assertEquals(AvslagType.MANGL_DOK, hentBehandlingById.avslag)
+//        assertEquals(AvslagType.MANGL_DOK, hentBehandlingById.avslag)
 
         assertEquals(NOTAT, oppdatertBehandling.virkningsTidspunktBegrunnelseKunINotat)
         assertEquals(MED_I_VEDTAK, oppdatertBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat)
@@ -260,13 +258,11 @@ class BehandlingServiceTest : TestContainerRunner() {
         val createdBehandling = behandlingService.createBehandling(behandling)
 
         assertNotNull(createdBehandling.id)
-        assertNull(createdBehandling.avslag)
         assertNull(createdBehandling.aarsak)
 
         behandlingService.updateVirkningsTidspunkt(
             createdBehandling.id!!,
-            ForskuddBeregningKodeAarsakType.BF,
-            AvslagType.BARNS_EKTESKAP,
+            ForskuddAarsakType.BF,
             null,
             NOTAT,
             MED_I_VEDTAK,
@@ -274,8 +270,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
-        assertEquals(ForskuddBeregningKodeAarsakType.BF, updatedBehandling.aarsak)
-        assertEquals(AvslagType.BARNS_EKTESKAP, updatedBehandling.avslag)
+        assertEquals(ForskuddAarsakType.BF, updatedBehandling.aarsak)
         assertEquals(NOTAT, updatedBehandling.virkningsTidspunktBegrunnelseKunINotat)
         assertEquals(MED_I_VEDTAK, updatedBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat)
     }
@@ -290,11 +285,11 @@ class BehandlingServiceTest : TestContainerRunner() {
         val createdBehandling = behandlingService.createBehandling(behandling)
 
         assertNotNull(createdBehandling.id)
-        assertNull(createdBehandling.avslag)
-        assertEquals(0, createdBehandling.behandlingBarn.size)
+        assertNull(createdBehandling.aarsak)
+        assertEquals(0, createdBehandling.husstandsBarn.size)
         assertEquals(0, createdBehandling.sivilstand.size)
 
-        val behandlingBarn = setOf(BehandlingBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
+        val husstandsBarn = setOf(HusstandsBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
         val sivilstand = setOf(
             SivilstandDto(
                 null,
@@ -306,7 +301,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         behandlingService.updateBoforhold(
             createdBehandling.id!!,
-            behandlingBarn.toDomain(createdBehandling),
+            husstandsBarn.toDomain(createdBehandling),
             sivilstand.toSivilstandDomain(createdBehandling),
             NOTAT,
             MED_I_VEDTAK,
@@ -314,7 +309,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
-        assertEquals(1, updatedBehandling.behandlingBarn.size)
+        assertEquals(1, updatedBehandling.husstandsBarn.size)
         assertEquals(1, updatedBehandling.sivilstand.size)
         assertEquals(NOTAT, updatedBehandling.boforholdBegrunnelseKunINotat)
         assertEquals(MED_I_VEDTAK, updatedBehandling.boforholdBegrunnelseMedIVedtakNotat)

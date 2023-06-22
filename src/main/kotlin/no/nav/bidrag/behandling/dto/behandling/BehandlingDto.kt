@@ -2,12 +2,11 @@ package no.nav.bidrag.behandling.dto.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
+import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
-import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import java.time.LocalDate
 
 data class BehandlingDto(
@@ -31,15 +30,14 @@ data class BehandlingDto(
     val saksnummer: String,
     val behandlerEnhet: String,
     val roller: Set<RolleDto>,
-    val behandlingBarn: Set<BehandlingBarnDto>,
+    val husstandsBarn: Set<HusstandsBarnDto>,
     val sivilstand: Set<SivilstandDto>,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningsDato: LocalDate? = null,
 
-    val aarsak: ForskuddBeregningKodeAarsakType? = null,
-    val avslag: AvslagType? = null,
+    val aarsak: ForskuddAarsakType? = null,
     val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
     val virkningsTidspunktBegrunnelseKunINotat: String? = null,
     val boforholdBegrunnelseMedIVedtakNotat: String? = null,

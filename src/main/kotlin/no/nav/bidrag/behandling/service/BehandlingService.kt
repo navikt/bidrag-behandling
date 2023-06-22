@@ -1,11 +1,10 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.`404`
-import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingBarn
-import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
+import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
+import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
@@ -30,8 +29,7 @@ class BehandlingService(
         boforholdBegrunnelseKunINotat: String? = null,
         inntektBegrunnelseMedIVedtakNotat: String? = null,
         inntektBegrunnelseKunINotat: String? = null,
-        avslag: AvslagType? = null,
-        aarsak: ForskuddBeregningKodeAarsakType? = null,
+        aarsak: ForskuddAarsakType? = null,
         virkningsDato: Date? = null,
     ): Behandling {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
@@ -42,14 +40,13 @@ class BehandlingService(
             boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat,
             inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat,
             inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat,
-            avslag = avslag,
             aarsak = aarsak,
             virkningsDato = virkningsDato,
         )
         updatedBehandling.roller = behandling.roller
         updatedBehandling.inntekter = behandling.inntekter
         updatedBehandling.sivilstand = behandling.sivilstand
-        updatedBehandling.behandlingBarn = behandling.behandlingBarn
+        updatedBehandling.husstandsBarn = behandling.husstandsBarn
         updatedBehandling.barnetillegg = behandling.barnetillegg
         updatedBehandling.utvidetbarnetrygd = behandling.utvidetbarnetrygd
 
@@ -70,7 +67,7 @@ class BehandlingService(
         updatedBehandling.roller = existingBehandling.roller
         updatedBehandling.inntekter = existingBehandling.inntekter
         updatedBehandling.sivilstand = existingBehandling.sivilstand
-        updatedBehandling.behandlingBarn = existingBehandling.behandlingBarn
+        updatedBehandling.husstandsBarn = existingBehandling.husstandsBarn
         updatedBehandling.barnetillegg = existingBehandling.barnetillegg
         updatedBehandling.utvidetbarnetrygd = existingBehandling.utvidetbarnetrygd
 
@@ -100,25 +97,24 @@ class BehandlingService(
 
         updatedBehandling.roller = existingBehandling.roller
         updatedBehandling.sivilstand = existingBehandling.sivilstand
-        updatedBehandling.behandlingBarn = existingBehandling.behandlingBarn
+        updatedBehandling.husstandsBarn = existingBehandling.husstandsBarn
 
         behandlingRepository.save(updatedBehandling)
     }
 
     fun updateVirkningsTidspunkt(
         behandlingId: Long,
-        aarsak: ForskuddBeregningKodeAarsakType?,
-        avslag: AvslagType?,
+        aarsak: ForskuddAarsakType?,
         virkningsDato: Date?,
         virkningsTidspunktBegrunnelseKunINotat: String?,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String?,
     ) {
-        behandlingRepository.updateVirkningsTidspunkt(behandlingId, aarsak, avslag, virkningsDato, virkningsTidspunktBegrunnelseKunINotat, virkningsTidspunktBegrunnelseMedIVedtakNotat)
+        behandlingRepository.updateVirkningsTidspunkt(behandlingId, aarsak, virkningsDato, virkningsTidspunktBegrunnelseKunINotat, virkningsTidspunktBegrunnelseMedIVedtakNotat)
     }
 
     fun updateBoforhold(
         behandlingId: Long,
-        behandlingBarn: MutableSet<BehandlingBarn>,
+        husstandsBarn: MutableSet<HusstandsBarn>,
         sivilstand: MutableSet<Sivilstand>,
         boforholdBegrunnelseKunINotat: String?,
         boforholdBegrunnelseMedIVedtakNotat: String?,
@@ -130,7 +126,7 @@ class BehandlingService(
             boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat,
         )
 
-        newBehandling.behandlingBarn = behandlingBarn
+        newBehandling.husstandsBarn = husstandsBarn
         newBehandling.sivilstand = sivilstand
 
         newBehandling.barnetillegg = behandling.barnetillegg

@@ -1,8 +1,7 @@
 package no.nav.bidrag.behandling.database.repository
 
-import no.nav.bidrag.behandling.database.datamodell.AvslagType
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.ForskuddBeregningKodeAarsakType
+import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
@@ -22,7 +21,6 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     @Query(
         "update behandling b set " +
             "b.aarsak = :aarsak," +
-            "b.avslag = :avslag," +
             "b.virkningsDato = :virkningsDato," +
             "b.virkningsTidspunktBegrunnelseKunINotat = :virkningsTidspunktBegrunnelseKunINotat," +
             "b.virkningsTidspunktBegrunnelseMedIVedtakNotat = :virkningsTidspunktBegrunnelseMedIVedtakNotat " +
@@ -30,8 +28,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     )
     fun updateVirkningsTidspunkt(
         behandlingId: Long,
-        aarsak: ForskuddBeregningKodeAarsakType?,
-        avslag: AvslagType?,
+        aarsak: ForskuddAarsakType?,
         virkningsDato: Date?,
         virkningsTidspunktBegrunnelseKunINotat: String?,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String?,

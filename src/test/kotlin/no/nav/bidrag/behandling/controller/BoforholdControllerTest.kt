@@ -4,12 +4,14 @@ import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
 import no.nav.bidrag.behandling.dto.boforhold.UpdateBoforholdRequest
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.util.Date
+import kotlin.test.assertEquals
 
 class BoforholdControllerTest : KontrollerTestRunner() {
 
@@ -30,13 +32,20 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
-        // 2.
-        val boforholdData = UpdateBoforholdRequest(emptySet(), emptySet(), "med i vedtak", "kun i notat") //
+        // 2.1 Prepare husstandsBarn
+
+        val husstandsBarn = setOf(HusstandsBarnDto(behandling.body!!.id, true, emptySet(), "ident", null))
+
+        // 2.2
+        val boforholdData = UpdateBoforholdRequest(husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //
         val boforholdResponse = httpHeaderTestRestTemplate.exchange(
             "${rootUri()}/behandling/${behandling.body!!.id}/boforhold",
             HttpMethod.PUT,
             HttpEntity(boforholdData),
             BoforholdResponse::class.java,
         )
+
+        assertEquals(1, boforholdResponse.body!!.husstandsBarn.size)
+        assertEquals("ident", boforholdResponse.body!!.husstandsBarn.iterator().next().ident)
     }
 }

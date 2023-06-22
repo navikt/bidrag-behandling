@@ -1,10 +1,10 @@
 package no.nav.bidrag.behandling.dto.boforhold
 
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 
 data class BoforholdResponse(
-    val behandlingBarn: Set<BehandlingBarnDto>,
+    val husstandsBarn: Set<HusstandsBarnDto>,
     val sivilstand: Set<SivilstandDto>,
     val boforholdBegrunnelseMedIVedtakNotat: String? = null,
     val boforholdBegrunnelseKunINotat: String? = null,

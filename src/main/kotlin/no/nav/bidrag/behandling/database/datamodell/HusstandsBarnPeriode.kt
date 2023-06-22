@@ -11,11 +11,11 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import java.util.Date
 
-@Entity(name = "behandling_barn_periode")
-data class BehandlingBarnPeriode(
+@Entity(name = "barn_i_husstand_periode")
+data class HusstandsBarnPeriode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_barn_id", nullable = false)
-    val behandlingBarn: BehandlingBarn,
+    val husstandsBarn: HusstandsBarn,
 
     val fraDato: Date,
 

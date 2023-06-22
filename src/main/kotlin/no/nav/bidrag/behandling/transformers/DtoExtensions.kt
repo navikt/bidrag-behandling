@@ -2,15 +2,15 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingBarn
-import no.nav.bidrag.behandling.database.datamodell.BehandlingBarnPeriode
+import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
+import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnDto
-import no.nav.bidrag.behandling.dto.behandlingbarn.BehandlingBarnPeriodeDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnPeriodeDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
@@ -40,20 +40,20 @@ fun Set<BarnetilleggDto>.toBarnetilleggDomain(behandling: Behandling) = this.map
     Barnetillegg(behandling, it.ident, it.barnetillegg, it.datoFom.toDate(), it.datoTom.toDate(), it.id)
 }.toMutableSet()
 
-fun Set<BehandlingBarnPeriode>.toBehandlingBarnPeriodeDto() = this.map {
-    BehandlingBarnPeriodeDto(it.id, it.fraDato.toLocalDate(), it.tilDato.toLocalDate(), it.boStatus, it.kilde)
+fun Set<HusstandsBarnPeriode>.toHusstandsBarnPeriodeDto() = this.map {
+    HusstandsBarnPeriodeDto(it.id, it.fraDato.toLocalDate(), it.tilDato.toLocalDate(), it.boStatus, it.kilde)
 }.toSet()
 
-fun Set<BehandlingBarnPeriodeDto>.toDomain(behandlingBarn: BehandlingBarn) = this.map {
-    BehandlingBarnPeriode(behandlingBarn, it.fraDato.toDate(), it.tilDato.toDate(), it.boStatus, it.kilde)
+fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: HusstandsBarn) = this.map {
+    HusstandsBarnPeriode(husstandsBarn, it.fraDato.toDate(), it.tilDato.toDate(), it.boStatus, it.kilde)
 }.toSet()
 
-fun Set<BehandlingBarn>.toBehandlingBarnDto() = this.map {
-    BehandlingBarnDto(it.id!!, it.medISaken, it.perioder.toBehandlingBarnPeriodeDto(), it.ident, it.navn, it.foedselsDato?.toLocalDate())
+fun Set<HusstandsBarn>.toHusstandsBarnDto() = this.map {
+    HusstandsBarnDto(it.id!!, it.medISaken, it.perioder.toHusstandsBarnPeriodeDto(), it.ident, it.navn, it.foedselsDato?.toLocalDate())
 }.toSet()
 
-fun Set<BehandlingBarnDto>.toDomain(behandling: Behandling) = this.map {
-    val barn = BehandlingBarn(
+fun Set<HusstandsBarnDto>.toDomain(behandling: Behandling) = this.map {
+    val barn = HusstandsBarn(
         behandling,
         it.medISaken,
         it.id,

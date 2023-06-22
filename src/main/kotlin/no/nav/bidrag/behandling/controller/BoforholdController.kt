@@ -5,8 +5,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
 import no.nav.bidrag.behandling.dto.boforhold.UpdateBoforholdRequest
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.transformers.toBehandlingBarnDto
 import no.nav.bidrag.behandling.transformers.toDomain
+import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import org.springframework.web.bind.annotation.GetMapping
@@ -31,7 +31,7 @@ class BoforholdController(private val behandlingService: BehandlingService) {
 
         behandlingService.updateBoforhold(
             behandlingId,
-            updateBoforholdRequest.behandlingBarn.toDomain(behandling),
+            updateBoforholdRequest.husstandsBarn.toDomain(behandling),
             updateBoforholdRequest.sivilstand.toSivilstandDomain(behandling),
             updateBoforholdRequest.boforholdBegrunnelseKunINotat,
             updateBoforholdRequest.boforholdBegrunnelseMedIVedtakNotat,
@@ -40,7 +40,7 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         val updatedBehandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(
-            updatedBehandling.behandlingBarn.toBehandlingBarnDto(),
+            updatedBehandling.husstandsBarn.toHusstandsBarnDto(),
             updatedBehandling.sivilstand.toSivilstandDto(),
             updatedBehandling.boforholdBegrunnelseMedIVedtakNotat,
             updatedBehandling.boforholdBegrunnelseKunINotat,
@@ -59,7 +59,7 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(
-            behandling.behandlingBarn.toBehandlingBarnDto(),
+            behandling.husstandsBarn.toHusstandsBarnDto(),
             behandling.sivilstand.toSivilstandDto(),
             behandling.boforholdBegrunnelseMedIVedtakNotat,
             behandling.boforholdBegrunnelseKunINotat,

@@ -36,10 +36,7 @@ data class Behandling(
     val virkningsDato: Date? = null,
 
     @Enumerated(EnumType.STRING)
-    val aarsak: ForskuddBeregningKodeAarsakType? = null,
-
-    @Enumerated(EnumType.STRING)
-    val avslag: AvslagType? = null,
+    val aarsak: ForskuddAarsakType? = null,
 
     @Column(name = "VIRKNINGS_TIDSPUNKT_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
     val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
@@ -67,7 +64,7 @@ data class Behandling(
     var roller: MutableSet<Rolle> = mutableSetOf()
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var behandlingBarn: MutableSet<BehandlingBarn> = mutableSetOf()
+    var husstandsBarn: MutableSet<HusstandsBarn> = mutableSetOf()
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var inntekter: MutableSet<Inntekt> = mutableSetOf()
