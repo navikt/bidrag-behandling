@@ -17,7 +17,7 @@ data class Sivilstand(
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
 
-    val gyldigFraOgMed: Date,
+    val gyldigFraOgMed: Date?,
 
     val datoTom: Date?,
 

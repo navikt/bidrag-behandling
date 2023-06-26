@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
 import arrow.core.Either
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.POJONode
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -16,6 +17,8 @@ import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.ForskuddDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.behandling.transformers.toNoString
+import org.springframework.http.HttpEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import java.math.BigDecimal
@@ -43,7 +46,11 @@ class BehandlingBeregnForskuddController(
             .filter { RolleType.BARN == it.rolleType }
             .map {
                 Either.catch {
-                    bidragBeregnForskuddConsumer.beregnForskudd(preparePayload(behandling, it))
+                    val payload = preparePayload(behandling, it)
+
+                    if (false) printDebugPayload(payload)
+
+                    bidragBeregnForskuddConsumer.beregnForskudd(payload)
                 }
             }
 
@@ -58,6 +65,13 @@ class BehandlingBeregnForskuddController(
             .mapNotNull { it.getOrNull() }
     }
 
+    private fun printDebugPayload(payload: BeregnForskuddPayload) {
+        val message = HttpEntity(payload)
+        val objectMapper = ObjectMapper()
+
+        objectMapper.writeValue(System.out, message.body)
+    }
+
     fun prepareSoknadsBarn(behandling: Behandling, soknadBarn: Rolle): List<Grunnlag> =
         listOf(
             Grunnlag(
@@ -66,7 +80,7 @@ class BehandlingBeregnForskuddController(
                 innhold = POJONode(
                     SoknadsBarnNode(
                         soknadsbarnId = soknadBarn.soknadsLinje,
-                        fodselsdato = soknadBarn.fodtDato?.toLocalDate().toString(),
+                        fodselsdato = soknadBarn.fodtDato?.toLocalDate()?.toNoString(),
                     ),
                 ),
             ),
@@ -83,8 +97,8 @@ class BehandlingBeregnForskuddController(
                     type = "BOSTATUS",
                     innhold = POJONode(
                         BostatusNode(
-                            datoTil = it.fraDato.toString(),
-                            datoFom = it.tilDato.toString(),
+                            datoTil = it.fraDato.toLocalDate().toNoString(),
+                            datoFom = it.tilDato.toLocalDate().toNoString(),
                             rolle = "SOKNADSBARN",
                             bostatusKode = "BOR_MED_FORELDRE", // TODO boStatus -> bostatusKode
                         ),
@@ -93,21 +107,17 @@ class BehandlingBeregnForskuddController(
             }
 
     fun prepareBarnIHusstand(behandling: Behandling): List<Grunnlag> =
-        behandling
-            .husstandsBarn
-            .filter { it.medISaken }
-            .map { it.perioder.filter { it.boStatus == BoStatusType.DOKUMENTERT_BOENDE_HOS_BM } }.flatten()
+        splitPeriods(
+            behandling
+                .husstandsBarn
+                .filter { it.medISaken }
+                .map { it.perioder.filter { it.boStatus == BoStatusType.DOKUMENTERT_BOENDE_HOS_BM } }.flatten(),
+        )
             .map {
                 Grunnlag(
                     referanse = "Mottatt_ref1",
                     type = "BARN_I_HUSSTAND",
-                    innhold = POJONode(
-                        BarnPeriodeNode(
-                            datoTil = behandling.virkningsDato.toString(),
-                            datoFom = behandling.datoTom.toString(),
-                            antall = BigDecimal.TEN,
-                        ),
-                    ),
+                    innhold = POJONode(it),
                 )
             }
 
@@ -120,8 +130,8 @@ class BehandlingBeregnForskuddController(
                     type = "INNTEKT",
                     innhold = POJONode(
                         InntektNode(
-                            datoFom = it.datoFom?.toLocalDate().toString(),
-                            datoTil = it.datoTom?.toLocalDate().toString(),
+                            datoFom = it.datoFom?.toLocalDate()?.toNoString(),
+                            datoTil = it.datoTom?.toLocalDate()?.toNoString(),
                             rolle = "BIDRAGSMOTTAKER",
                             inntektType = it.inntektType,
                             belop = it.belop,
@@ -134,8 +144,8 @@ class BehandlingBeregnForskuddController(
                 type = "INNTEKT",
                 innhold = POJONode(
                     InntektNode(
-                        datoFom = it.datoFom.toLocalDate().toString(),
-                        datoTil = it.datoTom.toLocalDate().toString(),
+                        datoFom = it.datoFom.toLocalDate().toNoString(),
+                        datoTil = it.datoTom.toLocalDate().toNoString(),
                         rolle = "BIDRAGSMOTTAKER",
                         inntektType = "EKSTRA_SMAABARNSTILLEGG",
                         belop = it.barnetillegg,
@@ -148,8 +158,8 @@ class BehandlingBeregnForskuddController(
                 type = "INNTEKT",
                 innhold = POJONode(
                     InntektNode(
-                        datoFom = it.datoFom.toLocalDate().toString(),
-                        datoTil = it.datoTom.toLocalDate().toString(),
+                        datoFom = it.datoFom.toLocalDate().toNoString(),
+                        datoTil = it.datoTom.toLocalDate().toNoString(),
                         rolle = "BIDRAGSMOTTAKER",
                         inntektType = "UTVIDET_BARNETRYGD",
                         belop = it.belop,
@@ -165,8 +175,8 @@ class BehandlingBeregnForskuddController(
                 type = "SIVILSTAND",
                 innhold = POJONode(
                     SivilstandNode(
-                        datoFom = it.gyldigFraOgMed.toLocalDate().toString(),
-                        datoTil = it.datoTom?.toLocalDate().toString(),
+                        datoFom = it.gyldigFraOgMed?.toLocalDate()?.toNoString(),
+                        datoTil = it.datoTom?.toLocalDate()?.toNoString(),
                         sivilstandKode = it.sivilstandType.name,
                     ),
                 ),
@@ -203,7 +213,7 @@ class BehandlingBeregnForskuddController(
         var currentPeriods: Long = list[0].info.heads
 
         for (i in 1 until list.size) {
-            r.add(BarnPeriodeNode(lastStartDate.toString(), list[i].point.toString(), BigDecimal.valueOf(currentPeriods)))
+            r.add(BarnPeriodeNode(lastStartDate.toNoString(), list[i].point.toNoString(), currentPeriods.toDouble()))
             lastStartDate = list[i].point
             currentPeriods = currentPeriods + list[i].info.heads - list[i].info.tails
         }
@@ -213,8 +223,8 @@ class BehandlingBeregnForskuddController(
 
     fun preparePayload(behandling: Behandling, soknadsBarn: Rolle): BeregnForskuddPayload =
         BeregnForskuddPayload(
-            beregnDatoFra = behandling.virkningsDato?.toLocalDate().toString(), // TODO kanskje behandling.datoFom?
-            beregnDatoTil = behandling.datoTom.toLocalDate().toString(),
+            beregnDatoFra = behandling.virkningsDato?.toLocalDate()?.toNoString(), // TODO kanskje behandling.datoFom?
+            beregnDatoTil = behandling.datoTom.toLocalDate().toNoString(),
             grunnlagListe = prepareSoknadsBarn(behandling, soknadsBarn) +
                 prepareBarnIHusstand(behandling) +
                 prepareBostatus(behandling, soknadsBarn) +
@@ -237,7 +247,7 @@ data class PointInTime(
 data class BarnPeriodeNode(
     val datoFom: String,
     val datoTil: String,
-    val antall: BigDecimal,
+    val antall: Double,
 )
 
 data class BostatusNode(
