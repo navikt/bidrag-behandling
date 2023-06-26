@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.consumer.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
+import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.ForskuddDto
@@ -18,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.toLocalDate
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import java.math.BigDecimal
+import java.time.LocalDate
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -90,7 +92,6 @@ class BehandlingBeregnForskuddController(
                 )
             }
 
-    // TODO PERIODER!
     fun prepareBarnIHusstand(behandling: Behandling): List<Grunnlag> =
         behandling
             .husstandsBarn
@@ -172,6 +173,44 @@ class BehandlingBeregnForskuddController(
             )
         }
 
+    fun splitPeriods(husstandsBarnPerioder: List<HusstandsBarnPeriode>): List<BarnPeriodeNode> {
+        val timesMap = HashMap<LocalDate, PointInTimeInfo>()
+            .toSortedMap()
+
+        husstandsBarnPerioder.forEach {
+            val startDate = it.fraDato.toLocalDate()
+            if (timesMap.contains(startDate)) {
+                val existingStart = timesMap[startDate]!!
+                existingStart.heads += 1
+            } else {
+                timesMap[startDate] = PointInTimeInfo(1, 0)
+            }
+
+            val endDate = it.tilDato.toLocalDate()
+            if (timesMap.contains(endDate)) {
+                val existingEnd = timesMap[endDate]!!
+                existingEnd.tails += 1
+            } else {
+                timesMap[endDate] = PointInTimeInfo(0, 1)
+            }
+        }
+
+        val list = timesMap.map { PointInTime(it.key, it.value) }.toList()
+
+        val r = mutableListOf<BarnPeriodeNode>()
+
+        var lastStartDate: LocalDate = list[0].point
+        var currentPeriods: Long = list[0].info.heads
+
+        for (i in 1 until list.size) {
+            r.add(BarnPeriodeNode(lastStartDate.toString(), list[i].point.toString(), BigDecimal.valueOf(currentPeriods)))
+            lastStartDate = list[i].point
+            currentPeriods = currentPeriods + list[i].info.heads - list[i].info.tails
+        }
+
+        return r
+    }
+
     fun preparePayload(behandling: Behandling, soknadsBarn: Rolle): BeregnForskuddPayload =
         BeregnForskuddPayload(
             beregnDatoFra = behandling.virkningsDato?.toLocalDate().toString(), // TODO kanskje behandling.datoFom?
@@ -184,6 +223,16 @@ class BehandlingBeregnForskuddController(
 
         )
 }
+
+data class PointInTimeInfo(
+    var heads: Long = 0,
+    var tails: Long = 0,
+)
+
+data class PointInTime(
+    val point: LocalDate,
+    val info: PointInTimeInfo,
+)
 
 data class BarnPeriodeNode(
     val datoFom: String,
