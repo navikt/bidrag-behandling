@@ -41,11 +41,11 @@ fun Set<BarnetilleggDto>.toBarnetilleggDomain(behandling: Behandling) = this.map
 }.toMutableSet()
 
 fun Set<HusstandsBarnPeriode>.toHusstandsBarnPeriodeDto() = this.map {
-    HusstandsBarnPeriodeDto(it.id, it.fraDato.toLocalDate(), it.tilDato.toLocalDate(), it.boStatus, it.kilde)
+    HusstandsBarnPeriodeDto(it.id, it.fraDato?.toLocalDate(), it.tilDato?.toLocalDate(), it.boStatus, it.kilde)
 }.toSet()
 
 fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: HusstandsBarn) = this.map {
-    HusstandsBarnPeriode(husstandsBarn, it.fraDato.toDate(), it.tilDato.toDate(), it.boStatus, it.kilde)
+    HusstandsBarnPeriode(husstandsBarn, it.fraDato?.toDate(), it.tilDato?.toDate(), it.boStatus, it.kilde)
 }.toSet()
 
 fun Set<HusstandsBarn>.toHusstandsBarnDto() = this.map {

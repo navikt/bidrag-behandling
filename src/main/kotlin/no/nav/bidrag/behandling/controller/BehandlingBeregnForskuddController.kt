@@ -91,14 +91,15 @@ class BehandlingBeregnForskuddController(
             .husstandsBarn
             .filter { soknadsBarn.ident == it.ident }
             .flatMap { it.perioder }
+            .filter { it.fraDato != null && it.tilDato != null }
             .map {
                 Grunnlag(
                     referanse = "Mottatt_ref1",
                     type = "BOSTATUS",
                     innhold = POJONode(
                         BostatusNode(
-                            datoTil = it.fraDato.toLocalDate().toNoString(),
-                            datoFom = it.tilDato.toLocalDate().toNoString(),
+                            datoTil = it.fraDato!!.toLocalDate().toNoString(),
+                            datoFom = it.tilDato!!.toLocalDate().toNoString(),
                             rolle = "SOKNADSBARN",
                             bostatusKode = "BOR_MED_FORELDRE", // TODO boStatus -> bostatusKode
                         ),
@@ -188,7 +189,7 @@ class BehandlingBeregnForskuddController(
             .toSortedMap()
 
         husstandsBarnPerioder.forEach {
-            val startDate = it.fraDato.toLocalDate()
+            val startDate = it.fraDato?.toLocalDate()
             if (timesMap.contains(startDate)) {
                 val existingStart = timesMap[startDate]!!
                 existingStart.heads += 1
@@ -196,7 +197,7 @@ class BehandlingBeregnForskuddController(
                 timesMap[startDate] = PointInTimeInfo(1, 0)
             }
 
-            val endDate = it.tilDato.toLocalDate()
+            val endDate = it.tilDato?.toLocalDate()
             if (timesMap.contains(endDate)) {
                 val existingEnd = timesMap[endDate]!!
                 existingEnd.tails += 1
