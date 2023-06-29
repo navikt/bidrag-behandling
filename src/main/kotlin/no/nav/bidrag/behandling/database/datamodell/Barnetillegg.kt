@@ -18,8 +18,8 @@ data class Barnetillegg(
 
     val ident: String,
     val barnetillegg: BigDecimal,
-    val datoFom: Date,
-    val datoTom: Date,
+    val datoFom: Date?,
+    val datoTom: Date?,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

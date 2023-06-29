@@ -19,8 +19,8 @@ data class Utvidetbarnetrygd(
     val deltBoSted: Boolean,
 
     val belop: BigDecimal,
-    val datoFom: Date,
-    val datoTom: Date,
+    val datoFom: Date?,
+    val datoTom: Date?,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

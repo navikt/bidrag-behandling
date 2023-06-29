@@ -25,19 +25,19 @@ fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) = this.map {
 }.toMutableSet()
 
 fun Set<Barnetillegg>.toBarnetilleggDto() = this.map {
-    BarnetilleggDto(it.id, it.ident, it.barnetillegg, it.datoFom.toLocalDate(), it.datoTom.toLocalDate())
+    BarnetilleggDto(it.id, it.ident, it.barnetillegg, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate())
 }.toSet()
 
 fun Set<UtvidetbarnetrygdDto>.toUtvidetbarnetrygdDomain(behandling: Behandling) = this.map {
-    Utvidetbarnetrygd(behandling, it.deltBoSted, it.belop, it.datoFom.toDate(), it.datoTom.toDate())
+    Utvidetbarnetrygd(behandling, it.deltBoSted, it.belop, it.datoFom?.toDate(), it.datoTom?.toDate())
 }.toMutableSet()
 
 fun Set<Utvidetbarnetrygd>.toUtvidetbarnetrygdDto() = this.map {
-    UtvidetbarnetrygdDto(it.id, it.deltBoSted, it.belop, it.datoFom.toLocalDate(), it.datoTom.toLocalDate())
+    UtvidetbarnetrygdDto(it.id, it.deltBoSted, it.belop, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate())
 }.toSet()
 
 fun Set<BarnetilleggDto>.toBarnetilleggDomain(behandling: Behandling) = this.map {
-    Barnetillegg(behandling, it.ident, it.barnetillegg, it.datoFom.toDate(), it.datoTom.toDate(), it.id)
+    Barnetillegg(behandling, it.ident, it.barnetillegg, it.datoFom?.toDate(), it.datoTom?.toDate(), it.id)
 }.toMutableSet()
 
 fun Set<HusstandsBarnPeriode>.toHusstandsBarnPeriodeDto() = this.map {

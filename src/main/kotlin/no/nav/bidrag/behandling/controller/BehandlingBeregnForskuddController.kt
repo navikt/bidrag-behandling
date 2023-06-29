@@ -145,8 +145,8 @@ class BehandlingBeregnForskuddController(
                 type = "INNTEKT",
                 innhold = POJONode(
                     InntektNode(
-                        datoFom = it.datoFom.toLocalDate().toNoString(),
-                        datoTil = it.datoTom.toLocalDate().toNoString(),
+                        datoFom = it.datoFom!!.toLocalDate().toNoString(),
+                        datoTil = it.datoTom!!.toLocalDate().toNoString(),
                         rolle = "BIDRAGSMOTTAKER",
                         inntektType = "EKSTRA_SMAABARNSTILLEGG",
                         belop = it.barnetillegg,
@@ -159,8 +159,8 @@ class BehandlingBeregnForskuddController(
                 type = "INNTEKT",
                 innhold = POJONode(
                     InntektNode(
-                        datoFom = it.datoFom.toLocalDate().toNoString(),
-                        datoTil = it.datoTom.toLocalDate().toNoString(),
+                        datoFom = it.datoFom!!.toLocalDate().toNoString(),
+                        datoTil = it.datoTom!!.toLocalDate().toNoString(),
                         rolle = "BIDRAGSMOTTAKER",
                         inntektType = "UTVIDET_BARNETRYGD",
                         belop = it.belop,
