@@ -16,6 +16,9 @@ data class HusstandsBarnPeriodeDto(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val tilDato: LocalDate?,
 
+    @Schema(required = true)
     val boStatus: BoStatusType,
+
+    @Schema(required = true)
     val kilde: String,
 )

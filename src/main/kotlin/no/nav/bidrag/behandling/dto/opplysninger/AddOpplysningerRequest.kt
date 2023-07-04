@@ -7,8 +7,13 @@ import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
 import java.time.LocalDate
 
 data class AddOpplysningerRequest(
+    @Schema(required = true, nullable = false)
     val behandlingId: Long,
+
+    @Schema(required = true, nullable = false)
     val aktiv: Boolean,
+
+    @Schema(required = true, nullable = false)
     val opplysningerType: OpplysningerType,
 
     @Schema(type = "string", description = "data", required = true, nullable = false)

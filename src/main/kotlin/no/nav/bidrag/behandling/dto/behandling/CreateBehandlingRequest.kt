@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.behandling
 
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -9,16 +10,22 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import java.util.Date
 
 data class CreateBehandlingRequest(
+    @Schema(required = true)
     val behandlingType: BehandlingType,
 
+    @Schema(required = true)
     val soknadType: SoknadType,
 
+    @Schema(required = true)
     val datoFom: Date,
 
+    @Schema(required = true)
     val datoTom: Date,
 
+    @Schema(required = true)
     val mottatDato: Date,
 
+    @Schema(required = true)
     val soknadFra: SoknadFraType,
 
     @field:NotBlank(message = "Saksnummer kan ikke være blank")

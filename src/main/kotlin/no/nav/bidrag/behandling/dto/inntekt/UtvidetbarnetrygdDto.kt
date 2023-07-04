@@ -8,8 +8,10 @@ import java.time.LocalDate
 data class UtvidetbarnetrygdDto(
     val id: Long? = null,
 
+    @Schema(required = true)
     val deltBoSted: Boolean,
 
+    @Schema(required = true)
     val belop: BigDecimal,
 
     @Schema(type = "string", format = "date", example = "2025-01-25")
