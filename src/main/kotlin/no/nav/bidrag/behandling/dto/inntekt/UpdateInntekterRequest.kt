@@ -11,7 +11,7 @@ data class UpdateInntekterRequest(
 
     @Schema(required = true)
     val utvidetbarnetrygd: Set<UtvidetbarnetrygdDto>,
-    
+
     val inntektBegrunnelseMedIVedtakNotat: String? = null,
     val inntektBegrunnelseKunINotat: String? = null,
 )

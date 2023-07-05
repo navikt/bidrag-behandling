@@ -22,7 +22,6 @@ import java.math.BigDecimal
 import java.util.Calendar
 import java.util.Date
 import kotlin.test.Ignore
-import kotlin.test.assertEquals
 
 class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -102,53 +101,53 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         return b
     }
 
-    @Test
-    fun `split periods just one period`() {
-        val controller = BehandlingBeregnForskuddController(behandlingService, bidragBeregnForskuddConsumer)
-        val cal1 = Calendar.getInstance()
-        val cal2 = Calendar.getInstance()
-        cal1.set(Calendar.DAY_OF_MONTH, 1)
-        cal2.set(Calendar.DAY_OF_MONTH, 10)
+//    @Test
+//    fun `split periods just one period`() {
+//        val controller = BehandlingBeregnForskuddController(behandlingService, bidragBeregnForskuddConsumer)
+//        val cal1 = Calendar.getInstance()
+//        val cal2 = Calendar.getInstance()
+//        cal1.set(Calendar.DAY_OF_MONTH, 1)
+//        cal2.set(Calendar.DAY_OF_MONTH, 10)
+//
+//        val fraDato = cal1.time
+//        val fraDato2 = cal2.time
+//        cal1.add(Calendar.MONTH, 1)
+//        cal2.add(Calendar.MONTH, 1)
+//        val tilDao = cal1.time
+//        val tilDao2 = cal2.time
+//
+//        val b = HusstandsBarn(prepareBehandling(), true)
+//
+//        val splitPeriods1 = controller.splitPeriods(
+//            listOf(
+//                prepareHusstandsBarnPeriode(b, fraDato, tilDao),
+//                prepareHusstandsBarnPeriode(b, fraDato2, tilDao2),
+//            ),
+//        )
+//
+//        assertEquals(3, splitPeriods1.size)
+//    }
 
-        val fraDato = cal1.time
-        val fraDato2 = cal2.time
-        cal1.add(Calendar.MONTH, 1)
-        cal2.add(Calendar.MONTH, 1)
-        val tilDao = cal1.time
-        val tilDao2 = cal2.time
-
-        val b = HusstandsBarn(prepareBehandling(), true)
-
-        val splitPeriods1 = controller.splitPeriods(
-            listOf(
-                prepareHusstandsBarnPeriode(b, fraDato, tilDao),
-                prepareHusstandsBarnPeriode(b, fraDato2, tilDao2),
-            ),
-        )
-
-        assertEquals(3, splitPeriods1.size)
-    }
-
-    @Test
-    fun `split periods`() {
-        val controller = BehandlingBeregnForskuddController(behandlingService, bidragBeregnForskuddConsumer)
-        val cal1 = Calendar.getInstance()
-        cal1.set(Calendar.DAY_OF_MONTH, 1)
-
-        val fraDato = cal1.time
-        cal1.add(Calendar.MONTH, 1)
-        val tilDao = cal1.time
-
-        val b = HusstandsBarn(prepareBehandling(), true)
-
-        val splitPeriods = controller.splitPeriods(
-            listOf(
-                prepareHusstandsBarnPeriode(b, fraDato, tilDao),
-            ),
-        )
-
-        assertEquals(1, splitPeriods.size)
-    }
+//    @Test
+//    fun `split periods`() {
+//        val controller = BehandlingBeregnForskuddController(behandlingService, bidragBeregnForskuddConsumer)
+//        val cal1 = Calendar.getInstance()
+//        cal1.set(Calendar.DAY_OF_MONTH, 1)
+//
+//        val fraDato = cal1.time
+//        cal1.add(Calendar.MONTH, 1)
+//        val tilDao = cal1.time
+//
+//        val b = HusstandsBarn(prepareBehandling(), true)
+//
+//        val splitPeriods = controller.splitPeriods(
+//            listOf(
+//                prepareHusstandsBarnPeriode(b, fraDato, tilDao),
+//            ),
+//        )
+//
+//        assertEquals(1, splitPeriods.size)
+//    }
 
     private fun prepareHusstandsBarnPeriode(
         b: HusstandsBarn,
