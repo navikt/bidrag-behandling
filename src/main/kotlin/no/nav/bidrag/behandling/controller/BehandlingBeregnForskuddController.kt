@@ -1,7 +1,5 @@
 package no.nav.bidrag.behandling.controller
 
-import arrow.core.Either
-import arrow.core.NonEmptyList
 import arrow.core.mapOrAccumulate
 import arrow.core.raise.either
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -12,7 +10,8 @@ import no.nav.bidrag.behandling.beregning.ForskuddBeregning
 import no.nav.bidrag.behandling.consumer.BeregnForskuddPayload
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.database.datamodell.RolleType
-import no.nav.bidrag.behandling.dto.behandling.ForskuddDto
+import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningPerBarn
+import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
 import no.nav.bidrag.behandling.service.BehandlingService
 import org.springframework.http.HttpEntity
 import org.springframework.web.bind.annotation.PathVariable
@@ -33,8 +32,8 @@ class BehandlingBeregnForskuddController(
         description = "Beregn forskudd",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun beregnForskudd(@PathVariable behandlingId: Long): Either<NonEmptyList<String>, List<ForskuddDto>> =
-        either {
+    fun beregnForskudd(@PathVariable behandlingId: Long): ForskuddBeregningRespons {
+        val result = either {
             val behandling = behandlingService.hentBehandlingById(behandlingId)
             val behandlingModel = forskuddBeregning.toBehandlingBeregningModel(behandling).bind()
             val results = behandling
@@ -46,7 +45,10 @@ class BehandlingBeregnForskuddController(
                     if (false) printDebugPayload(payload)
 
                     try {
-                        bidragBeregnForskuddConsumer.beregnForskudd(payload)
+                        ForskuddBeregningPerBarn(
+                            ident = it.ident,
+                            beregnetForskuddPeriodeListe = bidragBeregnForskuddConsumer.beregnForskudd(payload).beregnetForskuddPeriodeListe,
+                        )
                     } catch (e: Exception) {
                         LOGGER.warn { e }
                         raise(e.message!!)
@@ -55,6 +57,9 @@ class BehandlingBeregnForskuddController(
 
             return@either results
         }
+
+        return ForskuddBeregningRespons(result.getOrNull(), result.leftOrNull())
+    }
 
     private fun printDebugPayload(payload: BeregnForskuddPayload) {
         val message = HttpEntity(payload)
