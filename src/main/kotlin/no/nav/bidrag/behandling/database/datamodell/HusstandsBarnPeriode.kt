@@ -14,7 +14,7 @@ import java.util.Date
 @Entity(name = "barn_i_husstand_periode")
 data class HusstandsBarnPeriode(
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "behandling_barn_id", nullable = false)
+    @JoinColumn(name = "barn_i_husstand_id", nullable = false)
     val husstandsBarn: HusstandsBarn,
 
     val fraDato: Date?,

@@ -62,7 +62,7 @@ data class BehandlingBeregningModel private constructor(
                     }
                 },
                 {
-                    mapOrAccumulate(inntekter) {
+                    mapOrAccumulate(inntekter.filter { it.taMed }) {
                         InntektModel(
                             inntektType = it.inntektType ?: raise("Inntekts inntektType kan ikke være null"),
                             belop = it.belop,
