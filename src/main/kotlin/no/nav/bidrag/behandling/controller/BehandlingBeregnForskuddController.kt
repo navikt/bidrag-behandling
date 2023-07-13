@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import org.springframework.http.HttpEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.client.HttpClientErrorException
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -33,8 +34,8 @@ class BehandlingBeregnForskuddController(
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun beregnForskudd(@PathVariable behandlingId: Long): ForskuddBeregningRespons {
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
         val result = either {
-            val behandling = behandlingService.hentBehandlingById(behandlingId)
             val behandlingModel = forskuddBeregning.toBehandlingBeregningModel(behandling).bind()
             val results = behandling
                 .roller
@@ -49,6 +50,10 @@ class BehandlingBeregnForskuddController(
                             ident = it.ident,
                             beregnetForskuddPeriodeListe = bidragBeregnForskuddConsumer.beregnForskudd(payload).beregnetForskuddPeriodeListe,
                         )
+                    } catch (e: HttpClientErrorException) {
+                        LOGGER.warn { e }
+                        val errors = e.responseHeaders?.get("error")?.joinToString("\r\n")
+                        raise(errors ?: e.message!!)
                     } catch (e: Exception) {
                         LOGGER.warn { e }
                         raise(e.message!!)

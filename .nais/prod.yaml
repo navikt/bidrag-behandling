@@ -6,6 +6,8 @@ env:
   BIDRAG_PERSON_SCOPE: prod-fss.bidrag.bidrag-person
   BIDRAG_BEREGN_FORSKUDD_URL: http://bidrag-beregn-forskudd-rest
   BIDRAG_BEREGN_FORSKUDD_SCOPE: prod-gcp.bidrag.bidrag-beregn-forskudd-rest
+  BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag
+  BIDRAG_GRUNNLAG_URL_SCOPE: prod-gcp.bidrag.bidrag-grunnlag
 azure_access_inbound:
   - application: bidrag-ui
     namespace: bidrag
@@ -22,3 +24,4 @@ database:
   tier: db-custom-1-3840
 outbound-access-apps:
   - bidrag-beregn-forskudd-rest
+  - bidrag-grunnlag

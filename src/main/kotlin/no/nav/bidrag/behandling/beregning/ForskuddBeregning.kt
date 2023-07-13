@@ -131,7 +131,7 @@ class ForskuddBeregning {
             )
         }
 
-    private fun splitPeriods(husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>): List<BarnPeriodeNode> {
+    fun splitPeriods(husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>): List<BarnPeriodeNode> {
         if (husstandsBarnPerioder.isEmpty()) return emptyList()
 
         val timesMap = HashMap<LocalDate, PointInTimeInfo>()
@@ -140,18 +140,12 @@ class ForskuddBeregning {
         husstandsBarnPerioder.forEach {
             val startDate = it.fraDato
 
-            timesMap[startDate]?.apply {
-                this.heads += 1
-            } ?: {
+            if (timesMap.contains(startDate)) {
+                val existingStart = timesMap[startDate]!!
+                existingStart.heads += 1
+            } else {
                 timesMap[startDate] = PointInTimeInfo(1, 0)
             }
-
-//            if (timesMap.contains(startDate)) {
-//                val existingStart = timesMap[startDate]!!
-//                existingStart.heads += 1
-//            } else {
-//                timesMap[startDate] = PointInTimeInfo(1, 0)
-//            }
 
             val endDate = it.tilDato
             if (timesMap.contains(endDate)) {
