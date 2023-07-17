@@ -45,8 +45,8 @@ class ForskuddBeregning {
                     type = "BOSTATUS",
                     innhold = POJONode(
                         BostatusNode(
-                            datoTil = it.fraDato.toNoString(),
-                            datoFom = it.tilDato.toNoString(),
+                            datoFom = it.fraDato.toNoString(),
+                            datoTil = it.tilDato.toNoString(),
                             rolle = "SOKNADSBARN",
                             bostatusKode = "BOR_MED_FORELDRE", // TODO boStatus -> bostatusKode
                         ),

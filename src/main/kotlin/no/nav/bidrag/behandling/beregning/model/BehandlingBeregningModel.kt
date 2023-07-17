@@ -58,15 +58,14 @@ data class BehandlingBeregningModel private constructor(
                             it.gyldigFraOgMed?.toLocalDate() ?: raise("Sivilstands gyldigFraOgMed kan ikke være null"),
                             it.datoTom?.toLocalDate() ?: raise("Sivilstands datoTom kan ikke være null"),
                             it.sivilstandType,
-//                            SivilstandType.GIFT
                         )
                     }
                 },
                 {
                     mapOrAccumulate(inntekter.filter { it.taMed }) {
                         InntektModel(
-                            inntektType = it.inntektType ?: raise("Inntekts inntektType kan ikke være null"),
-                            // "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER",
+                            inntektType = it.inntektType ?: "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO -> DETTE ER KUN MIDLERTIDIG
+//                            inntektType = it.inntektType ?: raise("InntektType kan ikke være null"),
                             belop = it.belop,
                             datoFom = it.datoFom?.toLocalDate() ?: raise("Inntekts datoFom kan ikke være null"),
                             datoTom = it.datoTom?.toLocalDate() ?: raise("Inntekts datoTom kan ikke være null"),
