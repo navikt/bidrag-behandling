@@ -42,12 +42,12 @@ class ForskuddBeregning {
             .filter { soknadsBarnIdent == it.ident }
             .map {
                 Grunnlag(
-                    referanse = "Mottatt_Bostatus_" + it.fraDato.toCompactString(),
+                    referanse = "Mottatt_Bostatus_" + it.datoFom.toCompactString(),
                     type = "BOSTATUS",
                     innhold = POJONode(
                         BostatusNode(
-                            datoFom = it.fraDato.toNoString(),
-                            datoTil = it.tilDato.toNoString(),
+                            datoFom = it.datoFom.toNoString(),
+                            datoTil = it.datoTom.toNoString(),
                             rolle = "SOKNADSBARN",
                             bostatusKode = "BOR_MED_FORELDRE", // TODO boStatus -> bostatusKode
                         ),
@@ -139,7 +139,7 @@ class ForskuddBeregning {
             .toSortedMap()
 
         husstandsBarnPerioder.forEach {
-            val startDate = it.fraDato
+            val startDate = it.datoFom
 
             if (timesMap.contains(startDate)) {
                 val existingStart = timesMap[startDate]!!
@@ -148,7 +148,7 @@ class ForskuddBeregning {
                 timesMap[startDate] = PointInTimeInfo(1, 0)
             }
 
-            val endDate = it.tilDato
+            val endDate = it.datoTom
             if (timesMap.contains(endDate)) {
                 val existingEnd = timesMap[endDate]!!
                 existingEnd.tails += 1

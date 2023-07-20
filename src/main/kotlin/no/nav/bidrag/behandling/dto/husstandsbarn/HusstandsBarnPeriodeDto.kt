@@ -10,11 +10,11 @@ data class HusstandsBarnPeriodeDto(
 
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val fraDato: LocalDate?,
+    val datoFom: LocalDate?,
 
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val tilDato: LocalDate?,
+    val datoTom: LocalDate?,
 
     @Schema(required = true)
     val boStatus: BoStatusType,

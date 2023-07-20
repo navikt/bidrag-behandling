@@ -17,9 +17,9 @@ data class HusstandsBarnPeriode(
     @JoinColumn(name = "barn_i_husstand_id", nullable = false)
     val husstandsBarn: HusstandsBarn,
 
-    val fraDato: Date?,
+    val datoFom: Date?,
 
-    val tilDato: Date?,
+    val datoTom: Date?,
 
     @Enumerated(EnumType.STRING)
     val boStatus: BoStatusType,

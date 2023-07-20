@@ -97,8 +97,8 @@ data class BehandlingBeregningModel private constructor(
                             .flatten(),
                     ) {
                         HusstandsBarnPeriodeModel(
-                            fraDato = it.fraDato?.toLocalDate() ?: raise("HusstandsBarnPeriode fraDato kan ikke være null"),
-                            tilDato = it.tilDato?.toLocalDate() ?: raise("HusstandsBarnPeriode tilDato kan ikke være null"),
+                            datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoFom kan ikke være null"),
+                            datoTom = it.datoTom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoTom kan ikke være null"),
                             ident = it.husstandsBarn.ident,
                         )
                     }
@@ -120,8 +120,8 @@ data class BehandlingBeregningModel private constructor(
 }
 
 data class HusstandsBarnPeriodeModel(
-    val fraDato: LocalDate,
-    val tilDato: LocalDate,
+    val datoFom: LocalDate,
+    val datoTom: LocalDate,
     val ident: String?,
 )
 
