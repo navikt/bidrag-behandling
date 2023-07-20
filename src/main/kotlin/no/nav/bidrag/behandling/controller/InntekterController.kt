@@ -49,6 +49,9 @@ class InntekterController(private val behandlingService: BehandlingService) {
             request.inntekter.toInntektDomain(behandling),
             request.barnetillegg.toBarnetilleggDomain(behandling),
             request.utvidetbarnetrygd.toUtvidetbarnetrygdDomain(behandling),
+            request.inntektBegrunnelseMedIVedtakNotat,
+            request.inntektBegrunnelseKunINotat,
+
         )
 
         val newBehandling = behandlingService.hentBehandlingById(behandlingId)
@@ -57,6 +60,8 @@ class InntekterController(private val behandlingService: BehandlingService) {
             newBehandling.inntekter.toInntektDto(),
             newBehandling.barnetillegg.toBarnetilleggDto(),
             newBehandling.utvidetbarnetrygd.toUtvidetbarnetrygdDto(),
+            newBehandling.inntektBegrunnelseMedIVedtakNotat,
+            newBehandling.inntektBegrunnelseKunINotat,
         )
     }
 
@@ -86,6 +91,8 @@ class InntekterController(private val behandlingService: BehandlingService) {
             behandling.inntekter.toInntektDto(),
             behandling.barnetillegg.toBarnetilleggDto(),
             behandling.utvidetbarnetrygd.toUtvidetbarnetrygdDto(),
+            behandling.inntektBegrunnelseMedIVedtakNotat,
+            behandling.inntektBegrunnelseKunINotat,
         )
     }
 }

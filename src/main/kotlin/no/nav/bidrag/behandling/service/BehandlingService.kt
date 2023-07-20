@@ -87,9 +87,14 @@ class BehandlingService(
         inntekter: MutableSet<Inntekt>,
         barnetillegg: MutableSet<Barnetillegg>,
         utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd>,
+        inntektBegrunnelseMedIVedtakNotat: String?,
+        inntektBegrunnelseKunINotat: String?,
     ) {
         val existingBehandling = behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
-        val updatedBehandling = existingBehandling.copy()
+        val updatedBehandling = existingBehandling.copy(
+            inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat,
+            inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat,
+        )
 
         updatedBehandling.inntekter = inntekter
         updatedBehandling.barnetillegg = barnetillegg

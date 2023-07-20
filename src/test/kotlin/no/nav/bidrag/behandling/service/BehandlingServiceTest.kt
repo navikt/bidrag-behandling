@@ -112,6 +112,8 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertEquals(0, actualBehandling.inntekter.size)
         assertEquals(0, actualBehandling.barnetillegg.size)
         assertEquals(0, actualBehandling.utvidetbarnetrygd.size)
+        assertNull(actualBehandling.inntektBegrunnelseMedIVedtakNotat)
+        assertNull(actualBehandling.inntektBegrunnelseKunINotat)
 
         behandlingService.oppdaterInntekter(
             actualBehandling.id!!,
@@ -145,13 +147,17 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Calendar.getInstance().time,
                 ),
             ),
+            "Med i Vedtaket",
+            "Kun i Notat",
         )
 
-        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
+        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id)
 
         assertEquals(1, expectedBehandling.inntekter.size)
         assertEquals(1, expectedBehandling.barnetillegg.size)
         assertEquals(1, expectedBehandling.utvidetbarnetrygd.size)
+        assertEquals("Med i Vedtaket", expectedBehandling.inntektBegrunnelseMedIVedtakNotat)
+        assertEquals("Kun i Notat", expectedBehandling.inntektBegrunnelseKunINotat)
     }
 
     @Test
@@ -188,19 +194,25 @@ class BehandlingServiceTest : TestContainerRunner() {
                 ),
             ),
             mutableSetOf(),
+            "null",
+            "null",
         )
 
-        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
+        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id)
 
         assertEquals(1, expectedBehandling.inntekter.size)
         assertEquals(1, expectedBehandling.barnetillegg.size)
+        assertNotNull(expectedBehandling.inntektBegrunnelseMedIVedtakNotat)
+        assertNotNull(expectedBehandling.inntektBegrunnelseKunINotat)
 
-        behandlingService.oppdaterInntekter(actualBehandling.id!!, mutableSetOf(), expectedBehandling.barnetillegg, mutableSetOf())
+        behandlingService.oppdaterInntekter(actualBehandling.id, mutableSetOf(), expectedBehandling.barnetillegg, mutableSetOf(), null, null)
 
-        val expectedBehandlingWithoutInntekter = behandlingService.hentBehandlingById(actualBehandling.id!!)
+        val expectedBehandlingWithoutInntekter = behandlingService.hentBehandlingById(actualBehandling.id)
 
         assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
         assertEquals(1, expectedBehandlingWithoutInntekter.barnetillegg.size)
+        assertNull(expectedBehandlingWithoutInntekter.inntektBegrunnelseMedIVedtakNotat)
+        assertNull(expectedBehandlingWithoutInntekter.inntektBegrunnelseKunINotat)
     }
 
     @Test
@@ -239,7 +251,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             NOTAT,
         )
 
-        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id)
 
         assertEquals(3, hentBehandlingById.roller.size)
 //        assertEquals(AvslagType.MANGL_DOK, hentBehandlingById.avslag)
@@ -268,7 +280,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             MED_I_VEDTAK,
         )
 
-        val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
+        val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id)
 
         assertEquals(ForskuddAarsakType.BF, updatedBehandling.aarsak)
         assertEquals(NOTAT, updatedBehandling.virkningsTidspunktBegrunnelseKunINotat)
@@ -307,7 +319,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             MED_I_VEDTAK,
         )
 
-        val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
+        val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id)
 
         assertEquals(1, updatedBehandling.husstandsBarn.size)
         assertEquals(1, updatedBehandling.sivilstand.size)
