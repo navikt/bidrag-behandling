@@ -151,7 +151,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             "Kun i Notat",
         )
 
-        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id)
+        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
 
         assertEquals(1, expectedBehandling.inntekter.size)
         assertEquals(1, expectedBehandling.barnetillegg.size)
@@ -198,16 +198,16 @@ class BehandlingServiceTest : TestContainerRunner() {
             "null",
         )
 
-        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id)
+        val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
 
         assertEquals(1, expectedBehandling.inntekter.size)
         assertEquals(1, expectedBehandling.barnetillegg.size)
         assertNotNull(expectedBehandling.inntektBegrunnelseMedIVedtakNotat)
         assertNotNull(expectedBehandling.inntektBegrunnelseKunINotat)
 
-        behandlingService.oppdaterInntekter(actualBehandling.id, mutableSetOf(), expectedBehandling.barnetillegg, mutableSetOf(), null, null)
+        behandlingService.oppdaterInntekter(actualBehandling.id!!, mutableSetOf(), expectedBehandling.barnetillegg, mutableSetOf(), null, null)
 
-        val expectedBehandlingWithoutInntekter = behandlingService.hentBehandlingById(actualBehandling.id)
+        val expectedBehandlingWithoutInntekter = behandlingService.hentBehandlingById(actualBehandling.id!!)
 
         assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
         assertEquals(1, expectedBehandlingWithoutInntekter.barnetillegg.size)
@@ -251,7 +251,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             NOTAT,
         )
 
-        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id)
+        val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
         assertEquals(3, hentBehandlingById.roller.size)
 //        assertEquals(AvslagType.MANGL_DOK, hentBehandlingById.avslag)
@@ -280,7 +280,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             MED_I_VEDTAK,
         )
 
-        val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id)
+        val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
         assertEquals(ForskuddAarsakType.BF, updatedBehandling.aarsak)
         assertEquals(NOTAT, updatedBehandling.virkningsTidspunktBegrunnelseKunINotat)
@@ -319,7 +319,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             MED_I_VEDTAK,
         )
 
-        val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id)
+        val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
         assertEquals(1, updatedBehandling.husstandsBarn.size)
         assertEquals(1, updatedBehandling.sivilstand.size)
