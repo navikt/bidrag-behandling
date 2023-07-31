@@ -76,6 +76,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 "1234",
                 "1234",
                 SoknadFraType.BIDRAGSMOTTAKER,
+                null,
+                null,
             )
             val roller = HashSet(
                 createRoller.map {

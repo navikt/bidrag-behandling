@@ -100,6 +100,7 @@ data class BehandlingBeregningModel private constructor(
                             datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoFom kan ikke være null"),
                             datoTom = it.datoTom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoTom kan ikke være null"),
                             ident = it.husstandsBarn.ident,
+                            boStatus = it.boStatus,
                         )
                     }
                 },
@@ -123,6 +124,9 @@ data class HusstandsBarnPeriodeModel(
     val datoFom: LocalDate,
     val datoTom: LocalDate,
     val ident: String?,
+    val boStatus: BoStatusType,
+    // TODO ENDRE til bostatusKode fra felles
+    // import no.nav.bidrag.beregn.felles.enums.BostatusKode
 )
 
 data class SivilstandModel(

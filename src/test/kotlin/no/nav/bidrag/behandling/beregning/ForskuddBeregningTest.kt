@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.beregning
 
 import no.nav.bidrag.behandling.beregning.model.HusstandsBarnPeriodeModel
+import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -25,8 +26,8 @@ class ForskuddBeregningTest {
 
         val splitPeriods1 = forskuddBeregning.splitPeriods(
             listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1"),
-                HusstandsBarnPeriodeModel(fraDato2.toLocalDate(), tilDao2.toLocalDate(), "ident2"),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
+                HusstandsBarnPeriodeModel(fraDato2.toLocalDate(), tilDao2.toLocalDate(), "ident2", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
             ),
         )
 
@@ -45,7 +46,7 @@ class ForskuddBeregningTest {
 
         val splitPeriods = forskuddBeregning.splitPeriods(
             listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident"),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
             ),
         )
 
@@ -64,9 +65,9 @@ class ForskuddBeregningTest {
 
         val splitPeriods = forskuddBeregning.splitPeriods(
             listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident"),
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1"),
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident2"),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident2", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
             ),
         )
 

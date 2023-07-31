@@ -58,6 +58,8 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             createBehandling.saksnummer,
             createBehandling.behandlerEnhet,
             createBehandling.soknadFra,
+            createBehandling.stonadType,
+            createBehandling.engangsbelopType,
         )
         val roller = HashSet(
             createBehandling.roller.map {

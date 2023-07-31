@@ -10,6 +10,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.domain.enums.EngangsbelopType
+import no.nav.bidrag.domain.enums.StonadType
 import java.util.Date
 
 @Entity(name = "behandling")
@@ -32,6 +34,12 @@ data class Behandling(
 
     @Enumerated(EnumType.STRING)
     val soknadFra: SoknadFraType,
+
+    @Enumerated(EnumType.STRING)
+    var stonadType: StonadType?,
+
+    @Enumerated(EnumType.STRING)
+    var engangsbelopType: EngangsbelopType?,
 
     val virkningsDato: Date? = null,
 

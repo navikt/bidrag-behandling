@@ -16,12 +16,12 @@
 		<java.version>17</java.version>
 		<kotlin.version>1.8.21</kotlin.version>
 		<bidrag-commons.version>20230510130746_8b93e85</bidrag-commons.version>
-		<bidrag-domain.version>20230419124722_86ea018</bidrag-domain.version>
+		<bidrag-domain.version>20230719123551_28a5a86</bidrag-domain.version>
 		<logback-encoder.version>7.3</logback-encoder.version>
 		<token-support.version>3.0.11</token-support.version>
 		<springdoc.version>2.1.0</springdoc.version>
 		<springframework-cloud.version>4.0.3</springframework-cloud.version>
-		<bidrag-commons-test.version>1.20230217164307_1ec9d3f</bidrag-commons-test.version>
+		<bidrag-commons-test.version>LATEST</bidrag-commons-test.version>
 		<kotest.version>5.6.1</kotest.version>
 		<mockk.version>4.0.2</mockk.version>
 		<kotlin-logging-jvm.version>3.0.5</kotlin-logging-jvm.version>
@@ -174,6 +174,12 @@
 			<groupId>no.nav.bidrag</groupId>
 			<artifactId>bidrag-domain</artifactId>
 			<version>${bidrag-domain.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>no.nav.bidrag</groupId>
+			<artifactId>bidrag-beregn-felles</artifactId>
+			<version>0.19.3</version>
 		</dependency>
 		<!--Diverse-->
 		<dependency>

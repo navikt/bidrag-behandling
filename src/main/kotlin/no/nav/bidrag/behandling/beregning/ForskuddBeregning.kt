@@ -12,10 +12,14 @@ import no.nav.bidrag.behandling.beregning.model.UtvidetbarnetrygdModel
 import no.nav.bidrag.behandling.consumer.BeregnForskuddPayload
 import no.nav.bidrag.behandling.consumer.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toNoString
+import no.nav.bidrag.beregn.felles.enums.BostatusKode
+import no.nav.bidrag.beregn.felles.enums.SivilstandKode
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -26,7 +30,7 @@ class ForskuddBeregning {
     private fun prepareSoknadsBarn(soknadBarn: Rolle): List<Grunnlag> =
         listOf(
             Grunnlag(
-                referanse = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.soknadsLinje,
+                referanse = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
                 type = "SOKNADSBARN_INFO",
                 innhold = POJONode(
                     SoknadsBarnNode(
@@ -36,6 +40,16 @@ class ForskuddBeregning {
                 ),
             ),
         )
+
+    // TODO BostatusKode
+    private fun boStatusTypeToBoStatusKode(boStatusType: BoStatusType): BostatusKode =
+        if (boStatusType == BoStatusType.DOKUMENTERT_BOENDE_HOS_BM ||
+            boStatusType == BoStatusType.DOKUMENTERT_SKOLEGANG
+        ) {
+            BostatusKode.BOR_MED_FORELDRE
+        } else {
+            BostatusKode.BOR_IKKE_MED_FORELDRE
+        }
 
     private fun prepareBostatus(husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>, soknadsBarnIdent: String): List<Grunnlag> =
         husstandsBarnPerioder
@@ -49,7 +63,7 @@ class ForskuddBeregning {
                             datoFom = it.datoFom.toNoString(),
                             datoTil = it.datoTom.toNoString(),
                             rolle = "SOKNADSBARN",
-                            bostatusKode = "BOR_MED_FORELDRE", // TODO boStatus -> bostatusKode
+                            bostatusKode = boStatusTypeToBoStatusKode(it.boStatus).name,
                         ),
                     ),
                 )
@@ -117,6 +131,14 @@ class ForskuddBeregning {
                 )
             }
 
+    // TODO SivilstandKode
+    private fun sivilstandTypeToSivilstandKode(sivilstandType: SivilstandType): SivilstandKode =
+        if (sivilstandType == SivilstandType.GIFT) {
+            SivilstandKode.GIFT
+        } else {
+            SivilstandKode.ENSLIG
+        }
+
     private fun prepareSivilstand(sivilstand: List<SivilstandModel>): List<Grunnlag> =
         sivilstand.map {
             Grunnlag(
@@ -126,7 +148,7 @@ class ForskuddBeregning {
                     SivilstandNode(
                         datoFom = it.gyldigFraOgMed.toNoString(),
                         datoTil = it.datoTom.toNoString(),
-                        sivilstandKode = it.sivilstandType.name,
+                        sivilstandKode = sivilstandTypeToSivilstandKode(it.sivilstandType).name,
                     ),
                 ),
             )

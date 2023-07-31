@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.domain.enums.EngangsbelopType
+import no.nav.bidrag.domain.enums.StonadType
 import java.util.Date
 
 data class CreateBehandlingRequest(
@@ -38,4 +40,10 @@ data class CreateBehandlingRequest(
 
     @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
     val roller: Set<@Valid CreateRolleDto>,
+
+    @Schema(required = true)
+    var stonadType: StonadType?,
+
+    @Schema(required = true)
+    var engangsbelopType: EngangsbelopType?,
 )
