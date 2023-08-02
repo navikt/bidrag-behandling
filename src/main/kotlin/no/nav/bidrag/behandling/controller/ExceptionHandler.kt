@@ -29,16 +29,12 @@ class ExceptionHandler {
         val cause = exception.cause ?: exception
         val validationError = when (cause) {
             is JsonMappingException -> createMissingKotlinParameterViolation(cause)
-            is MethodArgumentNotValidException -> parseMethodARgumentNotValidexception(cause)
+            is MethodArgumentNotValidException -> parseMethodArgumentNotValidException(cause)
             else -> null
         }
         val errorMessage =
             validationError?.fieldErrors?.joinToString(", ") { "${it.field}: ${it.message}" }
                 ?: "ukjent feil"
-        log.warn(
-            "Forespørselen inneholder ugyldig verdi: $errorMessage",
-            exception,
-        )
 
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
@@ -53,7 +49,6 @@ class ExceptionHandler {
     @ExceptionHandler(HttpStatusCodeException::class)
     fun handleHttpClientErrorException(exception: HttpStatusCodeException): ResponseEntity<*> {
         val errorMessage = getErrorMessage(exception)
-        log.warn(errorMessage, exception)
         return ResponseEntity
             .status(exception.statusCode)
             .header(HttpHeaders.WARNING, errorMessage)
@@ -83,13 +78,13 @@ class ExceptionHandler {
 
     private fun createMissingKotlinParameterViolation(ex: JsonMappingException): Error {
         val error = Error(HttpStatus.BAD_REQUEST.value(), "validation error")
-        ex.path.forEach {
+        ex.path.filter { it.fieldName != null }.forEach {
             error.addFieldError(it.from.toString(), it.fieldName, ex.message.toString())
         }
         return error
     }
 
-    private fun parseMethodARgumentNotValidexception(ex: MethodArgumentNotValidException): Error {
+    private fun parseMethodArgumentNotValidException(ex: MethodArgumentNotValidException): Error {
         val error = Error(HttpStatus.BAD_REQUEST.value(), "validation error")
         ex.fieldErrors.forEach {
             val message: String = if (it.defaultMessage == null) it.toString() else it.defaultMessage!!
