@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.Date
 
 @Service
@@ -140,5 +141,10 @@ class BehandlingService(
         newBehandling.inntekter = behandling.inntekter
 
         behandlingRepository.save(newBehandling)
+    }
+
+    @Transactional
+    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long) {
+        behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
     }
 }

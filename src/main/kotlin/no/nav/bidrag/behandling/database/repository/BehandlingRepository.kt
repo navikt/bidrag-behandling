@@ -33,4 +33,12 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
         virkningsTidspunktBegrunnelseKunINotat: String?,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String?,
     )
+
+    @Modifying
+    @Query(
+        "update behandling b set " +
+            "b.vedtakId = :vedtakId " +
+            "where b.id = :behandlingId",
+    )
+    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long)
 }

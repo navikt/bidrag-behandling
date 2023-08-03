@@ -86,6 +86,27 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     }
 
     @Suppress("unused")
+    @PutMapping("/behandling/{behandlingId}/vedtak/{vedtakId}")
+    @Operation(
+        description = "Oppdaterer vedtak id",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Lagret behandling"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
+            ApiResponse(
+                responseCode = "403",
+                description = "Oppdaterer behandling med ny vedtak id",
+            ),
+        ],
+    )
+    fun oppdaterVedtakId(@PathVariable behandlingId: Long, @PathVariable vedtakId: Long) {
+        behandlingService.oppdaterVedtakId(behandlingId, vedtakId)
+    }
+
+    @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}")
     @Operation(
         description = "Hente en behandling",

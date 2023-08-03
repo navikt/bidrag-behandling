@@ -41,6 +41,8 @@ data class Behandling(
     @Enumerated(EnumType.STRING)
     var engangsbelopType: EngangsbelopType?,
 
+    var vedtakId: Long? = null,
+
     val virkningsDato: Date? = null,
 
     @Enumerated(EnumType.STRING)

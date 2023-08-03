@@ -1,11 +1,14 @@
 package no.nav.bidrag.behandling.controller
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.service.BehandlingService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
@@ -31,7 +34,10 @@ data class CreateRolleDtoTest(
 )
 
 @Suppress("NonAsciiCharacters")
-class BehandlingControllerTest : KontrollerTestRunner() {
+class BehandlingControllerTest() : KontrollerTestRunner() {
+
+    @Autowired
+    lateinit var behandlingService: BehandlingService
 
     @Test
     fun `skal opprette en behandling med null opprettetDato`() {
@@ -56,6 +62,29 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+    }
+
+    @Test
+    fun `skal opprette en behandling og oppdatere vedtak id`() {
+        val behandling = behandlingService.createBehandling(
+            Behandling(
+                BehandlingType.FORSKUDD,
+                SoknadType.FASTSETTELSE,
+                Date(1),
+                Date(2),
+                Date(1),
+                "123",
+                "EN123",
+                SoknadFraType.VERGE,
+                null,
+                null,
+            ),
+        )
+
+        val VEDTAK_ID: Long = 1
+        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.id}/vedtak/${VEDTAK_ID}", HttpMethod.PUT, HttpEntity.EMPTY, Void::class.java)
+        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+        assertEquals(VEDTAK_ID, behandlingService.hentBehandlingById(behandling.id!!).vedtakId)
     }
 
     @Test

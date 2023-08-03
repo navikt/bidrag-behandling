@@ -51,6 +51,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             SoknadFraType.BIDRAGSMOTTAKER,
             null,
             null,
+            null,
             datoFom,
             null,
             null,
