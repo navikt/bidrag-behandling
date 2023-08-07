@@ -17,11 +17,11 @@ import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 
 fun Set<Sivilstand>.toSivilstandDto() = this.map {
-    SivilstandDto(it.id, it.gyldigFraOgMed?.toLocalDate(), it.datoTom?.toLocalDate(), it.sivilstandType)
+    SivilstandDto(it.id, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.sivilstandType)
 }.toSet()
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) = this.map {
-    Sivilstand(behandling, it.gyldigFraOgMed?.toDate(), it.datoTom?.toDate(), it.sivilstandType, it.id)
+    Sivilstand(behandling, it.datoFom?.toDate(), it.datoTom?.toDate(), it.sivilstandType, it.id)
 }.toMutableSet()
 
 fun Set<Barnetillegg>.toBarnetilleggDto() = this.map {

@@ -76,7 +76,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 husstandsBarn,
                 datoFom,
                 datoTom,
-                BoStatusType.DOKUMENTERT_BOENDE_HOS_BM,
+                BoStatusType.REGISTRERT_PA_ADRESSE,
                 "",
             ),
         )
@@ -160,7 +160,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         b,
         fraDato,
         tilDao,
-        BoStatusType.DOKUMENTERT_BOENDE_HOS_BM,
+        BoStatusType.REGISTRERT_PA_ADRESSE,
         "",
     )
 

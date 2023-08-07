@@ -43,8 +43,7 @@ class ForskuddBeregning {
 
     // TODO BostatusKode
     private fun boStatusTypeToBoStatusKode(boStatusType: BoStatusType): BostatusKode =
-        if (boStatusType == BoStatusType.DOKUMENTERT_BOENDE_HOS_BM ||
-            boStatusType == BoStatusType.DOKUMENTERT_SKOLEGANG
+        if (boStatusType == BoStatusType.REGISTRERT_PA_ADRESSE
         ) {
             BostatusKode.BOR_MED_FORELDRE
         } else {
@@ -142,11 +141,11 @@ class ForskuddBeregning {
     private fun prepareSivilstand(sivilstand: List<SivilstandModel>): List<Grunnlag> =
         sivilstand.map {
             Grunnlag(
-                referanse = "Mottatt_Sivilstand_" + it.gyldigFraOgMed.toCompactString(),
+                referanse = "Mottatt_Sivilstand_" + it.datoFom.toCompactString(),
                 type = "SIVILSTAND",
                 innhold = POJONode(
                     SivilstandNode(
-                        datoFom = it.gyldigFraOgMed.toNoString(),
+                        datoFom = it.datoFom.toNoString(),
                         datoTil = it.datoTom.toNoString(),
                         sivilstandKode = sivilstandTypeToSivilstandKode(it.sivilstandType).name,
                     ),

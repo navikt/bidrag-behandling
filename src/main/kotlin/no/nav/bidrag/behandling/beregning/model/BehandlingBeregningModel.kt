@@ -55,7 +55,7 @@ data class BehandlingBeregningModel private constructor(
                 {
                     mapOrAccumulate(sivilstand) {
                         SivilstandModel(
-                            it.gyldigFraOgMed?.toLocalDate() ?: raise("Sivilstands gyldigFraOgMed kan ikke være null"),
+                            it.datoFom?.toLocalDate() ?: raise("Sivilstands datoFom kan ikke være null"),
                             it.datoTom?.toLocalDate() ?: raise("Sivilstands datoTom kan ikke være null"),
                             it.sivilstandType,
                         )
@@ -93,8 +93,7 @@ data class BehandlingBeregningModel private constructor(
                 {
                     mapOrAccumulate(
                         husstandsBarn.filter { it.medISaken }
-                            .map { it.perioder.filter { it.boStatus == BoStatusType.DOKUMENTERT_BOENDE_HOS_BM } }
-                            .flatten(),
+                            .flatMap { it.perioder },
                     ) {
                         HusstandsBarnPeriodeModel(
                             datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoFom kan ikke være null"),
@@ -130,7 +129,7 @@ data class HusstandsBarnPeriodeModel(
 )
 
 data class SivilstandModel(
-    val gyldigFraOgMed: LocalDate,
+    val datoFom: LocalDate,
     val datoTom: LocalDate,
     val sivilstandType: SivilstandType,
 )

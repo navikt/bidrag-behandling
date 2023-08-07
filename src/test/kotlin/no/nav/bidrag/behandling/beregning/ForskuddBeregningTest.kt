@@ -26,8 +26,8 @@ class ForskuddBeregningTest {
 
         val splitPeriods1 = forskuddBeregning.splitPeriods(
             listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
-                HusstandsBarnPeriodeModel(fraDato2.toLocalDate(), tilDao2.toLocalDate(), "ident2", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
+                HusstandsBarnPeriodeModel(fraDato2.toLocalDate(), tilDao2.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
             ),
         )
 
@@ -46,7 +46,7 @@ class ForskuddBeregningTest {
 
         val splitPeriods = forskuddBeregning.splitPeriods(
             listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
             ),
         )
 
@@ -65,9 +65,9 @@ class ForskuddBeregningTest {
 
         val splitPeriods = forskuddBeregning.splitPeriods(
             listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident2", BoStatusType.DOKUMENTERT_BOENDE_HOS_BM),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
+                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
             ),
         )
 
