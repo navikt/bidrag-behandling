@@ -5,7 +5,7 @@ management:
         include: "prometheus,health"
 
 springdoc:
-  packages-to-scan: no.nav.bidrag.template.controller
+  packages-to-scan: no.nav.bidrag.behandling.controller
 spring.main.banner-mode: off
 ---
 spring.config.activate.on-profile: nais,lokal-nais
@@ -22,22 +22,31 @@ no.nav.security.jwt:
           client-id: ${AZURE_APP_CLIENT_ID}
           client-secret: ${AZURE_APP_CLIENT_SECRET}
           client-auth-method: client_secret_post
+      bidrag-beregn-forskudd-rest:
+        resource-url: ${BIDRAG_BEREGN_FORSKUDD_URL}
+        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
+        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
+        scope: api://${BIDRAG_BEREGN_FORSKUDD_SCOPE}/.default
+        authentication:
+          client-id: ${AZURE_APP_CLIENT_ID}
+          client-secret: ${AZURE_APP_CLIENT_SECRET}
+          client-auth-method: client_secret_post
   issuer.aad:
     discovery_url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/v2.0/.well-known/openid-configuration
     accepted_audience: ${AZURE_APP_CLIENT_ID}, api://${AZURE_APP_CLIENT_ID}
 
 spring:
-#  datasource:
-#    type: com.zaxxer.hikari.HikariDataSource
-#    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}?user=${DB_USERNAME}&password=${DB_PASSWORD}
-#    hikari:
-#      idle-timeout: 10001
-#      max-lifetime: 30001
-#      connectionTimeout: 1000
-#      maximum-pool-size: 10
-#      minimum-idle: 1
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}?user=${DB_USERNAME}&password=${DB_PASSWORD}
+    hikari:
+      idle-timeout: 10001
+      max-lifetime: 30001
+      connectionTimeout: 1000
+      maximum-pool-size: 10
+      minimum-idle: 1
   flyway:
-    enabled: false
-#    locations: classpath:/db/migration
-#  jpa:
-#    database: postgresql
+    enabled: true
+    locations: classpath:/db/migration
+  jpa:
+    database: postgresql

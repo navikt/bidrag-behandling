@@ -9,7 +9,7 @@ Legg til Github secret `NAIS_DEPLOY_APIKEY` hvor secret hentes fra [Api key](htt
 
 ## Kjøre applikasjonen lokalt
 
-Start opp applikasjonen ved å kjøre [BidragTemplateLocal.kt](src/test/kotlin/no/nav/bidrag/template/BidragTemplateLocal.kt).
+Start opp applikasjonen ved å kjøre [BidragTemplateLocal.kt](src/test/kotlin/no/nav/bidrag/behandling/BidragSpringAppLocal.kt).
 Dette starter applikasjonen med profil `local` og henter miljøvariabler for Q1 miljøet fra filen [application-local.yaml](src/test/resources/application-local.yaml).
 
 Her mangler det noen miljøvariabler som ikke bør committes til Git (Miljøvariabler for passord/secret osv).<br/>
@@ -48,7 +48,7 @@ kubectl config use dev-gcp
 Deretter kjør følgende kommando for å importere secrets. Viktig at filen som opprettes ikke committes til git
 
 ```bash
-kubectl exec --tty deployment/bidrag-behandling-feature printenv | grep -E 'AZURE_|_URL|SCOPE' > src/test/resources/application-lokal-nais-secrets.properties
+kubectl exec --tty deployment/bidrag-behandling printenv | grep -E 'AZURE_APP_CLIENT_ID|AZURE_APP_CLIENT_SECRET|TOKEN_X|AZURE_OPENID_CONFIG_TOKEN_ENDPOINT|AZURE_APP_TENANT_ID|AZURE_APP_WELL_KNOWN_URL|_URL|SCOPE' > src/test/resources/application-lokal-nais-secrets.properties
 ```
 
 Deretter kan tokenet brukes til å logge inn på swagger-ui http://localhost:8080/swagger-ui.html

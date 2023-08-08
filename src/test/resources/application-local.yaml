@@ -1,13 +1,14 @@
 PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
 BIDRAG_PERSON_URL: https://bidrag-person-feature.dev.adeo.no
+BIDRAG_BEREGN_FORSKUDD_URL: https://bidrag-beregn-forskudd-rest.dev.intern.dev.nav.no
 AZURE_APP_TENANT_ID: 966ac572-f5b7-4bbe-aa88-c76419c0f851
 AZURE_APP_CLIENT_ID: <app_client_id>
 AZURE_APP_CLIENT_SECRET: unset
-server.port: 8999
+server.port: 8990
 NAIS_APP_NAME: bidrag-behandling
 
 DB_HOST: localhost
-DB_PORT: 5432
+DB_PORT: 5445
 DB_DATABASE: bidrag-behandling
 DB_USERNAME: cloudsqliamuser
 DB_PASSWORD: admin

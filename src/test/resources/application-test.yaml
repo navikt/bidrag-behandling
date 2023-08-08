@@ -1,4 +1,5 @@
 BIDRAG_PERSON_URL: http://localhost:${wiremock.server.port}/person
+BIDRAG_BEREGN_FORSKUDD_URL: http://localhost:${wiremock.server.port}/beregn-forskudd
 AZURE_OPENID_CONFIG_ISSUER: http://localhost:${mock-oauth2-server.port}/aad
 AZURE_APP_TENANT_ID: 12321321-123213-3213123
 AZURE_APP_CLIENT_ID: asdasd-sadas-ddas-qwe
@@ -20,6 +21,30 @@ no.nav.security.jwt:
     discovery_url: http://localhost:${mock-oauth2-server.port:1234}/aad/.well-known/openid-configuration
     accepted_audience: ${AZURE_APP_CLIENT_ID}, api://${AZURE_APP_CLIENT_ID}, aud-localhost
 
+
+#spring:
+#  jpa:
+#    properties:
+#      hibernate:
+#        format_sql: true
+#    show-sql: true
+#
+#logging:
+#  level:
+#    org:
+#      hibernate:
+#        type:
+#          descriptor:
+#            sql: trace
+#      flywaydb: debug
+spring:
+  datasource:
+    hikari:
+      max-lifetime: 500000
+      connection-timeout: 300000
+      idle-timeout: 600000
+      maximum-pool-size: 5
+      minimum-idle: 1
 ---
 spring.config.activate.on-profile: "!testcontainer"
 
