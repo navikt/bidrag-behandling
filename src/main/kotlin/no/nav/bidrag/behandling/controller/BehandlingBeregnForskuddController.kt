@@ -17,6 +17,7 @@ import org.springframework.http.HttpEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -26,6 +27,10 @@ class BehandlingBeregnForskuddController(
     private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
     private val forskuddBeregning: ForskuddBeregning,
 ) {
+
+    private fun isPeriodOneWithinPeriodTwo(datoFom1: LocalDate?, datoTom1: LocalDate?, datoFom2: LocalDate, datoTom2: LocalDate) =
+        (datoFom1 === null || datoFom1.isAfter(datoFom2) || datoFom1.isEqual(datoFom2)) &&
+            (datoTom1 === null || datoTom1.isBefore(datoTom2) || datoTom1.isEqual(datoTom2))
 
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/beregn")
@@ -46,9 +51,14 @@ class BehandlingBeregnForskuddController(
                     if (false) printDebugPayload(payload)
 
                     try {
+                        val beregnetForskuddPeriodeListe =
+                            bidragBeregnForskuddConsumer.beregnForskudd(payload).beregnetForskuddPeriodeListe
+                        beregnetForskuddPeriodeListe.forEach { r ->
+                            r.sivilstandType = behandlingModel.sivilstand.find { isPeriodOneWithinPeriodTwo(r.periode.datoFom, r.periode.datoTil, it.datoFom, it.datoTom) }?.sivilstandType
+                        }
                         ForskuddBeregningPerBarn(
                             ident = it.ident,
-                            beregnetForskuddPeriodeListe = bidragBeregnForskuddConsumer.beregnForskudd(payload).beregnetForskuddPeriodeListe,
+                            beregnetForskuddPeriodeListe = beregnetForskuddPeriodeListe,
                         )
                     } catch (e: HttpClientErrorException) {
                         LOGGER.warn { e }
