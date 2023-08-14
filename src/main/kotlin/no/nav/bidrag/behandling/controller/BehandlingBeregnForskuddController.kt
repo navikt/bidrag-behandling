@@ -59,6 +59,7 @@ class BehandlingBeregnForskuddController(
                         ForskuddBeregningPerBarn(
                             ident = it.ident,
                             beregnetForskuddPeriodeListe = beregnetForskuddPeriodeListe,
+                            grunnlagListe = payload.grunnlagListe,
                         )
                     } catch (e: HttpClientErrorException) {
                         LOGGER.warn { e }

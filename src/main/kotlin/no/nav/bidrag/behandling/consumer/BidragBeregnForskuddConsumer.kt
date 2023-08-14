@@ -1,9 +1,9 @@
 package no.nav.bidrag.behandling.consumer
 
-import com.fasterxml.jackson.databind.JsonNode
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.behandling.ForskuddDto
 import no.nav.bidrag.commons.web.client.AbstractRestClient
+import no.nav.bidrag.transport.behandling.vedtak.reponse.GrunnlagDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -31,9 +31,4 @@ data class BeregnForskuddPayload(
     @Schema(description = "Periodisert liste over grunnlagselementer") val grunnlagListe: List<Grunnlag>? = null,
 )
 
-@Schema(description = "Grunnlag")
-data class Grunnlag(
-    @Schema(description = "Referanse") val referanse: String? = null,
-    @Schema(description = "Type") val type: String? = null,
-    @Schema(description = "Innhold") val innhold: JsonNode? = null,
-)
+typealias Grunnlag = GrunnlagDto

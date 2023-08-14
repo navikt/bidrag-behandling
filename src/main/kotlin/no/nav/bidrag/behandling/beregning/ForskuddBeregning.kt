@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toNoString
 import no.nav.bidrag.beregn.felles.enums.BostatusKode
 import no.nav.bidrag.beregn.felles.enums.SivilstandKode
+import no.nav.bidrag.domain.enums.GrunnlagType
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -31,7 +32,7 @@ class ForskuddBeregning {
         listOf(
             Grunnlag(
                 referanse = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
-                type = "SOKNADSBARN_INFO",
+                type = GrunnlagType.SOKNADSBARN_INFO,
                 innhold = POJONode(
                     SoknadsBarnNode(
                         soknadsbarnId = soknadBarn.soknadsLinje,
@@ -56,7 +57,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_Bostatus_" + it.datoFom.toCompactString(),
-                    type = "BOSTATUS",
+                    type = GrunnlagType.BOSTATUS,
                     innhold = POJONode(
                         BostatusNode(
                             datoFom = it.datoFom.toNoString(),
@@ -73,7 +74,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_BarnIHusstand_" + it.datoFom.replace("-", ""),
-                    type = "BARN_I_HUSSTAND",
+                    type = GrunnlagType.BARN_I_HUSSTAND,
                     innhold = POJONode(it),
                 )
             }
@@ -87,7 +88,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_Inntekt_" + it.inntektType + it.datoFom.toCompactString(),
-                    type = "INNTEKT",
+                    type = GrunnlagType.INNTEKT,
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
@@ -102,7 +103,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
-                    type = "INNTEKT",
+                    type = GrunnlagType.INNTEKT,
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
@@ -117,7 +118,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
-                    type = "INNTEKT",
+                    type = GrunnlagType.INNTEKT,
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
@@ -142,7 +143,7 @@ class ForskuddBeregning {
         sivilstand.map {
             Grunnlag(
                 referanse = "Mottatt_Sivilstand_" + it.datoFom.toCompactString(),
-                type = "SIVILSTAND",
+                type = GrunnlagType.SIVILSTAND,
                 innhold = POJONode(
                     SivilstandNode(
                         datoFom = it.datoFom.toNoString(),
