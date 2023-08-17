@@ -23,11 +23,13 @@ jobs:
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
         id: PR
         with:
+          sha: ${{ github.event.pull_request.head.sha }}
           filterOutClosed: true
           filterOutDraft: true
       - uses: 8BitJonny/gh-get-current-pr@2.2.0
         id: DRAFT_PR
         with:
+          sha: ${{ github.event.pull_request.head.sha }}
           filterOutClosed: true
           filterOutDraft: false
 #      - uses: actions/setup-java@v3
@@ -48,15 +50,18 @@ jobs:
 #          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
 #          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
       - run: |
-          echo ${{steps.PR.outputs.number}}
-          echo ${{steps.PR.outputs.number == 'null'}}
-          echo ${{steps.PR.outputs.number != 'null'}}
-          echo ${{steps.DRAFT_PR.outputs.number != 'null'}}
+          echo ${{steps.PR.outputs.prJSON}}
+          echo ${{steps.PR.outputs.prNumber}}
+          echo ${{steps.DRAFT_PR.outputs.prJSON}}
+          echo ${{steps.DRAFT_PR.outputs.prNumber}}
+          echo ${{steps.PR.outputs.prNumber == '0'}}
+          echo ${{steps.PR.outputs.prNumber != '0'}}
+          echo ${{steps.DRAFT_PR.outputs.prNumber != '0'}}
     outputs:
       image: ${{ steps.docker-push.outputs.image }}
       tag: ${{ steps.docker-push.outputs.tag }}
-      is_open_PR: ${{ steps.PR.outputs.number != 'null' }}
-      is_draft_PR: ${{ steps.DRAFT_PR.outputs.number != 'null' }}
+      is_open_PR: ${{ steps.PR.outputs.prNumber != '0' }}
+      is_draft_PR: ${{ steps.DRAFT_PR.outputs.prNumber != '0' }}
 
   run-tests:
     runs-on: ubuntu-latest
