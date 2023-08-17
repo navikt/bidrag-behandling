@@ -51,11 +51,12 @@ jobs:
           echo ${{steps.PR.outputs.number}}
           echo ${{steps.PR.outputs.number == 'null'}}
           echo ${{steps.PR.outputs.number != 'null'}}
+          echo ${{steps.DRAFT_PR.outputs.number != 'null'}}
     outputs:
       image: ${{ steps.docker-push.outputs.image }}
       tag: ${{ steps.docker-push.outputs.tag }}
-      is_open_PR: ${{ steps.PR.outputs.number != '0' }}
-      is_draft_PR: ${{ steps.DRAFT_PR.outputs.number != '0' }}
+      is_open_PR: ${{ steps.PR.outputs.number != 'null' }}
+      is_draft_PR: ${{ steps.DRAFT_PR.outputs.number != 'null' }}
 
   run-tests:
     runs-on: ubuntu-latest
@@ -71,11 +72,20 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests
     needs: build
-    if: needs.build.outputs.is_open_PR == 'true'
+    if: needs.build.outputs.is_open_PR
     steps:
       - uses: actions/checkout@v3
       - run: |
           echo ${{needs.build.outputs.is_open_PR}}
+  run-tests3:
+    runs-on: ubuntu-latest
+    name: Run tests
+    needs: build
+    if: needs.build.outputs.is_open_PR
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          echo ${{needs.build.outputs.is_draft_PR}}
 #      - uses: actions/setup-java@v3
 #        with:
 #          java-version: '17'
