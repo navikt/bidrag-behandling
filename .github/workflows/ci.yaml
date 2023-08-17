@@ -1,5 +1,6 @@
 name: Deploy to dev
 on:
+  pull_request:
   push:
     branches:
       - '!main'
