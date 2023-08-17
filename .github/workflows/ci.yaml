@@ -86,24 +86,6 @@ jobs:
           VARS: deploy/.nais/main.yaml
           IMAGE: ${{ needs.build.outputs.image }}
 
-  deploy-syntetisk:
-    runs-on: ubuntu-latest
-    name: Deploy syntetisk
-    if: needs.build.outputs.is_open_PR || github.ref == 'refs/heads/main'
-    needs: build
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          path: deploy
-      - name: Deploy to dev-gcp
-        uses: nais/deploy/actions/deploy@v1
-        env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          CLUSTER: dev-gcp
-          RESOURCE: deploy/.nais/nais.yaml
-          VARS: deploy/.nais/syntetisk.yaml
-          IMAGE: ${{ needs.build.outputs.image }}
-
   deploy-feature:
     runs-on: ubuntu-latest
     name: Deploy feature
