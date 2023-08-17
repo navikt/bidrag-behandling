@@ -78,8 +78,8 @@ jobs:
   deploy-main:
     runs-on: ubuntu-latest
     name: Deploy main
-    if: ${{needs.build.outputs.is_open_PR}}
     needs: build
+    if: needs.build.outputs.is_open_PR == 'true'
     steps:
       - uses: actions/checkout@v3
         with:
