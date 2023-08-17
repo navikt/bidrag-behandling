@@ -16,7 +16,7 @@
 		<java.version>17</java.version>
 		<kotlin.version>1.9.0</kotlin.version>
 		<bidrag-commons.version>20230510130746_8b93e85</bidrag-commons.version>
-		<bidrag-domain.version>20230719123551_28a5a86</bidrag-domain.version>
+		<bidrag-domain.version>20230817134109_ada9d45</bidrag-domain.version>
 		<logback-encoder.version>7.3</logback-encoder.version>
 		<token-support.version>3.0.11</token-support.version>
 		<springdoc.version>2.1.0</springdoc.version>
