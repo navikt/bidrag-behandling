@@ -78,7 +78,7 @@ jobs:
   deploy-main:
     runs-on: ubuntu-latest
     name: Deploy main
-    if: needs.build.outputs.is_open_PR
+    if: ${{needs.build.outputs.is_open_PR}}
     needs: build
     steps:
       - uses: actions/checkout@v3
@@ -96,7 +96,7 @@ jobs:
   deploy-feature:
     runs-on: ubuntu-latest
     name: Deploy feature
-    #    if: github.ref == 'refs/heads/main' || needs.build.outputs.is_open_PR == false && needs.build.outputs.is_draft_PR
+    #    if: github.ref == 'refs/heads/main' || ${{needs.build.outputs.is_open_PR}} == false && ${{needs.build.outputs.is_draft_PR}}
     needs: build
 
     steps:
