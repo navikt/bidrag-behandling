@@ -139,6 +139,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandlingId,
             behandling.behandlingType,
             behandling.soknadType,
+            behandling.vedtakId != null,
             behandling.datoFom.toLocalDate(),
             behandling.datoTom.toLocalDate(),
             behandling.mottatDato.toLocalDate(),

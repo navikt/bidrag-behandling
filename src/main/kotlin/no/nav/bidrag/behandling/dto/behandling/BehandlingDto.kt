@@ -13,6 +13,7 @@ data class BehandlingDto(
     val id: Long,
     val behandlingType: BehandlingType,
     val soknadType: SoknadType,
+    val erVedtakFattet: Boolean,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
