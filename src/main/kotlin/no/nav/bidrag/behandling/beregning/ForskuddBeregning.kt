@@ -51,7 +51,7 @@ class ForskuddBeregning {
             BostatusKode.BOR_IKKE_MED_FORELDRE
         }
 
-    private fun prepareBostatus(husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>, soknadsBarnIdent: String): List<Grunnlag> =
+    private fun prepareBostatus(husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>, soknadsBarnIdent: String, soknadBarn: Rolle): List<Grunnlag> =
         husstandsBarnPerioder
             .filter { soknadsBarnIdent == it.ident }
             .map {
@@ -61,9 +61,10 @@ class ForskuddBeregning {
                     innhold = POJONode(
                         BostatusNode(
                             datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
                             rolle = "SOKNADSBARN",
                             bostatusKode = boStatusTypeToBoStatusKode(it.boStatus).name,
+                            soknadsbarnId = soknadBarn.soknadsLinje
                         ),
                     ),
                 )
@@ -92,7 +93,7 @@ class ForskuddBeregning {
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
                             rolle = "BIDRAGSMOTTAKER",
                             inntektType = it.inntektType,
                             belop = it.belop,
@@ -107,7 +108,7 @@ class ForskuddBeregning {
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
                             rolle = "BIDRAGSMOTTAKER",
                             inntektType = "EKSTRA_SMAABARNSTILLEGG",
                             belop = it.belop,
@@ -122,7 +123,7 @@ class ForskuddBeregning {
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
                             rolle = "BIDRAGSMOTTAKER",
                             inntektType = "UTVIDET_BARNETRYGD",
                             belop = it.belop,
@@ -147,7 +148,7 @@ class ForskuddBeregning {
                 innhold = POJONode(
                     SivilstandNode(
                         datoFom = it.datoFom.toNoString(),
-                        datoTil = it.datoTom.toNoString(),
+                        datoTil = it.datoTom?.toNoString(),
                         sivilstandKode = sivilstandTypeToSivilstandKode(it.sivilstandType).name,
                     ),
                 ),
@@ -171,10 +172,10 @@ class ForskuddBeregning {
             }
 
             val endDate = it.datoTom
-            if (timesMap.contains(endDate)) {
+            if (endDate != null && timesMap.contains(endDate)) {
                 val existingEnd = timesMap[endDate]!!
                 existingEnd.tails += 1
-            } else {
+            } else if (endDate != null) {
                 timesMap[endDate] = PointInTimeInfo(0, 1)
             }
         }
@@ -186,10 +187,15 @@ class ForskuddBeregning {
         var lastStartDate: LocalDate = list[0].point
         var currentPeriods: Long = list[0].info.heads
 
-        for (i in 1 until list.size) {
-            r.add(BarnPeriodeNode(lastStartDate.toNoString(), list[i].point.toNoString(), currentPeriods.toDouble()))
-            lastStartDate = list[i].point
-            currentPeriods = currentPeriods + list[i].info.heads - list[i].info.tails
+        if (list.size == 1){
+              r.add(BarnPeriodeNode(lastStartDate.toNoString(), null, currentPeriods.toDouble()))
+        } else {
+            for (i in 1 until list.size) {
+                r.add(BarnPeriodeNode(lastStartDate.toNoString(), list[i].point.toNoString(), currentPeriods.toDouble()))
+                lastStartDate = list[i].point.plusDays(1)
+                currentPeriods = currentPeriods + list[i].info.heads - list[i].info.tails
+            }
+            r.add(BarnPeriodeNode(lastStartDate.toNoString(), null, currentPeriods.toDouble()))
         }
 
         return r
@@ -201,7 +207,7 @@ class ForskuddBeregning {
             virkningsDato = behandling.virkningsDato,
             datoTom = behandling.datoTom,
             sivilstand = behandling.sivilstand,
-            inntekter = behandling.inntekter,
+            inntekter = behandling.inntekter.filter { it.taMed }.toSet(),
             barnetillegg = behandling.barnetillegg,
             utvidetbarnetrygd = behandling.utvidetbarnetrygd,
             husstandsBarn = behandling.husstandsBarn,
@@ -213,7 +219,7 @@ class ForskuddBeregning {
             beregnDatoTil = b.datoTom.toNoString(),
             grunnlagListe = prepareSoknadsBarn(soknadsBarn) +
                 prepareBarnIHusstand(b) +
-                prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident) +
+                prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +
                 prepareInntekterForBeregning(
                     b.inntekter,
                     b.barnetillegg,
@@ -236,15 +242,16 @@ data class PointInTime(
 
 data class BarnPeriodeNode(
     val datoFom: String,
-    val datoTil: String,
+    val datoTil: String? = null,
     val antall: Double,
 )
 
 data class BostatusNode(
     val datoFom: String,
-    val datoTil: String,
+    val datoTil: String? = null,
     val rolle: String,
     val bostatusKode: String,
+    val soknadsbarnId: Int
 )
 
 data class SoknadsBarnNode(

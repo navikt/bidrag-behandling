@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.config
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.datatype.jsr310.deser.YearMonthDeserializer
 import com.fasterxml.jackson.module.kotlin.KotlinModule
@@ -30,6 +31,7 @@ class RestConfig {
                         YearMonthDeserializer(DateTimeFormatter.ofPattern("u-MM")),
                     ),
             )
+            .dateFormat(StdDateFormat())
             .failOnUnknownProperties(false)
             .serializationInclusion(JsonInclude.Include.NON_NULL)
     }
