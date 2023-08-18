@@ -74,6 +74,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                 Date(2),
                 Date(1),
                 "123",
+                123213L,
+                null,
                 "EN123",
                 SoknadFraType.VERGE,
                 null,

@@ -28,6 +28,7 @@ data class BehandlingDto(
 
     val soknadFraType: SoknadFraType,
     val saksnummer: String,
+    val soknadId: Long,
     val behandlerEnhet: String,
     val roller: Set<RolleDto>,
     val husstandsBarn: Set<HusstandsBarnDto>,
@@ -37,6 +38,7 @@ data class BehandlingDto(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningsDato: LocalDate? = null,
 
+    val soknadRefId: Long? = null,
     val aarsak: ForskuddAarsakType? = null,
     val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
     val virkningsTidspunktBegrunnelseKunINotat: String? = null,

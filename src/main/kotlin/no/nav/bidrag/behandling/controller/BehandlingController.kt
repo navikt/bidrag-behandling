@@ -56,6 +56,8 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             createBehandling.datoTom,
             createBehandling.mottatDato,
             createBehandling.saksnummer,
+            createBehandling.soknadId,
+            createBehandling.soknadRefId,
             createBehandling.behandlerEnhet,
             createBehandling.soknadFra,
             createBehandling.stonadType,
@@ -142,6 +144,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandling.mottatDato.toLocalDate(),
             behandling.soknadFra,
             behandling.saksnummer,
+            behandling.soknadId,
             behandling.behandlerEnhet,
             behandling.roller.map {
                 RolleDto(it.id!!, it.rolleType, it.ident, it.fodtDato, it.opprettetDato)
@@ -149,6 +152,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandling.husstandsBarn.toHusstandsBarnDto(),
             behandling.sivilstand.toSivilstandDto(),
             behandling.virkningsDato?.toLocalDate(),
+            behandling.soknadRefId,
             behandling.aarsak,
             behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
             behandling.virkningsTidspunktBegrunnelseKunINotat,
