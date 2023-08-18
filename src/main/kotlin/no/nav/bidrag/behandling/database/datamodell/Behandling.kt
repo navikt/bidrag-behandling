@@ -12,6 +12,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domain.enums.EngangsbelopType
 import no.nav.bidrag.domain.enums.StonadType
+import java.time.LocalDateTime
 import java.util.Date
 
 @Entity(name = "behandling")
@@ -68,6 +69,7 @@ data class Behandling(
     @Column(name = "INNTEKT_BEGRUNNELSE_KUN_I_NOTAT")
     val inntektBegrunnelseKunINotat: String? = null,
 
+    val opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

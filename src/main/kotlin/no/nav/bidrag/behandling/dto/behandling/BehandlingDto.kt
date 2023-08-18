@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 data class BehandlingDto(
     val id: Long,
@@ -38,7 +39,7 @@ data class BehandlingDto(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningsDato: LocalDate? = null,
-
+    val opprettetTidspunkt: LocalDateTime? = null,
     val soknadRefId: Long? = null,
     val aarsak: ForskuddAarsakType? = null,
     val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,

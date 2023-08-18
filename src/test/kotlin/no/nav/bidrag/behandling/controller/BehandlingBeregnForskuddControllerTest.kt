@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.Calendar
 import java.util.Date
 import kotlin.test.Ignore
@@ -62,6 +63,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             null,
             null,
             null,
+            LocalDateTime.now(),
             1,
         )
 
