@@ -74,6 +74,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 Calendar.getInstance().time,
                 Calendar.getInstance().time,
                 "1234",
+                123213L,
+                null,
                 "1234",
                 SoknadFraType.BIDRAGSMOTTAKER,
                 null,

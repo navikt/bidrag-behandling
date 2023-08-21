@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
+import no.nav.bidrag.behandling.transformers.INFINITY
 import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toNoString
@@ -24,7 +25,6 @@ import no.nav.bidrag.domain.enums.GrunnlagType
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
-
 @Service
 class ForskuddBeregning {
 
@@ -35,7 +35,7 @@ class ForskuddBeregning {
                 type = GrunnlagType.SOKNADSBARN_INFO,
                 innhold = POJONode(
                     SoknadsBarnNode(
-                        soknadsbarnId = soknadBarn.soknadsLinje,
+                        soknadsbarnId = soknadBarn.id!!.toInt(),
                         fodselsdato = soknadBarn.fodtDato?.toLocalDate()?.toNoString(),
                     ),
                 ),
@@ -51,7 +51,7 @@ class ForskuddBeregning {
             BostatusKode.BOR_IKKE_MED_FORELDRE
         }
 
-    private fun prepareBostatus(husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>, soknadsBarnIdent: String): List<Grunnlag> =
+    private fun prepareBostatus(husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>, soknadsBarnIdent: String, soknadBarn: Rolle): List<Grunnlag> =
         husstandsBarnPerioder
             .filter { soknadsBarnIdent == it.ident }
             .map {
@@ -61,9 +61,10 @@ class ForskuddBeregning {
                     innhold = POJONode(
                         BostatusNode(
                             datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
                             rolle = "SOKNADSBARN",
                             bostatusKode = boStatusTypeToBoStatusKode(it.boStatus).name,
+                            soknadsbarnId = soknadBarn.soknadsLinje,
                         ),
                     ),
                 )
@@ -87,13 +88,13 @@ class ForskuddBeregning {
         inntekter
             .map {
                 Grunnlag(
-                    referanse = "Mottatt_Inntekt_" + it.inntektType + it.datoFom.toCompactString(),
+                    referanse = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
                     type = GrunnlagType.INNTEKT,
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom.toNoString(),
-                            rolle = "BIDRAGSMOTTAKER",
+                            datoTil = it.datoTom?.toNoString(),
+                            rolle = it.rolle,
                             inntektType = it.inntektType,
                             belop = it.belop,
                         ),
@@ -107,7 +108,7 @@ class ForskuddBeregning {
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
                             rolle = "BIDRAGSMOTTAKER",
                             inntektType = "EKSTRA_SMAABARNSTILLEGG",
                             belop = it.belop,
@@ -122,7 +123,7 @@ class ForskuddBeregning {
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
                             rolle = "BIDRAGSMOTTAKER",
                             inntektType = "UTVIDET_BARNETRYGD",
                             belop = it.belop,
@@ -147,7 +148,7 @@ class ForskuddBeregning {
                 innhold = POJONode(
                     SivilstandNode(
                         datoFom = it.datoFom.toNoString(),
-                        datoTil = it.datoTom.toNoString(),
+                        datoTil = it.datoTom?.toNoString(),
                         sivilstandKode = sivilstandTypeToSivilstandKode(it.sivilstandType).name,
                     ),
                 ),
@@ -170,7 +171,7 @@ class ForskuddBeregning {
                 timesMap[startDate] = PointInTimeInfo(1, 0)
             }
 
-            val endDate = it.datoTom
+            val endDate = it.datoTom ?: INFINITY
             if (timesMap.contains(endDate)) {
                 val existingEnd = timesMap[endDate]!!
                 existingEnd.tails += 1
@@ -187,7 +188,8 @@ class ForskuddBeregning {
         var currentPeriods: Long = list[0].info.heads
 
         for (i in 1 until list.size) {
-            r.add(BarnPeriodeNode(lastStartDate.toNoString(), list[i].point.toNoString(), currentPeriods.toDouble()))
+            val nextDate = if (list[i].point == INFINITY) null else list[i].point
+            r.add(BarnPeriodeNode(lastStartDate.toNoString(), nextDate?.toNoString(), currentPeriods.toDouble()))
             lastStartDate = list[i].point
             currentPeriods = currentPeriods + list[i].info.heads - list[i].info.tails
         }
@@ -201,10 +203,11 @@ class ForskuddBeregning {
             virkningsDato = behandling.virkningsDato,
             datoTom = behandling.datoTom,
             sivilstand = behandling.sivilstand,
-            inntekter = behandling.inntekter,
+            inntekter = behandling.inntekter.filter { it.taMed }.toSet(),
             barnetillegg = behandling.barnetillegg,
             utvidetbarnetrygd = behandling.utvidetbarnetrygd,
             husstandsBarn = behandling.husstandsBarn,
+            roller = behandling.roller,
         )
 
     fun toPayload(b: BehandlingBeregningModel, soknadsBarn: Rolle): BeregnForskuddPayload =
@@ -213,7 +216,7 @@ class ForskuddBeregning {
             beregnDatoTil = b.datoTom.toNoString(),
             grunnlagListe = prepareSoknadsBarn(soknadsBarn) +
                 prepareBarnIHusstand(b) +
-                prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident) +
+                prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +
                 prepareInntekterForBeregning(
                     b.inntekter,
                     b.barnetillegg,
@@ -236,15 +239,16 @@ data class PointInTime(
 
 data class BarnPeriodeNode(
     val datoFom: String,
-    val datoTil: String,
+    val datoTil: String? = null,
     val antall: Double,
 )
 
 data class BostatusNode(
     val datoFom: String,
-    val datoTil: String,
+    val datoTil: String? = null,
     val rolle: String,
     val bostatusKode: String,
+    val soknadsbarnId: Int,
 )
 
 data class SoknadsBarnNode(

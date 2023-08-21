@@ -29,6 +29,8 @@ data class Behandling(
     val mottatDato: Date,
 
     val saksnummer: String,
+    val soknadId: Long,
+    val soknadRefId: Long? = null,
 
     val behandlerEnhet: String,
 

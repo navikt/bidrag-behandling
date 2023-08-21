@@ -74,6 +74,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                 Date(2),
                 Date(1),
                 "123",
+                123213L,
+                null,
                 "EN123",
                 SoknadFraType.VERGE,
                 null,
@@ -82,7 +84,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         )
 
         val VEDTAK_ID: Long = 1
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.id}/vedtak/${VEDTAK_ID}", HttpMethod.PUT, HttpEntity.EMPTY, Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.id}/vedtak/$VEDTAK_ID", HttpMethod.PUT, HttpEntity.EMPTY, Void::class.java)
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
         assertEquals(VEDTAK_ID, behandlingService.hentBehandlingById(behandling.id!!).vedtakId)
     }

@@ -10,6 +10,8 @@ import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
@@ -18,6 +20,14 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Date
 
+fun Set<Rolle>.rolleType(ident: String): String {
+    val rolleType = this.find { it.ident == ident }?.rolleType
+    return when (rolleType) {
+        RolleType.BIDRAGS_PLIKTIG -> "BIDRAGSPLIKTIG"
+        RolleType.BIDRAGS_MOTTAKER -> "BIDRAGSMOTTAKER"
+        else -> rolleType?.name ?: "BIDRAGSMOTTAKER"
+    }
+}
 data class BehandlingBeregningModel private constructor(
     val behandlingId: Long,
     val virkningsDato: LocalDate,
@@ -38,6 +48,7 @@ data class BehandlingBeregningModel private constructor(
             barnetillegg: Set<Barnetillegg>,
             utvidetbarnetrygd: Set<Utvidetbarnetrygd>,
             husstandsBarn: Set<HusstandsBarn>,
+            roller: Set<Rolle>,
         ): Either<NonEmptyList<String>, BehandlingBeregningModel> = either {
             zipOrAccumulate(
                 {
@@ -56,7 +67,7 @@ data class BehandlingBeregningModel private constructor(
                     mapOrAccumulate(sivilstand) {
                         SivilstandModel(
                             it.datoFom?.toLocalDate() ?: raise("Sivilstands datoFom kan ikke være null"),
-                            it.datoTom?.toLocalDate() ?: raise("Sivilstands datoTom kan ikke være null"),
+                            it.datoTom?.toLocalDate(),
                             it.sivilstandType,
                         )
                     }
@@ -67,8 +78,9 @@ data class BehandlingBeregningModel private constructor(
                             inntektType = it.inntektType ?: "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO -> DETTE ER KUN MIDLERTIDIG
 //                            inntektType = it.inntektType ?: raise("InntektType kan ikke være null"),
                             belop = it.belop,
+                            rolle = roller.rolleType(it.ident),
                             datoFom = it.datoFom?.toLocalDate() ?: raise("Inntekts datoFom kan ikke være null"),
-                            datoTom = it.datoTom?.toLocalDate() ?: raise("Inntekts datoTom kan ikke være null"),
+                            datoTom = it.datoTom?.toLocalDate(),
                         )
                     }
                 },
@@ -76,7 +88,7 @@ data class BehandlingBeregningModel private constructor(
                     mapOrAccumulate(barnetillegg) {
                         BarnetilleggModel(
                             datoFom = it.datoFom?.toLocalDate() ?: raise("Barnetillegg datoFom kan ikke være null"),
-                            datoTom = it.datoTom?.toLocalDate() ?: raise("Barnetillegg datoTom kan ikke være null"),
+                            datoTom = it.datoTom?.toLocalDate(),
                             belop = it.barnetillegg,
                         )
                     }
@@ -85,7 +97,7 @@ data class BehandlingBeregningModel private constructor(
                     mapOrAccumulate(utvidetbarnetrygd) {
                         UtvidetbarnetrygdModel(
                             datoFom = it.datoFom?.toLocalDate() ?: raise("Utvidetbarnetrygd datoFom kan ikke være null"),
-                            datoTom = it.datoTom?.toLocalDate() ?: raise("Utvidetbarnetrygd datoTom kan ikke være null"),
+                            datoTom = it.datoTom?.toLocalDate(),
                             belop = it.belop,
                         )
                     }
@@ -97,7 +109,7 @@ data class BehandlingBeregningModel private constructor(
                     ) {
                         HusstandsBarnPeriodeModel(
                             datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoFom kan ikke være null"),
-                            datoTom = it.datoTom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoTom kan ikke være null"),
+                            datoTom = it.datoTom?.toLocalDate(),
                             ident = it.husstandsBarn.ident,
                             boStatus = it.boStatus,
                         )
@@ -121,7 +133,7 @@ data class BehandlingBeregningModel private constructor(
 
 data class HusstandsBarnPeriodeModel(
     val datoFom: LocalDate,
-    val datoTom: LocalDate,
+    val datoTom: LocalDate? = null,
     val ident: String?,
     val boStatus: BoStatusType,
     // TODO ENDRE til bostatusKode fra felles
@@ -130,25 +142,26 @@ data class HusstandsBarnPeriodeModel(
 
 data class SivilstandModel(
     val datoFom: LocalDate,
-    val datoTom: LocalDate,
+    val datoTom: LocalDate? = null,
     val sivilstandType: SivilstandType,
 )
 
 data class InntektModel(
     val inntektType: String,
     val belop: BigDecimal,
+    val rolle: String,
     val datoFom: LocalDate,
-    val datoTom: LocalDate,
+    val datoTom: LocalDate? = null,
 )
 
 data class BarnetilleggModel(
     val datoFom: LocalDate,
-    val datoTom: LocalDate,
+    val datoTom: LocalDate? = null,
     val belop: BigDecimal,
 )
 
 data class UtvidetbarnetrygdModel(
     val datoFom: LocalDate,
-    val datoTom: LocalDate,
+    val datoTom: LocalDate? = null,
     val belop: BigDecimal,
 )
