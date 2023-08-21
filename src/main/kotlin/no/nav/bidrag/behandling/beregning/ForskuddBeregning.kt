@@ -64,7 +64,7 @@ class ForskuddBeregning {
                             datoTil = it.datoTom?.toNoString(),
                             rolle = "SOKNADSBARN",
                             bostatusKode = boStatusTypeToBoStatusKode(it.boStatus).name,
-                            soknadsbarnId = soknadBarn.soknadsLinje
+                            soknadsbarnId = soknadBarn.soknadsLinje,
                         ),
                     ),
                 )
@@ -187,12 +187,12 @@ class ForskuddBeregning {
         var lastStartDate: LocalDate = list[0].point
         var currentPeriods: Long = list[0].info.heads
 
-            for (i in 1 until list.size) {
-                val nextDate = if (list[i].point == INFINITY) null else list[i].point
-                r.add(BarnPeriodeNode(lastStartDate.toNoString(), nextDate?.toNoString(), currentPeriods.toDouble()))
-                lastStartDate = list[i].point
-                currentPeriods = currentPeriods + list[i].info.heads - list[i].info.tails
-            }
+        for (i in 1 until list.size) {
+            val nextDate = if (list[i].point == INFINITY) null else list[i].point
+            r.add(BarnPeriodeNode(lastStartDate.toNoString(), nextDate?.toNoString(), currentPeriods.toDouble()))
+            lastStartDate = list[i].point
+            currentPeriods = currentPeriods + list[i].info.heads - list[i].info.tails
+        }
 
         return r
     }
@@ -207,7 +207,7 @@ class ForskuddBeregning {
             barnetillegg = behandling.barnetillegg,
             utvidetbarnetrygd = behandling.utvidetbarnetrygd,
             husstandsBarn = behandling.husstandsBarn,
-            roller = behandling.roller
+            roller = behandling.roller,
         )
 
     fun toPayload(b: BehandlingBeregningModel, soknadsBarn: Rolle): BeregnForskuddPayload =
@@ -248,7 +248,7 @@ data class BostatusNode(
     val datoTil: String? = null,
     val rolle: String,
     val bostatusKode: String,
-    val soknadsbarnId: Int
+    val soknadsbarnId: Int,
 )
 
 data class SoknadsBarnNode(

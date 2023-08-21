@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(enumAsRef = true)
 enum class RolleType {
-    BIDRAGS_PLIKTIG, //TODO: Endre til BIDRAGSPLIKTIG
-    BIDRAGS_MOTTAKER, //TODO: Endre til BIDRAGSMOTTAKER
+    BIDRAGS_PLIKTIG, // TODO: Endre til BIDRAGSPLIKTIG
+    BIDRAGS_MOTTAKER, // TODO: Endre til BIDRAGSMOTTAKER
     BARN,
     REELL_MOTTAKER,
     FEILREGISTRERT,

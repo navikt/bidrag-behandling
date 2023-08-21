@@ -48,5 +48,5 @@ data class CreateBehandlingRequest(
     var engangsbelopType: EngangsbelopType?,
     @Schema(required = true)
     val soknadId: Long,
-    val soknadRefId: Long? = null
+    val soknadRefId: Long? = null,
 )

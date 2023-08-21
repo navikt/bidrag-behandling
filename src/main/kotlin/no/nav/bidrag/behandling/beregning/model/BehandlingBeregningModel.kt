@@ -22,7 +22,7 @@ import java.util.Date
 
 fun Set<Rolle>.rolleType(ident: String): String {
     val rolleType = this.find { it.ident == ident }?.rolleType
-    return when(rolleType){
+    return when (rolleType) {
         RolleType.BIDRAGS_PLIKTIG -> "BIDRAGSPLIKTIG"
         RolleType.BIDRAGS_MOTTAKER -> "BIDRAGSMOTTAKER"
         else -> rolleType?.name ?: "BIDRAGSMOTTAKER"
@@ -48,7 +48,7 @@ data class BehandlingBeregningModel private constructor(
             barnetillegg: Set<Barnetillegg>,
             utvidetbarnetrygd: Set<Utvidetbarnetrygd>,
             husstandsBarn: Set<HusstandsBarn>,
-            roller: Set<Rolle>
+            roller: Set<Rolle>,
         ): Either<NonEmptyList<String>, BehandlingBeregningModel> = either {
             zipOrAccumulate(
                 {

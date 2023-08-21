@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 data class BehandlingDto(
     val id: Long,

@@ -29,8 +29,10 @@ class BehandlingBeregnForskuddController(
 ) {
 
     private fun isPeriodOneWithinPeriodTwo(datoFom1: LocalDate?, datoTom1: LocalDate?, datoFom2: LocalDate, datoTom2: LocalDate?) =
-        (datoFom1 === null || datoFom1 > datoFom2 || datoFom1.isEqual(datoFom2)) && ((datoTom2 == null && datoTom1 == null) ||
-            (datoTom1 != null && (datoTom2 == null || datoTom1 < datoTom2 || datoTom1.isEqual(datoTom2))))
+        (datoFom1 === null || datoFom1 > datoFom2 || datoFom1.isEqual(datoFom2)) && (
+            (datoTom2 == null && datoTom1 == null) ||
+                (datoTom1 != null && (datoTom2 == null || datoTom1 < datoTom2 || datoTom1.isEqual(datoTom2)))
+            )
 
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/beregn")

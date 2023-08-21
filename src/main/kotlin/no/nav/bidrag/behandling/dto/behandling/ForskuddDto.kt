@@ -10,7 +10,7 @@ import java.time.LocalDate
 data class ForskuddDto(
     @Schema(description = "Periodisert liste over resultat av forskuddsberegning") var beregnetForskuddPeriodeListe: List<ResultatPeriode> = emptyList(),
     @Schema(description = "Grunnlagsliste") val grunnlagListe: List<Grunnlag>,
-    )
+)
 
 @Schema(description = "Resultatet av en beregning for en gitt periode")
 data class ResultatPeriode(

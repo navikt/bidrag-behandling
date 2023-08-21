@@ -7,7 +7,7 @@ import java.util.Date
 
 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 val formatterCommpact = DateTimeFormatter.ofPattern("yyyyMMdd")
-val INFINITY = LocalDate.ofYearDay(999999,1)
+val INFINITY = LocalDate.ofYearDay(999999, 1)
 
 fun Date.toLocalDate(): LocalDate {
     return LocalDate.ofInstant(this.toInstant(), ZoneId.systemDefault())

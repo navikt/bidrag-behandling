@@ -12,7 +12,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domain.enums.EngangsbelopType
 import no.nav.bidrag.domain.enums.StonadType
-import java.time.LocalDateTime
 import java.util.Date
 
 @Entity(name = "behandling")
