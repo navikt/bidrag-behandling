@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.consumer.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -8,7 +9,8 @@ import java.time.LocalDate
 @Schema(description = "Beregnet forskudd")
 data class ForskuddDto(
     @Schema(description = "Periodisert liste over resultat av forskuddsberegning") var beregnetForskuddPeriodeListe: List<ResultatPeriode> = emptyList(),
-)
+    @Schema(description = "Grunnlagsliste") val grunnlagListe: List<Grunnlag>,
+    )
 
 @Schema(description = "Resultatet av en beregning for en gitt periode")
 data class ResultatPeriode(

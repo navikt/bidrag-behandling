@@ -51,15 +51,16 @@ class BehandlingBeregnForskuddController(
                     if (false) printDebugPayload(payload)
 
                     try {
-                        val beregnetForskuddPeriodeListe =
-                            bidragBeregnForskuddConsumer.beregnForskudd(payload).beregnetForskuddPeriodeListe
+                        val respons =
+                            bidragBeregnForskuddConsumer.beregnForskudd(payload)
+                        val beregnetForskuddPeriodeListe = respons.beregnetForskuddPeriodeListe
                         beregnetForskuddPeriodeListe.forEach { r ->
                             r.sivilstandType = behandlingModel.sivilstand.find { sivilstand -> isPeriodOneWithinPeriodTwo(r.periode.datoFom, r.periode.datoTil, sivilstand.datoFom, sivilstand.datoTom) }?.sivilstandType
                         }
                         ForskuddBeregningPerBarn(
                             ident = it.ident,
                             beregnetForskuddPeriodeListe = beregnetForskuddPeriodeListe,
-                            grunnlagListe = payload.grunnlagListe,
+                            grunnlagListe = respons.grunnlagListe,
                         )
                     } catch (e: HttpClientErrorException) {
                         LOGGER.warn { e }

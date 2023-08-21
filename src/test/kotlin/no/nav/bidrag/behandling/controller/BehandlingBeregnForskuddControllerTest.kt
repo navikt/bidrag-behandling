@@ -63,7 +63,6 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             null,
             null,
             null,
-            LocalDateTime.now(),
             1,
         )
 
