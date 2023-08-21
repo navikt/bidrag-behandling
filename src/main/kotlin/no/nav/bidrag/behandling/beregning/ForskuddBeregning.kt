@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
+import no.nav.bidrag.behandling.transformers.INFINITY
 import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toNoString
@@ -24,7 +25,6 @@ import no.nav.bidrag.domain.enums.GrunnlagType
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
-
 @Service
 class ForskuddBeregning {
 
@@ -35,7 +35,7 @@ class ForskuddBeregning {
                 type = GrunnlagType.SOKNADSBARN_INFO,
                 innhold = POJONode(
                     SoknadsBarnNode(
-                        soknadsbarnId = soknadBarn.soknadsLinje,
+                        soknadsbarnId = soknadBarn.id!!.toInt(),
                         fodselsdato = soknadBarn.fodtDato?.toLocalDate()?.toNoString(),
                     ),
                 ),
@@ -88,13 +88,13 @@ class ForskuddBeregning {
         inntekter
             .map {
                 Grunnlag(
-                    referanse = "Mottatt_Inntekt_" + it.inntektType + it.datoFom.toCompactString(),
+                    referanse = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
                     type = GrunnlagType.INNTEKT,
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
                             datoTil = it.datoTom?.toNoString(),
-                            rolle = "BIDRAGSMOTTAKER",
+                            rolle = it.rolle,
                             inntektType = it.inntektType,
                             belop = it.belop,
                         ),
@@ -171,11 +171,11 @@ class ForskuddBeregning {
                 timesMap[startDate] = PointInTimeInfo(1, 0)
             }
 
-            val endDate = it.datoTom
-            if (endDate != null && timesMap.contains(endDate)) {
+            val endDate = it.datoTom ?: INFINITY
+            if (timesMap.contains(endDate)) {
                 val existingEnd = timesMap[endDate]!!
                 existingEnd.tails += 1
-            } else if (endDate != null) {
+            } else {
                 timesMap[endDate] = PointInTimeInfo(0, 1)
             }
         }
@@ -187,16 +187,12 @@ class ForskuddBeregning {
         var lastStartDate: LocalDate = list[0].point
         var currentPeriods: Long = list[0].info.heads
 
-        if (list.size == 1){
-              r.add(BarnPeriodeNode(lastStartDate.toNoString(), null, currentPeriods.toDouble()))
-        } else {
             for (i in 1 until list.size) {
-                r.add(BarnPeriodeNode(lastStartDate.toNoString(), list[i].point.toNoString(), currentPeriods.toDouble()))
-                lastStartDate = list[i].point.plusDays(1)
+                val nextDate = if (list[i].point == INFINITY) null else list[i].point
+                r.add(BarnPeriodeNode(lastStartDate.toNoString(), nextDate?.toNoString(), currentPeriods.toDouble()))
+                lastStartDate = list[i].point
                 currentPeriods = currentPeriods + list[i].info.heads - list[i].info.tails
             }
-            r.add(BarnPeriodeNode(lastStartDate.toNoString(), null, currentPeriods.toDouble()))
-        }
 
         return r
     }
@@ -211,6 +207,7 @@ class ForskuddBeregning {
             barnetillegg = behandling.barnetillegg,
             utvidetbarnetrygd = behandling.utvidetbarnetrygd,
             husstandsBarn = behandling.husstandsBarn,
+            roller = behandling.roller
         )
 
     fun toPayload(b: BehandlingBeregningModel, soknadsBarn: Rolle): BeregnForskuddPayload =

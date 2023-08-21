@@ -39,7 +39,6 @@ data class BehandlingDto(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningsDato: LocalDate? = null,
-    val opprettetTidspunkt: LocalDateTime? = null,
     val soknadRefId: Long? = null,
     val aarsak: ForskuddAarsakType? = null,
     val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,

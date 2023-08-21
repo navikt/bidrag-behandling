@@ -69,7 +69,6 @@ data class Behandling(
     @Column(name = "INNTEKT_BEGRUNNELSE_KUN_I_NOTAT")
     val inntektBegrunnelseKunINotat: String? = null,
 
-    val opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

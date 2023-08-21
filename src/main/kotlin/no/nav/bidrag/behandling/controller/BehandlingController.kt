@@ -153,7 +153,6 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandling.husstandsBarn.toHusstandsBarnDto(),
             behandling.sivilstand.toSivilstandDto(),
             behandling.virkningsDato?.toLocalDate(),
-            behandling.opprettetTidspunkt,
             behandling.soknadRefId,
             behandling.aarsak,
             behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,

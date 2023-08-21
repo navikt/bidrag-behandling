@@ -29,8 +29,8 @@ class BehandlingBeregnForskuddController(
 ) {
 
     private fun isPeriodOneWithinPeriodTwo(datoFom1: LocalDate?, datoTom1: LocalDate?, datoFom2: LocalDate, datoTom2: LocalDate?) =
-        (datoFom1 === null || datoFom1.isAfter(datoFom2) || datoFom1.isEqual(datoFom2)) &&
-            (datoTom1 === null || datoTom2 == null || datoTom1.isBefore(datoTom2) || datoTom1.isEqual(datoTom2))
+        (datoFom1 === null || datoFom1 > datoFom2 || datoFom1.isEqual(datoFom2)) && ((datoTom2 == null && datoTom1 == null) ||
+            (datoTom1 != null && (datoTom2 == null || datoTom1 < datoTom2 || datoTom1.isEqual(datoTom2))))
 
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/beregn")
@@ -54,7 +54,7 @@ class BehandlingBeregnForskuddController(
                         val beregnetForskuddPeriodeListe =
                             bidragBeregnForskuddConsumer.beregnForskudd(payload).beregnetForskuddPeriodeListe
                         beregnetForskuddPeriodeListe.forEach { r ->
-                            r.sivilstandType = behandlingModel.sivilstand.find { isPeriodOneWithinPeriodTwo(r.periode.datoFom, r.periode.datoTil, it.datoFom, it.datoTom) }?.sivilstandType
+                            r.sivilstandType = behandlingModel.sivilstand.find { sivilstand -> isPeriodOneWithinPeriodTwo(r.periode.datoFom, r.periode.datoTil, sivilstand.datoFom, sivilstand.datoTom) }?.sivilstandType
                         }
                         ForskuddBeregningPerBarn(
                             ident = it.ident,
