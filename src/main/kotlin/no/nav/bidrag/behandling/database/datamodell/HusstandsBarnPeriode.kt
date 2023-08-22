@@ -22,7 +22,7 @@ data class HusstandsBarnPeriode(
     val datoTom: Date?,
 
     @Enumerated(EnumType.STRING)
-    val boStatus: BoStatusType,
+    val boStatus: BoStatusType?,
 
     val kilde: String,
 
