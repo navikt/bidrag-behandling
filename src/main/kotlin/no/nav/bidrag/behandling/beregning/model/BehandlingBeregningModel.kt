@@ -135,7 +135,7 @@ data class HusstandsBarnPeriodeModel(
     val datoFom: LocalDate,
     val datoTom: LocalDate? = null,
     val ident: String?,
-    val boStatus: BoStatusType,
+    val boStatus: BoStatusType?,
     // TODO ENDRE til bostatusKode fra felles
     // import no.nav.bidrag.beregn.felles.enums.BostatusKode
 )

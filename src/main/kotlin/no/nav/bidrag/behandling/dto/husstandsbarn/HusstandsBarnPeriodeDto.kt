@@ -17,7 +17,7 @@ data class HusstandsBarnPeriodeDto(
     val datoTom: LocalDate?,
 
     @Schema(required = true)
-    val boStatus: BoStatusType,
+    val boStatus: BoStatusType?,
 
     @Schema(required = true)
     val kilde: String,

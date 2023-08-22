@@ -63,7 +63,7 @@ class ForskuddBeregning {
                             datoFom = it.datoFom.toNoString(),
                             datoTil = it.datoTom?.toNoString(),
                             rolle = "SOKNADSBARN",
-                            bostatusKode = boStatusTypeToBoStatusKode(it.boStatus).name,
+                            bostatusKode = it.boStatus?.let { it1 -> boStatusTypeToBoStatusKode(it1).name },
                             soknadsbarnId = soknadBarn.soknadsLinje,
                         ),
                     ),
@@ -247,7 +247,7 @@ data class BostatusNode(
     val datoFom: String,
     val datoTil: String? = null,
     val rolle: String,
-    val bostatusKode: String,
+    val bostatusKode: String?,
     val soknadsbarnId: Int,
 )
 
