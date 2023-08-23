@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
+import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnPeriodeDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
@@ -20,7 +21,6 @@ import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.domain.ident.PersonIdent
-import no.nav.bidrag.transport.sak.RolleDto
 
 fun Set<Sivilstand>.toSivilstandDto() = this.map {
     SivilstandDto(it.id, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.sivilstandType)
@@ -86,8 +86,8 @@ fun Opplysninger.toDto(): OpplysningerDto {
     return OpplysningerDto(this.id!!, this.behandling.id!!, this.aktiv, this.opplysningerType, this.data, this.hentetDato.toLocalDate())
 }
 
-fun Behandling.tilRolleDto() = roller.map {
-    RolleDto(
+fun Behandling.tilForsendelseRolleDto() = roller.map {
+    ForsendelseRolleDto(
         fødselsnummer = PersonIdent(it.ident),
         type = when (it.rolleType) {
             RolleType.BIDRAGS_MOTTAKER -> Rolletype.BM

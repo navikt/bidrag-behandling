@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.dto.forsendelse
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.domain.ident.PersonIdent
 import no.nav.bidrag.transport.sak.RolleDto
 
 data class InitalizeForsendelseRequest(
@@ -11,5 +13,10 @@ data class InitalizeForsendelseRequest(
     val behandlingInfo: BehandlingInfoDto,
     val enhet: String,
     val tema: String? = null,
-    val roller: List<RolleDto>,
+    val roller: List<ForsendelseRolleDto>,
+)
+
+data class ForsendelseRolleDto(
+    val fødselsnummer: PersonIdent,
+    val type: Rolletype
 )

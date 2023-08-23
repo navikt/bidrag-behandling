@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
-import no.nav.bidrag.behandling.transformers.tilRolleDto
+import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilVedtakType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,7 +29,7 @@ class BehandlingService(
                 InitalizeForsendelseRequest(
                     saksnummer = it.saksnummer,
                     enhet = it.behandlerEnhet,
-                    roller = it.tilRolleDto(),
+                    roller = it.tilForsendelseRolleDto(),
                     behandlingInfo = BehandlingInfoDto(
                         behandlingId = it.id,
                         soknadId = it.soknadId,

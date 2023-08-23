@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragForsendelseConsumer
 import no.nav.bidrag.behandling.consumer.BidragTIlgangskontrollConsumer
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.forsendelse.MottakerDto
 import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
@@ -61,7 +62,7 @@ class ForsendelseService(
             )
     }
     private fun opprettForRoller(
-        behandlingRoller: List<RolleDto>,
+        behandlingRoller: List<ForsendelseRolleDto>,
         behandlingInfoDto: BehandlingInfoDto,
     ): OpprettForsendelseForRollerListe {
         val roller = OpprettForsendelseForRollerListe()
@@ -81,7 +82,7 @@ class ForsendelseService(
 }
 
 class OpprettForsendelseForRollerListe : MutableList<PersonIdent> by mutableListOf() {
-    fun leggTil(rolle: RolleDto?) {
+    fun leggTil(rolle: ForsendelseRolleDto?) {
         if (rolle == null) return
         val fødselsnummer = rolle.fødselsnummer
         if (fødselsnummer != null && fødselsnummer.verdi.isNotEmpty()) this.add(fødselsnummer)
@@ -90,5 +91,5 @@ class OpprettForsendelseForRollerListe : MutableList<PersonIdent> by mutableList
     fun listeMedFødselsnummere() = this.map { it.verdi }
 }
 
-fun List<RolleDto>.hentRolle(rolleType: Rolletype): RolleDto? = this.find { it.type == rolleType }
-fun List<RolleDto>.hentBarn(): List<RolleDto> = this.filter { it.type == Rolletype.BA }
+fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? = this.find { it.type == rolleType }
+fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> = this.filter { it.type == Rolletype.BA }

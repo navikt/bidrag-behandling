@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
-import no.nav.bidrag.behandling.transformers.tilRolleDto
+import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.domain.enums.BehandlingsrefKilde
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -50,7 +50,7 @@ class VedtakHendelseListener(
                     erFattetBeregnet = true,
                     vedtakType = vedtak.type,
                 ),
-                roller = behandling.tilRolleDto(),
+                roller = behandling.tilForsendelseRolleDto(),
             ),
         )
     }
