@@ -25,25 +25,28 @@ class BehandlingService(
 ) {
     fun createBehandling(behandling: Behandling): Behandling {
         return behandlingRepository.save(behandling).let {
-            forsendelseService.opprettForsendelse(
-                InitalizeForsendelseRequest(
-                    saksnummer = it.saksnummer,
-                    enhet = it.behandlerEnhet,
-                    roller = it.tilForsendelseRolleDto(),
-                    behandlingInfo = BehandlingInfoDto(
-                        behandlingId = it.id,
-                        soknadId = it.soknadId,
-                        soknadFra = it.soknadFra,
-                        stonadType = it.stonadType,
-                        engangsBelopType = it.engangsbelopType,
-                        vedtakType = it.soknadType.tilVedtakType(),
-                    ),
-                ),
-            )
+            opprettForsendelseForBehandling(it)
             it
         }
     }
 
+    private fun opprettForsendelseForBehandling(behandling: Behandling){
+        forsendelseService.opprettForsendelse(
+            InitalizeForsendelseRequest(
+                saksnummer = behandling.saksnummer,
+                enhet = behandling.behandlerEnhet,
+                roller = behandling.tilForsendelseRolleDto(),
+                behandlingInfo = BehandlingInfoDto(
+                    behandlingId = behandling.id,
+                    soknadId = behandling.soknadId,
+                    soknadFra = behandling.soknadFra,
+                    behandlingType = behandling.behandlingType.name,
+                    stonadType = behandling.stonadType,
+                    engangsBelopType = behandling.engangsbelopType,
+                    vedtakType = behandling.soknadType.tilVedtakType(),
+                ),
+            ))
+    }
     fun oppdaterBehandling(
         behandlingId: Long,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.hendelse
 
 import StubUtils
+import com.github.tomakehurst.wiremock.client.WireMock
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
@@ -8,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.CommonTestRunner
@@ -26,6 +28,7 @@ import no.nav.bidrag.transport.behandling.vedtak.Sporingsdata
 import no.nav.bidrag.transport.behandling.vedtak.Stonadsendring
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDateTime
@@ -35,10 +38,15 @@ class VedtakHendelseTest : CommonTestRunner() {
     val stubUtils: StubUtils = StubUtils()
 
     @Autowired
-    lateinit var behandlingService: BehandlingService
+    lateinit var behandlingRepository: BehandlingRepository
 
     @Autowired
     lateinit var vedtakHendelseListener: VedtakHendelseListener
+
+    @BeforeEach
+    fun resetMocks(){
+        WireMock.resetAllRequests()
+    }
 
     @Test
     fun `skal opprette forsendelse for vedtakhendelse og lagre vedtakId`() {
@@ -46,18 +54,11 @@ class VedtakHendelseTest : CommonTestRunner() {
         val vedtakId = 123123
         val behandlingRequest = opprettBehandling()
         behandlingRequest.roller = opprettBehandlingRoller(behandlingRequest)
-        val behandling = behandlingService.createBehandling(behandlingRequest)
-        vedtakHendelseListener.prossesserVedtakHendelse(
-            ConsumerRecord(
-                "",
-                1,
-                1,
-                "",
-                stubUtils.toJsonString(opprettVedtakhendelse(vedtakId, behandling.id!!)),
-            ),
-        )
-        val oppdatertBehandling = behandlingService.hentBehandlingById(behandling.id!!)
+        val behandling = behandlingRepository.save(behandlingRequest)
+        vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(opprettVedtakhendelse(vedtakId, behandling.id!!)))
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
         oppdatertBehandling.vedtakId shouldBe vedtakId
+        stubUtils.Verify().opprettForsendelseKaltAntallGanger(3)
         stubUtils.Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
         stubUtils.Verify()
@@ -66,6 +67,29 @@ class VedtakHendelseTest : CommonTestRunner() {
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_1.fødselsnummer?.verdi}\"")
     }
 
+    @Test
+    fun `skal opprette forsendelse for vedtakhendelse og lagre vedtakId for forskudd`() {
+        stubUtils.stubOpprettForsendelse()
+        val vedtakId = 123123
+        val behandlingRequest = opprettBehandling()
+        behandlingRequest.roller = opprettBehandlingRoller(behandlingRequest)
+        val behandling = behandlingRepository.save(behandlingRequest)
+        val vedtakHendelse = opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = StonadType.FORSKUDD)
+        vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
+        oppdatertBehandling.vedtakId shouldBe vedtakId
+        stubUtils.Verify().opprettForsendelseKaltAntallGanger(1)
+        stubUtils.Verify()
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
+    }
+
+    private fun opprettHendelseRecord(vedtakHendelse: VedtakHendelse) = ConsumerRecord(
+        "",
+        1,
+        1,
+        "",
+        stubUtils.toJsonString(vedtakHendelse),
+    )
     private fun opprettBehandling() = Behandling(
         datoFom = Date(),
         datoTom = Date(),
@@ -104,12 +128,12 @@ class VedtakHendelseTest : CommonTestRunner() {
         ),
     )
 
-    private fun opprettVedtakhendelse(vedtakId: Int, behandlingId: Long): VedtakHendelse {
+    private fun opprettVedtakhendelse(vedtakId: Int, behandlingId: Long, stonadType: StonadType = StonadType.BIDRAG18AAR): VedtakHendelse {
         return VedtakHendelse(
             type = VedtakType.FASTSETTELSE,
             stonadsendringListe = listOf(
                 Stonadsendring(
-                    type = StonadType.BIDRAG18AAR,
+                    type = stonadType,
                     eksternReferanse = "",
                     endring = true,
                     indeksreguleringAar = "2024",

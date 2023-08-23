@@ -62,11 +62,15 @@ class StubUtils {
             verifyContains(verify, *contains)
         }
 
-        fun opprettForsendelseIkkeKalt() {
+        fun opprettForsendelseKaltAntallGanger(antall: Int) {
             val verify = WireMock.postRequestedFor(
                 WireMock.urlMatching("/forsendelse/api/forsendelse"),
             )
-            WireMock.verify(0, verify)
+            WireMock.verify(antall, verify)
+        }
+
+        fun opprettForsendelseIkkeKalt() {
+            opprettForsendelseKaltAntallGanger(0)
         }
 
         private fun verifyContains(verify: RequestPatternBuilder, vararg contains: String) {
