@@ -34,6 +34,7 @@ class ForsendelseService(
         )
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
+        log.info { "Oppretter forsendelse for ${opprettForRoller.size} roller for behandling ${request.behandlingInfo}" }
         opprettForRoller.forEach {
             try {
                 val response = bidragForsendelseConsumer.opprettForsendelse(
