@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.transformers.tilRolleDto
+import no.nav.bidrag.behandling.transformers.tilVedtakType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Date
@@ -33,7 +34,8 @@ class BehandlingService(
                     soknadId = it.soknadId,
                     soknadFra = it.soknadFra,
                     stonadType = it.stonadType,
-                    engangsBelopType = it.engangsbelopType
+                    engangsBelopType = it.engangsbelopType,
+                    vedtakType = it.soknadType.tilVedtakType()
                 )
             ))
             it

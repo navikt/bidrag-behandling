@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.StonadType
+import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.domain.ident.PersonIdent
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
 import no.nav.bidrag.transport.sak.RolleDto
@@ -51,13 +52,14 @@ class ForsendelseServiceTest {
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
                 stonadType = StonadType.FORSKUDD,
+                vedtakType = VedtakType.KLAGE
             ),
             roller = listOf(
                 ROLLE_BM, ROLLE_BP, ROLLE_BA_1
             )
         )
         forsendelseService.opprettForsendelse(request)
-        verify(atMost = 1) {
+        verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(withArg {
                 it.tema shouldBe "FAR"
             })
@@ -72,14 +74,15 @@ class ForsendelseServiceTest {
             enhet = ENHET_FARSKAP,
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.FORSKUDD,
+                stonadType = StonadType.BIDRAG,
+                vedtakType = VedtakType.FASTSETTELSE
             ),
             roller = listOf(
                 ROLLE_BM, ROLLE_BP, ROLLE_BA_1
             )
         )
         forsendelseService.opprettForsendelse(request)
-        verify(atMost = 1) {
+        verify(exactly = 2) {
             bidragForsendelseConsumer.opprettForsendelse(withArg {
                 it.tema shouldBe "BID"
             })
@@ -87,20 +90,21 @@ class ForsendelseServiceTest {
     }
 
     @Test
-    fun `Skal opprette forsendelse for behandling med type FORSKUDD`(){
+    fun `Skal opprette forsendelse for behandling med type FORSKUDD og vedtakType KLAGE`(){
         val request = InitalizeForsendelseRequest(
             saksnummer = SAKSNUMMER,
             enhet = "4806",
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
                 stonadType = StonadType.FORSKUDD,
+                vedtakType = VedtakType.KLAGE
             ),
             roller = listOf(
                 ROLLE_BM, ROLLE_BP, ROLLE_BA_1
             )
         )
         forsendelseService.opprettForsendelse(request)
-        verify(atMost = 1) {
+        verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(withArg {
                 it.enhet shouldBe "4806"
                 it.saksnummer shouldBe SAKSNUMMER
@@ -125,13 +129,14 @@ class ForsendelseServiceTest {
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
                 stonadType = StonadType.BIDRAG,
+                vedtakType = VedtakType.FASTSETTELSE
             ),
             roller = listOf(
                 ROLLE_BM, ROLLE_BP, ROLLE_BA_1
             )
         )
         forsendelseService.opprettForsendelse(request)
-        verify(atMost = 2) {
+        verify(exactly = 2) {
             bidragForsendelseConsumer.opprettForsendelse(withArg {
                 it.enhet shouldBe "4806"
                 it.saksnummer shouldBe SAKSNUMMER
@@ -164,13 +169,14 @@ class ForsendelseServiceTest {
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
                 stonadType = StonadType.BIDRAG18AAR,
+                vedtakType = VedtakType.FASTSETTELSE
             ),
             roller = listOf(
                 ROLLE_BM, ROLLE_BP, ROLLE_BA_1
             )
         )
         forsendelseService.opprettForsendelse(request)
-        verify(atMost = 3) {
+        verify(exactly = 3) {
             bidragForsendelseConsumer.opprettForsendelse(withArg {
                 it.enhet shouldBe "4806"
                 it.saksnummer shouldBe SAKSNUMMER
@@ -196,6 +202,48 @@ class ForsendelseServiceTest {
                 it.gjelderIdent shouldBe ROLLE_BA_1.fødselsnummer?.verdi
                 it.mottaker?.ident shouldBe ROLLE_BA_1.fødselsnummer?.verdi
             })
+        }
+    }
+
+    @Test
+    fun `Skal ikke opprette forsendelse for behandling med type forskudd fastsettelse hvis vedtak ikke er fattet`(){
+        every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
+        val request = InitalizeForsendelseRequest(
+            saksnummer = SAKSNUMMER,
+            enhet = ENHET_FARSKAP,
+            behandlingInfo = BehandlingInfoDto(
+                soknadId = SOKNAD_ID,
+                stonadType = StonadType.FORSKUDD,
+                vedtakType = VedtakType.FASTSETTELSE
+            ),
+            roller = listOf(
+                ROLLE_BM, ROLLE_BP, ROLLE_BA_1
+            )
+        )
+        forsendelseService.opprettForsendelse(request)
+        verify(exactly = 0) {
+            bidragForsendelseConsumer.opprettForsendelse(any())
+        }
+    }
+
+    @Test
+    fun `Skal ikke opprette forsendelse for behandling med type forskudd endring hvis vedtak ikke er fattet`(){
+        every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
+        val request = InitalizeForsendelseRequest(
+            saksnummer = SAKSNUMMER,
+            enhet = ENHET_FARSKAP,
+            behandlingInfo = BehandlingInfoDto(
+                soknadId = SOKNAD_ID,
+                stonadType = StonadType.FORSKUDD,
+                vedtakType = VedtakType.ENDRING
+            ),
+            roller = listOf(
+                ROLLE_BM, ROLLE_BP, ROLLE_BA_1
+            )
+        )
+        forsendelseService.opprettForsendelse(request)
+        verify(exactly = 0) {
+            bidragForsendelseConsumer.opprettForsendelse(any())
         }
     }
 }

@@ -39,10 +39,11 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     )
                 )
             ),
-            Void::class.java
+            List::class.java
         )
 
         response.statusCode shouldBe HttpStatus.OK
+        response.body shouldBe listOf(ROLLE_BM.fødselsnummer?.verdi)
         @Language("Json")
         val expectedRequest = """
             {
@@ -59,7 +60,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     "behandlingId": null,
                     "soknadId": $SOKNAD_ID,
                     "erFattetBeregnet": null,
-                    "erVedtakIkkeTilbakekreving": null,
+                    "erVedtakIkkeTilbakekreving": false,
                     "stonadType": "FORSKUDD",
                     "engangsBelopType": null,
                     "behandlingType": null,

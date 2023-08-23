@@ -2,12 +2,14 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
@@ -17,6 +19,7 @@ import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.domain.ident.PersonIdent
 import no.nav.bidrag.transport.sak.RolleDto
 
@@ -95,4 +98,17 @@ fun Behandling.tilRolleDto() = roller.map {
             RolleType.FEILREGISTRERT -> Rolletype.FR
         }
     )
+}
+
+fun SoknadType.tilVedtakType(): VedtakType = when(this){
+    SoknadType.FASTSETTELSE -> VedtakType.FASTSETTELSE
+    SoknadType.REVURDERING -> VedtakType.REVURDERING
+    SoknadType.ALDERSJUSTERING -> VedtakType.ALDERSJUSTERING
+    SoknadType.ALDERSOPPHØR -> VedtakType.ALDERSOPPHØR
+    SoknadType.ENDRING -> VedtakType.ENDRING
+    SoknadType.ENDRING_MOTTAKER -> VedtakType.ENDRING_MOTTAKER
+    SoknadType.KLAGE -> VedtakType.KLAGE
+    SoknadType.OPPHØR -> VedtakType.OPPHØR
+    SoknadType.INDEKSREGULERING -> VedtakType.INDEKSREGULERING
+    SoknadType.INNKREVING -> VedtakType.INNKREVING
 }

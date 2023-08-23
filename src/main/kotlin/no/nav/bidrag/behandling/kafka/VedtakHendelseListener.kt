@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.transformers.tilRolleDto
 import no.nav.bidrag.domain.enums.BehandlingsrefKilde
+import no.nav.bidrag.domain.enums.GrunnlagType
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
@@ -37,7 +38,7 @@ class VedtakHendelseListener(
     }
 
     private fun opprettForsendelse(vedtak: VedtakHendelse, behandling: Behandling){
-            forsendelseService.opprettForsendelse(InitalizeForsendelseRequest(
+        forsendelseService.opprettForsendelse(InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer,
                 enhet = vedtak.enhetId,
                 behandlingInfo = BehandlingInfoDto(
@@ -46,6 +47,7 @@ class VedtakHendelseListener(
                     soknadFra = behandling.soknadFra,
                     stonadType = vedtak.stonadType,
                     engangsBelopType = vedtak.engangsbelopType,
+                    erFattetBeregnet = true,
                     vedtakType = vedtak.type
                 ),
                 roller = behandling.tilRolleDto()

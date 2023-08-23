@@ -22,7 +22,7 @@ class ForsendelseController(private val forsendelseService: ForsendelseService) 
         @Valid
         @RequestBody(required = true)
         request: InitalizeForsendelseRequest
-    ) {
-        forsendelseService.opprettForsendelse(request)
+    ): List<String> {
+        return forsendelseService.opprettForsendelse(request)
     }
 }
