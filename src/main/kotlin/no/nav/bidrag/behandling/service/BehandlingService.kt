@@ -10,6 +10,9 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
+import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.transformers.tilRolleDto
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Date
@@ -17,9 +20,24 @@ import java.util.Date
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
+    private val forsendelseService: ForsendelseService
 ) {
     fun createBehandling(behandling: Behandling): Behandling {
-        return behandlingRepository.save(behandling)
+        return behandlingRepository.save(behandling).let {
+            forsendelseService.opprettForsendelse(InitalizeForsendelseRequest(
+                saksnummer = it.saksnummer,
+                enhet = it.behandlerEnhet,
+                roller = it.tilRolleDto(),
+                behandlingInfo = BehandlingInfoDto(
+                    behandlingId = it.id,
+                    soknadId = it.soknadId,
+                    soknadFra = it.soknadFra,
+                    stonadType = it.stonadType,
+                    engangsBelopType = it.engangsbelopType
+                )
+            ))
+            it
+        }
     }
 
     fun oppdaterBehandling(

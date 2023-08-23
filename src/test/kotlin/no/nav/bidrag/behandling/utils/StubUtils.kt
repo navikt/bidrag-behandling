@@ -3,12 +3,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.matching.ContainsPattern
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
+import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import java.util.*
 
-@Component
 class StubUtils {
 
     companion object {
@@ -30,6 +33,48 @@ class StubUtils {
             )
         } catch (e: JsonProcessingException) {
             Assert.fail(e.message)
+        }
+    }
+
+    fun stubOpprettForsendelse(status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/forsendelse/api/forsendelse")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(OpprettForsendelseRespons("123213")))
+            )
+        )
+    }
+    fun stubTilgangskontrollTema(result: Boolean = true, status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/tema")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(result.toString())
+            )
+        )
+    }
+
+    inner class Verify {
+        fun opprettForsendelseKaltMed(vararg contains: String) {
+            val verify = WireMock.postRequestedFor(
+                WireMock.urlMatching("/forsendelse/api/forsendelse")
+            )
+            verifyContains(verify, *contains)
+        }
+
+
+        private fun verifyContains(verify: RequestPatternBuilder, vararg contains: String) {
+            Arrays.stream(contains).forEach { verify.withRequestBody(ContainsPattern(it)) }
+            WireMock.verify(verify)
+        }
+    }
+    fun toJsonString(data: Any): String {
+        return try {
+            ObjectMapper().findAndRegisterModules().writeValueAsString(data)
+        } catch (e: JsonProcessingException) {
+            Assert.fail(e.message)
+            ""
         }
     }
 }

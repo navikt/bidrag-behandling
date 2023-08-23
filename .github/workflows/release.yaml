@@ -52,7 +52,7 @@ jobs:
           CLUSTER: prod-gcp
           RESOURCE: deploy/.nais/nais.yaml
           VARS: deploy/.nais/prod.yaml
-          IMAGE: ${{ needs.build.outputs.image }}
+          IMAGE: ${{ needs.deploy.outputs.image }}
     outputs:
       image: ${{ needs.build.outputs.image }}
       tag: ${{ needs.build.outputs.tag }}

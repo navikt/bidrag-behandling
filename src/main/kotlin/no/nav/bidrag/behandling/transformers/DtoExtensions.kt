@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
+import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
@@ -15,6 +16,9 @@ import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
+import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.domain.ident.PersonIdent
+import no.nav.bidrag.transport.sak.RolleDto
 
 fun Set<Sivilstand>.toSivilstandDto() = this.map {
     SivilstandDto(it.id, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.sivilstandType)
@@ -78,4 +82,17 @@ fun Set<Inntekt>.toInntektDto() = this.map {
 
 fun Opplysninger.toDto(): OpplysningerDto {
     return OpplysningerDto(this.id!!, this.behandling.id!!, this.aktiv, this.opplysningerType, this.data, this.hentetDato.toLocalDate())
+}
+
+fun Behandling.tilRolleDto() = roller.map {
+    RolleDto(
+        fødselsnummer = PersonIdent(it.ident),
+        type = when (it.rolleType) {
+            RolleType.BIDRAGS_MOTTAKER -> Rolletype.BM
+            RolleType.BIDRAGS_PLIKTIG -> Rolletype.BP
+            RolleType.REELL_MOTTAKER -> Rolletype.RM
+            RolleType.BARN -> Rolletype.BA
+            RolleType.FEILREGISTRERT -> Rolletype.FR
+        }
+    )
 }

@@ -1,14 +1,34 @@
 PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
+BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
 BIDRAG_PERSON_URL: https://bidrag-person-feature.dev.adeo.no
-BIDRAG_BEREGN_FORSKUDD_URL: https://bidrag-beregn-forskudd-rest.dev.intern.dev.nav.no
+BIDRAG_BEREGN_FORSKUDD_URL: http://localhost:8999
+BIDRAG_BEREGN_FORSKUDD_URL2: https://bidrag-beregn-forskudd-rest.intern.dev.nav.no
+BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
+BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll.intern.dev.nav.no
+BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll
 AZURE_APP_TENANT_ID: 966ac572-f5b7-4bbe-aa88-c76419c0f851
 AZURE_APP_CLIENT_ID: <app_client_id>
 AZURE_APP_CLIENT_SECRET: unset
 server.port: 8990
 NAIS_APP_NAME: bidrag-behandling
-
 DB_HOST: localhost
 DB_PORT: 5445
 DB_DATABASE: bidrag-behandling
 DB_USERNAME: cloudsqliamuser
 DB_PASSWORD: admin
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS}
+    properties:
+      security.protocol: PLAINTEXT
+    consumer:
+      enableAutoCommit: false
+    listener:
+      ackMode: RECORD
+
+
+KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+KAFKA_GROUP_ID: bidrag-behandling
+KAFKA_BROKERS: localhost:9092
+TOPIC_VEDTAK: bidrag.vedtak-lokal
