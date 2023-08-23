@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.domain.enums.StonadType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus
 
 class ForsendelseControllerTest : KontrollerTestRunner() {
 
-
     @Test
     fun `Skal opprette forsendelse`() {
         stubUtils.stubOpprettForsendelse()
@@ -35,11 +34,13 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         stonadType = StonadType.FORSKUDD,
                     ),
                     roller = listOf(
-                        ROLLE_BM, ROLLE_BP, ROLLE_BA_1
-                    )
-                )
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
+                ),
             ),
-            List::class.java
+            List::class.java,
         )
 
         response.statusCode shouldBe HttpStatus.OK
@@ -74,4 +75,3 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         stubUtils.Verify().opprettForsendelseKaltMed(expectedRequest)
     }
 }
-

@@ -34,7 +34,6 @@ import java.util.*
 class VedtakHendelseTest : CommonTestRunner() {
     val stubUtils: StubUtils = StubUtils()
 
-
     @Autowired
     lateinit var behandlingService: BehandlingService
 
@@ -54,8 +53,8 @@ class VedtakHendelseTest : CommonTestRunner() {
                 1,
                 1,
                 "",
-                stubUtils.toJsonString(opprettVedtakhendelse(vedtakId, behandling.id!!))
-            )
+                stubUtils.toJsonString(opprettVedtakhendelse(vedtakId, behandling.id!!)),
+            ),
         )
         val oppdatertBehandling = behandlingService.hentBehandlingById(behandling.id!!)
         oppdatertBehandling.vedtakId shouldBe vedtakId
@@ -87,27 +86,28 @@ class VedtakHendelseTest : CommonTestRunner() {
             rolleType = RolleType.BIDRAGS_MOTTAKER,
             behandling = behandling,
             fodtDato = null,
-            opprettetDato = null
+            opprettetDato = null,
         ),
         Rolle(
             ident = ROLLE_BP.fødselsnummer?.verdi!!,
             rolleType = RolleType.BIDRAGS_PLIKTIG,
             behandling = behandling,
             fodtDato = null,
-            opprettetDato = null
+            opprettetDato = null,
         ),
         Rolle(
             ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
             rolleType = RolleType.BARN,
             behandling = behandling,
             fodtDato = null,
-            opprettetDato = null
-        )
+            opprettetDato = null,
+        ),
     )
 
     private fun opprettVedtakhendelse(vedtakId: Int, behandlingId: Long): VedtakHendelse {
         return VedtakHendelse(
-            type = VedtakType.FASTSETTELSE, stonadsendringListe = listOf(
+            type = VedtakType.FASTSETTELSE,
+            stonadsendringListe = listOf(
                 Stonadsendring(
                     type = StonadType.BIDRAG18AAR,
                     eksternReferanse = "",
@@ -119,8 +119,8 @@ class VedtakHendelseTest : CommonTestRunner() {
                     omgjorVedtakId = 1,
                     periodeListe = emptyList(),
                     sakId = SAKSNUMMER,
-                    skyldnerId = ""
-                )
+                    skyldnerId = "",
+                ),
             ),
             engangsbelopListe = emptyList(),
             enhetId = "4806",
@@ -135,13 +135,13 @@ class VedtakHendelseTest : CommonTestRunner() {
             behandlingsreferanseListe = listOf(
                 Behandlingsreferanse(
                     BehandlingsrefKilde.BEHANDLING_ID.name,
-                    behandlingId.toString()
+                    behandlingId.toString(),
                 ),
                 Behandlingsreferanse(
                     BehandlingsrefKilde.BISYS_SOKNAD.name,
-                    SOKNAD_ID.toString()
-                )
-            )
+                    SOKNAD_ID.toString(),
+                ),
+            ),
         )
     }
 }

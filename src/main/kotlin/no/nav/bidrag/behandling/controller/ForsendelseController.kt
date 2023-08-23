@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody
 @BehandlingRestController
 class ForsendelseController(private val forsendelseService: ForsendelseService) {
 
-
     @Suppress("unused")
     @PostMapping("/forsendelse/init")
     @Operation(
@@ -21,7 +20,7 @@ class ForsendelseController(private val forsendelseService: ForsendelseService) 
     fun opprettForsendelse(
         @Valid
         @RequestBody(required = true)
-        request: InitalizeForsendelseRequest
+        request: InitalizeForsendelseRequest,
     ): List<String> {
         return forsendelseService.opprettForsendelse(request)
     }

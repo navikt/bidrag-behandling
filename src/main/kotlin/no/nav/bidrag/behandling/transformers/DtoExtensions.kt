@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -96,11 +95,11 @@ fun Behandling.tilRolleDto() = roller.map {
             RolleType.REELL_MOTTAKER -> Rolletype.RM
             RolleType.BARN -> Rolletype.BA
             RolleType.FEILREGISTRERT -> Rolletype.FR
-        }
+        },
     )
 }
 
-fun SoknadType.tilVedtakType(): VedtakType = when(this){
+fun SoknadType.tilVedtakType(): VedtakType = when (this) {
     SoknadType.FASTSETTELSE -> VedtakType.FASTSETTELSE
     SoknadType.REVURDERING -> VedtakType.REVURDERING
     SoknadType.ALDERSJUSTERING -> VedtakType.ALDERSJUSTERING

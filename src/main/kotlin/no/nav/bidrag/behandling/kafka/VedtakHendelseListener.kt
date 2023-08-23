@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.transformers.tilRolleDto
 import no.nav.bidrag.domain.enums.BehandlingsrefKilde
-import no.nav.bidrag.domain.enums.GrunnlagType
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
@@ -22,7 +21,7 @@ private val log = KotlinLogging.logger {}
 class VedtakHendelseListener(
     val objectMapper: ObjectMapper,
     val forsendelseService: ForsendelseService,
-    val behandlingService: BehandlingService
+    val behandlingService: BehandlingService,
 ) {
 
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
@@ -37,8 +36,9 @@ class VedtakHendelseListener(
         opprettForsendelse(vedtak, behandling)
     }
 
-    private fun opprettForsendelse(vedtak: VedtakHendelse, behandling: Behandling){
-        forsendelseService.opprettForsendelse(InitalizeForsendelseRequest(
+    private fun opprettForsendelse(vedtak: VedtakHendelse, behandling: Behandling) {
+        forsendelseService.opprettForsendelse(
+            InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer,
                 enhet = vedtak.enhetId,
                 behandlingInfo = BehandlingInfoDto(
@@ -48,10 +48,11 @@ class VedtakHendelseListener(
                     stonadType = vedtak.stonadType,
                     engangsBelopType = vedtak.engangsbelopType,
                     erFattetBeregnet = true,
-                    vedtakType = vedtak.type
+                    vedtakType = vedtak.type,
                 ),
-                roller = behandling.tilRolleDto()
-            ))
+                roller = behandling.tilRolleDto(),
+            ),
+        )
     }
 
     private fun parseVedtakHendelse(melding: ConsumerRecord<String, String>): VedtakHendelse {

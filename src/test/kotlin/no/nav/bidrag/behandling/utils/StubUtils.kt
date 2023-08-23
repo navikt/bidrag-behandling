@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
-import org.springframework.stereotype.Component
 import java.util.*
 
 class StubUtils {
@@ -41,8 +40,8 @@ class StubUtils {
             WireMock.post(WireMock.urlMatching("/forsendelse/api/forsendelse")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBody(toJsonString(OpprettForsendelseRespons("123213")))
-            )
+                    .withBody(toJsonString(OpprettForsendelseRespons("123213"))),
+            ),
         )
     }
     fun stubTilgangskontrollTema(result: Boolean = true, status: HttpStatus = HttpStatus.OK) {
@@ -50,26 +49,25 @@ class StubUtils {
             WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/tema")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBody(result.toString())
-            )
+                    .withBody(result.toString()),
+            ),
         )
     }
 
     inner class Verify {
         fun opprettForsendelseKaltMed(vararg contains: String) {
             val verify = WireMock.postRequestedFor(
-                WireMock.urlMatching("/forsendelse/api/forsendelse")
+                WireMock.urlMatching("/forsendelse/api/forsendelse"),
             )
             verifyContains(verify, *contains)
         }
 
         fun opprettForsendelseIkkeKalt() {
             val verify = WireMock.postRequestedFor(
-                WireMock.urlMatching("/forsendelse/api/forsendelse")
+                WireMock.urlMatching("/forsendelse/api/forsendelse"),
             )
             WireMock.verify(0, verify)
         }
-
 
         private fun verifyContains(verify: RequestPatternBuilder, vararg contains: String) {
             Arrays.stream(contains).forEach { verify.withRequestBody(ContainsPattern(it)) }

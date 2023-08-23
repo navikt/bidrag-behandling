@@ -21,17 +21,16 @@ private val log = KotlinLogging.logger {}
 @Service
 class ForsendelseService(
     private val bidragForsendelseConsumer: BidragForsendelseConsumer,
-    private val tIlgangskontrollConsumer: BidragTIlgangskontrollConsumer
+    private val tIlgangskontrollConsumer: BidragTIlgangskontrollConsumer,
 ) {
     private val ikkeOpprettVarslingForForskuddMedType = listOf(VedtakType.FASTSETTELSE, VedtakType.ENDRING)
     fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
-
         val opprettRequestTemplate = OpprettForsendelseForespørsel(
             behandlingInfo = request.behandlingInfo,
             saksnummer = request.saksnummer,
             enhet = request.enhet,
             tema = request.tema
-                ?: if (request.enhet == ENHET_FARSKAP && harTilgangTilTemaFar()) "FAR" else "BID"
+                ?: if (request.enhet == ENHET_FARSKAP && harTilgangTilTemaFar()) "FAR" else "BID",
         )
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
@@ -40,8 +39,8 @@ class ForsendelseService(
                 val response = bidragForsendelseConsumer.opprettForsendelse(
                     opprettRequestTemplate.copy(
                         mottaker = MottakerDto(ident = it.verdi),
-                        gjelderIdent = it.verdi
-                    )
+                        gjelderIdent = it.verdi,
+                    ),
                 )
                 log.info { "Opprettet forsendelse med id ${response.forsendelseId} for behandling ${request.behandlingInfo} og rolle $it" }
             } catch (e: Exception) {
@@ -55,12 +54,14 @@ class ForsendelseService(
     private fun skalOppretteForsendelseForSoknad(behandlingInfo: BehandlingInfoDto): Boolean {
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
-        return !(behandlingInfo.stonadType == StonadType.FORSKUDD
-                && ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType))
+        return !(
+            behandlingInfo.stonadType == StonadType.FORSKUDD &&
+                ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
+            )
     }
     private fun opprettForRoller(
         behandlingRoller: List<RolleDto>,
-        behandlingInfoDto: BehandlingInfoDto
+        behandlingInfoDto: BehandlingInfoDto,
     ): OpprettForsendelseForRollerListe {
         val roller = OpprettForsendelseForRollerListe()
         if (!skalOppretteForsendelseForSoknad(behandlingInfoDto)) return roller

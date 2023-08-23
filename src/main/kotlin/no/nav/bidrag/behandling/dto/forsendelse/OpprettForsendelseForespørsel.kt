@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.dto.forsendelse
 
-data class OpprettForsendelseForespørsel (
+data class OpprettForsendelseForespørsel(
     val mottaker: MottakerDto? = null,
     val gjelderIdent: String? = null,
     val saksnummer: String? = null,
@@ -8,5 +8,5 @@ data class OpprettForsendelseForespørsel (
     val språk: String = "NB",
     val tema: String? = null,
     val behandlingInfo: BehandlingInfoDto? = null,
-    val opprettTittel: Boolean = true
+    val opprettTittel: Boolean = true,
 )

@@ -5,12 +5,12 @@ import no.nav.bidrag.domain.enums.EngangsbelopType
 import no.nav.bidrag.domain.enums.StonadType
 import no.nav.bidrag.domain.enums.VedtakType
 
-data class DokumentDto (
+data class DokumentDto(
     val tittel: String? = null,
     val dokumentmalId: String? = null,
     val bestillDokument: Boolean? = null,
     val språk: String? = null,
-    val arkivsystem: String? = null
+    val arkivsystem: String? = null,
 )
 data class BehandlingInfoDto(
     val vedtakId: Long? = null,
@@ -23,12 +23,12 @@ data class BehandlingInfoDto(
     val behandlingType: String? = null,
     val soknadType: String? = null,
     val soknadFra: SoknadFraType? = null,
-    val vedtakType: VedtakType? = null
-){
+    val vedtakType: VedtakType? = null,
+) {
     fun erBehandlingType(stonadType: StonadType?) = this.stonadType == stonadType
     fun erBehandlingType(engangsBelopType: EngangsbelopType?) = this.engangsBelopType == engangsBelopType
     fun erBehandlingType(behandlingType: String?) = this.behandlingType == behandlingType
 }
-data class MottakerDto (
+data class MottakerDto(
     val ident: String? = null,
 )

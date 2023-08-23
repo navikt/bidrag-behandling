@@ -46,5 +46,4 @@ class HendelseCorrelationAspect(private val objectMapper: ObjectMapper) {
     fun clearCorrelationIdFromKafkaListener(joinPoint: JoinPoint) {
         MDC.clear()
     }
-
 }

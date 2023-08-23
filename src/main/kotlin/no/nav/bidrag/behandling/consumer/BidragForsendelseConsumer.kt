@@ -22,7 +22,6 @@ class BidragForsendelseConsumer(
         postForNonNullEntity(bidragForsendelsedUri.build().toUri(), payload)
 }
 
-
 data class OpprettForsendelseRespons(
-    var forsendelseId: String? = null
+    var forsendelseId: String? = null,
 )
