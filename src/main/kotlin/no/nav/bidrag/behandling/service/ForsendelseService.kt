@@ -40,8 +40,8 @@ class ForsendelseService(
             try {
                 val response = bidragForsendelseConsumer.opprettForsendelse(
                     opprettRequestTemplate.copy(
-                        mottaker = MottakerDto(ident = it.verdi),
-                        gjelderIdent = it.verdi,
+                        mottaker = MottakerDto(ident = it.fødselsnummer.verdi),
+                        gjelderIdent = it.fødselsnummer.verdi,
                     ),
                 )
                 log.info { "Opprettet forsendelse med id ${response.forsendelseId} for behandling ${request.behandlingInfo} og rolle $it" }
@@ -81,14 +81,14 @@ class ForsendelseService(
     }
 }
 
-class OpprettForsendelseForRollerListe : MutableList<PersonIdent> by mutableListOf() {
+class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mutableListOf() {
     fun leggTil(rolle: ForsendelseRolleDto?) {
         if (rolle == null) return
         val fødselsnummer = rolle.fødselsnummer
-        if (fødselsnummer != null && fødselsnummer.verdi.isNotEmpty()) this.add(fødselsnummer)
+        if (fødselsnummer.verdi.isNotEmpty()) this.add(rolle)
     }
 
-    fun listeMedFødselsnummere() = this.map { it.verdi }
+    fun listeMedFødselsnummere() = this.map { it.fødselsnummer.verdi }
 }
 
 fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? = this.find { it.type == rolleType }
