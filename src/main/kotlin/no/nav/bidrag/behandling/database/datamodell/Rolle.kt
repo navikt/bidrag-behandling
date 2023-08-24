@@ -18,7 +18,7 @@ data class Rolle(
     val behandling: Behandling,
 
     @Enumerated(EnumType.STRING)
-    val rolleType: RolleType,
+    val rolleType: RolleType, //TODO Bruk enum no.nav.bidrag.domain.enums.Rolletype istedenfor
 
     val ident: String,
 

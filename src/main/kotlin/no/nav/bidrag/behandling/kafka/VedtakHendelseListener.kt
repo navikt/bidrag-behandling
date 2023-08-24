@@ -28,6 +28,8 @@ class VedtakHendelseListener(
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
 
+        log.info { "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}" }
+
         if (!vedtak.erFattetFraBehandling()) return
         val behandling = behandlingService.hentBehandlingById(vedtak.behandlingId!!)
         log.info { "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. Lagrer vedtakId på behandling og oppretter forsendelser for vedtaket" }
