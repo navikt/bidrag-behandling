@@ -2,12 +2,17 @@ name: bidrag-behandling-feature
 ingresses:
   - https://bidrag-behandling-feature.intern.dev.nav.no
 env:
-  BIDRAG_PERSON_URL: https://bidrag-person-feature.dev-fss-pub.nais.io/bidrag-person
-  BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
   BIDRAG_BEREGN_FORSKUDD_URL: http://bidrag-beregn-forskudd-rest-feature
   BIDRAG_BEREGN_FORSKUDD_SCOPE: dev-gcp.bidrag.bidrag-beregn-forskudd-rest-feature
   BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag-feature
   BIDRAG_GRUNNLAG_URL_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
+  BIDRAG_FORSENDELSE_URL: http://bidrag-dokument-forsendelse-feature
+  BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
+  BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
+  BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
+  TOPIC_VEDTAK: bidrag.vedtak-feature
+kafka:
+  pool: nav-dev
 azure_access_inbound:
   - application: bidrag-ui-feature
     namespace: bidrag
@@ -25,3 +30,5 @@ database:
 outbound-access-apps:
   - bidrag-beregn-forskudd-rest-feature
   - bidrag-grunnlag-feature
+  - bidrag-dokument-forsendelse-feature
+  - bidrag-tilgangskontroll-feature

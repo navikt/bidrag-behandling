@@ -6,15 +6,21 @@ import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
+import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
+import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnPeriodeDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
+import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.domain.enums.VedtakType
+import no.nav.bidrag.domain.ident.PersonIdent
 
 fun Set<Sivilstand>.toSivilstandDto() = this.map {
     SivilstandDto(it.id, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.sivilstandType)
@@ -78,4 +84,30 @@ fun Set<Inntekt>.toInntektDto() = this.map {
 
 fun Opplysninger.toDto(): OpplysningerDto {
     return OpplysningerDto(this.id!!, this.behandling.id!!, this.aktiv, this.opplysningerType, this.data, this.hentetDato.toLocalDate())
+}
+
+fun Behandling.tilForsendelseRolleDto() = roller.map {
+    ForsendelseRolleDto(
+        fødselsnummer = PersonIdent(it.ident),
+        type = when (it.rolleType) {
+            RolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+            RolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+            RolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+            RolleType.BARN -> Rolletype.BARN
+            RolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
+        },
+    )
+}
+
+fun SoknadType.tilVedtakType(): VedtakType = when (this) {
+    SoknadType.FASTSETTELSE -> VedtakType.FASTSETTELSE
+    SoknadType.REVURDERING -> VedtakType.REVURDERING
+    SoknadType.ALDERSJUSTERING -> VedtakType.ALDERSJUSTERING
+    SoknadType.ALDERSOPPHØR -> VedtakType.ALDERSOPPHØR
+    SoknadType.ENDRING -> VedtakType.ENDRING
+    SoknadType.ENDRING_MOTTAKER -> VedtakType.ENDRING_MOTTAKER
+    SoknadType.KLAGE -> VedtakType.KLAGE
+    SoknadType.OPPHØR -> VedtakType.OPPHØR
+    SoknadType.INDEKSREGULERING -> VedtakType.INDEKSREGULERING
+    SoknadType.INNKREVING -> VedtakType.INNKREVING
 }

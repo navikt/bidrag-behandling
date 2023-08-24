@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.consumer
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.behandling.ForskuddDto
 import no.nav.bidrag.commons.web.client.AbstractRestClient
-import no.nav.bidrag.transport.behandling.vedtak.reponse.GrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.response.GrunnlagDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service

@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.domain.enums.StonadType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,6 +18,7 @@ import kotlin.test.Ignore
 
 data class CreateBehandlingRequestTest(
     val behandlingType: BehandlingType,
+    val stonadType: StonadType,
     val soknadType: SoknadType,
     val datoFom: Date,
     val datoTom: Date,
@@ -54,6 +56,48 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
 
     @Test
     fun `skal opprette en behandling`() {
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
+
+        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+    }
+
+    @Test
+    fun `skal opprette en behandling og ikke opprette forsendelse for forskudd`() {
+        stubUtils.stubOpprettForsendelse()
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
+
+        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+        stubUtils.Verify().opprettForsendelseIkkeKalt()
+    }
+
+    @Test
+    fun `skal opprette en behandling og forsendelse for stonadType BIDRAG`() {
+        stubUtils.stubOpprettForsendelse()
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller).copy(stonadType = StonadType.BIDRAG)
+
+        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+        stubUtils.Verify()
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"123\"")
+    }
+
+    @Test
+    fun `skal opprette en behandling og ignorere feil hvis opprett forsendelse feiler`() {
+        stubUtils.stubOpprettForsendelse(HttpStatus.BAD_REQUEST)
         val roller = setOf(
             CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
             CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
@@ -170,6 +214,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         ): CreateBehandlingRequestTest {
             val testBehandling = CreateBehandlingRequestTest(
                 BehandlingType.FORSKUDD,
+                StonadType.FORSKUDD,
                 SoknadType.FASTSETTELSE,
                 Date(1),
                 Date(1),

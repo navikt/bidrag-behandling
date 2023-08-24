@@ -10,6 +10,10 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
+import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
+import no.nav.bidrag.behandling.transformers.tilVedtakType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Date
@@ -17,11 +21,32 @@ import java.util.Date
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
+    private val forsendelseService: ForsendelseService,
 ) {
     fun createBehandling(behandling: Behandling): Behandling {
-        return behandlingRepository.save(behandling)
+        return behandlingRepository.save(behandling).let {
+            opprettForsendelseForBehandling(it)
+            it
+        }
     }
 
+    private fun opprettForsendelseForBehandling(behandling: Behandling){
+        forsendelseService.opprettForsendelse(
+            InitalizeForsendelseRequest(
+                saksnummer = behandling.saksnummer,
+                enhet = behandling.behandlerEnhet,
+                roller = behandling.tilForsendelseRolleDto(),
+                behandlingInfo = BehandlingInfoDto(
+                    behandlingId = behandling.id,
+                    soknadId = behandling.soknadId,
+                    soknadFra = behandling.soknadFra,
+                    behandlingType = behandling.behandlingType.name,
+                    stonadType = behandling.stonadType,
+                    engangsBelopType = behandling.engangsbelopType,
+                    vedtakType = behandling.soknadType.tilVedtakType(),
+                ),
+            ))
+    }
     fun oppdaterBehandling(
         behandlingId: Long,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,

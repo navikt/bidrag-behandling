@@ -61,6 +61,8 @@ spec:
      - name: {{@key}}
        value: "{{this}}"
   {{/each}}
+  kafka:
+    pool: {{ kafka.pool }}
   gcp:
     sqlInstances:
       - name: {{ database.dbname }}
