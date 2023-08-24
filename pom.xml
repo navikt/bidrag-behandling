@@ -48,6 +48,11 @@
 				<artifactId>snappy-java</artifactId>
 				<version>1.1.10.3</version>
 			</dependency>
+			<dependency>
+				<groupId>org.springframework.kafka</groupId>
+				<artifactId>spring-kafka</artifactId>
+				<version>3.0.10</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
