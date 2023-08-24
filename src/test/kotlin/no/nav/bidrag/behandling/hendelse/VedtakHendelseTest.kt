@@ -46,10 +46,13 @@ class VedtakHendelseTest : CommonTestRunner() {
     @BeforeEach
     fun resetMocks(){
         WireMock.resetAllRequests()
+        stubUtils.stubHentForsendelserForSak()
+        stubUtils.stubSlettForsendelse()
     }
 
     @Test
     fun `skal opprette forsendelse for vedtakhendelse og lagre vedtakId`() {
+
         stubUtils.stubOpprettForsendelse()
         val vedtakId = 123123
         val behandlingRequest = opprettBehandling()
@@ -65,6 +68,9 @@ class VedtakHendelseTest : CommonTestRunner() {
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BP.fødselsnummer?.verdi}\"")
         stubUtils.Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_1.fødselsnummer?.verdi}\"")
+        stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
+        stubUtils.Verify().forsendelseSlettet("1")
+        stubUtils.Verify().forsendelseSlettet("2")
     }
 
     @Test
