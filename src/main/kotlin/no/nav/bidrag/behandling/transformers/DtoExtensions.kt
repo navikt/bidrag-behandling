@@ -90,11 +90,11 @@ fun Behandling.tilForsendelseRolleDto() = roller.map {
     ForsendelseRolleDto(
         fødselsnummer = PersonIdent(it.ident),
         type = when (it.rolleType) {
-            RolleType.BIDRAGS_MOTTAKER -> Rolletype.BM
-            RolleType.BIDRAGS_PLIKTIG -> Rolletype.BP
-            RolleType.REELL_MOTTAKER -> Rolletype.RM
-            RolleType.BARN -> Rolletype.BA
-            RolleType.FEILREGISTRERT -> Rolletype.FR
+            RolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+            RolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+            RolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+            RolleType.BARN -> Rolletype.BARN
+            RolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
         },
     )
 }

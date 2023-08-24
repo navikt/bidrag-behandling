@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
 import StubUtils
+import com.github.tomakehurst.wiremock.client.WireMock
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.commons.web.test.HttpHeaderTestRestTemplate
 import org.junit.jupiter.api.BeforeEach
@@ -21,7 +22,10 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
 
     @BeforeEach
     fun initMocks() {
+        WireMock.resetAllRequests()
         stubUtils.stubOpprettForsendelse()
+        stubUtils.stubSlettForsendelse()
+        stubUtils.stubHentForsendelserForSak()
         stubUtils.stubTilgangskontrollTema()
     }
 }

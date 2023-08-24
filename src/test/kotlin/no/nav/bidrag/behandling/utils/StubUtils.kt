@@ -1,11 +1,16 @@
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.moreThanOrExactly
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
+import io.kotest.matchers.ints.exactly
+import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
+import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -44,6 +49,26 @@ class StubUtils {
             ),
         )
     }
+
+    fun stubHentForsendelserForSak(response: List<ForsendelseResponsTo> = listOf(opprettForsendelseResponsUnderOpprettelse(1), opprettForsendelseResponsUnderOpprettelse(2)), status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlMatching("/forsendelse/api/forsendelse/sak/(.*)")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(response)),
+            ),
+        )
+    }
+
+    fun stubSlettForsendelse(status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/forsendelse/api/forsendelse/journal/(.*)/avvik")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(OpprettForsendelseRespons("123213"))),
+            ),
+        )
+    }
     fun stubTilgangskontrollTema(result: Boolean = true, status: HttpStatus = HttpStatus.OK) {
         WireMock.stubFor(
             WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/tema")).willReturn(
@@ -60,6 +85,21 @@ class StubUtils {
                 WireMock.urlMatching("/forsendelse/api/forsendelse"),
             )
             verifyContains(verify, *contains)
+        }
+
+        fun forsendelseHentetForSak(saksnummer: String, antall: Int = -1) {
+            val verify = WireMock.getRequestedFor(
+                WireMock.urlMatching("/forsendelse/api/forsendelse/sak/$saksnummer/forsendelser"),
+            )
+            WireMock.verify(if (antall == -1) CountMatchingStrategy(CountMatchingStrategy.GREATER_THAN_OR_EQUAL, 1) else CountMatchingStrategy(CountMatchingStrategy.EQUAL_TO, antall) , verify)
+        }
+
+
+        fun forsendelseSlettet(forsendelseId: String = "(.*)", antall: Int = -1) {
+            val verify = WireMock.postRequestedFor(
+                WireMock.urlMatching("/forsendelse/api/forsendelse/journal/$forsendelseId/avvik"),
+            )
+            WireMock.verify(if (antall == -1) CountMatchingStrategy(CountMatchingStrategy.GREATER_THAN_OR_EQUAL, 1) else CountMatchingStrategy(CountMatchingStrategy.EQUAL_TO, antall) , verify)
         }
 
         fun opprettForsendelseKaltAntallGanger(antall: Int) {
