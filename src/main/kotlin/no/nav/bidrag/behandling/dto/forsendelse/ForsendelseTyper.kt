@@ -28,6 +28,7 @@ data class BehandlingInfoDto(
     fun erBehandlingType(stonadType: StonadType?) = this.stonadType == stonadType
     fun erBehandlingType(engangsBelopType: EngangsbelopType?) = this.engangsBelopType == engangsBelopType
     fun erBehandlingType(behandlingType: String?) = this.behandlingType == behandlingType
+    fun erVedtakFattet() = erFattetBeregnet != null || vedtakId != null
 }
 data class MottakerDto(
     val ident: String? = null,

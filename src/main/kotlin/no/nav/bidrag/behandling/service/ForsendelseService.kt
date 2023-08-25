@@ -16,7 +16,6 @@ import no.nav.bidrag.domain.enums.StonadType
 import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
 import org.springframework.stereotype.Service
-import java.util.*
 
 private val log = KotlinLogging.logger {}
 
@@ -36,7 +35,7 @@ class ForsendelseService(
         )
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
-        log.info { "Oppretter forsendelse for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) for behandling ${request.behandlingInfo}" }
+        log.info { "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}" }
         opprettForRoller.forEach {
             try {
                 val response = bidragForsendelseConsumer.opprettForsendelse(
@@ -51,7 +50,7 @@ class ForsendelseService(
                 log.error(e) { "Det skjedde en feil ved opprettelse av forsendelse for rolle $it. Ignorerer feilen uten å opprette forsendelse" }
             }
         }
-        if (request.behandlingInfo.erFattetBeregnet != null || request.behandlingInfo.vedtakId != null){
+        if (request.behandlingInfo.erVedtakFattet()){
             slettVarselbrevUnderOpprettelse(request.saksnummer, request.behandlingInfo.soknadId)
         }
         return opprettForRoller.listeMedFødselsnummere()
@@ -109,5 +108,6 @@ class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mut
     fun listeMedFødselsnummere() = this.map { it.fødselsnummer.verdi }
 }
 
+fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
 fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? = this.find { it.type == rolleType }
 fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> = this.filter { it.type == Rolletype.BARN }
