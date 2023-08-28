@@ -117,6 +117,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
         stubUtils.Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"123\"")
+        stubUtils.Verify()
+            .opprettForsendelseKaltMed("\"barnIBehandling\":[\"123\"]")
     }
 
     @Test

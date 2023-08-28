@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.Ordering
@@ -71,6 +73,8 @@ class ForsendelseServiceTest {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
                     it.tema shouldBe "FAR"
+                    it.behandlingInfo!!.barnIBehandling shouldHaveSize 1
+                    it.behandlingInfo!!.barnIBehandling shouldContain ROLLE_BA_1.fødselsnummer.verdi
                 },
             )
         }

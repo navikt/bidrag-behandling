@@ -30,7 +30,12 @@ class ForsendelseService(
 
     fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         val opprettRequestTemplate = OpprettForsendelseForespørsel(
-            behandlingInfo = request.behandlingInfo,
+            behandlingInfo = request.behandlingInfo
+                .copy(
+                    barnIBehandling = request.roller
+                        .filter { it.type == Rolletype.BARN }
+                        .map { it.fødselsnummer.verdi }
+                ),
             saksnummer = request.saksnummer,
             enhet = request.enhet,
             tema = request.tema
