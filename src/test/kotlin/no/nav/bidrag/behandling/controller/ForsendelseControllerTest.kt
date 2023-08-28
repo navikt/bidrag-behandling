@@ -71,7 +71,8 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     "behandlingType": null,
                     "soknadType": null,
                     "soknadFra": null,
-                    "vedtakType": null
+                    "vedtakType": null,
+                    "barnIBehandling":["1344124"]
                 },
                 "opprettTittel": true
             }
