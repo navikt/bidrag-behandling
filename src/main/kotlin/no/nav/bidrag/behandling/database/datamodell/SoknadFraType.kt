@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import io.swagger.v3.oas.annotations.media.Schema
 
+// TODO Flytt dette til bidrag-domain
 @Schema(enumAsRef = true)
 enum class SoknadFraType {
     BM_I_ANNEN_SAK,

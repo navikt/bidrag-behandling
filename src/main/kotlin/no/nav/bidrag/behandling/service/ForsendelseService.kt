@@ -42,6 +42,7 @@ class ForsendelseService(
             "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev " +
                     "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
         }
+        val opprettetForsendelser = mutableListOf<String>()
         opprettForRoller.forEach {
             try {
                 val response = bidragForsendelseConsumer.opprettForsendelse(
@@ -50,6 +51,7 @@ class ForsendelseService(
                         gjelderIdent = it.fødselsnummer.verdi,
                     ),
                 )
+                opprettetForsendelser.add(response.forsendelseId ?: "-1")
                 log.info { "Opprettet forsendelse med id ${response.forsendelseId} for rolle $it" }
                 SECURE_LOGGER.info("Opprettet forsendelse med id ${response.forsendelseId} for rolle $it, fnr: ${it.fødselsnummer.verdi}")
             } catch (e: Exception) {
@@ -59,7 +61,7 @@ class ForsendelseService(
         if (request.behandlingInfo.erVedtakFattet()) {
             slettVarselbrevUnderOpprettelse(request.saksnummer, request.behandlingInfo.soknadId)
         }
-        return opprettForRoller.listeMedFødselsnummere()
+        return opprettetForsendelser
     }
 
     fun slettVarselbrevUnderOpprettelse(saksnummer: String, soknadId: Long) {
@@ -121,8 +123,6 @@ class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mut
         val fødselsnummer = rolle.fødselsnummer
         if (fødselsnummer.verdi.isNotEmpty()) this.add(rolle)
     }
-
-    fun listeMedFødselsnummere() = this.map { it.fødselsnummer.verdi }
 }
 
 fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
