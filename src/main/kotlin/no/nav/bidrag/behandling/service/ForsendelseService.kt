@@ -39,11 +39,8 @@ class ForsendelseService(
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
         log.info {
-            "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev for ${opprettForRoller.size} roller (${
-                opprettForRoller.joinToString(
-                    ","
-                )
-            }) og behandling ${request.behandlingInfo}"
+            "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev " +
+                    "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
         }
         opprettForRoller.forEach {
             try {
