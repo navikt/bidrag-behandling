@@ -50,7 +50,12 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         )
         val behandlingReq = createBehandlingRequestTest("sak123", "en12", roller)
 
-        val behandlingRes = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(behandlingReq), Void::class.java)
+        val behandlingRes = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(behandlingReq),
+            Void::class.java
+        )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
     }
 
@@ -62,7 +67,12 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedNull),
+            Void::class.java
+        )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
     }
 
@@ -75,7 +85,12 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedNull),
+            Void::class.java
+        )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
         stubUtils.Verify().opprettForsendelseIkkeKalt()
     }
@@ -87,9 +102,18 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
             CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
             CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
-        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller).copy(stonadType = StonadType.BIDRAG)
+        val testBehandlingMedNull = createBehandlingRequestTest(
+            "sak123",
+            "en12",
+            roller
+        ).copy(stonadType = StonadType.BIDRAG)
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedNull),
+            Void::class.java
+        )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
         stubUtils.Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"123\"")
@@ -97,14 +121,19 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
 
     @Test
     fun `skal opprette en behandling og ignorere feil hvis opprett forsendelse feiler`() {
-        stubUtils.stubOpprettForsendelse(HttpStatus.BAD_REQUEST)
+        stubUtils.stubOpprettForsendelse(status = HttpStatus.BAD_REQUEST)
         val roller = setOf(
             CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
             CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedNull),
+            Void::class.java
+        )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
     }
 
@@ -128,16 +157,30 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         )
 
         val VEDTAK_ID: Long = 1
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.id}/vedtak/$VEDTAK_ID", HttpMethod.PUT, HttpEntity.EMPTY, Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling/${behandling.id}/vedtak/$VEDTAK_ID",
+            HttpMethod.PUT,
+            HttpEntity.EMPTY,
+            Void::class.java
+        )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
         assertEquals(VEDTAK_ID, behandlingService.hentBehandlingById(behandling.id!!).vedtakId)
     }
 
     @Test
     fun `skal ikke opprette en behandling med bare én rolle`() {
-        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", setOf(CreateRolleDtoTest(RolleType.BARN, "abc1s", Date(1))))
+        val testBehandlingMedNull = createBehandlingRequestTest(
+            "sak123",
+            "en12",
+            setOf(CreateRolleDtoTest(RolleType.BARN, "abc1s", Date(1)))
+        )
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedNull),
+            Void::class.java
+        )
         assertEquals(HttpStatus.BAD_REQUEST, responseMedNull.statusCode)
     }
 
@@ -145,7 +188,12 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling uten roller`() {
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", setOf())
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedNull),
+            Void::class.java
+        )
         assertEquals(HttpStatus.BAD_REQUEST, responseMedNull.statusCode)
     }
 
@@ -157,7 +205,12 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedNull),
+            Void::class.java
+        )
         assertEquals(HttpStatus.BAD_REQUEST, responseMedNull.statusCode)
     }
 
@@ -170,39 +223,76 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
-        val responseMedNull = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), Void::class.java)
+        val responseMedNull = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedNull),
+            Void::class.java
+        )
         assertEquals(HttpStatus.BAD_REQUEST, responseMedNull.statusCode)
     }
 
     @Test
     fun `skal ikke opprette en behandling med blank sak`() {
-        val roller = setOf(CreateRolleDtoTest(RolleType.BARN, "123", Date(1)), CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)))
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1))
+        )
         val testBehandlingMedBlank = createBehandlingRequestTest("   ", "en12", roller)
-        val responseMedBlank = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedBlank), Void::class.java)
+        val responseMedBlank = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedBlank),
+            Void::class.java
+        )
         assertEquals(HttpStatus.BAD_REQUEST, responseMedBlank.statusCode)
     }
 
     @Test
     fun `skal ikke opprette en behandling med blank sak1`() {
-        val roller = setOf(CreateRolleDtoTest(RolleType.BARN, "123", Date(1)), CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)))
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1))
+        )
         val testBehandlingMedBlank = createBehandlingRequestTest("", "en12", roller)
-        val responseMedBlank = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedBlank), Void::class.java)
+        val responseMedBlank = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedBlank),
+            Void::class.java
+        )
         assertEquals(HttpStatus.BAD_REQUEST, responseMedBlank.statusCode)
     }
 
     @Test
     fun `skal ikke opprette en behandling med lang sak`() {
-        val roller = setOf(CreateRolleDtoTest(RolleType.BARN, "123", Date(1)), CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)))
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1))
+        )
         val testBehandlingMedBlank = createBehandlingRequestTest("123456789", "en12", roller)
-        val responseMedBlank = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedBlank), Void::class.java)
+        val responseMedBlank = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(testBehandlingMedBlank),
+            Void::class.java
+        )
         assertEquals(HttpStatus.BAD_REQUEST, responseMedBlank.statusCode)
     }
 
     @Test
     fun `skal ikke opprette en behandling med ugyldig enhet`() {
-        val roller = setOf(CreateRolleDtoTest(RolleType.BARN, "123", Date(1)), CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)))
+        val roller = setOf(
+            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1))
+        )
         val b = createBehandlingRequestTest(null, "12312312312", roller)
-        val r = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(b), Void::class.java)
+        val r = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(b),
+            Void::class.java
+        )
         assertEquals(HttpStatus.BAD_REQUEST, r.statusCode)
     }
 

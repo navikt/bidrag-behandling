@@ -23,7 +23,8 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
 
     @Test
     fun `Skal opprette forsendelse`() {
-        stubUtils.stubOpprettForsendelse()
+        val forsendelseId = "213123213123"
+        stubUtils.stubOpprettForsendelse(forsendelseId)
         stubUtils.stubTilgangskontrollTema()
         val response = httpHeaderTestRestTemplate.exchange(
             "${rootUri()}/forsendelse/init",
@@ -47,7 +48,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         )
 
         response.statusCode shouldBe HttpStatus.OK
-        response.body shouldBe listOf(ROLLE_BM.fødselsnummer?.verdi)
+        response.body shouldBe listOf(forsendelseId)
         @Language("Json")
         val expectedRequest = """
             {
@@ -82,14 +83,18 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
 
     @Test
     fun `Skal opprette forsendelse og slette forsendelser for varsel`() {
-        stubUtils.stubOpprettForsendelse()
+        val forsendelseId = "213123213123"
+
+        stubUtils.stubOpprettForsendelse(forsendelseId)
         stubUtils.stubSlettForsendelse()
-        stubUtils.stubHentForsendelserForSak(listOf(
-            opprettForsendelseResponsUnderOpprettelse(1),
-            opprettForsendelseResponsUnderOpprettelse(2),
-            opprettForsendelseResponsUnderOpprettelse(3).copy(forsendelseType = ForsendelseTypeTo.NOTAT),
-            opprettForsendelseResponsUnderOpprettelse(4).copy(status = ForsendelseStatusTo.UNDER_PRODUKSJON)
-        ))
+        stubUtils.stubHentForsendelserForSak(
+            listOf(
+                opprettForsendelseResponsUnderOpprettelse(1),
+                opprettForsendelseResponsUnderOpprettelse(2),
+                opprettForsendelseResponsUnderOpprettelse(3).copy(forsendelseType = ForsendelseTypeTo.NOTAT),
+                opprettForsendelseResponsUnderOpprettelse(4).copy(status = ForsendelseStatusTo.UNDER_PRODUKSJON)
+            )
+        )
         stubUtils.stubTilgangskontrollTema()
         val response = httpHeaderTestRestTemplate.exchange(
             "${rootUri()}/forsendelse/init",
@@ -114,7 +119,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         )
 
         response.statusCode shouldBe HttpStatus.OK
-        response.body shouldBe listOf(ROLLE_BM.fødselsnummer?.verdi)
+        response.body shouldBe listOf(forsendelseId)
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(1)
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
