@@ -8,7 +8,6 @@ import io.mockk.every
 import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragForsendelseConsumer
 import no.nav.bidrag.behandling.consumer.BidragTIlgangskontrollConsumer
-import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
@@ -20,6 +19,7 @@ import no.nav.bidrag.behandling.utils.ROLLE_BP
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.domain.enums.EngangsbelopType
 import no.nav.bidrag.domain.enums.StonadType
 import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
@@ -40,8 +40,11 @@ class ForsendelseServiceTest {
 
     @BeforeEach
     fun initMocks() {
-        forsendelseService = ForsendelseService(bidragForsendelseConsumer, bidragTIlgangskontrollConsumer)
-        every { bidragForsendelseConsumer.opprettForsendelse(any()) } returns OpprettForsendelseRespons("2313")
+        forsendelseService =
+            ForsendelseService(bidragForsendelseConsumer, bidragTIlgangskontrollConsumer)
+        every { bidragForsendelseConsumer.opprettForsendelse(any()) } returns OpprettForsendelseRespons(
+            "2313"
+        )
         every { bidragForsendelseConsumer.slettForsendelse(any()) } returns Unit
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
     }
@@ -68,6 +71,60 @@ class ForsendelseServiceTest {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
                     it.tema shouldBe "FAR"
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `Skal opprette forsendelse for gebyr behandling for bidragsmottaker`() {
+        every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
+        val request = InitalizeForsendelseRequest(
+            saksnummer = SAKSNUMMER,
+            enhet = ENHET_FARSKAP,
+            behandlingInfo = BehandlingInfoDto(
+                soknadId = SOKNAD_ID,
+                engangsBelopType = EngangsbelopType.GEBYR_MOTTAKER,
+                vedtakType = VedtakType.ENDRING,
+            ),
+            roller = listOf(
+                ROLLE_BM,
+                ROLLE_BP,
+                ROLLE_BA_1,
+            ),
+        )
+        forsendelseService.opprettForsendelse(request)
+        verify(exactly = 1) {
+            bidragForsendelseConsumer.opprettForsendelse(
+                withArg {
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `Skal opprette forsendelse for gebyr behandling for bidragspliktig`() {
+        every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
+        val request = InitalizeForsendelseRequest(
+            saksnummer = SAKSNUMMER,
+            enhet = ENHET_FARSKAP,
+            behandlingInfo = BehandlingInfoDto(
+                soknadId = SOKNAD_ID,
+                engangsBelopType = EngangsbelopType.GEBYR_SKYLDNER,
+                vedtakType = VedtakType.ENDRING,
+            ),
+            roller = listOf(
+                ROLLE_BM,
+                ROLLE_BP,
+                ROLLE_BA_1,
+            ),
+        )
+        forsendelseService.opprettForsendelse(request)
+        verify(exactly = 1) {
+            bidragForsendelseConsumer.opprettForsendelse(
+                withArg {
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
                 },
             )
         }

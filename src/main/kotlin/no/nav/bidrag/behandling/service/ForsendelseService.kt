@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.forsendelse.MottakerDto
 import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
+import no.nav.bidrag.domain.enums.EngangsbelopType
 import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.StonadType
 import no.nav.bidrag.domain.enums.VedtakType
@@ -24,7 +25,9 @@ class ForsendelseService(
     private val bidragForsendelseConsumer: BidragForsendelseConsumer,
     private val tIlgangskontrollConsumer: BidragTIlgangskontrollConsumer,
 ) {
-    private val ikkeOpprettVarslingForForskuddMedType = listOf(VedtakType.FASTSETTELSE, VedtakType.ENDRING)
+    private val ikkeOpprettVarslingForForskuddMedType =
+        listOf(VedtakType.FASTSETTELSE, VedtakType.ENDRING)
+
     fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         val opprettRequestTemplate = OpprettForsendelseForespørsel(
             behandlingInfo = request.behandlingInfo,
@@ -35,7 +38,10 @@ class ForsendelseService(
         )
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
-        log.info { "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}" }
+        log.info {
+            "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev " +
+                    "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
+        }
         opprettForRoller.forEach {
             try {
                 val response = bidragForsendelseConsumer.opprettForsendelse(
@@ -50,13 +56,13 @@ class ForsendelseService(
                 log.error(e) { "Det skjedde en feil ved opprettelse av forsendelse for rolle $it. Ignorerer feilen uten å opprette forsendelse" }
             }
         }
-        if (request.behandlingInfo.erVedtakFattet()){
+        if (request.behandlingInfo.erVedtakFattet()) {
             slettVarselbrevUnderOpprettelse(request.saksnummer, request.behandlingInfo.soknadId)
         }
         return opprettForRoller.listeMedFødselsnummere()
     }
 
-    fun slettVarselbrevUnderOpprettelse(saksnummer: String, soknadId: Long){
+    fun slettVarselbrevUnderOpprettelse(saksnummer: String, soknadId: Long) {
 
         val forsendelser = bidragForsendelseConsumer.hentForsendelserISak(saksnummer)
         forsendelser
@@ -74,16 +80,27 @@ class ForsendelseService(
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
         return !(
-            behandlingInfo.stonadType == StonadType.FORSKUDD &&
-                ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
-            )
+                behandlingInfo.stonadType == StonadType.FORSKUDD &&
+                        ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
+                )
     }
+
     private fun opprettForRoller(
         behandlingRoller: List<ForsendelseRolleDto>,
         behandlingInfoDto: BehandlingInfoDto,
     ): OpprettForsendelseForRollerListe {
         val roller = OpprettForsendelseForRollerListe()
         if (!skalOppretteForsendelseForSoknad(behandlingInfoDto)) return roller
+
+        if (behandlingInfoDto.erGebyr()) {
+            if (behandlingInfoDto.erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)) {
+                roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSMOTTAKER))
+            } else {
+                roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSPLIKTIG))
+            }
+            return roller
+        }
+
         roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSMOTTAKER))
 
         if (!behandlingInfoDto.erBehandlingType(StonadType.FORSKUDD)) {
@@ -109,5 +126,8 @@ class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mut
 }
 
 fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
-fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? = this.find { it.type == rolleType }
-fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> = this.filter { it.type == Rolletype.BARN }
+fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? =
+    this.find { it.type == rolleType }
+
+fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> =
+    this.filter { it.type == Rolletype.BARN }
