@@ -23,6 +23,9 @@ azure_access_inbound:
   - application: bidrag-dokument-forsendelse-feature
     namespace: bidrag
     cluster: dev-gcp
+  - application: bidrag-dokument-bestilling-feature
+    namespace: bidrag
+    cluster: dev-gcp
 database:
   dbname: bidrag-behandling-feature
   autoResize: false
