@@ -33,7 +33,7 @@ class ForsendelseService(
             behandlingInfo = request.behandlingInfo
                 .copy(
                     barnIBehandling = request.roller
-                        .filter { it.type == Rolletype.BARN }
+                        .filter { it.type == Rolletype.BARN && it.fødselsnummer.verdi.isNotEmpty() }
                         .map { it.fødselsnummer.verdi }
                 ),
             saksnummer = request.saksnummer,
