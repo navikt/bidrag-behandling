@@ -9,10 +9,11 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import java.time.LocalDate
 
+// TODO: Flytt dette til bidrag-transport
 data class BehandlingDto(
     val id: Long,
-    val behandlingType: BehandlingType,
-    val soknadType: SoknadType,
+    val behandlingType: BehandlingType, // Union av StonadType og EngangsbelopType
+    val soknadType: SoknadType, //TODO Bruk VedtakType istedenfor
     val erVedtakFattet: Boolean,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")

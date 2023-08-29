@@ -12,6 +12,7 @@ data class DokumentDto(
     val språk: String? = null,
     val arkivsystem: String? = null,
 )
+
 data class BehandlingInfoDto(
     val vedtakId: Long? = null,
     val behandlingId: Long? = null,
@@ -24,13 +25,19 @@ data class BehandlingInfoDto(
     val soknadType: String? = null,
     val soknadFra: SoknadFraType? = null,
     val vedtakType: VedtakType? = null,
+    val barnIBehandling: List<String> = emptyList()
 ) {
     fun erBehandlingType(stonadType: StonadType?) = this.stonadType == stonadType
-    fun erBehandlingType(engangsBelopType: EngangsbelopType?) = this.engangsBelopType == engangsBelopType
-    fun erGebyr() = erBehandlingType(EngangsbelopType.GEBYR_SKYLDNER) || erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)
+    fun erBehandlingType(engangsBelopType: EngangsbelopType?) =
+        this.engangsBelopType == engangsBelopType
+
+    fun erGebyr() =
+        erBehandlingType(EngangsbelopType.GEBYR_SKYLDNER) || erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)
+
     fun erBehandlingType(behandlingType: String?) = this.behandlingType == behandlingType
     fun erVedtakFattet() = erFattetBeregnet != null || vedtakId != null
 }
+
 data class MottakerDto(
     val ident: String? = null,
 )

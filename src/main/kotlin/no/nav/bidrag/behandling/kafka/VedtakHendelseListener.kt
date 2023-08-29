@@ -30,11 +30,14 @@ class VedtakHendelseListener(
 
         log.info { "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}" }
 
-        if (!vedtak.erFattetFraBehandling()) return
+        if (!vedtak.erFattetFraBidragBehandling()) return
         val behandling = behandlingService.hentBehandlingById(vedtak.behandlingId!!)
         log.info { "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. Lagrer vedtakId på behandling og oppretter forsendelser for vedtaket" }
 
-        behandlingService.oppdaterVedtakId(vedtak.behandlingId!!, vedtak.id.toLong()) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
+        behandlingService.oppdaterVedtakId(
+            vedtak.behandlingId!!,
+            vedtak.id.toLong()
+        ) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
         opprettForsendelse(vedtak, behandling)
     }
 
@@ -71,7 +74,7 @@ val VedtakHendelse.stonadType get() = this.stonadsendringListe?.firstOrNull()?.t
 val VedtakHendelse.engangsbelopType get() = this.engangsbelopListe?.firstOrNull()?.type
 val VedtakHendelse.soknadId get() = this.behandlingsreferanseListe?.find { it.kilde == BehandlingsrefKilde.BISYS_SOKNAD.name }?.referanse?.toLong()
 val VedtakHendelse.behandlingId get() = this.behandlingsreferanseListe?.find { it.kilde == BehandlingsrefKilde.BEHANDLING_ID.name }?.referanse?.toLong()
-fun VedtakHendelse.erFattetFraBehandling() = behandlingId != null
+fun VedtakHendelse.erFattetFraBidragBehandling() = behandlingId != null
 val VedtakHendelse.saksnummer
     get(): String = stonadsendringListe?.firstOrNull()?.sakId
         ?: engangsbelopListe?.firstOrNull()?.sakId
