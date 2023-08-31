@@ -13,7 +13,7 @@ import java.time.LocalDate
 data class BehandlingDto(
     val id: Long,
     val behandlingType: BehandlingType, // Union av StonadType og EngangsbelopType
-    val soknadType: SoknadType, //TODO Bruk VedtakType istedenfor
+    val soknadType: SoknadType, // TODO Bruk VedtakType istedenfor
     val erVedtakFattet: Boolean,
 
     @Schema(type = "string", format = "date", example = "01.12.2025")

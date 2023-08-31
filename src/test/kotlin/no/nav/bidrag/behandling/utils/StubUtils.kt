@@ -4,10 +4,8 @@ import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.moreThanOrExactly
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
-import io.kotest.matchers.ints.exactly
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
@@ -42,7 +40,7 @@ class StubUtils {
 
     fun stubOpprettForsendelse(
         forsendelseId: String = "12312321",
-        status: HttpStatus = HttpStatus.OK
+        status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
             WireMock.post(WireMock.urlMatching("/forsendelse/api/forsendelse")).willReturn(
@@ -56,8 +54,9 @@ class StubUtils {
     fun stubHentForsendelserForSak(
         response: List<ForsendelseResponsTo> = listOf(
             opprettForsendelseResponsUnderOpprettelse(1),
-            opprettForsendelseResponsUnderOpprettelse(2)
-        ), status: HttpStatus = HttpStatus.OK
+            opprettForsendelseResponsUnderOpprettelse(2),
+        ),
+        status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
             WireMock.get(WireMock.urlMatching("/forsendelse/api/forsendelse/sak/(.*)")).willReturn(
@@ -102,23 +101,32 @@ class StubUtils {
                 WireMock.urlMatching("/forsendelse/api/forsendelse/sak/$saksnummer/forsendelser"),
             )
             WireMock.verify(
-                if (antall == -1) CountMatchingStrategy(
-                    CountMatchingStrategy.GREATER_THAN_OR_EQUAL,
-                    1
-                ) else CountMatchingStrategy(CountMatchingStrategy.EQUAL_TO, antall), verify
+                if (antall == -1) {
+                    CountMatchingStrategy(
+                        CountMatchingStrategy.GREATER_THAN_OR_EQUAL,
+                        1,
+                    )
+                } else {
+                    CountMatchingStrategy(CountMatchingStrategy.EQUAL_TO, antall)
+                },
+                verify,
             )
         }
-
 
         fun forsendelseSlettet(forsendelseId: String = "(.*)", antall: Int = -1) {
             val verify = WireMock.postRequestedFor(
                 WireMock.urlMatching("/forsendelse/api/forsendelse/journal/$forsendelseId/avvik"),
             )
             WireMock.verify(
-                if (antall == -1) CountMatchingStrategy(
-                    CountMatchingStrategy.GREATER_THAN_OR_EQUAL,
-                    1
-                ) else CountMatchingStrategy(CountMatchingStrategy.EQUAL_TO, antall), verify
+                if (antall == -1) {
+                    CountMatchingStrategy(
+                        CountMatchingStrategy.GREATER_THAN_OR_EQUAL,
+                        1,
+                    )
+                } else {
+                    CountMatchingStrategy(CountMatchingStrategy.EQUAL_TO, antall)
+                },
+                verify,
             )
         }
 

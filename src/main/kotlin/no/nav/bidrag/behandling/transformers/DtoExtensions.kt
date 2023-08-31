@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.InntektPostDomain
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
@@ -21,6 +22,7 @@ import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.domain.ident.PersonIdent
+import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 
 fun Set<Sivilstand>.toSivilstandDto() = this.map {
     SivilstandDto(it.id, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.sivilstandType)
@@ -72,14 +74,24 @@ fun Set<HusstandsBarnDto>.toDomain(behandling: Behandling) = this.map {
 }.toMutableSet()
 
 fun Set<InntektDto>.toInntektDomain(behandling: Behandling) = this.map {
-    Inntekt(
+    val inntekt = Inntekt(
         behandling, it.taMed, it.inntektType, it.belop,
         it.datoFom?.toDate(), it.datoTom?.toDate(), it.ident, it.fraGrunnlag, it.id,
     )
+    inntekt.inntektPostListe = it.inntektPostListe.toInntektPostDomain(inntekt).toMutableSet()
+    inntekt
 }.toMutableSet()
 
+fun Set<InntektPost>.toInntektPostDomain(inntekt: Inntekt) = this.map {
+    InntektPostDomain(inntekt, it.beløp, it.kode, it.visningsnavn)
+}.toSet()
+
+fun Set<InntektPostDomain>.toInntektPost() = this.map {
+    InntektPost(it.kode, it.visningsnavn, it.beløp)
+}.toSet()
+
 fun Set<Inntekt>.toInntektDto() = this.map {
-    InntektDto(it.id, it.taMed, it.inntektType, it.belop, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.ident, it.fraGrunnlag)
+    InntektDto(it.id, it.taMed, it.inntektType, it.belop, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.ident, it.fraGrunnlag, it.inntektPostListe.toInntektPost())
 }.toSet()
 
 fun Opplysninger.toDto(): OpplysningerDto {

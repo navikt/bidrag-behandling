@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-//TODO Bruk Sivilstandstype fra bidrag-domain istedenfor
+// TODO Bruk Sivilstandstype fra bidrag-domain istedenfor
 @Schema(enumAsRef = true)
 enum class SivilstandType {
     ENKE_ELLER_ENKEMANN,

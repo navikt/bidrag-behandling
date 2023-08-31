@@ -36,7 +36,7 @@ class VedtakHendelseListener(
 
         behandlingService.oppdaterVedtakId(
             vedtak.behandlingId!!,
-            vedtak.id.toLong()
+            vedtak.id.toLong(),
         ) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
         opprettForsendelse(vedtak, behandling)
     }

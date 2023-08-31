@@ -45,7 +45,7 @@ class ForsendelseServiceTest {
         forsendelseService =
             ForsendelseService(bidragForsendelseConsumer, bidragTIlgangskontrollConsumer)
         every { bidragForsendelseConsumer.opprettForsendelse(any()) } returns OpprettForsendelseRespons(
-            "2313"
+            "2313",
         )
         every { bidragForsendelseConsumer.slettForsendelse(any()) } returns Unit
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
@@ -351,7 +351,7 @@ class ForsendelseServiceTest {
             opprettForsendelseResponsUnderOpprettelse(1),
             opprettForsendelseResponsUnderOpprettelse(2),
             opprettForsendelseResponsUnderOpprettelse(3).copy(status = ForsendelseStatusTo.DISTRIBUERT),
-            opprettForsendelseResponsUnderOpprettelse(4).copy(forsendelseType = ForsendelseTypeTo.NOTAT)
+            opprettForsendelseResponsUnderOpprettelse(4).copy(forsendelseType = ForsendelseTypeTo.NOTAT),
         )
         val request = InitalizeForsendelseRequest(
             saksnummer = SAKSNUMMER,
@@ -360,7 +360,7 @@ class ForsendelseServiceTest {
                 soknadId = SOKNAD_ID,
                 stonadType = StonadType.BIDRAG,
                 vedtakType = VedtakType.FASTSETTELSE,
-                erFattetBeregnet = true
+                erFattetBeregnet = true,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -402,7 +402,6 @@ class ForsendelseServiceTest {
         verify {
             bidragForsendelseConsumer.hentForsendelserISak(eq(SAKSNUMMER))
         }
-
 
         verify {
             bidragForsendelseConsumer.slettForsendelse(eq(1))

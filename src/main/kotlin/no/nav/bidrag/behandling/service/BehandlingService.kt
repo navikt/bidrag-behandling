@@ -30,7 +30,7 @@ class BehandlingService(
         }
     }
 
-    private fun opprettForsendelseForBehandling(behandling: Behandling){
+    private fun opprettForsendelseForBehandling(behandling: Behandling) {
         forsendelseService.opprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = behandling.saksnummer,
@@ -45,7 +45,8 @@ class BehandlingService(
                     engangsBelopType = behandling.engangsbelopType,
                     vedtakType = behandling.soknadType.tilVedtakType(),
                 ),
-            ))
+            ),
+        )
     }
     fun oppdaterBehandling(
         behandlingId: Long,
