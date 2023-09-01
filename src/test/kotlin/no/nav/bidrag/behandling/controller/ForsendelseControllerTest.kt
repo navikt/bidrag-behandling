@@ -53,9 +53,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         val expectedRequest = """
             {
                 "mottaker": {
-                    "ident": "${ROLLE_BM.fødselsnummer?.verdi}"
+                    "ident": "${ROLLE_BM.fødselsnummer.verdi}"
                 },
-                "gjelderIdent": "${ROLLE_BM.fødselsnummer?.verdi}",
+                "gjelderIdent": "${ROLLE_BM.fødselsnummer.verdi}",
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "språk": "NB",
