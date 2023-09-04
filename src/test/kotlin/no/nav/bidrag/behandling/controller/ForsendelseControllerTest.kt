@@ -53,9 +53,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         val expectedRequest = """
             {
                 "mottaker": {
-                    "ident": "${ROLLE_BM.fødselsnummer?.verdi}"
+                    "ident": "${ROLLE_BM.fødselsnummer.verdi}"
                 },
-                "gjelderIdent": "${ROLLE_BM.fødselsnummer?.verdi}",
+                "gjelderIdent": "${ROLLE_BM.fødselsnummer.verdi}",
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "språk": "NB",
@@ -93,8 +93,8 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 opprettForsendelseResponsUnderOpprettelse(1),
                 opprettForsendelseResponsUnderOpprettelse(2),
                 opprettForsendelseResponsUnderOpprettelse(3).copy(forsendelseType = ForsendelseTypeTo.NOTAT),
-                opprettForsendelseResponsUnderOpprettelse(4).copy(status = ForsendelseStatusTo.UNDER_PRODUKSJON)
-            )
+                opprettForsendelseResponsUnderOpprettelse(4).copy(status = ForsendelseStatusTo.UNDER_PRODUKSJON),
+            ),
         )
         stubUtils.stubTilgangskontrollTema()
         val response = httpHeaderTestRestTemplate.exchange(
@@ -107,7 +107,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     behandlingInfo = BehandlingInfoDto(
                         soknadId = SOKNAD_ID,
                         stonadType = StonadType.FORSKUDD,
-                        vedtakId = 1
+                        vedtakId = 1,
                     ),
                     roller = listOf(
                         ROLLE_BM,

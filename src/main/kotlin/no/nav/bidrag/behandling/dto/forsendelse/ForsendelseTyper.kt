@@ -25,7 +25,7 @@ data class BehandlingInfoDto(
     val soknadType: String? = null,
     val soknadFra: SoknadFraType? = null,
     val vedtakType: VedtakType? = null,
-    val barnIBehandling: List<String> = emptyList()
+    val barnIBehandling: List<String> = emptyList(),
 ) {
     fun erBehandlingType(stonadType: StonadType?) = this.stonadType == stonadType
     fun erBehandlingType(engangsBelopType: EngangsbelopType?) =

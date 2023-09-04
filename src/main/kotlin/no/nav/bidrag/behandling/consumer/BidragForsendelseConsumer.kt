@@ -1,9 +1,5 @@
 package no.nav.bidrag.behandling.consumer
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonInclude
-import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.dokument.AvvikType
@@ -14,7 +10,6 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
-import java.time.LocalDate
 
 @Service
 class BidragForsendelseConsumer(
@@ -49,12 +44,12 @@ data class ForsendelseResponsTo(
 )
 data class BehandlingInfoResponseDto(
     val soknadId: String? = null,
-    val erFattet: Boolean
+    val erFattet: Boolean,
 )
 
 enum class ForsendelseTypeTo {
     UTGÅENDE,
-    NOTAT
+    NOTAT,
 }
 
 enum class ForsendelseStatusTo {
@@ -63,5 +58,5 @@ enum class ForsendelseStatusTo {
     FERDIGSTILT,
     SLETTET,
     DISTRIBUERT,
-    DISTRIBUERT_LOKALT
+    DISTRIBUERT_LOKALT,
 }

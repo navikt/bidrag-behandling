@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.inntekt
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -29,4 +30,7 @@ data class InntektDto(
 
     @Schema(required = true)
     val fraGrunnlag: Boolean,
+
+    @Schema(required = true)
+    val inntektPostListe: Set<InntektPost>,
 )

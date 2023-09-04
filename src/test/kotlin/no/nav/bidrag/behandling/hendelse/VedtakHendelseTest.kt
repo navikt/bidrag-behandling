@@ -11,7 +11,6 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
-import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BM
@@ -44,7 +43,7 @@ class VedtakHendelseTest : CommonTestRunner() {
     lateinit var vedtakHendelseListener: VedtakHendelseListener
 
     @BeforeEach
-    fun resetMocks(){
+    fun resetMocks() {
         WireMock.resetAllRequests()
         stubUtils.stubHentForsendelserForSak()
         stubUtils.stubSlettForsendelse()
@@ -52,7 +51,6 @@ class VedtakHendelseTest : CommonTestRunner() {
 
     @Test
     fun `skal opprette forsendelse for vedtakhendelse og lagre vedtakId`() {
-
         stubUtils.stubOpprettForsendelse()
         val vedtakId = 123123
         val behandlingRequest = opprettBehandling()
@@ -63,11 +61,11 @@ class VedtakHendelseTest : CommonTestRunner() {
         oppdatertBehandling.vedtakId shouldBe vedtakId
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(3)
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer.verdi}\"")
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BP.fødselsnummer?.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BP.fødselsnummer.verdi}\"")
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_1.fødselsnummer?.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_1.fødselsnummer.verdi}\"")
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
         stubUtils.Verify().forsendelseSlettet("2")

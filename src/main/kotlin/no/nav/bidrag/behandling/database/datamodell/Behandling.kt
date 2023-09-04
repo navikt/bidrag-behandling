@@ -20,7 +20,7 @@ data class Behandling(
     val behandlingType: BehandlingType,
 
     @Enumerated(EnumType.STRING)
-    val soknadType: SoknadType, //TODO Endre til VedtakType
+    val soknadType: SoknadType, // TODO Endre til VedtakType
 
     val datoFom: Date,
 
