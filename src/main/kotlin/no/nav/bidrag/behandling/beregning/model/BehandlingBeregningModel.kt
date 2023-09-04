@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import arrow.core.raise.mapOrAccumulate
 import arrow.core.raise.zipOrAccumulate
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
@@ -23,8 +22,8 @@ import java.util.Date
 fun Set<Rolle>.rolleType(ident: String): String {
     val rolleType = this.find { it.ident == ident }?.rolleType
     return when (rolleType) {
-        RolleType.BIDRAGS_PLIKTIG -> "BIDRAGSPLIKTIG"
-        RolleType.BIDRAGS_MOTTAKER -> "BIDRAGSMOTTAKER"
+        RolleType.BIDRAGSPLIKTIG -> "BIDRAGSPLIKTIG"
+        RolleType.BIDRAGSMOTTAKER -> "BIDRAGSMOTTAKER"
         else -> rolleType?.name ?: "BIDRAGSMOTTAKER"
     }
 }

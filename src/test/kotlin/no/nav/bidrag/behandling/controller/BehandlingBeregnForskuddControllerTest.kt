@@ -87,7 +87,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             husstandsBarn,
         )
         b.roller = mutableSetOf(
-            Rolle(b, RolleType.BIDRAGS_MOTTAKER, "123", datoFom, null, null),
+            Rolle(b, RolleType.BIDRAGSMOTTAKER, "123", datoFom, null, null),
             Rolle(b, RolleType.BARN, "123", datoFom, null, null),
         )
         b.inntekter = mutableSetOf(

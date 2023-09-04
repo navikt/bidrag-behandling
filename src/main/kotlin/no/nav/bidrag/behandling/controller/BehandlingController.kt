@@ -8,9 +8,11 @@ import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.service.BehandlingService
@@ -67,7 +69,13 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             createBehandling.roller.map {
                 Rolle(
                     behandling,
-                    it.rolleType,
+                    rolleType = when (it.rolleType) {
+                        CreateRolleRolleType.BIDRAGS_MOTTAKER -> RolleType.BIDRAGSMOTTAKER
+                        CreateRolleRolleType.BIDRAGS_PLIKTIG -> RolleType.BIDRAGSPLIKTIG
+                        CreateRolleRolleType.REELL_MOTTAKER -> RolleType.REELLMOTTAKER
+                        CreateRolleRolleType.BARN -> RolleType.BARN
+                        CreateRolleRolleType.FEILREGISTRERT -> RolleType.FEILREGISTRERT
+                    },
                     it.ident,
                     it.fodtDato,
                     it.opprettetDato,

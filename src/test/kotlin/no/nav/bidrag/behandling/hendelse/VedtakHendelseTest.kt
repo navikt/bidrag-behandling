@@ -111,14 +111,14 @@ class VedtakHendelseTest : CommonTestRunner() {
     private fun opprettBehandlingRoller(behandling: Behandling) = mutableSetOf(
         Rolle(
             ident = ROLLE_BM.fødselsnummer?.verdi!!,
-            rolleType = RolleType.BIDRAGS_MOTTAKER,
+            rolleType = RolleType.BIDRAGSMOTTAKER,
             behandling = behandling,
             fodtDato = null,
             opprettetDato = null,
         ),
         Rolle(
             ident = ROLLE_BP.fødselsnummer?.verdi!!,
-            rolleType = RolleType.BIDRAGS_PLIKTIG,
+            rolleType = RolleType.BIDRAGSPLIKTIG,
             behandling = behandling,
             fodtDato = null,
             opprettetDato = null,

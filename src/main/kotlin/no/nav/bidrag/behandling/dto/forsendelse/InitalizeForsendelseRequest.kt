@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.dto.forsendelse
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.domain.ident.PersonIdent
 
 data class InitalizeForsendelseRequest(
@@ -17,5 +17,5 @@ data class InitalizeForsendelseRequest(
 
 data class ForsendelseRolleDto(
     val fødselsnummer: PersonIdent,
-    val type: Rolletype,
+    val type: RolleType,
 )

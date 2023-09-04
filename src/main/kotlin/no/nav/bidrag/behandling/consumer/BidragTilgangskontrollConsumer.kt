@@ -18,7 +18,7 @@ import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 
 @Service
-class BidragTIlgangskontrollConsumer(
+class BidragTilgangskontrollConsumer(
     @Value("\${BIDRAG_TILGANGSKONTROLL_URL}") val url: URI,
     @Qualifier("azure") private val restTemplate: RestOperations,
 ) : AbstractRestClient(restTemplate, "bidrag-tilgangskontroll") {

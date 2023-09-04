@@ -3,16 +3,16 @@ package no.nav.bidrag.behandling.service
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.consumer.BidragForsendelseConsumer
-import no.nav.bidrag.behandling.consumer.BidragTIlgangskontrollConsumer
+import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
+import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.forsendelse.MottakerDto
 import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
 import no.nav.bidrag.domain.enums.EngangsbelopType
-import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.StonadType
 import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
@@ -23,7 +23,7 @@ private val log = KotlinLogging.logger {}
 @Service
 class ForsendelseService(
     private val bidragForsendelseConsumer: BidragForsendelseConsumer,
-    private val tIlgangskontrollConsumer: BidragTIlgangskontrollConsumer,
+    private val tilgangskontrollConsumer: BidragTilgangskontrollConsumer,
 ) {
     private val ikkeOpprettVarslingForForskuddMedType =
         listOf(VedtakType.FASTSETTELSE, VedtakType.ENDRING)
@@ -33,7 +33,7 @@ class ForsendelseService(
             behandlingInfo = request.behandlingInfo
                 .copy(
                     barnIBehandling = request.roller
-                        .filter { it.type == Rolletype.BARN && it.fødselsnummer.verdi.isNotEmpty() }
+                        .filter { it.type == RolleType.BARN && it.fødselsnummer.verdi.isNotEmpty() }
                         .map { it.fødselsnummer.verdi },
                 ),
             saksnummer = request.saksnummer,
@@ -81,7 +81,7 @@ class ForsendelseService(
             }
     }
 
-    private fun harTilgangTilTemaFar() = tIlgangskontrollConsumer.sjekkTilgangTema(tema = "FAR")
+    private fun harTilgangTilTemaFar() = tilgangskontrollConsumer.sjekkTilgangTema(tema = "FAR")
     private fun skalOppretteForsendelseForSoknad(behandlingInfo: BehandlingInfoDto): Boolean {
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
@@ -100,17 +100,17 @@ class ForsendelseService(
 
         if (behandlingInfoDto.erGebyr()) {
             if (behandlingInfoDto.erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)) {
-                roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSMOTTAKER))
+                roller.leggTil(behandlingRoller.hentRolle(RolleType.BIDRAGSMOTTAKER))
             } else {
-                roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSPLIKTIG))
+                roller.leggTil(behandlingRoller.hentRolle(RolleType.BIDRAGSPLIKTIG))
             }
             return roller
         }
 
-        roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSMOTTAKER))
+        roller.leggTil(behandlingRoller.hentRolle(RolleType.BIDRAGSMOTTAKER))
 
         if (!behandlingInfoDto.erBehandlingType(StonadType.FORSKUDD)) {
-            roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSPLIKTIG))
+            roller.leggTil(behandlingRoller.hentRolle(RolleType.BIDRAGSPLIKTIG))
         }
 
         if (behandlingInfoDto.erBehandlingType(StonadType.BIDRAG18AAR)) {
@@ -130,8 +130,8 @@ class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mut
 }
 
 fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
-fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? =
+fun List<ForsendelseRolleDto>.hentRolle(rolleType: RolleType): ForsendelseRolleDto? =
     this.find { it.type == rolleType }
 
 fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> =
-    this.filter { it.type == Rolletype.BARN }
+    this.filter { it.type == RolleType.BARN }

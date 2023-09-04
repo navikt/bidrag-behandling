@@ -12,7 +12,6 @@ import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toDomain
@@ -66,7 +65,6 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     companion object {
         fun prepareBehandling(): Behandling {
-            val createRoller = prepareRoles()
             val behandling = Behandling(
                 BehandlingType.FORSKUDD,
                 SoknadType.FASTSETTELSE,
@@ -81,6 +79,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 null,
                 null,
             )
+            val createRoller = prepareRoles(behandling)
             val roller = HashSet(
                 createRoller.map {
                     Rolle(
@@ -97,12 +96,12 @@ class BehandlingServiceTest : TestContainerRunner() {
             return behandling
         }
 
-        fun prepareRoles(): Set<CreateRolleDto> {
+        fun prepareRoles(behandling: Behandling): Set<Rolle> {
             val someDate = Calendar.getInstance().time
             return setOf(
-                CreateRolleDto(RolleType.BIDRAGS_MOTTAKER, "123344", someDate, someDate),
-                CreateRolleDto(RolleType.BIDRAGS_PLIKTIG, "44332211", someDate, someDate),
-                CreateRolleDto(RolleType.BARN, "1111", someDate, someDate),
+                Rolle(behandling, RolleType.BIDRAGSMOTTAKER, "123344", someDate, someDate),
+                Rolle(behandling, RolleType.BIDRAGSPLIKTIG, "44332211", someDate, someDate),
+                Rolle(behandling, RolleType.BARN, "1111", someDate, someDate),
             )
         }
     }

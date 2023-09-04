@@ -1,8 +1,8 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
 import no.nav.bidrag.behandling.dto.boforhold.UpdateBoforholdRequest
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
@@ -20,8 +20,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal lagre boforhold data`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
 

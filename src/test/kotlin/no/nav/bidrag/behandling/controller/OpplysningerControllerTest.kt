@@ -1,8 +1,8 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -25,8 +25,8 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal opprette og oppdatere opplysninger`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
 
@@ -57,8 +57,8 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal returnere 404 hvis opplysninger ikke eksisterer for en gitt behandling`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
 
@@ -81,8 +81,8 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal opprette og oppdatere opplysninger1`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
 
