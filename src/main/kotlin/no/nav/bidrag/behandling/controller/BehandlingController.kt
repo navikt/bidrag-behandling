@@ -8,7 +8,6 @@ import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
@@ -19,6 +18,7 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import no.nav.bidrag.domain.enums.Rolletype
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -70,11 +70,11 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 Rolle(
                     behandling,
                     rolleType = when (it.rolleType) {
-                        CreateRolleRolleType.BIDRAGS_MOTTAKER -> RolleType.BIDRAGSMOTTAKER
-                        CreateRolleRolleType.BIDRAGS_PLIKTIG -> RolleType.BIDRAGSPLIKTIG
-                        CreateRolleRolleType.REELL_MOTTAKER -> RolleType.REELLMOTTAKER
-                        CreateRolleRolleType.BARN -> RolleType.BARN
-                        CreateRolleRolleType.FEILREGISTRERT -> RolleType.FEILREGISTRERT
+                        CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+                        CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+                        CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+                        CreateRolleRolleType.BARN -> Rolletype.BARN
+                        CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
                     },
                     it.ident,
                     it.fodtDato,

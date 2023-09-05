@@ -14,7 +14,7 @@ enum class CreateRolleRolleType {
 
 @Schema(description = "Rolle beskrivelse som er brukte til å opprette nye roller")
 data class CreateRolleDto(
-    @Schema(required = true)
+    @Schema(required = true, enumAsRef = true)
     val rolleType: CreateRolleRolleType,
 
     @Schema(type = "string", description = "F.eks fødselsnummer", required = true, nullable = false)

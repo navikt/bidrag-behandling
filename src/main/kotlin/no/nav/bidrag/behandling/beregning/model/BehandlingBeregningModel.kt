@@ -10,11 +10,11 @@ import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.domain.enums.Rolletype
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Date
@@ -22,8 +22,8 @@ import java.util.Date
 fun Set<Rolle>.rolleType(ident: String): String {
     val rolleType = this.find { it.ident == ident }?.rolleType
     return when (rolleType) {
-        RolleType.BIDRAGSPLIKTIG -> "BIDRAGSPLIKTIG"
-        RolleType.BIDRAGSMOTTAKER -> "BIDRAGSMOTTAKER"
+        Rolletype.BIDRAGSPLIKTIG -> "BIDRAGSPLIKTIG"
+        Rolletype.BIDRAGSMOTTAKER -> "BIDRAGSMOTTAKER"
         else -> rolleType?.name ?: "BIDRAGSMOTTAKER"
     }
 }

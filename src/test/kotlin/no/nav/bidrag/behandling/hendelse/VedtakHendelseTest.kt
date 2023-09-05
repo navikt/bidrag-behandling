@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -19,6 +18,7 @@ import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.domain.enums.BehandlingsrefKilde
 import no.nav.bidrag.domain.enums.Innkreving
+import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.StonadType
 import no.nav.bidrag.domain.enums.VedtakKilde
 import no.nav.bidrag.domain.enums.VedtakType
@@ -111,21 +111,21 @@ class VedtakHendelseTest : CommonTestRunner() {
     private fun opprettBehandlingRoller(behandling: Behandling) = mutableSetOf(
         Rolle(
             ident = ROLLE_BM.fødselsnummer?.verdi!!,
-            rolleType = RolleType.BIDRAGSMOTTAKER,
+            rolleType = Rolletype.BIDRAGSMOTTAKER,
             behandling = behandling,
             fodtDato = null,
             opprettetDato = null,
         ),
         Rolle(
             ident = ROLLE_BP.fødselsnummer?.verdi!!,
-            rolleType = RolleType.BIDRAGSPLIKTIG,
+            rolleType = Rolletype.BIDRAGSPLIKTIG,
             behandling = behandling,
             fodtDato = null,
             opprettetDato = null,
         ),
         Rolle(
             ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
-            rolleType = RolleType.BARN,
+            rolleType = Rolletype.BARN,
             behandling = behandling,
             fodtDato = null,
             opprettetDato = null,

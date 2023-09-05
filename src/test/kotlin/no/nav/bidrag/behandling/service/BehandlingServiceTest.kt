@@ -7,7 +7,6 @@ import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
@@ -17,6 +16,7 @@ import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
+import no.nav.bidrag.domain.enums.Rolletype
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -99,9 +99,9 @@ class BehandlingServiceTest : TestContainerRunner() {
         fun prepareRoles(behandling: Behandling): Set<Rolle> {
             val someDate = Calendar.getInstance().time
             return setOf(
-                Rolle(behandling, RolleType.BIDRAGSMOTTAKER, "123344", someDate, someDate),
-                Rolle(behandling, RolleType.BIDRAGSPLIKTIG, "44332211", someDate, someDate),
-                Rolle(behandling, RolleType.BARN, "1111", someDate, someDate),
+                Rolle(behandling, Rolletype.BIDRAGSMOTTAKER, "123344", someDate, someDate),
+                Rolle(behandling, Rolletype.BIDRAGSPLIKTIG, "44332211", someDate, someDate),
+                Rolle(behandling, Rolletype.BARN, "1111", someDate, someDate),
             )
         }
     }
