@@ -9,7 +9,7 @@ import io.mockk.Ordering
 import io.mockk.every
 import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragForsendelseConsumer
-import no.nav.bidrag.behandling.consumer.BidragTIlgangskontrollConsumer
+import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
@@ -37,7 +37,7 @@ class ForsendelseServiceTest {
     lateinit var bidragForsendelseConsumer: BidragForsendelseConsumer
 
     @MockkBean
-    lateinit var bidragTIlgangskontrollConsumer: BidragTIlgangskontrollConsumer
+    lateinit var bidragTIlgangskontrollConsumer: BidragTilgangskontrollConsumer
     lateinit var forsendelseService: ForsendelseService
 
     @BeforeEach

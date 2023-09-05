@@ -2,9 +2,9 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.domain.enums.StonadType
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -30,7 +30,7 @@ data class CreateBehandlingRequestTest(
 )
 
 data class CreateRolleDtoTest(
-    val rolleType: RolleType,
+    val rolleType: CreateRolleRolleType,
     val ident: String?,
     val opprettetDato: Date?,
 )
@@ -44,9 +44,9 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     @Test
     fun `skal opprette en behandling med null opprettetDato`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BARN, "1234", null),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "1234", null),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val behandlingReq = createBehandlingRequestTest("sak123", "en12", roller)
 
@@ -62,8 +62,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     @Test
     fun `skal opprette en behandling`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
@@ -80,8 +80,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     fun `skal opprette en behandling og ikke opprette forsendelse for forskudd`() {
         stubUtils.stubOpprettForsendelse()
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
@@ -99,8 +99,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     fun `skal opprette en behandling og forsendelse for stonadType BIDRAG`() {
         stubUtils.stubOpprettForsendelse()
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = createBehandlingRequestTest(
             "sak123",
@@ -125,8 +125,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     fun `skal opprette en behandling og ignorere feil hvis opprett forsendelse feiler`() {
         stubUtils.stubOpprettForsendelse(status = HttpStatus.BAD_REQUEST)
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
@@ -174,7 +174,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         val testBehandlingMedNull = createBehandlingRequestTest(
             "sak123",
             "en12",
-            setOf(CreateRolleDtoTest(RolleType.BARN, "abc1s", Date(1))),
+            setOf(CreateRolleDtoTest(CreateRolleRolleType.BARN, "abc1s", Date(1))),
         )
 
         val responseMedNull = httpHeaderTestRestTemplate.exchange(
@@ -202,8 +202,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     @Test
     fun `skal ikke opprette en behandling med rolle med null ident`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, null, Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, null, Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
@@ -220,8 +220,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     @Test
     fun `skal ikke opprette en behandling med rolle med blank ident`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "   ", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "   ", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
@@ -237,8 +237,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     @Test
     fun `skal ikke opprette en behandling med blank sak`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedBlank = createBehandlingRequestTest("   ", "en12", roller)
         val responseMedBlank = httpHeaderTestRestTemplate.exchange(
@@ -253,8 +253,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     @Test
     fun `skal ikke opprette en behandling med blank sak1`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedBlank = createBehandlingRequestTest("", "en12", roller)
         val responseMedBlank = httpHeaderTestRestTemplate.exchange(
@@ -269,8 +269,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     @Test
     fun `skal ikke opprette en behandling med lang sak`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val testBehandlingMedBlank = createBehandlingRequestTest("123456789", "en12", roller)
         val responseMedBlank = httpHeaderTestRestTemplate.exchange(
@@ -285,8 +285,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     @Test
     fun `skal ikke opprette en behandling med ugyldig enhet`() {
         val roller = setOf(
-            CreateRolleDtoTest(RolleType.BARN, "123", Date(1)),
-            CreateRolleDtoTest(RolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
         )
         val b = createBehandlingRequestTest(null, "12312312312", roller)
         val r = httpHeaderTestRestTemplate.exchange(

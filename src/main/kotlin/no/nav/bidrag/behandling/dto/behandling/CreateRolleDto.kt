@@ -2,13 +2,20 @@ package no.nav.bidrag.behandling.dto.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import java.util.Date
+
+enum class CreateRolleRolleType {
+    BIDRAGS_PLIKTIG,
+    BIDRAGS_MOTTAKER,
+    BARN,
+    REELL_MOTTAKER,
+    FEILREGISTRERT,
+}
 
 @Schema(description = "Rolle beskrivelse som er brukte til å opprette nye roller")
 data class CreateRolleDto(
     @Schema(required = true)
-    val rolleType: RolleType,
+    val rolleType: CreateRolleRolleType,
 
     @Schema(type = "string", description = "F.eks fødselsnummer", required = true, nullable = false)
     @field:NotBlank

@@ -7,7 +7,6 @@ import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.InntektPostDomain
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
@@ -19,7 +18,6 @@ import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
-import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.domain.ident.PersonIdent
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -101,13 +99,7 @@ fun Opplysninger.toDto(): OpplysningerDto {
 fun Behandling.tilForsendelseRolleDto() = roller.map {
     ForsendelseRolleDto(
         fødselsnummer = PersonIdent(it.ident),
-        type = when (it.rolleType) {
-            RolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-            RolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-            RolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-            RolleType.BARN -> Rolletype.BARN
-            RolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
-        },
+        type = it.rolleType,
     )
 }
 
