@@ -16,8 +16,10 @@ import no.nav.bidrag.transport.dokument.BidragEnhet
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 
 class ForsendelseControllerTest : KontrollerTestRunner() {
 
@@ -43,6 +45,91 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         ROLLE_BA_1,
                     ),
                 ),
+            ),
+            List::class.java,
+        )
+
+        response.statusCode shouldBe HttpStatus.OK
+        response.body shouldBe listOf(forsendelseId)
+        @Language("Json")
+        val expectedRequest = """
+            {
+                "mottaker": {
+                    "ident": "${ROLLE_BM.fødselsnummer.verdi}"
+                },
+                "gjelderIdent": "${ROLLE_BM.fødselsnummer.verdi}",
+                "saksnummer": "$SAKSNUMMER",
+                "enhet": "${BidragEnhet.ENHET_FARSKAP}",
+                "språk": "NB",
+                "tema": "FAR",
+                "behandlingInfo": {
+                    "vedtakId": null,
+                    "behandlingId": null,
+                    "soknadId": $SOKNAD_ID,
+                    "erFattetBeregnet": null,
+                    "erVedtakIkkeTilbakekreving": false,
+                    "stonadType": "FORSKUDD",
+                    "engangsBelopType": null,
+                    "behandlingType": null,
+                    "soknadType": null,
+                    "soknadFra": null,
+                    "vedtakType": null,
+                    "barnIBehandling":["1344124"]
+                },
+                "opprettTittel": true
+            }
+        """.trimIndent().replace("\n", "").replace(" ", "")
+        stubUtils.Verify().opprettForsendelseKaltMed(expectedRequest)
+        stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER, 0)
+        stubUtils.Verify().forsendelseSlettet(antall = 0)
+    }
+
+    @Test
+    fun `Skal opprette forsendelse med forkortet roller`() {
+        val forsendelseId = "213123213123"
+        stubUtils.stubOpprettForsendelse(forsendelseId)
+        stubUtils.stubTilgangskontrollTema()
+        val header = HttpHeaders()
+        header.contentType = MediaType.APPLICATION_JSON
+        val response = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/forsendelse/init",
+            HttpMethod.POST,
+            HttpEntity(
+                """{
+                        "saksnummer": "$SAKSNUMMER",
+                        "behandlingInfo": {
+                            "vedtakId": null,
+                            "behandlingId": null,
+                            "soknadId": 12412421414,
+                            "erFattetBeregnet": null,
+                            "erVedtakIkkeTilbakekreving": false,
+                            "stonadType": "FORSKUDD",
+                            "engangsBelopType": null,
+                            "behandlingType": null,
+                            "soknadType": null,
+                            "soknadFra": null,
+                            "vedtakType": null,
+                            "barnIBehandling": []
+                        },
+                        "enhet": "4860",
+                        "tema": null,
+                        "roller": [
+                            {
+                                "fødselsnummer": "${ROLLE_BM.fødselsnummer.verdi}",
+                                "type": "BM"
+                            },
+                            {
+                                "fødselsnummer": "${ROLLE_BP.fødselsnummer.verdi}",
+                                "type": "BP"
+                            },
+                            {
+                                "fødselsnummer": "${ROLLE_BA_1.fødselsnummer.verdi}",
+                                "type": "BA"
+                            }
+                        ]
+                    }
+                """.trimIndent(),
+                header
             ),
             List::class.java,
         )
