@@ -16,8 +16,10 @@ import no.nav.bidrag.transport.dokument.BidragEnhet
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 
 class ForsendelseControllerTest : KontrollerTestRunner() {
 
@@ -87,6 +89,8 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         val forsendelseId = "213123213123"
         stubUtils.stubOpprettForsendelse(forsendelseId)
         stubUtils.stubTilgangskontrollTema()
+        val header = HttpHeaders()
+        header.contentType = MediaType.APPLICATION_JSON
         val response = httpHeaderTestRestTemplate.exchange(
             "${rootUri()}/forsendelse/init",
             HttpMethod.POST,
@@ -124,7 +128,8 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                             }
                         ]
                     }
-                """.trimIndent()
+                """.trimIndent(),
+                header
             ),
             List::class.java,
         )
