@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.forsendelse.MottakerDto
 import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
 import no.nav.bidrag.domain.enums.EngangsbelopType
+import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.StonadType
 import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
@@ -33,7 +34,7 @@ class ForsendelseService(
             behandlingInfo = request.behandlingInfo
                 .copy(
                     barnIBehandling = request.roller
-                        .filter { it.type == RolleType.BARN && it.fødselsnummer.verdi.isNotEmpty() }
+                        .filter { it.type == Rolletype.BARN && it.fødselsnummer.verdi.isNotEmpty() }
                         .map { it.fødselsnummer.verdi },
                 ),
             saksnummer = request.saksnummer,
@@ -45,7 +46,7 @@ class ForsendelseService(
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
         log.info {
             "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev " +
-                "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
+                    "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
         }
         val opprettetForsendelser = mutableListOf<String>()
         opprettForRoller.forEach {
@@ -86,9 +87,9 @@ class ForsendelseService(
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
         return !(
-            behandlingInfo.stonadType == StonadType.FORSKUDD &&
-                ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
-            )
+                behandlingInfo.stonadType == StonadType.FORSKUDD &&
+                        ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
+                )
     }
 
     private fun opprettForRoller(
@@ -100,17 +101,17 @@ class ForsendelseService(
 
         if (behandlingInfoDto.erGebyr()) {
             if (behandlingInfoDto.erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)) {
-                roller.leggTil(behandlingRoller.hentRolle(RolleType.BIDRAGSMOTTAKER))
+                roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSMOTTAKER))
             } else {
-                roller.leggTil(behandlingRoller.hentRolle(RolleType.BIDRAGSPLIKTIG))
+                roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSPLIKTIG))
             }
             return roller
         }
 
-        roller.leggTil(behandlingRoller.hentRolle(RolleType.BIDRAGSMOTTAKER))
+        roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSMOTTAKER))
 
         if (!behandlingInfoDto.erBehandlingType(StonadType.FORSKUDD)) {
-            roller.leggTil(behandlingRoller.hentRolle(RolleType.BIDRAGSPLIKTIG))
+            roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSPLIKTIG))
         }
 
         if (behandlingInfoDto.erBehandlingType(StonadType.BIDRAG18AAR)) {
@@ -130,8 +131,8 @@ class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mut
 }
 
 fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
-fun List<ForsendelseRolleDto>.hentRolle(rolleType: RolleType): ForsendelseRolleDto? =
+fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? =
     this.find { it.type == rolleType }
 
 fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> =
-    this.filter { it.type == RolleType.BARN }
+    this.filter { it.type == Rolletype.BARN }
