@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.domain.enums.Rolletype
 import java.util.Date
 
 @Entity(name = "rolle")
@@ -18,7 +19,7 @@ data class Rolle(
     val behandling: Behandling,
 
     @Enumerated(EnumType.STRING)
-    val rolleType: RolleType,
+    val rolleType: Rolletype,
 
     val ident: String,
 

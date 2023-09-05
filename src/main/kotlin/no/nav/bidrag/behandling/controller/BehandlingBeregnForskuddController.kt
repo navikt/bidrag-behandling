@@ -9,10 +9,10 @@ import mu.KotlinLogging
 import no.nav.bidrag.behandling.beregning.ForskuddBeregning
 import no.nav.bidrag.behandling.consumer.BeregnForskuddPayload
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningPerBarn
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.domain.enums.Rolletype
 import org.springframework.http.HttpEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -46,7 +46,7 @@ class BehandlingBeregnForskuddController(
             val behandlingModel = forskuddBeregning.toBehandlingBeregningModel(behandling).bind()
             val results = behandling
                 .roller
-                .filter { RolleType.BARN == it.rolleType }
+                .filter { Rolletype.BARN == it.rolleType }
                 .mapOrAccumulate {
                     val payload = forskuddBeregning.toPayload(behandlingModel, it)
 

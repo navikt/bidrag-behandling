@@ -9,13 +9,13 @@ import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.RolleType
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.domain.enums.Rolletype
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.math.BigDecimal
@@ -87,8 +87,8 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             husstandsBarn,
         )
         b.roller = mutableSetOf(
-            Rolle(b, RolleType.BIDRAGSMOTTAKER, "123", datoFom, null, null),
-            Rolle(b, RolleType.BARN, "123", datoFom, null, null),
+            Rolle(b, Rolletype.BIDRAGSMOTTAKER, "123", datoFom, null, null),
+            Rolle(b, Rolletype.BARN, "123", datoFom, null, null),
         )
         b.inntekter = mutableSetOf(
             Inntekt(b, true, "beskrivelse", BigDecimal.TEN, datoFom, datoTom, "ident", true),
