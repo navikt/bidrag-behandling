@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne
 import java.util.Date
 
 @Entity(name = "sivilstand")
-data class Sivilstand(
+class Sivilstand(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,

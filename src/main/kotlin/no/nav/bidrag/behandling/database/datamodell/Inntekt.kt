@@ -13,7 +13,7 @@ import java.math.BigDecimal
 import java.util.Date
 
 @Entity(name = "inntekt")
-data class Inntekt(
+class Inntekt(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
@@ -29,7 +29,7 @@ data class Inntekt(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-) {
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.ALL])
-    var inntektPostListe: MutableSet<InntektPostDomain> = mutableSetOf()
-}
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var inntektPostListe: MutableSet<InntektPostDomain> = mutableSetOf(),
+)

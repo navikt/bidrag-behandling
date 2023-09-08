@@ -129,7 +129,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         ]
                     }
                 """.trimIndent(),
-                header
+                header,
             ),
             List::class.java,
         )

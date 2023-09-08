@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne
 import java.util.Date
 
 @Entity(name = "barn_i_husstand_periode")
-data class HusstandsBarnPeriode(
+class HusstandsBarnPeriode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barn_i_husstand_id", nullable = false)
     val husstandsBarn: HusstandsBarn,

@@ -12,13 +12,13 @@ import jakarta.persistence.ManyToOne
 import java.util.Date
 
 @Entity(name = "opplysninger")
-data class Opplysninger(
+class Opplysninger(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
 
-    val aktiv: Boolean,
+    var aktiv: Boolean,
 
     @Enumerated(EnumType.STRING)
     val opplysningerType: OpplysningerType,
