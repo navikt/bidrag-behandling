@@ -9,8 +9,6 @@ import no.nav.bidrag.behandling.beregning.model.HusstandsBarnPeriodeModel
 import no.nav.bidrag.behandling.beregning.model.InntektModel
 import no.nav.bidrag.behandling.beregning.model.SivilstandModel
 import no.nav.bidrag.behandling.beregning.model.UtvidetbarnetrygdModel
-import no.nav.bidrag.behandling.consumer.BeregnForskuddPayload
-import no.nav.bidrag.behandling.consumer.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -22,6 +20,8 @@ import no.nav.bidrag.behandling.transformers.toNoString
 import no.nav.bidrag.beregn.felles.enums.BostatusKode
 import no.nav.bidrag.beregn.felles.enums.SivilstandKode
 import no.nav.bidrag.domain.enums.GrunnlagType
+import no.nav.bidrag.transport.beregning.forskudd.rest.request.BeregnForskuddGrunnlag
+import no.nav.bidrag.transport.beregning.forskudd.rest.request.Grunnlag
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -32,7 +32,7 @@ class ForskuddBeregning {
         listOf(
             Grunnlag(
                 referanse = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
-                type = GrunnlagType.SOKNADSBARN_INFO,
+                type = GrunnlagType.SOKNADSBARN_INFO.toString(),
                 innhold = POJONode(
                     SoknadsBarnNode(
                         soknadsbarnId = soknadBarn.id!!.toInt(),
@@ -57,7 +57,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_Bostatus_" + it.datoFom.toCompactString(),
-                    type = GrunnlagType.BOSTATUS,
+                    type = GrunnlagType.BOSTATUS.toString(),
                     innhold = POJONode(
                         BostatusNode(
                             datoFom = it.datoFom.toNoString(),
@@ -75,7 +75,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_BarnIHusstand_" + it.datoFom.replace("-", ""),
-                    type = GrunnlagType.BARN_I_HUSSTAND,
+                    type = GrunnlagType.BARN_I_HUSSTAND.toString(),
                     innhold = POJONode(it),
                 )
             }
@@ -89,7 +89,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
-                    type = GrunnlagType.INNTEKT,
+                    type = GrunnlagType.INNTEKT.toString(),
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
@@ -104,7 +104,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
-                    type = GrunnlagType.INNTEKT,
+                    type = GrunnlagType.INNTEKT.toString(),
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
@@ -119,7 +119,7 @@ class ForskuddBeregning {
             .map {
                 Grunnlag(
                     referanse = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
-                    type = GrunnlagType.INNTEKT,
+                    type = GrunnlagType.INNTEKT.toString(),
                     innhold = POJONode(
                         InntektNode(
                             datoFom = it.datoFom.toNoString(),
@@ -144,7 +144,7 @@ class ForskuddBeregning {
         sivilstand.map {
             Grunnlag(
                 referanse = "Mottatt_Sivilstand_" + it.datoFom.toCompactString(),
-                type = GrunnlagType.SIVILSTAND,
+                type = GrunnlagType.SIVILSTAND.toString(),
                 innhold = POJONode(
                     SivilstandNode(
                         datoFom = it.datoFom.toNoString(),
@@ -210,10 +210,10 @@ class ForskuddBeregning {
             roller = behandling.roller,
         )
 
-    fun toPayload(b: BehandlingBeregningModel, soknadsBarn: Rolle): BeregnForskuddPayload =
-        BeregnForskuddPayload(
-            beregnDatoFra = b.virkningsDato.toNoString(), // TODO kanskje behandling.datoFom?
-            beregnDatoTil = b.datoTom.toNoString(),
+    fun toPayload(b: BehandlingBeregningModel, soknadsBarn: Rolle): BeregnForskuddGrunnlag =
+        BeregnForskuddGrunnlag(
+            beregnDatoFra = b.virkningsDato,
+            beregnDatoTil = b.datoTom,
             grunnlagListe = prepareSoknadsBarn(soknadsBarn) +
                 prepareBarnIHusstand(b) +
                 prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +

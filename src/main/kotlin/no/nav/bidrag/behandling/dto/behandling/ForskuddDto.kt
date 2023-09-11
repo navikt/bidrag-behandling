@@ -1,8 +1,8 @@
 package no.nav.bidrag.behandling.dto.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.consumer.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
+import no.nav.bidrag.transport.beregning.forskudd.rest.request.Grunnlag
 import java.math.BigDecimal
 import java.time.LocalDate
 

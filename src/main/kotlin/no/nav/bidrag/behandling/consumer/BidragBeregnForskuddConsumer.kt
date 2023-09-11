@@ -1,9 +1,8 @@
 package no.nav.bidrag.behandling.consumer
 
-import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.behandling.ForskuddDto
 import no.nav.bidrag.commons.web.client.AbstractRestClient
-import no.nav.bidrag.transport.behandling.vedtak.response.GrunnlagDto
+import no.nav.bidrag.transport.beregning.forskudd.rest.request.BeregnForskuddGrunnlag
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -20,15 +19,6 @@ class BidragBeregnForskuddConsumer(
     private val beregnForskuddUri =
         UriComponentsBuilder.fromUri(bidragBeregnForskuddUrl).pathSegment("beregn").pathSegment("forskudd").build().toUri()
 
-    fun beregnForskudd(payload: BeregnForskuddPayload): ForskuddDto =
+    fun beregnForskudd(payload: BeregnForskuddGrunnlag): ForskuddDto =
         postForNonNullEntity(beregnForskuddUri, payload)
 }
-
-@Schema(description = "Grunnlaget for en forskuddsberegning")
-data class BeregnForskuddPayload(
-    @Schema(description = "Beregn forskudd fra-dato") val beregnDatoFra: String? = null,
-    @Schema(description = "Beregn forskudd til-dato") val beregnDatoTil: String? = null,
-    @Schema(description = "Periodisert liste over grunnlagselementer") val grunnlagListe: List<Grunnlag>? = null,
-)
-
-typealias Grunnlag = GrunnlagDto
