@@ -11,7 +11,7 @@ import java.math.BigDecimal
 import java.util.Date
 
 @Entity(name = "barnetillegg")
-data class Barnetillegg(
+class Barnetillegg(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,

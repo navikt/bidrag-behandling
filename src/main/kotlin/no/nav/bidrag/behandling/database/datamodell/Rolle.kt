@@ -13,7 +13,7 @@ import no.nav.bidrag.domain.enums.Rolletype
 import java.util.Date
 
 @Entity(name = "rolle")
-data class Rolle(
+class Rolle(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,

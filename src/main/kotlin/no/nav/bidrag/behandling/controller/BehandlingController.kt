@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequestExtended
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
@@ -171,29 +170,29 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandling.inntektBegrunnelseKunINotat,
         )
 
-    @Suppress("unused")
-    @PutMapping("/behandling/ext/{behandlingId}")
-    @Operation(
-        description = "Oppdatere en behandling",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
-            ),
-        ],
-    )
-    fun oppdaterBehandlingExtended(
-        @PathVariable behandlingId: Long,
-        @RequestBody updateBehandling: UpdateBehandlingRequestExtended,
-    ): BehandlingDto {
-        return behandlingDto(behandlingId, behandlingService.oppdaterBehandlingExtended(behandlingId, updateBehandling))
-    }
+//    @Suppress("unused")
+//    @PutMapping("/behandling/ext/{behandlingId}")
+//    @Operation(
+//        description = "Oppdatere en behandling",
+//        security = [SecurityRequirement(name = "bearer-key")],
+//    )
+//    @ApiResponses(
+//        value = [
+//            ApiResponse(responseCode = "200", description = "Lagret behandling"),
+//            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+//            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
+//            ApiResponse(
+//                responseCode = "403",
+//                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
+//            ),
+//        ],
+//    )
+//    fun oppdaterBehandlingExtended(
+//        @PathVariable behandlingId: Long,
+//        @RequestBody updateBehandling: UpdateBehandlingRequestExtended,
+//    ): BehandlingDto {
+//        return behandlingDto(behandlingId, behandlingService.oppdaterBehandlingExtended(behandlingId, updateBehandling))
+//    }
 
     @Suppress("unused")
     @GetMapping("/behandling")

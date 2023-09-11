@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne
 import java.math.BigDecimal
 
 @Entity(name = "inntekt_post")
-data class InntektPostDomain(
+class InntektPostDomain(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inntekt_id", nullable = false)
     val inntekt: Inntekt,

@@ -26,15 +26,16 @@ class OpplysningerService(
         return opplysningerRepository.save<Opplysninger>(Opplysninger(behandling, true, opplysningerType, data, hentetDato))
     }
 
-    fun updateAktivOpplysninger(opplysninger: Opplysninger, aktiv: Boolean) {
+    fun updateAktivOpplysninger(opplysninger: Opplysninger, aktiv: Boolean) =
         opplysningerRepository.save(
-            opplysninger.copy(
-                aktiv = aktiv,
-            ),
+            opplysningerRepository.findById(opplysninger.id!!)
+                .orElseThrow { `404`(opplysninger.id) }
+                .let {
+                    it.aktiv = aktiv
+                    it
+                },
         )
-    }
 
-    fun hentSistAktiv(behandlingId: Long, opplysningerType: OpplysningerType): Optional<Opplysninger> {
-        return opplysningerRepository.findActiveByBehandlingIdAndType(behandlingId, opplysningerType)
-    }
+    fun hentSistAktiv(behandlingId: Long, opplysningerType: OpplysningerType): Optional<Opplysninger> =
+        opplysningerRepository.findActiveByBehandlingIdAndType(behandlingId, opplysningerType)
 }
