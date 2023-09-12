@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.behandling.transformers.toRolleTypeDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import no.nav.bidrag.domain.enums.Rolletype
 import org.springframework.web.bind.annotation.GetMapping
@@ -155,7 +156,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             behandling.soknadId,
             behandling.behandlerEnhet,
             behandling.roller.map {
-                RolleDto(it.id!!, it.rolleType, it.ident, it.fodtDato, it.opprettetDato)
+                RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.fodtDato, it.opprettetDato)
             }.toSet(),
             behandling.husstandsBarn.toHusstandsBarnDto(),
             behandling.sivilstand.toSivilstandDto(),

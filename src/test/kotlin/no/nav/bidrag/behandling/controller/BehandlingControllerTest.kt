@@ -63,7 +63,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     }
 
     @Test
-    fun `skal opprette en behandling med null opprettetDato og hente den`() {
+    fun `skal opprette en behandling med null opprettetDato og så hente den`() {
         val roller = setOf(
             CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
             CreateRolleDtoTest(CreateRolleRolleType.BARN, "1234", null),

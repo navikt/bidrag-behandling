@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
+import no.nav.bidrag.behandling.dto.behandling.RolleTypeDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
@@ -18,6 +19,7 @@ import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
+import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.VedtakType
 import no.nav.bidrag.domain.ident.PersonIdent
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -114,4 +116,12 @@ fun SoknadType.tilVedtakType(): VedtakType = when (this) {
     SoknadType.OPPHØR -> VedtakType.OPPHØR
     SoknadType.INDEKSREGULERING -> VedtakType.INDEKSREGULERING
     SoknadType.INNKREVING -> VedtakType.INNKREVING
+}
+
+fun Rolletype.toRolleTypeDto(): RolleTypeDto = when (this) {
+    Rolletype.BARN -> RolleTypeDto.BARN
+    Rolletype.BIDRAGSMOTTAKER -> RolleTypeDto.BIDRAGSMOTTAKER
+    Rolletype.BIDRAGSPLIKTIG -> RolleTypeDto.BIDRAGSPLIKTIG
+    Rolletype.FEILREGISTRERT -> RolleTypeDto.FEILREGISTRERT
+    Rolletype.REELMOTTAKER -> RolleTypeDto.REELMOTTAKER
 }
