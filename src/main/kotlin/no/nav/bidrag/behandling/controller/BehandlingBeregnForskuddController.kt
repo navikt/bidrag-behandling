@@ -7,12 +7,12 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.beregning.ForskuddBeregning
-import no.nav.bidrag.behandling.consumer.BeregnForskuddPayload
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningPerBarn
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.transport.beregning.forskudd.rest.request.BeregnForskuddGrunnlag
 import org.springframework.http.HttpEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -80,7 +80,7 @@ class BehandlingBeregnForskuddController(
         return ForskuddBeregningRespons(result.getOrNull(), result.leftOrNull())
     }
 
-    private fun printDebugPayload(payload: BeregnForskuddPayload) {
+    private fun printDebugPayload(payload: BeregnForskuddGrunnlag) {
         val message = HttpEntity(payload)
         val objectMapper = ObjectMapper()
 
