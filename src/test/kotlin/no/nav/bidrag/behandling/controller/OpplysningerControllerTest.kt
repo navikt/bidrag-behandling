@@ -49,6 +49,32 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     }
 
     @Test
+    fun `skal ikke være mulig å opprette flere aktive opplysninger`() {
+        val roller = setOf(
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
+
+        // 1. Create new behandling
+        val behandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), CreateBehandlingResponse::class.java)
+        Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
+
+        val behandlingId = behandling.body!!.id
+
+        // 2. Create new opplysninger opp and opp1
+        skalOppretteOpplysninger(behandlingId, "opp", true, OpplysningerType.BOFORHOLD)
+        skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD)
+
+        // 3. Assert that opp1 is active
+        val oppAktivResult1 = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv", HttpMethod.GET, HttpEntity.EMPTY, OpplysningerDto::class.java)
+        Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
+        Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
+        Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
+        Assertions.assertTrue(oppAktivResult1.body!!.aktiv)
+    }
+
+    @Test
     fun `skal returnere 404 ved ugyldig behandling id`() {
         val r = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/1232132/opplysninger/${OpplysningerType.BOFORHOLD.name}/aktiv", HttpMethod.GET, HttpEntity.EMPTY, OpplysningerDto::class.java)
         Assertions.assertEquals(HttpStatus.NOT_FOUND, r.statusCode)
