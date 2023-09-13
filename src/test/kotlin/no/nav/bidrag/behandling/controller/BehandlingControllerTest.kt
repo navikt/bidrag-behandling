@@ -4,6 +4,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.domain.enums.StonadType
@@ -15,6 +17,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.util.Date
 import kotlin.test.Ignore
+import kotlin.test.assertNotNull
 
 data class CreateBehandlingRequestTest(
     val behandlingType: BehandlingType,
@@ -57,6 +60,34 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
             Void::class.java,
         )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+    }
+
+    @Test
+    fun `skal opprette en behandling med null opprettetDato og så hente den`() {
+        val roller = setOf(
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "1234", null),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val behandlingReq = createBehandlingRequestTest("sak123", "en12", roller)
+
+        val behandlingRes = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling",
+            HttpMethod.POST,
+            HttpEntity(behandlingReq),
+            CreateBehandlingResponse::class.java,
+        )
+        assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+
+        val behandling = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/behandling/${behandlingRes.body!!.id}",
+            HttpMethod.GET,
+            HttpEntity.EMPTY,
+            BehandlingDto::class.java,
+        )
+
+        assertNotNull(behandling.body)
+        assertEquals(3, behandling.body!!.roller.size)
     }
 
     @Test
