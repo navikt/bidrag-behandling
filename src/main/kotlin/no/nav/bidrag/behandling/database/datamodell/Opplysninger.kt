@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -18,14 +19,15 @@ class Opplysninger(
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
 
-    var aktiv: Boolean,
-
     @Enumerated(EnumType.STRING)
     val opplysningerType: OpplysningerType,
 
     val data: String,
 
     val hentetDato: Date,
+
+    @Column(insertable = false, updatable = false)
+    val ts: Date? = null,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

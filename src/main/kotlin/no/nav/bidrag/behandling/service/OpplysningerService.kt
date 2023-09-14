@@ -18,15 +18,13 @@ class OpplysningerService(
 
     @Transactional
     fun opprett(behandlingId: Long, opplysningerType: OpplysningerType, data: String, hentetDato: Date): Opplysninger {
-        opplysningerRepository.deactivateOpplysninger(behandlingId, opplysningerType)
-
         behandlingRepository
             .findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
             .let {
-                return opplysningerRepository.save<Opplysninger>(Opplysninger(it, true, opplysningerType, data, hentetDato))
+                return opplysningerRepository.save<Opplysninger>(Opplysninger(it, opplysningerType, data, hentetDato))
             }
     }
 
     fun hentSistAktiv(behandlingId: Long, opplysningerType: OpplysningerType): Optional<Opplysninger> =
-        opplysningerRepository.findActiveByBehandlingIdAndType(behandlingId, opplysningerType)
+        opplysningerRepository.findTopByBehandlingIdAndOpplysningerTypeOrderByTsDescIdDesc(behandlingId, opplysningerType)
 }

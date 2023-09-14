@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.util.Date
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class OpplysningerServiceTest : TestContainerRunner() {
@@ -44,9 +45,14 @@ class OpplysningerServiceTest : TestContainerRunner() {
                 stonadType = null,
             ),
         )
-        opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
-        opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
+        val opp1 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
+        val opp2 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
+        val opp4 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
+        val opp3 = opplysningerService.opprett(b.id!!, OpplysningerType.INNTEKTSOPPLYSNINGER, "data", Date(1))
 
-        assertTrue(opplysningerService.hentSistAktiv(1, OpplysningerType.BOFORHOLD).isPresent)
+        val option = opplysningerService.hentSistAktiv(b.id!!, OpplysningerType.BOFORHOLD)
+
+        assertTrue(option.isPresent)
+        assertEquals(opp4.id, option.get().id)
     }
 }
