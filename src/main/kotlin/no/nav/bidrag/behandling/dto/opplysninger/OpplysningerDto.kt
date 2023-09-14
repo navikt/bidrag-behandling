@@ -8,7 +8,6 @@ import java.time.LocalDate
 data class OpplysningerDto(
     val id: Long,
     val behandlingId: Long,
-    val aktiv: Boolean,
     val opplysningerType: OpplysningerType,
     val data: String,
 

@@ -45,7 +45,31 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
         Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
         Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
-        Assertions.assertTrue(oppAktivResult1.body!!.aktiv)
+    }
+
+    @Test
+    fun `skal ikke være mulig å opprette flere aktive opplysninger`() {
+        val roller = setOf(
+            CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
+            CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+        )
+        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
+
+        // 1. Create new behandling
+        val behandling = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling", HttpMethod.POST, HttpEntity(testBehandlingMedNull), CreateBehandlingResponse::class.java)
+        Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
+
+        val behandlingId = behandling.body!!.id
+
+        // 2. Create new opplysninger opp and opp1
+        skalOppretteOpplysninger(behandlingId, "opp", true, OpplysningerType.BOFORHOLD)
+        skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD)
+
+        // 3. Assert that opp1 is active
+        val oppAktivResult1 = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv", HttpMethod.GET, HttpEntity.EMPTY, OpplysningerDto::class.java)
+        Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
+        Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
+        Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
     }
 
     @Test
@@ -103,14 +127,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
         Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
         Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
-        Assertions.assertTrue(oppAktivResult1.body!!.aktiv)
 
         // 4. Assert that inn1 is active
         val oppAktivResult2 = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.INNTEKTSOPPLYSNINGER.name}/aktiv", HttpMethod.GET, HttpEntity.EMPTY, OpplysningerDto::class.java)
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult2.statusCode)
         Assertions.assertEquals(behandlingId, oppAktivResult2.body!!.behandlingId)
         Assertions.assertEquals("inn1", oppAktivResult2.body!!.data)
-        Assertions.assertTrue(oppAktivResult2.body!!.aktiv)
     }
 
     private fun skalOppretteOpplysninger(
@@ -131,7 +153,6 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         Assertions.assertEquals(HttpStatus.OK, opp.statusCode)
         val body = opp.body!!
         Assertions.assertEquals(behandlingId, body.behandlingId)
-        Assertions.assertEquals(true, body.aktiv)
 
         return body
     }

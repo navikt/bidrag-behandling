@@ -95,7 +95,7 @@ fun Set<Inntekt>.toInntektDto() = this.map {
 }.toSet()
 
 fun Opplysninger.toDto(): OpplysningerDto {
-    return OpplysningerDto(this.id!!, this.behandling.id!!, this.aktiv, this.opplysningerType, this.data, this.hentetDato.toLocalDate())
+    return OpplysningerDto(this.id!!, this.behandling.id!!, this.opplysningerType, this.data, this.hentetDato.toLocalDate())
 }
 
 fun Behandling.tilForsendelseRolleDto() = roller.map {
