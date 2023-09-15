@@ -42,7 +42,7 @@ class VedtakHendelseListener(
     }
 
     private fun opprettForsendelse(vedtak: VedtakHendelse, behandling: Behandling) {
-        forsendelseService.opprettForsendelse(
+        forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer,
                 enhet = vedtak.enhetId,

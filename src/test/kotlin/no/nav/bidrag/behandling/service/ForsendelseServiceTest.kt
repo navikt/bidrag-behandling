@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BM
@@ -68,7 +69,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -97,7 +98,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -124,7 +125,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -151,7 +152,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 2) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -177,7 +178,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -213,7 +214,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 2) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -261,7 +262,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 3) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -316,7 +317,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 0) {
             bidragForsendelseConsumer.opprettForsendelse(any())
         }
@@ -339,7 +340,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 0) {
             bidragForsendelseConsumer.opprettForsendelse(any())
         }
@@ -368,7 +369,7 @@ class ForsendelseServiceTest {
                 ROLLE_BA_1,
             ),
         )
-        forsendelseService.opprettForsendelse(request)
+        forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 2) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -397,6 +398,45 @@ class ForsendelseServiceTest {
                     it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer.verdi
                 },
             )
+        }
+
+        verify {
+            bidragForsendelseConsumer.hentForsendelserISak(eq(SAKSNUMMER))
+        }
+
+        verify {
+            bidragForsendelseConsumer.slettForsendelse(eq(1))
+            bidragForsendelseConsumer.slettForsendelse(eq(2))
+        }
+    }
+
+    @Test
+    fun `Skal slette forsendelser for varsel under opprettelse hvis behandlingstatus er feilregistrert`() {
+        every { bidragForsendelseConsumer.hentForsendelserISak(any()) } returns listOf(
+            opprettForsendelseResponsUnderOpprettelse(1),
+            opprettForsendelseResponsUnderOpprettelse(2),
+            opprettForsendelseResponsUnderOpprettelse(3).copy(status = ForsendelseStatusTo.DISTRIBUERT),
+            opprettForsendelseResponsUnderOpprettelse(4).copy(forsendelseType = ForsendelseTypeTo.NOTAT),
+        )
+        val request = InitalizeForsendelseRequest(
+            saksnummer = SAKSNUMMER,
+            enhet = "4806",
+            behandlingStatus = BehandlingStatus.FEILREGISTRERT,
+            behandlingInfo = BehandlingInfoDto(
+                soknadId = SOKNAD_ID,
+                stonadType = StonadType.BIDRAG,
+                vedtakType = VedtakType.FASTSETTELSE,
+                erFattetBeregnet = true,
+            ),
+            roller = listOf(
+                ROLLE_BM,
+                ROLLE_BP,
+                ROLLE_BA_1,
+            ),
+        )
+        forsendelseService.slettEllerOpprettForsendelse(request)
+        verify(exactly = 0) {
+            bidragForsendelseConsumer.opprettForsendelse(any())
         }
 
         verify {

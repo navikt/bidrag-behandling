@@ -30,7 +30,7 @@ class BehandlingService(
             }
 
     private fun opprettForsendelseForBehandling(behandling: Behandling) {
-        forsendelseService.opprettForsendelse(
+        forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = behandling.saksnummer,
                 enhet = behandling.behandlerEnhet,
@@ -47,6 +47,7 @@ class BehandlingService(
             ),
         )
     }
+
     fun oppdaterBehandling(
         behandlingId: Long,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
@@ -61,7 +62,8 @@ class BehandlingService(
         behandlingRepository.findBehandlingById(behandlingId)
             .orElseThrow { `404`(behandlingId) }
             .let {
-                it.virkningsTidspunktBegrunnelseMedIVedtakNotat = virkningsTidspunktBegrunnelseMedIVedtakNotat
+                it.virkningsTidspunktBegrunnelseMedIVedtakNotat =
+                    virkningsTidspunktBegrunnelseMedIVedtakNotat
                 it.virkningsTidspunktBegrunnelseKunINotat = virkningsTidspunktBegrunnelseKunINotat
                 it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat
                 it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
@@ -113,7 +115,13 @@ class BehandlingService(
         virkningsTidspunktBegrunnelseKunINotat: String?,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String?,
     ) =
-        behandlingRepository.updateVirkningsTidspunkt(behandlingId, aarsak, virkningsDato, virkningsTidspunktBegrunnelseKunINotat, virkningsTidspunktBegrunnelseMedIVedtakNotat)
+        behandlingRepository.updateVirkningsTidspunkt(
+            behandlingId,
+            aarsak,
+            virkningsDato,
+            virkningsTidspunktBegrunnelseKunINotat,
+            virkningsTidspunktBegrunnelseMedIVedtakNotat
+        )
 
     fun updateBoforhold(
         behandlingId: Long,
@@ -140,5 +148,6 @@ class BehandlingService(
         )
 
     @Transactional
-    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long) = behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
+    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long) =
+        behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
 }

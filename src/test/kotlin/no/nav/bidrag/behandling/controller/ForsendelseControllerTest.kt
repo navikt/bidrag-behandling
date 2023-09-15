@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BM
@@ -209,6 +210,52 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         response.statusCode shouldBe HttpStatus.OK
         response.body shouldBe listOf(forsendelseId)
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(1)
+        stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
+        stubUtils.Verify().forsendelseSlettet("1")
+        stubUtils.Verify().forsendelseSlettet("2")
+    }
+
+    @Test
+    fun `Skal slette forsendelser for varsel hvis behandling er feilregistrert`() {
+        val forsendelseId = "213123213123"
+
+        stubUtils.stubOpprettForsendelse(forsendelseId)
+        stubUtils.stubSlettForsendelse()
+        stubUtils.stubHentForsendelserForSak(
+            listOf(
+                opprettForsendelseResponsUnderOpprettelse(1),
+                opprettForsendelseResponsUnderOpprettelse(2),
+                opprettForsendelseResponsUnderOpprettelse(3).copy(forsendelseType = ForsendelseTypeTo.NOTAT),
+                opprettForsendelseResponsUnderOpprettelse(4).copy(status = ForsendelseStatusTo.UNDER_PRODUKSJON),
+            ),
+        )
+        stubUtils.stubTilgangskontrollTema()
+        val response = httpHeaderTestRestTemplate.exchange(
+            "${rootUri()}/forsendelse/init",
+            HttpMethod.POST,
+            HttpEntity(
+                InitalizeForsendelseRequest(
+                    saksnummer = SAKSNUMMER,
+                    behandlingStatus = BehandlingStatus.FEILREGISTRERT,
+                    enhet = BidragEnhet.ENHET_FARSKAP,
+                    behandlingInfo = BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = StonadType.FORSKUDD,
+                        vedtakId = 1,
+                    ),
+                    roller = listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
+                ),
+            ),
+            List::class.java,
+        )
+
+        response.statusCode shouldBe HttpStatus.OK
+        response.body shouldBe listOf("1", "2")
+        stubUtils.Verify().opprettForsendelseKaltAntallGanger(0)
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
         stubUtils.Verify().forsendelseSlettet("2")

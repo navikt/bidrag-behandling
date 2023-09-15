@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.forsendelse.MottakerDto
@@ -28,7 +29,22 @@ class ForsendelseService(
     private val ikkeOpprettVarslingForForskuddMedType =
         listOf(VedtakType.FASTSETTELSE, VedtakType.ENDRING)
 
-    fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
+    fun slettEllerOpprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
+        if (request.behandlingStatus == BehandlingStatus.FEILREGISTRERT) {
+            return slettForsendelse(request)
+        }
+
+        return opprettForsendelse(request)
+    }
+
+    private fun slettForsendelse(request: InitalizeForsendelseRequest): List<String> {
+        return slettVarselbrevUnderOpprettelse(
+            request.saksnummer,
+            request.behandlingInfo.soknadId
+        ).map { it.toString() }
+    }
+
+    private fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         val opprettRequestTemplate = OpprettForsendelseForespørsel(
             behandlingInfo = request.behandlingInfo
                 .copy(
@@ -45,7 +61,7 @@ class ForsendelseService(
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
         log.info {
             "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev " +
-                "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
+                    "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
         }
         val opprettetForsendelser = mutableListOf<String>()
         opprettForRoller.forEach {
@@ -69,15 +85,16 @@ class ForsendelseService(
         return opprettetForsendelser
     }
 
-    fun slettVarselbrevUnderOpprettelse(saksnummer: String, soknadId: Long) {
+    private fun slettVarselbrevUnderOpprettelse(saksnummer: String, soknadId: Long): List<Long> {
         val forsendelser = bidragForsendelseConsumer.hentForsendelserISak(saksnummer)
-        forsendelser
+        return forsendelser
             .filter { it.forsendelseType == ForsendelseTypeTo.UTGÅENDE }
             .filter { it.status == ForsendelseStatusTo.UNDER_OPPRETTELSE && it.behandlingInfo?.soknadId?.isNotEmpty() == true }
             .filter { it.behandlingInfo?.soknadId == soknadId.toString() && !it.behandlingInfo.erFattet }
-            .forEach {
+            .map {
                 bidragForsendelseConsumer.slettForsendelse(it.forsendelseId)
                 log.info { "Slettet forsendelse ${it.forsendelseId} for varselbrev som var under opprettelse" }
+                it.forsendelseId
             }
     }
 
@@ -86,9 +103,9 @@ class ForsendelseService(
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
         return !(
-            behandlingInfo.stonadType == StonadType.FORSKUDD &&
-                ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
-            )
+                behandlingInfo.stonadType == StonadType.FORSKUDD &&
+                        ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
+                )
     }
 
     private fun opprettForRoller(
