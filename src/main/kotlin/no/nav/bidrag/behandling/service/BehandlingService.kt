@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.service
 
-import no.nav.bidrag.behandling.`404`
+import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
@@ -47,6 +47,9 @@ class BehandlingService(
             ),
         )
     }
+
+    fun deleteBehandlingById(behandlingId: Long) = behandlingRepository.deleteById(behandlingId)
+
     fun oppdaterBehandling(
         behandlingId: Long,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
@@ -59,7 +62,7 @@ class BehandlingService(
         virkningsDato: Date? = null,
     ): Behandling = behandlingRepository.save(
         behandlingRepository.findBehandlingById(behandlingId)
-            .orElseThrow { `404`(behandlingId) }
+            .orElseThrow { behandlingNotFoundException(behandlingId) }
             .let {
                 it.virkningsTidspunktBegrunnelseMedIVedtakNotat = virkningsTidspunktBegrunnelseMedIVedtakNotat
                 it.virkningsTidspunktBegrunnelseKunINotat = virkningsTidspunktBegrunnelseKunINotat
@@ -74,7 +77,7 @@ class BehandlingService(
     )
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
-        behandlingRepository.findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+        behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
 
     fun hentBehandlinger(): List<Behandling> = behandlingRepository.hentBehandlinger()
 
@@ -88,7 +91,7 @@ class BehandlingService(
     ) =
         behandlingRepository.save(
             behandlingRepository.findBehandlingById(behandlingId)
-                .orElseThrow { `404`(behandlingId) }
+                .orElseThrow { behandlingNotFoundException(behandlingId) }
                 .let {
                     it.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
                     it.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
@@ -124,7 +127,7 @@ class BehandlingService(
     ) =
         behandlingRepository.save(
             behandlingRepository.findBehandlingById(behandlingId)
-                .orElseThrow { `404`(behandlingId) }
+                .orElseThrow { behandlingNotFoundException(behandlingId) }
                 .let {
                     it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
                     it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat

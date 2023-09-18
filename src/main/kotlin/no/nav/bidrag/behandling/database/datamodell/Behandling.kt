@@ -12,9 +12,13 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domain.enums.EngangsbelopType
 import no.nav.bidrag.domain.enums.StonadType
+import org.hibernate.annotations.SQLDelete
+import org.hibernate.annotations.Where
 import java.util.Date
 
 @Entity(name = "behandling")
+@SQLDelete(sql = "UPDATE behandling SET deleted = true WHERE id=?")
+@Where(clause = "deleted=false")
 class Behandling(
     @Enumerated(EnumType.STRING)
     val behandlingType: BehandlingType,
@@ -89,4 +93,6 @@ class Behandling(
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd> = mutableSetOf(),
+
+    var deleted: Boolean = false,
 )

@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.service
 
-import no.nav.bidrag.behandling.`404`
+import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -19,7 +19,7 @@ class OpplysningerService(
     @Transactional
     fun opprett(behandlingId: Long, opplysningerType: OpplysningerType, data: String, hentetDato: Date): Opplysninger {
         behandlingRepository
-            .findBehandlingById(behandlingId).orElseThrow { `404`(behandlingId) }
+            .findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
             .let {
                 return opplysningerRepository.save<Opplysninger>(Opplysninger(it, opplysningerType, data, hentetDato))
             }

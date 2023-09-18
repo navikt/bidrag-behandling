@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.behandling.UpdateRolesRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
@@ -93,6 +94,18 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 "med id ${behandlingDo.id} "
         }
         return CreateBehandlingResponse(behandlingDo.id!!)
+    }
+
+    fun addRoles() {
+
+    }
+
+    fun updateRoles(request: List<UpdateRolesRequest>) {
+
+    }
+
+    fun removeRole() {
+
     }
 
     @Suppress("unused")

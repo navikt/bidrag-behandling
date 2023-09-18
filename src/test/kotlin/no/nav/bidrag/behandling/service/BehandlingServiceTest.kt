@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.service
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -11,6 +13,7 @@ import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toDomain
@@ -27,9 +30,16 @@ import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.util.Calendar
 
+
 class BehandlingServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var behandlingService: BehandlingService
+
+    @Autowired
+    lateinit var behandlingRepository: BehandlingRepository
+
+    @PersistenceContext
+    lateinit var entityManager: EntityManager;
 
     @Test
     fun `skal opprette en behandling`() {
@@ -44,6 +54,38 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertEquals(BehandlingType.FORSKUDD, actualBehandlingFetched.behandlingType)
         assertEquals(3, actualBehandlingFetched.roller.size)
         assertNotNull(actualBehandlingFetched.roller.iterator().next().fodtDato)
+    }
+
+    @Test
+    fun `delete behandling`() {
+        val behandling = createBehandling()
+        behandlingService.deleteBehandlingById(behandling.id!!)
+
+        Assertions.assertThrows(HttpClientErrorException::class.java) {
+            behandlingService.hentBehandlingById(behandling.id!!)
+        }
+    }
+
+    @Test
+    fun `delete behandling rolle`() {
+        val behandling = createBehandling()
+
+        assertEquals(3, behandling.roller.size)
+        behandling.roller.removeIf { it.rolleType == Rolletype.BARN }
+
+        behandlingRepository.save(behandling)
+
+        val updatedBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
+        assertEquals(2, updatedBehandling.roller.size)
+
+        val realCount =
+            entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id!!).getSingleResult()
+
+        val deletedCount =
+            entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id!! + " and r.deleted = true").getSingleResult()
+
+        assertEquals(3L, realCount);
+        assertEquals(1L, deletedCount);
     }
 
     @Test
@@ -333,7 +375,6 @@ class BehandlingServiceTest : TestContainerRunner() {
     fun createBehandling(): Behandling {
         val behandling = prepareBehandling()
 
-        val actualBehandling = behandlingService.createBehandling(behandling)
-        return actualBehandling
+        return behandlingService.createBehandling(behandling)
     }
 }
