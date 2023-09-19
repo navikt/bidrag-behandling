@@ -25,7 +25,7 @@
 		<kotest.version>5.6.2</kotest.version>
 		<mockk.version>4.0.2</mockk.version>
 		<kotlin-logging-jvm.version>3.0.5</kotlin-logging-jvm.version>
-		<flyway.version>9.22.0</flyway.version>
+		<flyway.version>9.22.1</flyway.version>
 		<testcontainers.version>1.19.0</testcontainers.version>
 	</properties>
 
@@ -130,7 +130,7 @@
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
-			<version>2.2.220</version>
+			<version>2.2.224</version>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
@@ -423,7 +423,7 @@
 					<dependency>
 						<groupId>com.pinterest</groupId>
 						<artifactId>ktlint</artifactId>
-						<version>0.48.2</version>
+						<version>0.50.0</version>
 					</dependency>
 					<!-- additional 3rd party ruleset(s) can be specified here -->
 				</dependencies>
