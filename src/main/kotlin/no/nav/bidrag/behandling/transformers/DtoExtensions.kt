@@ -7,9 +7,12 @@ import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.InntektPostDomain
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleTypeDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
@@ -104,6 +107,21 @@ fun Behandling.tilForsendelseRolleDto() = roller.map {
         type = it.rolleType,
     )
 }
+
+fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
+    Rolle(
+        behandling,
+        rolleType = when (this.rolleType) {
+            CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+            CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+            CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+            CreateRolleRolleType.BARN -> Rolletype.BARN
+            CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
+        },
+        this.ident,
+        this.fodtDato,
+        this.opprettetDato,
+    )
 
 fun SoknadType.tilVedtakType(): VedtakType = when (this) {
     SoknadType.FASTSETTELSE -> VedtakType.FASTSETTELSE

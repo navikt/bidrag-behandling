@@ -9,10 +9,13 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.RolleRepository
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilVedtakType
+import no.nav.bidrag.behandling.transformers.toRolle
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Date
@@ -20,6 +23,7 @@ import java.util.Date
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
+    private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
 ) {
     fun createBehandling(behandling: Behandling): Behandling =
@@ -144,4 +148,25 @@ class BehandlingService(
 
     @Transactional
     fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long) = behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
+
+    @Transactional
+    fun leggeTilRoller(behandlingId: Long, roller: List<CreateRolleDto>) {
+        val rollerDomain = hentBehandlingById(behandlingId).let { b ->
+            roller.map { it.toRolle(b) }
+        }
+        rolleRepository.saveAll(rollerDomain)
+    }
+
+    @Transactional
+    fun sletteRoller(behandlingId: Long, idents: Set<String>) {
+        val b = hentBehandlingById(behandlingId)
+        b.roller.removeIf {
+            idents.contains(it.ident)
+        }
+
+        if (b.roller.isEmpty()) {
+            // sletter behandling hvis vi har ingen roller igjen
+            behandlingRepository.deleteById(behandlingId)
+        }
+    }
 }

@@ -14,6 +14,8 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toDomain
@@ -25,11 +27,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.util.Calendar
-
+import java.util.Date
 
 class BehandlingServiceTest : TestContainerRunner() {
     @Autowired
@@ -39,7 +42,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     lateinit var behandlingRepository: BehandlingRepository
 
     @PersistenceContext
-    lateinit var entityManager: EntityManager;
+    lateinit var entityManager: EntityManager
 
     @Test
     fun `skal opprette en behandling`() {
@@ -67,6 +70,35 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     @Test
+    fun `legge til flere roller`() {
+        val b = createBehandling()
+
+        behandlingService.leggeTilRoller(
+            b.id!!,
+            listOf(
+                CreateRolleDto(
+                    CreateRolleRolleType.BARN,
+                    "newident",
+                    Date(1),
+                    Date(2),
+                ),
+            ),
+        )
+
+        assertEquals(4, behandlingService.hentBehandlingById(b.id!!).roller.size)
+    }
+
+    @Test
+    fun `behandling må slettes når alle roller ble slettet`() {
+        val b = createBehandling()
+        behandlingService.sletteRoller(b.id!!, b.roller.map { it.ident }.toSet())
+
+        Assertions.assertThrows(HttpClientErrorException::class.java) {
+            behandlingService.hentBehandlingById(b.id!!)
+        }
+    }
+
+    @Test
     fun `delete behandling rolle`() {
         val behandling = createBehandling()
 
@@ -84,8 +116,8 @@ class BehandlingServiceTest : TestContainerRunner() {
         val deletedCount =
             entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id!! + " and r.deleted = true").getSingleResult()
 
-        assertEquals(3L, realCount);
-        assertEquals(1L, deletedCount);
+        assertEquals(3L, realCount)
+        assertEquals(1L, deletedCount)
     }
 
     @Test

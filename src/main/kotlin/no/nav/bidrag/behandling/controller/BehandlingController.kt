@@ -7,19 +7,17 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.behandling.UpdateRolesRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toRolleTypeDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
-import no.nav.bidrag.domain.enums.Rolletype
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -68,19 +66,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         )
         val roller = HashSet(
             createBehandling.roller.map {
-                Rolle(
-                    behandling,
-                    rolleType = when (it.rolleType) {
-                        CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-                        CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-                        CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-                        CreateRolleRolleType.BARN -> Rolletype.BARN
-                        CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
-                    },
-                    it.ident,
-                    it.fodtDato,
-                    it.opprettetDato,
-                )
+                it.toRolle(behandling)
             },
         )
 
@@ -96,17 +82,23 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         return CreateBehandlingResponse(behandlingDo.id!!)
     }
 
-    fun addRoles() {
+    @Suppress("unused")
+    @PostMapping("/behandling/{behandlingId}/roller")
+    @Operation(
+        description = "Legge til roller til behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun leggeTilRoller(@PathVariable behandlingId: Long, @Valid @RequestBody(required = true) roller: List<CreateRolleDto>) =
+        behandlingService.leggeTilRoller(behandlingId, roller)
 
-    }
-
-    fun updateRoles(request: List<UpdateRolesRequest>) {
-
-    }
-
-    fun removeRole() {
-
-    }
+    @Suppress("unused")
+    @PutMapping("/behandling/{behandlingId}/roller/slett")
+    @Operation(
+        description = "Slette roller fra behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun sletteRoller(@PathVariable behandlingId: Long, @Valid @RequestBody(required = true) idents: Set<String>) =
+        behandlingService.sletteRoller(behandlingId, idents)
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/vedtak/{vedtakId}")
