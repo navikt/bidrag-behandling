@@ -16,6 +16,6 @@ data class InitalizeForsendelseRequest(
 )
 
 data class ForsendelseRolleDto(
-    val fødselsnummer: PersonIdent,
+    val fødselsnummer: PersonIdent?,
     val type: Rolletype,
 )

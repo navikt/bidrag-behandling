@@ -74,7 +74,7 @@ class ForsendelseServiceTest {
                 withArg {
                     it.tema shouldBe "FAR"
                     it.behandlingInfo!!.barnIBehandling shouldHaveSize 1
-                    it.behandlingInfo!!.barnIBehandling shouldContain ROLLE_BA_1.fødselsnummer.verdi
+                    it.behandlingInfo!!.barnIBehandling shouldContain ROLLE_BA_1.fødselsnummer?.verdi
                 },
             )
         }
@@ -101,7 +101,7 @@ class ForsendelseServiceTest {
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
         }
@@ -128,7 +128,7 @@ class ForsendelseServiceTest {
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
                 },
             )
         }
@@ -190,8 +190,8 @@ class ForsendelseServiceTest {
                     it.behandlingInfo!!.soknadId shouldBe SOKNAD_ID
                     it.behandlingInfo!!.stonadType shouldBe StonadType.FORSKUDD
 
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
         }
@@ -232,14 +232,14 @@ class ForsendelseServiceTest {
         verify(ordering = Ordering.SEQUENCE) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
                 },
             )
         }
@@ -280,20 +280,20 @@ class ForsendelseServiceTest {
         verify(ordering = Ordering.SEQUENCE) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BA_1.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BA_1.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BA_1.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BA_1.fødselsnummer?.verdi
                 },
             )
         }
@@ -387,14 +387,14 @@ class ForsendelseServiceTest {
         verify {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
                 },
             )
         }
