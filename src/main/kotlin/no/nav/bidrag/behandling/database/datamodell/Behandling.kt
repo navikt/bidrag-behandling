@@ -22,77 +22,51 @@ import java.util.Date
 class Behandling(
     @Enumerated(EnumType.STRING)
     val behandlingType: BehandlingType,
-
     @Enumerated(EnumType.STRING)
     val soknadType: SoknadType, // TODO Endre til VedtakType
-
     val datoFom: Date,
-
     val datoTom: Date,
-
     val mottatDato: Date,
-
     val saksnummer: String,
     val soknadId: Long,
     val soknadRefId: Long? = null,
-
     val behandlerEnhet: String,
-
     @Enumerated(EnumType.STRING)
     val soknadFra: SoknadFraType,
-
     @Enumerated(EnumType.STRING)
     var stonadType: StonadType?,
-
     @Enumerated(EnumType.STRING)
     var engangsbelopType: EngangsbelopType?,
-
     var vedtakId: Long? = null,
-
     var virkningsDato: Date? = null,
-
     @Enumerated(EnumType.STRING)
     var aarsak: ForskuddAarsakType? = null,
-
     @Column(name = "VIRKNINGS_TIDSPUNKT_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
     var virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
-
     @Column(name = "VIRKNINGS_TIDSPUNKT_BEGRUNNELSE_KUN_I_NOTAT")
     var virkningsTidspunktBegrunnelseKunINotat: String? = null,
-
     @Column(name = "BOFORHOLD_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
     var boforholdBegrunnelseMedIVedtakNotat: String? = null,
-
     @Column(name = "BOFORHOLD_BEGRUNNELSE_KUN_I_NOTAT")
     var boforholdBegrunnelseKunINotat: String? = null,
-
     @Column(name = "INNTEKT_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
     var inntektBegrunnelseMedIVedtakNotat: String? = null,
-
     @Column(name = "INNTEKT_BEGRUNNELSE_KUN_I_NOTAT")
     var inntektBegrunnelseKunINotat: String? = null,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var roller: MutableSet<Rolle> = mutableSetOf(),
-
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var husstandsBarn: MutableSet<HusstandsBarn> = mutableSetOf(),
-
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var inntekter: MutableSet<Inntekt> = mutableSetOf(),
-
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
-
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var barnetillegg: MutableSet<Barnetillegg> = mutableSetOf(),
-
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd> = mutableSetOf(),
-
     var deleted: Boolean = false,
 )

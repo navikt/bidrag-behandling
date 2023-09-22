@@ -23,7 +23,6 @@ class VedtakHendelseListener(
     val forsendelseService: ForsendelseService,
     val behandlingService: BehandlingService,
 ) {
-
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
@@ -32,7 +31,9 @@ class VedtakHendelseListener(
 
         if (!vedtak.erFattetFraBidragBehandling()) return
         val behandling = behandlingService.hentBehandlingById(vedtak.behandlingId!!)
-        log.info { "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. Lagrer vedtakId på behandling og oppretter forsendelser for vedtaket" }
+        log.info {
+            "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. Lagrer vedtakId på behandling og oppretter forsendelser for vedtaket"
+        }
 
         behandlingService.oppdaterVedtakId(
             vedtak.behandlingId!!,
@@ -41,12 +42,16 @@ class VedtakHendelseListener(
         opprettForsendelse(vedtak, behandling)
     }
 
-    private fun opprettForsendelse(vedtak: VedtakHendelse, behandling: Behandling) {
+    private fun opprettForsendelse(
+        vedtak: VedtakHendelse,
+        behandling: Behandling,
+    ) {
         forsendelseService.opprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer,
                 enhet = vedtak.enhetId,
-                behandlingInfo = BehandlingInfoDto(
+                behandlingInfo =
+                BehandlingInfoDto(
                     soknadId = vedtak.soknadId ?: behandling.soknadId,
                     vedtakId = vedtak.id.toLong(),
                     soknadFra = behandling.soknadFra,
@@ -72,10 +77,19 @@ class VedtakHendelseListener(
 
 val VedtakHendelse.stonadType get() = this.stonadsendringListe?.firstOrNull()?.type
 val VedtakHendelse.engangsbelopType get() = this.engangsbelopListe?.firstOrNull()?.type
-val VedtakHendelse.soknadId get() = this.behandlingsreferanseListe?.find { it.kilde == BehandlingsrefKilde.BISYS_SOKNAD.name }?.referanse?.toLong()
-val VedtakHendelse.behandlingId get() = this.behandlingsreferanseListe?.find { it.kilde == BehandlingsrefKilde.BEHANDLING_ID.name }?.referanse?.toLong()
+val VedtakHendelse.soknadId get() =
+    this.behandlingsreferanseListe?.find {
+        it.kilde == BehandlingsrefKilde.BISYS_SOKNAD.name
+    }?.referanse?.toLong()
+val VedtakHendelse.behandlingId get() =
+    this.behandlingsreferanseListe?.find {
+        it.kilde == BehandlingsrefKilde.BEHANDLING_ID.name
+    }?.referanse?.toLong()
+
 fun VedtakHendelse.erFattetFraBidragBehandling() = behandlingId != null
+
 val VedtakHendelse.saksnummer
-    get(): String = stonadsendringListe?.firstOrNull()?.sakId
-        ?: engangsbelopListe?.firstOrNull()?.sakId
-        ?: throw RuntimeException("Vedtak hendelse med id $id mangler saksnummer")
+    get(): String =
+        stonadsendringListe?.firstOrNull()?.sakId
+            ?: engangsbelopListe?.firstOrNull()?.sakId
+            ?: throw RuntimeException("Vedtak hendelse med id $id mangler saksnummer")

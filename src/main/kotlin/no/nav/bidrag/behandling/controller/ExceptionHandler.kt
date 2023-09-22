@@ -24,14 +24,17 @@ private val log = KotlinLogging.logger {}
 @Suppress("unused")
 class ExceptionHandler {
     @ResponseBody
-    @ExceptionHandler(value = [MethodArgumentNotValidException::class, InvalidFormatException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class])
+    @ExceptionHandler(
+        value = [MethodArgumentNotValidException::class, InvalidFormatException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class],
+    )
     fun handleInvalidValueExceptions(exception: Exception): ResponseEntity<*> {
         val cause = exception.cause ?: exception
-        val validationError = when (cause) {
-            is JsonMappingException -> createMissingKotlinParameterViolation(cause)
-            is MethodArgumentNotValidException -> parseMethodArgumentNotValidException(cause)
-            else -> null
-        }
+        val validationError =
+            when (cause) {
+                is JsonMappingException -> createMissingKotlinParameterViolation(cause)
+                is MethodArgumentNotValidException -> parseMethodArgumentNotValidException(cause)
+                else -> null
+            }
         val errorMessage =
             validationError?.fieldErrors?.joinToString(", ") { "${it.field}: ${it.message}" }
                 ?: "ukjent feil"
@@ -94,7 +97,11 @@ class ExceptionHandler {
     }
 
     data class Error(val status: Int, val message: String, val fieldErrors: MutableList<CustomFieldError> = mutableListOf()) {
-        fun addFieldError(objectName: String, field: String, message: String) {
+        fun addFieldError(
+            objectName: String,
+            field: String,
+            message: String,
+        ) {
             val error = CustomFieldError(objectName, field, message)
             fieldErrors.add(error)
         }

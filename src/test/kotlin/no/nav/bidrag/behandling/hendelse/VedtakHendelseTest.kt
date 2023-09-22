@@ -87,55 +87,64 @@ class VedtakHendelseTest : CommonTestRunner() {
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
     }
 
-    private fun opprettHendelseRecord(vedtakHendelse: VedtakHendelse) = ConsumerRecord(
-        "",
-        1,
-        1,
-        "",
-        stubUtils.toJsonString(vedtakHendelse),
-    )
-    private fun opprettBehandling() = Behandling(
-        datoFom = Date(),
-        datoTom = Date(),
-        saksnummer = SAKSNUMMER,
-        soknadId = 123123L,
-        behandlerEnhet = "4806",
-        behandlingType = BehandlingType.BIDRAG18AAR,
-        engangsbelopType = null,
-        mottatDato = Date(),
-        soknadFra = SoknadFraType.BIDRAGSMOTTAKER,
-        soknadType = SoknadType.FASTSETTELSE,
-        stonadType = StonadType.BIDRAG18AAR,
-    )
+    private fun opprettHendelseRecord(vedtakHendelse: VedtakHendelse) =
+        ConsumerRecord(
+            "",
+            1,
+            1,
+            "",
+            stubUtils.toJsonString(vedtakHendelse),
+        )
 
-    private fun opprettBehandlingRoller(behandling: Behandling) = mutableSetOf(
-        Rolle(
-            ident = ROLLE_BM.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BIDRAGSMOTTAKER,
-            behandling = behandling,
-            fodtDato = null,
-            opprettetDato = null,
-        ),
-        Rolle(
-            ident = ROLLE_BP.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BIDRAGSPLIKTIG,
-            behandling = behandling,
-            fodtDato = null,
-            opprettetDato = null,
-        ),
-        Rolle(
-            ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BARN,
-            behandling = behandling,
-            fodtDato = null,
-            opprettetDato = null,
-        ),
-    )
+    private fun opprettBehandling() =
+        Behandling(
+            datoFom = Date(),
+            datoTom = Date(),
+            saksnummer = SAKSNUMMER,
+            soknadId = 123123L,
+            behandlerEnhet = "4806",
+            behandlingType = BehandlingType.BIDRAG18AAR,
+            engangsbelopType = null,
+            mottatDato = Date(),
+            soknadFra = SoknadFraType.BIDRAGSMOTTAKER,
+            soknadType = SoknadType.FASTSETTELSE,
+            stonadType = StonadType.BIDRAG18AAR,
+        )
 
-    private fun opprettVedtakhendelse(vedtakId: Int, behandlingId: Long, stonadType: StonadType = StonadType.BIDRAG18AAR): VedtakHendelse {
+    private fun opprettBehandlingRoller(behandling: Behandling) =
+        mutableSetOf(
+            Rolle(
+                ident = ROLLE_BM.fødselsnummer?.verdi!!,
+                rolleType = Rolletype.BIDRAGSMOTTAKER,
+                behandling = behandling,
+                fodtDato = null,
+                opprettetDato = null,
+            ),
+            Rolle(
+                ident = ROLLE_BP.fødselsnummer?.verdi!!,
+                rolleType = Rolletype.BIDRAGSPLIKTIG,
+                behandling = behandling,
+                fodtDato = null,
+                opprettetDato = null,
+            ),
+            Rolle(
+                ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
+                rolleType = Rolletype.BARN,
+                behandling = behandling,
+                fodtDato = null,
+                opprettetDato = null,
+            ),
+        )
+
+    private fun opprettVedtakhendelse(
+        vedtakId: Int,
+        behandlingId: Long,
+        stonadType: StonadType = StonadType.BIDRAG18AAR,
+    ): VedtakHendelse {
         return VedtakHendelse(
             type = VedtakType.FASTSETTELSE,
-            stonadsendringListe = listOf(
+            stonadsendringListe =
+            listOf(
                 Stonadsendring(
                     type = stonadType,
                     eksternReferanse = "",
@@ -160,7 +169,8 @@ class VedtakHendelseTest : CommonTestRunner() {
             sporingsdata = Sporingsdata("sporing"),
             utsattTilDato = null,
             vedtakTidspunkt = LocalDateTime.now(),
-            behandlingsreferanseListe = listOf(
+            behandlingsreferanseListe =
+            listOf(
                 Behandlingsreferanse(
                     BehandlingsrefKilde.BEHANDLING_ID.name,
                     behandlingId.toString(),

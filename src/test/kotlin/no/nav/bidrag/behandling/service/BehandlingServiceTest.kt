@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
@@ -73,7 +72,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     fun `legge til flere roller`() {
         val b = createBehandling()
 
-        behandlingService.leggeTilRoller(
+        behandlingService.syncRoller(
             b.id!!,
             listOf(
                 CreateRolleDto(
@@ -89,13 +88,33 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     @Test
-    fun `behandling må slettes når alle roller ble slettet`() {
+    fun `behandling må synce roller og slette behandling`() {
         val b = createBehandling()
-        behandlingService.sletteRoller(b.id!!, b.roller.map { it.ident }.toSet())
+        behandlingService.syncRoller(
+            b.id!!,
+            listOf(
+                CreateRolleDto(CreateRolleRolleType.BARN, "1111", Date(1), Date(2), true),
+            ),
+        )
 
         Assertions.assertThrows(HttpClientErrorException::class.java) {
             behandlingService.hentBehandlingById(b.id!!)
         }
+    }
+
+    @Test
+    fun `behandling må synce roller`() {
+        val b = createBehandling()
+        behandlingService.syncRoller(
+            b.id!!,
+            listOf(
+                CreateRolleDto(CreateRolleRolleType.BARN, "1111", Date(1), Date(2), true),
+                CreateRolleDto(CreateRolleRolleType.BARN, "111123", Date(1), Date(2)),
+                CreateRolleDto(CreateRolleRolleType.BARN, "1111234", Date(1), Date(2)),
+            ),
+        )
+
+        assertEquals(2, behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolleType == Rolletype.BARN }.size)
     }
 
     @Test
@@ -114,7 +133,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id!!).getSingleResult()
 
         val deletedCount =
-            entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id!! + " and r.deleted = true").getSingleResult()
+            entityManager.createNativeQuery(
+                "select count(*) from rolle r where r.behandling_id = " + behandling.id!! + " and r.deleted = true",
+            ).getSingleResult()
 
         assertEquals(3L, realCount)
         assertEquals(1L, deletedCount)
@@ -139,32 +160,34 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     companion object {
         fun prepareBehandling(): Behandling {
-            val behandling = Behandling(
-                BehandlingType.FORSKUDD,
-                SoknadType.FASTSETTELSE,
-                Calendar.getInstance().time,
-                Calendar.getInstance().time,
-                Calendar.getInstance().time,
-                "1234",
-                123213L,
-                null,
-                "1234",
-                SoknadFraType.BIDRAGSMOTTAKER,
-                null,
-                null,
-            )
+            val behandling =
+                Behandling(
+                    BehandlingType.FORSKUDD,
+                    SoknadType.FASTSETTELSE,
+                    Calendar.getInstance().time,
+                    Calendar.getInstance().time,
+                    Calendar.getInstance().time,
+                    "1234",
+                    123213L,
+                    null,
+                    "1234",
+                    SoknadFraType.BIDRAGSMOTTAKER,
+                    null,
+                    null,
+                )
             val createRoller = prepareRoles(behandling)
-            val roller = HashSet(
-                createRoller.map {
-                    Rolle(
-                        behandling,
-                        it.rolleType,
-                        it.ident,
-                        it.fodtDato,
-                        it.opprettetDato,
-                    )
-                },
-            )
+            val roller =
+                HashSet(
+                    createRoller.map {
+                        Rolle(
+                            behandling,
+                            it.rolleType,
+                            it.ident,
+                            it.fodtDato,
+                            it.opprettetDato,
+                        )
+                    },
+                )
 
             behandling.roller.addAll(roller)
             return behandling
@@ -282,7 +305,14 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertNotNull(expectedBehandling.inntektBegrunnelseMedIVedtakNotat)
         assertNotNull(expectedBehandling.inntektBegrunnelseKunINotat)
 
-        behandlingService.oppdaterInntekter(actualBehandling.id!!, mutableSetOf(), expectedBehandling.barnetillegg, mutableSetOf(), null, null)
+        behandlingService.oppdaterInntekter(
+            actualBehandling.id!!,
+            mutableSetOf(),
+            expectedBehandling.barnetillegg,
+            mutableSetOf(),
+            null,
+            null,
+        )
 
         val expectedBehandlingWithoutInntekter = behandlingService.hentBehandlingById(actualBehandling.id!!)
 
@@ -318,15 +348,16 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertNotNull(createdBehandling.id)
         assertNull(createdBehandling.aarsak)
 
-        val oppdatertBehandling = behandlingService.oppdaterBehandling(
-            createdBehandling.id!!,
-            MED_I_VEDTAK,
-            NOTAT,
-            MED_I_VEDTAK,
-            NOTAT,
-            MED_I_VEDTAK,
-            NOTAT,
-        )
+        val oppdatertBehandling =
+            behandlingService.oppdaterBehandling(
+                createdBehandling.id!!,
+                MED_I_VEDTAK,
+                NOTAT,
+                MED_I_VEDTAK,
+                NOTAT,
+                MED_I_VEDTAK,
+                NOTAT,
+            )
 
         val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
@@ -379,14 +410,15 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertEquals(0, createdBehandling.sivilstand.size)
 
         val husstandsBarn = setOf(HusstandsBarnDto(null, true, emptySet(), "Manuelt", "ident!"))
-        val sivilstand = setOf(
-            SivilstandDto(
-                null,
-                Calendar.getInstance().time.toLocalDate(),
-                Calendar.getInstance().time.toLocalDate(),
-                SivilstandType.ENKE_ELLER_ENKEMANN,
-            ),
-        )
+        val sivilstand =
+            setOf(
+                SivilstandDto(
+                    null,
+                    Calendar.getInstance().time.toLocalDate(),
+                    Calendar.getInstance().time.toLocalDate(),
+                    SivilstandType.ENKE_ELLER_ENKEMANN,
+                ),
+            )
 
         behandlingService.updateBoforhold(
             createdBehandling.id!!,

@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
 class OpplysningerController(val opplysningerService: OpplysningerService) {
-
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
     @Operation(
@@ -62,7 +61,13 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
             ),
         ],
     )
-    fun hentAktiv(@PathVariable behandlingId: Long, @PathVariable opplysningerType: OpplysningerType): OpplysningerDto {
-        return opplysningerService.hentSistAktiv(behandlingId, opplysningerType).orElseThrow { behandlingNotFoundException(behandlingId) }.toDto()
+    fun hentAktiv(
+        @PathVariable behandlingId: Long,
+        @PathVariable opplysningerType: OpplysningerType,
+    ): OpplysningerDto {
+        return opplysningerService.hentSistAktiv(
+            behandlingId,
+            opplysningerType,
+        ).orElseThrow { behandlingNotFoundException(behandlingId) }.toDto()
     }
 }

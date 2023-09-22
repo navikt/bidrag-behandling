@@ -9,7 +9,6 @@ data class UpdateBoforholdRequest(
     val husstandsBarn: Set<HusstandsBarnDto>,
     @Schema(required = true)
     val sivilstand: Set<SivilstandDto>,
-
     val boforholdBegrunnelseMedIVedtakNotat: String? = null,
     val boforholdBegrunnelseKunINotat: String? = null,
 )

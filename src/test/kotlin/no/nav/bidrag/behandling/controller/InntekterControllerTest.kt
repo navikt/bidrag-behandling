@@ -43,47 +43,64 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal opprette og oppdatere inntekter`() {
         // 1. Create new behandling
-        val behandling: Behandling = behandlingRepository.save(
-            Behandling(
-                BehandlingType.FORSKUDD,
-                SoknadType.FASTSETTELSE,
-                Date(1),
-                Date(1),
-                Date(1),
-                "123",
-                123,
-                null,
-                "ENH",
-                SoknadFraType.BIDRAGSMOTTAKER,
-                null,
-                null,
-            ),
-        )
+        val behandling: Behandling =
+            behandlingRepository.save(
+                Behandling(
+                    BehandlingType.FORSKUDD,
+                    SoknadType.FASTSETTELSE,
+                    Date(1),
+                    Date(1),
+                    Date(1),
+                    "123",
+                    123,
+                    null,
+                    "ENH",
+                    SoknadFraType.BIDRAGSMOTTAKER,
+                    null,
+                    null,
+                ),
+            )
 
-        val inn = TestInntektDto(null, true, "some0", "1.123", "2022-10-10", "2022-10-10", "blablabla", setOf(InntektPost("ABC", "ABC", BigDecimal.TEN)))
+        val inn =
+            TestInntektDto(
+                null,
+                true,
+                "some0",
+                "1.123",
+                "2022-10-10",
+                "2022-10-10",
+                "blablabla",
+                setOf(InntektPost("ABC", "ABC", BigDecimal.TEN)),
+            )
 //        val inn1 = TestInntektDto(null, true, "some1", "1.123", "2022-10-10", "2022-10-10", "blablabla", setOf(InntektPost("ABC1", "ABC1", BigDecimal.TEN), InntektPost("ABC2", "ABC2", BigDecimal.TEN)))
 
         // 2. Add inntekter
-        val r = httpHeaderTestRestTemplate.exchange(
-            "${rootUri()}/behandling/${behandling.id}/inntekter",
-            HttpMethod.PUT,
-            HttpEntity(TestInntektRequest(setOf(inn), emptySet(), emptySet())),
-            InntekterResponse::class.java,
-        )
+        val r =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling/${behandling.id}/inntekter",
+                HttpMethod.PUT,
+                HttpEntity(TestInntektRequest(setOf(inn), emptySet(), emptySet())),
+                InntekterResponse::class.java,
+            )
 
         assertEquals(HttpStatus.OK, r.statusCode)
         assertEquals(1, r.body!!.inntekter.size)
 
         // 3. Add some more inntekter
-        val inntekt1 = inn.copy(id = r.body!!.inntekter.iterator().next().id, inntektPostListe = setOf(InntektPost("ABC1", "ABC1", BigDecimal.TEN), InntektPost("ABC2", "ABC2", BigDecimal.TEN)))
+        val inntekt1 =
+            inn.copy(
+                id = r.body!!.inntekter.iterator().next().id,
+                inntektPostListe = setOf(InntektPost("ABC1", "ABC1", BigDecimal.TEN), InntektPost("ABC2", "ABC2", BigDecimal.TEN)),
+            )
         val inntekt2 = inn.copy(datoFom = null, inntektType = "null")
 
-        val r1 = httpHeaderTestRestTemplate.exchange(
-            "${rootUri()}/behandling/${behandling.id}/inntekter",
-            HttpMethod.PUT,
-            HttpEntity(TestInntektRequest(setOf(inntekt1, inntekt2), setOf(), setOf())),
-            InntekterResponse::class.java,
-        )
+        val r1 =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling/${behandling.id}/inntekter",
+                HttpMethod.PUT,
+                HttpEntity(TestInntektRequest(setOf(inntekt1, inntekt2), setOf(), setOf())),
+                InntekterResponse::class.java,
+            )
 
         assertEquals(HttpStatus.OK, r.statusCode)
         assertEquals(2, r1.body!!.inntekter.size)
@@ -91,12 +108,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
         assertNotNull(r1.body!!.inntekter.find { it.inntektType == "null" && it.inntektPostListe.size == 1 })
 
         // 4. Remove inntekter
-        val r2 = httpHeaderTestRestTemplate.exchange(
-            "${rootUri()}/behandling/${behandling.id}/inntekter",
-            HttpMethod.PUT,
-            HttpEntity(TestInntektRequest(emptySet(), emptySet(), emptySet())),
-            InntekterResponse::class.java,
-        )
+        val r2 =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling/${behandling.id}/inntekter",
+                HttpMethod.PUT,
+                HttpEntity(TestInntektRequest(emptySet(), emptySet(), emptySet())),
+                InntekterResponse::class.java,
+            )
 
         assertEquals(HttpStatus.OK, r.statusCode)
         assertEquals(0, r2.body!!.inntekter.size)

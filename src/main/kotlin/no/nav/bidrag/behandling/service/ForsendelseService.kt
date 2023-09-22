@@ -29,18 +29,22 @@ class ForsendelseService(
         listOf(VedtakType.FASTSETTELSE, VedtakType.ENDRING)
 
     fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
-        val opprettRequestTemplate = OpprettForsendelseForespørsel(
-            behandlingInfo = request.behandlingInfo
-                .copy(
-                    barnIBehandling = request.roller
-                        .filter { it.type == Rolletype.BARN && it.fødselsnummer.verdi.isNotEmpty() }
-                        .map { it.fødselsnummer.verdi },
-                ),
-            saksnummer = request.saksnummer,
-            enhet = request.enhet,
-            tema = request.tema
-                ?: if (request.enhet == ENHET_FARSKAP && harTilgangTilTemaFar()) "FAR" else "BID",
-        )
+        val opprettRequestTemplate =
+            OpprettForsendelseForespørsel(
+                behandlingInfo =
+                request.behandlingInfo
+                    .copy(
+                        barnIBehandling =
+                        request.roller
+                            .filter { it.type == Rolletype.BARN && it.fødselsnummer.verdi.isNotEmpty() }
+                            .map { it.fødselsnummer.verdi },
+                    ),
+                saksnummer = request.saksnummer,
+                enhet = request.enhet,
+                tema =
+                request.tema
+                    ?: if (request.enhet == ENHET_FARSKAP && harTilgangTilTemaFar()) "FAR" else "BID",
+            )
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
         log.info {
@@ -50,17 +54,20 @@ class ForsendelseService(
         val opprettetForsendelser = mutableListOf<String>()
         opprettForRoller.forEach {
             try {
-                val response = bidragForsendelseConsumer.opprettForsendelse(
-                    opprettRequestTemplate.copy(
-                        mottaker = MottakerDto(ident = it.fødselsnummer.verdi),
-                        gjelderIdent = it.fødselsnummer.verdi,
-                    ),
-                )
+                val response =
+                    bidragForsendelseConsumer.opprettForsendelse(
+                        opprettRequestTemplate.copy(
+                            mottaker = MottakerDto(ident = it.fødselsnummer.verdi),
+                            gjelderIdent = it.fødselsnummer.verdi,
+                        ),
+                    )
                 opprettetForsendelser.add(response.forsendelseId ?: "-1")
                 log.info { "Opprettet forsendelse med id ${response.forsendelseId} for rolle $it" }
                 SECURE_LOGGER.info("Opprettet forsendelse med id ${response.forsendelseId} for rolle $it, fnr: ${it.fødselsnummer.verdi}")
             } catch (e: Exception) {
-                log.error(e) { "Det skjedde en feil ved opprettelse av forsendelse for rolle $it. Ignorerer feilen uten å opprette forsendelse" }
+                log.error(
+                    e,
+                ) { "Det skjedde en feil ved opprettelse av forsendelse for rolle $it. Ignorerer feilen uten å opprette forsendelse" }
             }
         }
         if (request.behandlingInfo.erVedtakFattet()) {
@@ -69,7 +76,10 @@ class ForsendelseService(
         return opprettetForsendelser
     }
 
-    fun slettVarselbrevUnderOpprettelse(saksnummer: String, soknadId: Long) {
+    fun slettVarselbrevUnderOpprettelse(
+        saksnummer: String,
+        soknadId: Long,
+    ) {
         val forsendelser = bidragForsendelseConsumer.hentForsendelserISak(saksnummer)
         forsendelser
             .filter { it.forsendelseType == ForsendelseTypeTo.UTGÅENDE }
@@ -82,6 +92,7 @@ class ForsendelseService(
     }
 
     private fun harTilgangTilTemaFar() = tilgangskontrollConsumer.sjekkTilgangTema(tema = "FAR")
+
     private fun skalOppretteForsendelseForSoknad(behandlingInfo: BehandlingInfoDto): Boolean {
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
@@ -130,8 +141,7 @@ class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mut
 }
 
 fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
-fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? =
-    this.find { it.type == rolleType }
 
-fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> =
-    this.filter { it.type == Rolletype.BARN }
+fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? = this.find { it.type == rolleType }
+
+fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> = this.filter { it.type == Rolletype.BARN }

@@ -15,19 +15,15 @@ data class BehandlingDto(
     val behandlingType: BehandlingType, // Union av StonadType og EngangsbelopType
     val soknadType: SoknadType, // TODO Bruk VedtakType istedenfor
     val erVedtakFattet: Boolean,
-
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,
-
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate,
-
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val mottatDato: LocalDate,
-
     val soknadFraType: SoknadFraType,
     val saksnummer: String,
     val soknadId: Long,
@@ -35,7 +31,6 @@ data class BehandlingDto(
     val roller: Set<RolleDto>,
     val husstandsBarn: Set<HusstandsBarnDto>,
     val sivilstand: Set<SivilstandDto>,
-
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningsDato: LocalDate? = null,

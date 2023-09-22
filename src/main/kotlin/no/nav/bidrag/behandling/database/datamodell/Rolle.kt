@@ -21,21 +21,15 @@ class Rolle(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
-
     @Enumerated(EnumType.STRING)
     val rolleType: Rolletype,
-
     val ident: String,
-
     val fodtDato: Date?,
     val opprettetDato: Date?,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-
     val deleted: Boolean = false,
-
     @Transient
     val soknadsLinje: Int = 1,
 )

@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilVedtakType
 import no.nav.bidrag.behandling.transformers.toRolle
+import no.nav.bidrag.domain.enums.Rolletype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Date
@@ -39,7 +40,8 @@ class BehandlingService(
                 saksnummer = behandling.saksnummer,
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
-                behandlingInfo = BehandlingInfoDto(
+                behandlingInfo =
+                BehandlingInfoDto(
                     behandlingId = behandling.id,
                     soknadId = behandling.soknadId,
                     soknadFra = behandling.soknadFra,
@@ -64,21 +66,22 @@ class BehandlingService(
         inntektBegrunnelseKunINotat: String? = null,
         aarsak: ForskuddAarsakType? = null,
         virkningsDato: Date? = null,
-    ): Behandling = behandlingRepository.save(
-        behandlingRepository.findBehandlingById(behandlingId)
-            .orElseThrow { behandlingNotFoundException(behandlingId) }
-            .let {
-                it.virkningsTidspunktBegrunnelseMedIVedtakNotat = virkningsTidspunktBegrunnelseMedIVedtakNotat
-                it.virkningsTidspunktBegrunnelseKunINotat = virkningsTidspunktBegrunnelseKunINotat
-                it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat
-                it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
-                it.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
-                it.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
-                it.aarsak = aarsak
-                it.virkningsDato = virkningsDato
-                it
-            },
-    )
+    ): Behandling =
+        behandlingRepository.save(
+            behandlingRepository.findBehandlingById(behandlingId)
+                .orElseThrow { behandlingNotFoundException(behandlingId) }
+                .let {
+                    it.virkningsTidspunktBegrunnelseMedIVedtakNotat = virkningsTidspunktBegrunnelseMedIVedtakNotat
+                    it.virkningsTidspunktBegrunnelseKunINotat = virkningsTidspunktBegrunnelseKunINotat
+                    it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat
+                    it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
+                    it.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
+                    it.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
+                    it.aarsak = aarsak
+                    it.virkningsDato = virkningsDato
+                    it
+                },
+        )
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
         behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
@@ -92,26 +95,25 @@ class BehandlingService(
         utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd>,
         inntektBegrunnelseMedIVedtakNotat: String?,
         inntektBegrunnelseKunINotat: String?,
-    ) =
-        behandlingRepository.save(
-            behandlingRepository.findBehandlingById(behandlingId)
-                .orElseThrow { behandlingNotFoundException(behandlingId) }
-                .let {
-                    it.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
-                    it.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
+    ) = behandlingRepository.save(
+        behandlingRepository.findBehandlingById(behandlingId)
+            .orElseThrow { behandlingNotFoundException(behandlingId) }
+            .let {
+                it.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
+                it.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
 
-                    it.inntekter.clear()
-                    it.inntekter.addAll(inntekter)
+                it.inntekter.clear()
+                it.inntekter.addAll(inntekter)
 
-                    it.barnetillegg.clear()
-                    it.barnetillegg.addAll(barnetillegg)
+                it.barnetillegg.clear()
+                it.barnetillegg.addAll(barnetillegg)
 
-                    it.utvidetbarnetrygd.clear()
-                    it.utvidetbarnetrygd.addAll(utvidetbarnetrygd)
+                it.utvidetbarnetrygd.clear()
+                it.utvidetbarnetrygd.addAll(utvidetbarnetrygd)
 
-                    it
-                },
-        )
+                it
+            },
+    )
 
     fun updateVirkningsTidspunkt(
         behandlingId: Long,
@@ -119,8 +121,13 @@ class BehandlingService(
         virkningsDato: Date?,
         virkningsTidspunktBegrunnelseKunINotat: String?,
         virkningsTidspunktBegrunnelseMedIVedtakNotat: String?,
-    ) =
-        behandlingRepository.updateVirkningsTidspunkt(behandlingId, aarsak, virkningsDato, virkningsTidspunktBegrunnelseKunINotat, virkningsTidspunktBegrunnelseMedIVedtakNotat)
+    ) = behandlingRepository.updateVirkningsTidspunkt(
+        behandlingId,
+        aarsak,
+        virkningsDato,
+        virkningsTidspunktBegrunnelseKunINotat,
+        virkningsTidspunktBegrunnelseMedIVedtakNotat,
+    )
 
     fun updateBoforhold(
         behandlingId: Long,
@@ -128,45 +135,53 @@ class BehandlingService(
         sivilstand: MutableSet<Sivilstand>,
         boforholdBegrunnelseKunINotat: String?,
         boforholdBegrunnelseMedIVedtakNotat: String?,
-    ) =
-        behandlingRepository.save(
-            behandlingRepository.findBehandlingById(behandlingId)
-                .orElseThrow { behandlingNotFoundException(behandlingId) }
-                .let {
-                    it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
-                    it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat
+    ) = behandlingRepository.save(
+        behandlingRepository.findBehandlingById(behandlingId)
+            .orElseThrow { behandlingNotFoundException(behandlingId) }
+            .let {
+                it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
+                it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat
 
-                    it.husstandsBarn.clear()
-                    it.husstandsBarn.addAll(husstandsBarn)
+                it.husstandsBarn.clear()
+                it.husstandsBarn.addAll(husstandsBarn)
 
-                    it.sivilstand.clear()
-                    it.sivilstand.addAll(sivilstand)
+                it.sivilstand.clear()
+                it.sivilstand.addAll(sivilstand)
 
-                    it
-                },
-        )
-
-    @Transactional
-    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long) = behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
+                it
+            },
+    )
 
     @Transactional
-    fun leggeTilRoller(behandlingId: Long, roller: List<CreateRolleDto>) {
-        val rollerDomain = hentBehandlingById(behandlingId).let { b ->
-            roller.map { it.toRolle(b) }
-        }
-        rolleRepository.saveAll(rollerDomain)
-    }
+    fun oppdaterVedtakId(
+        behandlingId: Long,
+        vedtakId: Long,
+    ) = behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
 
     @Transactional
-    fun sletteRoller(behandlingId: Long, idents: Set<String>) {
-        val b = hentBehandlingById(behandlingId)
-        b.roller.removeIf {
-            idents.contains(it.ident)
-        }
+    fun syncRoller(
+        behandlingId: Long,
+        roller: List<CreateRolleDto>,
+    ) {
+        val existingRoller = rolleRepository.findRollerByBehandlingId(behandlingId)
 
-        if (b.roller.isEmpty()) {
-            // sletter behandling hvis vi har ingen roller igjen
-            behandlingRepository.deleteById(behandlingId)
+        val behandling = behandlingRepository.findById(behandlingId).get()
+
+        val rollerSomLeggesTil =
+            roller.filter { r ->
+                // not deleted and behandling.roller doesn't contain it yet
+                !r.erSlettet && !existingRoller.any { br -> br.ident == r.ident }
+            }
+
+        behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
+
+        val identsSomSkalSlettes = roller.filter { r -> r.erSlettet }.map { it.ident }
+        behandling.roller.removeIf { r -> identsSomSkalSlettes.contains(r.ident) }
+
+        behandlingRepository.save(behandling)
+
+        if (behandling.roller.none { r -> r.rolleType == Rolletype.BARN }) {
+            behandlingRepository.delete(behandling)
         }
     }
 }

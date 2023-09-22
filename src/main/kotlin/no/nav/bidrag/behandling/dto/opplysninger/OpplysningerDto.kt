@@ -10,7 +10,6 @@ data class OpplysningerDto(
     val behandlingId: Long,
     val opplysningerType: OpplysningerType,
     val data: String,
-
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val hentetDato: LocalDate,

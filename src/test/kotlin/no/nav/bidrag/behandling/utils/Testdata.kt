@@ -15,13 +15,15 @@ val ROLLE_BA_1 = ForsendelseRolleDto(PersonIdent("1344124"), type = Rolletype.BA
 val ROLLE_BA_2 = ForsendelseRolleDto(PersonIdent("12344424214"), type = Rolletype.BARN)
 val ROLLE_BP = ForsendelseRolleDto(PersonIdent("213244124"), type = Rolletype.BIDRAGSPLIKTIG)
 
-fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) = ForsendelseResponsTo(
-    forsendelseId = forsendelseId,
-    saksnummer = SAKSNUMMER,
-    behandlingInfo = BehandlingInfoResponseDto(
-        soknadId = SOKNAD_ID.toString(),
-        erFattet = false,
-    ),
-    forsendelseType = ForsendelseTypeTo.UTGÅENDE,
-    status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
-)
+fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
+    ForsendelseResponsTo(
+        forsendelseId = forsendelseId,
+        saksnummer = SAKSNUMMER,
+        behandlingInfo =
+        BehandlingInfoResponseDto(
+            soknadId = SOKNAD_ID.toString(),
+            erFattet = false,
+        ),
+        forsendelseType = ForsendelseTypeTo.UTGÅENDE,
+        status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
+    )

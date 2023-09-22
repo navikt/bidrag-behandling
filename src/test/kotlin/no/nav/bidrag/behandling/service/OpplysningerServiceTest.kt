@@ -29,22 +29,23 @@ class OpplysningerServiceTest : TestContainerRunner() {
 
     @Test
     fun `skal være bare en rad med aktive opplysninger`() {
-        val b = behandlingService.createBehandling(
-            Behandling(
-                BehandlingType.FORSKUDD,
-                SoknadType.FASTSETTELSE,
-                Date(1),
-                Date(2),
-                Date(2),
-                "123",
-                123L,
-                null,
-                "ENH1",
-                SoknadFraType.VERGE,
-                engangsbelopType = EngangsbelopType.ETTERGIVELSE,
-                stonadType = null,
-            ),
-        )
+        val b =
+            behandlingService.createBehandling(
+                Behandling(
+                    BehandlingType.FORSKUDD,
+                    SoknadType.FASTSETTELSE,
+                    Date(1),
+                    Date(2),
+                    Date(2),
+                    "123",
+                    123L,
+                    null,
+                    "ENH1",
+                    SoknadFraType.VERGE,
+                    engangsbelopType = EngangsbelopType.ETTERGIVELSE,
+                    stonadType = null,
+                ),
+            )
         val opp1 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
         val opp2 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
         val opp4 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))

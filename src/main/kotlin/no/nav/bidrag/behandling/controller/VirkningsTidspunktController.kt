@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
 class VirkningsTidspunktController(private val behandlingService: BehandlingService) {
-
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/virkningstidspunkt")
     @Operation(

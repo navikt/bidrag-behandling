@@ -16,7 +16,6 @@ class BidragForsendelseConsumer(
     @Value("\${BIDRAG_FORSENDELSE_URL}") private val bidragForsnendelseUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-dokument-forsendelse") {
-
     private val bidragForsendelsedUri get() =
         UriComponentsBuilder.fromUri(bidragForsnendelseUrl).pathSegment("api").pathSegment("forsendelse")
 
@@ -27,7 +26,10 @@ class BidragForsendelseConsumer(
         getForNonNullEntity(bidragForsendelsedUri.pathSegment("sak").pathSegment(saksnummer).pathSegment("forsendelser").build().toUri())
 
     fun slettForsendelse(forsendelseId: Long) {
-        postForEntity<Void>(bidragForsendelsedUri.pathSegment("journal").pathSegment(forsendelseId.toString()).pathSegment("avvik").build().toUri(), Avvikshendelse(AvvikType.SLETT_JOURNALPOST))
+        postForEntity<Void>(
+            bidragForsendelsedUri.pathSegment("journal").pathSegment(forsendelseId.toString()).pathSegment("avvik").build().toUri(),
+            Avvikshendelse(AvvikType.SLETT_JOURNALPOST),
+        )
     }
 }
 
@@ -42,6 +44,7 @@ data class ForsendelseResponsTo(
     val forsendelseType: ForsendelseTypeTo? = null,
     val status: ForsendelseStatusTo? = null,
 )
+
 data class BehandlingInfoResponseDto(
     val soknadId: String? = null,
     val erFattet: Boolean,
