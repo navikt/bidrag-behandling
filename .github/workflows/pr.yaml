@@ -9,7 +9,7 @@ env:
 
 jobs:
   build:
-    if: github.event.pull_request.draft == false && github.actor != 'dependabot[bot]'
+    if: github.event.pull_request.draft == false && ${{ github.actor != 'dependabot[bot]' }}
     permissions:
       contents: "read"
       id-token: "write"
@@ -41,7 +41,7 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     name: Run tests
-#    needs: build
+    needs: build
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v3
@@ -60,7 +60,6 @@ jobs:
     runs-on: ubuntu-latest
     name: Deploy main
     needs: build
-    if: github.actor!= 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v4
         with:

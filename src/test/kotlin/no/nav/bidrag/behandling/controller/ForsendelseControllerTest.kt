@@ -58,9 +58,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
             """
             {
                 "mottaker": {
-                    "ident": "${ROLLE_BM.fødselsnummer.verdi}"
+                    "ident": "${ROLLE_BM.fødselsnummer?.verdi}"
                 },
-                "gjelderIdent": "${ROLLE_BM.fødselsnummer.verdi}",
+                "gjelderIdent": "${ROLLE_BM.fødselsnummer?.verdi}",
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "språk": "NB",
@@ -120,15 +120,15 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         "tema": null,
                         "roller": [
                             {
-                                "fødselsnummer": "${ROLLE_BM.fødselsnummer.verdi}",
+                                "fødselsnummer": "${ROLLE_BM.fødselsnummer?.verdi}",
                                 "type": "BM"
                             },
                             {
-                                "fødselsnummer": "${ROLLE_BP.fødselsnummer.verdi}",
+                                "fødselsnummer": "${ROLLE_BP.fødselsnummer?.verdi}",
                                 "type": "BP"
                             },
                             {
-                                "fødselsnummer": "${ROLLE_BA_1.fødselsnummer.verdi}",
+                                "fødselsnummer": "${ROLLE_BA_1.fødselsnummer?.verdi}",
                                 "type": "BA"
                             }
                         ]
@@ -146,9 +146,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
             """
             {
                 "mottaker": {
-                    "ident": "${ROLLE_BM.fødselsnummer.verdi}"
+                    "ident": "${ROLLE_BM.fødselsnummer?.verdi}"
                 },
-                "gjelderIdent": "${ROLLE_BM.fødselsnummer.verdi}",
+                "gjelderIdent": "${ROLLE_BM.fødselsnummer?.verdi}",
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "språk": "NB",
