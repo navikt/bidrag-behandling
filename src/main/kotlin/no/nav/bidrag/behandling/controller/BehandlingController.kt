@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.behandling.SyncRollerRequest
+import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
@@ -82,6 +83,19 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 "med id ${behandlingDo.id} "
         }
         return CreateBehandlingResponse(behandlingDo.id!!)
+    }
+
+    @Suppress("unused")
+    @PutMapping("/behandling/{behandlingId}")
+    @Operation(
+        description = "Oppdatere behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun updateBehandling(
+        @PathVariable behandlingId: Long,
+        @Valid @RequestBody(required = true) request: UpdateBehandlingRequest,
+    ) {
+        behandlingService.updateBehandling(behandlingId, request.grunnlagspakkeId)
     }
 
     @Suppress("unused")
@@ -169,6 +183,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling.sivilstand.toSivilstandDto(),
         behandling.virkningsDato?.toLocalDate(),
         behandling.soknadRefId,
+        behandling.grunnlagspakkeId,
         behandling.aarsak,
         behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
         behandling.virkningsTidspunktBegrunnelseKunINotat,
