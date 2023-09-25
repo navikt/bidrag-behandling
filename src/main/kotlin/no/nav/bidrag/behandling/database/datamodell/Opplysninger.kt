@@ -14,21 +14,15 @@ import java.util.Date
 
 @Entity(name = "opplysninger")
 class Opplysninger(
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
-
     @Enumerated(EnumType.STRING)
     val opplysningerType: OpplysningerType,
-
     val data: String,
-
     val hentetDato: Date,
-
     @Column(insertable = false, updatable = false)
     val ts: Date? = null,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

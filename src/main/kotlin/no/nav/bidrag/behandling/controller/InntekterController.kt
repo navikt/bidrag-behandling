@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
 class InntekterController(private val behandlingService: BehandlingService) {
-
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/inntekter")
     @Operation(
@@ -51,7 +50,6 @@ class InntekterController(private val behandlingService: BehandlingService) {
             request.utvidetbarnetrygd.toUtvidetbarnetrygdDomain(behandling),
             request.inntektBegrunnelseMedIVedtakNotat,
             request.inntektBegrunnelseKunINotat,
-
         )
 
         val newBehandling = behandlingService.hentBehandlingById(behandlingId)

@@ -16,14 +16,10 @@ class Sivilstand(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
-
     val datoFom: Date?,
-
     val datoTom: Date?,
-
     @Enumerated(EnumType.STRING)
     val sivilstandType: SivilstandType,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

@@ -7,28 +7,27 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.behandling.SyncRollerRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toRolleTypeDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
-import no.nav.bidrag.domain.enums.Rolletype
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+
 private val LOGGER = KotlinLogging.logger {}
 
 @BehandlingRestController
 class BehandlingController(private val behandlingService: BehandlingService) {
-
     @Suppress("unused")
     @PostMapping("/behandling")
     @Operation(
@@ -51,37 +50,27 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         @RequestBody(required = true)
         createBehandling: CreateBehandlingRequest,
     ): CreateBehandlingResponse {
-        val behandling = Behandling(
-            createBehandling.behandlingType,
-            createBehandling.soknadType,
-            createBehandling.datoFom,
-            createBehandling.datoTom,
-            createBehandling.mottatDato,
-            createBehandling.saksnummer,
-            createBehandling.soknadId,
-            createBehandling.soknadRefId,
-            createBehandling.behandlerEnhet,
-            createBehandling.soknadFra,
-            createBehandling.stonadType,
-            createBehandling.engangsbelopType,
-        )
-        val roller = HashSet(
-            createBehandling.roller.map {
-                Rolle(
-                    behandling,
-                    rolleType = when (it.rolleType) {
-                        CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-                        CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-                        CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-                        CreateRolleRolleType.BARN -> Rolletype.BARN
-                        CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
-                    },
-                    it.ident,
-                    it.fodtDato,
-                    it.opprettetDato,
-                )
-            },
-        )
+        val behandling =
+            Behandling(
+                createBehandling.behandlingType,
+                createBehandling.soknadType,
+                createBehandling.datoFom,
+                createBehandling.datoTom,
+                createBehandling.mottatDato,
+                createBehandling.saksnummer,
+                createBehandling.soknadId,
+                createBehandling.soknadRefId,
+                createBehandling.behandlerEnhet,
+                createBehandling.soknadFra,
+                createBehandling.stonadType,
+                createBehandling.engangsbelopType,
+            )
+        val roller =
+            HashSet(
+                createBehandling.roller.map {
+                    it.toRolle(behandling)
+                },
+            )
 
         behandling.roller.addAll(roller)
 
@@ -94,6 +83,17 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         }
         return CreateBehandlingResponse(behandlingDo.id!!)
     }
+
+    @Suppress("unused")
+    @PutMapping("/behandling/{behandlingId}/roller/sync")
+    @Operation(
+        description = "Sync fra behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun syncRoller(
+        @PathVariable behandlingId: Long,
+        @Valid @RequestBody(required = true) request: SyncRollerRequest,
+    ) = behandlingService.syncRoller(behandlingId, request.roller)
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/vedtak/{vedtakId}")
@@ -112,7 +112,10 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun oppdaterVedtakId(@PathVariable behandlingId: Long, @PathVariable vedtakId: Long) {
+    fun oppdaterVedtakId(
+        @PathVariable behandlingId: Long,
+        @PathVariable vedtakId: Long,
+    ) {
         behandlingService.oppdaterVedtakId(behandlingId, vedtakId)
     }
 
@@ -133,7 +136,9 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun hentBehandling(@PathVariable behandlingId: Long): BehandlingDto {
+    fun hentBehandling(
+        @PathVariable behandlingId: Long,
+    ): BehandlingDto {
         return findBehandlingById(behandlingId)
     }
 
@@ -142,34 +147,36 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         return behandlingDto(behandlingId, behandling)
     }
 
-    private fun behandlingDto(behandlingId: Long, behandling: Behandling) =
-        BehandlingDto(
-            behandlingId,
-            behandling.behandlingType,
-            behandling.soknadType,
-            behandling.vedtakId != null,
-            behandling.datoFom.toLocalDate(),
-            behandling.datoTom.toLocalDate(),
-            behandling.mottatDato.toLocalDate(),
-            behandling.soknadFra,
-            behandling.saksnummer,
-            behandling.soknadId,
-            behandling.behandlerEnhet,
-            behandling.roller.map {
-                RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.fodtDato, it.opprettetDato)
-            }.toSet(),
-            behandling.husstandsBarn.toHusstandsBarnDto(),
-            behandling.sivilstand.toSivilstandDto(),
-            behandling.virkningsDato?.toLocalDate(),
-            behandling.soknadRefId,
-            behandling.aarsak,
-            behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
-            behandling.virkningsTidspunktBegrunnelseKunINotat,
-            behandling.boforholdBegrunnelseMedIVedtakNotat,
-            behandling.boforholdBegrunnelseKunINotat,
-            behandling.inntektBegrunnelseMedIVedtakNotat,
-            behandling.inntektBegrunnelseKunINotat,
-        )
+    private fun behandlingDto(
+        behandlingId: Long,
+        behandling: Behandling,
+    ) = BehandlingDto(
+        behandlingId,
+        behandling.behandlingType,
+        behandling.soknadType,
+        behandling.vedtakId != null,
+        behandling.datoFom.toLocalDate(),
+        behandling.datoTom.toLocalDate(),
+        behandling.mottatDato.toLocalDate(),
+        behandling.soknadFra,
+        behandling.saksnummer,
+        behandling.soknadId,
+        behandling.behandlerEnhet,
+        behandling.roller.map {
+            RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.fodtDato, it.opprettetDato)
+        }.toSet(),
+        behandling.husstandsBarn.toHusstandsBarnDto(),
+        behandling.sivilstand.toSivilstandDto(),
+        behandling.virkningsDato?.toLocalDate(),
+        behandling.soknadRefId,
+        behandling.aarsak,
+        behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
+        behandling.virkningsTidspunktBegrunnelseKunINotat,
+        behandling.boforholdBegrunnelseMedIVedtakNotat,
+        behandling.boforholdBegrunnelseKunINotat,
+        behandling.inntektBegrunnelseMedIVedtakNotat,
+        behandling.inntektBegrunnelseKunINotat,
+    )
 
     @Suppress("unused")
     @GetMapping("/behandling")

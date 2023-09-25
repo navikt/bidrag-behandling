@@ -18,7 +18,6 @@ import java.time.format.DateTimeFormatter
 @EnableSecurityConfiguration
 @Import(RestOperationsAzure::class)
 class RestConfig {
-
     @Bean
     fun jackson2ObjectMapperBuilder(): Jackson2ObjectMapperBuilder {
         return Jackson2ObjectMapperBuilder()

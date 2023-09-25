@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
 class BoforholdController(private val behandlingService: BehandlingService) {
-
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/boforhold")
     @Operation(

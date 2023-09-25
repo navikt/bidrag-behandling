@@ -27,6 +27,7 @@ fun Set<Rolle>.rolleType(ident: String): String {
         else -> rolleType?.name ?: "BIDRAGSMOTTAKER"
     }
 }
+
 data class BehandlingBeregningModel private constructor(
     val behandlingId: Long,
     val virkningsDato: LocalDate,
@@ -48,85 +49,86 @@ data class BehandlingBeregningModel private constructor(
             utvidetbarnetrygd: Set<Utvidetbarnetrygd>,
             husstandsBarn: Set<HusstandsBarn>,
             roller: Set<Rolle>,
-        ): Either<NonEmptyList<String>, BehandlingBeregningModel> = either {
-            zipOrAccumulate(
-                {
-                    ensure(behandlingId != null) { raise("Behandling id kan ikke være null") }
-                    behandlingId
-                },
-                {
-                    ensure(virkningsDato != null) { raise("Behandling virkningsDato kan ikke være null") }
-                    virkningsDato.toLocalDate()
-                },
-                {
-                    ensure(datoTom != null) { raise("Behandling datoTom kan ikke være null") }
-                    datoTom.toLocalDate()
-                },
-                {
-                    mapOrAccumulate(sivilstand) {
-                        SivilstandModel(
-                            it.datoFom?.toLocalDate() ?: raise("Sivilstands datoFom kan ikke være null"),
-                            it.datoTom?.toLocalDate(),
-                            it.sivilstandType,
-                        )
-                    }
-                },
-                {
-                    mapOrAccumulate(inntekter.filter { it.taMed }) {
-                        InntektModel(
-                            inntektType = it.inntektType ?: "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO -> DETTE ER KUN MIDLERTIDIG
+        ): Either<NonEmptyList<String>, BehandlingBeregningModel> =
+            either {
+                zipOrAccumulate(
+                    {
+                        ensure(behandlingId != null) { raise("Behandling id kan ikke være null") }
+                        behandlingId
+                    },
+                    {
+                        ensure(virkningsDato != null) { raise("Behandling virkningsDato kan ikke være null") }
+                        virkningsDato.toLocalDate()
+                    },
+                    {
+                        ensure(datoTom != null) { raise("Behandling datoTom kan ikke være null") }
+                        datoTom.toLocalDate()
+                    },
+                    {
+                        mapOrAccumulate(sivilstand) {
+                            SivilstandModel(
+                                it.datoFom?.toLocalDate() ?: raise("Sivilstands datoFom kan ikke være null"),
+                                it.datoTom?.toLocalDate(),
+                                it.sivilstandType,
+                            )
+                        }
+                    },
+                    {
+                        mapOrAccumulate(inntekter.filter { it.taMed }) {
+                            InntektModel(
+                                inntektType = it.inntektType ?: "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO -> DETTE ER KUN MIDLERTIDIG
 //                            inntektType = it.inntektType ?: raise("InntektType kan ikke være null"),
-                            belop = it.belop,
-                            rolle = roller.rolleType(it.ident),
-                            datoFom = it.datoFom?.toLocalDate() ?: raise("Inntekts datoFom kan ikke være null"),
-                            datoTom = it.datoTom?.toLocalDate(),
-                        )
-                    }
-                },
-                {
-                    mapOrAccumulate(barnetillegg) {
-                        BarnetilleggModel(
-                            datoFom = it.datoFom?.toLocalDate() ?: raise("Barnetillegg datoFom kan ikke være null"),
-                            datoTom = it.datoTom?.toLocalDate(),
-                            belop = it.barnetillegg,
-                        )
-                    }
-                },
-                {
-                    mapOrAccumulate(utvidetbarnetrygd) {
-                        UtvidetbarnetrygdModel(
-                            datoFom = it.datoFom?.toLocalDate() ?: raise("Utvidetbarnetrygd datoFom kan ikke være null"),
-                            datoTom = it.datoTom?.toLocalDate(),
-                            belop = it.belop,
-                        )
-                    }
-                },
-                {
-                    mapOrAccumulate(
-                        husstandsBarn.filter { it.medISaken }
-                            .flatMap { it.perioder },
-                    ) {
-                        HusstandsBarnPeriodeModel(
-                            datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoFom kan ikke være null"),
-                            datoTom = it.datoTom?.toLocalDate(),
-                            ident = it.husstandsBarn.ident,
-                            boStatus = it.boStatus,
-                        )
-                    }
-                },
-            ) { behandlingId, virkningsDato, datoTom, sivilstand, inntekter, barnetillegg, utvidetbarnetrygd, husstandsBarnPerioder ->
-                BehandlingBeregningModel(
-                    behandlingId,
-                    virkningsDato,
-                    datoTom,
-                    sivilstand,
-                    inntekter,
-                    barnetillegg,
-                    utvidetbarnetrygd,
-                    husstandsBarnPerioder,
-                )
+                                belop = it.belop,
+                                rolle = roller.rolleType(it.ident),
+                                datoFom = it.datoFom?.toLocalDate() ?: raise("Inntekts datoFom kan ikke være null"),
+                                datoTom = it.datoTom?.toLocalDate(),
+                            )
+                        }
+                    },
+                    {
+                        mapOrAccumulate(barnetillegg) {
+                            BarnetilleggModel(
+                                datoFom = it.datoFom?.toLocalDate() ?: raise("Barnetillegg datoFom kan ikke være null"),
+                                datoTom = it.datoTom?.toLocalDate(),
+                                belop = it.barnetillegg,
+                            )
+                        }
+                    },
+                    {
+                        mapOrAccumulate(utvidetbarnetrygd) {
+                            UtvidetbarnetrygdModel(
+                                datoFom = it.datoFom?.toLocalDate() ?: raise("Utvidetbarnetrygd datoFom kan ikke være null"),
+                                datoTom = it.datoTom?.toLocalDate(),
+                                belop = it.belop,
+                            )
+                        }
+                    },
+                    {
+                        mapOrAccumulate(
+                            husstandsBarn.filter { it.medISaken }
+                                .flatMap { it.perioder },
+                        ) {
+                            HusstandsBarnPeriodeModel(
+                                datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoFom kan ikke være null"),
+                                datoTom = it.datoTom?.toLocalDate(),
+                                ident = it.husstandsBarn.ident,
+                                boStatus = it.boStatus,
+                            )
+                        }
+                    },
+                ) { behandlingId, virkningsDato, datoTom, sivilstand, inntekter, barnetillegg, utvidetbarnetrygd, husstandsBarnPerioder ->
+                    BehandlingBeregningModel(
+                        behandlingId,
+                        virkningsDato,
+                        datoTom,
+                        sivilstand,
+                        inntekter,
+                        barnetillegg,
+                        utvidetbarnetrygd,
+                        husstandsBarnPerioder,
+                    )
+                }
             }
-        }
     }
 }
 

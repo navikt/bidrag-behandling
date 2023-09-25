@@ -19,14 +19,21 @@ class VirkningsTidspunktControllerTest : KontrollerTestRunner() {
     fun `skal oppdatere virknings tidspunkt data`() {
         val behandling = behandlingService.createBehandling(BehandlingServiceTest.prepareBehandling())
 
-        val req = UpdateVirkningsTidspunktRequestTest(
-            "MED I VEDTAK",
-            "KUN I NOTAT",
-            ForskuddAarsakType.KF,
-            "2025-12-27",
-        )
+        val req =
+            UpdateVirkningsTidspunktRequestTest(
+                "MED I VEDTAK",
+                "KUN I NOTAT",
+                ForskuddAarsakType.KF,
+                "2025-12-27",
+            )
 
-        val virknsRes = httpHeaderTestRestTemplate.exchange("${rootUri()}/behandling/${behandling.id}/virkningstidspunkt", HttpMethod.PUT, HttpEntity(req), VirkningsTidspunktResponse::class.java)
+        val virknsRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling/${behandling.id}/virkningstidspunkt",
+                HttpMethod.PUT,
+                HttpEntity(req),
+                VirkningsTidspunktResponse::class.java,
+            )
         Assertions.assertEquals(HttpStatus.OK, virknsRes.statusCode)
 
         val body = virknsRes.body!!
