@@ -25,7 +25,7 @@
 		<kotest.version>5.6.2</kotest.version>
 		<mockk.version>4.0.2</mockk.version>
 		<kotlin-logging-jvm.version>3.0.5</kotlin-logging-jvm.version>
-		<flyway.version>9.22.1</flyway.version>
+		<flyway.version>9.22.2</flyway.version>
 		<testcontainers.version>1.19.0</testcontainers.version>
 	</properties>
 
