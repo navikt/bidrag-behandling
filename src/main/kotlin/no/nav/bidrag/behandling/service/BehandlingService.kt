@@ -41,15 +41,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadId,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.behandlingType.name,
-                    stonadType = behandling.stonadType,
-                    engangsBelopType = behandling.engangsbelopType,
-                    vedtakType = behandling.soknadType.tilVedtakType(),
-                ),
+                    BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadId,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.behandlingType.name,
+                        stonadType = behandling.stonadType,
+                        engangsBelopType = behandling.engangsbelopType,
+                        vedtakType = behandling.soknadType.tilVedtakType(),
+                    ),
             ),
         )
     }
@@ -182,6 +182,16 @@ class BehandlingService(
 
         if (behandling.roller.none { r -> r.rolleType == Rolletype.BARN }) {
             behandlingRepository.delete(behandling)
+        }
+    }
+
+    fun updateBehandling(
+        behandlingId: Long,
+        grunnlagspakkeId: Long?,
+    ) {
+        hentBehandlingById(behandlingId).let {
+            it.grunnlagspakkeId = grunnlagspakkeId
+            behandlingRepository.save(it)
         }
     }
 }
