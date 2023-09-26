@@ -58,10 +58,10 @@ jobs:
             ${{ runner.os }}-maven-
       - run: mvn -B -e --settings .m2/maven-settings.xml clean install
 
-  deploy-main:
+  deploy-dev:
     runs-on: ubuntu-latest
-    name: Deploy main
-    needs: build
+    name: Deploy dev
+    needs: run-tests
     steps:
       - uses: actions/checkout@v4
         with:

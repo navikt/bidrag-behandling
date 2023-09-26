@@ -61,7 +61,7 @@ jobs:
   deploy-feature:
     runs-on: ubuntu-latest
     name: Deploy feature
-    needs: build
+    needs: run-tests
 
     steps:
       - uses: actions/checkout@v4
