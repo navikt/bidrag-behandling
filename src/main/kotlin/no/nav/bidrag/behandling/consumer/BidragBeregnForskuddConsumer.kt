@@ -15,10 +15,8 @@ class BidragBeregnForskuddConsumer(
     @Value("\${BIDRAG_BEREGN_FORSKUDD_URL}") bidragBeregnForskuddUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-beregn-forskudd-rest") {
-
     private val beregnForskuddUri =
         UriComponentsBuilder.fromUri(bidragBeregnForskuddUrl).pathSegment("beregn").pathSegment("forskudd").build().toUri()
 
-    fun beregnForskudd(payload: BeregnForskuddGrunnlag): ForskuddDto =
-        postForNonNullEntity(beregnForskuddUri, payload)
+    fun beregnForskudd(payload: BeregnForskuddGrunnlag): ForskuddDto = postForNonNullEntity(beregnForskuddUri, payload)
 }

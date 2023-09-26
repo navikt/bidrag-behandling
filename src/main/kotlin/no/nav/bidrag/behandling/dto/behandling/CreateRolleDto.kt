@@ -16,14 +16,12 @@ enum class CreateRolleRolleType {
 data class CreateRolleDto(
     @Schema(required = true, enumAsRef = true)
     val rolleType: CreateRolleRolleType,
-
     @Schema(type = "string", description = "F.eks fødselsnummer", required = true, nullable = false)
     @field:NotBlank
     val ident: String,
-
     @Schema(type = "string", format = "date", description = "F.eks fødselsdato")
     val fodtDato: Date?,
-
     @Schema(type = "string", format = "date", description = "Opprettet dato")
     val opprettetDato: Date?,
+    val erSlettet: Boolean = false,
 )

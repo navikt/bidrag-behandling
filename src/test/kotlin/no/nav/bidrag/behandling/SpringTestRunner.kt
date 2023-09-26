@@ -22,7 +22,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 @ActiveProfiles("test")
 @EnableMockOAuth2Server
 class SpringTestRunner {
-
     @LocalServerPort
     protected var port: Int = 0
 
@@ -55,7 +54,6 @@ class SpringTestRunner {
     }
 
     companion object {
-
         private const val LOCALHOST = "http://localhost:"
     }
 }

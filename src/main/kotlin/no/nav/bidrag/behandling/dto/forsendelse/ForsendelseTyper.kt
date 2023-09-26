@@ -28,13 +28,13 @@ data class BehandlingInfoDto(
     val barnIBehandling: List<String> = emptyList(),
 ) {
     fun erBehandlingType(stonadType: StonadType?) = this.stonadType == stonadType
-    fun erBehandlingType(engangsBelopType: EngangsbelopType?) =
-        this.engangsBelopType == engangsBelopType
 
-    fun erGebyr() =
-        erBehandlingType(EngangsbelopType.GEBYR_SKYLDNER) || erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)
+    fun erBehandlingType(engangsBelopType: EngangsbelopType?) = this.engangsBelopType == engangsBelopType
+
+    fun erGebyr() = erBehandlingType(EngangsbelopType.GEBYR_SKYLDNER) || erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)
 
     fun erBehandlingType(behandlingType: String?) = this.behandlingType == behandlingType
+
     fun erVedtakFattet() = erFattetBeregnet != null || vedtakId != null
 }
 

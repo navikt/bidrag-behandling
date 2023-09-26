@@ -22,7 +22,9 @@ class DefaultRestControllerAdvice {
     }
 
     @ResponseBody
-    @ExceptionHandler(value = [MethodArgumentNotValidException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class])
+    @ExceptionHandler(
+        value = [MethodArgumentNotValidException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class],
+    )
     fun handleInvalidValueExceptions(exception: Exception): ResponseEntity<*> {
         val cause = exception.cause
         val valideringsFeil =
@@ -91,10 +93,11 @@ class DefaultRestControllerAdvice {
 
     private fun createMissingKotlinParameterViolation(ex: MissingKotlinParameterException): String {
         val errorFieldRegex = Regex("\\.([^.]*)\\[\\\"(.*)\"\\]\$")
-        val paths = ex.path.map { errorFieldRegex.find(it.description)!! }.map {
-            val (objectName, field) = it.destructured
-            "$objectName.$field"
-        }
+        val paths =
+            ex.path.map { errorFieldRegex.find(it.description)!! }.map {
+                val (objectName, field) = it.destructured
+                "$objectName.$field"
+            }
         return "${paths.joinToString("->")} kan ikke være null"
     }
 }

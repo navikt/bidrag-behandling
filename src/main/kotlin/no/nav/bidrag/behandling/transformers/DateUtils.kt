@@ -18,4 +18,5 @@ fun LocalDate.toDate(): Date {
 }
 
 fun LocalDate.toNoString(): String = this.format(formatter)
+
 fun LocalDate.toCompactString(): String = this.format(formatterCommpact)

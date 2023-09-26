@@ -16,16 +16,11 @@ class HusstandsBarnPeriode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barn_i_husstand_id", nullable = false)
     val husstandsBarn: HusstandsBarn,
-
     val datoFom: Date?,
-
     val datoTom: Date?,
-
     @Enumerated(EnumType.STRING)
     val boStatus: BoStatusType?,
-
     val kilde: String,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

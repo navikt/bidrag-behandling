@@ -17,7 +17,6 @@ class Inntekt(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
-
     val taMed: Boolean,
     val inntektType: String?,
     val belop: BigDecimal,
@@ -25,11 +24,9 @@ class Inntekt(
     val datoTom: Date?,
     val ident: String,
     val fraGrunnlag: Boolean,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.ALL], orphanRemoval = true)
     var inntektPostListe: MutableSet<InntektPostDomain> = mutableSetOf(),
 )

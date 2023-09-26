@@ -56,16 +56,23 @@ class VedtakHendelseTest : CommonTestRunner() {
         val behandlingRequest = opprettBehandling()
         behandlingRequest.roller = opprettBehandlingRoller(behandlingRequest)
         val behandling = behandlingRepository.save(behandlingRequest)
-        vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(opprettVedtakhendelse(vedtakId, behandling.id!!)))
+        vedtakHendelseListener.prossesserVedtakHendelse(
+            opprettHendelseRecord(
+                opprettVedtakhendelse(
+                    vedtakId,
+                    behandling.id!!
+                )
+            )
+        )
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
         oppdatertBehandling.vedtakId shouldBe vedtakId
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(3)
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BP.fødselsnummer.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BP.fødselsnummer?.verdi}\"")
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_1.fødselsnummer.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_1.fødselsnummer?.verdi}\"")
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
         stubUtils.Verify().forsendelseSlettet("2")
@@ -78,7 +85,8 @@ class VedtakHendelseTest : CommonTestRunner() {
         val behandlingRequest = opprettBehandling()
         behandlingRequest.roller = opprettBehandlingRoller(behandlingRequest)
         val behandling = behandlingRepository.save(behandlingRequest)
-        val vedtakHendelse = opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = StonadType.FORSKUDD)
+        val vedtakHendelse =
+            opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = StonadType.FORSKUDD)
         vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
         oppdatertBehandling.vedtakId shouldBe vedtakId
@@ -94,6 +102,7 @@ class VedtakHendelseTest : CommonTestRunner() {
         "",
         stubUtils.toJsonString(vedtakHendelse),
     )
+
     private fun opprettBehandling() = Behandling(
         datoFom = Date(),
         datoTom = Date(),
@@ -132,7 +141,11 @@ class VedtakHendelseTest : CommonTestRunner() {
         ),
     )
 
-    private fun opprettVedtakhendelse(vedtakId: Int, behandlingId: Long, stonadType: StonadType = StonadType.BIDRAG18AAR): VedtakHendelse {
+    private fun opprettVedtakhendelse(
+        vedtakId: Int,
+        behandlingId: Long,
+        stonadType: StonadType = StonadType.BIDRAG18AAR
+    ): VedtakHendelse {
         return VedtakHendelse(
             type = VedtakType.FASTSETTELSE,
             stonadsendringListe = listOf(

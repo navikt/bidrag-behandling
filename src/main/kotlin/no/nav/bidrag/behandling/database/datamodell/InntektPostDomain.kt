@@ -15,14 +15,10 @@ class InntektPostDomain(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inntekt_id", nullable = false)
     val inntekt: Inntekt,
-
     @Column(name = "belop")
     val beløp: BigDecimal,
-
     val kode: String,
-
     val visningsnavn: String,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

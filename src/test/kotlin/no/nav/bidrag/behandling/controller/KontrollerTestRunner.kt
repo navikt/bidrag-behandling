@@ -16,6 +16,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     lateinit var httpHeaderTestRestTemplate: HttpHeaderTestRestTemplate
 
     val stubUtils: StubUtils = StubUtils()
+
     protected fun rootUri(): String {
         return "http://localhost:$port/api/"
     }

@@ -17,10 +17,8 @@ class HusstandsBarn(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
-
     @Column(name = "med_i_saken")
     val medISaken: Boolean,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

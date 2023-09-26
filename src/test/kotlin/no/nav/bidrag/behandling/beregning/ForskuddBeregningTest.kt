@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
 import java.util.Calendar
 
 class ForskuddBeregningTest {
-
     @Test
     fun `split periods just one period`() {
         val forskuddBeregning = ForskuddBeregning()
@@ -24,12 +23,13 @@ class ForskuddBeregningTest {
         val tilDao = cal1.time
         val tilDao2 = cal2.time
 
-        val splitPeriods1 = forskuddBeregning.splitPeriods(
-            listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
-                HusstandsBarnPeriodeModel(fraDato2.toLocalDate(), tilDao2.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
-            ),
-        )
+        val splitPeriods1 =
+            forskuddBeregning.splitPeriods(
+                listOf(
+                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
+                    HusstandsBarnPeriodeModel(fraDato2.toLocalDate(), tilDao2.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
+                ),
+            )
 
         assertEquals(3, splitPeriods1.size)
     }
@@ -44,11 +44,12 @@ class ForskuddBeregningTest {
         cal1.add(Calendar.MONTH, 1)
         val tilDao = cal1.time
 
-        val splitPeriods = forskuddBeregning.splitPeriods(
-            listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
-            ),
-        )
+        val splitPeriods =
+            forskuddBeregning.splitPeriods(
+                listOf(
+                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
+                ),
+            )
 
         assertEquals(1, splitPeriods.size)
     }
@@ -63,13 +64,14 @@ class ForskuddBeregningTest {
         cal1.add(Calendar.MONTH, 1)
         val tilDao = cal1.time
 
-        val splitPeriods = forskuddBeregning.splitPeriods(
-            listOf(
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
-                HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
-            ),
-        )
+        val splitPeriods =
+            forskuddBeregning.splitPeriods(
+                listOf(
+                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
+                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
+                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDao.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
+                ),
+            )
 
         assertEquals(1, splitPeriods.size)
         assertEquals(3.0, splitPeriods.get(0).antall)

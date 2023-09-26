@@ -40,68 +40,77 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         cal.add(Calendar.MONTH, 2)
         val datoTom = cal.time
 
-        val b = Behandling(
-            BehandlingType.FORSKUDD,
-            SoknadType.FASTSETTELSE,
-            datoFom,
-            datoTom,
-            datoFom,
-            "1234",
-            123213L,
-            123213L,
-            "ENHE",
-            SoknadFraType.BIDRAGSMOTTAKER,
-            null,
-            null,
-            null,
-            datoFom,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            1,
-        )
-
-        val husstandsBarn = HusstandsBarn(
-            behandling = b,
-            medISaken = true,
-            null,
-            "123",
-            null,
-            datoFom,
-        )
-        husstandsBarn.perioder = mutableSetOf(
-            HusstandsBarnPeriode(
-                husstandsBarn,
+        val b =
+            Behandling(
+                BehandlingType.FORSKUDD,
+                SoknadType.FASTSETTELSE,
                 datoFom,
                 datoTom,
-                BoStatusType.REGISTRERT_PA_ADRESSE,
-                "",
-            ),
-        )
+                datoFom,
+                "1234",
+                123213L,
+                123213L,
+                "ENHE",
+                SoknadFraType.BIDRAGSMOTTAKER,
+                null,
+                null,
+                null,
+                datoFom,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                1,
+            )
 
-        b.husstandsBarn = mutableSetOf(
-            husstandsBarn,
-        )
-        b.roller = mutableSetOf(
-            Rolle(b, Rolletype.BIDRAGSMOTTAKER, "123", datoFom, null, null),
-            Rolle(b, Rolletype.BARN, "123", datoFom, null, null),
-        )
-        b.inntekter = mutableSetOf(
-            Inntekt(b, true, "beskrivelse", BigDecimal.TEN, datoFom, datoTom, "ident", true),
-        )
-        b.barnetillegg = mutableSetOf(
-            Barnetillegg(b, "ident", BigDecimal.TEN, datoFom, datoTom),
-        )
-        b.utvidetbarnetrygd = mutableSetOf(
-            Utvidetbarnetrygd(b, true, BigDecimal.TEN, datoFom, datoTom),
-        )
-        b.sivilstand = mutableSetOf(
-            Sivilstand(b, datoFom, datoTom, SivilstandType.GIFT),
-        )
+        val husstandsBarn =
+            HusstandsBarn(
+                behandling = b,
+                medISaken = true,
+                null,
+                "123",
+                null,
+                datoFom,
+            )
+        husstandsBarn.perioder =
+            mutableSetOf(
+                HusstandsBarnPeriode(
+                    husstandsBarn,
+                    datoFom,
+                    datoTom,
+                    BoStatusType.REGISTRERT_PA_ADRESSE,
+                    "",
+                ),
+            )
+
+        b.husstandsBarn =
+            mutableSetOf(
+                husstandsBarn,
+            )
+        b.roller =
+            mutableSetOf(
+                Rolle(b, Rolletype.BIDRAGSMOTTAKER, "123", datoFom, null, null),
+                Rolle(b, Rolletype.BARN, "123", datoFom, null, null),
+            )
+        b.inntekter =
+            mutableSetOf(
+                Inntekt(b, true, "beskrivelse", BigDecimal.TEN, datoFom, datoTom, "ident", true),
+            )
+        b.barnetillegg =
+            mutableSetOf(
+                Barnetillegg(b, "ident", BigDecimal.TEN, datoFom, datoTom),
+            )
+        b.utvidetbarnetrygd =
+            mutableSetOf(
+                Utvidetbarnetrygd(b, true, BigDecimal.TEN, datoFom, datoTom),
+            )
+        b.sivilstand =
+            mutableSetOf(
+                Sivilstand(b, datoFom, datoTom, SivilstandType.GIFT),
+            )
 
         return b
     }

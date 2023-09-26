@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus
 import java.util.*
 
 class StubUtils {
-
     companion object {
         fun aClosedJsonResponse(): ResponseDefinitionBuilder {
             return aResponse()
@@ -24,7 +23,10 @@ class StubUtils {
         }
     }
 
-    fun <R> stubResponse(url: String, personResponse: R) {
+    fun <R> stubResponse(
+        url: String,
+        personResponse: R,
+    ) {
         try {
             WireMock.stubFor(
                 WireMock.post(url).willReturn(
@@ -52,10 +54,11 @@ class StubUtils {
     }
 
     fun stubHentForsendelserForSak(
-        response: List<ForsendelseResponsTo> = listOf(
-            opprettForsendelseResponsUnderOpprettelse(1),
-            opprettForsendelseResponsUnderOpprettelse(2),
-        ),
+        response: List<ForsendelseResponsTo> =
+            listOf(
+                opprettForsendelseResponsUnderOpprettelse(1),
+                opprettForsendelseResponsUnderOpprettelse(2),
+            ),
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
@@ -78,7 +81,10 @@ class StubUtils {
         )
     }
 
-    fun stubTilgangskontrollTema(result: Boolean = true, status: HttpStatus = HttpStatus.OK) {
+    fun stubTilgangskontrollTema(
+        result: Boolean = true,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
         WireMock.stubFor(
             WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/tema")).willReturn(
                 aClosedJsonResponse()
@@ -90,16 +96,21 @@ class StubUtils {
 
     inner class Verify {
         fun opprettForsendelseKaltMed(vararg contains: String) {
-            val verify = WireMock.postRequestedFor(
-                WireMock.urlMatching("/forsendelse/api/forsendelse"),
-            )
+            val verify =
+                WireMock.postRequestedFor(
+                    WireMock.urlMatching("/forsendelse/api/forsendelse"),
+                )
             verifyContains(verify, *contains)
         }
 
-        fun forsendelseHentetForSak(saksnummer: String, antall: Int = -1) {
-            val verify = WireMock.getRequestedFor(
-                WireMock.urlMatching("/forsendelse/api/forsendelse/sak/$saksnummer/forsendelser"),
-            )
+        fun forsendelseHentetForSak(
+            saksnummer: String,
+            antall: Int = -1,
+        ) {
+            val verify =
+                WireMock.getRequestedFor(
+                    WireMock.urlMatching("/forsendelse/api/forsendelse/sak/$saksnummer/forsendelser"),
+                )
             WireMock.verify(
                 if (antall == -1) {
                     CountMatchingStrategy(
@@ -113,10 +124,14 @@ class StubUtils {
             )
         }
 
-        fun forsendelseSlettet(forsendelseId: String = "(.*)", antall: Int = -1) {
-            val verify = WireMock.postRequestedFor(
-                WireMock.urlMatching("/forsendelse/api/forsendelse/journal/$forsendelseId/avvik"),
-            )
+        fun forsendelseSlettet(
+            forsendelseId: String = "(.*)",
+            antall: Int = -1,
+        ) {
+            val verify =
+                WireMock.postRequestedFor(
+                    WireMock.urlMatching("/forsendelse/api/forsendelse/journal/$forsendelseId/avvik"),
+                )
             WireMock.verify(
                 if (antall == -1) {
                     CountMatchingStrategy(
@@ -131,9 +146,10 @@ class StubUtils {
         }
 
         fun opprettForsendelseKaltAntallGanger(antall: Int) {
-            val verify = WireMock.postRequestedFor(
-                WireMock.urlMatching("/forsendelse/api/forsendelse"),
-            )
+            val verify =
+                WireMock.postRequestedFor(
+                    WireMock.urlMatching("/forsendelse/api/forsendelse"),
+                )
             WireMock.verify(antall, verify)
         }
 
@@ -141,7 +157,10 @@ class StubUtils {
             opprettForsendelseKaltAntallGanger(0)
         }
 
-        private fun verifyContains(verify: RequestPatternBuilder, vararg contains: String) {
+        private fun verifyContains(
+            verify: RequestPatternBuilder,
+            vararg contains: String,
+        ) {
             Arrays.stream(contains).forEach { verify.withRequestBody(ContainsPattern(it)) }
             WireMock.verify(verify)
         }

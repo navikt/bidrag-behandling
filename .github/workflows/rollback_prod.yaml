@@ -19,7 +19,7 @@ jobs:
     name: Find tag to deploy
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: NAIS login
         uses: nais/login@v0
         id: login
@@ -30,16 +30,16 @@ jobs:
       - id: deploy_version
         name: Find deploy version
         run: |
-         git fetch --all --tags
-         echo ${GITHUB_EVENT_NAME}
-         REPO_NAME=${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}
-         DEPLOY_TAG=${{ github.event.inputs.deploy_tag }}
-         if [ -z "$INPUT_TAG" ]; then 
-          echo "NULL";
-          DEPLOY_TAG=$(git tag -l | sort -V | tail -2 | head -1)
-         fi
-         echo "IMAGE=${{ steps.login.outputs.registry }}/$REPO_NAME:$DEPLOY_TAG" >> $GITHUB_OUTPUT
-         echo "DEPLOY_TAG=$DEPLOY_TAG" >> $GITHUB_OUTPUT
+          git fetch --all --tags
+          echo ${GITHUB_EVENT_NAME}
+          REPO_NAME=${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}
+          DEPLOY_TAG=${{ github.event.inputs.deploy_tag }}
+          if [ -z "$INPUT_TAG" ]; then 
+           echo "NULL";
+           DEPLOY_TAG=$(git tag -l | sort -V | tail -2 | head -1)
+          fi
+          echo "IMAGE=${{ steps.login.outputs.registry }}/$REPO_NAME:$DEPLOY_TAG" >> $GITHUB_OUTPUT
+          echo "DEPLOY_TAG=$DEPLOY_TAG" >> $GITHUB_OUTPUT
     outputs:
       image: ${{ steps.deploy_version.outputs.IMAGE }}
       version: ${{ steps.deploy_version.outputs.DEPLOY_TAG }}
@@ -50,7 +50,7 @@ jobs:
     needs: prepare_deploy
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: nais/deploy/actions/deploy@v1
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}

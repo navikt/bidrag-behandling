@@ -1,9 +1,11 @@
 name: Deploy feature
 on:
+  workflow_dispatch:
   push:
     branches:
       - '**'
       - '!main'
+      - '!dependabot/**'
 
 env:
   GITHUB_USERNAME: x-access-token
@@ -17,7 +19,7 @@ jobs:
     name: Build with maven and docker
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
@@ -44,7 +46,7 @@ jobs:
     name: Run tests
     needs: build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
@@ -60,10 +62,11 @@ jobs:
   deploy-feature:
     runs-on: ubuntu-latest
     name: Deploy feature
-    needs: build
-
+    needs:
+      - run-tests
+      - build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: deploy
       - name: Deploy to dev-gcp for feature.yaml
