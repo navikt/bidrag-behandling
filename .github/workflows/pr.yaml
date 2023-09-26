@@ -61,7 +61,9 @@ jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     name: Deploy dev
-    needs: run-tests
+    needs:
+      - run-tests
+      - build
     steps:
       - uses: actions/checkout@v4
         with:
