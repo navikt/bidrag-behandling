@@ -7,7 +7,9 @@ import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
+import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import no.nav.bidrag.domain.enums.StonadType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -92,6 +94,31 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
 
         assertNotNull(behandling.body)
         assertEquals(3, behandling.body!!.roller.size)
+    }
+
+    @Test
+    fun `skal oppdatere behandling`() {
+        val b = behandlingService.createBehandling(BehandlingServiceTest.prepareBehandling())
+
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling/" + b.id,
+                HttpMethod.PUT,
+                HttpEntity(UpdateBehandlingRequest(123L)),
+                Void::class.java,
+            )
+        assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+
+        val updatedBehandling =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling/${b!!.id}",
+                HttpMethod.GET,
+                HttpEntity.EMPTY,
+                BehandlingDto::class.java,
+            )
+
+        assertNotNull(updatedBehandling.body)
+        assertEquals(123L, updatedBehandling.body!!.grunnlagspakkeId)
     }
 
     @Test
