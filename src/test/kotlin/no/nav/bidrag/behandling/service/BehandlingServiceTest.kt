@@ -142,6 +142,15 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     @Test
+    fun `skal opprette en behandling med grunnlagspakkeId`() {
+        val b = createBehandling()
+
+        behandlingService.updateBehandling(b.id!!, 123L)
+
+        assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeId)
+    }
+
+    @Test
     fun `skal opprette en behandling med inntekter`() {
         val behandling = prepareBehandling()
 
