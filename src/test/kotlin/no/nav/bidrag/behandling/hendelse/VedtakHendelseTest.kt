@@ -60,9 +60,9 @@ class VedtakHendelseTest : CommonTestRunner() {
             opprettHendelseRecord(
                 opprettVedtakhendelse(
                     vedtakId,
-                    behandling.id!!
-                )
-            )
+                    behandling.id!!,
+                ),
+            ),
         )
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
         oppdatertBehandling.vedtakId shouldBe vedtakId
@@ -144,7 +144,7 @@ class VedtakHendelseTest : CommonTestRunner() {
     private fun opprettVedtakhendelse(
         vedtakId: Int,
         behandlingId: Long,
-        stonadType: StonadType = StonadType.BIDRAG18AAR
+        stonadType: StonadType = StonadType.BIDRAG18AAR,
     ): VedtakHendelse {
         return VedtakHendelse(
             type = VedtakType.FASTSETTELSE,

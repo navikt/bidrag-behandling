@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller
 
 import arrow.core.mapOrAccumulate
 import arrow.core.raise.either
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
@@ -12,8 +11,6 @@ import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningPerBarn
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.domain.enums.Rolletype
-import no.nav.bidrag.transport.beregning.forskudd.rest.request.BeregnForskuddGrunnlag
-import org.springframework.http.HttpEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.client.HttpClientErrorException
@@ -57,8 +54,6 @@ class BehandlingBeregnForskuddController(
                         .mapOrAccumulate {
                             val payload = forskuddBeregning.toPayload(behandlingModel, it)
 
-                            if (false) printDebugPayload(payload)
-
                             try {
                                 val respons =
                                     bidragBeregnForskuddConsumer.beregnForskudd(payload)
@@ -91,10 +86,4 @@ class BehandlingBeregnForskuddController(
         return ForskuddBeregningRespons(result.getOrNull(), result.leftOrNull())
     }
 
-    private fun printDebugPayload(payload: BeregnForskuddGrunnlag) {
-        val message = HttpEntity(payload)
-        val objectMapper = ObjectMapper()
-
-        objectMapper.writeValue(System.out, message.body)
-    }
 }
