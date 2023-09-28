@@ -198,7 +198,7 @@
 		<dependency>
 			<groupId>no.nav.bidrag</groupId>
 			<artifactId>bidrag-transport</artifactId>
-			<version>20230821134807_d0642b9</version>
+			<version>20230918144946_1e1bc33</version>
 		</dependency>
 
 		<dependency>
