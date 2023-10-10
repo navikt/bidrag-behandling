@@ -6,6 +6,8 @@ management:
 
 springdoc:
   packages-to-scan: no.nav.bidrag.behandling.controller
+  paths-to-match: "/api/**"
+
 spring.main.banner-mode: off
 ---
 spring.config.activate.on-profile: nais,lokal-nais
