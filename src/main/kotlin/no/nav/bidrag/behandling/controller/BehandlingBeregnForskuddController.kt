@@ -7,10 +7,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.beregning.ForskuddBeregning
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningPerBarn
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.behandling.transformers.toNoString
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.client.HttpClientErrorException
@@ -23,6 +25,7 @@ class BehandlingBeregnForskuddController(
     private val behandlingService: BehandlingService,
     private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
     private val forskuddBeregning: ForskuddBeregning,
+    private val bidragPersonConsumer: BidragPersonConsumer
 ) {
     private fun isPeriodOneWithinPeriodTwo(
         datoFom1: LocalDate?,
@@ -49,10 +52,13 @@ class BehandlingBeregnForskuddController(
                 val behandlingModel = forskuddBeregning.toBehandlingBeregningModel(behandling).bind()
                 val results =
                     behandling
-                        .roller
-                        .filter { Rolletype.BARN == it.rolleType }
+                        .getSøknadsBarn()
                         .mapOrAccumulate {
-                            val payload = forskuddBeregning.toPayload(behandlingModel, it)
+                            val fDato = if (it.fodtDato == null) {
+                                bidragPersonConsumer.hentPerson(it.ident).fødselsdato
+                            } else it.fodtDato.toLocalDate().toNoString()
+
+                            val payload = forskuddBeregning.toPayload(behandlingModel, it, fDato)
 
                             try {
                                 val respons =
