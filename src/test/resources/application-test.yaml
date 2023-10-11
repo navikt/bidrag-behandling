@@ -1,3 +1,4 @@
+BIDRAG_PERSON_URL: http://localhost:${wiremock.server.port}/bidrag-person
 BIDRAG_BEREGN_FORSKUDD_URL: http://localhost:${wiremock.server.port}/beregn-forskudd
 BIDRAG_FORSENDELSE_URL: http://localhost:${wiremock.server.port}/forsendelse
 BIDRAG_TILGANGSKONTROLL_URL: http://localhost:${wiremock.server.port}/tilgangskontroll

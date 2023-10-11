@@ -2,6 +2,8 @@ name: bidrag-behandling-feature
 ingresses:
   - https://bidrag-behandling-feature.intern.dev.nav.no
 env:
+  BIDRAG_PERSON_URL: https://bidrag-person
+  BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
   BIDRAG_BEREGN_FORSKUDD_URL: http://bidrag-beregn-forskudd-rest-feature
   BIDRAG_BEREGN_FORSKUDD_SCOPE: dev-gcp.bidrag.bidrag-beregn-forskudd-rest-feature
   BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag-feature
@@ -32,6 +34,7 @@ database:
   autoResize: false
   tier: db-f1-micro
 outbound-access-apps:
+  - bidrag-person
   - bidrag-beregn-forskudd-rest-feature
   - bidrag-grunnlag-feature
   - bidrag-dokument-forsendelse-feature

@@ -57,17 +57,17 @@ data class BehandlingBeregningModel private constructor(
                         behandlingId
                     },
                     {
-                        ensure(virkningsDato != null) { raise("Behandling virkningsDato kan ikke være null") }
+                        ensure(virkningsDato != null) { raise("Behandling virkningsDato må fylles ut") }
                         virkningsDato.toLocalDate()
                     },
                     {
-                        ensure(datoTom != null) { raise("Behandling datoTom kan ikke være null") }
+                        ensure(datoTom != null) { raise("Behandling Dato Til må fylles ut") }
                         datoTom.toLocalDate()
                     },
                     {
                         mapOrAccumulate(sivilstand) {
                             SivilstandModel(
-                                it.datoFom?.toLocalDate() ?: raise("Sivilstands datoFom kan ikke være null"),
+                                it.datoFom?.toLocalDate() ?: raise("Sivilstand Dato Fra må fylles ut"),
                                 it.datoTom?.toLocalDate(),
                                 it.sivilstandType,
                             )
@@ -76,11 +76,10 @@ data class BehandlingBeregningModel private constructor(
                     {
                         mapOrAccumulate(inntekter.filter { it.taMed }) {
                             InntektModel(
-                                inntektType = it.inntektType ?: "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER", // TODO -> DETTE ER KUN MIDLERTIDIG
-//                            inntektType = it.inntektType ?: raise("InntektType kan ikke være null"),
+                                inntektType = it.inntektType ?: raise("InntektType kan ikke være null"),
                                 belop = it.belop,
                                 rolle = roller.rolleType(it.ident),
-                                datoFom = it.datoFom?.toLocalDate() ?: raise("Inntekts datoFom kan ikke være null"),
+                                datoFom = it.datoFom?.toLocalDate() ?: raise("Inntekts Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                             )
                         }
@@ -88,7 +87,7 @@ data class BehandlingBeregningModel private constructor(
                     {
                         mapOrAccumulate(barnetillegg) {
                             BarnetilleggModel(
-                                datoFom = it.datoFom?.toLocalDate() ?: raise("Barnetillegg datoFom kan ikke være null"),
+                                datoFom = it.datoFom?.toLocalDate() ?: raise("Barnetillegg Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                                 belop = it.barnetillegg,
                             )
@@ -97,7 +96,7 @@ data class BehandlingBeregningModel private constructor(
                     {
                         mapOrAccumulate(utvidetbarnetrygd) {
                             UtvidetbarnetrygdModel(
-                                datoFom = it.datoFom?.toLocalDate() ?: raise("Utvidetbarnetrygd datoFom kan ikke være null"),
+                                datoFom = it.datoFom?.toLocalDate() ?: raise("Utvidetbarnetrygd Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                                 belop = it.belop,
                             )
@@ -109,7 +108,7 @@ data class BehandlingBeregningModel private constructor(
                                 .flatMap { it.perioder },
                         ) {
                             HusstandsBarnPeriodeModel(
-                                datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode datoFom kan ikke være null"),
+                                datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                                 ident = it.husstandsBarn.ident,
                                 boStatus = it.boStatus,

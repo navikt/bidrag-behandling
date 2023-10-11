@@ -114,7 +114,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             ),
         )
 
-        assertEquals(2, behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolleType == Rolletype.BARN }.size)
+        assertEquals(2, behandlingService.hentBehandlingById(b.id!!).getSøknadsBarn().size)
     }
 
     @Test

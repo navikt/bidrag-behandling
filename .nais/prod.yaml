@@ -2,6 +2,8 @@ name: bidrag-behandling
 ingresses:
   - https://bidrag-behandling.intern.nav.no
 env:
+  BIDRAG_PERSON_URL: https://bidrag-person
+  BIDRAG_PERSON_SCOPE: prod-fss.bidrag.bidrag-person
   BIDRAG_BEREGN_FORSKUDD_URL: http://bidrag-beregn-forskudd-rest
   BIDRAG_BEREGN_FORSKUDD_SCOPE: prod-gcp.bidrag.bidrag-beregn-forskudd-rest
   BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag
@@ -31,6 +33,7 @@ database:
   autoResize: false
   tier: db-custom-1-3840
 outbound-access-apps:
+  - bidrag-person
   - bidrag-beregn-forskudd-rest
   - bidrag-grunnlag
   - bidrag-dokument-forsendelse

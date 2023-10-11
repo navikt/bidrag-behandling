@@ -98,6 +98,6 @@ class DefaultRestControllerAdvice {
                 val (objectName, field) = it.destructured
                 "$objectName.$field"
             }
-        return "${paths.joinToString("->")} kan ikke være null"
+        return "${paths.joinToString("->")} må fylles ut"
     }
 }
