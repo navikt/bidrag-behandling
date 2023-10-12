@@ -33,8 +33,9 @@ database:
   autoResize: false
   tier: db-custom-1-3840
 outbound-access-apps:
-  - bidrag-person
   - bidrag-beregn-forskudd-rest
   - bidrag-grunnlag
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll
+outbound-access-hosts:
+  - bidrag-person.prod-fss-pub.nais.io
