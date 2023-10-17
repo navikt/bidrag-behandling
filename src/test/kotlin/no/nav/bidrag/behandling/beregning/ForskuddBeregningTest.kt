@@ -51,7 +51,6 @@ class ForskuddBeregningTest {
                 ),
             )
 
-
         splitPeriods.size shouldBe 1
     }
 
@@ -74,9 +73,8 @@ class ForskuddBeregningTest {
                 ),
             )
 
-
         splitPeriods.size shouldBe 1
-        splitPeriods[0].antall shouldBe  3.0
+        splitPeriods[0].antall shouldBe 3.0
     }
 
     @Test
@@ -102,7 +100,6 @@ class ForskuddBeregningTest {
 
         cal2.add(Calendar.MONTH, 1)
         val tilDato3 = cal2.time
-
 
         val splitPeriods =
             forskuddBeregning.splitPeriods(
@@ -130,13 +127,13 @@ class ForskuddBeregningTest {
         val fraDato = cal1.time
         cal1.add(Calendar.MONTH, 1)
         val tilDato = cal1.time
-        
+
         cal1.add(Calendar.MONTH, 1)
         val fraDato1 = cal1.time
-        
+
         cal1.add(Calendar.MONTH, 1)
         val tilDato1 = cal1.time
-        
+
         val splitPeriods =
             forskuddBeregning.splitPeriods(
                 listOf(

@@ -41,11 +41,11 @@ class InntekterController(private val behandlingService: BehandlingService) {
         @PathVariable behandlingId: Long,
         @RequestBody request: UpdateInntekterRequest,
     ): InntekterResponse {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        var behandling = behandlingService.hentBehandlingById(behandlingId)
 
         behandlingService.oppdaterInntekter(
             behandlingId,
-            request.inntekter.toInntektDomain(behandling),
+            request.inntekter.toInntektDomain(behandling!!),
             request.barnetillegg.toBarnetilleggDomain(behandling),
             request.utvidetbarnetrygd.toUtvidetbarnetrygdDomain(behandling),
             request.inntektBegrunnelseMedIVedtakNotat,

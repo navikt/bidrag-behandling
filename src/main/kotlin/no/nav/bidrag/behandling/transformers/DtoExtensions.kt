@@ -69,7 +69,14 @@ fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: HusstandsBarn) =
 
 fun Set<HusstandsBarn>.toHusstandsBarnDto() =
     this.map {
-        HusstandsBarnDto(it.id!!, it.medISaken, it.perioder.toHusstandsBarnPeriodeDto(), it.ident, it.navn, it.foedselsDato?.toLocalDate())
+        HusstandsBarnDto(
+            it.id!!,
+            it.medISaken,
+            it.perioder.toHusstandsBarnPeriodeDto(),
+            it.ident,
+            it.navn,
+            it.foedselsDato?.toLocalDate(),
+        )
     }.toSet()
 
 fun Set<HusstandsBarnDto>.toDomain(behandling: Behandling) =
@@ -91,8 +98,15 @@ fun Set<InntektDto>.toInntektDomain(behandling: Behandling) =
     this.map {
         val inntekt =
             Inntekt(
-                behandling, it.taMed, it.inntektType, it.belop,
-                it.datoFom?.toDate(), it.datoTom?.toDate(), it.ident, it.fraGrunnlag, it.id,
+                it.inntektType,
+                it.belop,
+                it.datoFom?.toDate(),
+                it.datoTom?.toDate(),
+                it.ident,
+                it.fraGrunnlag,
+                it.taMed,
+                it.id,
+                behandling,
             )
         inntekt.inntektPostListe = it.inntektPostListe.toInntektPostDomain(inntekt).toMutableSet()
         inntekt
@@ -100,7 +114,7 @@ fun Set<InntektDto>.toInntektDomain(behandling: Behandling) =
 
 fun Set<InntektPost>.toInntektPostDomain(inntekt: Inntekt) =
     this.map {
-        InntektPostDomain(inntekt, it.beløp, it.kode, it.visningsnavn)
+        InntektPostDomain(it.beløp, it.kode, it.visningsnavn, inntekt = inntekt)
     }.toSet()
 
 fun Set<InntektPostDomain>.toInntektPost() =
@@ -110,11 +124,27 @@ fun Set<InntektPostDomain>.toInntektPost() =
 
 fun Set<Inntekt>.toInntektDto() =
     this.map {
-        InntektDto(it.id, it.taMed, it.inntektType, it.belop, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.ident, it.fraGrunnlag, it.inntektPostListe.toInntektPost())
+        InntektDto(
+            it.id,
+            it.taMed,
+            it.inntektType,
+            it.belop,
+            it.datoFom?.toLocalDate(),
+            it.datoTom?.toLocalDate(),
+            it.ident,
+            it.fraGrunnlag,
+            it.inntektPostListe.toInntektPost(),
+        )
     }.toSet()
 
 fun Opplysninger.toDto(): OpplysningerDto {
-    return OpplysningerDto(this.id!!, this.behandling.id!!, this.opplysningerType, this.data, this.hentetDato.toLocalDate())
+    return OpplysningerDto(
+        this.id!!,
+        this.behandling.id!!,
+        this.opplysningerType,
+        this.data,
+        this.hentetDato.toLocalDate(),
+    )
 }
 
 fun Behandling.tilForsendelseRolleDto() =

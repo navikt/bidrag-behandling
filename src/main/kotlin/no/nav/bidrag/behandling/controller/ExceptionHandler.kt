@@ -86,7 +86,7 @@ class ExceptionHandler {
     data class Error(
         val status: Int,
         val message: String,
-        val fieldErrors: MutableList<CustomFieldError> = mutableListOf()
+        val fieldErrors: MutableList<CustomFieldError> = mutableListOf(),
     ) {
         fun addFieldError(
             objectName: String,

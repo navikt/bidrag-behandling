@@ -10,6 +10,12 @@ services:
       POSTGRES_DB: bidrag-behandling
     volumes:
       - db:/var/lib/postgresql/data
+  zookeeper:
+    container_name: zookeeper
+    image: confluentinc/cp-zookeeper:7.1.2
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
   kafka:
     image: confluentinc/cp-kafka:6.2.1
     depends_on:

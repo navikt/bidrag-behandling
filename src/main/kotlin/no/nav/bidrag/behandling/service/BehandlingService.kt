@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import mu.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -19,7 +20,9 @@ import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.domain.enums.Rolletype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.Date
+import java.util.*
+
+private val log = KotlinLogging.logger {}
 
 @Service
 class BehandlingService(
@@ -88,6 +91,7 @@ class BehandlingService(
 
     fun hentBehandlinger(): List<Behandling> = behandlingRepository.hentBehandlinger()
 
+    @Transactional
     fun oppdaterInntekter(
         behandlingId: Long,
         inntekter: MutableSet<Inntekt>,
@@ -95,25 +99,31 @@ class BehandlingService(
         utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd>,
         inntektBegrunnelseMedIVedtakNotat: String?,
         inntektBegrunnelseKunINotat: String?,
-    ) = behandlingRepository.save(
-        behandlingRepository.findBehandlingById(behandlingId)
+    ) {
+        var behandling = behandlingRepository.findBehandlingById(behandlingId)
             .orElseThrow { behandlingNotFoundException(behandlingId) }
-            .let {
-                it.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
-                it.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
 
-                it.inntekter.clear()
-                it.inntekter.addAll(inntekter)
+        behandling.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
+        behandling.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
 
-                it.barnetillegg.clear()
-                it.barnetillegg.addAll(barnetillegg)
+        if (behandling.inntekter != inntekter) {
+            log.info("Oppdaterer inntekter for behandlingsid $behandlingId")
+            behandling.inntekter.clear()
+            behandling.inntekter.addAll(inntekter)
+        }
 
-                it.utvidetbarnetrygd.clear()
-                it.utvidetbarnetrygd.addAll(utvidetbarnetrygd)
+        if (behandling.barnetillegg != barnetillegg) {
+            log.info("Oppdaterer barnetillegg for behandlingsid $behandlingId")
+            behandling.barnetillegg.clear()
+            behandling.barnetillegg.addAll(barnetillegg)
+        }
 
-                it
-            },
-    )
+        if (behandling.utvidetbarnetrygd != utvidetbarnetrygd) {
+            log.info("Oppdaterer utvidet barnetrygd for behandlingsid $behandlingId")
+            behandling.utvidetbarnetrygd.clear()
+            behandling.utvidetbarnetrygd.addAll(utvidetbarnetrygd)
+        }
+    }
 
     fun updateVirkningsTidspunkt(
         behandlingId: Long,
