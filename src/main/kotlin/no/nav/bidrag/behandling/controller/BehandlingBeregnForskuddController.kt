@@ -91,5 +91,4 @@ class BehandlingBeregnForskuddController(
 
         return ForskuddBeregningRespons(result.getOrNull(), result.leftOrNull())
     }
-
 }

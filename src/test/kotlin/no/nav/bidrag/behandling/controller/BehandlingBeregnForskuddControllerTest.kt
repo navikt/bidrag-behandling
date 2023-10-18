@@ -97,7 +97,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             )
         b.inntekter =
             mutableSetOf(
-                Inntekt(b, true, "beskrivelse", BigDecimal.TEN, datoFom, datoTom, "ident", true),
+                Inntekt("lønn", BigDecimal.TEN, datoFom, datoTom, "ident", true, true),
             )
         b.barnetillegg =
             mutableSetOf(

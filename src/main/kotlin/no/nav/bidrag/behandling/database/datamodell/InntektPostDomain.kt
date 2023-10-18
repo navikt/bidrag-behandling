@@ -12,9 +12,6 @@ import java.math.BigDecimal
 
 @Entity(name = "inntekt_post")
 class InntektPostDomain(
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "inntekt_id", nullable = false)
-    val inntekt: Inntekt,
     @Column(name = "belop")
     val beløp: BigDecimal,
     val kode: String,
@@ -22,4 +19,7 @@ class InntektPostDomain(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inntekt_id", nullable = false)
+    val inntekt: Inntekt? = null,
 )
