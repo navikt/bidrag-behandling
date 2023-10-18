@@ -21,6 +21,7 @@ Et lokalt Dockermiljø må være tilgjengelig for lokal kjøring. Forebredelsess
 Profil: local (angis i program arguments)
 
 Start opp applikasjonen ved å kjøre [BidragTemplateLocal.kt](src/test/kotlin/no/nav/bidrag/behandling/BidragSpringAppLocal.kt).
+
 Dette starter applikasjonen med profil `local` og henter miljøvariabler for Q1 miljøet fra filen [application-local.yaml](src/test/resources/application-local.yaml).
 
 Her mangler det noen miljøvariabler som ikke bør committes til Git (Miljøvariabler for passord/secret osv).<br/>

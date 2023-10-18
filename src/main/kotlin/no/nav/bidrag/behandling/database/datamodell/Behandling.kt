@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domain.enums.EngangsbelopType
+import no.nav.bidrag.domain.enums.Rolletype
 import no.nav.bidrag.domain.enums.StonadType
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
@@ -70,4 +71,6 @@ class Behandling(
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
     var utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd> = mutableSetOf(),
     var deleted: Boolean = false,
-)
+) {
+    fun getSøknadsBarn() = roller.filter { it.rolleType == Rolletype.BARN }
+}

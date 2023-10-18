@@ -2,6 +2,8 @@ name: bidrag-behandling
 ingresses:
   - https://bidrag-behandling.intern.nav.no
 env:
+  BIDRAG_PERSON_URL: https://bidrag-person.prod-fss-pub.nais.io/bidrag-person
+  BIDRAG_PERSON_SCOPE: prod-fss.bidrag.bidrag-person
   BIDRAG_BEREGN_FORSKUDD_URL: http://bidrag-beregn-forskudd-rest
   BIDRAG_BEREGN_FORSKUDD_SCOPE: prod-gcp.bidrag.bidrag-beregn-forskudd-rest
   BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag
@@ -35,3 +37,5 @@ outbound-access-apps:
   - bidrag-grunnlag
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll
+outbound-access-hosts:
+  - bidrag-person.prod-fss-pub.nais.io
