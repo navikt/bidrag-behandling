@@ -30,7 +30,7 @@ import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 fun Set<Sivilstand>.toSivilstandDto() =
     this.map {
         SivilstandDto(it.id, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.sivilstandType)
-    }.toSet()
+    }.sortedBy { s -> s.id }.toSet()
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     this.map {
@@ -77,7 +77,7 @@ fun Set<HusstandsBarn>.toHusstandsBarnDto() =
             it.navn,
             it.foedselsDato?.toLocalDate(),
         )
-    }.toSet()
+    }.sortedBy { b -> b.id }.toSet()
 
 fun Set<HusstandsBarnDto>.toDomain(behandling: Behandling) =
     this.map {
