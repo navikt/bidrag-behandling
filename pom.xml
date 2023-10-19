@@ -26,7 +26,9 @@
 		<mockk.version>4.0.2</mockk.version>
 		<kotlin-logging-jvm.version>3.0.5</kotlin-logging-jvm.version>
 		<flyway.version>9.22.3</flyway.version>
+		<jackson.version>2.15.3</jackson.version>
 		<testcontainers.version>1.19.1</testcontainers.version>
+		<tomcat-embed-core.version>10.1.15</tomcat-embed-core.version>
 	</properties>
 
 	<repositories>
@@ -38,6 +40,16 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-annotations</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.yaml</groupId>
 				<artifactId>snakeyaml</artifactId>
@@ -52,6 +64,21 @@
 				<groupId>org.springframework.kafka</groupId>
 				<artifactId>spring-kafka</artifactId>
 				<version>3.0.12</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.tomcat.embed</groupId>
+				<artifactId>tomcat-embed-core</artifactId>
+				<version>${tomcat-embed-core.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.tomcat.embed</groupId>
+				<artifactId>tomcat-embed-el</artifactId>
+				<version>${tomcat-embed-core.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.tomcat.embed</groupId>
+				<artifactId>tomcat-embed-websocket</artifactId>
+				<version>${tomcat-embed-core.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -159,7 +186,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.module</groupId>
 			<artifactId>jackson-module-kotlin</artifactId>
-			<version>2.15.3</version>
+			<version>${jackson.version}</version>
 		</dependency>
 
 
@@ -430,4 +457,42 @@
 			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>OSX</id>
+			<activation>
+				<os>
+					<name>Mac OS X</name>
+				</os>
+			</activation>
+			<properties>
+				<profile.default.on>false</profile.default.on>
+			</properties>
+			<repositories>
+				<repository>
+					<id>nexus-internal-release</id>
+					<url>https://repo.adeo.no/repository/maven-release</url>
+				</repository>
+				<repository>
+					<id>nexus-internal-mirror</id>
+					<url>https://repo.adeo.no/repository/maven-public</url>
+				</repository>
+			</repositories>
+		</profile>
+		<profile>
+			<id>default</id>
+			<activation>
+				<property>
+					<name>profile.default.on</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<repositories>
+				<repository>
+					<id>github</id>
+					<url>https://maven.pkg.github.com/navikt/bidrag-commons</url>
+				</repository>
+			</repositories>
+		</profile>
+	</profiles>
 </project>

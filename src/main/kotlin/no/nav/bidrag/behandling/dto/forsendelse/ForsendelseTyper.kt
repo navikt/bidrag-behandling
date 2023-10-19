@@ -5,14 +5,6 @@ import no.nav.bidrag.domain.enums.EngangsbelopType
 import no.nav.bidrag.domain.enums.StonadType
 import no.nav.bidrag.domain.enums.VedtakType
 
-data class DokumentDto(
-    val tittel: String? = null,
-    val dokumentmalId: String? = null,
-    val bestillDokument: Boolean? = null,
-    val språk: String? = null,
-    val arkivsystem: String? = null,
-)
-
 data class BehandlingInfoDto(
     val vedtakId: Long? = null,
     val behandlingId: Long? = null,

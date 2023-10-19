@@ -21,6 +21,6 @@ class ForsendelseController(private val forsendelseService: ForsendelseService) 
         @RequestBody(required = true)
         request: InitalizeForsendelseRequest,
     ): List<String> {
-        return forsendelseService.opprettForsendelse(request)
+        return forsendelseService.slettEllerOpprettForsendelse(request)
     }
 }

@@ -38,7 +38,7 @@ class BehandlingService(
             }
 
     private fun opprettForsendelseForBehandling(behandling: Behandling) {
-        forsendelseService.opprettForsendelse(
+        forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = behandling.saksnummer,
                 enhet = behandling.behandlerEnhet,
@@ -163,10 +163,8 @@ class BehandlingService(
     )
 
     @Transactional
-    fun oppdaterVedtakId(
-        behandlingId: Long,
-        vedtakId: Long,
-    ) = behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
+    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long) =
+        behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
 
     @Transactional
     fun syncRoller(
