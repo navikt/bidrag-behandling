@@ -40,7 +40,7 @@ class ForsendelseService(
     private fun slettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         return slettVarselbrevUnderOpprettelse(
             request.saksnummer,
-            request.behandlingInfo.soknadId
+            request.behandlingInfo.soknadId,
         ).map { it.toString() }
     }
 
@@ -61,7 +61,7 @@ class ForsendelseService(
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
         log.info {
             "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev " +
-                    "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
+                "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
         }
         val opprettetForsendelser = mutableListOf<String>()
         opprettForRoller.forEach {
@@ -103,9 +103,9 @@ class ForsendelseService(
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
         return !(
-                behandlingInfo.stonadType == StonadType.FORSKUDD &&
-                        ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
-                )
+            behandlingInfo.stonadType == StonadType.FORSKUDD &&
+                ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
+            )
     }
 
     private fun opprettForRoller(

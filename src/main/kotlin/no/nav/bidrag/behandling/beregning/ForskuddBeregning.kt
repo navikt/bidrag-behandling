@@ -53,7 +53,7 @@ class ForskuddBeregning {
     private fun prepareBostatus(
         husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>,
         soknadsBarnIdent: String,
-        soknadBarn: Rolle
+        soknadBarn: Rolle,
     ): List<Grunnlag> =
         husstandsBarnPerioder
             .filter { soknadsBarnIdent == it.ident }
@@ -218,14 +218,14 @@ class ForskuddBeregning {
             beregnDatoFra = b.virkningsDato,
             beregnDatoTil = b.datoTom,
             grunnlagListe = prepareSoknadsBarn(soknadsBarn, fDato) +
-                    prepareBarnIHusstand(b) +
-                    prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +
-                    prepareInntekterForBeregning(
-                        b.inntekter,
-                        b.barnetillegg,
-                        b.utvidetbarnetrygd,
-                    ) +
-                    prepareSivilstand(b.sivilstand),
+                prepareBarnIHusstand(b) +
+                prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +
+                prepareInntekterForBeregning(
+                    b.inntekter,
+                    b.barnetillegg,
+                    b.utvidetbarnetrygd,
+                ) +
+                prepareSivilstand(b.sivilstand),
         )
 }
 

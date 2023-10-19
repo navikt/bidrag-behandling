@@ -45,9 +45,9 @@ class ForsendelseServiceTest {
         forsendelseService =
             ForsendelseService(bidragForsendelseConsumer, bidragTIlgangskontrollConsumer)
         every { bidragForsendelseConsumer.opprettForsendelse(any()) } returns
-                OpprettForsendelseRespons(
-                    "2313",
-                )
+            OpprettForsendelseRespons(
+                "2313",
+            )
         every { bidragForsendelseConsumer.slettForsendelse(any()) } returns Unit
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
     }
@@ -248,7 +248,6 @@ class ForsendelseServiceTest {
 
     @Test
     fun `Skal opprette forsendelse for behandling med type BIDRAG 18 år`() {
-
         val request = InitalizeForsendelseRequest(
             saksnummer = SAKSNUMMER,
             enhet = "4806",
@@ -354,7 +353,6 @@ class ForsendelseServiceTest {
 
     @Test
     fun `Skal opprette forsendelse for behandling med type BIDRAG som er fattet og slette forsendelser for varsel under opprettelse`() {
-
         every { bidragForsendelseConsumer.hentForsendelserISak(any()) } returns listOf(
             opprettForsendelseResponsUnderOpprettelse(1),
             opprettForsendelseResponsUnderOpprettelse(2),

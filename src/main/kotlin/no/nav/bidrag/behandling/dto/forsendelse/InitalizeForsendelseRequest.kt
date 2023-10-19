@@ -21,9 +21,9 @@ data class ForsendelseRolleDto(
     val type: Rolletype,
 )
 
-//TODO: Flytt dette hvis det blir også brukt i Behandling domain objektet
+// TODO: Flytt dette hvis det blir også brukt i Behandling domain objektet
 enum class BehandlingStatus {
     OPPRETTET,
     ENDRET,
-    FEILREGISTRERT
+    FEILREGISTRERT,
 }

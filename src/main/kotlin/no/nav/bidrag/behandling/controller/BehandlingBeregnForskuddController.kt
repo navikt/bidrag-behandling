@@ -25,7 +25,7 @@ class BehandlingBeregnForskuddController(
     private val behandlingService: BehandlingService,
     private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
     private val forskuddBeregning: ForskuddBeregning,
-    private val bidragPersonConsumer: BidragPersonConsumer
+    private val bidragPersonConsumer: BidragPersonConsumer,
 ) {
     private fun isPeriodOneWithinPeriodTwo(
         datoFom1: LocalDate?,
@@ -56,7 +56,9 @@ class BehandlingBeregnForskuddController(
                         .mapOrAccumulate {
                             val fDato = if (it.fodtDato == null) {
                                 bidragPersonConsumer.hentPerson(it.ident).fødselsdato
-                            } else it.fodtDato.toLocalDate().toNoString()
+                            } else {
+                                it.fodtDato.toLocalDate().toNoString()
+                            }
 
                             val payload = forskuddBeregning.toPayload(behandlingModel, it, fDato)
 
