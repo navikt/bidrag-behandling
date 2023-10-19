@@ -10,7 +10,6 @@ import java.util.Date
 import java.util.Optional
 
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
-
     fun findBehandlingById(id: Long): Optional<Behandling>
 
     @Query("select b from behandling b")
@@ -40,5 +39,8 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
             "b.vedtakId = :vedtakId " +
             "where b.id = :behandlingId",
     )
-    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long)
+    fun oppdaterVedtakId(
+        behandlingId: Long,
+        vedtakId: Long,
+    )
 }

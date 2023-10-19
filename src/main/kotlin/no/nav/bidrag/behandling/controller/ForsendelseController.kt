@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
 class ForsendelseController(private val forsendelseService: ForsendelseService) {
-
     @Suppress("unused")
     @PostMapping("/forsendelse/init")
     @Operation(

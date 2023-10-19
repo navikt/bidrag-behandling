@@ -15,12 +15,10 @@ class Barnetillegg(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
-
     val ident: String,
     val barnetillegg: BigDecimal,
     val datoFom: Date?,
     val datoTom: Date?,
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

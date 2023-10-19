@@ -33,7 +33,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 
 @ExtendWith(SpringExtension::class)
 class ForsendelseServiceTest {
-
     @MockkBean
     lateinit var bidragForsendelseConsumer: BidragForsendelseConsumer
 
@@ -45,9 +44,10 @@ class ForsendelseServiceTest {
     fun initMocks() {
         forsendelseService =
             ForsendelseService(bidragForsendelseConsumer, bidragTIlgangskontrollConsumer)
-        every { bidragForsendelseConsumer.opprettForsendelse(any()) } returns OpprettForsendelseRespons(
-            "2313",
-        )
+        every { bidragForsendelseConsumer.opprettForsendelse(any()) } returns
+                OpprettForsendelseRespons(
+                    "2313",
+                )
         every { bidragForsendelseConsumer.slettForsendelse(any()) } returns Unit
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
     }
@@ -75,7 +75,7 @@ class ForsendelseServiceTest {
                 withArg {
                     it.tema shouldBe "FAR"
                     it.behandlingInfo!!.barnIBehandling shouldHaveSize 1
-                    it.behandlingInfo!!.barnIBehandling shouldContain ROLLE_BA_1.fødselsnummer.verdi
+                    it.behandlingInfo!!.barnIBehandling shouldContain ROLLE_BA_1.fødselsnummer?.verdi
                 },
             )
         }
@@ -102,7 +102,7 @@ class ForsendelseServiceTest {
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
         }
@@ -129,7 +129,7 @@ class ForsendelseServiceTest {
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
                 },
             )
         }
@@ -191,8 +191,8 @@ class ForsendelseServiceTest {
                     it.behandlingInfo!!.soknadId shouldBe SOKNAD_ID
                     it.behandlingInfo!!.stonadType shouldBe StonadType.FORSKUDD
 
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
         }
@@ -233,14 +233,14 @@ class ForsendelseServiceTest {
         verify(ordering = Ordering.SEQUENCE) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
                 },
             )
         }
@@ -248,6 +248,7 @@ class ForsendelseServiceTest {
 
     @Test
     fun `Skal opprette forsendelse for behandling med type BIDRAG 18 år`() {
+
         val request = InitalizeForsendelseRequest(
             saksnummer = SAKSNUMMER,
             enhet = "4806",
@@ -263,6 +264,7 @@ class ForsendelseServiceTest {
             ),
         )
         forsendelseService.slettEllerOpprettForsendelse(request)
+
         verify(exactly = 3) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -281,20 +283,20 @@ class ForsendelseServiceTest {
         verify(ordering = Ordering.SEQUENCE) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BA_1.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BA_1.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BA_1.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BA_1.fødselsnummer?.verdi
                 },
             )
         }
@@ -303,6 +305,7 @@ class ForsendelseServiceTest {
     @Test
     fun `Skal ikke opprette forsendelse for behandling med type forskudd fastsettelse hvis vedtak ikke er fattet`() {
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
+
         val request = InitalizeForsendelseRequest(
             saksnummer = SAKSNUMMER,
             enhet = ENHET_FARSKAP,
@@ -318,6 +321,7 @@ class ForsendelseServiceTest {
             ),
         )
         forsendelseService.slettEllerOpprettForsendelse(request)
+
         verify(exactly = 0) {
             bidragForsendelseConsumer.opprettForsendelse(any())
         }
@@ -326,6 +330,7 @@ class ForsendelseServiceTest {
     @Test
     fun `Skal ikke opprette forsendelse for behandling med type forskudd endring hvis vedtak ikke er fattet`() {
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
+
         val request = InitalizeForsendelseRequest(
             saksnummer = SAKSNUMMER,
             enhet = ENHET_FARSKAP,
@@ -341,6 +346,7 @@ class ForsendelseServiceTest {
             ),
         )
         forsendelseService.slettEllerOpprettForsendelse(request)
+
         verify(exactly = 0) {
             bidragForsendelseConsumer.opprettForsendelse(any())
         }
@@ -348,6 +354,7 @@ class ForsendelseServiceTest {
 
     @Test
     fun `Skal opprette forsendelse for behandling med type BIDRAG som er fattet og slette forsendelser for varsel under opprettelse`() {
+
         every { bidragForsendelseConsumer.hentForsendelserISak(any()) } returns listOf(
             opprettForsendelseResponsUnderOpprettelse(1),
             opprettForsendelseResponsUnderOpprettelse(2),
@@ -370,6 +377,7 @@ class ForsendelseServiceTest {
             ),
         )
         forsendelseService.slettEllerOpprettForsendelse(request)
+
         verify(exactly = 2) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
@@ -388,14 +396,14 @@ class ForsendelseServiceTest {
         verify {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer.verdi
+                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
                 },
             )
         }

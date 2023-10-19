@@ -14,36 +14,26 @@ import java.util.Date
 data class CreateBehandlingRequest(
     @Schema(required = true)
     val behandlingType: BehandlingType,
-
     @Schema(required = true)
     val soknadType: SoknadType,
-
     @Schema(required = true)
     val datoFom: Date,
-
     @Schema(required = true)
     val datoTom: Date,
-
     @Schema(required = true)
     val mottatDato: Date,
-
     @Schema(required = true)
     val soknadFra: SoknadFraType,
-
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
     @field:Size(max = 7, message = "Saks nummer kan ikke være lengre enn 7 tegn")
     val saksnummer: String,
-
     @field:NotBlank(message = "Enhet kan ikke være blank")
     @field:Size(min = 4, max = 4, message = "Enhet må være 4 tegn")
     val behandlerEnhet: String,
-
     @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
     val roller: Set<@Valid CreateRolleDto>,
-
     @Schema(required = true)
     var stonadType: StonadType?,
-
     @Schema(required = true)
     var engangsbelopType: EngangsbelopType?,
     @Schema(required = true)

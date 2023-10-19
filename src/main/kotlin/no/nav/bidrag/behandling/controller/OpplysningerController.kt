@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import no.nav.bidrag.behandling.`404`
+import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
 import no.nav.bidrag.behandling.dto.opplysninger.AddOpplysningerRequest
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
 class OpplysningerController(val opplysningerService: OpplysningerService) {
-
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
     @Operation(
@@ -62,7 +61,13 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
             ),
         ],
     )
-    fun hentAktiv(@PathVariable behandlingId: Long, @PathVariable opplysningerType: OpplysningerType): OpplysningerDto {
-        return opplysningerService.hentSistAktiv(behandlingId, opplysningerType).orElseThrow { `404`(behandlingId) }.toDto()
+    fun hentAktiv(
+        @PathVariable behandlingId: Long,
+        @PathVariable opplysningerType: OpplysningerType,
+    ): OpplysningerDto {
+        return opplysningerService.hentSistAktiv(
+            behandlingId,
+            opplysningerType,
+        ).orElseThrow { behandlingNotFoundException(behandlingId) }.toDto()
     }
 }

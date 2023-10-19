@@ -19,9 +19,11 @@ private val log = KotlinLogging.logger {}
 @Component
 @Aspect
 class HendelseCorrelationAspect(private val objectMapper: ObjectMapper) {
-
     @Before(value = "execution(* no.nav.bidrag.behandling.kafka.VedtakHendelseListener.prossesserVedtakHendelse(..)) && args(hendelse)")
-    fun leggSporingFraVedtakHendelseTilMDC(joinPoint: JoinPoint, hendelse: ConsumerRecord<String, String>) {
+    fun leggSporingFraVedtakHendelseTilMDC(
+        joinPoint: JoinPoint,
+        hendelse: ConsumerRecord<String, String>,
+    ) {
         hentSporingFraHendelse(hendelse)?.let {
             val correlationId = CorrelationId.existing(it)
             MDC.put(CORRELATION_ID_HEADER, correlationId.get())

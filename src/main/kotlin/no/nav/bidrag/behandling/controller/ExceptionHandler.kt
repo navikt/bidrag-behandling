@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
-import mu.KotlinLogging
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.core.convert.ConversionFailedException
@@ -17,21 +16,22 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
-private val log = KotlinLogging.logger {}
-
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ControllerAdvice
 @Suppress("unused")
 class ExceptionHandler {
     @ResponseBody
-    @ExceptionHandler(value = [MethodArgumentNotValidException::class, InvalidFormatException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class])
+    @ExceptionHandler(
+        value = [MethodArgumentNotValidException::class, InvalidFormatException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class],
+    )
     fun handleInvalidValueExceptions(exception: Exception): ResponseEntity<*> {
         val cause = exception.cause ?: exception
-        val validationError = when (cause) {
-            is JsonMappingException -> createMissingKotlinParameterViolation(cause)
-            is MethodArgumentNotValidException -> parseMethodArgumentNotValidException(cause)
-            else -> null
-        }
+        val validationError =
+            when (cause) {
+                is JsonMappingException -> createMissingKotlinParameterViolation(cause)
+                is MethodArgumentNotValidException -> parseMethodArgumentNotValidException(cause)
+                else -> null
+            }
         val errorMessage =
             validationError?.fieldErrors?.joinToString(", ") { "${it.field}: ${it.message}" }
                 ?: "ukjent feil"
@@ -52,16 +52,6 @@ class ExceptionHandler {
         return ResponseEntity
             .status(exception.statusCode)
             .header(HttpHeaders.WARNING, errorMessage)
-            .build<Any>()
-    }
-
-    @ResponseBody
-    @ExceptionHandler(Exception::class)
-    fun handleOtherExceptions(exception: Exception): ResponseEntity<*> {
-        log.warn("Det skjedde en ukjent feil", exception)
-        return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .header(HttpHeaders.WARNING, "Det skjedde en ukjent feil: ${exception.message}")
             .build<Any>()
     }
 
@@ -93,8 +83,16 @@ class ExceptionHandler {
         return error
     }
 
-    data class Error(val status: Int, val message: String, val fieldErrors: MutableList<CustomFieldError> = mutableListOf()) {
-        fun addFieldError(objectName: String, field: String, message: String) {
+    data class Error(
+        val status: Int,
+        val message: String,
+        val fieldErrors: MutableList<CustomFieldError> = mutableListOf(),
+    ) {
+        fun addFieldError(
+            objectName: String,
+            field: String,
+            message: String,
+        ) {
             val error = CustomFieldError(objectName, field, message)
             fieldErrors.add(error)
         }

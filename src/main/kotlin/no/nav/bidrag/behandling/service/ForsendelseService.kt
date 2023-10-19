@@ -49,8 +49,8 @@ class ForsendelseService(
             behandlingInfo = request.behandlingInfo
                 .copy(
                     barnIBehandling = request.roller
-                        .filter { it.type == Rolletype.BARN && it.fødselsnummer.verdi.isNotEmpty() }
-                        .map { it.fødselsnummer.verdi },
+                        .filter { it.type == Rolletype.BARN && !it.fødselsnummer?.verdi.isNullOrEmpty() }
+                        .map { it.fødselsnummer!!.verdi },
                 ),
             saksnummer = request.saksnummer,
             enhet = request.enhet,
@@ -68,7 +68,7 @@ class ForsendelseService(
             try {
                 val response = bidragForsendelseConsumer.opprettForsendelse(
                     opprettRequestTemplate.copy(
-                        mottaker = MottakerDto(ident = it.fødselsnummer.verdi),
+                        mottaker = MottakerDto(ident = it.fødselsnummer!!.verdi),
                         gjelderIdent = it.fødselsnummer.verdi,
                     ),
                 )
@@ -140,7 +140,7 @@ class ForsendelseService(
 
 class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mutableListOf() {
     fun leggTil(rolle: ForsendelseRolleDto?) {
-        if (rolle == null) return
+        if (rolle?.fødselsnummer == null) return
         val fødselsnummer = rolle.fødselsnummer
         if (fødselsnummer.verdi.isNotEmpty()) this.add(rolle)
     }

@@ -12,16 +12,16 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @ActiveProfiles(value = ["test", "testcontainer"])
 @DirtiesContext
 class TestContainerRunner : SpringTestRunner() {
-
     companion object {
         @Container
-        protected val postgreSqlDb = PostgreSQLContainer("postgres:14.5").apply {
-            withDatabaseName("bidrag-behandling")
-            withUsername("cloudsqliamuser")
-            withPassword("admin")
-            portBindings = listOf("7777:5432")
-            start()
-        }
+        protected val postgreSqlDb =
+            PostgreSQLContainer("postgres:14.5").apply {
+                withDatabaseName("bidrag-behandling")
+                withUsername("cloudsqliamuser")
+                withPassword("admin")
+                portBindings = listOf("7777:5432")
+                start()
+            }
 
         @Suppress("unused")
         @JvmStatic

@@ -23,42 +23,45 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 
 class ForsendelseControllerTest : KontrollerTestRunner() {
-
     @Test
     fun `Skal opprette forsendelse`() {
         val forsendelseId = "213123213123"
         stubUtils.stubOpprettForsendelse(forsendelseId)
         stubUtils.stubTilgangskontrollTema()
-        val response = httpHeaderTestRestTemplate.exchange(
-            "${rootUri()}/forsendelse/init",
-            HttpMethod.POST,
-            HttpEntity(
-                InitalizeForsendelseRequest(
-                    saksnummer = SAKSNUMMER,
-                    enhet = BidragEnhet.ENHET_FARSKAP,
-                    behandlingInfo = BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = StonadType.FORSKUDD,
-                    ),
-                    roller = listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+        val response =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/forsendelse/init",
+                HttpMethod.POST,
+                HttpEntity(
+                    InitalizeForsendelseRequest(
+                        saksnummer = SAKSNUMMER,
+                        enhet = BidragEnhet.ENHET_FARSKAP,
+                        behandlingInfo =
+                        BehandlingInfoDto(
+                            soknadId = SOKNAD_ID,
+                            stonadType = StonadType.FORSKUDD,
+                        ),
+                        roller =
+                        listOf(
+                            ROLLE_BM,
+                            ROLLE_BP,
+                            ROLLE_BA_1,
+                        ),
                     ),
                 ),
-            ),
-            List::class.java,
-        )
+                List::class.java,
+            )
 
         response.statusCode shouldBe HttpStatus.OK
         response.body shouldBe listOf(forsendelseId)
         @Language("Json")
-        val expectedRequest = """
+        val expectedRequest =
+            """
             {
                 "mottaker": {
-                    "ident": "${ROLLE_BM.fødselsnummer.verdi}"
+                    "ident": "${ROLLE_BM.fødselsnummer?.verdi}"
                 },
-                "gjelderIdent": "${ROLLE_BM.fødselsnummer.verdi}",
+                "gjelderIdent": "${ROLLE_BM.fødselsnummer?.verdi}",
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "språk": "NB",
@@ -79,7 +82,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 },
                 "opprettTittel": true
             }
-        """.trimIndent().replace("\n", "").replace(" ", "")
+            """.trimIndent().replace("\n", "").replace(" ", "")
         stubUtils.Verify().opprettForsendelseKaltMed(expectedRequest)
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER, 0)
         stubUtils.Verify().forsendelseSlettet(antall = 0)
@@ -92,11 +95,13 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         stubUtils.stubTilgangskontrollTema()
         val header = HttpHeaders()
         header.contentType = MediaType.APPLICATION_JSON
-        val response = httpHeaderTestRestTemplate.exchange(
-            "${rootUri()}/forsendelse/init",
-            HttpMethod.POST,
-            HttpEntity(
-                """{
+        val response =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/forsendelse/init",
+                HttpMethod.POST,
+                HttpEntity(
+                    """
+                    {
                         "saksnummer": "$SAKSNUMMER",
                         "behandlingInfo": {
                             "vedtakId": null,
@@ -116,34 +121,35 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         "tema": null,
                         "roller": [
                             {
-                                "fødselsnummer": "${ROLLE_BM.fødselsnummer.verdi}",
+                                "fødselsnummer": "${ROLLE_BM.fødselsnummer?.verdi}",
                                 "type": "BM"
                             },
                             {
-                                "fødselsnummer": "${ROLLE_BP.fødselsnummer.verdi}",
+                                "fødselsnummer": "${ROLLE_BP.fødselsnummer?.verdi}",
                                 "type": "BP"
                             },
                             {
-                                "fødselsnummer": "${ROLLE_BA_1.fødselsnummer.verdi}",
+                                "fødselsnummer": "${ROLLE_BA_1.fødselsnummer?.verdi}",
                                 "type": "BA"
                             }
                         ]
                     }
-                """.trimIndent(),
-                header,
-            ),
-            List::class.java,
-        )
+                    """.trimIndent(),
+                    header,
+                ),
+                List::class.java,
+            )
 
         response.statusCode shouldBe HttpStatus.OK
         response.body shouldBe listOf(forsendelseId)
         @Language("Json")
-        val expectedRequest = """
+        val expectedRequest =
+            """
             {
                 "mottaker": {
-                    "ident": "${ROLLE_BM.fødselsnummer.verdi}"
+                    "ident": "${ROLLE_BM.fødselsnummer?.verdi}"
                 },
-                "gjelderIdent": "${ROLLE_BM.fødselsnummer.verdi}",
+                "gjelderIdent": "${ROLLE_BM.fødselsnummer?.verdi}",
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "språk": "NB",
@@ -164,7 +170,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 },
                 "opprettTittel": true
             }
-        """.trimIndent().replace("\n", "").replace(" ", "")
+            """.trimIndent().replace("\n", "").replace(" ", "")
         stubUtils.Verify().opprettForsendelseKaltMed(expectedRequest)
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER, 0)
         stubUtils.Verify().forsendelseSlettet(antall = 0)
@@ -185,27 +191,30 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
             ),
         )
         stubUtils.stubTilgangskontrollTema()
-        val response = httpHeaderTestRestTemplate.exchange(
-            "${rootUri()}/forsendelse/init",
-            HttpMethod.POST,
-            HttpEntity(
-                InitalizeForsendelseRequest(
-                    saksnummer = SAKSNUMMER,
-                    enhet = BidragEnhet.ENHET_FARSKAP,
-                    behandlingInfo = BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = StonadType.FORSKUDD,
-                        vedtakId = 1,
-                    ),
-                    roller = listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+        val response =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/forsendelse/init",
+                HttpMethod.POST,
+                HttpEntity(
+                    InitalizeForsendelseRequest(
+                        saksnummer = SAKSNUMMER,
+                        enhet = BidragEnhet.ENHET_FARSKAP,
+                        behandlingInfo =
+                        BehandlingInfoDto(
+                            soknadId = SOKNAD_ID,
+                            stonadType = StonadType.FORSKUDD,
+                            vedtakId = 1,
+                        ),
+                        roller =
+                        listOf(
+                            ROLLE_BM,
+                            ROLLE_BP,
+                            ROLLE_BA_1,
+                        ),
                     ),
                 ),
-            ),
-            List::class.java,
-        )
+                List::class.java,
+            )
 
         response.statusCode shouldBe HttpStatus.OK
         response.body shouldBe listOf(forsendelseId)
