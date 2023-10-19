@@ -314,21 +314,6 @@
 		<testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
 		<plugins>
 			<plugin>
-				<groupId>org.owasp</groupId>
-				<artifactId>dependency-check-maven</artifactId>
-				<version>8.4.0</version>
-				<configuration>
-					<failBuildOnCVSS>7</failBuildOnCVSS>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<version>${project.parent.version}</version>
@@ -430,4 +415,61 @@
 			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>OSX</id>
+			<activation>
+				<os>
+					<name>Mac OS X</name>
+				</os>
+			</activation>
+			<properties>
+				<profile.default.on>false</profile.default.on>
+			</properties>
+			<repositories>
+				<repository>
+					<id>nexus-internal-release</id>
+					<url>https://repo.adeo.no/repository/maven-release</url>
+				</repository>
+				<repository>
+					<id>nexus-internal-mirror</id>
+					<url>https://repo.adeo.no/repository/maven-public</url>
+				</repository>
+			</repositories>
+		</profile>
+		<profile>
+			<id>default</id>
+			<activation>
+				<property>
+					<name>profile.default.on</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.owasp</groupId>
+						<artifactId>dependency-check-maven</artifactId>
+						<version>8.4.0</version>
+						<configuration>
+							<failBuildOnCVSS>7</failBuildOnCVSS>
+						</configuration>
+						<executions>
+							<execution>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+			<repositories>
+				<repository>
+					<id>github</id>
+					<url>https://maven.pkg.github.com/navikt/bidrag-commons</url>
+				</repository>
+			</repositories>
+		</profile>
+	</profiles>
 </project>
