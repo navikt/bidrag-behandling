@@ -17,5 +17,5 @@ jobs:
     permissions:
       contents: "read"
       id-token: "write"
-    uses: navikt/bidrag-workflow/.github/workflows/pr.yaml@main
+    uses: navikt/bidrag-workflow/.github/workflows/deploy_main.yaml@main
     secrets: inherit
