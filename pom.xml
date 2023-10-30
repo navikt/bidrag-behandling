@@ -14,7 +14,7 @@
 	<name>bidrag-behandling</name>
 	<properties>
 		<java.version>17</java.version>
-		<kotlin.version>1.9.10</kotlin.version>
+		<kotlin.version>1.9.20</kotlin.version>
 		<bidrag-commons.version>20230510130746_8b93e85</bidrag-commons.version>
 		<bidrag-domain.version>20230824131636_7aef062</bidrag-domain.version>
 		<logback-encoder.version>7.4</logback-encoder.version>
