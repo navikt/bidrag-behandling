@@ -12,10 +12,10 @@ import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.forsendelse.MottakerDto
 import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
-import no.nav.bidrag.domain.enums.EngangsbelopType
-import no.nav.bidrag.domain.enums.Rolletype
-import no.nav.bidrag.domain.enums.StonadType
-import no.nav.bidrag.domain.enums.VedtakType
+import no.nav.bidrag.domene.enums.Engangsbeløptype
+import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.Stønadstype
+import no.nav.bidrag.domene.enums.Vedtakstype
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
 import org.springframework.stereotype.Service
 
@@ -27,7 +27,7 @@ class ForsendelseService(
     private val tilgangskontrollConsumer: BidragTilgangskontrollConsumer,
 ) {
     private val ikkeOpprettVarslingForForskuddMedType =
-        listOf(VedtakType.FASTSETTELSE, VedtakType.ENDRING)
+        listOf(Vedtakstype.FASTSETTELSE, Vedtakstype.ENDRING)
 
     fun slettEllerOpprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         if (request.behandlingStatus == BehandlingStatus.FEILREGISTRERT) {
@@ -103,7 +103,7 @@ class ForsendelseService(
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
         return !(
-            behandlingInfo.stonadType == StonadType.FORSKUDD &&
+            behandlingInfo.stonadType == Stønadstype.FORSKUDD &&
                 ikkeOpprettVarslingForForskuddMedType.contains(behandlingInfo.vedtakType)
             )
     }
@@ -116,7 +116,7 @@ class ForsendelseService(
         if (!skalOppretteForsendelseForSoknad(behandlingInfoDto)) return roller
 
         if (behandlingInfoDto.erGebyr()) {
-            if (behandlingInfoDto.erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)) {
+            if (behandlingInfoDto.erBehandlingType(Engangsbeløptype.GEBYR_MOTTAKER)) {
                 roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSMOTTAKER))
             } else {
                 roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSPLIKTIG))
@@ -126,11 +126,11 @@ class ForsendelseService(
 
         roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSMOTTAKER))
 
-        if (!behandlingInfoDto.erBehandlingType(StonadType.FORSKUDD)) {
+        if (!behandlingInfoDto.erBehandlingType(Stønadstype.FORSKUDD)) {
             roller.leggTil(behandlingRoller.hentRolle(Rolletype.BIDRAGSPLIKTIG))
         }
 
-        if (behandlingInfoDto.erBehandlingType(StonadType.BIDRAG18AAR)) {
+        if (behandlingInfoDto.erBehandlingType(Stønadstype.BIDRAG18AAR)) {
             behandlingRoller.hentBarn().forEach { roller.leggTil(it) }
         }
 

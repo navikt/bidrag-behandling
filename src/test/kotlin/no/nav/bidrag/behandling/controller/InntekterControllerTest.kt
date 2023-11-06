@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.InntektPostDomain
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
@@ -17,6 +16,7 @@ import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toDate
+import no.nav.bidrag.domene.enums.SøktAvType
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.hibernate.engine.spi.SessionImplementor
 import org.hibernate.resource.transaction.spi.TransactionStatus
@@ -276,7 +276,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 123,
                 null,
                 "ENH",
-                SoknadFraType.BIDRAGSMOTTAKER,
+                SøktAvType.BIDRAGSMOTTAKER,
                 null,
                 null,
             ),

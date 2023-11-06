@@ -5,10 +5,10 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
-import no.nav.bidrag.domain.enums.EngangsbelopType
-import no.nav.bidrag.domain.enums.StonadType
+import no.nav.bidrag.domene.enums.Engangsbeløptype
+import no.nav.bidrag.domene.enums.Stønadstype
+import no.nav.bidrag.domene.enums.SøktAvType
 import java.util.Date
 
 data class CreateBehandlingRequest(
@@ -23,7 +23,7 @@ data class CreateBehandlingRequest(
     @Schema(required = true)
     val mottatDato: Date,
     @Schema(required = true)
-    val soknadFra: SoknadFraType,
+    val soknadFra: SøktAvType,
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
     @field:Size(max = 7, message = "Saks nummer kan ikke være lengre enn 7 tegn")
     val saksnummer: String,
@@ -33,9 +33,9 @@ data class CreateBehandlingRequest(
     @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
     val roller: Set<@Valid CreateRolleDto>,
     @Schema(required = true)
-    var stonadType: StonadType?,
+    var stonadType: Stønadstype?,
     @Schema(required = true)
-    var engangsbelopType: EngangsbelopType?,
+    var engangsbelopType: Engangsbeløptype?,
     @Schema(required = true)
     val soknadId: Long,
     val soknadRefId: Long? = null,

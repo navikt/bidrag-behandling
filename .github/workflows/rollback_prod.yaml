@@ -6,9 +6,6 @@ on:
         description: 'Deploy tag. Default the previous tag will be deployed'
         required: false
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 jobs:
   build-deploy:
     name: "Rollback and deploy previous version to prod"
@@ -17,3 +14,5 @@ jobs:
       id-token: "write"
     uses: navikt/bidrag-workflow/.github/workflows/rollback_prod.yaml@main
     secrets: inherit
+    with:
+      deploy_tag: ${{inputs.deploy_tag}}

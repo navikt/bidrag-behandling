@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
-import no.nav.bidrag.domain.enums.BehandlingsrefKilde
+import no.nav.bidrag.domene.enums.BehandlingsrefKilde
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
@@ -46,7 +46,7 @@ class VedtakHendelseListener(
         forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer,
-                enhet = vedtak.enhetId,
+                enhet = vedtak.enhetsnummer.verdi,
                 behandlingInfo =
                 BehandlingInfoDto(
                     soknadId = vedtak.soknadId ?: behandling.soknadId,
@@ -72,21 +72,23 @@ class VedtakHendelseListener(
     }
 }
 
-val VedtakHendelse.stonadType get() = this.stonadsendringListe?.firstOrNull()?.type
-val VedtakHendelse.engangsbelopType get() = this.engangsbelopListe?.firstOrNull()?.type
-val VedtakHendelse.soknadId get() =
-    this.behandlingsreferanseListe?.find {
-        it.kilde == BehandlingsrefKilde.BISYS_SOKNAD.name
-    }?.referanse?.toLong()
-val VedtakHendelse.behandlingId get() =
-    this.behandlingsreferanseListe?.find {
-        it.kilde == BehandlingsrefKilde.BEHANDLING_ID.name
-    }?.referanse?.toLong()
+val VedtakHendelse.stonadType get() = this.stønadsendringListe?.firstOrNull()?.type
+val VedtakHendelse.engangsbelopType get() = this.engangsbeløpListe?.firstOrNull()?.type
+val VedtakHendelse.soknadId
+    get() =
+        this.behandlingsreferanseListe?.find {
+            it.kilde == BehandlingsrefKilde.BISYS_SOKNAD.name
+        }?.referanse?.toLong()
+val VedtakHendelse.behandlingId
+    get() =
+        this.behandlingsreferanseListe?.find {
+            it.kilde == BehandlingsrefKilde.BEHANDLING_ID.name
+        }?.referanse?.toLong()
 
 fun VedtakHendelse.erFattetFraBidragBehandling() = behandlingId != null
 
 val VedtakHendelse.saksnummer
     get(): String =
-        stonadsendringListe?.firstOrNull()?.sakId
-            ?: engangsbelopListe?.firstOrNull()?.sakId
+        stønadsendringListe?.firstOrNull()?.sak?.verdi
+            ?: engangsbeløpListe?.firstOrNull()?.sak?.verdi
             ?: throw RuntimeException("Vedtak hendelse med id $id mangler saksnummer")

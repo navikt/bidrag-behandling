@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.dto.forsendelse
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import no.nav.bidrag.domain.enums.Rolletype
-import no.nav.bidrag.domain.ident.PersonIdent
+import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 
 data class InitalizeForsendelseRequest(
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
@@ -17,7 +17,7 @@ data class InitalizeForsendelseRequest(
 )
 
 data class ForsendelseRolleDto(
-    val fødselsnummer: PersonIdent?,
+    val fødselsnummer: Personident?,
     val type: Rolletype,
 )
 

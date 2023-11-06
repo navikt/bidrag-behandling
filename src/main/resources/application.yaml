@@ -7,6 +7,9 @@ management:
 springdoc:
   packages-to-scan: no.nav.bidrag.behandling.controller
   paths-to-match: "/api/**"
+  swagger-ui:
+    path: /
+    showCommonExtensions: true
 
 spring.main.banner-mode: off
 ---

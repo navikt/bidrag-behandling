@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
@@ -10,25 +9,26 @@ import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
-import no.nav.bidrag.domain.enums.StonadType
+import no.nav.bidrag.domene.enums.Stønadstype
+import no.nav.bidrag.domene.enums.SøktAvType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
-import java.util.Date
+import java.util.*
 import kotlin.test.Ignore
 import kotlin.test.assertNotNull
 
 data class CreateBehandlingRequestTest(
     val behandlingType: BehandlingType,
-    val stonadType: StonadType,
+    val stonadType: Stønadstype,
     val soknadType: SoknadType,
     val datoFom: Date,
     val datoTom: Date,
     val mottatDato: Date,
-    val soknadFra: SoknadFraType,
+    val soknadFra: SøktAvType,
     val saksnummer: String?,
     val behandlerEnhet: String,
     val roller: Set<CreateRolleDtoTest>,
@@ -174,7 +174,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                 "sak123",
                 "en12",
                 roller,
-            ).copy(stonadType = StonadType.BIDRAG)
+            ).copy(stonadType = Stønadstype.BIDRAG)
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
@@ -224,7 +224,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                     123213L,
                     null,
                     "EN123",
-                    SoknadFraType.VERGE,
+                    SøktAvType.VERGE,
                     null,
                     null,
                 ),
@@ -395,12 +395,12 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
             val testBehandling =
                 CreateBehandlingRequestTest(
                     BehandlingType.FORSKUDD,
-                    StonadType.FORSKUDD,
+                    Stønadstype.FORSKUDD,
                     SoknadType.FASTSETTELSE,
                     Date(1),
                     Date(1),
                     Date(1),
-                    SoknadFraType.BIDRAGSMOTTAKER,
+                    SøktAvType.BIDRAGSMOTTAKER,
                     saksnummer,
                     enhet,
                     roller,

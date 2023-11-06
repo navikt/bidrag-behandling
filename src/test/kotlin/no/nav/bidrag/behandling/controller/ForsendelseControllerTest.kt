@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.utils.ROLLE_BP
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
-import no.nav.bidrag.domain.enums.StonadType
+import no.nav.bidrag.domene.enums.Stønadstype
 import no.nav.bidrag.transport.dokument.BidragEnhet
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
@@ -39,7 +39,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         behandlingInfo =
                         BehandlingInfoDto(
                             soknadId = SOKNAD_ID,
-                            stonadType = StonadType.FORSKUDD,
+                            stonadType = Stønadstype.FORSKUDD,
                         ),
                         roller =
                         listOf(
@@ -202,7 +202,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         behandlingInfo =
                         BehandlingInfoDto(
                             soknadId = SOKNAD_ID,
-                            stonadType = StonadType.FORSKUDD,
+                            stonadType = Stønadstype.FORSKUDD,
                             vedtakId = 1,
                         ),
                         roller =
@@ -249,7 +249,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     enhet = BidragEnhet.ENHET_FARSKAP,
                     behandlingInfo = BehandlingInfoDto(
                         soknadId = SOKNAD_ID,
-                        stonadType = StonadType.FORSKUDD,
+                        stonadType = Stønadstype.FORSKUDD,
                         vedtakId = 1,
                     ),
                     roller = listOf(

@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.dto.beregning
 
 import no.nav.bidrag.behandling.dto.behandling.ResultatPeriode
-import no.nav.bidrag.transport.beregning.felles.Grunnlag
+import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
 
 data class ForskuddBeregningRespons(
     val resultat: List<ForskuddBeregningPerBarn>?,

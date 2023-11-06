@@ -1,9 +1,9 @@
 package no.nav.bidrag.behandling.dto.forsendelse
 
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
-import no.nav.bidrag.domain.enums.EngangsbelopType
-import no.nav.bidrag.domain.enums.StonadType
-import no.nav.bidrag.domain.enums.VedtakType
+import no.nav.bidrag.domene.enums.Engangsbeløptype
+import no.nav.bidrag.domene.enums.Stønadstype
+import no.nav.bidrag.domene.enums.SøktAvType
+import no.nav.bidrag.domene.enums.Vedtakstype
 
 data class BehandlingInfoDto(
     val vedtakId: Long? = null,
@@ -11,19 +11,21 @@ data class BehandlingInfoDto(
     val soknadId: Long,
     val erFattetBeregnet: Boolean? = null,
     val erVedtakIkkeTilbakekreving: Boolean = false,
-    val stonadType: StonadType? = null,
-    val engangsBelopType: EngangsbelopType? = null,
+    val stonadType: Stønadstype? = null,
+    val engangsBelopType: Engangsbeløptype? = null,
     val behandlingType: String? = null,
     val soknadType: String? = null,
-    val soknadFra: SoknadFraType? = null,
-    val vedtakType: VedtakType? = null,
+    val soknadFra: SøktAvType? = null,
+    val vedtakType: Vedtakstype? = null,
     val barnIBehandling: List<String> = emptyList(),
 ) {
-    fun erBehandlingType(stonadType: StonadType?) = this.stonadType == stonadType
+    fun erBehandlingType(stonadType: Stønadstype?) = this.stonadType == stonadType
 
-    fun erBehandlingType(engangsBelopType: EngangsbelopType?) = this.engangsBelopType == engangsBelopType
+    fun erBehandlingType(engangsBelopType: Engangsbeløptype?) =
+        this.engangsBelopType == engangsBelopType
 
-    fun erGebyr() = erBehandlingType(EngangsbelopType.GEBYR_SKYLDNER) || erBehandlingType(EngangsbelopType.GEBYR_MOTTAKER)
+    fun erGebyr() =
+        erBehandlingType(Engangsbeløptype.GEBYR_SKYLDNER) || erBehandlingType(Engangsbeløptype.GEBYR_MOTTAKER)
 
     fun erBehandlingType(behandlingType: String?) = this.behandlingType == behandlingType
 

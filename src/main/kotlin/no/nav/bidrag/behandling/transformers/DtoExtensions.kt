@@ -22,14 +22,19 @@ import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
-import no.nav.bidrag.domain.enums.Rolletype
-import no.nav.bidrag.domain.enums.VedtakType
-import no.nav.bidrag.domain.ident.PersonIdent
+import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.Vedtakstype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 
 fun Set<Sivilstand>.toSivilstandDto() =
     this.map {
-        SivilstandDto(it.id, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.sivilstandType)
+        SivilstandDto(
+            it.id,
+            it.datoFom?.toLocalDate(),
+            it.datoTom?.toLocalDate(),
+            it.sivilstandType,
+        )
     }.toSet()
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
@@ -39,32 +44,69 @@ fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
 
 fun Set<Barnetillegg>.toBarnetilleggDto() =
     this.map {
-        BarnetilleggDto(it.id, it.ident, it.barnetillegg, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate())
+        BarnetilleggDto(
+            it.id,
+            it.ident,
+            it.barnetillegg,
+            it.datoFom?.toLocalDate(),
+            it.datoTom?.toLocalDate(),
+        )
     }.toSet()
 
 fun Set<UtvidetbarnetrygdDto>.toUtvidetbarnetrygdDomain(behandling: Behandling) =
     this.map {
-        Utvidetbarnetrygd(behandling, it.deltBoSted, it.belop, it.datoFom?.toDate(), it.datoTom?.toDate())
+        Utvidetbarnetrygd(
+            behandling,
+            it.deltBoSted,
+            it.belop,
+            it.datoFom?.toDate(),
+            it.datoTom?.toDate(),
+        )
     }.toMutableSet()
 
 fun Set<Utvidetbarnetrygd>.toUtvidetbarnetrygdDto() =
     this.map {
-        UtvidetbarnetrygdDto(it.id, it.deltBoSted, it.belop, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate())
+        UtvidetbarnetrygdDto(
+            it.id,
+            it.deltBoSted,
+            it.belop,
+            it.datoFom?.toLocalDate(),
+            it.datoTom?.toLocalDate(),
+        )
     }.toSet()
 
 fun Set<BarnetilleggDto>.toBarnetilleggDomain(behandling: Behandling) =
     this.map {
-        Barnetillegg(behandling, it.ident, it.barnetillegg, it.datoFom?.toDate(), it.datoTom?.toDate(), it.id)
+        Barnetillegg(
+            behandling,
+            it.ident,
+            it.barnetillegg,
+            it.datoFom?.toDate(),
+            it.datoTom?.toDate(),
+            it.id,
+        )
     }.toMutableSet()
 
 fun Set<HusstandsBarnPeriode>.toHusstandsBarnPeriodeDto() =
     this.map {
-        HusstandsBarnPeriodeDto(it.id, it.datoFom?.toLocalDate(), it.datoTom?.toLocalDate(), it.boStatus, it.kilde)
+        HusstandsBarnPeriodeDto(
+            it.id,
+            it.datoFom?.toLocalDate(),
+            it.datoTom?.toLocalDate(),
+            it.boStatus,
+            it.kilde,
+        )
     }.toSet()
 
 fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: HusstandsBarn) =
     this.map {
-        HusstandsBarnPeriode(husstandsBarn, it.datoFom?.toDate(), it.datoTom?.toDate(), it.boStatus, it.kilde)
+        HusstandsBarnPeriode(
+            husstandsBarn,
+            it.datoFom?.toDate(),
+            it.datoTom?.toDate(),
+            it.boStatus,
+            it.kilde,
+        )
     }.toSet()
 
 fun Set<HusstandsBarn>.toHusstandsBarnDto() =
@@ -150,7 +192,7 @@ fun Opplysninger.toDto(): OpplysningerDto {
 fun Behandling.tilForsendelseRolleDto() =
     roller.map {
         ForsendelseRolleDto(
-            fødselsnummer = PersonIdent(it.ident),
+            fødselsnummer = Personident(it.ident),
             type = it.rolleType,
         )
     }
@@ -171,18 +213,18 @@ fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
         this.opprettetDato,
     )
 
-fun SoknadType.tilVedtakType(): VedtakType =
+fun SoknadType.tilVedtakType(): Vedtakstype =
     when (this) {
-        SoknadType.FASTSETTELSE -> VedtakType.FASTSETTELSE
-        SoknadType.REVURDERING -> VedtakType.REVURDERING
-        SoknadType.ALDERSJUSTERING -> VedtakType.ALDERSJUSTERING
-        SoknadType.ALDERSOPPHØR -> VedtakType.ALDERSOPPHØR
-        SoknadType.ENDRING -> VedtakType.ENDRING
-        SoknadType.ENDRING_MOTTAKER -> VedtakType.ENDRING_MOTTAKER
-        SoknadType.KLAGE -> VedtakType.KLAGE
-        SoknadType.OPPHØR -> VedtakType.OPPHØR
-        SoknadType.INDEKSREGULERING -> VedtakType.INDEKSREGULERING
-        SoknadType.INNKREVING -> VedtakType.INNKREVING
+        SoknadType.FASTSETTELSE -> Vedtakstype.FASTSETTELSE
+        SoknadType.REVURDERING -> Vedtakstype.REVURDERING
+        SoknadType.ALDERSJUSTERING -> Vedtakstype.ALDERSJUSTERING
+        SoknadType.ALDERSOPPHØR -> Vedtakstype.ALDERSOPPHØR
+        SoknadType.ENDRING -> Vedtakstype.ENDRING
+        SoknadType.ENDRING_MOTTAKER -> Vedtakstype.ENDRING_MOTTAKER
+        SoknadType.KLAGE -> Vedtakstype.KLAGE
+        SoknadType.OPPHØR -> Vedtakstype.OPPHØR
+        SoknadType.INDEKSREGULERING -> Vedtakstype.INDEKSREGULERING
+        SoknadType.INNKREVING -> Vedtakstype.INNKREVING
     }
 
 fun Rolletype.toRolleTypeDto(): RolleTypeDto =
