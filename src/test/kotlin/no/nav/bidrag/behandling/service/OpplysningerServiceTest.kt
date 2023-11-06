@@ -4,13 +4,13 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
-import no.nav.bidrag.domain.enums.EngangsbelopType
+import no.nav.bidrag.domene.enums.Engangsbeløptype
+import no.nav.bidrag.domene.enums.SøktAvType
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import java.util.Date
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -41,15 +41,20 @@ class OpplysningerServiceTest : TestContainerRunner() {
                     123L,
                     null,
                     "ENH1",
-                    SoknadFraType.VERGE,
-                    engangsbelopType = EngangsbelopType.ETTERGIVELSE,
+                    SøktAvType.VERGE,
+                    engangsbelopType = Engangsbeløptype.ETTERGIVELSE,
                     stonadType = null,
                 ),
             )
         val opp1 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
         val opp2 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
         val opp4 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
-        val opp3 = opplysningerService.opprett(b.id!!, OpplysningerType.INNTEKTSOPPLYSNINGER, "data", Date(1))
+        val opp3 = opplysningerService.opprett(
+            b.id!!,
+            OpplysningerType.INNTEKTSOPPLYSNINGER,
+            "data",
+            Date(1),
+        )
 
         val option = opplysningerService.hentSistAktiv(b.id!!, OpplysningerType.BOFORHOLD)
 

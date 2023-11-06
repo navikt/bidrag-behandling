@@ -11,16 +11,15 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.SøktAvType
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.math.BigDecimal
-import java.util.Calendar
-import java.util.Date
+import java.util.*
 import kotlin.test.Ignore
 
 class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
@@ -51,7 +50,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 123213L,
                 123213L,
                 "ENHE",
-                SoknadFraType.BIDRAGSMOTTAKER,
+                SøktAvType.BIDRAGSMOTTAKER,
                 null,
                 null,
                 null,

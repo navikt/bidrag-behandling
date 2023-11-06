@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
@@ -16,15 +15,20 @@ import no.nav.bidrag.behandling.utils.ROLLE_BM
 import no.nav.bidrag.behandling.utils.ROLLE_BP
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
-import no.nav.bidrag.domain.enums.BehandlingsrefKilde
-import no.nav.bidrag.domain.enums.Innkreving
-import no.nav.bidrag.domain.enums.Rolletype
-import no.nav.bidrag.domain.enums.StonadType
-import no.nav.bidrag.domain.enums.VedtakKilde
-import no.nav.bidrag.domain.enums.VedtakType
+import no.nav.bidrag.domene.enums.BehandlingsrefKilde
+import no.nav.bidrag.domene.enums.Beslutningstype
+import no.nav.bidrag.domene.enums.Innkrevingstype
+import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.Stønadstype
+import no.nav.bidrag.domene.enums.SøktAvType
+import no.nav.bidrag.domene.enums.Vedtakskilde
+import no.nav.bidrag.domene.enums.Vedtakstype
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.streng.Enhetsnummer
+import no.nav.bidrag.domene.streng.Saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.Behandlingsreferanse
 import no.nav.bidrag.transport.behandling.vedtak.Sporingsdata
-import no.nav.bidrag.transport.behandling.vedtak.Stonadsendring
+import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.junit.jupiter.api.BeforeEach
@@ -86,7 +90,7 @@ class VedtakHendelseTest : CommonTestRunner() {
         behandlingRequest.roller = opprettBehandlingRoller(behandlingRequest)
         val behandling = behandlingRepository.save(behandlingRequest)
         val vedtakHendelse =
-            opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = StonadType.FORSKUDD)
+            opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = Stønadstype.FORSKUDD)
         vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
         oppdatertBehandling.vedtakId shouldBe vedtakId
@@ -112,9 +116,9 @@ class VedtakHendelseTest : CommonTestRunner() {
         behandlingType = BehandlingType.BIDRAG18AAR,
         engangsbelopType = null,
         mottatDato = Date(),
-        soknadFra = SoknadFraType.BIDRAGSMOTTAKER,
+        soknadFra = SøktAvType.BIDRAGSMOTTAKER,
         soknadType = SoknadType.FASTSETTELSE,
-        stonadType = StonadType.BIDRAG18AAR,
+        stonadType = Stønadstype.BIDRAG18AAR,
     )
 
     private fun opprettBehandlingRoller(behandling: Behandling) = mutableSetOf(
@@ -144,35 +148,36 @@ class VedtakHendelseTest : CommonTestRunner() {
     private fun opprettVedtakhendelse(
         vedtakId: Int,
         behandlingId: Long,
-        stonadType: StonadType = StonadType.BIDRAG18AAR,
+        stonadType: Stønadstype = Stønadstype.BIDRAG18AAR,
     ): VedtakHendelse {
         return VedtakHendelse(
-            type = VedtakType.FASTSETTELSE,
-            stonadsendringListe = listOf(
-                Stonadsendring(
+            type = Vedtakstype.FASTSETTELSE,
+            stønadsendringListe = listOf(
+                Stønadsendring(
                     type = stonadType,
                     eksternReferanse = "",
-                    endring = true,
-                    indeksreguleringAar = "2024",
-                    innkreving = Innkreving.JA,
-                    kravhaverId = "",
-                    mottakerId = "",
-                    omgjorVedtakId = 1,
+                    beslutning = Beslutningstype.ENDRING,
+                    førsteIndeksreguleringsår = 2024,
+                    innkreving = Innkrevingstype.MED_INNKREVING,
+                    kravhaver = Personident(""),
+                    mottaker = Personident(""),
+                    omgjørVedtakId = 1,
                     periodeListe = emptyList(),
-                    sakId = SAKSNUMMER,
-                    skyldnerId = "",
+                    sak = Saksnummer(SAKSNUMMER),
+                    skyldner = Personident(""),
                 ),
             ),
-            engangsbelopListe = emptyList(),
-            enhetId = "4806",
+            engangsbeløpListe = emptyList(),
+            enhetsnummer = Enhetsnummer("4806"),
             id = vedtakId,
-            kilde = VedtakKilde.MANUELT,
+            kilde = Vedtakskilde.MANUELT,
             opprettetTidspunkt = LocalDateTime.now(),
             opprettetAvNavn = "",
             opprettetAv = "",
             sporingsdata = Sporingsdata("sporing"),
-            utsattTilDato = null,
-            vedtakTidspunkt = LocalDateTime.now(),
+            innkrevingUtsattTilDato = null,
+            vedtakstidspunkt = LocalDateTime.now(),
+            fastsattILand = null,
             behandlingsreferanseListe = listOf(
                 Behandlingsreferanse(
                     BehandlingsrefKilde.BEHANDLING_ID.name,

@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -21,7 +20,8 @@ import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
-import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.SøktAvType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -32,8 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
-import java.util.Calendar
-import java.util.Date
+import java.util.*
 
 class BehandlingServiceTest : TestContainerRunner() {
     @Autowired
@@ -65,7 +64,8 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertEquals(BehandlingType.FORSKUDD, actualBehandling.behandlingType)
             assertEquals(3, actualBehandling.roller.size)
 
-            val actualBehandlingFetched = behandlingService.hentBehandlingById(actualBehandling.id!!)
+            val actualBehandlingFetched =
+                behandlingService.hentBehandlingById(actualBehandling.id!!)
 
             assertEquals(BehandlingType.FORSKUDD, actualBehandlingFetched.behandlingType)
             assertEquals(3, actualBehandlingFetched.roller.size)
@@ -76,17 +76,32 @@ class BehandlingServiceTest : TestContainerRunner() {
         fun `skal opprette en behandling med inntekter`() {
             val behandling = prepareBehandling()
 
-            behandling.inntekter = mutableSetOf(Inntekt("", BigDecimal.valueOf(555.55), null, null, "ident", true, true, behandling = behandling))
+            behandling.inntekter = mutableSetOf(
+                Inntekt(
+                    "",
+                    BigDecimal.valueOf(555.55),
+                    null,
+                    null,
+                    "ident",
+                    true,
+                    true,
+                    behandling = behandling,
+                ),
+            )
 
             val actualBehandling = behandlingService.createBehandling(behandling)
 
             assertNotNull(actualBehandling.id)
 
-            val actualBehandlingFetched = behandlingService.hentBehandlingById(actualBehandling.id!!)
+            val actualBehandlingFetched =
+                behandlingService.hentBehandlingById(actualBehandling.id!!)
 
             assertEquals(BehandlingType.FORSKUDD, actualBehandlingFetched.behandlingType)
             assertEquals(1, actualBehandlingFetched.inntekter.size)
-            assertEquals(BigDecimal.valueOf(555.55), actualBehandlingFetched.inntekter.iterator().next().belop)
+            assertEquals(
+                BigDecimal.valueOf(555.55),
+                actualBehandlingFetched.inntekter.iterator().next().belop,
+            )
         }
 
         @Test
@@ -154,7 +169,10 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(ForskuddAarsakType.BF, updatedBehandling.aarsak)
             assertEquals(NOTAT, updatedBehandling.virkningsTidspunktBegrunnelseKunINotat)
-            assertEquals(MED_I_VEDTAK, updatedBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat)
+            assertEquals(
+                MED_I_VEDTAK,
+                updatedBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
+            )
         }
     }
 
@@ -219,7 +237,10 @@ class BehandlingServiceTest : TestContainerRunner() {
                 ),
             )
 
-            assertEquals(2, behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolleType == Rolletype.BARN }.size)
+            assertEquals(
+                2,
+                behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolleType == Rolletype.BARN }.size,
+            )
         }
     }
 
@@ -259,7 +280,10 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(3, hentBehandlingById.roller.size)
             assertEquals(NOTAT, oppdatertBehandling.virkningsTidspunktBegrunnelseKunINotat)
-            assertEquals(MED_I_VEDTAK, oppdatertBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat)
+            assertEquals(
+                MED_I_VEDTAK,
+                oppdatertBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
+            )
         }
 
         @Test
@@ -388,7 +412,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 null,
             )
 
-            val expectedBehandlingWithoutInntekter = behandlingService.hentBehandlingById(actualBehandling.id!!)
+            val expectedBehandlingWithoutInntekter =
+                behandlingService.hentBehandlingById(actualBehandling.id!!)
 
             assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
             assertEquals(1, expectedBehandlingWithoutInntekter.barnetillegg.size)
@@ -410,7 +435,8 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertEquals(2, updatedBehandling.roller.size)
 
         val realCount =
-            entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id!!).getSingleResult()
+            entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id!!)
+                .getSingleResult()
 
         val deletedCount =
             entityManager.createNativeQuery(
@@ -434,7 +460,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     123213L,
                     null,
                     "1234",
-                    SoknadFraType.BIDRAGSMOTTAKER,
+                    SøktAvType.BIDRAGSMOTTAKER,
                     null,
                     null,
                 )

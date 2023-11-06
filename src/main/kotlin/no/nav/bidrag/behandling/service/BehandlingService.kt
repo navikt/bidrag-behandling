@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilVedtakType
 import no.nav.bidrag.behandling.transformers.toRolle
-import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.domene.enums.Rolletype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -74,8 +74,10 @@ class BehandlingService(
             behandlingRepository.findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
                 .let {
-                    it.virkningsTidspunktBegrunnelseMedIVedtakNotat = virkningsTidspunktBegrunnelseMedIVedtakNotat
-                    it.virkningsTidspunktBegrunnelseKunINotat = virkningsTidspunktBegrunnelseKunINotat
+                    it.virkningsTidspunktBegrunnelseMedIVedtakNotat =
+                        virkningsTidspunktBegrunnelseMedIVedtakNotat
+                    it.virkningsTidspunktBegrunnelseKunINotat =
+                        virkningsTidspunktBegrunnelseKunINotat
                     it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat
                     it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
                     it.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
@@ -87,7 +89,8 @@ class BehandlingService(
         )
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
-        behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
+        behandlingRepository.findBehandlingById(behandlingId)
+            .orElseThrow { behandlingNotFoundException(behandlingId) }
 
     fun hentBehandlinger(): List<Behandling> = behandlingRepository.hentBehandlinger()
 

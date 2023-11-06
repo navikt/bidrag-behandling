@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.dto.behandling.ForskuddDto
 import no.nav.bidrag.commons.web.client.AbstractRestClient
-import no.nav.bidrag.transport.beregning.felles.BeregnGrunnlag
+import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -16,7 +16,9 @@ class BidragBeregnForskuddConsumer(
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-beregn-forskudd-rest") {
     private val beregnForskuddUri =
-        UriComponentsBuilder.fromUri(bidragBeregnForskuddUrl).pathSegment("beregn").pathSegment("forskudd").build().toUri()
+        UriComponentsBuilder.fromUri(bidragBeregnForskuddUrl).pathSegment("beregn")
+            .pathSegment("forskudd").build().toUri()
 
-    fun beregnForskudd(payload: BeregnGrunnlag): ForskuddDto = postForNonNullEntity(beregnForskuddUri, payload)
+    fun beregnForskudd(payload: BeregnGrunnlag): ForskuddDto =
+        postForNonNullEntity(beregnForskuddUri, payload)
 }

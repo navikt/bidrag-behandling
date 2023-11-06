@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.transformers.toLocalDate
-import no.nav.bidrag.domain.enums.Rolletype
+import no.nav.bidrag.domene.enums.Rolletype
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Date
@@ -67,7 +67,8 @@ data class BehandlingBeregningModel private constructor(
                     {
                         mapOrAccumulate(sivilstand) {
                             SivilstandModel(
-                                it.datoFom?.toLocalDate() ?: raise("Sivilstand Dato Fra må fylles ut"),
+                                it.datoFom?.toLocalDate()
+                                    ?: raise("Sivilstand Dato Fra må fylles ut"),
                                 it.datoTom?.toLocalDate(),
                                 it.sivilstandType,
                             )
@@ -76,10 +77,12 @@ data class BehandlingBeregningModel private constructor(
                     {
                         mapOrAccumulate(inntekter.filter { it.taMed }) {
                             InntektModel(
-                                inntektType = it.inntektType ?: raise("InntektType kan ikke være null"),
+                                inntektType = it.inntektType
+                                    ?: raise("InntektType kan ikke være null"),
                                 belop = it.belop,
                                 rolle = roller.rolleType(it.ident),
-                                datoFom = it.datoFom?.toLocalDate() ?: raise("Inntekts Dato Fra må fylles ut"),
+                                datoFom = it.datoFom?.toLocalDate()
+                                    ?: raise("Inntekts Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                             )
                         }
@@ -87,7 +90,8 @@ data class BehandlingBeregningModel private constructor(
                     {
                         mapOrAccumulate(barnetillegg) {
                             BarnetilleggModel(
-                                datoFom = it.datoFom?.toLocalDate() ?: raise("Barnetillegg Dato Fra må fylles ut"),
+                                datoFom = it.datoFom?.toLocalDate()
+                                    ?: raise("Barnetillegg Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                                 belop = it.barnetillegg,
                             )
@@ -96,7 +100,8 @@ data class BehandlingBeregningModel private constructor(
                     {
                         mapOrAccumulate(utvidetbarnetrygd) {
                             UtvidetbarnetrygdModel(
-                                datoFom = it.datoFom?.toLocalDate() ?: raise("Utvidetbarnetrygd Dato Fra må fylles ut"),
+                                datoFom = it.datoFom?.toLocalDate()
+                                    ?: raise("Utvidetbarnetrygd Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                                 belop = it.belop,
                             )
@@ -108,7 +113,8 @@ data class BehandlingBeregningModel private constructor(
                                 .flatMap { it.perioder },
                         ) {
                             HusstandsBarnPeriodeModel(
-                                datoFom = it.datoFom?.toLocalDate() ?: raise("HusstandsBarnPeriode Dato Fra må fylles ut"),
+                                datoFom = it.datoFom?.toLocalDate()
+                                    ?: raise("HusstandsBarnPeriode Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                                 ident = it.husstandsBarn.ident,
                                 boStatus = it.boStatus,

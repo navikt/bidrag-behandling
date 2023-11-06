@@ -10,9 +10,10 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
-import no.nav.bidrag.domain.enums.EngangsbelopType
-import no.nav.bidrag.domain.enums.Rolletype
-import no.nav.bidrag.domain.enums.StonadType
+import no.nav.bidrag.domene.enums.Engangsbeløptype
+import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.Stønadstype
+import no.nav.bidrag.domene.enums.SøktAvType
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import java.util.Date
@@ -24,7 +25,7 @@ class Behandling(
     @Enumerated(EnumType.STRING)
     val behandlingType: BehandlingType,
     @Enumerated(EnumType.STRING)
-    val soknadType: SoknadType, // TODO Endre til VedtakType
+    val soknadType: SoknadType, // TODO Endre til Vedtakstype
     val datoFom: Date,
     val datoTom: Date,
     val mottatDato: Date,
@@ -33,11 +34,11 @@ class Behandling(
     val soknadRefId: Long? = null,
     val behandlerEnhet: String,
     @Enumerated(EnumType.STRING)
-    val soknadFra: SoknadFraType,
+    val soknadFra: SøktAvType,
     @Enumerated(EnumType.STRING)
-    var stonadType: StonadType?,
+    var stonadType: Stønadstype?,
     @Enumerated(EnumType.STRING)
-    var engangsbelopType: EngangsbelopType?,
+    var engangsbelopType: Engangsbeløptype?,
     var vedtakId: Long? = null,
     var virkningsDato: Date? = null,
     @Enumerated(EnumType.STRING)
@@ -58,17 +59,47 @@ class Behandling(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     var grunnlagspakkeId: Long? = null,
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
     var roller: MutableSet<Rolle> = mutableSetOf(),
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
     var husstandsBarn: MutableSet<HusstandsBarn> = mutableSetOf(),
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
     var inntekter: MutableSet<Inntekt> = mutableSetOf(),
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
     var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
     var barnetillegg: MutableSet<Barnetillegg> = mutableSetOf(),
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "behandling", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
     var utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd> = mutableSetOf(),
     var deleted: Boolean = false,
 ) {

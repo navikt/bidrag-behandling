@@ -4,16 +4,16 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
-import no.nav.bidrag.behandling.database.datamodell.SoknadFraType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
+import no.nav.bidrag.domene.enums.SøktAvType
 import java.time.LocalDate
 
 // TODO: Flytt dette til bidrag-transport
 data class BehandlingDto(
     val id: Long,
-    val behandlingType: BehandlingType, // Union av StonadType og EngangsbelopType
-    val soknadType: SoknadType, // TODO Bruk VedtakType istedenfor
+    val behandlingType: BehandlingType, // Union av Stønadstype og Engangsbeløptype
+    val soknadType: SoknadType, // TODO Bruk Vedtakstype istedenfor
     val erVedtakFattet: Boolean,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -24,7 +24,7 @@ data class BehandlingDto(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val mottatDato: LocalDate,
-    val soknadFraType: SoknadFraType,
+    val soknadFraType: SøktAvType,
     val saksnummer: String,
     val soknadId: Long,
     val behandlerEnhet: String,

@@ -22,9 +22,9 @@ import no.nav.bidrag.behandling.utils.ROLLE_BP
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
-import no.nav.bidrag.domain.enums.EngangsbelopType
-import no.nav.bidrag.domain.enums.StonadType
-import no.nav.bidrag.domain.enums.VedtakType
+import no.nav.bidrag.domene.enums.Engangsbeløptype
+import no.nav.bidrag.domene.enums.Stønadstype
+import no.nav.bidrag.domene.enums.Vedtakstype
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -60,8 +60,8 @@ class ForsendelseServiceTest {
             enhet = ENHET_FARSKAP,
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.FORSKUDD,
-                vedtakType = VedtakType.KLAGE,
+                stonadType = Stønadstype.FORSKUDD,
+                vedtakType = Vedtakstype.KLAGE,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -89,8 +89,8 @@ class ForsendelseServiceTest {
             enhet = ENHET_FARSKAP,
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                engangsBelopType = EngangsbelopType.GEBYR_MOTTAKER,
-                vedtakType = VedtakType.ENDRING,
+                engangsBelopType = Engangsbeløptype.GEBYR_MOTTAKER,
+                vedtakType = Vedtakstype.ENDRING,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -116,8 +116,8 @@ class ForsendelseServiceTest {
             enhet = ENHET_FARSKAP,
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                engangsBelopType = EngangsbelopType.GEBYR_SKYLDNER,
-                vedtakType = VedtakType.ENDRING,
+                engangsBelopType = Engangsbeløptype.GEBYR_SKYLDNER,
+                vedtakType = Vedtakstype.ENDRING,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -143,8 +143,8 @@ class ForsendelseServiceTest {
             enhet = ENHET_FARSKAP,
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.BIDRAG,
-                vedtakType = VedtakType.FASTSETTELSE,
+                stonadType = Stønadstype.BIDRAG,
+                vedtakType = Vedtakstype.FASTSETTELSE,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -169,8 +169,8 @@ class ForsendelseServiceTest {
             enhet = "4806",
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.FORSKUDD,
-                vedtakType = VedtakType.KLAGE,
+                stonadType = Stønadstype.FORSKUDD,
+                vedtakType = Vedtakstype.KLAGE,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -189,7 +189,7 @@ class ForsendelseServiceTest {
 
                     it.behandlingInfo shouldNotBe null
                     it.behandlingInfo!!.soknadId shouldBe SOKNAD_ID
-                    it.behandlingInfo!!.stonadType shouldBe StonadType.FORSKUDD
+                    it.behandlingInfo!!.stonadType shouldBe Stønadstype.FORSKUDD
 
                     it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
                     it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
@@ -205,8 +205,8 @@ class ForsendelseServiceTest {
             enhet = "4806",
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.BIDRAG,
-                vedtakType = VedtakType.FASTSETTELSE,
+                stonadType = Stønadstype.BIDRAG,
+                vedtakType = Vedtakstype.FASTSETTELSE,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -225,7 +225,7 @@ class ForsendelseServiceTest {
 
                     it.behandlingInfo shouldNotBe null
                     it.behandlingInfo!!.soknadId shouldBe SOKNAD_ID
-                    it.behandlingInfo!!.stonadType shouldBe StonadType.BIDRAG
+                    it.behandlingInfo!!.stonadType shouldBe Stønadstype.BIDRAG
                 },
             )
         }
@@ -253,8 +253,8 @@ class ForsendelseServiceTest {
             enhet = "4806",
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.BIDRAG18AAR,
-                vedtakType = VedtakType.FASTSETTELSE,
+                stonadType = Stønadstype.BIDRAG18AAR,
+                vedtakType = Vedtakstype.FASTSETTELSE,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -274,7 +274,7 @@ class ForsendelseServiceTest {
 
                     it.behandlingInfo shouldNotBe null
                     it.behandlingInfo!!.soknadId shouldBe SOKNAD_ID
-                    it.behandlingInfo!!.stonadType shouldBe StonadType.BIDRAG18AAR
+                    it.behandlingInfo!!.stonadType shouldBe Stønadstype.BIDRAG18AAR
                 },
             )
         }
@@ -310,8 +310,8 @@ class ForsendelseServiceTest {
             enhet = ENHET_FARSKAP,
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.FORSKUDD,
-                vedtakType = VedtakType.FASTSETTELSE,
+                stonadType = Stønadstype.FORSKUDD,
+                vedtakType = Vedtakstype.FASTSETTELSE,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -335,8 +335,8 @@ class ForsendelseServiceTest {
             enhet = ENHET_FARSKAP,
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.FORSKUDD,
-                vedtakType = VedtakType.ENDRING,
+                stonadType = Stønadstype.FORSKUDD,
+                vedtakType = Vedtakstype.ENDRING,
             ),
             roller = listOf(
                 ROLLE_BM,
@@ -364,8 +364,8 @@ class ForsendelseServiceTest {
             enhet = "4806",
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.BIDRAG,
-                vedtakType = VedtakType.FASTSETTELSE,
+                stonadType = Stønadstype.BIDRAG,
+                vedtakType = Vedtakstype.FASTSETTELSE,
                 erFattetBeregnet = true,
             ),
             roller = listOf(
@@ -386,7 +386,7 @@ class ForsendelseServiceTest {
 
                     it.behandlingInfo shouldNotBe null
                     it.behandlingInfo!!.soknadId shouldBe SOKNAD_ID
-                    it.behandlingInfo!!.stonadType shouldBe StonadType.BIDRAG
+                    it.behandlingInfo!!.stonadType shouldBe Stønadstype.BIDRAG
                 },
             )
         }
@@ -430,8 +430,8 @@ class ForsendelseServiceTest {
             behandlingStatus = BehandlingStatus.FEILREGISTRERT,
             behandlingInfo = BehandlingInfoDto(
                 soknadId = SOKNAD_ID,
-                stonadType = StonadType.BIDRAG,
-                vedtakType = VedtakType.FASTSETTELSE,
+                stonadType = Stønadstype.BIDRAG,
+                vedtakType = Vedtakstype.FASTSETTELSE,
                 erFattetBeregnet = true,
             ),
             roller = listOf(
