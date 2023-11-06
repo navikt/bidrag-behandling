@@ -15,7 +15,7 @@ class TestContainerRunner : SpringTestRunner() {
     companion object {
         @Container
         protected val postgreSqlDb =
-            PostgreSQLContainer("postgres:14.5").apply {
+            PostgreSQLContainer("postgres:15.4").apply {
                 withDatabaseName("bidrag-behandling")
                 withUsername("cloudsqliamuser")
                 withPassword("admin")

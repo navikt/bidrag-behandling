@@ -31,7 +31,7 @@ azure_access_inbound:
     cluster: dev-gcp
 database:
   dbname: bidrag-behandling-feature
-  autoResize: false
+  autoResize: true
   tier: db-f1-micro
 outbound-access-apps:
   - bidrag-beregn-forskudd-rest-feature
