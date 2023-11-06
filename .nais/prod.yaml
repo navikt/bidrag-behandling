@@ -30,7 +30,7 @@ azure_access_inbound:
     cluster: prod-gcp
 database:
   dbname: bidrag-behandling
-  autoResize: false
+  autoResize: true
   tier: db-custom-1-3840
 outbound-access-apps:
   - bidrag-beregn-forskudd-rest
