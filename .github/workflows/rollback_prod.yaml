@@ -16,3 +16,4 @@ jobs:
     secrets: inherit
     with:
       deploy_tag: ${{inputs.deploy_tag}}
+      maven_options: -B -q -fae -Pit

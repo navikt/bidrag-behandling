@@ -14,5 +14,6 @@ jobs:
     secrets: inherit
     with:
       nais_variabler_filnavn: main.yaml
+      maven_options: -B -q -fae -Pit
 
 

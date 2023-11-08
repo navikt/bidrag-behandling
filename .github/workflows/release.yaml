@@ -12,3 +12,5 @@ jobs:
       id-token: "write"
     uses: navikt/bidrag-workflow/.github/workflows/deploy_prod.yaml@main
     secrets: inherit
+    with:
+      maven_options: -B -q -fae -Pit
