@@ -125,7 +125,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         null,
                         Calendar.getInstance().time.toLocalDate(),
                         Calendar.getInstance().time.toLocalDate(),
-                        SivilstandType.ENKE_ELLER_ENKEMANN,
+                        SivilstandType.BOR_ALENE_MED_BARN,
                     ),
                 )
 
