@@ -11,12 +11,10 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.dto.HentPersonResponse
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.domene.enums.Grunnlagstype
-import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Fødselsdato
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
-import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -100,9 +98,9 @@ class StubUtils {
                             toJsonString(
                                 HentPersonResponse(
                                     personident,
-                                    fødselsdato = Fødselsdato(LocalDate.now().minusMonths(500)).toString()
-                                )
-                            )
+                                    fødselsdato = Fødselsdato(LocalDate.now().minusMonths(500)).toString(),
+                                ),
+                            ),
                         ),
                 ),
         )
@@ -116,10 +114,21 @@ class StubUtils {
                         .withStatus(status.value())
                         .withBody(
                             toJsonString(
-                                BeregnGrunnlag(periode = ÅrMånedsperiode(LocalDate.now().minusMonths(6), LocalDate.now().plusMonths(6)), søknadsbarnReferanse = "123", grunnlagListe = listOf(
-                                    Grunnlag(referanse="abra_cadabra", type= Grunnlagstype.BARNETILLEGG, grunnlagsreferanseListe = listOf("123"))
-                                ))
-                            )
+                                BeregnGrunnlag(
+                                    periode = ÅrMånedsperiode(
+                                        LocalDate.now().minusMonths(6),
+                                        LocalDate.now().plusMonths(6),
+                                    ),
+                                    søknadsbarnReferanse = "123",
+                                    grunnlagListe = listOf(
+                                        Grunnlag(
+                                            referanse = "abra_cadabra",
+                                            type = Grunnlagstype.BARNETILLEGG,
+                                            grunnlagsreferanseListe = listOf("123"),
+                                        ),
+                                    ),
+                                ),
+                            ),
                         ),
                 ),
         )

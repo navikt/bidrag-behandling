@@ -6,10 +6,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.InntektPostDomain
-import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
@@ -17,7 +15,6 @@ import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.utils.oppretteBehandling
-import no.nav.bidrag.domene.enums.SøktAvType
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.hibernate.engine.spi.SessionImplementor
 import org.hibernate.resource.transaction.spi.TransactionStatus
@@ -32,7 +29,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
