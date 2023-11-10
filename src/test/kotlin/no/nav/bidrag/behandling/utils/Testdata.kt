@@ -4,9 +4,18 @@ import no.nav.bidrag.behandling.consumer.BehandlingInfoResponseDto
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingType
+import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.SøktAvType
 import no.nav.bidrag.domene.ident.Personident
+import java.time.LocalDate
+import java.time.YearMonth
+import java.util.*
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
@@ -27,3 +36,45 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
         forsendelseType = ForsendelseTypeTo.UTGÅENDE,
         status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
     )
+
+fun oppretteBehandling(): Behandling {
+    return Behandling(
+        BehandlingType.FORSKUDD,
+        SoknadType.FASTSETTELSE,
+        datoFom = YearMonth.now().atDay(1).minusMonths(16).toDate(),
+        datoTom = YearMonth.now().plusMonths(10).atEndOfMonth().toDate(),
+        mottatDato = LocalDate.now().toDate(),
+        "123",
+        123,
+        null,
+        "ENH",
+        SøktAvType.BIDRAGSMOTTAKER,
+        null,
+        null,
+        virkningsDato = LocalDate.now().toDate(),
+    )
+}
+
+fun oppretteBehandlingRoller(behandling: Behandling) = mutableSetOf(
+    Rolle(
+        ident = ROLLE_BM.fødselsnummer?.verdi!!,
+        rolleType = Rolletype.BIDRAGSMOTTAKER,
+        behandling = behandling,
+        fodtDato = null,
+        opprettetDato = null,
+    ),
+    Rolle(
+        ident = ROLLE_BP.fødselsnummer?.verdi!!,
+        rolleType = Rolletype.BIDRAGSPLIKTIG,
+        behandling = behandling,
+        fodtDato = null,
+        opprettetDato = null,
+    ),
+    Rolle(
+        ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
+        rolleType = Rolletype.BARN,
+        behandling = behandling,
+        fodtDato = null,
+        opprettetDato = null,
+    ),
+)

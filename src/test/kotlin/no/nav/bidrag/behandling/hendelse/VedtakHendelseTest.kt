@@ -5,7 +5,6 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingType
-import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
@@ -15,10 +14,10 @@ import no.nav.bidrag.behandling.utils.ROLLE_BM
 import no.nav.bidrag.behandling.utils.ROLLE_BP
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
+import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
 import no.nav.bidrag.domene.enums.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.Beslutningstype
 import no.nav.bidrag.domene.enums.Innkrevingstype
-import no.nav.bidrag.domene.enums.Rolletype
 import no.nav.bidrag.domene.enums.Stønadstype
 import no.nav.bidrag.domene.enums.SøktAvType
 import no.nav.bidrag.domene.enums.Vedtakskilde
@@ -58,7 +57,7 @@ class VedtakHendelseTest : CommonTestRunner() {
         stubUtils.stubOpprettForsendelse()
         val vedtakId = 123123
         val behandlingRequest = opprettBehandling()
-        behandlingRequest.roller = opprettBehandlingRoller(behandlingRequest)
+        behandlingRequest.roller = oppretteBehandlingRoller(behandlingRequest)
         val behandling = behandlingRepository.save(behandlingRequest)
         vedtakHendelseListener.prossesserVedtakHendelse(
             opprettHendelseRecord(
@@ -87,7 +86,7 @@ class VedtakHendelseTest : CommonTestRunner() {
         stubUtils.stubOpprettForsendelse()
         val vedtakId = 123123
         val behandlingRequest = opprettBehandling()
-        behandlingRequest.roller = opprettBehandlingRoller(behandlingRequest)
+        behandlingRequest.roller = oppretteBehandlingRoller(behandlingRequest)
         val behandling = behandlingRepository.save(behandlingRequest)
         val vedtakHendelse =
             opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = Stønadstype.FORSKUDD)
@@ -119,30 +118,6 @@ class VedtakHendelseTest : CommonTestRunner() {
         soknadFra = SøktAvType.BIDRAGSMOTTAKER,
         soknadType = SoknadType.FASTSETTELSE,
         stonadType = Stønadstype.BIDRAG18AAR,
-    )
-
-    private fun opprettBehandlingRoller(behandling: Behandling) = mutableSetOf(
-        Rolle(
-            ident = ROLLE_BM.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BIDRAGSMOTTAKER,
-            behandling = behandling,
-            fodtDato = null,
-            opprettetDato = null,
-        ),
-        Rolle(
-            ident = ROLLE_BP.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BIDRAGSPLIKTIG,
-            behandling = behandling,
-            fodtDato = null,
-            opprettetDato = null,
-        ),
-        Rolle(
-            ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BARN,
-            behandling = behandling,
-            fodtDato = null,
-            opprettetDato = null,
-        ),
     )
 
     private fun opprettVedtakhendelse(

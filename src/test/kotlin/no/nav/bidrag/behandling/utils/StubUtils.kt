@@ -8,10 +8,19 @@ import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
+import no.nav.bidrag.behandling.dto.HentPersonResponse
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.domene.enums.Grunnlagstype
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Fødselsdato
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
+import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
+import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import java.time.LocalDate
 import java.util.*
 
 class StubUtils {
@@ -77,6 +86,41 @@ class StubUtils {
                     aClosedJsonResponse()
                         .withStatus(status.value())
                         .withBody(toJsonString(OpprettForsendelseRespons("123213"))),
+                ),
+        )
+    }
+
+    fun stubHentePersoninfo(status: HttpStatus = HttpStatus.OK, personident: String) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/bidrag-person/informasjon"))
+                .willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(status.value())
+                        .withBody(
+                            toJsonString(
+                                HentPersonResponse(
+                                    personident,
+                                    fødselsdato = Fødselsdato(LocalDate.now().minusMonths(500)).toString()
+                                )
+                            )
+                        ),
+                ),
+        )
+    }
+
+    fun stubBeregneForskudd(status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/beregn/forskudd"))
+                .willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(status.value())
+                        .withBody(
+                            toJsonString(
+                                BeregnGrunnlag(periode = ÅrMånedsperiode(LocalDate.now().minusMonths(6), LocalDate.now().plusMonths(6)), søknadsbarnReferanse = "123", grunnlagListe = listOf(
+                                    Grunnlag(referanse="abra_cadabra", type= Grunnlagstype.BARNETILLEGG, grunnlagsreferanseListe = listOf("123"))
+                                ))
+                            )
+                        ),
                 ),
         )
     }

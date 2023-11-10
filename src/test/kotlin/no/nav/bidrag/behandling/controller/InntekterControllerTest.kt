@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toDate
+import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.domene.enums.SøktAvType
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.hibernate.engine.spi.SessionImplementor
@@ -266,20 +267,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
     private fun behandling(): Behandling {
         val behandling: Behandling = behandlingRepository.save(
-            Behandling(
-                BehandlingType.FORSKUDD,
-                SoknadType.FASTSETTELSE,
-                Date(1),
-                Date(1),
-                Date(1),
-                "123",
-                123,
-                null,
-                "ENH",
-                SøktAvType.BIDRAGSMOTTAKER,
-                null,
-                null,
-            ),
+            oppretteBehandling(),
         )
         return behandling
     }
