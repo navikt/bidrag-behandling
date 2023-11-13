@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingType
+import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.domene.enums.Engangsbeløptype
@@ -32,7 +32,7 @@ class OpplysningerServiceTest : TestContainerRunner() {
         val b =
             behandlingService.createBehandling(
                 Behandling(
-                    BehandlingType.FORSKUDD,
+                    Behandlingstype.FORSKUDD,
                     SoknadType.FASTSETTELSE,
                     Date(1),
                     Date(2),

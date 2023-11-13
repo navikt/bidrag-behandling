@@ -16,10 +16,12 @@ mvnw.cmd
 *nais-secrets*
 
 ### IntelliJ IDEA ###
+.editorconfig
 .idea
 *.iws
 *.iml
 *.ipr
+
 
 ### NetBeans ###
 /nbproject/private/

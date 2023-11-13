@@ -23,9 +23,10 @@ import java.util.Date
 @Where(clause = "deleted=false")
 class Behandling(
     @Enumerated(EnumType.STRING)
-    val behandlingType: BehandlingType,
+    val behandlingType: Behandlingstype,
+    // TODO Endre til Vedtakstype
     @Enumerated(EnumType.STRING)
-    val soknadType: SoknadType, // TODO Endre til Vedtakstype
+    val soknadType: SoknadType,
     val datoFom: Date,
     val datoTom: Date,
     val mottatDato: Date,

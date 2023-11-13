@@ -6,8 +6,5 @@ import org.springframework.data.repository.CrudRepository
 import java.util.Optional
 
 interface OpplysningerRepository : CrudRepository<Opplysninger, Long> {
-    fun findTopByBehandlingIdAndOpplysningerTypeOrderByTsDescIdDesc(
-        behandlingId: Long,
-        opplysningerType: OpplysningerType,
-    ): Optional<Opplysninger>
+    fun findTopByBehandlingIdAndOpplysningerTypeOrderByTsDescIdDesc(behandlingId: Long, opplysningerType: OpplysningerType): Optional<Opplysninger>
 }

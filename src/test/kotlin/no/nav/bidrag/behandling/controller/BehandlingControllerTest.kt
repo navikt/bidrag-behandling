@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingType
+import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
@@ -22,7 +22,7 @@ import kotlin.test.Ignore
 import kotlin.test.assertNotNull
 
 data class CreateBehandlingRequestTest(
-    val behandlingType: BehandlingType,
+    val behandlingType: Behandlingstype,
     val stonadType: Stønadstype,
     val soknadType: SoknadType,
     val datoFom: Date,
@@ -118,7 +118,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
             )
 
         assertNotNull(updatedBehandling.body)
-        assertEquals(123L, updatedBehandling.body!!.grunnlagspakkeId)
+        assertEquals(123L, updatedBehandling.body!!.grunnlagspakkeid)
     }
 
     @Test
@@ -215,7 +215,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         val behandling =
             behandlingService.createBehandling(
                 Behandling(
-                    BehandlingType.FORSKUDD,
+                    Behandlingstype.FORSKUDD,
                     SoknadType.FASTSETTELSE,
                     Date(1),
                     Date(2),
@@ -230,16 +230,16 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                 ),
             )
 
-        val VEDTAK_ID: Long = 1
+        val vedtaksid: Long = 1
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/vedtak/$VEDTAK_ID",
+                "${rootUri()}/behandling/${behandling.id}/vedtak/$vedtaksid",
                 HttpMethod.PUT,
                 HttpEntity.EMPTY,
                 Void::class.java,
             )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
-        assertEquals(VEDTAK_ID, behandlingService.hentBehandlingById(behandling.id!!).vedtakId)
+        assertEquals(vedtaksid, behandlingService.hentBehandlingById(behandling.id!!).vedtakId)
     }
 
     @Test
@@ -277,6 +277,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
 
     @Test
     fun `skal ikke opprette en behandling med rolle med null ident`() {
+
+        // given
         val roller =
             setOf(
                 CreateRolleDtoTest(CreateRolleRolleType.BARN, null, Date(1)),
@@ -284,6 +286,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
             )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
+        // when
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling",
@@ -291,6 +294,8 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
             )
+
+        // then
         assertEquals(HttpStatus.BAD_REQUEST, responseMedNull.statusCode)
     }
 
@@ -387,14 +392,10 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     }
 
     companion object {
-        fun createBehandlingRequestTest(
-            saksnummer: String?,
-            enhet: String,
-            roller: Set<CreateRolleDtoTest>,
-        ): CreateBehandlingRequestTest {
+        fun createBehandlingRequestTest(saksnummer: String?, enhet: String, roller: Set<CreateRolleDtoTest>): CreateBehandlingRequestTest {
             val testBehandling =
                 CreateBehandlingRequestTest(
-                    BehandlingType.FORSKUDD,
+                    Behandlingstype.FORSKUDD,
                     Stønadstype.FORSKUDD,
                     SoknadType.FASTSETTELSE,
                     Date(1),

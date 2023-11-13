@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.domene.enums.Rolletype
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.util.Date
+import java.util.*
 
 fun Set<Rolle>.rolleType(ident: String): String {
     val rolleType = this.find { it.ident == ident }?.rolleType
@@ -49,98 +49,97 @@ data class BehandlingBeregningModel private constructor(
             utvidetbarnetrygd: Set<Utvidetbarnetrygd>,
             husstandsBarn: Set<HusstandsBarn>,
             roller: Set<Rolle>,
-        ): Either<NonEmptyList<String>, BehandlingBeregningModel> =
-            either {
-                zipOrAccumulate(
-                    {
-                        ensure(behandlingId != null) { raise("Behandling id kan ikke være null") }
-                        behandlingId
-                    },
-                    {
-                        ensure(virkningsDato != null) { raise("Behandling virkningsDato må fylles ut") }
-                        virkningsDato.toLocalDate()
-                    },
-                    {
-                        ensure(datoTom != null) { raise("Behandling Dato Til må fylles ut") }
-                        datoTom.toLocalDate()
-                    },
-                    {
-                        mapOrAccumulate(sivilstand) {
-                            SivilstandModel(
-                                it.datoFom?.toLocalDate()
-                                    ?: raise("Sivilstand Dato Fra må fylles ut"),
-                                it.datoTom?.toLocalDate(),
-                                it.sivilstandType,
-                            )
-                        }
-                    },
-                    {
-                        mapOrAccumulate(inntekter.filter { it.taMed }) {
-                            InntektModel(
-                                inntektType = it.inntektType
-                                    ?: raise("InntektType kan ikke være null"),
-                                belop = it.belop,
-                                rolle = roller.rolleType(it.ident),
-                                datoFom = it.datoFom?.toLocalDate()
-                                    ?: raise("Inntekts Dato Fra må fylles ut"),
-                                datoTom = it.datoTom?.toLocalDate(),
-                            )
-                        }
-                    },
-                    {
-                        mapOrAccumulate(barnetillegg) {
-                            BarnetilleggModel(
-                                datoFom = it.datoFom?.toLocalDate()
-                                    ?: raise("Barnetillegg Dato Fra må fylles ut"),
-                                datoTom = it.datoTom?.toLocalDate(),
-                                belop = it.barnetillegg,
-                            )
-                        }
-                    },
-                    {
-                        mapOrAccumulate(utvidetbarnetrygd) {
-                            UtvidetbarnetrygdModel(
-                                datoFom = it.datoFom?.toLocalDate()
-                                    ?: raise("Utvidetbarnetrygd Dato Fra må fylles ut"),
-                                datoTom = it.datoTom?.toLocalDate(),
-                                belop = it.belop,
-                            )
-                        }
-                    },
-                    {
-                        mapOrAccumulate(
-                            husstandsBarn.filter { it.medISaken }
-                                .flatMap { it.perioder },
-                        ) {
-                            HusstandsBarnPeriodeModel(
-                                datoFom = it.datoFom?.toLocalDate()
-                                    ?: raise("HusstandsBarnPeriode Dato Fra må fylles ut"),
-                                datoTom = it.datoTom?.toLocalDate(),
-                                ident = it.husstandsBarn.ident,
-                                boStatus = it.boStatus,
-                            )
-                        }
-                    },
-                ) { behandlingId, virkningsDato, datoTom, sivilstand, inntekter, barnetillegg, utvidetbarnetrygd, husstandsBarnPerioder ->
-                    BehandlingBeregningModel(
-                        behandlingId,
-                        virkningsDato,
-                        datoTom,
-                        sivilstand,
-                        inntekter,
-                        barnetillegg,
-                        utvidetbarnetrygd,
-                        husstandsBarnPerioder,
-                    )
-                }
+        ): Either<NonEmptyList<String>, BehandlingBeregningModel> = either {
+            zipOrAccumulate(
+                {
+                    ensure(behandlingId != null) { raise("Behandling id kan ikke være null") }
+                    behandlingId
+                },
+                {
+                    ensure(virkningsDato != null) { raise("Behandling virkningsDato må fylles ut") }
+                    virkningsDato.toLocalDate()
+                },
+                {
+                    ensure(datoTom != null) { raise("Behandling Dato Til må fylles ut") }
+                    datoTom.toLocalDate()
+                },
+                {
+                    mapOrAccumulate(sivilstand) {
+                        SivilstandModel(
+                            it.datoFom?.toLocalDate()
+                                ?: raise("Sivilstand Dato Fra må fylles ut"),
+                            it.datoTom?.toLocalDate(),
+                            it.sivilstandType,
+                        )
+                    }
+                },
+                {
+                    mapOrAccumulate(inntekter.filter { it.taMed }) {
+                        InntektModel(
+                            inntektType = it.inntektType
+                                ?: raise("InntektType kan ikke være null"),
+                            belop = it.belop,
+                            rolle = roller.rolleType(it.ident),
+                            datoFom = it.datoFom?.toLocalDate()
+                                ?: raise("Inntekts Dato Fra må fylles ut"),
+                            datoTom = it.datoTom?.toLocalDate(),
+                        )
+                    }
+                },
+                {
+                    mapOrAccumulate(barnetillegg) {
+                        BarnetilleggModel(
+                            datoFom = it.datoFom?.toLocalDate()
+                                ?: raise("Barnetillegg Dato Fra må fylles ut"),
+                            datoTom = it.datoTom?.toLocalDate(),
+                            belop = it.barnetillegg,
+                        )
+                    }
+                },
+                {
+                    mapOrAccumulate(utvidetbarnetrygd) {
+                        UtvidetbarnetrygdModel(
+                            datoFom = it.datoFom?.toLocalDate()
+                                ?: raise("Utvidetbarnetrygd Dato Fra må fylles ut"),
+                            datoTom = it.datoTom?.toLocalDate(),
+                            belop = it.belop,
+                        )
+                    }
+                },
+                {
+                    mapOrAccumulate(
+                        husstandsBarn.filter { it.medISaken }
+                            .flatMap { it.perioder },
+                    ) {
+                        HusstandsBarnPeriodeModel(
+                            datoFom = it.datoFom?.toLocalDate()
+                                ?: raise("HusstandsBarnPeriode Dato Fra må fylles ut"),
+                            datoTom = it.datoTom?.toLocalDate(),
+                            referanseTilBarn = it.husstandsBarn.ident,
+                            boStatus = it.boStatus,
+                        )
+                    }
+                },
+            ) { behandlingId, virkningsDato, datoTom, sivilstand, inntekter, barnetillegg, utvidetbarnetrygd, husstandsBarnPerioder ->
+                BehandlingBeregningModel(
+                    behandlingId,
+                    virkningsDato,
+                    datoTom,
+                    sivilstand,
+                    inntekter,
+                    barnetillegg,
+                    utvidetbarnetrygd,
+                    husstandsBarnPerioder,
+                )
             }
+        }
     }
 }
 
 data class HusstandsBarnPeriodeModel(
     val datoFom: LocalDate,
     val datoTom: LocalDate? = null,
-    val ident: String?,
+    val referanseTilBarn: String?,
     val boStatus: BoStatusType?,
     // TODO ENDRE til bostatusKode fra felles
     // import no.nav.bidrag.beregn.felles.enums.BostatusKode

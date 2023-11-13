@@ -91,10 +91,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         description = "Oppdatere behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun updateBehandling(
-        @PathVariable behandlingId: Long,
-        @Valid @RequestBody(required = true) request: UpdateBehandlingRequest,
-    ) {
+    fun updateBehandling(@PathVariable behandlingId: Long, @Valid @RequestBody(required = true) request: UpdateBehandlingRequest) {
         behandlingService.updateBehandling(behandlingId, request.grunnlagspakkeId)
     }
 
@@ -104,10 +101,8 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         description = "Sync fra behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun syncRoller(
-        @PathVariable behandlingId: Long,
-        @Valid @RequestBody(required = true) request: SyncRollerRequest,
-    ) = behandlingService.syncRoller(behandlingId, request.roller)
+    fun syncRoller(@PathVariable behandlingId: Long, @Valid @RequestBody(required = true) request: SyncRollerRequest) =
+        behandlingService.syncRoller(behandlingId, request.roller)
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/vedtak/{vedtakId}")
@@ -126,10 +121,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun oppdaterVedtakId(
-        @PathVariable behandlingId: Long,
-        @PathVariable vedtakId: Long,
-    ) {
+    fun oppdaterVedtakId(@PathVariable behandlingId: Long, @PathVariable vedtakId: Long) {
         behandlingService.oppdaterVedtakId(behandlingId, vedtakId)
     }
 
@@ -150,9 +142,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun hentBehandling(
-        @PathVariable behandlingId: Long,
-    ): BehandlingDto {
+    fun hentBehandling(@PathVariable behandlingId: Long): BehandlingDto {
         return findBehandlingById(behandlingId)
     }
 
@@ -161,10 +151,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         return behandlingDto(behandlingId, behandling)
     }
 
-    private fun behandlingDto(
-        behandlingId: Long,
-        behandling: Behandling,
-    ) = BehandlingDto(
+    private fun behandlingDto(behandlingId: Long, behandling: Behandling) = BehandlingDto(
         behandlingId,
         behandling.behandlingType,
         behandling.soknadType,
@@ -177,7 +164,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling.soknadId,
         behandling.behandlerEnhet,
         behandling.roller.map {
-            RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.fodtDato, it.opprettetDato)
+            RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.navn, it.fodtDato, it.opprettetDato)
         }.toSet(),
         behandling.husstandsBarn.toHusstandsBarnDto(),
         behandling.sivilstand.toSivilstandDto(),

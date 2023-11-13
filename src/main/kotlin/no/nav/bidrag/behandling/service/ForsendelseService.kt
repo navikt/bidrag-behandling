@@ -147,8 +147,6 @@ class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mut
 }
 
 fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
-fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? =
-    this.find { it.type == rolleType }
+fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? = this.find { it.type == rolleType }
 
-fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> =
-    this.filter { it.type == Rolletype.BARN }
+fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> = this.filter { it.type == Rolletype.BARN }

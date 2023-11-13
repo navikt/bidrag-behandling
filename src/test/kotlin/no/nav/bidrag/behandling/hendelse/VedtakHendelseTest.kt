@@ -4,7 +4,7 @@ import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingType
+import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
@@ -112,7 +112,7 @@ class VedtakHendelseTest : CommonTestRunner() {
         saksnummer = SAKSNUMMER,
         soknadId = 123123L,
         behandlerEnhet = "4806",
-        behandlingType = BehandlingType.BIDRAG18AAR,
+        behandlingType = Behandlingstype.BIDRAG18AAR,
         engangsbelopType = null,
         mottatDato = Date(),
         soknadFra = SøktAvType.BIDRAGSMOTTAKER,
@@ -120,11 +120,7 @@ class VedtakHendelseTest : CommonTestRunner() {
         stonadType = Stønadstype.BIDRAG18AAR,
     )
 
-    private fun opprettVedtakhendelse(
-        vedtakId: Int,
-        behandlingId: Long,
-        stonadType: Stønadstype = Stønadstype.BIDRAG18AAR,
-    ): VedtakHendelse {
+    private fun opprettVedtakhendelse(vedtakId: Int, behandlingId: Long, stonadType: Stønadstype = Stønadstype.BIDRAG18AAR): VedtakHendelse {
         return VedtakHendelse(
             type = Vedtakstype.FASTSETTELSE,
             stønadsendringListe = listOf(

@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
 import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
-import no.nav.bidrag.domene.enums.Rolletype
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -51,12 +50,10 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
 
     @Test
     @Disabled
-    fun `skal ikke beregne forskudd for behandling som mangler informasjon om søknadsbarn`() {
+    fun `skal videreføre BAD_REQUEST fra bidrag-beregn-forskudd-rest`() {
         // given
-        var behandling = oppretteBehandling()
-        var rollerUtenBarn = oppretteBehandlingRoller(behandling)
-        rollerUtenBarn.removeIf { r -> r.rolleType == Rolletype.BARN }
-        behandling.roller = rollerUtenBarn
+        stubUtils.stubBeregneForskudd(HttpStatus.BAD_REQUEST)
+        var behandling = lagreBehandlingMedRoller()
 
         // when
         val returnert =
@@ -70,7 +67,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // then
         assertSoftly {
             returnert shouldNotBe null
-            returnert.statusCode shouldBe HttpStatus.OK
+            returnert.statusCode shouldBe HttpStatus.BAD_REQUEST
             returnert.body shouldNotBe null
         }
     }

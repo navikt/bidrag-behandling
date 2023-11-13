@@ -19,6 +19,5 @@ class BidragBeregnForskuddConsumer(
         UriComponentsBuilder.fromUri(bidragBeregnForskuddUrl).pathSegment("beregn")
             .pathSegment("forskudd").build().toUri()
 
-    fun beregnForskudd(payload: BeregnGrunnlag): ForskuddDto =
-        postForNonNullEntity(beregnForskuddUri, payload)
+    fun beregnForskudd(payload: BeregnGrunnlag): ForskuddDto = postForNonNullEntity(beregnForskuddUri, payload)
 }

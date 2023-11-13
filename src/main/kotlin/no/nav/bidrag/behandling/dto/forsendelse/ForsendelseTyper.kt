@@ -21,11 +21,9 @@ data class BehandlingInfoDto(
 ) {
     fun erBehandlingType(stonadType: Stønadstype?) = this.stonadType == stonadType
 
-    fun erBehandlingType(engangsBelopType: Engangsbeløptype?) =
-        this.engangsBelopType == engangsBelopType
+    fun erBehandlingType(engangsBelopType: Engangsbeløptype?) = this.engangsBelopType == engangsBelopType
 
-    fun erGebyr() =
-        erBehandlingType(Engangsbeløptype.GEBYR_SKYLDNER) || erBehandlingType(Engangsbeløptype.GEBYR_MOTTAKER)
+    fun erGebyr() = erBehandlingType(Engangsbeløptype.GEBYR_SKYLDNER) || erBehandlingType(Engangsbeløptype.GEBYR_MOTTAKER)
 
     fun erBehandlingType(behandlingType: String?) = this.behandlingType == behandlingType
 

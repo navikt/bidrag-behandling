@@ -13,7 +13,8 @@ class ForsendelseController(private val forsendelseService: ForsendelseService) 
     @Suppress("unused")
     @PostMapping("/forsendelse/init")
     @Operation(
-        description = "Oppretter forsendelse for behandling eller vedtak. Skal bare benyttes hvis vedtakId eller behandlingId mangler for behandling (Søknad som behandles gjennom Bisys)",
+        description = "Oppretter forsendelse for behandling eller vedtak. Skal bare benyttes hvis vedtakId eller behandlingId mangler for " +
+            "behandling (Søknad som behandles gjennom Bisys)",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun opprettForsendelse(

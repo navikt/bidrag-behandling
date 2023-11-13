@@ -5,7 +5,8 @@ import java.util.Date
 data class RolleDto(
     val id: Long,
     val rolleType: RolleTypeDto,
-    val ident: String,
+    val ident: String?,
+    val navn: String?,
     val fodtDato: Date?,
     val opprettetDato: Date?,
 )

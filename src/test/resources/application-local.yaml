@@ -12,10 +12,8 @@ AZURE_APP_CLIENT_SECRET: unset
 server.port: 8990
 NAIS_APP_NAME: bidrag-behandling
 DB_HOST: localhost
-DB_PORT: 5445
+DB_PORT: 5432
 DB_DATABASE: bidrag-behandling
-DB_USERNAME: cloudsqliamuser
-DB_PASSWORD: admin
 
 spring:
   kafka:

@@ -22,7 +22,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 class ExceptionHandler {
     @ResponseBody
     @ExceptionHandler(
-        value = [MethodArgumentNotValidException::class, InvalidFormatException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class],
+        value = [
+            MethodArgumentNotValidException::class, InvalidFormatException::class, IllegalArgumentException::class,
+            MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class,
+        ],
     )
     fun handleInvalidValueExceptions(exception: Exception): ResponseEntity<*> {
         val cause = exception.cause ?: exception
@@ -88,11 +91,7 @@ class ExceptionHandler {
         val message: String,
         val fieldErrors: MutableList<CustomFieldError> = mutableListOf(),
     ) {
-        fun addFieldError(
-            objectName: String,
-            field: String,
-            message: String,
-        ) {
+        fun addFieldError(objectName: String, field: String, message: String) {
             val error = CustomFieldError(objectName, field, message)
             fieldErrors.add(error)
         }

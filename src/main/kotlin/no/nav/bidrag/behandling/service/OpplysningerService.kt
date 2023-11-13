@@ -16,12 +16,7 @@ class OpplysningerService(
     private val behandlingRepository: BehandlingRepository,
 ) {
     @Transactional
-    fun opprett(
-        behandlingId: Long,
-        opplysningerType: OpplysningerType,
-        data: String,
-        hentetDato: Date,
-    ): Opplysninger {
+    fun opprett(behandlingId: Long, opplysningerType: OpplysningerType, data: String, hentetDato: Date): Opplysninger {
         behandlingRepository
             .findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
             .let {
@@ -29,9 +24,6 @@ class OpplysningerService(
             }
     }
 
-    fun hentSistAktiv(
-        behandlingId: Long,
-        opplysningerType: OpplysningerType,
-    ): Optional<Opplysninger> =
+    fun hentSistAktiv(behandlingId: Long, opplysningerType: OpplysningerType): Optional<Opplysninger> =
         opplysningerRepository.findTopByBehandlingIdAndOpplysningerTypeOrderByTsDescIdDesc(behandlingId, opplysningerType)
 }
