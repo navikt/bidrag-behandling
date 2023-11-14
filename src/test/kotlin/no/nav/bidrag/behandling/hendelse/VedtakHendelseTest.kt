@@ -34,7 +34,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDateTime
-import java.util.*
+import java.util.Date
 
 class VedtakHendelseTest : CommonTestRunner() {
     val stubUtils: StubUtils = StubUtils()
@@ -98,46 +98,53 @@ class VedtakHendelseTest : CommonTestRunner() {
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
     }
 
-    private fun opprettHendelseRecord(vedtakHendelse: VedtakHendelse) = ConsumerRecord(
-        "",
-        1,
-        1,
-        "",
-        stubUtils.toJsonString(vedtakHendelse),
-    )
+    private fun opprettHendelseRecord(vedtakHendelse: VedtakHendelse) =
+        ConsumerRecord(
+            "",
+            1,
+            1,
+            "",
+            stubUtils.toJsonString(vedtakHendelse),
+        )
 
-    private fun opprettBehandling() = Behandling(
-        datoFom = Date(),
-        datoTom = Date(),
-        saksnummer = SAKSNUMMER,
-        soknadId = 123123L,
-        behandlerEnhet = "4806",
-        behandlingType = Behandlingstype.BIDRAG18AAR,
-        engangsbelopType = null,
-        mottatDato = Date(),
-        soknadFra = SøktAvType.BIDRAGSMOTTAKER,
-        soknadType = SoknadType.FASTSETTELSE,
-        stonadType = Stønadstype.BIDRAG18AAR,
-    )
+    private fun opprettBehandling() =
+        Behandling(
+            datoFom = Date(),
+            datoTom = Date(),
+            saksnummer = SAKSNUMMER,
+            soknadId = 123123L,
+            behandlerEnhet = "4806",
+            behandlingType = Behandlingstype.BIDRAG18AAR,
+            engangsbelopType = null,
+            mottatDato = Date(),
+            soknadFra = SøktAvType.BIDRAGSMOTTAKER,
+            soknadType = SoknadType.FASTSETTELSE,
+            stonadType = Stønadstype.BIDRAG18AAR,
+        )
 
-    private fun opprettVedtakhendelse(vedtakId: Int, behandlingId: Long, stonadType: Stønadstype = Stønadstype.BIDRAG18AAR): VedtakHendelse {
+    private fun opprettVedtakhendelse(
+        vedtakId: Int,
+        behandlingId: Long,
+        stonadType: Stønadstype = Stønadstype.BIDRAG18AAR,
+    ): VedtakHendelse {
         return VedtakHendelse(
             type = Vedtakstype.FASTSETTELSE,
-            stønadsendringListe = listOf(
-                Stønadsendring(
-                    type = stonadType,
-                    eksternReferanse = "",
-                    beslutning = Beslutningstype.ENDRING,
-                    førsteIndeksreguleringsår = 2024,
-                    innkreving = Innkrevingstype.MED_INNKREVING,
-                    kravhaver = Personident(""),
-                    mottaker = Personident(""),
-                    omgjørVedtakId = 1,
-                    periodeListe = emptyList(),
-                    sak = Saksnummer(SAKSNUMMER),
-                    skyldner = Personident(""),
+            stønadsendringListe =
+                listOf(
+                    Stønadsendring(
+                        type = stonadType,
+                        eksternReferanse = "",
+                        beslutning = Beslutningstype.ENDRING,
+                        førsteIndeksreguleringsår = 2024,
+                        innkreving = Innkrevingstype.MED_INNKREVING,
+                        kravhaver = Personident(""),
+                        mottaker = Personident(""),
+                        omgjørVedtakId = 1,
+                        periodeListe = emptyList(),
+                        sak = Saksnummer(SAKSNUMMER),
+                        skyldner = Personident(""),
+                    ),
                 ),
-            ),
             engangsbeløpListe = emptyList(),
             enhetsnummer = Enhetsnummer("4806"),
             id = vedtakId,
@@ -149,16 +156,17 @@ class VedtakHendelseTest : CommonTestRunner() {
             innkrevingUtsattTilDato = null,
             vedtakstidspunkt = LocalDateTime.now(),
             fastsattILand = null,
-            behandlingsreferanseListe = listOf(
-                Behandlingsreferanse(
-                    BehandlingsrefKilde.BEHANDLING_ID.name,
-                    behandlingId.toString(),
+            behandlingsreferanseListe =
+                listOf(
+                    Behandlingsreferanse(
+                        BehandlingsrefKilde.BEHANDLING_ID.name,
+                        behandlingId.toString(),
+                    ),
+                    Behandlingsreferanse(
+                        BehandlingsrefKilde.BISYS_SOKNAD.name,
+                        SOKNAD_ID.toString(),
+                    ),
                 ),
-                Behandlingsreferanse(
-                    BehandlingsrefKilde.BISYS_SOKNAD.name,
-                    SOKNAD_ID.toString(),
-                ),
-            ),
         )
     }
 }

@@ -10,6 +10,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.behandling.SyncRollerRequest
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
@@ -51,6 +53,8 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         @RequestBody(required = true)
         createBehandling: CreateBehandlingRequest,
     ): CreateBehandlingResponse {
+        validereRollerBarn(createBehandling.roller)
+
         val behandling =
             Behandling(
                 createBehandling.behandlingType,
@@ -91,7 +95,10 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         description = "Oppdatere behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun updateBehandling(@PathVariable behandlingId: Long, @Valid @RequestBody(required = true) request: UpdateBehandlingRequest) {
+    fun updateBehandling(
+        @PathVariable behandlingId: Long,
+        @Valid @RequestBody(required = true) request: UpdateBehandlingRequest,
+    ) {
         behandlingService.updateBehandling(behandlingId, request.grunnlagspakkeId)
     }
 
@@ -101,8 +108,10 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         description = "Sync fra behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun syncRoller(@PathVariable behandlingId: Long, @Valid @RequestBody(required = true) request: SyncRollerRequest) =
-        behandlingService.syncRoller(behandlingId, request.roller)
+    fun syncRoller(
+        @PathVariable behandlingId: Long,
+        @Valid @RequestBody(required = true) request: SyncRollerRequest,
+    ) = behandlingService.syncRoller(behandlingId, request.roller)
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/vedtak/{vedtakId}")
@@ -121,7 +130,10 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun oppdaterVedtakId(@PathVariable behandlingId: Long, @PathVariable vedtakId: Long) {
+    fun oppdaterVedtakId(
+        @PathVariable behandlingId: Long,
+        @PathVariable vedtakId: Long,
+    ) {
         behandlingService.oppdaterVedtakId(behandlingId, vedtakId)
     }
 
@@ -142,7 +154,9 @@ class BehandlingController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun hentBehandling(@PathVariable behandlingId: Long): BehandlingDto {
+    fun hentBehandling(
+        @PathVariable behandlingId: Long,
+    ): BehandlingDto {
         return findBehandlingById(behandlingId)
     }
 
@@ -151,7 +165,10 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         return behandlingDto(behandlingId, behandling)
     }
 
-    private fun behandlingDto(behandlingId: Long, behandling: Behandling) = BehandlingDto(
+    private fun behandlingDto(
+        behandlingId: Long,
+        behandling: Behandling,
+    ) = BehandlingDto(
         behandlingId,
         behandling.behandlingType,
         behandling.soknadType,
@@ -199,5 +216,10 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     )
     fun hentBehandlinger(): List<BehandlingDto> {
         return behandlingService.hentBehandlinger().map { behandlingDto(it.id!!, it) }
+    }
+
+    private fun validereRollerBarn(roller: Set<CreateRolleDto>) {
+        roller.filter { r -> r.rolleType == CreateRolleRolleType.BARN && (r.ident == null || r.ident.isBlank()) }
+            .filter { r -> r.navn == null || r.navn.isBlank() }.size == 0
     }
 }

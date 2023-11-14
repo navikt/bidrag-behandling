@@ -22,8 +22,9 @@ class BidragTilgangskontrollConsumer(
     @Value("\${BIDRAG_TILGANGSKONTROLL_URL}") val url: URI,
     @Qualifier("azure") private val restTemplate: RestOperations,
 ) : AbstractRestClient(restTemplate, "bidrag-tilgangskontroll") {
-    private fun createUri(path: String?) = UriComponentsBuilder.fromUri(url)
-        .path(path ?: "").build().toUri()
+    private fun createUri(path: String?) =
+        UriComponentsBuilder.fromUri(url)
+            .path(path ?: "").build().toUri()
 
     // TODO: Bruk dette for å sjekke om saksbehandler har tilgang til behandling (sak)
     @Retryable(value = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0))

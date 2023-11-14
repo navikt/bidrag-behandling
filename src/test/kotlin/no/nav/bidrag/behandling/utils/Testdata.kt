@@ -22,17 +22,18 @@ val ROLLE_BM = ForsendelseRolleDto(Personident("313213213"), type = Rolletype.BI
 val ROLLE_BA_1 = ForsendelseRolleDto(Personident("1344124"), type = Rolletype.BARN)
 val ROLLE_BP = ForsendelseRolleDto(Personident("213244124"), type = Rolletype.BIDRAGSPLIKTIG)
 
-fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) = ForsendelseResponsTo(
-    forsendelseId = forsendelseId,
-    saksnummer = SAKSNUMMER,
-    behandlingInfo =
-    BehandlingInfoResponseDto(
-        soknadId = SOKNAD_ID.toString(),
-        erFattet = false,
-    ),
-    forsendelseType = ForsendelseTypeTo.UTGÅENDE,
-    status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
-)
+fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
+    ForsendelseResponsTo(
+        forsendelseId = forsendelseId,
+        saksnummer = SAKSNUMMER,
+        behandlingInfo =
+            BehandlingInfoResponseDto(
+                soknadId = SOKNAD_ID.toString(),
+                erFattet = false,
+            ),
+        forsendelseType = ForsendelseTypeTo.UTGÅENDE,
+        status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
+    )
 
 fun oppretteBehandling(): Behandling {
     return Behandling(
@@ -52,26 +53,27 @@ fun oppretteBehandling(): Behandling {
     )
 }
 
-fun oppretteBehandlingRoller(behandling: Behandling) = mutableSetOf(
-    Rolle(
-        ident = ROLLE_BM.fødselsnummer?.verdi!!,
-        rolleType = Rolletype.BIDRAGSMOTTAKER,
-        behandling = behandling,
-        fodtDato = null,
-        opprettetDato = null,
-    ),
-    Rolle(
-        ident = ROLLE_BP.fødselsnummer?.verdi!!,
-        rolleType = Rolletype.BIDRAGSPLIKTIG,
-        behandling = behandling,
-        fodtDato = null,
-        opprettetDato = null,
-    ),
-    Rolle(
-        ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
-        rolleType = Rolletype.BARN,
-        behandling = behandling,
-        fodtDato = null,
-        opprettetDato = null,
-    ),
-)
+fun oppretteBehandlingRoller(behandling: Behandling) =
+    mutableSetOf(
+        Rolle(
+            ident = ROLLE_BM.fødselsnummer?.verdi!!,
+            rolleType = Rolletype.BIDRAGSMOTTAKER,
+            behandling = behandling,
+            fodtDato = null,
+            opprettetDato = null,
+        ),
+        Rolle(
+            ident = ROLLE_BP.fødselsnummer?.verdi!!,
+            rolleType = Rolletype.BIDRAGSPLIKTIG,
+            behandling = behandling,
+            fodtDato = null,
+            opprettetDato = null,
+        ),
+        Rolle(
+            ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
+            rolleType = Rolletype.BARN,
+            behandling = behandling,
+            fodtDato = null,
+            opprettetDato = null,
+        ),
+    )

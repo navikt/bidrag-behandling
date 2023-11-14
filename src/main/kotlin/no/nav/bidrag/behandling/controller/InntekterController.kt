@@ -37,7 +37,10 @@ class InntekterController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun oppdaterInntekter(@PathVariable behandlingId: Long, @RequestBody request: UpdateInntekterRequest): InntekterResponse {
+    fun oppdaterInntekter(
+        @PathVariable behandlingId: Long,
+        @RequestBody request: UpdateInntekterRequest,
+    ): InntekterResponse {
         var behandling = behandlingService.hentBehandlingById(behandlingId)
 
         behandlingService.oppdaterInntekter(
@@ -77,7 +80,9 @@ class InntekterController(private val behandlingService: BehandlingService) {
             ),
         ],
     )
-    fun hentInntekter(@PathVariable behandlingId: Long): InntekterResponse {
+    fun hentInntekter(
+        @PathVariable behandlingId: Long,
+    ): InntekterResponse {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         return InntekterResponse(

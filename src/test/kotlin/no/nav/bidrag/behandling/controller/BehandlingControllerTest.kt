@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
-import java.util.*
+import java.util.Date
 import kotlin.test.Ignore
 import kotlin.test.assertNotNull
 
@@ -277,7 +277,6 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
 
     @Test
     fun `skal ikke opprette en behandling med rolle med null ident`() {
-
         // given
         val roller =
             setOf(
@@ -392,7 +391,11 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     }
 
     companion object {
-        fun createBehandlingRequestTest(saksnummer: String?, enhet: String, roller: Set<CreateRolleDtoTest>): CreateBehandlingRequestTest {
+        fun createBehandlingRequestTest(
+            saksnummer: String?,
+            enhet: String,
+            roller: Set<CreateRolleDtoTest>,
+        ): CreateBehandlingRequestTest {
             val testBehandling =
                 CreateBehandlingRequestTest(
                     Behandlingstype.FORSKUDD,

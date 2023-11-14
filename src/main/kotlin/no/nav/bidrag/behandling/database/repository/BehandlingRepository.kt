@@ -39,5 +39,8 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
             "b.vedtakId = :vedtakId " +
             "where b.id = :behandlingId",
     )
-    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long)
+    fun oppdaterVedtakId(
+        behandlingId: Long,
+        vedtakId: Long,
+    )
 }

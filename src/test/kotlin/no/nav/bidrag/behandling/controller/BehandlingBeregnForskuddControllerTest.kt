@@ -17,7 +17,6 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 
 class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
-
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
 

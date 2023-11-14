@@ -67,7 +67,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @Nested
     @DisplayName("Tester endepunkt for henting av inntekter")
     open inner class HenteInntekter {
-
         @Test
         fun `skal hente inntekter for behandling`() {
             // given
@@ -81,12 +80,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
             var lagretBehandlingMedInntekter = behandlingRepository.findAll().iterator().next()
 
             // when
-            val r1 = httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
-                HttpMethod.GET,
-                HttpEntity.EMPTY,
-                InntekterResponse::class.java,
-            )
+            val r1 =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
+                    HttpMethod.GET,
+                    HttpEntity.EMPTY,
+                    InntekterResponse::class.java,
+                )
 
             // then
             assertSoftly {
@@ -107,12 +107,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
             var lagretBehandlingUtenInntekter = behandlingRepository.findAll().iterator().next()
 
             // when
-            val r1 = httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${lagretBehandlingUtenInntekter.id}/inntekter",
-                HttpMethod.GET,
-                HttpEntity.EMPTY,
-                InntekterResponse::class.java,
-            )
+            val r1 =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUri()}/behandling/${lagretBehandlingUtenInntekter.id}/inntekter",
+                    HttpMethod.GET,
+                    HttpEntity.EMPTY,
+                    InntekterResponse::class.java,
+                )
 
             // then
             assertSoftly {
@@ -127,7 +128,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @Nested
     @DisplayName("Tester endepunkt for oppdatering av inntekter")
     open inner class OppdatereInntekter {
-
         @Test
         @Transactional
         open fun `skal opprette inntekter`() {
@@ -140,12 +140,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
             val inn = testInntektDto()
 
             // when
-            val r = httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${lagretBehandlingUtenInntekter.id}/inntekter",
-                HttpMethod.PUT,
-                HttpEntity(TestInntektRequest(setOf(inn), emptySet(), emptySet())),
-                InntekterResponse::class.java,
-            )
+            val r =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUri()}/behandling/${lagretBehandlingUtenInntekter.id}/inntekter",
+                    HttpMethod.PUT,
+                    HttpEntity(TestInntektRequest(setOf(inn), emptySet(), emptySet())),
+                    InntekterResponse::class.java,
+                )
 
             // then
             assertEquals(HttpStatus.OK, r.statusCode)
@@ -162,22 +163,25 @@ class InntekterControllerTest : KontrollerTestRunner() {
             assert(lagretBehandlingMedInntekter.inntekter.size > 0)
 
             // when
-            val inntekt1 = testInntektDto().copy(
-                id = null,
-                inntektPostListe = setOf(
-                    InntektPost("ABC1", "ABC1", BigDecimal.TEN),
-                    InntektPost("ABC2", "ABC2", BigDecimal.TEN),
-                ),
-            )
+            val inntekt1 =
+                testInntektDto().copy(
+                    id = null,
+                    inntektPostListe =
+                        setOf(
+                            InntektPost("ABC1", "ABC1", BigDecimal.TEN),
+                            InntektPost("ABC2", "ABC2", BigDecimal.TEN),
+                        ),
+                )
 
             val inntekt2 = testInntektDto().copy(datoFom = null, inntektType = "null")
 
-            val r1 = httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
-                HttpMethod.PUT,
-                HttpEntity(TestInntektRequest(setOf(inntekt1, inntekt2), setOf(), setOf())),
-                InntekterResponse::class.java,
-            )
+            val r1 =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
+                    HttpMethod.PUT,
+                    HttpEntity(TestInntektRequest(setOf(inntekt1, inntekt2), setOf(), setOf())),
+                    InntekterResponse::class.java,
+                )
 
             // then
             assertEquals(HttpStatus.OK, r1.statusCode)
@@ -196,12 +200,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
             assert(lagretBehandlingMedInntekter.inntekter.size > 0)
 
             // when
-            val r = httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
-                HttpMethod.PUT,
-                HttpEntity(TestInntektRequest(emptySet(), emptySet(), emptySet())),
-                InntekterResponse::class.java,
-            )
+            val r =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
+                    HttpMethod.PUT,
+                    HttpEntity(TestInntektRequest(emptySet(), emptySet(), emptySet())),
+                    InntekterResponse::class.java,
+                )
 
             // then
             assertEquals(HttpStatus.OK, r.statusCode)
@@ -230,41 +235,45 @@ class InntekterControllerTest : KontrollerTestRunner() {
         transaction.commit()
     }
 
-    private fun inntekt(behandling: Behandling) = Inntekt(
-        "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER",
-        BigDecimal.valueOf(45000),
-        LocalDate.now().minusYears(1).withDayOfYear(1).toDate(),
-        LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31).toDate(),
-        "1234",
-        true,
-        true,
-        behandling = behandling,
-    )
+    private fun inntekt(behandling: Behandling) =
+        Inntekt(
+            "INNTEKTSOPPLYSNINGER_ARBEIDSGIVER",
+            BigDecimal.valueOf(45000),
+            LocalDate.now().minusYears(1).withDayOfYear(1).toDate(),
+            LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31).toDate(),
+            "1234",
+            true,
+            true,
+            behandling = behandling,
+        )
 
-    private fun inntektsposter(inntekt: Inntekt): MutableSet<InntektPostDomain> = setOf(
-        InntektPostDomain(
-            BigDecimal.valueOf(400000),
-            "lønnFraFluefiske",
-            "Lønn fra fluefiske",
-            inntekt = inntekt,
-        ),
-    ).toMutableSet()
+    private fun inntektsposter(inntekt: Inntekt): MutableSet<InntektPostDomain> =
+        setOf(
+            InntektPostDomain(
+                BigDecimal.valueOf(400000),
+                "lønnFraFluefiske",
+                "Lønn fra fluefiske",
+                inntekt = inntekt,
+            ),
+        ).toMutableSet()
 
-    private fun testInntektDto() = TestInntektDto(
-        null,
-        true,
-        "some0",
-        "1.123",
-        "2022-10-10",
-        "2022-10-10",
-        "blablabla",
-        setOf(InntektPost("ABC", "ABC", BigDecimal.TEN)),
-    )
+    private fun testInntektDto() =
+        TestInntektDto(
+            null,
+            true,
+            "some0",
+            "1.123",
+            "2022-10-10",
+            "2022-10-10",
+            "blablabla",
+            setOf(InntektPost("ABC", "ABC", BigDecimal.TEN)),
+        )
 
     private fun behandling(): Behandling {
-        val behandling: Behandling = behandlingRepository.save(
-            oppretteBehandling(),
-        )
+        val behandling: Behandling =
+            behandlingRepository.save(
+                oppretteBehandling(),
+            )
         return behandling
     }
 

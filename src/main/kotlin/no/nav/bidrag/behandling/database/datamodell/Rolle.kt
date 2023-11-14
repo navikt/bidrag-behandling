@@ -31,5 +31,4 @@ class Rolle(
     val id: Long? = null,
     val navn: String? = null,
     val deleted: Boolean = false,
-
 )

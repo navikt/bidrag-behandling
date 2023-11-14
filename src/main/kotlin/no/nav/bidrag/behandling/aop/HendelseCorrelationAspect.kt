@@ -12,7 +12,7 @@ import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
 import org.slf4j.MDC
 import org.springframework.stereotype.Component
-import java.util.*
+import java.util.UUID
 
 private val log = KotlinLogging.logger {}
 
@@ -20,7 +20,10 @@ private val log = KotlinLogging.logger {}
 @Aspect
 class HendelseCorrelationAspect(private val objectMapper: ObjectMapper) {
     @Before(value = "execution(* no.nav.bidrag.behandling.kafka.VedtakHendelseListener.prossesserVedtakHendelse(..)) && args(hendelse)")
-    fun leggSporingFraVedtakHendelseTilMDC(joinPoint: JoinPoint, hendelse: ConsumerRecord<String, String>) {
+    fun leggSporingFraVedtakHendelseTilMDC(
+        joinPoint: JoinPoint,
+        hendelse: ConsumerRecord<String, String>,
+    ) {
         hentSporingFraHendelse(hendelse)?.let {
             val correlationId = CorrelationId.existing(it)
             MDC.put(CORRELATION_ID_HEADER, correlationId.get())

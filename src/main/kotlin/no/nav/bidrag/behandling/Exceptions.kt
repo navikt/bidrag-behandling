@@ -8,10 +8,14 @@ fun behandlingNotFoundException(behandlingId: Long): Nothing =
 
 class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) : RuntimeException(melding, throwable)
 
-fun fantIkkeSak(saksnummer: String): Nothing = throw HttpClientErrorException(
-    HttpStatus.BAD_REQUEST,
-    "Sak med saksnummer $saksnummer finnes ikke",
-)
+fun fantIkkeSak(saksnummer: String): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Sak med saksnummer $saksnummer finnes ikke",
+    )
 
 fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
-    throw HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Fant ikke fødselsdato til søknadsbarn i behandling med id $behandlingsid")
+    throw HttpClientErrorException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Fant ikke fødselsdato til søknadsbarn i behandling med id $behandlingsid",
+    )

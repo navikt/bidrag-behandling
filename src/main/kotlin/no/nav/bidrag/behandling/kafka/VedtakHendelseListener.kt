@@ -32,7 +32,8 @@ class VedtakHendelseListener(
         if (!vedtak.erFattetFraBidragBehandling()) return
         val behandling = behandlingService.hentBehandlingById(vedtak.behandlingId!!)
         log.info {
-            "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. Lagrer vedtakId på behandling og oppretter forsendelser for vedtaket"
+            "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. Lagrer vedtakId på behandling og " +
+                "oppretter forsendelser for vedtaket"
         }
 
         behandlingService.oppdaterVedtakId(
@@ -42,21 +43,24 @@ class VedtakHendelseListener(
         opprettForsendelse(vedtak, behandling)
     }
 
-    private fun opprettForsendelse(vedtak: VedtakHendelse, behandling: Behandling) {
+    private fun opprettForsendelse(
+        vedtak: VedtakHendelse,
+        behandling: Behandling,
+    ) {
         forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer,
                 enhet = vedtak.enhetsnummer.verdi,
                 behandlingInfo =
-                BehandlingInfoDto(
-                    soknadId = vedtak.soknadId ?: behandling.soknadId,
-                    vedtakId = vedtak.id.toLong(),
-                    soknadFra = behandling.soknadFra,
-                    stonadType = vedtak.stonadType,
-                    engangsBelopType = vedtak.engangsbelopType,
-                    erFattetBeregnet = true,
-                    vedtakType = vedtak.type,
-                ),
+                    BehandlingInfoDto(
+                        soknadId = vedtak.soknadId ?: behandling.soknadId,
+                        vedtakId = vedtak.id.toLong(),
+                        soknadFra = behandling.soknadFra,
+                        stonadType = vedtak.stonadType,
+                        engangsBelopType = vedtak.engangsbelopType,
+                        erFattetBeregnet = true,
+                        vedtakType = vedtak.type,
+                    ),
                 roller = behandling.tilForsendelseRolleDto(),
             ),
         )

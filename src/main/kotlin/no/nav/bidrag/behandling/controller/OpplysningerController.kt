@@ -61,7 +61,10 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
             ),
         ],
     )
-    fun hentAktiv(@PathVariable behandlingId: Long, @PathVariable opplysningerType: OpplysningerType): OpplysningerDto {
+    fun hentAktiv(
+        @PathVariable behandlingId: Long,
+        @PathVariable opplysningerType: OpplysningerType,
+    ): OpplysningerDto {
         return opplysningerService.hentSistAktiv(
             behandlingId,
             opplysningerType,

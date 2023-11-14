@@ -22,7 +22,10 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         description = "Oppdatere boforhold data",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun oppdatereBoforhold(@PathVariable behandlingId: Long, @RequestBody updateBoforholdRequest: UpdateBoforholdRequest): BoforholdResponse {
+    fun oppdatereBoforhold(
+        @PathVariable behandlingId: Long,
+        @RequestBody updateBoforholdRequest: UpdateBoforholdRequest,
+    ): BoforholdResponse {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         behandlingService.updateBoforhold(
@@ -49,7 +52,9 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         description = "Hente boforhold data",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun hentBoforhold(@PathVariable behandlingId: Long): BoforholdResponse {
+    fun hentBoforhold(
+        @PathVariable behandlingId: Long,
+    ): BoforholdResponse {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(

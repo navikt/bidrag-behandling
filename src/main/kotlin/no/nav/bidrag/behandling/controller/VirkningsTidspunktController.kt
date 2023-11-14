@@ -72,7 +72,9 @@ class VirkningsTidspunktController(private val behandlingService: BehandlingServ
             ),
         ],
     )
-    fun hentVirkningsTidspunkt(@PathVariable behandlingId: Long): VirkningsTidspunktResponse {
+    fun hentVirkningsTidspunkt(
+        @PathVariable behandlingId: Long,
+    ): VirkningsTidspunktResponse {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         return VirkningsTidspunktResponse(
             behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,

@@ -32,7 +32,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
-import java.util.*
+import java.util.Calendar
+import java.util.Date
 
 class BehandlingServiceTest : TestContainerRunner() {
     @Autowired
@@ -76,18 +77,19 @@ class BehandlingServiceTest : TestContainerRunner() {
         fun `skal opprette en behandling med inntekter`() {
             val behandling = prepareBehandling()
 
-            behandling.inntekter = mutableSetOf(
-                Inntekt(
-                    "",
-                    BigDecimal.valueOf(555.55),
-                    null,
-                    null,
-                    "ident",
-                    true,
-                    true,
-                    behandling = behandling,
-                ),
-            )
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        "",
+                        BigDecimal.valueOf(555.55),
+                        null,
+                        null,
+                        "ident",
+                        true,
+                        true,
+                        behandling = behandling,
+                    ),
+                )
 
             val actualBehandling = behandlingService.createBehandling(behandling)
 

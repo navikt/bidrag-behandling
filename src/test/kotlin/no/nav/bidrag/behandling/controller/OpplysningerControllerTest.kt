@@ -204,7 +204,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         Assertions.assertEquals("inn1", oppAktivResult2.body!!.data)
     }
 
-    private fun skalOppretteOpplysninger(behandlingId: Long, data: String, aktiv: Boolean, opplysningerType: OpplysningerType): OpplysningerDto {
+    private fun skalOppretteOpplysninger(
+        behandlingId: Long,
+        data: String,
+        aktiv: Boolean,
+        opplysningerType: OpplysningerType,
+    ): OpplysningerDto {
         val opplysninger = createOpplysninger(behandlingId, data, aktiv, opplysningerType)
 
         val opp =
@@ -222,7 +227,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         return body
     }
 
-    private fun createOpplysninger(behandlingId: Long, data: String, aktiv: Boolean, opplysningerType: OpplysningerType): AddOpplysningerRequest {
+    private fun createOpplysninger(
+        behandlingId: Long,
+        data: String,
+        aktiv: Boolean,
+        opplysningerType: OpplysningerType,
+    ): AddOpplysningerRequest {
         val opplysninger =
             AddOpplysningerRequest(behandlingId, aktiv, opplysningerType, data, "2025-02-01")
         return opplysninger

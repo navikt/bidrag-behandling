@@ -37,16 +37,16 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         saksnummer = SAKSNUMMER,
                         enhet = BidragEnhet.ENHET_FARSKAP,
                         behandlingInfo =
-                        BehandlingInfoDto(
-                            soknadId = SOKNAD_ID,
-                            stonadType = Stønadstype.FORSKUDD,
-                        ),
+                            BehandlingInfoDto(
+                                soknadId = SOKNAD_ID,
+                                stonadType = Stønadstype.FORSKUDD,
+                            ),
                         roller =
-                        listOf(
-                            ROLLE_BM,
-                            ROLLE_BP,
-                            ROLLE_BA_1,
-                        ),
+                            listOf(
+                                ROLLE_BM,
+                                ROLLE_BP,
+                                ROLLE_BA_1,
+                            ),
                     ),
                 ),
                 List::class.java,
@@ -200,17 +200,17 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         saksnummer = SAKSNUMMER,
                         enhet = BidragEnhet.ENHET_FARSKAP,
                         behandlingInfo =
-                        BehandlingInfoDto(
-                            soknadId = SOKNAD_ID,
-                            stonadType = Stønadstype.FORSKUDD,
-                            vedtakId = 1,
-                        ),
+                            BehandlingInfoDto(
+                                soknadId = SOKNAD_ID,
+                                stonadType = Stønadstype.FORSKUDD,
+                                vedtakId = 1,
+                            ),
                         roller =
-                        listOf(
-                            ROLLE_BM,
-                            ROLLE_BP,
-                            ROLLE_BA_1,
-                        ),
+                            listOf(
+                                ROLLE_BM,
+                                ROLLE_BP,
+                                ROLLE_BA_1,
+                            ),
                     ),
                 ),
                 List::class.java,
@@ -239,28 +239,31 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
             ),
         )
         stubUtils.stubTilgangskontrollTema()
-        val response = httpHeaderTestRestTemplate.exchange(
-            "${rootUri()}/forsendelse/init",
-            HttpMethod.POST,
-            HttpEntity(
-                InitalizeForsendelseRequest(
-                    saksnummer = SAKSNUMMER,
-                    behandlingStatus = BehandlingStatus.FEILREGISTRERT,
-                    enhet = BidragEnhet.ENHET_FARSKAP,
-                    behandlingInfo = BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.FORSKUDD,
-                        vedtakId = 1,
-                    ),
-                    roller = listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+        val response =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/forsendelse/init",
+                HttpMethod.POST,
+                HttpEntity(
+                    InitalizeForsendelseRequest(
+                        saksnummer = SAKSNUMMER,
+                        behandlingStatus = BehandlingStatus.FEILREGISTRERT,
+                        enhet = BidragEnhet.ENHET_FARSKAP,
+                        behandlingInfo =
+                            BehandlingInfoDto(
+                                soknadId = SOKNAD_ID,
+                                stonadType = Stønadstype.FORSKUDD,
+                                vedtakId = 1,
+                            ),
+                        roller =
+                            listOf(
+                                ROLLE_BM,
+                                ROLLE_BP,
+                                ROLLE_BA_1,
+                            ),
                     ),
                 ),
-            ),
-            List::class.java,
-        )
+                List::class.java,
+            )
 
         response.statusCode shouldBe HttpStatus.OK
         response.body shouldBe listOf("1", "2")

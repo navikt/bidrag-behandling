@@ -30,13 +30,14 @@ class DefaultRestControllerAdvice {
     )
     fun handleInvalidValueExceptions(exception: Exception): ResponseEntity<*> {
         val cause = exception.cause
-        val valideringsFeil = if (cause is MissingKotlinParameterException) {
-            createMissingKotlinParameterViolation(
-                cause,
-            )
-        } else {
-            null
-        }
+        val valideringsFeil =
+            if (cause is MissingKotlinParameterException) {
+                createMissingKotlinParameterViolation(
+                    cause,
+                )
+            } else {
+                null
+            }
         LOGGER.warn(
             "Forespørselen inneholder ugyldig verdi: ${valideringsFeil ?: "ukjent feil"}",
             exception,
@@ -71,7 +72,9 @@ class DefaultRestControllerAdvice {
     @ExceptionHandler(Exception::class)
     fun handleOtherExceptions(exception: Exception): ResponseEntity<*> {
         LOGGER.warn("Det skjedde en ukjent feil", exception)
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header(HttpHeaders.WARNING, "Det skjedde en ukjent feil: ${exception.message}")
+        return ResponseEntity.status(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        ).header(HttpHeaders.WARNING, "Det skjedde en ukjent feil: ${exception.message}")
             .build<Any>()
     }
 
@@ -79,15 +82,18 @@ class DefaultRestControllerAdvice {
     @ExceptionHandler(JwtTokenUnauthorizedException::class)
     fun handleUnauthorizedException(exception: JwtTokenUnauthorizedException): ResponseEntity<*> {
         LOGGER.warn("Ugyldig eller manglende sikkerhetstoken", exception)
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(HttpHeaders.WARNING, "Ugyldig eller manglende sikkerhetstoken").build<Any>()
+        return ResponseEntity.status(
+            HttpStatus.UNAUTHORIZED,
+        ).header(HttpHeaders.WARNING, "Ugyldig eller manglende sikkerhetstoken").build<Any>()
     }
 
     private fun createMissingKotlinParameterViolation(ex: MissingKotlinParameterException): String {
         val errorFieldRegex = Regex("\\.([^.]*)\\[\\\"(.*)\"\\]\$")
-        val paths = ex.path.map { errorFieldRegex.find(it.description)!! }.map {
-            val (objectName, field) = it.destructured
-            "$objectName.$field"
-        }
+        val paths =
+            ex.path.map { errorFieldRegex.find(it.description)!! }.map {
+                val (objectName, field) = it.destructured
+                "$objectName.$field"
+            }
         return "${paths.joinToString("->")} må fylles ut"
     }
 }

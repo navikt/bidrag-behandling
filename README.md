@@ -16,6 +16,22 @@ Et lokalt Dockermiljø må være tilgjengelig for lokal kjøring. Forebredelsess
 > docker-compose build \
 > docker-compose up 
 
+#### Bygge applikasjonen
+
+###### Maven wrapper
+Maven wrapper sikrer at alle Maven bygg-forutsetninger er til stede. For å benytte Maven wrapper kjør
+> mvn wrapper:wrapper
+
+deretter kan Maven-kommandoer som clean install kjøres med
+> ./mvnw clean install
+ 
+###### Ktlint med Maven wrapper
+verifisere
+> ./mvnw antrun:run@ktlint
+
+formattere
+> ./mvnw antrun:run@ktlint-format
+
 #### Starte applikasjon lokalt
 
 Profil: local (angis i program arguments)

@@ -19,7 +19,7 @@ import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
-import java.util.*
+import java.util.Arrays
 
 class StubUtils {
     companion object {
@@ -30,7 +30,10 @@ class StubUtils {
         }
     }
 
-    fun <R> stubResponse(url: String, personResponse: R) {
+    fun <R> stubResponse(
+        url: String,
+        personResponse: R,
+    ) {
         try {
             WireMock.stubFor(
                 WireMock.post(url).willReturn(
@@ -44,7 +47,10 @@ class StubUtils {
         }
     }
 
-    fun stubOpprettForsendelse(forsendelseId: String = "12312321", status: HttpStatus = HttpStatus.OK) {
+    fun stubOpprettForsendelse(
+        forsendelseId: String = "12312321",
+        status: HttpStatus = HttpStatus.OK,
+    ) {
         WireMock.stubFor(
             WireMock.post(WireMock.urlMatching("/forsendelse/api/forsendelse")).willReturn(
                 aClosedJsonResponse()
@@ -82,7 +88,10 @@ class StubUtils {
         )
     }
 
-    fun stubHentePersoninfo(status: HttpStatus = HttpStatus.OK, personident: String) {
+    fun stubHentePersoninfo(
+        status: HttpStatus = HttpStatus.OK,
+        personident: String,
+    ) {
         WireMock.stubFor(
             WireMock.post(WireMock.urlMatching("/bidrag-person/informasjon"))
                 .willReturn(
@@ -109,18 +118,20 @@ class StubUtils {
                         .withBody(
                             toJsonString(
                                 BeregnGrunnlag(
-                                    periode = ÅrMånedsperiode(
-                                        LocalDate.now().minusMonths(6),
-                                        LocalDate.now().plusMonths(6),
-                                    ),
-                                    søknadsbarnReferanse = "123",
-                                    grunnlagListe = listOf(
-                                        Grunnlag(
-                                            referanse = "abra_cadabra",
-                                            type = Grunnlagstype.BARNETILLEGG,
-                                            grunnlagsreferanseListe = listOf("123"),
+                                    periode =
+                                        ÅrMånedsperiode(
+                                            LocalDate.now().minusMonths(6),
+                                            LocalDate.now().plusMonths(6),
                                         ),
-                                    ),
+                                    søknadsbarnReferanse = "123",
+                                    grunnlagListe =
+                                        listOf(
+                                            Grunnlag(
+                                                referanse = "abra_cadabra",
+                                                type = Grunnlagstype.BARNETILLEGG,
+                                                grunnlagsreferanseListe = listOf("123"),
+                                            ),
+                                        ),
                                 ),
                             ),
                         ),
@@ -128,7 +139,10 @@ class StubUtils {
         )
     }
 
-    fun stubTilgangskontrollTema(result: Boolean = true, status: HttpStatus = HttpStatus.OK) {
+    fun stubTilgangskontrollTema(
+        result: Boolean = true,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
         WireMock.stubFor(
             WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/tema")).willReturn(
                 aClosedJsonResponse()
@@ -147,7 +161,10 @@ class StubUtils {
             verifyContains(verify, *contains)
         }
 
-        fun forsendelseHentetForSak(saksnummer: String, antall: Int = -1) {
+        fun forsendelseHentetForSak(
+            saksnummer: String,
+            antall: Int = -1,
+        ) {
             val verify =
                 WireMock.getRequestedFor(
                     WireMock.urlMatching("/forsendelse/api/forsendelse/sak/$saksnummer/forsendelser"),
@@ -165,7 +182,10 @@ class StubUtils {
             )
         }
 
-        fun forsendelseSlettet(forsendelseId: String = "(.*)", antall: Int = -1) {
+        fun forsendelseSlettet(
+            forsendelseId: String = "(.*)",
+            antall: Int = -1,
+        ) {
             val verify =
                 WireMock.postRequestedFor(
                     WireMock.urlMatching("/forsendelse/api/forsendelse/journal/$forsendelseId/avvik"),
@@ -195,7 +215,10 @@ class StubUtils {
             opprettForsendelseKaltAntallGanger(0)
         }
 
-        private fun verifyContains(verify: RequestPatternBuilder, vararg contains: String) {
+        private fun verifyContains(
+            verify: RequestPatternBuilder,
+            vararg contains: String,
+        ) {
             Arrays.stream(contains).forEach { verify.withRequestBody(ContainsPattern(it)) }
             WireMock.verify(verify)
         }
