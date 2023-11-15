@@ -38,6 +38,7 @@ data class CreateRolleDtoTest(
     val rolleType: CreateRolleRolleType,
     val ident: String?,
     val opprettetDato: Date?,
+    val navn: String? = null,
 )
 
 @Suppress("NonAsciiCharacters")
@@ -276,12 +277,57 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
     }
 
     @Test
-    fun `skal ikke opprette en behandling med rolle med null ident`() {
+    fun `skal ikke opprette behandling som inkluderer barn uten navn og ident`() {
         // given
         val roller =
             setOf(
                 CreateRolleDtoTest(CreateRolleRolleType.BARN, null, Date(1)),
                 CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            )
+        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
+
+        // when
+        val responseMedNull =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling",
+                HttpMethod.POST,
+                HttpEntity(testBehandlingMedNull),
+                Void::class.java,
+            )
+
+        // then
+        assertEquals(HttpStatus.BAD_REQUEST, responseMedNull.statusCode)
+    }
+
+    @Test
+    fun `skal opprette behandling som inkluderer barn med navn men uten ident`() { // given
+        val roller =
+            setOf(
+                CreateRolleDtoTest(CreateRolleRolleType.BARN, null, Date(1), "Ola Dunk"),
+                CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+            )
+        val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
+
+        // when
+        val responseMedNull =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling",
+                HttpMethod.POST,
+                HttpEntity(testBehandlingMedNull),
+                Void::class.java,
+            )
+
+        // then
+        assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+    }
+
+    @Test
+    fun `skal ikke opprette behandling som inkluderer BP uten ident`() {
+        // given
+        val roller =
+            setOf(
+                CreateRolleDtoTest(CreateRolleRolleType.BARN, "1235", Date(1)),
+                CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, null, Date(1), "Ola Dunk"),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
