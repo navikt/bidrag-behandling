@@ -34,13 +34,13 @@ class ForskuddBeregning {
     ): Grunnlag =
         Grunnlag(
             referanse = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
-            type = Grunnlagstype.SOKNADSBARN_INFO,
+            type = Grunnlagstype.PERSON,
             innhold =
                 POJONode(
                     SoknadsBarnNode(
                         ident = soknadBarn.ident ?: "",
                         navn = soknadBarn.navn ?: "",
-                        fodselsdato = fødselsdato,
+                        fødselsdato = fødselsdato,
                     ),
                 ),
         )
@@ -235,6 +235,7 @@ class ForskuddBeregning {
     ): BeregnGrunnlag =
         BeregnGrunnlag(
             periode = ÅrMånedsperiode(b.virkningsDato, b.datoTom),
+            søknadsbarnReferanse = søknadsbarn.referanse,
             grunnlagListe =
                 listOf(søknadsbarn) +
                     prepareBarnIHusstand(b) +
@@ -274,7 +275,7 @@ data class BostatusNode(
 data class SoknadsBarnNode(
     val ident: String,
     val navn: String,
-    val fodselsdato: String,
+    val fødselsdato: String,
 )
 
 data class InntektNode(
