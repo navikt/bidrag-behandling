@@ -40,7 +40,7 @@ fun Set<Sivilstand>.toSivilstandDto() =
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     this.map {
-        Sivilstand(behandling, it.datoFom?.toDate(), it.datoTom?.toDate(), it.sivilstandType,it.kilde, it.id)
+        Sivilstand(behandling, it.datoFom?.toDate(), it.datoTom?.toDate(), it.sivilstandType, it.kilde, it.id)
     }.toMutableSet()
 
 fun Set<Barnetillegg>.toBarnetilleggDto() =

@@ -42,7 +42,6 @@ enum class Behandlingstype {
     OPPFOSTRINGSBIDRAG,
 }
 
-
 @Schema(enumAsRef = true)
 enum class SoknadType {
     INDEKSREGULERING,
@@ -65,7 +64,6 @@ enum class SoknadType {
 
     ENDRING_MOTTAKER,
 }
-
 
 @Schema(enumAsRef = true)
 enum class ForskuddAarsakType(val beskrivelse: String) {
