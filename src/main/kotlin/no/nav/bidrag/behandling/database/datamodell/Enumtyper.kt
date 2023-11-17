@@ -3,6 +3,71 @@ package no.nav.bidrag.behandling.database.datamodell
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(enumAsRef = true)
+enum class BoStatusType {
+    IKKE_REGISTRERT_PA_ADRESSE,
+    REGISTRERT_PA_ADRESSE,
+}
+
+@Schema(enumAsRef = true)
+enum class Kilde {
+    MANUELL,
+    OFFENTLIG,
+}
+
+@Schema(enumAsRef = true)
+enum class OpplysningerType {
+    INNTEKTSOPPLYSNINGER,
+    BOFORHOLD,
+}
+
+// TODO Bruk Sivilstandstype fra bidrag-domain istedenfor
+@Schema(enumAsRef = true)
+enum class SivilstandType {
+    BOR_ALENE_MED_BARN,
+    GIFT,
+}
+
+@Schema(enumAsRef = true)
+enum class Behandlingstype {
+    BIDRAG,
+
+    FORSKUDD,
+
+    BIDRAG18AAR,
+
+    EKTEFELLEBIDRAG,
+
+    MOTREGNING,
+
+    OPPFOSTRINGSBIDRAG,
+}
+
+
+@Schema(enumAsRef = true)
+enum class SoknadType {
+    INDEKSREGULERING,
+
+    ALDERSJUSTERING,
+
+    OPPHØR,
+
+    ALDERSOPPHØR,
+
+    REVURDERING,
+
+    FASTSETTELSE,
+
+    INNKREVING,
+
+    KLAGE,
+
+    ENDRING,
+
+    ENDRING_MOTTAKER,
+}
+
+
+@Schema(enumAsRef = true)
 enum class ForskuddAarsakType(val beskrivelse: String) {
     SF("Annet"),
     NF("Endring 3 måneder tilbake"),
