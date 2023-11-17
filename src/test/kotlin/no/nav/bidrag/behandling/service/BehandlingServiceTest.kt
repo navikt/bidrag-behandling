@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
@@ -128,6 +129,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         Calendar.getInstance().time.toLocalDate(),
                         Calendar.getInstance().time.toLocalDate(),
                         SivilstandType.BOR_ALENE_MED_BARN,
+                        Kilde.OFFENTLIG,
                     ),
                 )
 

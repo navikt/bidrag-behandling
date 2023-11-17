@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
@@ -37,7 +38,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
         // 2.1 Prepare husstandsBarn
 
-        val perioder = setOf(HusstandsBarnPeriodeDto(null, null, null, BoStatusType.IKKE_REGISTRERT_PA_ADRESSE, "offentlig"))
+        val perioder =
+            setOf(HusstandsBarnPeriodeDto(null, null, null, BoStatusType.IKKE_REGISTRERT_PA_ADRESSE, Kilde.OFFENTLIG))
         val husstandsBarn = setOf(HusstandsbarnDto(behandling.body!!.id, true, perioder, "ident", null))
 
         // 2.2

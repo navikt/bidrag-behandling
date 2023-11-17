@@ -10,7 +10,7 @@ enum class BoStatusType {
 
 @Schema(enumAsRef = true)
 enum class Kilde {
-    MANUELL,
+    MANUELT,
     OFFENTLIG,
 }
 
