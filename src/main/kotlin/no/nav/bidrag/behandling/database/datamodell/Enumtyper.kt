@@ -10,7 +10,7 @@ enum class BoStatusType {
 
 @Schema(enumAsRef = true)
 enum class Kilde {
-    MANUELT,
+    MANUELL,
     OFFENTLIG,
 }
 
@@ -30,38 +30,24 @@ enum class SivilstandType {
 @Schema(enumAsRef = true)
 enum class Behandlingstype {
     BIDRAG,
-
     FORSKUDD,
-
     BIDRAG18AAR,
-
     EKTEFELLEBIDRAG,
-
     MOTREGNING,
-
     OPPFOSTRINGSBIDRAG,
 }
 
 @Schema(enumAsRef = true)
 enum class SoknadType {
     INDEKSREGULERING,
-
     ALDERSJUSTERING,
-
     OPPHØR,
-
     ALDERSOPPHØR,
-
     REVURDERING,
-
     FASTSETTELSE,
-
     INNKREVING,
-
     KLAGE,
-
     ENDRING,
-
     ENDRING_MOTTAKER,
 }
 
