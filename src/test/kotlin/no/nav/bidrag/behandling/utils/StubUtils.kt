@@ -10,8 +10,7 @@ import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.dto.HentPersonResponse
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
-import no.nav.bidrag.domene.enums.Grunnlagstype
-import no.nav.bidrag.domene.tid.Fødselsdato
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
@@ -101,7 +100,7 @@ class StubUtils {
                             toJsonString(
                                 HentPersonResponse(
                                     personident,
-                                    fødselsdato = Fødselsdato(LocalDate.now().minusMonths(500)).toString(),
+                                    fødselsdato = LocalDate.now().minusMonths(500).toString(),
                                 ),
                             ),
                         ),

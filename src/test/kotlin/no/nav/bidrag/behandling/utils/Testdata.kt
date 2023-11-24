@@ -10,8 +10,8 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDate
-import no.nav.bidrag.domene.enums.Rolletype
-import no.nav.bidrag.domene.enums.SøktAvType
+import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.ident.Personident
 import java.time.LocalDate
 import java.time.YearMonth

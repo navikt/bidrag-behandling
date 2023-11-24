@@ -9,7 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import java.util.Date

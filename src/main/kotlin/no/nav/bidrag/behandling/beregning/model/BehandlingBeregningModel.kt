@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.transformers.toLocalDate
-import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Date

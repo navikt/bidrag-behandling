@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
-import no.nav.bidrag.domene.enums.BehandlingsrefKilde
+import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
@@ -50,7 +50,7 @@ class VedtakHendelseListener(
         forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer,
-                enhet = vedtak.enhetsnummer.verdi,
+                enhet = vedtak.enhetsnummer?.verdi,
                 behandlingInfo =
                     BehandlingInfoDto(
                         soknadId = vedtak.soknadId ?: behandling.soknadId,
@@ -81,7 +81,7 @@ val VedtakHendelse.engangsbelopType get() = this.engangsbeløpListe?.firstOrNull
 val VedtakHendelse.soknadId
     get() =
         this.behandlingsreferanseListe?.find {
-            it.kilde == BehandlingsrefKilde.BISYS_SOKNAD.name
+            it.kilde == BehandlingsrefKilde.BISYS_SØKNAD.name
         }?.referanse?.toLong()
 val VedtakHendelse.behandlingId
     get() =
