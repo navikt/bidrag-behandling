@@ -121,7 +121,7 @@ data class BehandlingBeregningModel private constructor(
                                     it.datoFom?.toLocalDate()
                                         ?: raise("HusstandsBarnPeriode Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
-                                referanseTilBarn = it.husstandsBarn.ident,
+                                ident = it.husstandsBarn.ident,
                                 boStatus = it.boStatus,
                             )
                         }
@@ -145,7 +145,7 @@ data class BehandlingBeregningModel private constructor(
 data class HusstandsBarnPeriodeModel(
     val datoFom: LocalDate,
     val datoTom: LocalDate? = null,
-    val referanseTilBarn: String?,
+    val ident: String?,
     val boStatus: BoStatusType?,
     // TODO ENDRE til bostatusKode fra felles
     // import no.nav.bidrag.beregn.felles.enums.BostatusKode

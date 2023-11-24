@@ -23,7 +23,7 @@ class Rolle(
     val behandling: Behandling,
     @Enumerated(EnumType.STRING)
     val rolleType: Rolletype,
-    val ident: String?,
+    val ident: String,
     val fodtDato: Date?,
     val opprettetDato: Date?,
     @Id

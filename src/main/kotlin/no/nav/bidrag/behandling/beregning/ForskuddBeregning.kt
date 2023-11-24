@@ -28,21 +28,22 @@ import java.time.LocalDate
 
 @Service
 class ForskuddBeregning {
-    fun lagePersonobjektForSøknadsbarn(
+    private fun prepareSoknadsBarn(
         soknadBarn: Rolle,
-        fødselsdato: String,
-    ): Grunnlag =
-        Grunnlag(
-            referanse = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
-            type = Grunnlagstype.PERSON,
-            innhold =
-                POJONode(
-                    SoknadsBarnNode(
-                        ident = soknadBarn.ident ?: "",
-                        navn = soknadBarn.navn ?: "",
-                        fødselsdato = fødselsdato,
+        fDato: String,
+    ): List<Grunnlag> =
+        listOf(
+            Grunnlag(
+                navn = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
+                type = Grunnlagstype.SOKNADSBARN_INFO,
+                innhold =
+                    POJONode(
+                        SoknadsBarnNode(
+                            soknadsbarnId = soknadBarn.id!!.toInt(),
+                            fodselsdato = fDato,
+                        ),
                     ),
-                ),
+            ),
         )
 
     // TODO BostatusKode
@@ -56,13 +57,14 @@ class ForskuddBeregning {
 
     private fun prepareBostatus(
         husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>,
-        søknadsbarn: Grunnlag,
+        soknadsBarnIdent: String,
+        soknadBarn: Rolle,
     ): List<Grunnlag> =
         husstandsBarnPerioder
-            .filter { søknadsbarn.referanse == it.referanseTilBarn }
+            .filter { soknadsBarnIdent == it.ident }
             .map {
                 Grunnlag(
-                    referanse = "Mottatt_Bostatus_" + it.datoFom.toCompactString(),
+                    navn = "Mottatt_Bostatus_" + it.datoFom.toCompactString(),
                     type = Grunnlagstype.BOSTATUS,
                     innhold =
                         POJONode(
@@ -80,7 +82,7 @@ class ForskuddBeregning {
         splitPeriods(behandlingBeregningModel.husstandsBarnPerioder)
             .map {
                 Grunnlag(
-                    referanse = "Mottatt_BarnIHusstand_" + it.datoFom.replace("-", ""),
+                    navn = "Mottatt_BarnIHusstand_" + it.datoFom.replace("-", ""),
                     type = Grunnlagstype.BARN_I_HUSSTAND,
                     innhold = POJONode(it),
                 )
@@ -94,7 +96,7 @@ class ForskuddBeregning {
         inntekter
             .map {
                 Grunnlag(
-                    referanse = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
+                    navn = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
                     type = Grunnlagstype.INNTEKT,
                     innhold =
                         POJONode(
@@ -111,7 +113,7 @@ class ForskuddBeregning {
             barnetillegg
                 .map {
                     Grunnlag(
-                        referanse = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
+                        navn = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
                         type = Grunnlagstype.INNTEKT,
                         innhold =
                             POJONode(
@@ -128,7 +130,7 @@ class ForskuddBeregning {
             utvidetbarnetrygd
                 .map {
                     Grunnlag(
-                        referanse = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
+                        navn = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
                         type = Grunnlagstype.INNTEKT,
                         innhold =
                             POJONode(
@@ -154,7 +156,7 @@ class ForskuddBeregning {
     private fun prepareSivilstand(sivilstand: List<SivilstandModel>): List<Grunnlag> =
         sivilstand.map {
             Grunnlag(
-                referanse = "Mottatt_Sivilstand_" + it.datoFom.toCompactString(),
+                navn = "Mottatt_Sivilstand_" + it.datoFom.toCompactString(),
                 type = Grunnlagstype.SIVILSTAND,
                 innhold =
                     POJONode(
@@ -231,15 +233,15 @@ class ForskuddBeregning {
 
     fun toPayload(
         b: BehandlingBeregningModel,
-        søknadsbarn: Grunnlag,
+        soknadsBarn: Rolle,
+        fDato: String,
     ): BeregnGrunnlag =
         BeregnGrunnlag(
             periode = ÅrMånedsperiode(b.virkningsDato, b.datoTom),
-            søknadsbarnReferanse = søknadsbarn.referanse,
             grunnlagListe =
-                listOf(søknadsbarn) +
+                prepareSoknadsBarn(soknadsBarn, fDato) +
                     prepareBarnIHusstand(b) +
-                    prepareBostatus(b.husstandsBarnPerioder, søknadsbarn) +
+                    prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +
                     prepareInntekterForBeregning(
                         b.inntekter,
                         b.barnetillegg,
@@ -273,9 +275,8 @@ data class BostatusNode(
 )
 
 data class SoknadsBarnNode(
-    val ident: String,
-    val navn: String,
-    val fødselsdato: String,
+    val soknadsbarnId: Int,
+    val fodselsdato: String,
 )
 
 data class InntektNode(

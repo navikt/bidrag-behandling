@@ -9,7 +9,7 @@ data class ForskuddBeregningRespons(
 )
 
 data class ForskuddBeregningPerBarn(
-    val referanseTilBarn: String?,
+    val ident: String,
     val beregnetForskuddPeriodeListe: List<ResultatPeriode>,
     val grunnlagListe: List<Grunnlag>? = null,
 )

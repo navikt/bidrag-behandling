@@ -209,7 +209,7 @@ fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
                 CreateRolleRolleType.BARN -> Rolletype.BARN
                 CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
             },
-        this.ident,
+        this.ident ?: "",
         this.fodtDato,
         this.opprettetDato,
         navn = this.navn,
