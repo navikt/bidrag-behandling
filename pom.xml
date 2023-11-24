@@ -29,7 +29,7 @@
     <flyway.version>9.22.3</flyway.version>
     <jackson.version>2.16.0</jackson.version>
     <testcontainers.version>1.19.2</testcontainers.version>
-    <tomcat-embed-core.version>10.1.15</tomcat-embed-core.version>
+    <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
     <skipOwasp>false</skipOwasp>
   </properties>
 
