@@ -127,7 +127,11 @@ class StubUtils {
                                     grunnlagListe =
                                         listOf(
                                             Grunnlag(
+<<<<<<< HEAD
                                                 referanse = "abra_cadabra",
+=======
+                                                navn = "abra_cadabra",
+>>>>>>> main
                                                 type = Grunnlagstype.BARNETILLEGG,
                                                 grunnlagsreferanseListe = listOf("123"),
                                             ),

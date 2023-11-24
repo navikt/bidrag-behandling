@@ -28,6 +28,7 @@ import java.time.LocalDate
 
 @Service
 class ForskuddBeregning {
+<<<<<<< HEAD
     fun lagePersonobjektForSøknadsbarn(
         soknadBarn: Rolle,
         fødselsdato: String,
@@ -43,6 +44,24 @@ class ForskuddBeregning {
                         fødselsdato = fødselsdato,
                     ),
                 ),
+=======
+    private fun prepareSoknadsBarn(
+        soknadBarn: Rolle,
+        fDato: String,
+    ): List<Grunnlag> =
+        listOf(
+            Grunnlag(
+                navn = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
+                type = Grunnlagstype.SOKNADSBARN_INFO,
+                innhold =
+                    POJONode(
+                        SoknadsBarnNode(
+                            soknadsbarnId = soknadBarn.id!!.toInt(),
+                            fodselsdato = fDato,
+                        ),
+                    ),
+            ),
+>>>>>>> main
         )
 
     // TODO BostatusKode
@@ -94,7 +113,11 @@ class ForskuddBeregning {
         inntekter
             .map {
                 Grunnlag(
+<<<<<<< HEAD
                     referanse = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
+=======
+                    navn = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
+>>>>>>> main
                     type = Grunnlagstype.INNTEKT,
                     innhold =
                         POJONode(
@@ -111,7 +134,11 @@ class ForskuddBeregning {
             barnetillegg
                 .map {
                     Grunnlag(
+<<<<<<< HEAD
                         referanse = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
+=======
+                        navn = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
+>>>>>>> main
                         type = Grunnlagstype.INNTEKT,
                         innhold =
                             POJONode(
@@ -128,7 +155,11 @@ class ForskuddBeregning {
             utvidetbarnetrygd
                 .map {
                     Grunnlag(
+<<<<<<< HEAD
                         referanse = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
+=======
+                        navn = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
+>>>>>>> main
                         type = Grunnlagstype.INNTEKT,
                         innhold =
                             POJONode(
@@ -231,6 +262,7 @@ class ForskuddBeregning {
 
     fun toPayload(
         b: BehandlingBeregningModel,
+<<<<<<< HEAD
         søknadsbarn: Grunnlag,
     ): BeregnGrunnlag =
         BeregnGrunnlag(
@@ -240,6 +272,17 @@ class ForskuddBeregning {
                 listOf(søknadsbarn) +
                     prepareBarnIHusstand(b) +
                     prepareBostatus(b.husstandsBarnPerioder, søknadsbarn) +
+=======
+        soknadsBarn: Rolle,
+        fDato: String,
+    ): BeregnGrunnlag =
+        BeregnGrunnlag(
+            periode = ÅrMånedsperiode(b.virkningsDato, b.datoTom),
+            grunnlagListe =
+                prepareSoknadsBarn(soknadsBarn, fDato) +
+                    prepareBarnIHusstand(b) +
+                    prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +
+>>>>>>> main
                     prepareInntekterForBeregning(
                         b.inntekter,
                         b.barnetillegg,
