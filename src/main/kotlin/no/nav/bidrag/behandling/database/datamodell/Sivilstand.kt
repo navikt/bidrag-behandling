@@ -20,6 +20,8 @@ class Sivilstand(
     val datoTom: Date?,
     @Enumerated(EnumType.STRING)
     val sivilstandType: SivilstandType,
+    @Enumerated(EnumType.STRING)
+    val kilde: Kilde,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

@@ -23,7 +23,10 @@ class DefaultRestControllerAdvice {
 
     @ResponseBody
     @ExceptionHandler(
-        value = [MethodArgumentNotValidException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class, ConversionFailedException::class, HttpMessageNotReadableException::class],
+        value = [
+            MethodArgumentNotValidException::class, IllegalArgumentException::class, MethodArgumentTypeMismatchException::class,
+            ConversionFailedException::class, HttpMessageNotReadableException::class,
+        ],
     )
     fun handleInvalidValueExceptions(exception: Exception): ResponseEntity<*> {
         val cause = exception.cause
@@ -40,13 +43,10 @@ class DefaultRestControllerAdvice {
             exception,
         )
 
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .header(
-                HttpHeaders.WARNING,
-                "Forespørselen inneholder ugyldig verdi: ${valideringsFeil ?: exception.message}",
-            )
-            .build<Any>()
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).header(
+            HttpHeaders.WARNING,
+            "Forespørselen inneholder ugyldig verdi: ${valideringsFeil ?: exception.message}",
+        ).build<Any>()
     }
 
     @ResponseBody
@@ -54,10 +54,7 @@ class DefaultRestControllerAdvice {
     fun handleHttpClientErrorException(exception: HttpStatusCodeException): ResponseEntity<*> {
         val errorMessage = getErrorMessage(exception)
         LOGGER.warn(errorMessage, exception)
-        return ResponseEntity
-            .status(exception.statusCode)
-            .header(HttpHeaders.WARNING, errorMessage)
-            .build<Any>()
+        return ResponseEntity.status(exception.statusCode).header(HttpHeaders.WARNING, errorMessage).build<Any>()
     }
 
     private fun getErrorMessage(exception: HttpStatusCodeException): String {
@@ -75,9 +72,9 @@ class DefaultRestControllerAdvice {
     @ExceptionHandler(Exception::class)
     fun handleOtherExceptions(exception: Exception): ResponseEntity<*> {
         LOGGER.warn("Det skjedde en ukjent feil", exception)
-        return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .header(HttpHeaders.WARNING, "Det skjedde en ukjent feil: ${exception.message}")
+        return ResponseEntity.status(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+        ).header(HttpHeaders.WARNING, "Det skjedde en ukjent feil: ${exception.message}")
             .build<Any>()
     }
 
@@ -85,10 +82,9 @@ class DefaultRestControllerAdvice {
     @ExceptionHandler(JwtTokenUnauthorizedException::class)
     fun handleUnauthorizedException(exception: JwtTokenUnauthorizedException): ResponseEntity<*> {
         LOGGER.warn("Ugyldig eller manglende sikkerhetstoken", exception)
-        return ResponseEntity
-            .status(HttpStatus.UNAUTHORIZED)
-            .header(HttpHeaders.WARNING, "Ugyldig eller manglende sikkerhetstoken")
-            .build<Any>()
+        return ResponseEntity.status(
+            HttpStatus.UNAUTHORIZED,
+        ).header(HttpHeaders.WARNING, "Ugyldig eller manglende sikkerhetstoken").build<Any>()
     }
 
     private fun createMissingKotlinParameterViolation(ex: MissingKotlinParameterException): String {

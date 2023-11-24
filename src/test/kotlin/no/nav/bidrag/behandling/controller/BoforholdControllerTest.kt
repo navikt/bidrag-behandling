@@ -1,12 +1,13 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.BoStatusType
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
 import no.nav.bidrag.behandling.dto.boforhold.UpdateBoforholdRequest
-import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnPeriodeDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -37,8 +38,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
         // 2.1 Prepare husstandsBarn
 
-        val perioder = setOf(HusstandsBarnPeriodeDto(null, null, null, BoStatusType.IKKE_REGISTRERT_PA_ADRESSE, "offentlig"))
-        val husstandsBarn = setOf(HusstandsBarnDto(behandling.body!!.id, true, perioder, "ident", null))
+        val perioder =
+            setOf(HusstandsBarnPeriodeDto(null, null, null, BoStatusType.IKKE_REGISTRERT_PA_ADRESSE, Kilde.OFFENTLIG))
+        val husstandsBarn = setOf(HusstandsbarnDto(behandling.body!!.id, true, perioder, "ident", null))
 
         // 2.2
         val boforholdData = UpdateBoforholdRequest(husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //

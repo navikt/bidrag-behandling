@@ -12,7 +12,7 @@ import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
 import org.slf4j.MDC
 import org.springframework.stereotype.Component
-import java.util.*
+import java.util.UUID
 
 private val log = KotlinLogging.logger {}
 

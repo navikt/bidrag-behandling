@@ -17,7 +17,6 @@ class BidragPersonConsumer(
     @Value("\${BIDRAG_PERSON_URL}") bidragPersonUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-person") {
-
     private val hentPersonUri =
         UriComponentsBuilder.fromUri(bidragPersonUrl).pathSegment("informasjon").build().toUri()
 

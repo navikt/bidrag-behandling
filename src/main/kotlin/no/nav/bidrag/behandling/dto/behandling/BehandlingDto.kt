@@ -2,18 +2,20 @@ package no.nav.bidrag.behandling.dto.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.BehandlingType
+import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
-import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.domene.enums.SøktAvType
 import java.time.LocalDate
 
 // TODO: Flytt dette til bidrag-transport
 data class BehandlingDto(
     val id: Long,
-    val behandlingType: BehandlingType, // Union av Stønadstype og Engangsbeløptype
-    val soknadType: SoknadType, // TODO Bruk Vedtakstype istedenfor
+    // Union av Stønadstype og Engangsbeløptype
+    val behandlingtype: Behandlingstype,
+    // TODO Bruk Vedtakstype istedenfor
+    val søknadstype: SoknadType,
     val erVedtakFattet: Boolean,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -26,21 +28,21 @@ data class BehandlingDto(
     val mottatDato: LocalDate,
     val soknadFraType: SøktAvType,
     val saksnummer: String,
-    val soknadId: Long,
-    val behandlerEnhet: String,
+    val soknadsid: Long,
+    val behandlerenhet: String,
     val roller: Set<RolleDto>,
-    val husstandsBarn: Set<HusstandsBarnDto>,
+    val husstandsbarn: Set<HusstandsbarnDto>,
     val sivilstand: Set<SivilstandDto>,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val virkningsDato: LocalDate? = null,
+    val virkningsdato: LocalDate? = null,
     val soknadRefId: Long? = null,
-    val grunnlagspakkeId: Long? = null,
-    val aarsak: ForskuddAarsakType? = null,
-    val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
-    val virkningsTidspunktBegrunnelseKunINotat: String? = null,
-    val boforholdBegrunnelseMedIVedtakNotat: String? = null,
-    val boforholdBegrunnelseKunINotat: String? = null,
-    val inntektBegrunnelseMedIVedtakNotat: String? = null,
-    val inntektBegrunnelseKunINotat: String? = null,
+    val grunnlagspakkeid: Long? = null,
+    val årsak: ForskuddAarsakType? = null,
+    val virkningstidspunktBegrunnelseMedIVedtaksnotat: String? = null,
+    val virkningstidspunktBegrunnelseKunINotat: String? = null,
+    val boforholdsbegrunnelseMedIVedtaksnotat: String? = null,
+    val boforholdsbegrunnelseKunINotat: String? = null,
+    val inntektsbegrunnelseMedIVedtaksnotat: String? = null,
+    val inntektsbegrunnelseKunINotat: String? = null,
 )

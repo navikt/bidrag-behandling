@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import no.nav.bidrag.behandling.database.datamodell.BehandlingType
+import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.domene.enums.Engangsbeløptype
 import no.nav.bidrag.domene.enums.Stønadstype
@@ -13,7 +13,7 @@ import java.util.Date
 
 data class CreateBehandlingRequest(
     @Schema(required = true)
-    val behandlingType: BehandlingType,
+    val behandlingType: Behandlingstype,
     @Schema(required = true)
     val soknadType: SoknadType,
     @Schema(required = true)

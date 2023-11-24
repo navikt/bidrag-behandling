@@ -28,5 +28,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubSlettForsendelse()
         stubUtils.stubHentForsendelserForSak()
         stubUtils.stubTilgangskontrollTema()
+        stubUtils.stubHentePersoninfo(personident = "12345")
+        stubUtils.stubBeregneForskudd()
     }
 }

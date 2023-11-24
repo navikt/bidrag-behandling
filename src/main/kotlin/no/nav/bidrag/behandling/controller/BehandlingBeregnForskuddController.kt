@@ -35,7 +35,7 @@ class BehandlingBeregnForskuddController(
     ) = (datoFom1 === null || datoFom1 > datoFom2 || datoFom1.isEqual(datoFom2)) && (
         (datoTom2 == null && datoTom1 == null) ||
             (datoTom1 != null && (datoTom2 == null || datoTom1 < datoTom2 || datoTom1.isEqual(datoTom2)))
-        )
+    )
 
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/beregn")
@@ -54,11 +54,12 @@ class BehandlingBeregnForskuddController(
                     behandling
                         .getSøknadsBarn()
                         .mapOrAccumulate {
-                            val fDato = if (it.fodtDato == null) {
-                                bidragPersonConsumer.hentPerson(it.ident).fødselsdato
-                            } else {
-                                it.fodtDato.toLocalDate().toNoString()
-                            }
+                            val fDato =
+                                if (it.fodtDato == null) {
+                                    bidragPersonConsumer.hentPerson(it.ident).fødselsdato
+                                } else {
+                                    it.fodtDato.toLocalDate().toNoString()
+                                }
 
                             val payload = forskuddBeregning.toPayload(behandlingModel, it, fDato)
 
@@ -68,9 +69,13 @@ class BehandlingBeregnForskuddController(
                                 val beregnetForskuddPeriodeListe = respons.beregnetForskuddPeriodeListe
                                 beregnetForskuddPeriodeListe.forEach { r ->
                                     r.sivilstandType =
-                                        behandlingModel.sivilstand.find {
-                                                sivilstand ->
-                                            isPeriodOneWithinPeriodTwo(r.periode.datoFom, r.periode.datoTil, sivilstand.datoFom, sivilstand.datoTom)
+                                        behandlingModel.sivilstand.find { sivilstand ->
+                                            isPeriodOneWithinPeriodTwo(
+                                                r.periode.datoFom,
+                                                r.periode.datoTil,
+                                                sivilstand.datoFom,
+                                                sivilstand.datoTom,
+                                            )
                                         }?.sivilstandType
                                 }
                                 ForskuddBeregningPerBarn(

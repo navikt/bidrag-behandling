@@ -10,6 +10,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.behandling.SyncRollerRequest
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
@@ -19,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toRolleTypeDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import org.apache.commons.lang3.Validate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -51,6 +54,15 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         @RequestBody(required = true)
         createBehandling: CreateBehandlingRequest,
     ): CreateBehandlingResponse {
+        ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller)
+
+        Validate.isTrue(
+            ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller) &&
+                ingenVoksneUtenIdent(
+                    createBehandling.roller,
+                ),
+        )
+
         val behandling =
             Behandling(
                 createBehandling.behandlingType,
@@ -177,7 +189,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling.soknadId,
         behandling.behandlerEnhet,
         behandling.roller.map {
-            RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.fodtDato, it.opprettetDato)
+            RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.navn, it.fodtDato, it.opprettetDato)
         }.toSet(),
         behandling.husstandsBarn.toHusstandsBarnDto(),
         behandling.sivilstand.toSivilstandDto(),
@@ -212,5 +224,14 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     )
     fun hentBehandlinger(): List<BehandlingDto> {
         return behandlingService.hentBehandlinger().map { behandlingDto(it.id!!, it) }
+    }
+
+    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<CreateRolleDto>): Boolean {
+        return roller.filter { r -> r.rolleType == CreateRolleRolleType.BARN && r.ident.isNullOrBlank() }
+            .none { r -> r.navn.isNullOrBlank() }
+    }
+
+    private fun ingenVoksneUtenIdent(roller: Set<CreateRolleDto>): Boolean {
+        return roller.filter { r -> r.rolleType != CreateRolleRolleType.BARN && r.ident.isNullOrBlank() }.none()
     }
 }

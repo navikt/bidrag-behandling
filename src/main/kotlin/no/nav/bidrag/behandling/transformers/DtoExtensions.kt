@@ -16,8 +16,8 @@ import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleTypeDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
-import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnPeriodeDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
@@ -34,12 +34,13 @@ fun Set<Sivilstand>.toSivilstandDto() =
             it.datoFom?.toLocalDate(),
             it.datoTom?.toLocalDate(),
             it.sivilstandType,
+            it.kilde,
         )
     }.toSet()
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     this.map {
-        Sivilstand(behandling, it.datoFom?.toDate(), it.datoTom?.toDate(), it.sivilstandType, it.id)
+        Sivilstand(behandling, it.datoFom?.toDate(), it.datoTom?.toDate(), it.sivilstandType, it.kilde, it.id)
     }.toMutableSet()
 
 fun Set<Barnetillegg>.toBarnetilleggDto() =
@@ -111,7 +112,7 @@ fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: HusstandsBarn) =
 
 fun Set<HusstandsBarn>.toHusstandsBarnDto() =
     this.map {
-        HusstandsBarnDto(
+        HusstandsbarnDto(
             it.id!!,
             it.medISaken,
             it.perioder.toHusstandsBarnPeriodeDto(),
@@ -121,16 +122,16 @@ fun Set<HusstandsBarn>.toHusstandsBarnDto() =
         )
     }.toSet()
 
-fun Set<HusstandsBarnDto>.toDomain(behandling: Behandling) =
+fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
     this.map {
         val barn =
             HusstandsBarn(
                 behandling,
-                it.medISaken,
+                it.medISak,
                 it.id,
                 it.ident,
                 it.navn,
-                it.foedselsDato?.toDate(),
+                it.foedselsdato?.toDate(),
             )
         barn.perioder = it.perioder.toDomain(barn).toMutableSet()
         barn
@@ -190,9 +191,9 @@ fun Opplysninger.toDto(): OpplysningerDto {
 }
 
 fun Behandling.tilForsendelseRolleDto() =
-    roller.map {
+    roller.filter { r -> !(r.rolleType == Rolletype.BARN && r.ident == null) }.map {
         ForsendelseRolleDto(
-            fødselsnummer = Personident(it.ident),
+            fødselsnummer = Personident(it.ident!!),
             type = it.rolleType,
         )
     }
@@ -201,16 +202,17 @@ fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
     Rolle(
         behandling,
         rolleType =
-        when (this.rolleType) {
-            CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-            CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-            CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-            CreateRolleRolleType.BARN -> Rolletype.BARN
-            CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
-        },
-        this.ident,
+            when (this.rolleType) {
+                CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+                CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+                CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+                CreateRolleRolleType.BARN -> Rolletype.BARN
+                CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
+            },
+        this.ident ?: "",
         this.fodtDato,
         this.opprettetDato,
+        navn = this.navn,
     )
 
 fun SoknadType.tilVedtakType(): Vedtakstype =

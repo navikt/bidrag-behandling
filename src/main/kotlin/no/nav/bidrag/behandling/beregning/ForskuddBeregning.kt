@@ -28,17 +28,21 @@ import java.time.LocalDate
 
 @Service
 class ForskuddBeregning {
-    private fun prepareSoknadsBarn(soknadBarn: Rolle, fDato: String): List<Grunnlag> =
+    private fun prepareSoknadsBarn(
+        soknadBarn: Rolle,
+        fDato: String,
+    ): List<Grunnlag> =
         listOf(
             Grunnlag(
                 navn = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
                 type = Grunnlagstype.SOKNADSBARN_INFO,
-                innhold = POJONode(
-                    SoknadsBarnNode(
-                        soknadsbarnId = soknadBarn.id!!.toInt(),
-                        fodselsdato = fDato,
+                innhold =
+                    POJONode(
+                        SoknadsBarnNode(
+                            soknadsbarnId = soknadBarn.id!!.toInt(),
+                            fodselsdato = fDato,
+                        ),
                     ),
-                ),
             ),
         )
 
@@ -62,15 +66,15 @@ class ForskuddBeregning {
                 Grunnlag(
                     navn = "Mottatt_Bostatus_" + it.datoFom.toCompactString(),
                     type = Grunnlagstype.BOSTATUS,
-                    innhold = POJONode(
-                        BostatusNode(
-                            datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom?.toNoString(),
-                            rolle = "SOKNADSBARN",
-                            bostatusKode = it.boStatus?.let { it1 -> boStatusTypeToBoStatusKode(it1).name },
-                            soknadsbarnId = soknadBarn.soknadsLinje,
+                    innhold =
+                        POJONode(
+                            BostatusNode(
+                                datoFom = it.datoFom.toNoString(),
+                                datoTil = it.datoTom?.toNoString(),
+                                rolle = "SOKNADSBARN",
+                                bostatusKode = it.boStatus?.let { it1 -> boStatusTypeToBoStatusKode(it1).name },
+                            ),
                         ),
-                    ),
                 )
             }
 
@@ -94,47 +98,52 @@ class ForskuddBeregning {
                 Grunnlag(
                     navn = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
                     type = Grunnlagstype.INNTEKT,
-                    innhold = POJONode(
-                        InntektNode(
-                            datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom?.toNoString(),
-                            rolle = it.rolle,
-                            inntektType = it.inntektType,
-                            belop = it.belop,
+                    innhold =
+                        POJONode(
+                            InntektNode(
+                                datoFom = it.datoFom.toNoString(),
+                                datoTil = it.datoTom?.toNoString(),
+                                rolle = it.rolle,
+                                inntektType = it.inntektType,
+                                belop = it.belop,
+                            ),
                         ),
-                    ),
                 )
-            } + barnetillegg
-            .map {
-                Grunnlag(
-                    navn = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
-                    type = Grunnlagstype.INNTEKT,
-                    innhold = POJONode(
-                        InntektNode(
-                            datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom?.toNoString(),
-                            rolle = "BIDRAGSMOTTAKER",
-                            inntektType = "EKSTRA_SMAABARNSTILLEGG",
-                            belop = it.belop,
-                        ),
-                    ),
-                )
-            } + utvidetbarnetrygd
-            .map {
-                Grunnlag(
-                    navn = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
-                    type = Grunnlagstype.INNTEKT,
-                    innhold = POJONode(
-                        InntektNode(
-                            datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom?.toNoString(),
-                            rolle = "BIDRAGSMOTTAKER",
-                            inntektType = "UTVIDET_BARNETRYGD",
-                            belop = it.belop,
-                        ),
-                    ),
-                )
-            }
+            } +
+            barnetillegg
+                .map {
+                    Grunnlag(
+                        navn = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
+                        type = Grunnlagstype.INNTEKT,
+                        innhold =
+                            POJONode(
+                                InntektNode(
+                                    datoFom = it.datoFom.toNoString(),
+                                    datoTil = it.datoTom?.toNoString(),
+                                    rolle = "BIDRAGSMOTTAKER",
+                                    inntektType = "EKSTRA_SMAABARNSTILLEGG",
+                                    belop = it.belop,
+                                ),
+                            ),
+                    )
+                } +
+            utvidetbarnetrygd
+                .map {
+                    Grunnlag(
+                        navn = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
+                        type = Grunnlagstype.INNTEKT,
+                        innhold =
+                            POJONode(
+                                InntektNode(
+                                    datoFom = it.datoFom.toNoString(),
+                                    datoTil = it.datoTom?.toNoString(),
+                                    rolle = "BIDRAGSMOTTAKER",
+                                    inntektType = "UTVIDET_BARNETRYGD",
+                                    belop = it.belop,
+                                ),
+                            ),
+                    )
+                }
 
     // TODO SivilstandKode
     private fun sivilstandTypeToSivilstandKode(sivilstandType: SivilstandType): SivilstandKode =
@@ -149,21 +158,23 @@ class ForskuddBeregning {
             Grunnlag(
                 navn = "Mottatt_Sivilstand_" + it.datoFom.toCompactString(),
                 type = Grunnlagstype.SIVILSTAND,
-                innhold = POJONode(
-                    SivilstandNode(
-                        datoFom = it.datoFom.toNoString(),
-                        datoTil = it.datoTom?.toNoString(),
-                        sivilstandKode = sivilstandTypeToSivilstandKode(it.sivilstandType).name,
+                innhold =
+                    POJONode(
+                        SivilstandNode(
+                            datoFom = it.datoFom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
+                            sivilstandKode = sivilstandTypeToSivilstandKode(it.sivilstandType).name,
+                        ),
                     ),
-                ),
             )
         }
 
     fun splitPeriods(husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>): List<BarnPeriodeNode> {
         if (husstandsBarnPerioder.isEmpty()) return emptyList()
 
-        val timesMap = HashMap<LocalDate, PointInTimeInfo>()
-            .toSortedMap()
+        val timesMap =
+            HashMap<LocalDate, PointInTimeInfo>()
+                .toSortedMap()
 
         husstandsBarnPerioder.forEach {
             val startDate = it.datoFom
@@ -220,18 +231,23 @@ class ForskuddBeregning {
             roller = behandling.roller,
         )
 
-    fun toPayload(b: BehandlingBeregningModel, soknadsBarn: Rolle, fDato: String): BeregnGrunnlag =
+    fun toPayload(
+        b: BehandlingBeregningModel,
+        soknadsBarn: Rolle,
+        fDato: String,
+    ): BeregnGrunnlag =
         BeregnGrunnlag(
             periode = ÅrMånedsperiode(b.virkningsDato, b.datoTom),
-            grunnlagListe = prepareSoknadsBarn(soknadsBarn, fDato) +
-                prepareBarnIHusstand(b) +
-                prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +
-                prepareInntekterForBeregning(
-                    b.inntekter,
-                    b.barnetillegg,
-                    b.utvidetbarnetrygd,
-                ) +
-                prepareSivilstand(b.sivilstand),
+            grunnlagListe =
+                prepareSoknadsBarn(soknadsBarn, fDato) +
+                    prepareBarnIHusstand(b) +
+                    prepareBostatus(b.husstandsBarnPerioder, soknadsBarn.ident, soknadsBarn) +
+                    prepareInntekterForBeregning(
+                        b.inntekter,
+                        b.barnetillegg,
+                        b.utvidetbarnetrygd,
+                    ) +
+                    prepareSivilstand(b.sivilstand),
         )
 }
 
@@ -256,7 +272,6 @@ data class BostatusNode(
     val datoTil: String? = null,
     val rolle: String,
     val bostatusKode: String?,
-    val soknadsbarnId: Int,
 )
 
 data class SoknadsBarnNode(

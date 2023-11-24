@@ -20,7 +20,7 @@ import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.domene.enums.Rolletype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.*
+import java.util.Date
 
 private val log = KotlinLogging.logger {}
 
@@ -44,15 +44,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadId,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.behandlingType.name,
-                    stonadType = behandling.stonadType,
-                    engangsBelopType = behandling.engangsbelopType,
-                    vedtakType = behandling.soknadType.tilVedtakType(),
-                ),
+                    BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadId,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.behandlingType.name,
+                        stonadType = behandling.stonadType,
+                        engangsBelopType = behandling.engangsbelopType,
+                        vedtakType = behandling.soknadType.tilVedtakType(),
+                    ),
             ),
         )
     }
@@ -103,8 +103,9 @@ class BehandlingService(
         inntektBegrunnelseMedIVedtakNotat: String?,
         inntektBegrunnelseKunINotat: String?,
     ) {
-        var behandling = behandlingRepository.findBehandlingById(behandlingId)
-            .orElseThrow { behandlingNotFoundException(behandlingId) }
+        var behandling =
+            behandlingRepository.findBehandlingById(behandlingId)
+                .orElseThrow { behandlingNotFoundException(behandlingId) }
 
         behandling.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
         behandling.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
@@ -166,8 +167,10 @@ class BehandlingService(
     )
 
     @Transactional
-    fun oppdaterVedtakId(behandlingId: Long, vedtakId: Long) =
-        behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
+    fun oppdaterVedtakId(
+        behandlingId: Long,
+        vedtakId: Long,
+    ) = behandlingRepository.oppdaterVedtakId(behandlingId, vedtakId)
 
     @Transactional
     fun syncRoller(
