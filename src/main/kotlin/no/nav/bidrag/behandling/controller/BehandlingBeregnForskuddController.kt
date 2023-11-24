@@ -55,7 +55,6 @@ class BehandlingBeregnForskuddController(
                     behandling
                         .getSøknadsBarn()
                         .mapOrAccumulate {
-<<<<<<< HEAD
                             val fødselsdatoSøknadsbarn =
                                 if (it.fodtDato == null && it.ident != null) {
                                     bidragPersonConsumer.hentPerson(it.ident).fødselsdato
@@ -67,14 +66,6 @@ class BehandlingBeregnForskuddController(
                             if (fødselsdatoSøknadsbarn == null) {
                                 fantIkkeFødselsdatoTilSøknadsbarn(behandlingId)
                             }
-=======
-                            val fDato =
-                                if (it.fodtDato == null) {
-                                    bidragPersonConsumer.hentPerson(it.ident).fødselsdato
-                                } else {
-                                    it.fodtDato.toLocalDate().toNoString()
-                                }
->>>>>>> main
 
                             var søknadsbarn =
                                 forskuddBeregning.lagePersonobjektForSøknadsbarn(it, fødselsdatoSøknadsbarn)
