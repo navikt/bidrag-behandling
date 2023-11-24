@@ -15,16 +15,16 @@ import no.nav.bidrag.behandling.utils.ROLLE_BP
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
-import no.nav.bidrag.domene.enums.BehandlingsrefKilde
-import no.nav.bidrag.domene.enums.Beslutningstype
-import no.nav.bidrag.domene.enums.Innkrevingstype
-import no.nav.bidrag.domene.enums.Stønadstype
-import no.nav.bidrag.domene.enums.SøktAvType
-import no.nav.bidrag.domene.enums.Vedtakskilde
-import no.nav.bidrag.domene.enums.Vedtakstype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.streng.Enhetsnummer
-import no.nav.bidrag.domene.streng.Saksnummer
+import no.nav.bidrag.domene.organisasjon.Enhetsnummer
+import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.Behandlingsreferanse
 import no.nav.bidrag.transport.behandling.vedtak.Sporingsdata
 import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
@@ -149,6 +149,7 @@ class VedtakHendelseTest : CommonTestRunner() {
             enhetsnummer = Enhetsnummer("4806"),
             id = vedtakId,
             kilde = Vedtakskilde.MANUELT,
+            kildeapplikasjon = "bidrag-behandling",
             opprettetTidspunkt = LocalDateTime.now(),
             opprettetAvNavn = "",
             opprettetAv = "",
@@ -163,7 +164,7 @@ class VedtakHendelseTest : CommonTestRunner() {
                         behandlingId.toString(),
                     ),
                     Behandlingsreferanse(
-                        BehandlingsrefKilde.BISYS_SOKNAD.name,
+                        BehandlingsrefKilde.BISYS_SØKNAD.name,
                         SOKNAD_ID.toString(),
                     ),
                 ),

@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.transformers.toLocalDate
-import no.nav.bidrag.domene.enums.Rolletype
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Date
@@ -121,7 +121,7 @@ data class BehandlingBeregningModel private constructor(
                                     it.datoFom?.toLocalDate()
                                         ?: raise("HusstandsBarnPeriode Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
-                                ident = it.husstandsBarn.ident,
+                                referanseTilBarn = it.husstandsBarn.ident,
                                 boStatus = it.boStatus,
                             )
                         }
@@ -145,7 +145,7 @@ data class BehandlingBeregningModel private constructor(
 data class HusstandsBarnPeriodeModel(
     val datoFom: LocalDate,
     val datoTom: LocalDate? = null,
-    val ident: String?,
+    val referanseTilBarn: String?,
     val boStatus: BoStatusType?,
     // TODO ENDRE til bostatusKode fra felles
     // import no.nav.bidrag.beregn.felles.enums.BostatusKode

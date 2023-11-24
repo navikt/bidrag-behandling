@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningPerBarn
 import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
+import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toNoString
@@ -54,14 +55,22 @@ class BehandlingBeregnForskuddController(
                     behandling
                         .getSøknadsBarn()
                         .mapOrAccumulate {
-                            val fDato =
-                                if (it.fodtDato == null) {
+                            val fødselsdatoSøknadsbarn =
+                                if (it.fodtDato == null && it.ident != null) {
                                     bidragPersonConsumer.hentPerson(it.ident).fødselsdato
                                 } else {
-                                    it.fodtDato.toLocalDate().toNoString()
+                                    it.fodtDato?.toLocalDate()?.toNoString() ?: null
                                 }
 
-                            val payload = forskuddBeregning.toPayload(behandlingModel, it, fDato)
+                            // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                            if (fødselsdatoSøknadsbarn == null) {
+                                fantIkkeFødselsdatoTilSøknadsbarn(behandlingId)
+                            }
+
+                            var søknadsbarn =
+                                forskuddBeregning.lagePersonobjektForSøknadsbarn(it, fødselsdatoSøknadsbarn)
+
+                            val payload = forskuddBeregning.toPayload(behandlingModel, søknadsbarn)
 
                             try {
                                 val respons =
@@ -79,7 +88,7 @@ class BehandlingBeregnForskuddController(
                                         }?.sivilstandType
                                 }
                                 ForskuddBeregningPerBarn(
-                                    ident = it.ident,
+                                    referanseTilBarn = søknadsbarn.referanse,
                                     beregnetForskuddPeriodeListe = beregnetForskuddPeriodeListe,
                                     grunnlagListe = respons.grunnlagListe,
                                 )

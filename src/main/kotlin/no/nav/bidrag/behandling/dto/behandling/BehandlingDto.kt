@@ -6,7 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
-import no.nav.bidrag.domene.enums.SøktAvType
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import java.time.LocalDate
 
 // TODO: Flytt dette til bidrag-transport
