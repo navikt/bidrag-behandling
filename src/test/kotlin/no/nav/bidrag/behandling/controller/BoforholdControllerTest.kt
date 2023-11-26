@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.controller
 
-import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
@@ -8,6 +7,7 @@ import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
 import no.nav.bidrag.behandling.dto.boforhold.UpdateBoforholdRequest
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnPeriodeDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -24,7 +24,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
                 CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
+        val testBehandlingMedNull =
+            BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -39,11 +40,21 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         // 2.1 Prepare husstandsBarn
 
         val perioder =
-            setOf(HusstandsBarnPeriodeDto(null, null, null, BoStatusType.IKKE_REGISTRERT_PA_ADRESSE, Kilde.OFFENTLIG))
-        val husstandsBarn = setOf(HusstandsbarnDto(behandling.body!!.id, true, perioder, "ident", null))
+            setOf(
+                HusstandsBarnPeriodeDto(
+                    null,
+                    null,
+                    null,
+                    Bostatuskode.MED_FORELDER,
+                    Kilde.OFFENTLIG
+                )
+            )
+        val husstandsBarn =
+            setOf(HusstandsbarnDto(behandling.body!!.id, true, perioder, "ident", null))
 
         // 2.2
-        val boforholdData = UpdateBoforholdRequest(husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //
+        val boforholdData =
+            UpdateBoforholdRequest(husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling/${behandling.body!!.id}/boforhold",

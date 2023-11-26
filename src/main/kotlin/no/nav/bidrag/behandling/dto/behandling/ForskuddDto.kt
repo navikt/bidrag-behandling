@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.dto.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.SivilstandType
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -18,7 +18,7 @@ data class ResultatPeriode(
     @Schema(description = "Beregnet resultat periode") var periode: Periode = Periode(),
     @Schema(description = "Beregnet resultat innhold") var resultat: ResultatBeregning = ResultatBeregning(),
     @Schema(description = "Beregnet grunnlag innhold") var grunnlagReferanseListe: List<String> = emptyList(),
-    @Schema(description = "Sivilstand") var sivilstandType: SivilstandType? = null,
+    @Schema(description = "Sivilstand") var sivilstand: Sivilstandskode? = null,
 )
 
 @Schema(description = "Periode (fra-til dato")

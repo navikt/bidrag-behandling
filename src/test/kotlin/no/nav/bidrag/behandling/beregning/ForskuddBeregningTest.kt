@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.beregning
 
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.beregning.model.HusstandsBarnPeriodeModel
-import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import org.junit.jupiter.api.Test
 import java.util.Calendar
 
@@ -26,8 +26,18 @@ class ForskuddBeregningTest {
         val splitPeriods1 =
             forskuddBeregning.splitPeriods(
                 listOf(
-                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDato.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
-                    HusstandsBarnPeriodeModel(fraDato2.toLocalDate(), tilDato2.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
+                    HusstandsBarnPeriodeModel(
+                        fraDato.toLocalDate(),
+                        tilDato.toLocalDate(),
+                        "ident1",
+                        Bostatuskode.MED_FORELDER
+                    ),
+                    HusstandsBarnPeriodeModel(
+                        fraDato2.toLocalDate(),
+                        tilDato2.toLocalDate(),
+                        "ident2",
+                        Bostatuskode.MED_FORELDER
+                    ),
                 ),
             )
 
@@ -47,7 +57,12 @@ class ForskuddBeregningTest {
         val splitPeriods =
             forskuddBeregning.splitPeriods(
                 listOf(
-                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDato.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
+                    HusstandsBarnPeriodeModel(
+                        fraDato.toLocalDate(),
+                        tilDato.toLocalDate(),
+                        "ident",
+                        Bostatuskode.MED_FORELDER
+                    ),
                 ),
             )
 
@@ -67,9 +82,24 @@ class ForskuddBeregningTest {
         val splitPeriods =
             forskuddBeregning.splitPeriods(
                 listOf(
-                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDato.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
-                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDato.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
-                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDato.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
+                    HusstandsBarnPeriodeModel(
+                        fraDato.toLocalDate(),
+                        tilDato.toLocalDate(),
+                        "ident",
+                        Bostatuskode.MED_FORELDER
+                    ),
+                    HusstandsBarnPeriodeModel(
+                        fraDato.toLocalDate(),
+                        tilDato.toLocalDate(),
+                        "ident1",
+                        Bostatuskode.MED_FORELDER
+                    ),
+                    HusstandsBarnPeriodeModel(
+                        fraDato.toLocalDate(),
+                        tilDato.toLocalDate(),
+                        "ident2",
+                        Bostatuskode.MED_FORELDER
+                    ),
                 ),
             )
 
@@ -104,9 +134,24 @@ class ForskuddBeregningTest {
         val splitPeriods =
             forskuddBeregning.splitPeriods(
                 listOf(
-                    HusstandsBarnPeriodeModel(fraDato1.toLocalDate(), tilDato1.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
-                    HusstandsBarnPeriodeModel(fraDato2.toLocalDate(), tilDato2.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
-                    HusstandsBarnPeriodeModel(fraDato3.toLocalDate(), tilDato3.toLocalDate(), "ident2", BoStatusType.REGISTRERT_PA_ADRESSE),
+                    HusstandsBarnPeriodeModel(
+                        fraDato1.toLocalDate(),
+                        tilDato1.toLocalDate(),
+                        "ident",
+                        Bostatuskode.MED_FORELDER
+                    ),
+                    HusstandsBarnPeriodeModel(
+                        fraDato2.toLocalDate(),
+                        tilDato2.toLocalDate(),
+                        "ident1",
+                        Bostatuskode.MED_FORELDER
+                    ),
+                    HusstandsBarnPeriodeModel(
+                        fraDato3.toLocalDate(),
+                        tilDato3.toLocalDate(),
+                        "ident2",
+                        Bostatuskode.MED_FORELDER
+                    ),
                 ),
             )
 
@@ -137,8 +182,18 @@ class ForskuddBeregningTest {
         val splitPeriods =
             forskuddBeregning.splitPeriods(
                 listOf(
-                    HusstandsBarnPeriodeModel(fraDato.toLocalDate(), tilDato.toLocalDate(), "ident", BoStatusType.REGISTRERT_PA_ADRESSE),
-                    HusstandsBarnPeriodeModel(fraDato1.toLocalDate(), tilDato1.toLocalDate(), "ident1", BoStatusType.REGISTRERT_PA_ADRESSE),
+                    HusstandsBarnPeriodeModel(
+                        fraDato.toLocalDate(),
+                        tilDato.toLocalDate(),
+                        "ident",
+                        Bostatuskode.MED_FORELDER
+                    ),
+                    HusstandsBarnPeriodeModel(
+                        fraDato1.toLocalDate(),
+                        tilDato1.toLocalDate(),
+                        "ident1",
+                        Bostatuskode.MED_FORELDER
+                    ),
                 ),
             )
 

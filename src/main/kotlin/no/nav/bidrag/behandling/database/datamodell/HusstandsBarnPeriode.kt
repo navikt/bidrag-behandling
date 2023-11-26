@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.util.Date
 
 @Entity(name = "barn_i_husstand_periode")
@@ -19,7 +20,7 @@ class HusstandsBarnPeriode(
     val datoFom: Date?,
     val datoTom: Date?,
     @Enumerated(EnumType.STRING)
-    val boStatus: BoStatusType?,
+    val bostatus: Bostatuskode?,
     @Enumerated(EnumType.STRING)
     val kilde: Kilde,
     @Id
