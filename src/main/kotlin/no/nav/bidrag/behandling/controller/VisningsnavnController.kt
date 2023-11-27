@@ -15,11 +15,10 @@ class VisningsnavnController {
     @GetMapping("/visningsnavn")
     fun hentVisningsnavn(): Map<String, String> {
         return Inntektsrapportering.entries.associate { it.name to it.visningsnavn.intern } +
-                Bostatuskode.entries.associate { it.name to it.visningsnavn.intern } +
-                Sivilstandskode.entries.associate { it.name to it.visningsnavn.intern } +
-                ResultatkodeSærtilskudd.entries.associate { it.name to it.visningsnavn.intern } +
-                ResultatkodeBarnebidrag.entries.associate { it.name to it.visningsnavn.intern } +
-                ResultatkodeForskudd.entries.associate { it.name to it.visningsnavn.intern }
-
+            Bostatuskode.entries.associate { it.name to it.visningsnavn.intern } +
+            Sivilstandskode.entries.associate { it.name to it.visningsnavn.intern } +
+            ResultatkodeSærtilskudd.entries.associate { it.name to it.visningsnavn.intern } +
+            ResultatkodeBarnebidrag.entries.associate { it.name to it.visningsnavn.intern } +
+            ResultatkodeForskudd.entries.associate { it.name to it.visningsnavn.intern }
     }
 }

@@ -30,13 +30,13 @@ class ForskuddBeregningTest {
                         fraDato.toLocalDate(),
                         tilDato.toLocalDate(),
                         "ident1",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                     HusstandsBarnPeriodeModel(
                         fraDato2.toLocalDate(),
                         tilDato2.toLocalDate(),
                         "ident2",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                 ),
             )
@@ -61,7 +61,7 @@ class ForskuddBeregningTest {
                         fraDato.toLocalDate(),
                         tilDato.toLocalDate(),
                         "ident",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                 ),
             )
@@ -86,19 +86,19 @@ class ForskuddBeregningTest {
                         fraDato.toLocalDate(),
                         tilDato.toLocalDate(),
                         "ident",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                     HusstandsBarnPeriodeModel(
                         fraDato.toLocalDate(),
                         tilDato.toLocalDate(),
                         "ident1",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                     HusstandsBarnPeriodeModel(
                         fraDato.toLocalDate(),
                         tilDato.toLocalDate(),
                         "ident2",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                 ),
             )
@@ -138,19 +138,19 @@ class ForskuddBeregningTest {
                         fraDato1.toLocalDate(),
                         tilDato1.toLocalDate(),
                         "ident",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                     HusstandsBarnPeriodeModel(
                         fraDato2.toLocalDate(),
                         tilDato2.toLocalDate(),
                         "ident1",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                     HusstandsBarnPeriodeModel(
                         fraDato3.toLocalDate(),
                         tilDato3.toLocalDate(),
                         "ident2",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                 ),
             )
@@ -186,13 +186,13 @@ class ForskuddBeregningTest {
                         fraDato.toLocalDate(),
                         tilDato.toLocalDate(),
                         "ident",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                     HusstandsBarnPeriodeModel(
                         fraDato1.toLocalDate(),
                         tilDato1.toLocalDate(),
                         "ident1",
-                        Bostatuskode.MED_FORELDER
+                        Bostatuskode.MED_FORELDER,
                     ),
                 ),
             )

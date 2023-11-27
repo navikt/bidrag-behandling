@@ -46,7 +46,7 @@ fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
             it.datoTom?.toDate(),
             it.sivilstand,
             it.kilde,
-            it.id
+            it.id,
         )
     }.toMutableSet()
 
@@ -209,13 +209,13 @@ fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
     Rolle(
         behandling,
         rolleType =
-        when (this.rolleType) {
-            CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-            CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-            CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-            CreateRolleRolleType.BARN -> Rolletype.BARN
-            CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
-        },
+            when (this.rolleType) {
+                CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+                CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+                CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+                CreateRolleRolleType.BARN -> Rolletype.BARN
+                CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
+            },
         this.ident,
         this.fodtDato,
         this.opprettetDato,

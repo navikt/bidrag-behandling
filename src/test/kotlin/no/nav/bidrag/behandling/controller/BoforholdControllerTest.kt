@@ -46,8 +46,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     null,
                     null,
                     Bostatuskode.MED_FORELDER,
-                    Kilde.OFFENTLIG
-                )
+                    Kilde.OFFENTLIG,
+                ),
             )
         val husstandsBarn =
             setOf(HusstandsbarnDto(behandling.body!!.id, true, perioder, "ident", null))

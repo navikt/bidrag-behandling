@@ -32,15 +32,14 @@ class ForskuddBeregning {
             referanse = "Mottatt_SoknadsbarnInfo_SB" + soknadBarn.id,
             type = Grunnlagstype.PERSON,
             innhold =
-            POJONode(
-                SoknadsBarnNode(
-                    ident = soknadBarn.ident ?: "",
-                    navn = soknadBarn.navn ?: "",
-                    fødselsdato = fødselsdato,
+                POJONode(
+                    SoknadsBarnNode(
+                        ident = soknadBarn.ident ?: "",
+                        navn = soknadBarn.navn ?: "",
+                        fødselsdato = fødselsdato,
+                    ),
                 ),
-            ),
         )
-
 
     private fun prepareBostatus(
         husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>,
@@ -53,14 +52,14 @@ class ForskuddBeregning {
                     referanse = "Mottatt_Bostatus_" + it.datoFom.toCompactString(),
                     type = Grunnlagstype.BOSTATUS,
                     innhold =
-                    POJONode(
-                        BostatusNode(
-                            datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom?.toNoString(),
-                            rolle = "SOKNADSBARN",
-                            bostatusKode = it.bostatus?.name
+                        POJONode(
+                            BostatusNode(
+                                datoFom = it.datoFom.toNoString(),
+                                datoTil = it.datoTom?.toNoString(),
+                                rolle = "SOKNADSBARN",
+                                bostatusKode = it.bostatus?.name,
+                            ),
                         ),
-                    ),
                 )
             }
 
@@ -85,23 +84,23 @@ class ForskuddBeregning {
                     referanse = "Mottatt_Inntekt_${it.inntektType}_${it.rolle}_${it.datoFom.toCompactString()}",
                     type = Grunnlagstype.INNTEKT,
                     innhold =
-                    POJONode(
-                        InntektNode(
-                            datoFom = it.datoFom.toNoString(),
-                            datoTil = it.datoTom?.toNoString(),
-                            rolle = it.rolle,
-                            inntektType = it.inntektType,
-                            belop = it.belop,
+                        POJONode(
+                            InntektNode(
+                                datoFom = it.datoFom.toNoString(),
+                                datoTil = it.datoTom?.toNoString(),
+                                rolle = it.rolle,
+                                inntektType = it.inntektType,
+                                belop = it.belop,
+                            ),
                         ),
-                    ),
                 )
             } +
-                barnetillegg
-                    .map {
-                        Grunnlag(
-                            referanse = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
-                            type = Grunnlagstype.INNTEKT,
-                            innhold =
+            barnetillegg
+                .map {
+                    Grunnlag(
+                        referanse = "Mottatt_Inntekt_TG" + it.datoFom.toCompactString(),
+                        type = Grunnlagstype.INNTEKT,
+                        innhold =
                             POJONode(
                                 InntektNode(
                                     datoFom = it.datoFom.toNoString(),
@@ -111,14 +110,14 @@ class ForskuddBeregning {
                                     belop = it.belop,
                                 ),
                             ),
-                        )
-                    } +
-                utvidetbarnetrygd
-                    .map {
-                        Grunnlag(
-                            referanse = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
-                            type = Grunnlagstype.INNTEKT,
-                            innhold =
+                    )
+                } +
+            utvidetbarnetrygd
+                .map {
+                    Grunnlag(
+                        referanse = "Mottatt_Inntekt_UB" + it.datoFom.toCompactString(),
+                        type = Grunnlagstype.INNTEKT,
+                        innhold =
                             POJONode(
                                 InntektNode(
                                     datoFom = it.datoFom.toNoString(),
@@ -128,9 +127,8 @@ class ForskuddBeregning {
                                     belop = it.belop,
                                 ),
                             ),
-                        )
-                    }
-
+                    )
+                }
 
     private fun prepareSivilstand(sivilstand: List<SivilstandModel>): List<Grunnlag> =
         sivilstand.map {
@@ -138,13 +136,13 @@ class ForskuddBeregning {
                 referanse = "Mottatt_Sivilstand_" + it.datoFom.toCompactString(),
                 type = Grunnlagstype.SIVILSTAND,
                 innhold =
-                POJONode(
-                    SivilstandNode(
-                        datoFom = it.datoFom.toNoString(),
-                        datoTil = it.datoTom?.toNoString(),
-                        sivilstand = it.sivilstand.name,
+                    POJONode(
+                        SivilstandNode(
+                            datoFom = it.datoFom.toNoString(),
+                            datoTil = it.datoTom?.toNoString(),
+                            sivilstand = it.sivilstand.name,
+                        ),
                     ),
-                ),
             )
         }
 
@@ -218,7 +216,7 @@ class ForskuddBeregning {
             periode = ÅrMånedsperiode(b.virkningsDato, b.datoTom),
             søknadsbarnReferanse = søknadsbarn.referanse,
             grunnlagListe =
-            listOf(søknadsbarn) +
+                listOf(søknadsbarn) +
                     prepareBarnIHusstand(b) +
                     prepareBostatus(b.husstandsBarnPerioder, søknadsbarn) +
                     prepareInntekterForBeregning(
