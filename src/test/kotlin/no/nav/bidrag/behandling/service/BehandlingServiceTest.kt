@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -21,6 +20,7 @@ import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import org.junit.jupiter.api.Assertions
@@ -128,7 +128,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         null,
                         Calendar.getInstance().time.toLocalDate(),
                         Calendar.getInstance().time.toLocalDate(),
-                        SivilstandType.BOR_ALENE_MED_BARN,
+                        Sivilstandskode.BOR_ALENE_MED_BARN,
                         Kilde.OFFENTLIG,
                     ),
                 )

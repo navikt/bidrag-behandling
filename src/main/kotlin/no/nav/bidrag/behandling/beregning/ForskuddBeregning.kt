@@ -10,14 +10,10 @@ import no.nav.bidrag.behandling.beregning.model.InntektModel
 import no.nav.bidrag.behandling.beregning.model.SivilstandModel
 import no.nav.bidrag.behandling.beregning.model.UtvidetbarnetrygdModel
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.transformers.INFINITY
 import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.behandling.transformers.toNoString
-import no.nav.bidrag.beregn.felles.enums.BostatusKode
-import no.nav.bidrag.beregn.felles.enums.SivilstandKode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
@@ -45,15 +41,6 @@ class ForskuddBeregning {
                 ),
         )
 
-    // TODO BostatusKode
-    private fun boStatusTypeToBoStatusKode(boStatusType: BoStatusType): BostatusKode =
-        if (boStatusType == BoStatusType.REGISTRERT_PA_ADRESSE
-        ) {
-            BostatusKode.BOR_MED_FORELDRE
-        } else {
-            BostatusKode.BOR_IKKE_MED_FORELDRE
-        }
-
     private fun prepareBostatus(
         husstandsBarnPerioder: List<HusstandsBarnPeriodeModel>,
         søknadsbarn: Grunnlag,
@@ -70,7 +57,7 @@ class ForskuddBeregning {
                                 datoFom = it.datoFom.toNoString(),
                                 datoTil = it.datoTom?.toNoString(),
                                 rolle = "SOKNADSBARN",
-                                bostatusKode = it.boStatus?.let { it1 -> boStatusTypeToBoStatusKode(it1).name },
+                                bostatusKode = it.bostatus?.name,
                             ),
                         ),
                 )
@@ -143,14 +130,6 @@ class ForskuddBeregning {
                     )
                 }
 
-    // TODO SivilstandKode
-    private fun sivilstandTypeToSivilstandKode(sivilstandType: SivilstandType): SivilstandKode =
-        if (sivilstandType == SivilstandType.GIFT) {
-            SivilstandKode.GIFT
-        } else {
-            SivilstandKode.ENSLIG
-        }
-
     private fun prepareSivilstand(sivilstand: List<SivilstandModel>): List<Grunnlag> =
         sivilstand.map {
             Grunnlag(
@@ -161,7 +140,7 @@ class ForskuddBeregning {
                         SivilstandNode(
                             datoFom = it.datoFom.toNoString(),
                             datoTil = it.datoTom?.toNoString(),
-                            sivilstandKode = sivilstandTypeToSivilstandKode(it.sivilstandType).name,
+                            sivilstand = it.sivilstand.name,
                         ),
                     ),
             )
@@ -289,6 +268,6 @@ data class InntektNode(
 data class SivilstandNode(
     val datoFom: String?,
     val datoTil: String?,
-    val sivilstandKode: String?,
+    val sivilstand: String?,
     val rolle: String = "BIDRAGSMOTTAKER",
 )

@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import java.util.Date
 
 @Entity(name = "sivilstand")
@@ -19,7 +20,7 @@ class Sivilstand(
     val datoFom: Date?,
     val datoTom: Date?,
     @Enumerated(EnumType.STRING)
-    val sivilstandType: SivilstandType,
+    val sivilstand: Sivilstandskode,
     @Enumerated(EnumType.STRING)
     val kilde: Kilde,
     @Id

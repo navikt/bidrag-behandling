@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.behandling
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.behandling.database.datamodell.SivilstandType
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import java.time.LocalDate
 
 data class SivilstandDto(
@@ -14,6 +14,6 @@ data class SivilstandDto(
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
-    val sivilstandType: SivilstandType,
+    val sivilstand: Sivilstandskode,
     val kilde: Kilde,
 )

@@ -33,14 +33,21 @@ fun Set<Sivilstand>.toSivilstandDto() =
             it.id,
             it.datoFom?.toLocalDate(),
             it.datoTom?.toLocalDate(),
-            it.sivilstandType,
+            it.sivilstand,
             it.kilde,
         )
     }.toSet()
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     this.map {
-        Sivilstand(behandling, it.datoFom?.toDate(), it.datoTom?.toDate(), it.sivilstandType, it.kilde, it.id)
+        Sivilstand(
+            behandling,
+            it.datoFom?.toDate(),
+            it.datoTom?.toDate(),
+            it.sivilstand,
+            it.kilde,
+            it.id,
+        )
     }.toMutableSet()
 
 fun Set<Barnetillegg>.toBarnetilleggDto() =
@@ -94,7 +101,7 @@ fun Set<HusstandsBarnPeriode>.toHusstandsBarnPeriodeDto() =
             it.id,
             it.datoFom?.toLocalDate(),
             it.datoTom?.toLocalDate(),
-            it.boStatus,
+            it.bostatus,
             it.kilde,
         )
     }.toSet()
@@ -105,7 +112,7 @@ fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: HusstandsBarn) =
             husstandsBarn,
             it.datoFom?.toDate(),
             it.datoTom?.toDate(),
-            it.boStatus,
+            it.bostatus,
             it.kilde,
         )
     }.toSet()

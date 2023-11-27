@@ -6,14 +6,14 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.zipOrAccumulate
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
-import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.SivilstandType
 import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -70,7 +70,7 @@ data class BehandlingBeregningModel private constructor(
                                 it.datoFom?.toLocalDate()
                                     ?: raise("Sivilstand Dato Fra må fylles ut"),
                                 it.datoTom?.toLocalDate(),
-                                it.sivilstandType,
+                                it.sivilstand,
                             )
                         }
                     },
@@ -122,7 +122,7 @@ data class BehandlingBeregningModel private constructor(
                                         ?: raise("HusstandsBarnPeriode Dato Fra må fylles ut"),
                                 datoTom = it.datoTom?.toLocalDate(),
                                 referanseTilBarn = it.husstandsBarn.ident,
-                                boStatus = it.boStatus,
+                                bostatus = it.bostatus,
                             )
                         }
                     },
@@ -146,7 +146,7 @@ data class HusstandsBarnPeriodeModel(
     val datoFom: LocalDate,
     val datoTom: LocalDate? = null,
     val referanseTilBarn: String?,
-    val boStatus: BoStatusType?,
+    val bostatus: Bostatuskode?,
     // TODO ENDRE til bostatusKode fra felles
     // import no.nav.bidrag.beregn.felles.enums.BostatusKode
 )
@@ -154,7 +154,7 @@ data class HusstandsBarnPeriodeModel(
 data class SivilstandModel(
     val datoFom: LocalDate,
     val datoTom: LocalDate? = null,
-    val sivilstandType: SivilstandType,
+    val sivilstand: Sivilstandskode,
 )
 
 data class InntektModel(

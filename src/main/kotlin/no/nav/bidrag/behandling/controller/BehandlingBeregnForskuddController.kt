@@ -35,7 +35,14 @@ class BehandlingBeregnForskuddController(
         datoTom2: LocalDate?,
     ) = (datoFom1 === null || datoFom1 > datoFom2 || datoFom1.isEqual(datoFom2)) && (
         (datoTom2 == null && datoTom1 == null) ||
-            (datoTom1 != null && (datoTom2 == null || datoTom1 < datoTom2 || datoTom1.isEqual(datoTom2)))
+            (
+                datoTom1 != null && (
+                    datoTom2 == null || datoTom1 < datoTom2 ||
+                        datoTom1.isEqual(
+                            datoTom2,
+                        )
+                )
+            )
     )
 
     @Suppress("unused")
@@ -50,7 +57,8 @@ class BehandlingBeregnForskuddController(
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val result =
             either {
-                val behandlingModel = forskuddBeregning.toBehandlingBeregningModel(behandling).bind()
+                val behandlingModel =
+                    forskuddBeregning.toBehandlingBeregningModel(behandling).bind()
                 val results =
                     behandling
                         .getSøknadsBarn()
@@ -68,16 +76,20 @@ class BehandlingBeregnForskuddController(
                             }
 
                             var søknadsbarn =
-                                forskuddBeregning.lagePersonobjektForSøknadsbarn(it, fødselsdatoSøknadsbarn)
+                                forskuddBeregning.lagePersonobjektForSøknadsbarn(
+                                    it,
+                                    fødselsdatoSøknadsbarn,
+                                )
 
                             val payload = forskuddBeregning.toPayload(behandlingModel, søknadsbarn)
 
                             try {
                                 val respons =
                                     bidragBeregnForskuddConsumer.beregnForskudd(payload)
-                                val beregnetForskuddPeriodeListe = respons.beregnetForskuddPeriodeListe
+                                val beregnetForskuddPeriodeListe =
+                                    respons.beregnetForskuddPeriodeListe
                                 beregnetForskuddPeriodeListe.forEach { r ->
-                                    r.sivilstandType =
+                                    r.sivilstand =
                                         behandlingModel.sivilstand.find { sivilstand ->
                                             isPeriodOneWithinPeriodTwo(
                                                 r.periode.datoFom,
@@ -85,7 +97,7 @@ class BehandlingBeregnForskuddController(
                                                 sivilstand.datoFom,
                                                 sivilstand.datoTom,
                                             )
-                                        }?.sivilstandType
+                                        }?.sivilstand
                                 }
                                 ForskuddBeregningPerBarn(
                                     referanseTilBarn = søknadsbarn.referanse,
