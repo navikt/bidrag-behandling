@@ -114,6 +114,9 @@ class VedtakHendelseTest : CommonTestRunner() {
             saksnummer = SAKSNUMMER,
             soknadId = 123123L,
             behandlerEnhet = "4806",
+            opprettetAv = "Z99999",
+            opprettetAvNavn = "Saksbehandler Navn",
+            kildeapplikasjon = "bisys",
             behandlingType = Behandlingstype.BIDRAG18AAR,
             engangsbelopType = null,
             mottatDato = Date(),
@@ -130,21 +133,21 @@ class VedtakHendelseTest : CommonTestRunner() {
         return VedtakHendelse(
             type = Vedtakstype.FASTSETTELSE,
             stønadsendringListe =
-                listOf(
-                    Stønadsendring(
-                        type = stonadType,
-                        eksternReferanse = "",
-                        beslutning = Beslutningstype.ENDRING,
-                        førsteIndeksreguleringsår = 2024,
-                        innkreving = Innkrevingstype.MED_INNKREVING,
-                        kravhaver = Personident(""),
-                        mottaker = Personident(""),
-                        omgjørVedtakId = 1,
-                        periodeListe = emptyList(),
-                        sak = Saksnummer(SAKSNUMMER),
-                        skyldner = Personident(""),
-                    ),
+            listOf(
+                Stønadsendring(
+                    type = stonadType,
+                    eksternReferanse = "",
+                    beslutning = Beslutningstype.ENDRING,
+                    førsteIndeksreguleringsår = 2024,
+                    innkreving = Innkrevingstype.MED_INNKREVING,
+                    kravhaver = Personident(""),
+                    mottaker = Personident(""),
+                    omgjørVedtakId = 1,
+                    periodeListe = emptyList(),
+                    sak = Saksnummer(SAKSNUMMER),
+                    skyldner = Personident(""),
                 ),
+            ),
             engangsbeløpListe = emptyList(),
             enhetsnummer = Enhetsnummer("4806"),
             id = vedtakId,
@@ -158,16 +161,16 @@ class VedtakHendelseTest : CommonTestRunner() {
             vedtakstidspunkt = LocalDateTime.now(),
             fastsattILand = null,
             behandlingsreferanseListe =
-                listOf(
-                    Behandlingsreferanse(
-                        BehandlingsrefKilde.BEHANDLING_ID.name,
-                        behandlingId.toString(),
-                    ),
-                    Behandlingsreferanse(
-                        BehandlingsrefKilde.BISYS_SØKNAD.name,
-                        SOKNAD_ID.toString(),
-                    ),
+            listOf(
+                Behandlingsreferanse(
+                    BehandlingsrefKilde.BEHANDLING_ID.name,
+                    behandlingId.toString(),
                 ),
+                Behandlingsreferanse(
+                    BehandlingsrefKilde.BISYS_SØKNAD.name,
+                    SOKNAD_ID.toString(),
+                ),
+            ),
         )
     }
 }

@@ -225,6 +225,9 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                     123213L,
                     null,
                     "EN123",
+                    "Z9999",
+                    "Navn Navnesen",
+                    "bisys",
                     SøktAvType.VERGE,
                     null,
                     null,
@@ -327,7 +330,12 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         val roller =
             setOf(
                 CreateRolleDtoTest(CreateRolleRolleType.BARN, "1235", Date(1)),
-                CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, null, Date(1), "Ola Dunk"),
+                CreateRolleDtoTest(
+                    CreateRolleRolleType.BIDRAGS_MOTTAKER,
+                    null,
+                    Date(1),
+                    "Ola Dunk"
+                ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
