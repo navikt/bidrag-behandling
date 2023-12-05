@@ -47,15 +47,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        behandlingId = behandling.id,
-                        soknadId = behandling.soknadId,
-                        soknadFra = behandling.soknadFra,
-                        behandlingType = behandling.behandlingType.name,
-                        stonadType = behandling.stonadType,
-                        engangsBelopType = behandling.engangsbelopType,
-                        vedtakType = behandling.soknadType.tilVedtakType(),
-                    ),
+                BehandlingInfoDto(
+                    behandlingId = behandling.id,
+                    soknadId = behandling.soknadId,
+                    soknadFra = behandling.soknadFra,
+                    behandlingType = behandling.behandlingType.name,
+                    stonadType = behandling.stonadType,
+                    engangsBelopType = behandling.engangsbelopType,
+                    vedtakType = behandling.soknadType.tilVedtakType(),
+                ),
             ),
         )
     }
@@ -113,6 +113,8 @@ class BehandlingService(
         behandling.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
         behandling.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
 
+        var inntektOppdatert = false
+
         val inntekter = nyeInntekter.toInntektDomain(behandling)
         val barnetillegg = nyeBarnetillegg.toBarnetilleggDomain(behandling)
         val nyUtvidetbarnetrygd = nyUtvidetbarnetrygd.toUtvidetbarnetrygdDomain(behandling)
@@ -121,18 +123,25 @@ class BehandlingService(
             log.info("Oppdaterer inntekter for behandlingsid $behandlingId")
             behandling.inntekter.clear()
             behandling.inntekter.addAll(inntekter)
+            inntektOppdatert = true
         }
 
         if (behandling.barnetillegg != barnetillegg) {
             log.info("Oppdaterer barnetillegg for behandlingsid $behandlingId")
             behandling.barnetillegg.clear()
             behandling.barnetillegg.addAll(barnetillegg)
+            inntektOppdatert = true
         }
 
         if (behandling.utvidetbarnetrygd != nyUtvidetbarnetrygd) {
             log.info("Oppdaterer utvidet barnetrygd for behandlingsid $behandlingId")
             behandling.utvidetbarnetrygd.clear()
             behandling.utvidetbarnetrygd.addAll(nyUtvidetbarnetrygd)
+            inntektOppdatert = true
+        }
+
+        if (inntektOppdatert == true) {
+            behandlingRepository.save(behandling)
         }
     }
 
