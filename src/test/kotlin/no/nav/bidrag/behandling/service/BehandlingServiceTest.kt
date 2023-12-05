@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
-import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
@@ -11,15 +10,18 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
-import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
+import no.nav.bidrag.behandling.dto.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -33,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.Calendar
 import java.util.Date
 
@@ -318,33 +321,31 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(
-                    Inntekt(
-                        "",
-                        BigDecimal.valueOf(1.111),
-                        Calendar.getInstance().time,
-                        Calendar.getInstance().time,
-                        "ident",
-                        true,
-                        true,
-                        behandling = actualBehandling,
+                    InntektDto(
+                        taMed = true,
+                        inntektType = Inntektsrapportering.KAPITALINNTEKT.name,
+                        belop = BigDecimal.valueOf(4000),
+                        datoFom = LocalDate.now().minusMonths(4),
+                        datoTom = LocalDate.now().plusMonths(4),
+                        ident = "123",
+                        fraGrunnlag = true,
+                        inntektPostListe = emptySet(),
                     ),
                 ),
                 mutableSetOf(
-                    Barnetillegg(
-                        actualBehandling,
-                        "ident",
-                        BigDecimal.ONE,
-                        Calendar.getInstance().time,
-                        Calendar.getInstance().time,
+                    BarnetilleggDto(
+                        ident = "123",
+                        barnetillegg = BigDecimal.TEN,
+                        datoFom = LocalDate.now().minusMonths(3),
+                        datoTom = LocalDate.now().plusMonths(3),
                     ),
                 ),
                 mutableSetOf(
-                    Utvidetbarnetrygd(
-                        actualBehandling,
-                        true,
-                        BigDecimal.TEN,
-                        Calendar.getInstance().time,
-                        Calendar.getInstance().time,
+                    UtvidetbarnetrygdDto(
+                        deltBoSted = false,
+                        belop = BigDecimal.TEN,
+                        datoFom = LocalDate.now().minusMonths(3),
+                        datoTom = LocalDate.now().plusMonths(3),
                     ),
                 ),
                 "Med i Vedtaket",
@@ -376,24 +377,23 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(
-                    Inntekt(
-                        "",
-                        BigDecimal.valueOf(1.111),
-                        Calendar.getInstance().time,
-                        Calendar.getInstance().time,
-                        "ident",
-                        true,
-                        true,
-                        behandling = actualBehandling,
+                    InntektDto(
+                        taMed = true,
+                        inntektType = Inntektsrapportering.KAPITALINNTEKT.name,
+                        belop = BigDecimal.valueOf(4000),
+                        datoFom = LocalDate.now().minusMonths(4),
+                        datoTom = LocalDate.now().plusMonths(4),
+                        ident = "123",
+                        fraGrunnlag = true,
+                        inntektPostListe = emptySet(),
                     ),
                 ),
                 mutableSetOf(
-                    Barnetillegg(
-                        actualBehandling,
-                        "ident",
-                        BigDecimal.ONE,
-                        Calendar.getInstance().time,
-                        Calendar.getInstance().time,
+                    BarnetilleggDto(
+                        ident = "123",
+                        barnetillegg = BigDecimal.TEN,
+                        datoFom = LocalDate.now().minusMonths(3),
+                        datoTom = LocalDate.now().plusMonths(3),
                     ),
                 ),
                 mutableSetOf(),
@@ -411,7 +411,14 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(),
-                expectedBehandling.barnetillegg,
+                mutableSetOf(
+                    BarnetilleggDto(
+                        ident = "123",
+                        barnetillegg = BigDecimal.TEN,
+                        datoFom = LocalDate.now().minusMonths(3),
+                        datoTom = LocalDate.now().plusMonths(3),
+                    ),
+                ),
                 mutableSetOf(),
                 null,
                 null,

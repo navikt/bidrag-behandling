@@ -2,21 +2,24 @@ package no.nav.bidrag.behandling.service
 
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
-import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.Utvidetbarnetrygd
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
+import no.nav.bidrag.behandling.dto.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilVedtakType
+import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
+import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toRolle
+import no.nav.bidrag.behandling.transformers.toUtvidetbarnetrygdDomain
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -97,9 +100,9 @@ class BehandlingService(
     @Transactional
     fun oppdaterInntekter(
         behandlingId: Long,
-        inntekter: MutableSet<Inntekt>,
-        barnetillegg: MutableSet<Barnetillegg>,
-        utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd>,
+        nyeInntekter: Set<InntektDto>,
+        nyeBarnetillegg: Set<BarnetilleggDto>,
+        nyUtvidetbarnetrygd: Set<UtvidetbarnetrygdDto>,
         inntektBegrunnelseMedIVedtakNotat: String?,
         inntektBegrunnelseKunINotat: String?,
     ) {
@@ -109,6 +112,10 @@ class BehandlingService(
 
         behandling.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
         behandling.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
+
+        val inntekter = nyeInntekter.toInntektDomain(behandling)
+        val barnetillegg = nyeBarnetillegg.toBarnetilleggDomain(behandling)
+        val nyUtvidetbarnetrygd = nyUtvidetbarnetrygd.toUtvidetbarnetrygdDomain(behandling)
 
         if (behandling.inntekter != inntekter) {
             log.info("Oppdaterer inntekter for behandlingsid $behandlingId")
@@ -122,10 +129,10 @@ class BehandlingService(
             behandling.barnetillegg.addAll(barnetillegg)
         }
 
-        if (behandling.utvidetbarnetrygd != utvidetbarnetrygd) {
+        if (behandling.utvidetbarnetrygd != nyUtvidetbarnetrygd) {
             log.info("Oppdaterer utvidet barnetrygd for behandlingsid $behandlingId")
             behandling.utvidetbarnetrygd.clear()
-            behandling.utvidetbarnetrygd.addAll(utvidetbarnetrygd)
+            behandling.utvidetbarnetrygd.addAll(nyUtvidetbarnetrygd)
         }
     }
 
