@@ -40,19 +40,11 @@ class InntekterController(private val behandlingService: BehandlingService) {
     ): InntekterResponse {
         behandlingService.oppdaterInntekter(
             behandlingId,
-<<<<<<< HEAD
-            request.inntekter.toInntektDomain(behandling!!),
-            request.barnetillegg.toBarnetilleggDomain(behandling),
-            request.utvidetBarnetrygd.toUtvidetbarnetrygdDomain(behandling),
-            request.inntektsbegrunnelseIVedtakOgNotat,
-            request.inntektsbegrunnelseKunINotat,
-=======
             request.inntekter,
             request.barnetillegg,
-            request.utvidetbarnetrygd,
-            request.inntektBegrunnelseMedIVedtakNotat,
-            request.inntektBegrunnelseKunINotat,
->>>>>>> main
+            request.utvidetBarnetrygd,
+            request.inntektsbegrunnelseIVedtakOgNotat,
+            request.inntektsbegrunnelseKunINotat,
         )
 
         val nyBehandling = behandlingService.hentBehandlingById(behandlingId)

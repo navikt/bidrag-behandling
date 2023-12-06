@@ -29,33 +29,16 @@ fun Set<Sivilstand>.toSivilstandDto() =
     this.map {
         SivilstandDto(
             it.id,
-<<<<<<< HEAD
             it.datoFom,
             it.datoTom,
-            it.sivilstandstype.tilSivilstandskodeForBeregning(),
-=======
-            it.datoFom?.toLocalDate(),
-            it.datoTom?.toLocalDate(),
-            it.sivilstand,
->>>>>>> main
+            it.sivilstand.tilSivilstandskodeForBeregning(),
             it.kilde,
         )
     }.toSet()
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     this.map {
-<<<<<<< HEAD
         Sivilstand(behandling, it.datoFom, it.datoTom, it.sivilstand.name, it.kilde, it.id)
-=======
-        Sivilstand(
-            behandling,
-            it.datoFom?.toDate(),
-            it.datoTom?.toDate(),
-            it.sivilstand,
-            it.kilde,
-            it.id,
-        )
->>>>>>> main
     }.toMutableSet()
 
 fun Set<Barnetillegg>.toBarnetilleggDto() =
@@ -73,8 +56,8 @@ fun Set<UtvidetBarnetrygdDto>.toUtvidetbarnetrygdDomain(behandling: Behandling) 
     this.map {
         UtvidetBarnetrygd(
             behandling,
-            it.deltBoSted,
-            it.belop,
+            it.deltBosted,
+            it.beløp,
             it.datoFom,
             it.datoTom,
         )
@@ -107,13 +90,8 @@ fun Set<Husstandsbarnperiode>.toHusstandsBarnPeriodeDto() =
     this.map {
         HusstandsBarnPeriodeDto(
             it.id,
-<<<<<<< HEAD
             it.datoFom,
             it.datoTom,
-=======
-            it.datoFom?.toLocalDate(),
-            it.datoTom?.toLocalDate(),
->>>>>>> main
             it.bostatus,
             it.kilde,
         )
@@ -123,13 +101,8 @@ fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
     this.map {
         Husstandsbarnperiode(
             husstandsBarn,
-<<<<<<< HEAD
             it.datoFom,
             it.datoTom,
-=======
-            it.datoFom?.toDate(),
-            it.datoTom?.toDate(),
->>>>>>> main
             it.bostatus,
             it.kilde,
         )
@@ -226,24 +199,10 @@ fun Behandling.tilForsendelseRolleDto() =
 fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
     Rolle(
         behandling,
-<<<<<<< HEAD
         rolletype = this.rolletype,
         this.ident,
         this.fødselsdato,
         this.opprettetdato,
-=======
-        rolleType =
-            when (this.rolleType) {
-                CreateRolleRolleType.BIDRAGS_MOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-                CreateRolleRolleType.BIDRAGS_PLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-                CreateRolleRolleType.REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-                CreateRolleRolleType.BARN -> Rolletype.BARN
-                CreateRolleRolleType.FEILREGISTRERT -> Rolletype.FEILREGISTRERT
-            },
-        this.ident,
-        this.fodtDato,
-        this.opprettetDato,
->>>>>>> main
         navn = this.navn,
     )
 

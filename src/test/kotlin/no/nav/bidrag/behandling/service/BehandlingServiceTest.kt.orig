@@ -9,14 +9,19 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.database.datamodell.Soknadstype
+import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
+=======
+import no.nav.bidrag.behandling.database.datamodell.SoknadType
+>>>>>>> main
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
-import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
+import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
@@ -36,7 +41,10 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
+<<<<<<< HEAD
 import java.time.YearMonth
+=======
+>>>>>>> main
 import java.util.Calendar
 
 class BehandlingServiceTest : TestContainerRunner() {
@@ -360,15 +368,27 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(
+<<<<<<< HEAD
+                    Inntekt(
+                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                        BigDecimal.valueOf(1.111),
+                        YearMonth.now().atDay(1),
+                        YearMonth.now().atEndOfMonth(),
+                        "ident",
+                        true,
+                        true,
+                        behandling = actualBehandling,
+=======
                     InntektDto(
                         taMed = true,
-                        inntektstype = Inntektsrapportering.KAPITALINNTEKT,
-                        beløp = BigDecimal.valueOf(4000),
+                        inntektType = Inntektsrapportering.KAPITALINNTEKT.name,
+                        belop = BigDecimal.valueOf(4000),
                         datoFom = LocalDate.now().minusMonths(4),
                         datoTom = LocalDate.now().plusMonths(4),
                         ident = "123",
                         fraGrunnlag = true,
-                        inntektsposter = emptySet(),
+                        inntektPostListe = emptySet(),
+>>>>>>> main
                     ),
                 ),
                 mutableSetOf(
@@ -380,11 +400,20 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                 ),
                 mutableSetOf(
-                    UtvidetBarnetrygdDto(
-                        deltBosted = false,
-                        beløp = BigDecimal.TEN,
+<<<<<<< HEAD
+                    UtvidetBarnetrygd(
+                        actualBehandling,
+                        true,
+                        BigDecimal.TEN,
+                        YearMonth.now().atDay(1),
+                        YearMonth.now().atEndOfMonth(),
+=======
+                    UtvidetbarnetrygdDto(
+                        deltBoSted = false,
+                        belop = BigDecimal.TEN,
                         datoFom = LocalDate.now().minusMonths(3),
                         datoTom = LocalDate.now().plusMonths(3),
+>>>>>>> main
                     ),
                 ),
                 "Med i Vedtaket",
@@ -416,15 +445,27 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(
+<<<<<<< HEAD
+                    Inntekt(
+                        Inntektsrapportering.DAGPENGER,
+                        BigDecimal.valueOf(1.111),
+                        YearMonth.now().atDay(1),
+                        YearMonth.now().atEndOfMonth(),
+                        "ident",
+                        true,
+                        true,
+                        behandling = actualBehandling,
+=======
                     InntektDto(
                         taMed = true,
-                        inntektstype = Inntektsrapportering.KAPITALINNTEKT,
-                        beløp = BigDecimal.valueOf(4000),
+                        inntektType = Inntektsrapportering.KAPITALINNTEKT.name,
+                        belop = BigDecimal.valueOf(4000),
                         datoFom = LocalDate.now().minusMonths(4),
                         datoTom = LocalDate.now().plusMonths(4),
                         ident = "123",
                         fraGrunnlag = true,
-                        inntektsposter = emptySet(),
+                        inntektPostListe = emptySet(),
+>>>>>>> main
                     ),
                 ),
                 mutableSetOf(

@@ -3,16 +3,7 @@ package no.nav.bidrag.behandling.controller
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
-<<<<<<< HEAD
 import no.nav.bidrag.behandling.dto.beregning.Forskuddsberegningrespons
-=======
-import no.nav.bidrag.behandling.beregning.ForskuddBeregning
-import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
-import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningPerBarn
-import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
-import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
->>>>>>> main
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForskuddService
 import org.springframework.http.HttpStatus
@@ -28,15 +19,16 @@ class BehandlingBeregnForskuddController(
     private val forskuddService: ForskuddService,
 ) {
     @Suppress("unused")
-    @PostMapping("/behandling/{behandlingId}/beregn")
+    @PostMapping("/behandling/{behandlingsid}/beregn")
     @Operation(
         description = "Beregn forskudd",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun beregnForskudd(
-        @PathVariable behandlingId: Long,
+        @PathVariable behandlingsid: Long,
     ): Forskuddsberegningrespons {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        LOGGER.info("Beregner forskudd for behandling med id $behandlingsid")
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
         if (behandling.id == null) throw HttpClientErrorException(HttpStatus.NOT_FOUND)
 

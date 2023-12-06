@@ -45,7 +45,7 @@ fun Behandling.tilGrunnlagSivilstand(bm: Grunnlag): Set<Grunnlag> {
             innhold =
                 POJONode(
                     SivilstandPeriode(
-                        sivilstand = it.sivilstandstype.tilSivilstandskodeForBeregning(),
+                        sivilstand = it.sivilstand.tilSivilstandskodeForBeregning(),
                         periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
                     ),
                 ),

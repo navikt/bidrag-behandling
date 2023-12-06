@@ -5,11 +5,19 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import java.time.LocalDate
+=======
+import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import java.util.Date
+>>>>>>> main
 
 data class CreateBehandlingRequest(
     @Schema(required = true)
