@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
-import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import java.time.LocalDate
@@ -15,7 +15,7 @@ data class BehandlingDto(
     // Union av Stønadstype og Engangsbeløptype
     val behandlingtype: Behandlingstype,
     // TODO Bruk Vedtakstype istedenfor
-    val søknadstype: SoknadType,
+    val søknadType: Soknadstype,
     val erVedtakFattet: Boolean,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -25,7 +25,7 @@ data class BehandlingDto(
     val datoTom: LocalDate,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val mottatDato: LocalDate,
+    val mottattdato: LocalDate,
     val soknadFraType: SøktAvType,
     val saksnummer: String,
     val soknadsid: Long,
@@ -39,10 +39,10 @@ data class BehandlingDto(
     val soknadRefId: Long? = null,
     val grunnlagspakkeid: Long? = null,
     val årsak: ForskuddAarsakType? = null,
-    val virkningstidspunktBegrunnelseMedIVedtaksnotat: String? = null,
-    val virkningstidspunktBegrunnelseKunINotat: String? = null,
-    val boforholdsbegrunnelseMedIVedtaksnotat: String? = null,
+    val virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
+    val virkningstidspunktsbegrunnelseKunINotat: String? = null,
+    val boforholdsbegrunnelseIVedtakOgNotat: String? = null,
     val boforholdsbegrunnelseKunINotat: String? = null,
-    val inntektsbegrunnelseMedIVedtaksnotat: String? = null,
+    val inntektsbegrunnelseIVedtakOgNotat: String? = null,
     val inntektsbegrunnelseKunINotat: String? = null,
 )

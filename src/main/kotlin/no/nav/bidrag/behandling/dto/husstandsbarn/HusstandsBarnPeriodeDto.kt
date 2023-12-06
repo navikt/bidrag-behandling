@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.dto.husstandsbarn
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.BoStatusType
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.time.LocalDate
 
 data class HusstandsBarnPeriodeDto(
@@ -15,7 +15,7 @@ data class HusstandsBarnPeriodeDto(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
     @Schema(required = true)
-    val boStatus: BoStatusType?,
+    val bostatus: Bostatuskode,
     @Schema(required = true)
     val kilde: Kilde,
 )

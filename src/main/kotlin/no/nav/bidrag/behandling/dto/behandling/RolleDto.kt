@@ -1,20 +1,12 @@
 package no.nav.bidrag.behandling.dto.behandling
 
-import java.util.Date
+import no.nav.bidrag.domene.enums.rolle.Rolletype
+import java.time.LocalDate
 
 data class RolleDto(
     val id: Long,
-    val rolleType: RolleTypeDto,
+    val rolletype: Rolletype,
     val ident: String?,
     val navn: String?,
-    val fodtDato: Date?,
-    val opprettetDato: Date?,
+    val fødselsdato: LocalDate?,
 )
-
-enum class RolleTypeDto {
-    BARN,
-    BIDRAGSMOTTAKER,
-    BIDRAGSPLIKTIG,
-    FEILREGISTRERT,
-    REELMOTTAKER,
-}

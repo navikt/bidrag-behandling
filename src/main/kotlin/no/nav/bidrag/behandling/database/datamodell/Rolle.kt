@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
-import java.util.Date
+import java.time.LocalDate
 
 @Entity(name = "rolle")
 @SQLDelete(sql = "UPDATE rolle SET deleted = true WHERE id=?")
@@ -22,10 +22,10 @@ class Rolle(
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
     @Enumerated(EnumType.STRING)
-    val rolleType: Rolletype,
+    val rolletype: Rolletype,
     val ident: String?,
-    val fodtDato: Date?,
-    val opprettetDato: Date?,
+    val foedselsdato: LocalDate,
+    val opprettetDato: LocalDate?,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

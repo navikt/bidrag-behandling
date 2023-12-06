@@ -39,10 +39,10 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         val updatedBehandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(
-            updatedBehandling.husstandsBarn.toHusstandsBarnDto(),
+            updatedBehandling.husstandsbarn.toHusstandsBarnDto(),
             updatedBehandling.sivilstand.toSivilstandDto(),
-            updatedBehandling.boforholdBegrunnelseMedIVedtakNotat,
-            updatedBehandling.boforholdBegrunnelseKunINotat,
+            updatedBehandling.boforholdsbegrunnelseIVedtakOgNotat,
+            updatedBehandling.boforholdsbegrunnelseKunINotat,
         )
     }
 
@@ -58,10 +58,10 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(
-            behandling.husstandsBarn.toHusstandsBarnDto(),
+            behandling.husstandsbarn.toHusstandsBarnDto(),
             behandling.sivilstand.toSivilstandDto(),
-            behandling.boforholdBegrunnelseMedIVedtakNotat,
-            behandling.boforholdBegrunnelseKunINotat,
+            behandling.boforholdsbegrunnelseIVedtakOgNotat,
+            behandling.boforholdsbegrunnelseKunINotat,
         )
     }
 }

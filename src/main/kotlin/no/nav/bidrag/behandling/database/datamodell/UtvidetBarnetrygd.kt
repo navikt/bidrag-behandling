@@ -8,17 +8,17 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import java.math.BigDecimal
-import java.util.Date
+import java.time.LocalDate
 
-@Entity(name = "utvidetbarnetrygd")
-class Utvidetbarnetrygd(
+@Entity(name = "utvidet_barnetrygd")
+class UtvidetBarnetrygd(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
-    val deltBoSted: Boolean,
+    val deltBosted: Boolean,
     val belop: BigDecimal,
-    val datoFom: Date?,
-    val datoTom: Date?,
+    val datoFom: LocalDate?,
+    val datoTom: LocalDate?,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

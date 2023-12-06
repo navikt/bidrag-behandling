@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
-import no.nav.bidrag.behandling.dto.inntekt.UpdateInntekterRequest
+import no.nav.bidrag.behandling.dto.inntekt.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDto
@@ -39,7 +39,7 @@ class InntekterController(private val behandlingService: BehandlingService) {
     )
     fun oppdaterInntekter(
         @PathVariable behandlingId: Long,
-        @RequestBody request: UpdateInntekterRequest,
+        @RequestBody request: OppdatereInntekterRequest,
     ): InntekterResponse {
         var behandling = behandlingService.hentBehandlingById(behandlingId)
 
@@ -47,19 +47,19 @@ class InntekterController(private val behandlingService: BehandlingService) {
             behandlingId,
             request.inntekter.toInntektDomain(behandling!!),
             request.barnetillegg.toBarnetilleggDomain(behandling),
-            request.utvidetbarnetrygd.toUtvidetbarnetrygdDomain(behandling),
-            request.inntektBegrunnelseMedIVedtakNotat,
-            request.inntektBegrunnelseKunINotat,
+            request.utvidetBarnetrygd.toUtvidetbarnetrygdDomain(behandling),
+            request.inntektsbegrunnelseIVedtakOgNotat,
+            request.inntektsbegrunnelseKunINotat,
         )
 
-        val newBehandling = behandlingService.hentBehandlingById(behandlingId)
+        val nyBehandling = behandlingService.hentBehandlingById(behandlingId)
 
         return InntekterResponse(
-            newBehandling.inntekter.toInntektDto(),
-            newBehandling.barnetillegg.toBarnetilleggDto(),
-            newBehandling.utvidetbarnetrygd.toUtvidetbarnetrygdDto(),
-            newBehandling.inntektBegrunnelseMedIVedtakNotat,
-            newBehandling.inntektBegrunnelseKunINotat,
+            nyBehandling.inntekter.toInntektDto(),
+            nyBehandling.barnetillegg.toBarnetilleggDto(),
+            nyBehandling.utvidetBarnetrygd.toUtvidetbarnetrygdDto(),
+            nyBehandling.inntektsbegrunnelseIVedtakOgNotat,
+            nyBehandling.inntektsbegrunnelseKunINotat,
         )
     }
 
@@ -88,9 +88,9 @@ class InntekterController(private val behandlingService: BehandlingService) {
         return InntekterResponse(
             behandling.inntekter.toInntektDto(),
             behandling.barnetillegg.toBarnetilleggDto(),
-            behandling.utvidetbarnetrygd.toUtvidetbarnetrygdDto(),
-            behandling.inntektBegrunnelseMedIVedtakNotat,
-            behandling.inntektBegrunnelseKunINotat,
+            behandling.utvidetBarnetrygd.toUtvidetbarnetrygdDto(),
+            behandling.inntektsbegrunnelseIVedtakOgNotat,
+            behandling.inntektsbegrunnelseKunINotat,
         )
     }
 }

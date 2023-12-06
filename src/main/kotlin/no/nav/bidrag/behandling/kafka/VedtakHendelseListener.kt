@@ -53,7 +53,7 @@ class VedtakHendelseListener(
                 enhet = vedtak.enhetsnummer?.verdi,
                 behandlingInfo =
                     BehandlingInfoDto(
-                        soknadId = vedtak.soknadId ?: behandling.soknadId,
+                        soknadId = vedtak.soknadId ?: behandling.soknadsid,
                         vedtakId = vedtak.id.toLong(),
                         soknadFra = behandling.soknadFra,
                         stonadType = vedtak.stonadType,

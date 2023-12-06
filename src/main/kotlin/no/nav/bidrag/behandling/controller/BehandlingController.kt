@@ -11,16 +11,14 @@ import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.behandling.SyncRollerRequest
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
-import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toRolle
-import no.nav.bidrag.behandling.transformers.toRolleTypeDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.apache.commons.lang3.Validate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -54,29 +52,25 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         @RequestBody(required = true)
         createBehandling: CreateBehandlingRequest,
     ): CreateBehandlingResponse {
-        ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller)
-
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller) &&
-                ingenVoksneUtenIdent(
-                    createBehandling.roller,
-                ),
+                ingenVoksneUtenIdent(createBehandling.roller),
         )
 
         val behandling =
             Behandling(
-                createBehandling.behandlingType,
-                createBehandling.soknadType,
+                createBehandling.behandlingstype,
+                createBehandling.søknadstype,
                 createBehandling.datoFom,
                 createBehandling.datoTom,
-                createBehandling.mottatDato,
+                createBehandling.mottattdato,
                 createBehandling.saksnummer,
-                createBehandling.soknadId,
-                createBehandling.soknadRefId,
-                createBehandling.behandlerEnhet,
-                createBehandling.soknadFra,
-                createBehandling.stonadType,
-                createBehandling.engangsbelopType,
+                createBehandling.søknadsid,
+                createBehandling.søknadsreferanseid,
+                createBehandling.behandlerenhet,
+                createBehandling.søknadFra,
+                createBehandling.stønadstype,
+                createBehandling.engangsbeløpstype,
             )
         val roller =
             HashSet(
@@ -89,9 +83,9 @@ class BehandlingController(private val behandlingService: BehandlingService) {
 
         val behandlingDo = behandlingService.createBehandling(behandling)
         LOGGER.info {
-            "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
-                "soknadType ${createBehandling.soknadType} " +
-                "og soknadFra ${createBehandling.soknadFra} " +
+            "Opprettet behandling for behandlingType ${createBehandling.behandlingstype} " +
+                "soknadType ${createBehandling.søknadstype} " +
+                "og soknadFra ${createBehandling.søknadFra} " +
                 "med id ${behandlingDo.id} "
         }
         return CreateBehandlingResponse(behandlingDo.id!!)
@@ -179,30 +173,30 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     ) = BehandlingDto(
         behandlingId,
         behandling.behandlingType,
-        behandling.soknadType,
-        behandling.vedtakId != null,
-        behandling.datoFom.toLocalDate(),
-        behandling.datoTom.toLocalDate(),
-        behandling.mottatDato.toLocalDate(),
+        behandling.soknadstype,
+        behandling.vedtaksid != null,
+        behandling.datoFom,
+        behandling.datoTom,
+        behandling.mottattdato,
         behandling.soknadFra,
         behandling.saksnummer,
-        behandling.soknadId,
+        behandling.soknadsid,
         behandling.behandlerEnhet,
         behandling.roller.map {
-            RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.navn, it.fodtDato, it.opprettetDato)
+            RolleDto(it.id!!, it.rolletype, it.ident, it.navn, it.foedselsdato)
         }.toSet(),
-        behandling.husstandsBarn.toHusstandsBarnDto(),
+        behandling.husstandsbarn.toHusstandsBarnDto(),
         behandling.sivilstand.toSivilstandDto(),
-        behandling.virkningsDato?.toLocalDate(),
+        behandling.virkningsdato,
         behandling.soknadRefId,
-        behandling.grunnlagspakkeId,
+        behandling.grunnlagspakkeid,
         behandling.aarsak,
-        behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
-        behandling.virkningsTidspunktBegrunnelseKunINotat,
-        behandling.boforholdBegrunnelseMedIVedtakNotat,
-        behandling.boforholdBegrunnelseKunINotat,
-        behandling.inntektBegrunnelseMedIVedtakNotat,
-        behandling.inntektBegrunnelseKunINotat,
+        behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
+        behandling.virkningstidspunktbegrunnelseKunINotat,
+        behandling.boforholdsbegrunnelseIVedtakOgNotat,
+        behandling.boforholdsbegrunnelseKunINotat,
+        behandling.inntektsbegrunnelseIVedtakOgNotat,
+        behandling.inntektsbegrunnelseKunINotat,
     )
 
     @Suppress("unused")
@@ -227,11 +221,12 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     }
 
     private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<CreateRolleDto>): Boolean {
-        return roller.filter { r -> r.rolleType == CreateRolleRolleType.BARN && r.ident.isNullOrBlank() }
+        return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident.isNullOrBlank() }
             .none { r -> r.navn.isNullOrBlank() }
     }
 
     private fun ingenVoksneUtenIdent(roller: Set<CreateRolleDto>): Boolean {
-        return roller.filter { r -> r.rolleType != CreateRolleRolleType.BARN && r.ident.isNullOrBlank() }.none()
+        return roller.filter { r -> r.rolletype != Rolletype.BARN && r.ident.isNullOrBlank() }
+            .none()
     }
 }

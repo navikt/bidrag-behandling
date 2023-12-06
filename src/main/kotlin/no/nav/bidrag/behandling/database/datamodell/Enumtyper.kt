@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.database.datamodell
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(enumAsRef = true)
-enum class BoStatusType {
+enum class Bostatustype {
     IKKE_REGISTRERT_PA_ADRESSE,
     REGISTRERT_PA_ADRESSE,
 }
@@ -20,13 +20,6 @@ enum class OpplysningerType {
     BOFORHOLD,
 }
 
-// TODO Bruk Sivilstandstype fra bidrag-domain istedenfor
-@Schema(enumAsRef = true)
-enum class SivilstandType {
-    BOR_ALENE_MED_BARN,
-    GIFT,
-}
-
 @Schema(enumAsRef = true)
 enum class Behandlingstype {
     BIDRAG,
@@ -38,7 +31,7 @@ enum class Behandlingstype {
 }
 
 @Schema(enumAsRef = true)
-enum class SoknadType {
+enum class Soknadstype {
     INDEKSREGULERING,
     ALDERSJUSTERING,
     OPPHØR,

@@ -9,17 +9,17 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import java.util.Date
+import java.time.LocalDate
 
+// TODO: koble sammen med rolletabellen
 @Entity(name = "sivilstand")
 class Sivilstand(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
-    val datoFom: Date?,
-    val datoTom: Date?,
-    @Enumerated(EnumType.STRING)
-    val sivilstandType: SivilstandType,
+    val datoFom: LocalDate? = null,
+    val datoTom: LocalDate? = null,
+    val sivilstandstype: String,
     @Enumerated(EnumType.STRING)
     val kilde: Kilde,
     @Id

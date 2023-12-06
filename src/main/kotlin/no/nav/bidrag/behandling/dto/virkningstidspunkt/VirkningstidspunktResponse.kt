@@ -5,11 +5,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import java.time.LocalDate
 
-data class VirkningsTidspunktResponse(
-    val virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
-    val virkningsTidspunktBegrunnelseKunINotat: String? = null,
-    val aarsak: ForskuddAarsakType? = null,
+data class VirkningstidspunktResponse(
+    val virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
+    val virkningstidspunktsbegrunnelseKunINotat: String? = null,
+    val årsak: ForskuddAarsakType? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val virkningsDato: LocalDate? = null,
+    val virkningsdato: LocalDate? = null,
 )

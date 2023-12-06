@@ -10,8 +10,8 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import java.math.BigDecimal
 
-@Entity(name = "inntekt_post")
-class InntektPostDomain(
+@Entity(name = "inntektspost")
+class Inntektspost(
     @Column(name = "belop")
     val beløp: BigDecimal,
     val kode: String,

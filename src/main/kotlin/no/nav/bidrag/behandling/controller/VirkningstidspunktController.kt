@@ -4,18 +4,16 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import no.nav.bidrag.behandling.dto.virkningstidspunkt.UpdateVirkningsTidspunktRequest
-import no.nav.bidrag.behandling.dto.virkningstidspunkt.VirkningsTidspunktResponse
+import no.nav.bidrag.behandling.dto.virkningstidspunkt.OppdatereVirkningstidspunktRequest
+import no.nav.bidrag.behandling.dto.virkningstidspunkt.VirkningstidspunktResponse
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.transformers.toDate
-import no.nav.bidrag.behandling.transformers.toLocalDate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestController
-class VirkningsTidspunktController(private val behandlingService: BehandlingService) {
+class VirkningstidspunktController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/virkningstidspunkt")
     @Operation(
@@ -35,23 +33,23 @@ class VirkningsTidspunktController(private val behandlingService: BehandlingServ
     )
     fun oppdaterVirkningsTidspunkt(
         @PathVariable behandlingId: Long,
-        @RequestBody updateVirkningsTidspunktRequest: UpdateVirkningsTidspunktRequest,
-    ): VirkningsTidspunktResponse {
-        behandlingService.updateVirkningsTidspunkt(
+        @RequestBody oppdatereVirkningsTidspunktRequest: OppdatereVirkningstidspunktRequest,
+    ): VirkningstidspunktResponse {
+        behandlingService.oppdatereVirkningstidspunkt(
             behandlingId,
-            updateVirkningsTidspunktRequest.aarsak,
-            updateVirkningsTidspunktRequest.virkningsDato?.toDate(),
-            updateVirkningsTidspunktRequest.virkningsTidspunktBegrunnelseKunINotat,
-            updateVirkningsTidspunktRequest.virkningsTidspunktBegrunnelseMedIVedtakNotat,
+            oppdatereVirkningsTidspunktRequest.årsak,
+            oppdatereVirkningsTidspunktRequest.virkningsdato,
+            oppdatereVirkningsTidspunktRequest.virkningstidspunktsbegrunnelseKunINotat,
+            oppdatereVirkningsTidspunktRequest.virkningstidspunktsbegrunnelseIVedtakOgNotat,
         )
 
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
-        return VirkningsTidspunktResponse(
-            behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
-            behandling.virkningsTidspunktBegrunnelseKunINotat,
+        return VirkningstidspunktResponse(
+            behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
+            behandling.virkningstidspunktbegrunnelseKunINotat,
             behandling.aarsak,
-            behandling.virkningsDato?.toLocalDate(),
+            behandling.virkningsdato,
         )
     }
 
@@ -74,13 +72,13 @@ class VirkningsTidspunktController(private val behandlingService: BehandlingServ
     )
     fun hentVirkningsTidspunkt(
         @PathVariable behandlingId: Long,
-    ): VirkningsTidspunktResponse {
+    ): VirkningstidspunktResponse {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        return VirkningsTidspunktResponse(
-            behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
-            behandling.virkningsTidspunktBegrunnelseKunINotat,
+        return VirkningstidspunktResponse(
+            behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
+            behandling.virkningstidspunktbegrunnelseKunINotat,
             behandling.aarsak,
-            behandling.virkningsDato?.toLocalDate(),
+            behandling.virkningsdato,
         )
     }
 }

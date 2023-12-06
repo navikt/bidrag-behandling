@@ -1,5 +1,6 @@
 BIDRAG_PERSON_URL: http://localhost:${wiremock.server.port}/bidrag-person
 BIDRAG_BEREGN_FORSKUDD_URL: http://localhost:${wiremock.server.port}
+BIDRAG_GRUNNLAG_URL: http://localhost:${wiremock.server.port}/grunnlag
 BIDRAG_FORSENDELSE_URL: http://localhost:${wiremock.server.port}/forsendelse
 BIDRAG_TILGANGSKONTROLL_URL: http://localhost:${wiremock.server.port}/tilgangskontroll
 AZURE_OPENID_CONFIG_ISSUER: http://localhost:${mock-oauth2-server.port}/aad
@@ -40,6 +41,15 @@ no.nav.security.jwt:
           client-auth-method: client_secret_basic
       bidrag-beregn-forskudd-rest:
         resource-url: ${BIDRAG_BEREGN_FORSKUDD_URL}
+        token-endpoint-url: http://localhost:${mock-oauth2-server.port:1234}/aad/token
+        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
+        scope: api://123/.default
+        authentication:
+          client-id: 123
+          client-secret: 123
+          client-auth-method: client_secret_basic
+      bidrag-grunnlag:
+        resource-url: ${BIDRAG_GRUNNLAG_URL}
         token-endpoint-url: http://localhost:${mock-oauth2-server.port:1234}/aad/token
         grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
         scope: api://123/.default
