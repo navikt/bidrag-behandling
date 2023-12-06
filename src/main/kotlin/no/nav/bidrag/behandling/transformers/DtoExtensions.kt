@@ -14,8 +14,8 @@ import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
-import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnPeriodeDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
@@ -88,7 +88,7 @@ fun Set<BarnetilleggDto>.toBarnetilleggDomain(behandling: Behandling) =
 
 fun Set<Husstandsbarnperiode>.toHusstandsBarnPeriodeDto() =
     this.map {
-        HusstandsBarnPeriodeDto(
+        HusstandsbarnperiodeDto(
             it.id,
             it.datoFom,
             it.datoTom,
@@ -97,7 +97,7 @@ fun Set<Husstandsbarnperiode>.toHusstandsBarnPeriodeDto() =
         )
     }.toSet()
 
-fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
+fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
     this.map {
         Husstandsbarnperiode(
             husstandsBarn,

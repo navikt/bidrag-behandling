@@ -6,7 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.time.LocalDate
 
-data class HusstandsBarnPeriodeDto(
+data class HusstandsbarnperiodeDto(
     val id: Long?,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")

@@ -4,8 +4,8 @@ import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
 import no.nav.bidrag.behandling.dto.boforhold.UpdateBoforholdRequest
-import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsBarnPeriodeDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.junit.jupiter.api.Assertions
@@ -50,7 +50,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         // 2.1 Prepare husstandsBarn
 
         val perioder =
-            setOf(HusstandsBarnPeriodeDto(null, null, null, Bostatuskode.IKKE_MED_FORELDER, Kilde.OFFENTLIG))
+            setOf(HusstandsbarnperiodeDto(null, null, null, Bostatuskode.IKKE_MED_FORELDER, Kilde.OFFENTLIG))
         val husstandsBarn =
             setOf(
                 HusstandsbarnDto(
