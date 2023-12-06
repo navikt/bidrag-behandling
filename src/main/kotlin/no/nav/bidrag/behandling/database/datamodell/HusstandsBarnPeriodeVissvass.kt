@@ -13,7 +13,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.time.LocalDate
 
 @Entity(name = "barn_i_husstand_periode")
-class Husstandsbarnperiode(
+class HusstandsbarnperiodeVissvass(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barn_i_husstand_id", nullable = false)
     val husstandsbarn: Husstandsbarn,

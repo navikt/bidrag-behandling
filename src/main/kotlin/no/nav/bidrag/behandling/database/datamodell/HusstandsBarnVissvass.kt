@@ -13,7 +13,7 @@ import jakarta.persistence.OneToMany
 import java.time.LocalDate
 
 @Entity(name = "barn_i_husstand")
-class Husstandsbarn(
+class HusstandsbarnVissvass(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
