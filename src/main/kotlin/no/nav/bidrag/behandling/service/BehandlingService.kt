@@ -53,7 +53,7 @@ class BehandlingService(
                         behandlingId = behandling.id,
                         soknadId = behandling.soknadsid,
                         soknadFra = behandling.soknadFra,
-                        behandlingType = behandling.behandlingType.name,
+                        behandlingType = behandling.behandlingstype.name,
                         stonadType = behandling.stonadstype,
                         engangsBelopType = behandling.engangsbeloptype,
                         vedtakType = behandling.soknadstype.tilVedtakType(),

@@ -29,7 +29,7 @@ import java.time.LocalDateTime
 @Where(clause = "deleted=false")
 class Behandling(
     @Enumerated(EnumType.STRING)
-    val behandlingType: Behandlingstype,
+    val behandlingstype: Behandlingstype,
     // TODO Endre til Vedtakstype
     @Enumerated(EnumType.STRING)
     val soknadstype: Soknadstype,

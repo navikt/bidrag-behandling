@@ -69,13 +69,13 @@ class BehandlingServiceTest : TestContainerRunner() {
             val actualBehandling = createBehandling()
 
             assertNotNull(actualBehandling.id)
-            assertEquals(Behandlingstype.FORSKUDD, actualBehandling.behandlingType)
+            assertEquals(Behandlingstype.FORSKUDD, actualBehandling.behandlingstype)
             assertEquals(3, actualBehandling.roller.size)
 
             val actualBehandlingFetched =
                 behandlingService.hentBehandlingById(actualBehandling.id!!)
 
-            assertEquals(Behandlingstype.FORSKUDD, actualBehandlingFetched.behandlingType)
+            assertEquals(Behandlingstype.FORSKUDD, actualBehandlingFetched.behandlingstype)
             assertEquals(3, actualBehandlingFetched.roller.size)
             assertNotNull(actualBehandlingFetched.roller.iterator().next().foedselsdato)
         }
@@ -105,7 +105,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val actualBehandlingFetched =
                 behandlingService.hentBehandlingById(actualBehandling.id!!)
 
-            assertEquals(Behandlingstype.FORSKUDD, actualBehandlingFetched.behandlingType)
+            assertEquals(Behandlingstype.FORSKUDD, actualBehandlingFetched.behandlingstype)
             assertEquals(1, actualBehandlingFetched.inntekter.size)
             assertEquals(
                 BigDecimal.valueOf(555.55),

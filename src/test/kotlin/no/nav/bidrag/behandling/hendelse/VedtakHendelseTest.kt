@@ -114,7 +114,7 @@ class VedtakHendelseTest : CommonTestRunner() {
             saksnummer = SAKSNUMMER,
             soknadsid = 123123L,
             behandlerEnhet = "4806",
-            behandlingType = Behandlingstype.BIDRAG18AAR,
+            behandlingstype = Behandlingstype.BIDRAG18AAR,
             engangsbeloptype = null,
             mottattdato = LocalDate.now(),
             soknadFra = SøktAvType.BIDRAGSMOTTAKER,

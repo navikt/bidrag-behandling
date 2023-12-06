@@ -172,7 +172,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling: Behandling,
     ) = BehandlingDto(
         behandlingId,
-        behandling.behandlingType,
+        behandling.behandlingstype,
         behandling.soknadstype,
         behandling.vedtaksid != null,
         behandling.datoFom,
