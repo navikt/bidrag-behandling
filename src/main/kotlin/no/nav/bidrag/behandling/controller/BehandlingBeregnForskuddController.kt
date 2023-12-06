@@ -3,7 +3,16 @@ package no.nav.bidrag.behandling.controller
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.dto.beregning.Forskuddsberegningrespons
+=======
+import no.nav.bidrag.behandling.beregning.ForskuddBeregning
+import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningPerBarn
+import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
+import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
+>>>>>>> main
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForskuddService
 import org.springframework.http.HttpStatus

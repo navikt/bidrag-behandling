@@ -18,7 +18,11 @@ data class ResultatPeriode(
     @Schema(description = "Beregnet resultat periode") var periode: Periode = Periode(),
     @Schema(description = "Beregnet resultat innhold") var resultat: ResultatBeregning = ResultatBeregning(),
     @Schema(description = "Beregnet grunnlag innhold") var grunnlagReferanseListe: List<String> = emptyList(),
+<<<<<<< HEAD
     @Schema(description = "Sivilstand") var sivilstandType: Sivilstandskode? = null,
+=======
+    @Schema(description = "Sivilstand") var sivilstand: Sivilstandskode? = null,
+>>>>>>> main
 )
 
 @Schema(description = "Periode (fra-til dato")

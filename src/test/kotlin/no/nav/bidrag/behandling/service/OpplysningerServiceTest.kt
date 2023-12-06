@@ -4,7 +4,11 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.database.datamodell.Soknadstype
+=======
+import no.nav.bidrag.behandling.database.datamodell.SoknadType
+>>>>>>> main
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import org.junit.jupiter.api.Assertions.assertFalse

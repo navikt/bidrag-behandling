@@ -22,10 +22,17 @@ class Rolle(
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
     @Enumerated(EnumType.STRING)
+<<<<<<< HEAD
     val rolletype: Rolletype,
     val ident: String?,
     val foedselsdato: LocalDate,
     val opprettetDato: LocalDate?,
+=======
+    val rolleType: Rolletype,
+    val ident: String?,
+    val fodtDato: Date?,
+    val opprettetDato: Date?,
+>>>>>>> main
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

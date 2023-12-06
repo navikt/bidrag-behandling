@@ -3,19 +3,25 @@ package no.nav.bidrag.behandling.service
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
-import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
+=======
+import no.nav.bidrag.behandling.database.datamodell.SoknadType
+>>>>>>> main
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
+import no.nav.bidrag.behandling.dto.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
@@ -35,7 +41,10 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
+<<<<<<< HEAD
 import java.time.YearMonth
+=======
+>>>>>>> main
 import java.util.Calendar
 
 class BehandlingServiceTest : TestContainerRunner() {
@@ -359,6 +368,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(
+<<<<<<< HEAD
                     Inntekt(
                         Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
                         BigDecimal.valueOf(1.111),
@@ -368,24 +378,42 @@ class BehandlingServiceTest : TestContainerRunner() {
                         true,
                         true,
                         behandling = actualBehandling,
+=======
+                    InntektDto(
+                        taMed = true,
+                        inntektType = Inntektsrapportering.KAPITALINNTEKT.name,
+                        belop = BigDecimal.valueOf(4000),
+                        datoFom = LocalDate.now().minusMonths(4),
+                        datoTom = LocalDate.now().plusMonths(4),
+                        ident = "123",
+                        fraGrunnlag = true,
+                        inntektPostListe = emptySet(),
+>>>>>>> main
                     ),
                 ),
                 mutableSetOf(
-                    Barnetillegg(
-                        actualBehandling,
-                        "ident",
-                        BigDecimal.ONE,
-                        Calendar.getInstance().time,
-                        Calendar.getInstance().time,
+                    BarnetilleggDto(
+                        ident = "123",
+                        barnetillegg = BigDecimal.TEN,
+                        datoFom = LocalDate.now().minusMonths(3),
+                        datoTom = LocalDate.now().plusMonths(3),
                     ),
                 ),
                 mutableSetOf(
+<<<<<<< HEAD
                     UtvidetBarnetrygd(
                         actualBehandling,
                         true,
                         BigDecimal.TEN,
                         YearMonth.now().atDay(1),
                         YearMonth.now().atEndOfMonth(),
+=======
+                    UtvidetbarnetrygdDto(
+                        deltBoSted = false,
+                        belop = BigDecimal.TEN,
+                        datoFom = LocalDate.now().minusMonths(3),
+                        datoTom = LocalDate.now().plusMonths(3),
+>>>>>>> main
                     ),
                 ),
                 "Med i Vedtaket",
@@ -417,6 +445,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(
+<<<<<<< HEAD
                     Inntekt(
                         Inntektsrapportering.DAGPENGER,
                         BigDecimal.valueOf(1.111),
@@ -426,15 +455,25 @@ class BehandlingServiceTest : TestContainerRunner() {
                         true,
                         true,
                         behandling = actualBehandling,
+=======
+                    InntektDto(
+                        taMed = true,
+                        inntektType = Inntektsrapportering.KAPITALINNTEKT.name,
+                        belop = BigDecimal.valueOf(4000),
+                        datoFom = LocalDate.now().minusMonths(4),
+                        datoTom = LocalDate.now().plusMonths(4),
+                        ident = "123",
+                        fraGrunnlag = true,
+                        inntektPostListe = emptySet(),
+>>>>>>> main
                     ),
                 ),
                 mutableSetOf(
-                    Barnetillegg(
-                        actualBehandling,
-                        "ident",
-                        BigDecimal.ONE,
-                        Calendar.getInstance().time,
-                        Calendar.getInstance().time,
+                    BarnetilleggDto(
+                        ident = "123",
+                        barnetillegg = BigDecimal.TEN,
+                        datoFom = LocalDate.now().minusMonths(3),
+                        datoTom = LocalDate.now().plusMonths(3),
                     ),
                 ),
                 mutableSetOf(),
@@ -452,7 +491,14 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(),
-                expectedBehandling.barnetillegg,
+                mutableSetOf(
+                    BarnetilleggDto(
+                        ident = "123",
+                        barnetillegg = BigDecimal.TEN,
+                        datoFom = LocalDate.now().minusMonths(3),
+                        datoTom = LocalDate.now().plusMonths(3),
+                    ),
+                ),
                 mutableSetOf(),
                 null,
                 null,

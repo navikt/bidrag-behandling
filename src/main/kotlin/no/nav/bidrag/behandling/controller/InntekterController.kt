@@ -7,11 +7,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
 import no.nav.bidrag.behandling.dto.inntekt.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDto
-import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toInntektDto
-import no.nav.bidrag.behandling.transformers.toUtvidetbarnetrygdDomain
 import no.nav.bidrag.behandling.transformers.toUtvidetbarnetrygdDto
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -41,15 +38,21 @@ class InntekterController(private val behandlingService: BehandlingService) {
         @PathVariable behandlingId: Long,
         @RequestBody request: OppdatereInntekterRequest,
     ): InntekterResponse {
-        var behandling = behandlingService.hentBehandlingById(behandlingId)
-
         behandlingService.oppdaterInntekter(
             behandlingId,
+<<<<<<< HEAD
             request.inntekter.toInntektDomain(behandling!!),
             request.barnetillegg.toBarnetilleggDomain(behandling),
             request.utvidetBarnetrygd.toUtvidetbarnetrygdDomain(behandling),
             request.inntektsbegrunnelseIVedtakOgNotat,
             request.inntektsbegrunnelseKunINotat,
+=======
+            request.inntekter,
+            request.barnetillegg,
+            request.utvidetbarnetrygd,
+            request.inntektBegrunnelseMedIVedtakNotat,
+            request.inntektBegrunnelseKunINotat,
+>>>>>>> main
         )
 
         val nyBehandling = behandlingService.hentBehandlingById(behandlingId)

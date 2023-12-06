@@ -15,7 +15,11 @@ data class HusstandsBarnPeriodeDto(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
     @Schema(required = true)
+<<<<<<< HEAD
     val bostatus: Bostatuskode,
+=======
+    val bostatus: Bostatuskode?,
+>>>>>>> main
     @Schema(required = true)
     val kilde: Kilde,
 )

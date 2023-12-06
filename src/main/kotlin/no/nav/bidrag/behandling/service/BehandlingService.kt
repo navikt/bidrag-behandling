@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -10,14 +11,29 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
+=======
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
+import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
+import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+>>>>>>> main
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
+import no.nav.bidrag.behandling.dto.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilVedtakType
+import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
+import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toRolle
+<<<<<<< HEAD
+=======
+import no.nav.bidrag.behandling.transformers.toUtvidetbarnetrygdDomain
+>>>>>>> main
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -98,12 +114,21 @@ class BehandlingService(
 
     @Transactional
     fun oppdaterInntekter(
+<<<<<<< HEAD
         behandlingsid: Long,
         inntekter: MutableSet<Inntekt>,
         barnetillegg: MutableSet<Barnetillegg>,
         utvidetbarnetrygd: MutableSet<UtvidetBarnetrygd>,
         inntektsbegrunnelseMedIVedtakOgNotat: String?,
         inntektsbegrunnelseKunINotat: String?,
+=======
+        behandlingId: Long,
+        nyeInntekter: Set<InntektDto>,
+        nyeBarnetillegg: Set<BarnetilleggDto>,
+        nyUtvidetbarnetrygd: Set<UtvidetbarnetrygdDto>,
+        inntektBegrunnelseMedIVedtakNotat: String?,
+        inntektBegrunnelseKunINotat: String?,
+>>>>>>> main
     ) {
         var behandling =
             behandlingRepository.findBehandlingById(behandlingsid)
@@ -112,22 +137,42 @@ class BehandlingService(
         behandling.inntektsbegrunnelseIVedtakOgNotat = inntektsbegrunnelseMedIVedtakOgNotat
         behandling.inntektsbegrunnelseKunINotat = inntektsbegrunnelseKunINotat
 
+        var inntektOppdatert = false
+
+        val inntekter = nyeInntekter.toInntektDomain(behandling)
+        val barnetillegg = nyeBarnetillegg.toBarnetilleggDomain(behandling)
+        val nyUtvidetbarnetrygd = nyUtvidetbarnetrygd.toUtvidetbarnetrygdDomain(behandling)
+
         if (behandling.inntekter != inntekter) {
             log.info("Oppdaterer inntekter for behandlingsid $behandlingsid")
             behandling.inntekter.clear()
             behandling.inntekter.addAll(inntekter)
+            inntektOppdatert = true
         }
 
         if (behandling.barnetillegg != barnetillegg) {
             log.info("Oppdaterer barnetillegg for behandlingsid $behandlingsid")
             behandling.barnetillegg.clear()
             behandling.barnetillegg.addAll(barnetillegg)
+            inntektOppdatert = true
         }
 
+<<<<<<< HEAD
         if (behandling.utvidetBarnetrygd != utvidetbarnetrygd) {
             log.info("Oppdaterer utvidet barnetrygd for behandlingsid $behandlingsid")
             behandling.utvidetBarnetrygd.clear()
             behandling.utvidetBarnetrygd.addAll(utvidetbarnetrygd)
+=======
+        if (behandling.utvidetbarnetrygd != nyUtvidetbarnetrygd) {
+            log.info("Oppdaterer utvidet barnetrygd for behandlingsid $behandlingId")
+            behandling.utvidetbarnetrygd.clear()
+            behandling.utvidetbarnetrygd.addAll(nyUtvidetbarnetrygd)
+            inntektOppdatert = true
+        }
+
+        if (inntektOppdatert == true) {
+            behandlingRepository.save(behandling)
+>>>>>>> main
         }
     }
 

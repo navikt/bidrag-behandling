@@ -8,7 +8,10 @@ import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
+<<<<<<< HEAD
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+=======
+>>>>>>> main
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import org.junit.jupiter.api.Assertions.assertEquals
