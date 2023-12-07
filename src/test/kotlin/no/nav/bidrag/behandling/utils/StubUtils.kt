@@ -121,19 +121,19 @@ class StubUtils {
                             toJsonString(
                                 BeregnGrunnlag(
                                     periode =
-                                    ÅrMånedsperiode(
-                                        LocalDate.now().minusMonths(6),
-                                        LocalDate.now().plusMonths(6),
-                                    ),
+                                        ÅrMånedsperiode(
+                                            LocalDate.now().minusMonths(6),
+                                            LocalDate.now().plusMonths(6),
+                                        ),
                                     søknadsbarnReferanse = "123",
                                     grunnlagListe =
-                                    listOf(
-                                        Grunnlag(
-                                            referanse = "abra_cadabra",
-                                            type = Grunnlagstype.BARNETILLEGG,
-                                            grunnlagsreferanseListe = listOf("123"),
+                                        listOf(
+                                            Grunnlag(
+                                                referanse = "abra_cadabra",
+                                                type = Grunnlagstype.BARNETILLEGG,
+                                                grunnlagsreferanseListe = listOf("123"),
+                                            ),
                                         ),
-                                    ),
                                 ),
                             ),
                         ),
@@ -165,9 +165,9 @@ class StubUtils {
                         toJsonString(
                             SaksbehandlerInfoResponse(
                                 "Z99999",
-                                "Fornavn Etternavn"
-                            )
-                        )
+                                "Fornavn Etternavn",
+                            ),
+                        ),
                     ),
             ),
         )
