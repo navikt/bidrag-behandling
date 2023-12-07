@@ -24,6 +24,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     @BeforeEach
     fun initMocks() {
         WireMock.resetAllRequests()
+        stubUtils.stubHentSaksbehandler()
         stubUtils.stubOpprettForsendelse()
         stubUtils.stubSlettForsendelse()
         stubUtils.stubHentForsendelserForSak()

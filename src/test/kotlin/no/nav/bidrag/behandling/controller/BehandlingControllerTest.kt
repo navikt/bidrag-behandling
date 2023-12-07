@@ -334,7 +334,7 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                     CreateRolleRolleType.BIDRAGS_MOTTAKER,
                     null,
                     Date(1),
-                    "Ola Dunk"
+                    "Ola Dunk",
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
