@@ -21,6 +21,8 @@ import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toRolleTypeDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import no.nav.bidrag.commons.security.utils.TokenUtils
+import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import org.apache.commons.lang3.Validate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -63,6 +65,11 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 ),
         )
 
+        val opprettetAv =
+            TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
+        val opprettetAvNavn =
+            TokenUtils.hentSaksbehandlerIdent()
+                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         val behandling =
             Behandling(
                 createBehandling.behandlingType,
@@ -74,6 +81,9 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 createBehandling.soknadId,
                 createBehandling.soknadRefId,
                 createBehandling.behandlerEnhet,
+                opprettetAv = opprettetAv,
+                opprettetAvNavn = opprettetAvNavn,
+                kildeapplikasjon = TokenUtils.hentApplikasjonsnavn() ?: "ukjent",
                 createBehandling.soknadFra,
                 createBehandling.stonadType,
                 createBehandling.engangsbelopType,
@@ -189,7 +199,14 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling.soknadId,
         behandling.behandlerEnhet,
         behandling.roller.map {
-            RolleDto(it.id!!, it.rolleType.toRolleTypeDto(), it.ident, it.navn, it.fodtDato, it.opprettetDato)
+            RolleDto(
+                it.id!!,
+                it.rolleType.toRolleTypeDto(),
+                it.ident,
+                it.navn,
+                it.fodtDato,
+                it.opprettetDato,
+            )
         }.toSet(),
         behandling.husstandsBarn.toHusstandsBarnDto(),
         behandling.sivilstand.toSivilstandDto(),
@@ -232,6 +249,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     }
 
     private fun ingenVoksneUtenIdent(roller: Set<CreateRolleDto>): Boolean {
-        return roller.filter { r -> r.rolleType != CreateRolleRolleType.BARN && r.ident.isNullOrBlank() }.none()
+        return roller.filter { r -> r.rolleType != CreateRolleRolleType.BARN && r.ident.isNullOrBlank() }
+            .none()
     }
 }

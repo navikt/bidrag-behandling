@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
+import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.SoknadType
@@ -61,9 +62,13 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(behandlingReq),
-                Void::class.java,
+                CreateBehandlingResponse::class.java,
             )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        val opprettetBehandling = behandlingService.hentBehandlingById(behandlingRes.body!!.id)
+        opprettetBehandling.opprettetAv shouldBe "aud-localhost"
+        opprettetBehandling.opprettetAvNavn shouldBe "Fornavn Etternavn"
+        opprettetBehandling.kildeapplikasjon shouldBe "aud-localhost"
     }
 
     @Test
@@ -225,6 +230,9 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
                     123213L,
                     null,
                     "EN123",
+                    "Z9999",
+                    "Navn Navnesen",
+                    "bisys",
                     SøktAvType.VERGE,
                     null,
                     null,
@@ -327,7 +335,12 @@ class BehandlingControllerTest() : KontrollerTestRunner() {
         val roller =
             setOf(
                 CreateRolleDtoTest(CreateRolleRolleType.BARN, "1235", Date(1)),
-                CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, null, Date(1), "Ola Dunk"),
+                CreateRolleDtoTest(
+                    CreateRolleRolleType.BIDRAGS_MOTTAKER,
+                    null,
+                    Date(1),
+                    "Ola Dunk",
+                ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("sak123", "en12", roller)
 
