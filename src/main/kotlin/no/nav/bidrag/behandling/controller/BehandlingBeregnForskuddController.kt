@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.dto.beregning.ForskuddBeregningRespons
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toLocalDate
-import no.nav.bidrag.behandling.transformers.toNoString
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.client.HttpClientErrorException
@@ -34,16 +33,16 @@ class BehandlingBeregnForskuddController(
         datoFom2: LocalDate,
         datoTom2: LocalDate?,
     ) = (datoFom1 === null || datoFom1 > datoFom2 || datoFom1.isEqual(datoFom2)) && (
-        (datoTom2 == null && datoTom1 == null) ||
-            (
-                datoTom1 != null && (
-                    datoTom2 == null || datoTom1 < datoTom2 ||
-                        datoTom1.isEqual(
-                            datoTom2,
-                        )
-                )
+            (datoTom2 == null && datoTom1 == null) ||
+                    (
+                            datoTom1 != null && (
+                                    datoTom2 == null || datoTom1 < datoTom2 ||
+                                            datoTom1.isEqual(
+                                                datoTom2,
+                                            )
+                                    )
+                            )
             )
-    )
 
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/beregn")
@@ -67,7 +66,7 @@ class BehandlingBeregnForskuddController(
                                 if (it.fodtDato == null && it.ident != null) {
                                     bidragPersonConsumer.hentPerson(it.ident).fødselsdato
                                 } else {
-                                    it.fodtDato?.toLocalDate()?.toNoString() ?: null
+                                    it.fodtDato?.toLocalDate()
                                 }
 
                             // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent

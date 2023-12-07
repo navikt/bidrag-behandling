@@ -13,6 +13,8 @@ env:
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
   TOPIC_VEDTAK: bidrag.vedtak-feature
+  BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon
+  BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
   pool: nav-dev
@@ -40,3 +42,4 @@ outbound-access-apps:
   - bidrag-tilgangskontroll-feature
 outbound-access-hosts:
   - bidrag-person-feature.dev-fss-pub.nais.io
+  - bidrag-organisasjon-feature.dev-fss-pub.nais.io

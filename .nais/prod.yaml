@@ -12,6 +12,8 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: prod-gcp.bidrag.bidrag-dokument-forsendelse
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll
   BIDRAG_TILGANGGSKONTROLL_SCOPE: prod-gcp.bidrag.bidrag-tilgangskontroll
+  BIDRAG_ORGANISASJON_SCOPE: prod-fss.bidrag.bidrag-organisasjon
+  BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon.prod-fss-pub.nais.io/bidrag-organisasjon
   TOPIC_VEDTAK: bidrag.vedtak
 kafka:
   pool: nav-prod
@@ -39,3 +41,4 @@ outbound-access-apps:
   - bidrag-tilgangskontroll
 outbound-access-hosts:
   - bidrag-person.prod-fss-pub.nais.io
+  - bidrag-organisasjon.prod-fss-pub.nais.io
