@@ -80,7 +80,7 @@ class Behandling(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
-        cascade = [CascadeType.ALL],
+        cascade = [CascadeType.PERSIST, CascadeType.MERGE],
         orphanRemoval = true,
     )
     var inntekter: MutableSet<Inntekt> = mutableSetOf(),
@@ -94,14 +94,14 @@ class Behandling(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
-        cascade = [CascadeType.ALL],
+        cascade = [CascadeType.PERSIST, CascadeType.MERGE],
         orphanRemoval = true,
     )
     var barnetillegg: MutableSet<Barnetillegg> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
-        cascade = [CascadeType.ALL],
+        cascade = [CascadeType.PERSIST, CascadeType.MERGE],
         orphanRemoval = true,
     )
     var utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd> = mutableSetOf(),

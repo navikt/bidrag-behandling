@@ -67,8 +67,9 @@ class BehandlingController(private val behandlingService: BehandlingService) {
 
         val opprettetAv =
             TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
-        val opprettetAvNavn = TokenUtils.hentSaksbehandlerIdent()
-            ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
+        val opprettetAvNavn =
+            TokenUtils.hentSaksbehandlerIdent()
+                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         val behandling =
             Behandling(
                 createBehandling.behandlingType,
@@ -205,6 +206,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 it.navn,
                 it.fodtDato,
                 it.opprettetDato
+            ,
             )
         }.toSet(),
         behandling.husstandsBarn.toHusstandsBarnDto(),

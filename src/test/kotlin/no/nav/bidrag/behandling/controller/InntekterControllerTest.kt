@@ -70,7 +70,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Test
         fun `skal hente inntekter for behandling`() {
             // given
-            var behandling = behandling()
+            var behandling = behandlingRepository.save(behandling())
 
             var inntekt = inntekt(behandling)
             inntekt.inntektPostListe = inntektsposter(inntekt)
