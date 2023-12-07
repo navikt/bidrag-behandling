@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.nav.bidrag.behandling.controller.objectmapper
+import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
@@ -18,19 +18,23 @@ import no.nav.bidrag.behandling.dto.notat.NotatDto
 import no.nav.bidrag.behandling.dto.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.behandling.dto.notat.OpplysningerFraFolkeregisteret
 import no.nav.bidrag.behandling.dto.notat.ParterISøknad
-import no.nav.bidrag.behandling.dto.notat.SivilstandPeriode
+import no.nav.bidrag.behandling.dto.notat.SivilstandNotat
 import no.nav.bidrag.behandling.dto.notat.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.notat.Virkningstidspunkt
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.YearMonth
+
+private val objectmapper = ObjectMapper().findAndRegisterModules()
 
 @Service
 class NotatOpplysningerService(
@@ -62,8 +66,7 @@ class NotatOpplysningerService(
             virkningstidspunkt = behandling.tilVirkningstidspunkt(),
             boforhold = Boforhold(
                 notat = behandling.tilNotatBoforhold(),
-                sivilstand = behandling.sivilstand.sortedBy { it.datoFom }
-                    .map(Sivilstand::tilSivilstandsperiode),
+                sivilstand = behandling.tilSivilstand(sivilstandGrunnlag),
                 barn = behandling.husstandsBarn.map { it.tilBoforholdBarn(husstandGrunnlag) }
             ),
             parterISøknad = behandling.roller.map(Rolle::tilPartISøknad),
@@ -94,14 +97,30 @@ private fun Behandling.tilNotatInntekt() = Notat(
     intern = inntektBegrunnelseKunINotat
 )
 
-private fun Sivilstand.tilSivilstandsperiode() = SivilstandPeriode(
-    periode = ÅrMånedsperiode(
-        datoFom!!.toLocalDate(),
-        datoTom?.toLocalDate()
-    ),
-    status = sivilstand,
-    kilde = kilde.name
+private fun Behandling.tilSivilstand(sivilstandGrunnlag: List<JsonNode>) = SivilstandNotat(
+    opplysningerBruktTilBeregning = sivilstand.map(Sivilstand::tilSivilstandsperiode),
+    opplysningerFraFolkeregisteret = sivilstandGrunnlag.map { periode ->
+        OpplysningerFraFolkeregisteret(
+            periode = ÅrMånedsperiode(
+                LocalDate.parse(periode.get("datoFom").asText()),
+                periode.get("datoTom").asText().takeIf { date -> date != "null" }
+                    ?.let { date -> LocalDate.parse(date) }
+            ),
+            status = periode.get("sivilstand")?.asText()
+                ?.let { it1 -> Sivilstandskode.valueOf(it1) }
+        )
+    }
 )
+
+private fun Sivilstand.tilSivilstandsperiode() =
+    OpplysningerBruktTilBeregning(
+        periode = ÅrMånedsperiode(
+            datoFom!!.toLocalDate(),
+            datoTom?.toLocalDate()
+        ),
+        status = sivilstand,
+        kilde = kilde.name
+    )
 
 private fun Behandling.tilVirkningstidspunkt() = Virkningstidspunkt(
     søknadstype = soknadType.name,
@@ -126,7 +145,7 @@ private fun HusstandsBarn.tilBoforholdBarn(husstandGrunnlag: List<JsonNode>) = B
                     periode.get("tilDato").asText().takeIf { date -> date != "null" }
                         ?.let { date -> LocalDate.parse(date.split("T")[0]) }
                 ),
-                status = periode.get("bostatus")?.asText()
+                status = periode.get("bostatus")?.asText()?.let { it1 -> Bostatuskode.valueOf(it1) }
             )
         } ?: emptyList()
 

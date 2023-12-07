@@ -37,32 +37,31 @@ data class Notat(
 
 data class Boforhold(
     val barn: List<BoforholdBarn> = emptyList(),
-    val sivilstand: List<SivilstandPeriode> = emptyList(),
+    val sivilstand: SivilstandNotat,
     val notat: Notat,
+)
+
+data class SivilstandNotat(
+    val opplysningerFraFolkeregisteret: List<OpplysningerFraFolkeregisteret<Sivilstandskode>> = emptyList(),
+    val opplysningerBruktTilBeregning: List<OpplysningerBruktTilBeregning<Sivilstandskode>> = emptyList(),
 )
 
 data class BoforholdBarn(
     val navn: String,
     val fødselsdato: LocalDate?,
-    val opplysningerFraFolkeregisteret: List<OpplysningerFraFolkeregisteret> = emptyList(),
-    val opplysningerBruktTilBeregning: List<OpplysningerBruktTilBeregning> = emptyList(),
+    val opplysningerFraFolkeregisteret: List<OpplysningerFraFolkeregisteret<Bostatuskode>> = emptyList(),
+    val opplysningerBruktTilBeregning: List<OpplysningerBruktTilBeregning<Bostatuskode>> = emptyList(),
 )
 
-data class OpplysningerFraFolkeregisteret(
+data class OpplysningerFraFolkeregisteret<T>(
     val periode: ÅrMånedsperiode,
-    val status: String?,
+    val status: T?,
 )
 
-data class OpplysningerBruktTilBeregning(
+data class OpplysningerBruktTilBeregning<T>(
     val periode: ÅrMånedsperiode,
-    val status: Bostatuskode,
+    val status: T,
     val kilde: String,
-)
-
-data class SivilstandPeriode(
-    val periode: ÅrMånedsperiode,
-    val status: Sivilstandskode?,
-    val kilde: String
 )
 
 data class ParterISøknad(
