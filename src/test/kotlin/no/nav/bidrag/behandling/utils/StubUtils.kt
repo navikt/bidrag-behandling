@@ -1,5 +1,6 @@
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -10,6 +11,8 @@ import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.dto.HentPersonResponse
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.commons.service.AppContext
+import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
@@ -147,6 +150,25 @@ class StubUtils {
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(result.toString()),
+            ),
+        )
+    }
+
+    fun stubHentSaksbehandler() {
+        AppContext.getBean(WireMockServer::class.java).stubFor(
+            WireMock.get(WireMock.urlMatching("/organisasjon/saksbehandler/info/(.*)")).willReturn(
+                aResponse()
+                    .withHeader(HttpHeaders.CONNECTION, "close")
+                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withStatus(HttpStatus.OK.value())
+                    .withBody(
+                        toJsonString(
+                            SaksbehandlerInfoResponse(
+                                "Z99999",
+                                "Fornavn Etternavn",
+                            ),
+                        ),
+                    ),
             ),
         )
     }

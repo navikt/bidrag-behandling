@@ -40,6 +40,9 @@ class Behandling(
     val soknadsid: Long,
     val soknadRefId: Long? = null,
     val behandlerEnhet: String,
+    val opprettetAv: String,
+    val opprettetAvNavn: String? = null,
+    val kildeapplikasjon: String,
     @Enumerated(EnumType.STRING)
     val soknadFra: SøktAvType,
     @Enumerated(EnumType.STRING)

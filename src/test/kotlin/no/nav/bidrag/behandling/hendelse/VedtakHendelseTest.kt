@@ -114,9 +114,18 @@ class VedtakHendelseTest : CommonTestRunner() {
             saksnummer = SAKSNUMMER,
             soknadsid = 123123L,
             behandlerEnhet = "4806",
+<<<<<<< HEAD
             behandlingstype = Behandlingstype.BIDRAG18AAR,
             engangsbeloptype = null,
             mottattdato = LocalDate.now(),
+=======
+            opprettetAv = "Z99999",
+            opprettetAvNavn = "Saksbehandler Navn",
+            kildeapplikasjon = "bisys",
+            behandlingType = Behandlingstype.BIDRAG18AAR,
+            engangsbelopType = null,
+            mottatDato = Date(),
+>>>>>>> main
             soknadFra = SøktAvType.BIDRAGSMOTTAKER,
             soknadstype = Soknadstype.FASTSETTELSE,
             stonadstype = Stønadstype.BIDRAG18AAR,
