@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
@@ -39,8 +39,7 @@ class ExceptionHandler {
             validationError?.fieldErrors?.joinToString(", ") { "${it.field}: ${it.message}" }
                 ?: "ukjent feil"
 
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .header(
                 HttpHeaders.WARNING,
                 "Forespørselen inneholder ugyldig verdi: $errorMessage",
@@ -52,8 +51,7 @@ class ExceptionHandler {
     @ExceptionHandler(HttpStatusCodeException::class)
     fun handleHttpClientErrorException(exception: HttpStatusCodeException): ResponseEntity<*> {
         val errorMessage = getErrorMessage(exception)
-        return ResponseEntity
-            .status(exception.statusCode)
+        return ResponseEntity.status(exception.statusCode)
             .header(HttpHeaders.WARNING, errorMessage)
             .build<Any>()
     }

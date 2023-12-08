@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -13,7 +13,7 @@ import org.springframework.web.client.HttpClientErrorException
 
 private val LOGGER = KotlinLogging.logger {}
 
-@BehandlingRestController
+@BehandlingRestControllerV1
 class BehandlingBeregnForskuddController(
     private val behandlingService: BehandlingService,
     private val forskuddService: ForskuddService,

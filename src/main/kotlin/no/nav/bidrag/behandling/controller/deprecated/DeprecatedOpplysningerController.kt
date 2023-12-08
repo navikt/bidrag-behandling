@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.deprecated
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -16,8 +16,9 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
-@BehandlingRestController
-class OpplysningerController(val opplysningerService: OpplysningerService) {
+@Deprecated("Bruk v1")
+@DeprecatedBehandlingRestController
+class DeprecatedOpplysningerController(val opplysningerService: OpplysningerService) {
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
     @Operation(

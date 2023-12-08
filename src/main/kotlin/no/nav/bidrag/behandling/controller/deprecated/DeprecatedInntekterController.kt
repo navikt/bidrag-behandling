@@ -1,22 +1,27 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.deprecated
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
-import no.nav.bidrag.behandling.dto.inntekt.OppdatereInntekterRequest
+import no.nav.bidrag.behandling.deprecated.dto.InntekterResponse
+import no.nav.bidrag.behandling.deprecated.dto.UpdateInntekterRequest
+import no.nav.bidrag.behandling.deprecated.dto.toDepreactedInntektDto
+import no.nav.bidrag.behandling.deprecated.dto.toInntektDto
+import no.nav.bidrag.behandling.deprecated.dto.toUtvidetBarnetrygdDto
+import no.nav.bidrag.behandling.deprecated.dto.toUtvidetbarnetrygdDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDto
 import no.nav.bidrag.behandling.transformers.toInntektDto
-import no.nav.bidrag.behandling.transformers.toUtvidetbarnetrygdDto
+import no.nav.bidrag.behandling.transformers.toUtvidetBarnetrygdDto
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
-@BehandlingRestController
-class InntekterController(private val behandlingService: BehandlingService) {
+@Deprecated("Bruk v1")
+@DeprecatedBehandlingRestController
+class DeprecatedInntekterController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/inntekter")
     @Operation(
@@ -36,25 +41,25 @@ class InntekterController(private val behandlingService: BehandlingService) {
     )
     fun oppdaterInntekter(
         @PathVariable behandlingId: Long,
-        @RequestBody request: OppdatereInntekterRequest,
+        @RequestBody request: UpdateInntekterRequest,
     ): InntekterResponse {
         behandlingService.oppdaterInntekter(
             behandlingId,
-            request.inntekter,
+            request.inntekter.toInntektDto(),
             request.barnetillegg,
-            request.utvidetBarnetrygd,
-            request.inntektsbegrunnelseIVedtakOgNotat,
-            request.inntektsbegrunnelseKunINotat,
+            request.utvidetbarnetrygd.toUtvidetBarnetrygdDto(),
+            request.inntektBegrunnelseMedIVedtakNotat,
+            request.inntektBegrunnelseKunINotat,
         )
 
-        val nyBehandling = behandlingService.hentBehandlingById(behandlingId)
+        val newBehandling = behandlingService.hentBehandlingById(behandlingId)
 
         return InntekterResponse(
-            nyBehandling.inntekter.toInntektDto(),
-            nyBehandling.barnetillegg.toBarnetilleggDto(),
-            nyBehandling.utvidetBarnetrygd.toUtvidetbarnetrygdDto(),
-            nyBehandling.inntektsbegrunnelseIVedtakOgNotat,
-            nyBehandling.inntektsbegrunnelseKunINotat,
+            newBehandling.inntekter.toInntektDto().toDepreactedInntektDto(),
+            newBehandling.barnetillegg.toBarnetilleggDto(),
+            newBehandling.utvidetBarnetrygd.toUtvidetBarnetrygdDto().toUtvidetbarnetrygdDto(),
+            newBehandling.inntektsbegrunnelseIVedtakOgNotat,
+            newBehandling.inntektsbegrunnelseKunINotat,
         )
     }
 
@@ -81,9 +86,9 @@ class InntekterController(private val behandlingService: BehandlingService) {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         return InntekterResponse(
-            behandling.inntekter.toInntektDto(),
+            behandling.inntekter.toInntektDto().toDepreactedInntektDto(),
             behandling.barnetillegg.toBarnetilleggDto(),
-            behandling.utvidetBarnetrygd.toUtvidetbarnetrygdDto(),
+            behandling.utvidetBarnetrygd.toUtvidetBarnetrygdDto().toUtvidetbarnetrygdDto(),
             behandling.inntektsbegrunnelseIVedtakOgNotat,
             behandling.inntektsbegrunnelseKunINotat,
         )

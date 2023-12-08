@@ -20,7 +20,7 @@ import no.nav.bidrag.behandling.transformers.tilVedtakType
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
 import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toRolle
-import no.nav.bidrag.behandling.transformers.toUtvidetbarnetrygdDomain
+import no.nav.bidrag.behandling.transformers.toUtvidetBarnetrygdDomain
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -119,7 +119,7 @@ class BehandlingService(
 
         val inntekter = nyeInntekter.toInntektDomain(behandling)
         val barnetillegg = nyeBarnetillegg.toBarnetilleggDomain(behandling)
-        val nyUtvidetbarnetrygd = nyUtvidetBarnetrygd.toUtvidetbarnetrygdDomain(behandling)
+        val nyUtvidetbarnetrygd = nyUtvidetBarnetrygd.toUtvidetBarnetrygdDomain(behandling)
 
         if (behandling.inntekter != inntekter) {
             log.info("Oppdaterer inntekter for behandlingsid $behandlingsid")

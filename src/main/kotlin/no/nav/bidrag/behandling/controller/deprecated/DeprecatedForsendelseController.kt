@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.deprecated
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -8,8 +8,9 @@ import no.nav.bidrag.behandling.service.ForsendelseService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
-@BehandlingRestController
-class ForsendelseController(private val forsendelseService: ForsendelseService) {
+@Deprecated("Bruk v1")
+@DeprecatedBehandlingRestController
+class DeprecatedForsendelseController(private val forsendelseService: ForsendelseService) {
     @Suppress("unused")
     @PostMapping("/forsendelse/init")
     @Operation(
@@ -18,7 +19,7 @@ class ForsendelseController(private val forsendelseService: ForsendelseService) 
                 "behandling (Søknad som behandles gjennom Bisys)",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun opprettForsendelse(
+    fun pprettForsendelse(
         @Valid
         @RequestBody(required = true)
         request: InitalizeForsendelseRequest,

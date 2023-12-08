@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import no.nav.bidrag.domene.enums.beregning.ResultatkodeBarnebidrag
 import no.nav.bidrag.domene.enums.beregning.ResultatkodeForskudd
@@ -9,7 +9,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.util.visningsnavn
 import org.springframework.web.bind.annotation.GetMapping
 
-@BehandlingRestController
+@BehandlingRestControllerV1
 class VisningsnavnController {
     @Suppress("unused")
     @GetMapping("/visningsnavn")

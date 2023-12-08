@@ -52,7 +52,7 @@ fun Set<Barnetillegg>.toBarnetilleggDto() =
         )
     }.toSet()
 
-fun Set<UtvidetBarnetrygdDto>.toUtvidetbarnetrygdDomain(behandling: Behandling) =
+fun Set<UtvidetBarnetrygdDto>.toUtvidetBarnetrygdDomain(behandling: Behandling) =
     this.map {
         UtvidetBarnetrygd(
             behandling,
@@ -63,7 +63,7 @@ fun Set<UtvidetBarnetrygdDto>.toUtvidetbarnetrygdDomain(behandling: Behandling) 
         )
     }.toMutableSet()
 
-fun Set<UtvidetBarnetrygd>.toUtvidetbarnetrygdDto() =
+fun Set<UtvidetBarnetrygd>.toUtvidetBarnetrygdDto() =
     this.map {
         UtvidetBarnetrygdDto(
             it.id,

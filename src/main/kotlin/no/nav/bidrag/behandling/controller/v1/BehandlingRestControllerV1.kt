@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import no.nav.security.token.support.core.api.Protected
 import org.springframework.web.bind.annotation.RequestMapping
@@ -11,5 +11,5 @@ import java.lang.annotation.Inherited
 @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
 @RestController
 @Protected
-@RequestMapping("/api")
-annotation class BehandlingRestController
+@RequestMapping("/api/v1")
+annotation class BehandlingRestControllerV1
