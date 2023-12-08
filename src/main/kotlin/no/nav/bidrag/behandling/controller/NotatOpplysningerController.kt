@@ -7,10 +7,12 @@ import org.springframework.web.bind.annotation.PathVariable
 
 @BehandlingRestController
 class NotatOpplysningerController(
-    private val notatOpplysningerService: NotatOpplysningerService
+    private val notatOpplysningerService: NotatOpplysningerService,
 ) {
     @GetMapping("/notat/{behandlingId}")
-    fun hentNotatOpplysninger(@PathVariable behandlingId: Long): NotatDto {
+    fun hentNotatOpplysninger(
+        @PathVariable behandlingId: Long,
+    ): NotatDto {
         return notatOpplysningerService.hentNotatOpplysninger(behandlingId)
     }
 }

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.controller
 import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
 import no.nav.bidrag.behandling.service.CommonTestRunner
+import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.commons.web.test.HttpHeaderTestRestTemplate
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,6 +15,9 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
 
     @Autowired
     lateinit var httpHeaderTestRestTemplate: HttpHeaderTestRestTemplate
+
+    @Autowired
+    lateinit var testdataManager: TestdataManager
 
     val stubUtils: StubUtils = StubUtils()
 

@@ -1,6 +1,5 @@
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -9,14 +8,14 @@ import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
-import no.nav.bidrag.behandling.dto.HentPersonResponse
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
-import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
+import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -101,9 +100,10 @@ class StubUtils {
                         .withStatus(status.value())
                         .withBody(
                             toJsonString(
-                                HentPersonResponse(
-                                    personident,
-                                    fødselsdato = LocalDate.now().minusMonths(500).toString(),
+                                PersonDto(
+                                    ident = Personident(personident),
+                                    fødselsdato = LocalDate.now().minusMonths(500),
+                                    visningsnavn = "",
                                 ),
                             ),
                         ),
@@ -155,7 +155,7 @@ class StubUtils {
     }
 
     fun stubHentSaksbehandler() {
-        AppContext.getBean(WireMockServer::class.java).stubFor(
+        WireMock.stubFor(
             WireMock.get(WireMock.urlMatching("/organisasjon/saksbehandler/info/(.*)")).willReturn(
                 aResponse()
                     .withHeader(HttpHeaders.CONNECTION, "close")

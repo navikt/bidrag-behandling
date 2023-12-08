@@ -44,7 +44,7 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
             behandlingId,
             opplysningerType,
             data,
-            hentetDato.toDate()
+            hentetDato.toDate(),
         )
             .toDto()
     }

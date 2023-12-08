@@ -30,8 +30,8 @@ class OpplysningerService(
                         it,
                         opplysningerType,
                         data,
-                        hentetDato
-                    )
+                        hentetDato,
+                    ),
                 )
             }
     }
@@ -42,6 +42,6 @@ class OpplysningerService(
     ): Opplysninger? =
         opplysningerRepository.findTopByBehandlingIdAndOpplysningerTypeOrderByTsDescIdDesc(
             behandlingId,
-            opplysningerType
+            opplysningerType,
         )
 }

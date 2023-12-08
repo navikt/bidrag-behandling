@@ -24,5 +24,4 @@ class BidragPersonConsumer(
     fun hentPerson(ident: String): PersonDto {
         return postForNonNullEntity(hentPersonUri, HentPersonRequest(ident))
     }
-
 }

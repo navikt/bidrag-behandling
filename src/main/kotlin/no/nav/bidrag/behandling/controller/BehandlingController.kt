@@ -60,9 +60,9 @@ class BehandlingController(private val behandlingService: BehandlingService) {
 
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller) &&
-                    ingenVoksneUtenIdent(
-                        createBehandling.roller,
-                    ),
+                ingenVoksneUtenIdent(
+                    createBehandling.roller,
+                ),
         )
 
         val opprettetAv =
@@ -100,9 +100,9 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         val behandlingDo = behandlingService.createBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
-                    "soknadType ${createBehandling.soknadType} " +
-                    "og soknadFra ${createBehandling.soknadFra} " +
-                    "med id ${behandlingDo.id} "
+                "soknadType ${createBehandling.soknadType} " +
+                "og soknadFra ${createBehandling.soknadFra} " +
+                "med id ${behandlingDo.id} "
         }
         return CreateBehandlingResponse(behandlingDo.id!!)
     }
@@ -205,8 +205,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 it.ident,
                 it.navn,
                 it.fodtDato,
-                it.opprettetDato
-            ,
+                it.opprettetDato,
             )
         }.toSet(),
         behandling.husstandsBarn.toHusstandsBarnDto(),
