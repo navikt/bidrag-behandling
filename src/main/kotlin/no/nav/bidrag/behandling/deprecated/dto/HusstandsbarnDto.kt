@@ -2,6 +2,9 @@ package no.nav.bidrag.behandling.deprecated.dto
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.transformers.toDomain
 import java.time.LocalDate
 
 data class HusstandsbarnDto(
@@ -16,3 +19,18 @@ data class HusstandsbarnDto(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val foedselsdato: LocalDate? = null,
 )
+
+fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
+    this.map {
+        val barn =
+            Husstandsbarn(
+                behandling,
+                it.medISak,
+                it.id,
+                it.ident,
+                it.navn,
+                it.foedselsdato!!,
+            )
+        barn.perioder = it.perioder.toDomain(barn).toMutableSet()
+        barn
+    }.toMutableSet()

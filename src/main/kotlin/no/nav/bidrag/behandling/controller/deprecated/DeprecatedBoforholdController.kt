@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.deprecated.dto.BoforholdResponse
 import no.nav.bidrag.behandling.deprecated.dto.UpdateBoforholdRequest
+import no.nav.bidrag.behandling.deprecated.dto.toDomain
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
