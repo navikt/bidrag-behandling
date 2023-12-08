@@ -428,7 +428,6 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         // given
         val roller =
             setOf(
-<<<<<<< HEAD
                 CreateRolleDtoTest(
                     Rolletype.BARN,
                     "1235",
@@ -441,14 +440,6 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                     navn = "Ola Dunk",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(529),
-=======
-                CreateRolleDtoTest(CreateRolleRolleType.BARN, "1235", Date(1)),
-                CreateRolleDtoTest(
-                    CreateRolleRolleType.BIDRAGS_MOTTAKER,
-                    null,
-                    Date(1),
-                    "Ola Dunk",
->>>>>>> main
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("1900000", "en12", roller)

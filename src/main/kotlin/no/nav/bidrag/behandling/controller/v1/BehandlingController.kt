@@ -18,12 +18,9 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
-<<<<<<< HEAD:src/main/kotlin/no/nav/bidrag/behandling/controller/v1/BehandlingController.kt
-import no.nav.bidrag.domene.enums.rolle.Rolletype
-=======
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
->>>>>>> main:src/main/kotlin/no/nav/bidrag/behandling/controller/BehandlingController.kt
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.apache.commons.lang3.Validate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -69,30 +66,21 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         val behandling =
             Behandling(
-                createBehandling.behandlingstype,
-                createBehandling.søknadstype,
-                createBehandling.datoFom,
-                createBehandling.datoTom,
-                createBehandling.mottattdato,
-                createBehandling.saksnummer,
-<<<<<<< HEAD:src/main/kotlin/no/nav/bidrag/behandling/controller/v1/BehandlingController.kt
-                createBehandling.søknadsid,
-                createBehandling.søknadsreferanseid,
-                createBehandling.behandlerenhet,
-                createBehandling.søknadFra,
-                createBehandling.stønadstype,
-                createBehandling.engangsbeløpstype,
-=======
-                createBehandling.soknadId,
-                createBehandling.soknadRefId,
-                createBehandling.behandlerEnhet,
+                behandlingstype = createBehandling.behandlingstype,
+                soknadstype = createBehandling.søknadstype,
+                datoFom = createBehandling.datoFom,
+                datoTom = createBehandling.datoTom,
+                mottattdato = createBehandling.mottattdato,
+                saksnummer = createBehandling.saksnummer,
+                soknadsid = createBehandling.søknadsid,
+                soknadRefId = createBehandling.søknadsreferanseid,
+                behandlerEnhet = createBehandling.behandlerenhet,
+                soknadFra = createBehandling.søknadFra,
+                stonadstype = createBehandling.stønadstype,
+                engangsbeloptype = createBehandling.engangsbeløpstype,
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = TokenUtils.hentApplikasjonsnavn() ?: "ukjent",
-                createBehandling.soknadFra,
-                createBehandling.stonadType,
-                createBehandling.engangsbelopType,
->>>>>>> main:src/main/kotlin/no/nav/bidrag/behandling/controller/BehandlingController.kt
             )
         val roller =
             HashSet(
@@ -205,18 +193,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling.soknadsid,
         behandling.behandlerEnhet,
         behandling.roller.map {
-<<<<<<< HEAD:src/main/kotlin/no/nav/bidrag/behandling/controller/v1/BehandlingController.kt
-            RolleDto(it.id!!, it.rolletype, it.ident, it.navn, it.foedselsdato)
-=======
-            RolleDto(
-                it.id!!,
-                it.rolleType.toRolleTypeDto(),
-                it.ident,
-                it.navn,
-                it.fodtDato,
-                it.opprettetDato,
-            )
->>>>>>> main:src/main/kotlin/no/nav/bidrag/behandling/controller/BehandlingController.kt
+            RolleDto(it.id!!, it.rolletype, it.ident, it.navn, it.foedselsdato, it.opprettetDato)
         }.toSet(),
         behandling.husstandsbarn.toHusstandsBarnDto(),
         behandling.sivilstand.toSivilstandDto(),
@@ -259,11 +236,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     }
 
     private fun ingenVoksneUtenIdent(roller: Set<CreateRolleDto>): Boolean {
-<<<<<<< HEAD:src/main/kotlin/no/nav/bidrag/behandling/controller/v1/BehandlingController.kt
         return roller.filter { r -> r.rolletype != Rolletype.BARN && r.ident.isNullOrBlank() }
-=======
-        return roller.filter { r -> r.rolleType != CreateRolleRolleType.BARN && r.ident.isNullOrBlank() }
->>>>>>> main:src/main/kotlin/no/nav/bidrag/behandling/controller/BehandlingController.kt
             .none()
     }
 }

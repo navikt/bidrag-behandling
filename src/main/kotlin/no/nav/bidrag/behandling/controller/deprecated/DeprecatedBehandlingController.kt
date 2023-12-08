@@ -24,6 +24,8 @@ import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import no.nav.bidrag.commons.security.utils.TokenUtils
+import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.apache.commons.lang3.Validate
 import org.springframework.web.bind.annotation.GetMapping
@@ -68,20 +70,29 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
                 ),
         )
 
+        val opprettetAv =
+            TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
+        val opprettetAvNavn =
+            TokenUtils.hentSaksbehandlerIdent()
+                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
+
         val behandling =
             Behandling(
-                createBehandling.behandlingType,
-                Soknadstype.valueOf(createBehandling.soknadType.name),
-                createBehandling.datoFom.toLocalDate(),
-                createBehandling.datoTom.toLocalDate(),
-                createBehandling.mottatDato.toLocalDate(),
-                createBehandling.saksnummer,
-                createBehandling.soknadId,
-                createBehandling.soknadRefId,
-                createBehandling.behandlerEnhet,
-                createBehandling.soknadFra,
-                createBehandling.stonadType,
-                createBehandling.engangsbelopType,
+                behandlingstype = createBehandling.behandlingType,
+                soknadstype = Soknadstype.valueOf(createBehandling.soknadType.name),
+                datoFom = createBehandling.datoFom.toLocalDate(),
+                datoTom = createBehandling.datoTom.toLocalDate(),
+                mottattdato = createBehandling.mottatDato.toLocalDate(),
+                saksnummer = createBehandling.saksnummer,
+                soknadsid = createBehandling.soknadId,
+                soknadRefId = createBehandling.soknadRefId,
+                behandlerEnhet = createBehandling.behandlerEnhet,
+                soknadFra = createBehandling.soknadFra,
+                stonadstype = createBehandling.stonadType,
+                engangsbeloptype = createBehandling.engangsbelopType,
+                opprettetAv = opprettetAv,
+                opprettetAvNavn = opprettetAvNavn,
+                kildeapplikasjon = TokenUtils.hentApplikasjonsnavn() ?: "ukjent",
             )
         val roller =
             HashSet(
