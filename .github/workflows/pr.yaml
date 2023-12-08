@@ -17,11 +17,10 @@ jobs:
       maven_options: -B -q -fae -Pit
 
   build-deploy-prod:
-    name: "Build and deploy to prod"
-    permissions:
-      contents: "write"
-      id-token: "write"
-    uses: navikt/bidrag-workflow/.github/workflows/deploy_prod.yaml@main
-    secrets: inherit
+    name: "Build and deploy to production"
+    uses: navikt/bidrag-workflow/.github/workflows/deploy.yaml@main
     with:
+      produksjon: true
+      nais_variabler_filnavn: prod.yaml
       maven_options: -B -q -fae -Pit
+    secrets: inherit
