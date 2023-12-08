@@ -18,6 +18,9 @@ jobs:
 
   build-deploy-prod:
     name: "Build and deploy to production"
+    permissions:
+      contents: "read"
+      id-token: "write"
     uses: navikt/bidrag-workflow/.github/workflows/deploy.yaml@main
     with:
       produksjon: true
