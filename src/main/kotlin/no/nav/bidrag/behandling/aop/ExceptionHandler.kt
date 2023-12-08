@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.aop
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
