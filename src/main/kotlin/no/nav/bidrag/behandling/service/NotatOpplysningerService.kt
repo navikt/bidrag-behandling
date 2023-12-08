@@ -42,7 +42,6 @@ class NotatOpplysningerService(
     private val opplysningerService: OpplysningerService
 ) {
 
-
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val opplysningerBoforholdJson =
@@ -51,14 +50,6 @@ class NotatOpplysningerService(
         val husstandGrunnlag = opplysningerBoforholdJson?.get("husstand")?.toList() ?: emptyList()
         val sivilstandGrunnlag =
             opplysningerBoforholdJson?.get("sivilstand")?.toList() ?: emptyList()
-        val opplysningerInntekterJson =
-            opplysningerService.hentSistAktiv(behandlingId, OpplysningerType.INNTEKTSOPPLYSNINGER)
-                ?.let { objectmapper.readTree(it.data) }
-        val inntektGrunnlag = opplysningerInntekterJson?.get("inntekt")?.toList() ?: emptyList()
-        val utvidetbarnetrygdGrunnlag =
-            opplysningerInntekterJson?.get("utvidetbarnetrygd")?.toList() ?: emptyList()
-        val barnetilleggGrunnlag =
-            opplysningerInntekterJson?.get("barnetillegg")?.toList() ?: emptyList()
         return NotatDto(
             saksnummer = behandling.saksnummer,
             saksbehandlerNavn = TokenUtils.hentSaksbehandlerIdent()
@@ -67,7 +58,8 @@ class NotatOpplysningerService(
             boforhold = Boforhold(
                 notat = behandling.tilNotatBoforhold(),
                 sivilstand = behandling.tilSivilstand(sivilstandGrunnlag),
-                barn = behandling.husstandsBarn.map { it.tilBoforholdBarn(husstandGrunnlag) }
+                barn = behandling.husstandsBarn.sortedBy { it.ident }
+                    .map { it.tilBoforholdBarn(husstandGrunnlag) }
             ),
             parterISøknad = behandling.roller.map(Rolle::tilPartISøknad),
             inntekter = Inntekter(
@@ -98,7 +90,8 @@ private fun Behandling.tilNotatInntekt() = Notat(
 )
 
 private fun Behandling.tilSivilstand(sivilstandGrunnlag: List<JsonNode>) = SivilstandNotat(
-    opplysningerBruktTilBeregning = sivilstand.map(Sivilstand::tilSivilstandsperiode),
+    opplysningerBruktTilBeregning = sivilstand.sortedBy { it.datoFom }
+        .map(Sivilstand::tilSivilstandsperiode),
     opplysningerFraFolkeregisteret = sivilstandGrunnlag.map { periode ->
         OpplysningerFraFolkeregisteret(
             periode = ÅrMånedsperiode(
@@ -109,7 +102,7 @@ private fun Behandling.tilSivilstand(sivilstandGrunnlag: List<JsonNode>) = Sivil
             status = periode.get("sivilstand")?.asText()
                 ?.let { it1 -> Sivilstandskode.valueOf(it1) }
         )
-    }
+    }.sortedBy { it.periode?.fom }
 )
 
 private fun Sivilstand.tilSivilstandsperiode() =
@@ -181,17 +174,19 @@ private fun Behandling.hentInntekterForIdent(ident: String, rolle: Rolletype) = 
                 inntektType = it.inntektType?.let { it1 -> Inntektsrapportering.valueOf(it1) }
             )
         },
-    barnetillegg = barnetillegg.sortedBy { it.datoFom }.map {
-        Barnetillegg(
-            periode = ÅrMånedsperiode(it.datoFom!!.toLocalDate(), it.datoTom?.toLocalDate()),
-            beløp = it.barnetillegg
-        )
-    },
-    utvidetBarnetrygd = utvidetbarnetrygd.sortedBy { it.datoFom }.map {
-        UtvidetBarnetrygd(
-            periode = ÅrMånedsperiode(it.datoFom!!.toLocalDate(), it.datoTom?.toLocalDate()),
-            beløp = it.belop
-        )
-    },
+    barnetillegg = if (rolle == Rolletype.BIDRAGSMOTTAKER) barnetillegg.sortedBy { it.datoFom }
+        .map {
+            Barnetillegg(
+                periode = ÅrMånedsperiode(it.datoFom!!.toLocalDate(), it.datoTom?.toLocalDate()),
+                beløp = it.barnetillegg
+            )
+        } else emptyList(),
+    utvidetBarnetrygd = if (rolle == Rolletype.BIDRAGSMOTTAKER) utvidetbarnetrygd.sortedBy { it.datoFom }
+        .map {
+            UtvidetBarnetrygd(
+                periode = ÅrMånedsperiode(it.datoFom!!.toLocalDate(), it.datoTom?.toLocalDate()),
+                beløp = it.belop
+            )
+        } else emptyList(),
     arbeidsforhold = emptyList()
 )
