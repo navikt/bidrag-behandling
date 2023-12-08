@@ -92,9 +92,17 @@ class StubUtils {
     fun stubHentePersoninfo(
         status: HttpStatus = HttpStatus.OK,
         personident: String,
+        navn: String = "Navn Navnesen",
+        shouldContaintPersonIdent: Boolean = false
     ) {
+        var postRequest = WireMock.post(WireMock.urlMatching("/bidrag-person/informasjon"))
+
+        if (shouldContaintPersonIdent) {
+            postRequest = postRequest.withRequestBody(ContainsPattern(personident))
+        }
+
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/bidrag-person/informasjon"))
+            postRequest
                 .willReturn(
                     aClosedJsonResponse()
                         .withStatus(status.value())
@@ -103,7 +111,7 @@ class StubUtils {
                                 PersonDto(
                                     ident = Personident(personident),
                                     fødselsdato = LocalDate.now().minusMonths(500),
-                                    visningsnavn = "",
+                                    visningsnavn = navn,
                                 ),
                             ),
                         ),
@@ -121,19 +129,19 @@ class StubUtils {
                             toJsonString(
                                 BeregnGrunnlag(
                                     periode =
-                                        ÅrMånedsperiode(
-                                            LocalDate.now().minusMonths(6),
-                                            LocalDate.now().plusMonths(6),
-                                        ),
+                                    ÅrMånedsperiode(
+                                        LocalDate.now().minusMonths(6),
+                                        LocalDate.now().plusMonths(6),
+                                    ),
                                     søknadsbarnReferanse = "123",
                                     grunnlagListe =
-                                        listOf(
-                                            Grunnlag(
-                                                referanse = "abra_cadabra",
-                                                type = Grunnlagstype.BARNETILLEGG,
-                                                grunnlagsreferanseListe = listOf("123"),
-                                            ),
+                                    listOf(
+                                        Grunnlag(
+                                            referanse = "abra_cadabra",
+                                            type = Grunnlagstype.BARNETILLEGG,
+                                            grunnlagsreferanseListe = listOf("123"),
                                         ),
+                                    ),
                                 ),
                             ),
                         ),

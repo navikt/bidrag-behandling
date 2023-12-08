@@ -15,15 +15,3 @@ jobs:
     with:
       nais_variabler_filnavn: main.yaml
       maven_options: -B -q -fae -Pit
-
-  build-deploy-prod:
-    name: "Build and deploy to production"
-    permissions:
-      contents: "read"
-      id-token: "write"
-    uses: navikt/bidrag-workflow/.github/workflows/deploy.yaml@main
-    with:
-      produksjon: true
-      nais_variabler_filnavn: prod.yaml
-      maven_options: -B -q -fae -Pit
-    secrets: inherit
