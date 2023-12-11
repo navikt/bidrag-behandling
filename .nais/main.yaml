@@ -15,6 +15,7 @@ env:
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon.dev-fss-pub.nais.io/bidrag-organisasjon
   TOPIC_VEDTAK: bidrag.vedtak-syntetisk
+  ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt-q2.dev.adeo.no/api/v2
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
   pool: nav-dev
