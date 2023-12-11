@@ -87,8 +87,8 @@ data class InntekterPerRolle(
 data class Arbeidsforhold(
     val periode: ÅrMånedsperiode,
     val arbeidsgiver: String,
-    val stillingProsent: String,
-    val lønnsendringDato: LocalDate,
+    val stillingProsent: String?,
+    val lønnsendringDato: LocalDate?,
 )
 
 data class InntekterSomLeggesTilGrunn(
