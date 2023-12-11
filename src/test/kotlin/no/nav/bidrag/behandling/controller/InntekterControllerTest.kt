@@ -5,9 +5,9 @@ import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
+import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
-import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
+import no.nav.bidrag.behandling.dto.inntekt.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.junit.jupiter.api.BeforeEach
@@ -22,23 +22,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-
-data class TestInntektRequest(
-    val inntekter: Set<TestInntektDto>,
-    val barnetillegg: Set<BarnetilleggDto>,
-    val utvidetbarnetrygd: Set<UtvidetbarnetrygdDto>,
-)
-
-data class TestInntektDto(
-    val id: Long?,
-    val taMed: Boolean,
-    val inntektType: String?,
-    val belop: String,
-    val datoTom: String?,
-    val datoFom: String?,
-    val ident: String,
-    val inntektPostListe: Set<InntektPost>,
-)
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -120,7 +103,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
-                    HttpEntity(TestInntektRequest(setOf(inn), emptySet(), emptySet())),
+                    HttpEntity(OppdatereInntekterRequest(setOf(inn), emptySet(), emptySet())),
                     InntekterResponse::class.java,
                 )
 
@@ -141,28 +124,37 @@ class InntekterControllerTest : KontrollerTestRunner() {
             val inntekt1 =
                 testInntektDto().copy(
                     id = null,
-                    inntektPostListe =
+                    inntektsposter =
                         setOf(
                             InntektPost("ABC1", "ABC1", BigDecimal.TEN),
                             InntektPost("ABC2", "ABC2", BigDecimal.TEN),
                         ),
                 )
 
-            val inntekt2 = testInntektDto().copy(datoFom = null, inntektType = "null")
+            val inntekt2 =
+                testInntektDto().copy(
+                    datoFom = LocalDate.now().minusMonths(5),
+                    inntektstype = Inntektsrapportering.INNTEKTSOPPLYSNINGER_ARBEIDSGIVER,
+                )
 
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
-                    HttpEntity(TestInntektRequest(setOf(inntekt1, inntekt2), setOf(), setOf())),
+                    HttpEntity(OppdatereInntekterRequest(setOf(inntekt1, inntekt2), setOf(), setOf())),
                     InntekterResponse::class.java,
                 )
 
             // then
             assertEquals(HttpStatus.OK, r1.statusCode)
             assertEquals(2, r1.body!!.inntekter.size)
-            assertNotNull(r1.body!!.inntekter.find { it.inntektType == "some0" && it.inntektPostListe.size == 2 })
-            assertNotNull(r1.body!!.inntekter.find { it.inntektType == "null" && it.inntektPostListe.size == 1 })
+            assertNotNull(r1.body!!.inntekter.find { it.inntektstype == Inntektsrapportering.DAGPENGER && it.inntektsposter.size == 2 })
+            assertNotNull(
+                r1.body!!.inntekter.find {
+                    it.inntektstype == Inntektsrapportering.INNTEKTSOPPLYSNINGER_ARBEIDSGIVER &&
+                        it.inntektsposter.size == 1
+                },
+            )
         }
 
         @Test
@@ -178,7 +170,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
-                    HttpEntity(TestInntektRequest(emptySet(), emptySet(), emptySet())),
+                    HttpEntity(OppdatereInntekterRequest(emptySet(), emptySet(), emptySet())),
                     InntekterResponse::class.java,
                 )
 
@@ -189,14 +181,15 @@ class InntekterControllerTest : KontrollerTestRunner() {
     }
 
     private fun testInntektDto() =
-        TestInntektDto(
+        InntektDto(
             null,
             true,
-            "some0",
-            "1.123",
-            "2022-10-10",
-            "2022-10-10",
+            Inntektsrapportering.DAGPENGER,
+            BigDecimal.valueOf(305203),
+            LocalDate.now().minusYears(1).withDayOfYear(1),
+            LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
             "blablabla",
+            true,
             setOf(InntektPost("ABC", "ABC", BigDecimal.TEN)),
         )
 }

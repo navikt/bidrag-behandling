@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -9,15 +11,17 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import java.math.BigDecimal
-import java.util.Date
+import java.time.LocalDate
 
 @Entity(name = "inntekt")
 class Inntekt(
-    val inntektType: String?,
+    @Enumerated(EnumType.STRING)
+    val inntektstype: Inntektsrapportering,
     val belop: BigDecimal,
-    val datoFom: Date?,
-    val datoTom: Date?,
+    val datoFom: LocalDate,
+    val datoTom: LocalDate?,
     val ident: String,
     val fraGrunnlag: Boolean,
     val taMed: Boolean,
@@ -28,5 +32,5 @@ class Inntekt(
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling? = null,
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var inntektPostListe: MutableSet<InntektPostDomain> = mutableSetOf(),
+    var inntektsposter: MutableSet<Inntektspost> = mutableSetOf(),
 )

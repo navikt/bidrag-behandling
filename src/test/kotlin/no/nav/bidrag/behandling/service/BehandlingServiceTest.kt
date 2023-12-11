@@ -9,15 +9,14 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
-import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
+import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
@@ -32,14 +31,18 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.Calendar
-import java.util.Date
 
 class BehandlingServiceTest : TestContainerRunner() {
+    @MockBean
+    lateinit var forsendelseService: ForsendelseService
+
     @Autowired
     lateinit var behandlingService: BehandlingService
 
@@ -52,7 +55,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Nested
     open inner class HenteBehandling {
         @Test
-        fun `skal caste 404 exception hvis behandlingen ikke er der`() {
+        fun `skal kaste 404 exception hvis behandlingen ikke er der`() {
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.hentBehandlingById(1234)
             }
@@ -66,15 +69,15 @@ class BehandlingServiceTest : TestContainerRunner() {
             val actualBehandling = createBehandling()
 
             assertNotNull(actualBehandling.id)
-            assertEquals(Behandlingstype.FORSKUDD, actualBehandling.behandlingType)
+            assertEquals(Behandlingstype.FORSKUDD, actualBehandling.behandlingstype)
             assertEquals(3, actualBehandling.roller.size)
 
             val actualBehandlingFetched =
                 behandlingService.hentBehandlingById(actualBehandling.id!!)
 
-            assertEquals(Behandlingstype.FORSKUDD, actualBehandlingFetched.behandlingType)
+            assertEquals(Behandlingstype.FORSKUDD, actualBehandlingFetched.behandlingstype)
             assertEquals(3, actualBehandlingFetched.roller.size)
-            assertNotNull(actualBehandlingFetched.roller.iterator().next().fodtDato)
+            assertNotNull(actualBehandlingFetched.roller.iterator().next().foedselsdato)
         }
 
         @Test
@@ -84,9 +87,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandling.inntekter =
                 mutableSetOf(
                     Inntekt(
-                        "",
+                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
                         BigDecimal.valueOf(555.55),
-                        null,
+                        LocalDate.now().minusMonths(4),
                         null,
                         "ident",
                         true,
@@ -102,7 +105,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val actualBehandlingFetched =
                 behandlingService.hentBehandlingById(actualBehandling.id!!)
 
-            assertEquals(Behandlingstype.FORSKUDD, actualBehandlingFetched.behandlingType)
+            assertEquals(Behandlingstype.FORSKUDD, actualBehandlingFetched.behandlingstype)
             assertEquals(1, actualBehandlingFetched.inntekter.size)
             assertEquals(
                 BigDecimal.valueOf(555.55),
@@ -121,10 +124,20 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertNotNull(createdBehandling.id)
             assertNull(createdBehandling.aarsak)
-            assertEquals(0, createdBehandling.husstandsBarn.size)
+            assertEquals(0, createdBehandling.husstandsbarn.size)
             assertEquals(0, createdBehandling.sivilstand.size)
 
-            val husstandsBarn = setOf(HusstandsbarnDto(null, true, emptySet(), "Manuelt", "ident!"))
+            val husstandsBarn =
+                setOf(
+                    HusstandsbarnDto(
+                        null,
+                        true,
+                        emptySet(),
+                        ident = "Manuelt",
+                        navn = "ident!",
+                        fødselsdato = LocalDate.now().minusMonths(156),
+                    ),
+                )
             val sivilstand =
                 setOf(
                     SivilstandDto(
@@ -146,10 +159,10 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
-            assertEquals(1, updatedBehandling.husstandsBarn.size)
+            assertEquals(1, updatedBehandling.husstandsbarn.size)
             assertEquals(1, updatedBehandling.sivilstand.size)
-            assertEquals(notat, updatedBehandling.boforholdBegrunnelseKunINotat)
-            assertEquals(medIVedtak, updatedBehandling.boforholdBegrunnelseMedIVedtakNotat)
+            assertEquals(notat, updatedBehandling.boforholdsbegrunnelseKunINotat)
+            assertEquals(medIVedtak, updatedBehandling.boforholdsbegrunnelseIVedtakOgNotat)
         }
 
         @Test
@@ -164,7 +177,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertNotNull(createdBehandling.id)
             assertNull(createdBehandling.aarsak)
 
-            behandlingService.updateVirkningsTidspunkt(
+            behandlingService.oppdatereVirkningstidspunkt(
                 createdBehandling.id!!,
                 ForskuddAarsakType.BF,
                 null,
@@ -175,10 +188,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
             assertEquals(ForskuddAarsakType.BF, updatedBehandling.aarsak)
-            assertEquals(notat, updatedBehandling.virkningsTidspunktBegrunnelseKunINotat)
+            assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
             assertEquals(
                 medIVedtak,
-                updatedBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
+                updatedBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
             )
         }
     }
@@ -206,11 +219,11 @@ class BehandlingServiceTest : TestContainerRunner() {
                 b.id!!,
                 listOf(
                     CreateRolleDto(
-                        CreateRolleRolleType.BARN,
+                        Rolletype.BARN,
                         "newident",
                         null,
-                        Date(1),
-                        Date(2),
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                        opprettetdato = LocalDate.now().minusMonths(4),
                     ),
                 ),
             )
@@ -224,7 +237,14 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.syncRoller(
                 b.id!!,
                 listOf(
-                    CreateRolleDto(CreateRolleRolleType.BARN, "1111", null, Date(1), Date(2), true),
+                    CreateRolleDto(
+                        Rolletype.BARN,
+                        "1111",
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                        opprettetdato = LocalDate.now().minusMonths(4),
+                        true,
+                    ),
                 ),
             )
 
@@ -239,15 +259,34 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.syncRoller(
                 b.id!!,
                 listOf(
-                    CreateRolleDto(CreateRolleRolleType.BARN, "1111", null, Date(1), Date(2), true),
-                    CreateRolleDto(CreateRolleRolleType.BARN, "111123", null, Date(1), Date(2)),
-                    CreateRolleDto(CreateRolleRolleType.BARN, "1111234", null, Date(1), Date(2)),
+                    CreateRolleDto(
+                        Rolletype.BARN,
+                        "1111",
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                        opprettetdato = LocalDate.now().minusMonths(4),
+                        true,
+                    ),
+                    CreateRolleDto(
+                        Rolletype.BARN,
+                        "111123",
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                        opprettetdato = LocalDate.now().minusMonths(4),
+                    ),
+                    CreateRolleDto(
+                        Rolletype.BARN,
+                        "1111234",
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                        opprettetdato = LocalDate.now().minusMonths(4),
+                    ),
                 ),
             )
 
             assertEquals(
                 2,
-                behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolleType == Rolletype.BARN }.size,
+                behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolletype == Rolletype.BARN }.size,
             )
         }
     }
@@ -287,10 +326,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
             assertEquals(3, hentBehandlingById.roller.size)
-            assertEquals(notat, oppdatertBehandling.virkningsTidspunktBegrunnelseKunINotat)
+            assertEquals(notat, oppdatertBehandling.virkningstidspunktbegrunnelseKunINotat)
             assertEquals(
                 medIVedtak,
-                oppdatertBehandling.virkningsTidspunktBegrunnelseMedIVedtakNotat,
+                oppdatertBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
             )
         }
 
@@ -300,7 +339,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             behandlingService.updateBehandling(b.id!!, 123L)
 
-            assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeId)
+            assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeid)
         }
     }
 
@@ -314,22 +353,22 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(0, actualBehandling.inntekter.size)
             assertEquals(0, actualBehandling.barnetillegg.size)
-            assertEquals(0, actualBehandling.utvidetbarnetrygd.size)
-            assertNull(actualBehandling.inntektBegrunnelseMedIVedtakNotat)
-            assertNull(actualBehandling.inntektBegrunnelseKunINotat)
+            assertEquals(0, actualBehandling.utvidetBarnetrygd.size)
+            assertNull(actualBehandling.inntektsbegrunnelseIVedtakOgNotat)
+            assertNull(actualBehandling.inntektsbegrunnelseKunINotat)
 
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(
                     InntektDto(
                         taMed = true,
-                        inntektType = Inntektsrapportering.KAPITALINNTEKT.name,
-                        belop = BigDecimal.valueOf(4000),
+                        inntektstype = Inntektsrapportering.KAPITALINNTEKT,
+                        beløp = BigDecimal.valueOf(4000),
                         datoFom = LocalDate.now().minusMonths(4),
                         datoTom = LocalDate.now().plusMonths(4),
                         ident = "123",
                         fraGrunnlag = true,
-                        inntektPostListe = emptySet(),
+                        inntektsposter = emptySet(),
                     ),
                 ),
                 mutableSetOf(
@@ -341,9 +380,9 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                 ),
                 mutableSetOf(
-                    UtvidetbarnetrygdDto(
-                        deltBoSted = false,
-                        belop = BigDecimal.TEN,
+                    UtvidetBarnetrygdDto(
+                        deltBosted = false,
+                        beløp = BigDecimal.TEN,
                         datoFom = LocalDate.now().minusMonths(3),
                         datoTom = LocalDate.now().plusMonths(3),
                     ),
@@ -356,9 +395,9 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(1, expectedBehandling.inntekter.size)
             assertEquals(1, expectedBehandling.barnetillegg.size)
-            assertEquals(1, expectedBehandling.utvidetbarnetrygd.size)
-            assertEquals("Med i Vedtaket", expectedBehandling.inntektBegrunnelseMedIVedtakNotat)
-            assertEquals("Kun i Notat", expectedBehandling.inntektBegrunnelseKunINotat)
+            assertEquals(1, expectedBehandling.utvidetBarnetrygd.size)
+            assertEquals("Med i Vedtaket", expectedBehandling.inntektsbegrunnelseIVedtakOgNotat)
+            assertEquals("Kun i Notat", expectedBehandling.inntektsbegrunnelseKunINotat)
         }
 
         @Test
@@ -372,20 +411,20 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(0, actualBehandling.inntekter.size)
             assertEquals(0, actualBehandling.barnetillegg.size)
-            assertEquals(0, actualBehandling.utvidetbarnetrygd.size)
+            assertEquals(0, actualBehandling.utvidetBarnetrygd.size)
 
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
                 mutableSetOf(
                     InntektDto(
                         taMed = true,
-                        inntektType = Inntektsrapportering.KAPITALINNTEKT.name,
-                        belop = BigDecimal.valueOf(4000),
+                        inntektstype = Inntektsrapportering.KAPITALINNTEKT,
+                        beløp = BigDecimal.valueOf(4000),
                         datoFom = LocalDate.now().minusMonths(4),
                         datoTom = LocalDate.now().plusMonths(4),
                         ident = "123",
                         fraGrunnlag = true,
-                        inntektPostListe = emptySet(),
+                        inntektsposter = emptySet(),
                     ),
                 ),
                 mutableSetOf(
@@ -405,8 +444,8 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(1, expectedBehandling.inntekter.size)
             assertEquals(1, expectedBehandling.barnetillegg.size)
-            assertNotNull(expectedBehandling.inntektBegrunnelseMedIVedtakNotat)
-            assertNotNull(expectedBehandling.inntektBegrunnelseKunINotat)
+            assertNotNull(expectedBehandling.inntektsbegrunnelseIVedtakOgNotat)
+            assertNotNull(expectedBehandling.inntektsbegrunnelseKunINotat)
 
             behandlingService.oppdaterInntekter(
                 actualBehandling.id!!,
@@ -429,8 +468,8 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
             assertEquals(1, expectedBehandlingWithoutInntekter.barnetillegg.size)
-            assertNull(expectedBehandlingWithoutInntekter.inntektBegrunnelseMedIVedtakNotat)
-            assertNull(expectedBehandlingWithoutInntekter.inntektBegrunnelseKunINotat)
+            assertNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseIVedtakOgNotat)
+            assertNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseKunINotat)
         }
     }
 
@@ -439,7 +478,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         val behandling = createBehandling()
 
         assertEquals(3, behandling.roller.size)
-        behandling.roller.removeIf { it.rolleType == Rolletype.BARN }
+        behandling.roller.removeIf { it.rolletype == Rolletype.BARN }
 
         behandlingRepository.save(behandling)
 
@@ -464,11 +503,11 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling =
                 Behandling(
                     Behandlingstype.FORSKUDD,
-                    SoknadType.FASTSETTELSE,
-                    Calendar.getInstance().time,
-                    Calendar.getInstance().time,
-                    Calendar.getInstance().time,
-                    "1234",
+                    Soknadstype.FASTSETTELSE,
+                    YearMonth.now().atDay(1),
+                    YearMonth.now().atEndOfMonth(),
+                    LocalDate.now(),
+                    "1900000",
                     123213L,
                     null,
                     "1234",
@@ -485,9 +524,9 @@ class BehandlingServiceTest : TestContainerRunner() {
                     createRoller.map {
                         Rolle(
                             behandling,
-                            it.rolleType,
+                            it.rolletype,
                             it.ident,
-                            it.fodtDato,
+                            it.foedselsdato,
                             it.opprettetDato,
                         )
                     },
@@ -498,11 +537,28 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         fun prepareRoles(behandling: Behandling): Set<Rolle> {
-            val someDate = Calendar.getInstance().time
             return setOf(
-                Rolle(behandling, Rolletype.BIDRAGSMOTTAKER, "123344", someDate, someDate),
-                Rolle(behandling, Rolletype.BIDRAGSPLIKTIG, "44332211", someDate, someDate),
-                Rolle(behandling, Rolletype.BARN, "1111", someDate, someDate),
+                Rolle(
+                    behandling,
+                    Rolletype.BIDRAGSMOTTAKER,
+                    "123344",
+                    LocalDate.now().minusMonths(1025),
+                    LocalDate.now().minusMonths(2),
+                ),
+                Rolle(
+                    behandling,
+                    Rolletype.BIDRAGSPLIKTIG,
+                    "44332211",
+                    LocalDate.now().minusMonths(1068),
+                    LocalDate.now().minusMonths(2),
+                ),
+                Rolle(
+                    behandling,
+                    Rolletype.BARN,
+                    "1111",
+                    LocalDate.now().minusMonths(154),
+                    LocalDate.now().minusMonths(2),
+                ),
             )
         }
     }

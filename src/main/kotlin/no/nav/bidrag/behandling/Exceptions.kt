@@ -19,3 +19,6 @@ fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
         HttpStatus.INTERNAL_SERVER_ERROR,
         "Fant ikke fødselsdato til søknadsbarn i behandling med id $behandlingsid",
     )
+
+fun valideringAvBehandlingFeilet(valideringsfeil: List<String>): Nothing =
+    throw HttpClientErrorException(HttpStatus.BAD_REQUEST, valideringsfeil.toString())

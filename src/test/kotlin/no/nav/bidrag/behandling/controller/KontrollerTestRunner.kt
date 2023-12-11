@@ -22,7 +22,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     val stubUtils: StubUtils = StubUtils()
 
     protected fun rootUri(): String {
-        return "http://localhost:$port/api/"
+        return "http://localhost:$port/api/v1"
     }
 
     @BeforeEach

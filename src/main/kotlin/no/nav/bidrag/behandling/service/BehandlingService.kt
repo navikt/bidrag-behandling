@@ -2,9 +2,10 @@ package no.nav.bidrag.behandling.service
 
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
+import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
-import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
@@ -13,23 +14,24 @@ import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
-import no.nav.bidrag.behandling.dto.inntekt.UtvidetbarnetrygdDto
+import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilVedtakType
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
 import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toRolle
-import no.nav.bidrag.behandling.transformers.toUtvidetbarnetrygdDomain
+import no.nav.bidrag.behandling.transformers.toUtvidetBarnetrygdDomain
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.Date
+import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
+    private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
 ) {
@@ -49,12 +51,12 @@ class BehandlingService(
                 behandlingInfo =
                     BehandlingInfoDto(
                         behandlingId = behandling.id,
-                        soknadId = behandling.soknadId,
+                        soknadId = behandling.soknadsid,
                         soknadFra = behandling.soknadFra,
-                        behandlingType = behandling.behandlingType.name,
-                        stonadType = behandling.stonadType,
-                        engangsBelopType = behandling.engangsbelopType,
-                        vedtakType = behandling.soknadType.tilVedtakType(),
+                        behandlingType = behandling.behandlingstype.name,
+                        stonadType = behandling.stonadstype,
+                        engangsBelopType = behandling.engangsbeloptype,
+                        vedtakType = behandling.soknadstype.tilVedtakType(),
                     ),
             ),
         )
@@ -63,30 +65,30 @@ class BehandlingService(
     fun deleteBehandlingById(behandlingId: Long) = behandlingRepository.deleteById(behandlingId)
 
     fun oppdaterBehandling(
-        behandlingId: Long,
-        virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
-        virkningsTidspunktBegrunnelseKunINotat: String? = null,
-        boforholdBegrunnelseMedIVedtakNotat: String? = null,
-        boforholdBegrunnelseKunINotat: String? = null,
-        inntektBegrunnelseMedIVedtakNotat: String? = null,
-        inntektBegrunnelseKunINotat: String? = null,
-        aarsak: ForskuddAarsakType? = null,
-        virkningsDato: Date? = null,
+        behandlingsid: Long,
+        virkningstidspunktBegrunnelseMedIVedtakNotat: String? = null,
+        virkningstidspunktBegrunnelseKunINotat: String? = null,
+        boforholdsbegrunnelseMedIVedtakOgNotat: String? = null,
+        boforholdsbegrunnelseKunINotat: String? = null,
+        inntektsbegrunnelseMedIVedtakNotat: String? = null,
+        inntektsbegrunnelseKunINotat: String? = null,
+        årsak: ForskuddAarsakType? = null,
+        virkningsdato: LocalDate? = null,
     ): Behandling =
         behandlingRepository.save(
-            behandlingRepository.findBehandlingById(behandlingId)
-                .orElseThrow { behandlingNotFoundException(behandlingId) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
                 .let {
-                    it.virkningsTidspunktBegrunnelseMedIVedtakNotat =
-                        virkningsTidspunktBegrunnelseMedIVedtakNotat
-                    it.virkningsTidspunktBegrunnelseKunINotat =
-                        virkningsTidspunktBegrunnelseKunINotat
-                    it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat
-                    it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
-                    it.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
-                    it.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
-                    it.aarsak = aarsak
-                    it.virkningsDato = virkningsDato
+                    it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
+                        virkningstidspunktBegrunnelseMedIVedtakNotat
+                    it.virkningstidspunktbegrunnelseKunINotat =
+                        virkningstidspunktBegrunnelseKunINotat
+                    it.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
+                    it.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
+                    it.inntektsbegrunnelseIVedtakOgNotat = inntektsbegrunnelseMedIVedtakNotat
+                    it.inntektsbegrunnelseKunINotat = inntektsbegrunnelseKunINotat
+                    it.aarsak = årsak
+                    it.virkningsdato = virkningsdato
                     it
                 },
         )
@@ -99,44 +101,44 @@ class BehandlingService(
 
     @Transactional
     fun oppdaterInntekter(
-        behandlingId: Long,
+        behandlingsid: Long,
         nyeInntekter: Set<InntektDto>,
         nyeBarnetillegg: Set<BarnetilleggDto>,
-        nyUtvidetbarnetrygd: Set<UtvidetbarnetrygdDto>,
-        inntektBegrunnelseMedIVedtakNotat: String?,
-        inntektBegrunnelseKunINotat: String?,
+        nyUtvidetBarnetrygd: Set<UtvidetBarnetrygdDto>,
+        inntektsbegrunnelseMedIVedtakOgNotat: String?,
+        inntektsbegrunnelseKunINotat: String?,
     ) {
         var behandling =
-            behandlingRepository.findBehandlingById(behandlingId)
-                .orElseThrow { behandlingNotFoundException(behandlingId) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        behandling.inntektBegrunnelseMedIVedtakNotat = inntektBegrunnelseMedIVedtakNotat
-        behandling.inntektBegrunnelseKunINotat = inntektBegrunnelseKunINotat
+        behandling.inntektsbegrunnelseIVedtakOgNotat = inntektsbegrunnelseMedIVedtakOgNotat
+        behandling.inntektsbegrunnelseKunINotat = inntektsbegrunnelseKunINotat
 
         var inntektOppdatert = false
 
         val inntekter = nyeInntekter.toInntektDomain(behandling)
         val barnetillegg = nyeBarnetillegg.toBarnetilleggDomain(behandling)
-        val nyUtvidetbarnetrygd = nyUtvidetbarnetrygd.toUtvidetbarnetrygdDomain(behandling)
+        val nyUtvidetbarnetrygd = nyUtvidetBarnetrygd.toUtvidetBarnetrygdDomain(behandling)
 
         if (behandling.inntekter != inntekter) {
-            log.info("Oppdaterer inntekter for behandlingsid $behandlingId")
+            log.info("Oppdaterer inntekter for behandlingsid $behandlingsid")
             behandling.inntekter.clear()
             behandling.inntekter.addAll(inntekter)
             inntektOppdatert = true
         }
 
         if (behandling.barnetillegg != barnetillegg) {
-            log.info("Oppdaterer barnetillegg for behandlingsid $behandlingId")
+            log.info("Oppdaterer barnetillegg for behandlingsid $behandlingsid")
             behandling.barnetillegg.clear()
             behandling.barnetillegg.addAll(barnetillegg)
             inntektOppdatert = true
         }
 
-        if (behandling.utvidetbarnetrygd != nyUtvidetbarnetrygd) {
-            log.info("Oppdaterer utvidet barnetrygd for behandlingsid $behandlingId")
-            behandling.utvidetbarnetrygd.clear()
-            behandling.utvidetbarnetrygd.addAll(nyUtvidetbarnetrygd)
+        if (behandling.utvidetBarnetrygd != nyUtvidetbarnetrygd) {
+            log.info("Oppdaterer utvidet barnetrygd for behandlingsid $behandlingsid")
+            behandling.utvidetBarnetrygd.clear()
+            behandling.utvidetBarnetrygd.addAll(nyUtvidetbarnetrygd)
             inntektOppdatert = true
         }
 
@@ -145,35 +147,35 @@ class BehandlingService(
         }
     }
 
-    fun updateVirkningsTidspunkt(
-        behandlingId: Long,
-        aarsak: ForskuddAarsakType?,
-        virkningsDato: Date?,
-        virkningsTidspunktBegrunnelseKunINotat: String?,
-        virkningsTidspunktBegrunnelseMedIVedtakNotat: String?,
-    ) = behandlingRepository.updateVirkningsTidspunkt(
-        behandlingId,
-        aarsak,
-        virkningsDato,
-        virkningsTidspunktBegrunnelseKunINotat,
-        virkningsTidspunktBegrunnelseMedIVedtakNotat,
+    fun oppdatereVirkningstidspunkt(
+        behandlingsid: Long,
+        årsak: ForskuddAarsakType?,
+        virkningsdato: LocalDate?,
+        virkningstidspunktbegrunnelseKunINotat: String?,
+        virkningstidspunktbegrunnelseMedIVedtakOgNotat: String?,
+    ) = behandlingRepository.updateVirkningstidspunkt(
+        behandlingsid,
+        årsak,
+        virkningsdato,
+        virkningstidspunktbegrunnelseKunINotat,
+        virkningstidspunktbegrunnelseMedIVedtakOgNotat,
     )
 
     fun updateBoforhold(
-        behandlingId: Long,
-        husstandsBarn: MutableSet<HusstandsBarn>,
+        behandlingsid: Long,
+        husstandsbarn: MutableSet<Husstandsbarn>,
         sivilstand: MutableSet<Sivilstand>,
-        boforholdBegrunnelseKunINotat: String?,
-        boforholdBegrunnelseMedIVedtakNotat: String?,
+        boforholdsbegrunnelseKunINotat: String?,
+        boforholdsbegrunnelseMedIVedtakOgNotat: String?,
     ) = behandlingRepository.save(
-        behandlingRepository.findBehandlingById(behandlingId)
-            .orElseThrow { behandlingNotFoundException(behandlingId) }
+        behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }
             .let {
-                it.boforholdBegrunnelseKunINotat = boforholdBegrunnelseKunINotat
-                it.boforholdBegrunnelseMedIVedtakNotat = boforholdBegrunnelseMedIVedtakNotat
+                it.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
+                it.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
 
-                it.husstandsBarn.clear()
-                it.husstandsBarn.addAll(husstandsBarn)
+                it.husstandsbarn.clear()
+                it.husstandsbarn.addAll(husstandsbarn)
 
                 it.sivilstand.clear()
                 it.sivilstand.addAll(sivilstand)
@@ -210,7 +212,7 @@ class BehandlingService(
 
         behandlingRepository.save(behandling)
 
-        if (behandling.roller.none { r -> r.rolleType == Rolletype.BARN }) {
+        if (behandling.roller.none { r -> r.rolletype == Rolletype.BARN }) {
             behandlingRepository.delete(behandling)
         }
     }
@@ -220,8 +222,12 @@ class BehandlingService(
         grunnlagspakkeId: Long?,
     ) {
         hentBehandlingById(behandlingId).let {
-            it.grunnlagspakkeId = grunnlagspakkeId
+            it.grunnlagspakkeid = grunnlagspakkeId
             behandlingRepository.save(it)
         }
+    }
+
+    fun oppfriskeGrunnlagsdata(grunlagspakkeid: Long) {
+        val grunnlagspakke = bidragGrunnlagConsumer.henteGrunnlagspakke(grunlagspakkeid)
     }
 }
