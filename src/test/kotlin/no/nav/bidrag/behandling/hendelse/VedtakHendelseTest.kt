@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
-import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
 import no.nav.bidrag.behandling.service.CommonTestRunner
@@ -33,8 +33,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.Date
 
 class VedtakHendelseTest : CommonTestRunner() {
     val stubUtils: StubUtils = StubUtils()
@@ -68,7 +68,7 @@ class VedtakHendelseTest : CommonTestRunner() {
             ),
         )
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
-        oppdatertBehandling.vedtakId shouldBe vedtakId
+        oppdatertBehandling.vedtaksid shouldBe vedtakId
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(3)
         stubUtils.Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
@@ -92,7 +92,7 @@ class VedtakHendelseTest : CommonTestRunner() {
             opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = Stønadstype.FORSKUDD)
         vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
-        oppdatertBehandling.vedtakId shouldBe vedtakId
+        oppdatertBehandling.vedtaksid shouldBe vedtakId
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(1)
         stubUtils.Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
@@ -109,20 +109,20 @@ class VedtakHendelseTest : CommonTestRunner() {
 
     private fun opprettBehandling() =
         Behandling(
-            datoFom = Date(),
-            datoTom = Date(),
+            datoFom = LocalDate.now(),
+            datoTom = LocalDate.now(),
             saksnummer = SAKSNUMMER,
-            soknadId = 123123L,
+            soknadsid = 123123L,
             behandlerEnhet = "4806",
             opprettetAv = "Z99999",
             opprettetAvNavn = "Saksbehandler Navn",
             kildeapplikasjon = "bisys",
-            behandlingType = Behandlingstype.BIDRAG18AAR,
-            engangsbelopType = null,
-            mottatDato = Date(),
+            behandlingstype = Behandlingstype.BIDRAG18AAR,
+            engangsbeloptype = null,
+            mottattdato = LocalDate.now(),
             soknadFra = SøktAvType.BIDRAGSMOTTAKER,
-            soknadType = SoknadType.FASTSETTELSE,
-            stonadType = Stønadstype.BIDRAG18AAR,
+            soknadstype = Soknadstype.FASTSETTELSE,
+            stonadstype = Stønadstype.BIDRAG18AAR,
         )
 
     private fun opprettVedtakhendelse(

@@ -9,10 +9,10 @@ data class HusstandsbarnDto(
     @Schema(required = true)
     val medISak: Boolean,
     @Schema(required = true)
-    val perioder: Set<HusstandsBarnPeriodeDto>,
+    val perioder: Set<HusstandsbarnperiodeDto>,
     val ident: String? = null,
     val navn: String? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val foedselsdato: LocalDate? = null,
+    val fødselsdato: LocalDate,
 )

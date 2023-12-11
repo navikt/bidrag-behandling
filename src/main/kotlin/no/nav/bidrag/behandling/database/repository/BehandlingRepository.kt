@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.transaction.annotation.Transactional
-import java.util.Date
+import java.time.LocalDate
 import java.util.Optional
 
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
@@ -19,28 +19,28 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     @Modifying
     @Query(
         "update behandling b set " +
-            "b.aarsak = :aarsak," +
-            "b.virkningsDato = :virkningsDato," +
-            "b.virkningsTidspunktBegrunnelseKunINotat = :virkningsTidspunktBegrunnelseKunINotat," +
-            "b.virkningsTidspunktBegrunnelseMedIVedtakNotat = :virkningsTidspunktBegrunnelseMedIVedtakNotat " +
-            "where b.id = :behandlingId",
+            "b.aarsak = :årsak," +
+            "b.virkningsdato = :virkningsdato," +
+            "b.virkningstidspunktbegrunnelseKunINotat = :virkningstidspunktsbegrunnelseKunINotat," +
+            "b.virkningstidspunktsbegrunnelseIVedtakOgNotat = :virkningstidspunktsbegrunnelseIVedtakOgNotat " +
+            "where b.id = :behandlingsid",
     )
-    fun updateVirkningsTidspunkt(
-        behandlingId: Long,
-        aarsak: ForskuddAarsakType?,
-        virkningsDato: Date?,
-        virkningsTidspunktBegrunnelseKunINotat: String?,
-        virkningsTidspunktBegrunnelseMedIVedtakNotat: String?,
+    fun updateVirkningstidspunkt(
+        behandlingsid: Long,
+        årsak: ForskuddAarsakType?,
+        virkningsdato: LocalDate?,
+        virkningstidspunktsbegrunnelseKunINotat: String?,
+        virkningstidspunktsbegrunnelseIVedtakOgNotat: String?,
     )
 
     @Modifying
     @Query(
         "update behandling b set " +
-            "b.vedtakId = :vedtakId " +
-            "where b.id = :behandlingId",
+            "b.vedtaksid = :vedtaksid " +
+            "where b.id = :behandlingsid",
     )
     fun oppdaterVedtakId(
-        behandlingId: Long,
-        vedtakId: Long,
+        behandlingsid: Long,
+        vedtaksid: Long,
     )
 }

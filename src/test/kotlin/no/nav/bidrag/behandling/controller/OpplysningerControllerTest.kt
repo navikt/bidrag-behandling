@@ -2,14 +2,14 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleRolleType
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
-import java.util.Date
+import java.time.LocalDate
 import kotlin.test.Ignore
 
 data class AddOpplysningerRequest(
@@ -25,10 +25,20 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal opprette og oppdatere opplysninger`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
-                CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+                CreateRolleDtoTest(
+                    Rolletype.BARN,
+                    "123",
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                    fødselsdato = LocalDate.now().minusMonths(136),
+                ),
+                CreateRolleDtoTest(
+                    Rolletype.BIDRAGSMOTTAKER,
+                    "123",
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                    fødselsdato = LocalDate.now().minusMonths(568),
+                ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
+        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -63,10 +73,20 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal ikke være mulig å opprette flere aktive opplysninger`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
-                CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+                CreateRolleDtoTest(
+                    Rolletype.BARN,
+                    "123",
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                    fødselsdato = LocalDate.now().minusMonths(136),
+                ),
+                CreateRolleDtoTest(
+                    Rolletype.BIDRAGSMOTTAKER,
+                    "123",
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                    fødselsdato = LocalDate.now().minusMonths(429),
+                ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
+        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -113,10 +133,20 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 hvis opplysninger ikke eksisterer for en gitt behandling`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
-                CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+                CreateRolleDtoTest(
+                    Rolletype.BARN,
+                    "123",
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                    fødselsdato = LocalDate.now().minusMonths(136),
+                ),
+                CreateRolleDtoTest(
+                    Rolletype.BIDRAGSMOTTAKER,
+                    "123",
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                    fødselsdato = LocalDate.now().minusMonths(471),
+                ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
+        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -156,10 +186,20 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal opprette og oppdatere opplysninger1`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(CreateRolleRolleType.BARN, "123", Date(1)),
-                CreateRolleDtoTest(CreateRolleRolleType.BIDRAGS_MOTTAKER, "123", Date(1)),
+                CreateRolleDtoTest(
+                    Rolletype.BARN,
+                    "123",
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                    fødselsdato = LocalDate.now().minusMonths(136),
+                ),
+                CreateRolleDtoTest(
+                    Rolletype.BIDRAGSMOTTAKER,
+                    "123",
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                    fødselsdato = LocalDate.now().minusMonths(409),
+                ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("sak123", "en12", roller)
+        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =

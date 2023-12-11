@@ -7,9 +7,8 @@ import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.SoknadType
+import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
-import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.ident.Personident
@@ -38,11 +37,11 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
 fun oppretteBehandling(): Behandling {
     return Behandling(
         Behandlingstype.FORSKUDD,
-        SoknadType.FASTSETTELSE,
-        datoFom = YearMonth.now().atDay(1).minusMonths(16).toDate(),
-        datoTom = YearMonth.now().plusMonths(10).atEndOfMonth().toDate(),
-        mottatDato = LocalDate.now().toDate(),
-        "123",
+        Soknadstype.FASTSETTELSE,
+        datoFom = YearMonth.now().atDay(1).minusMonths(16),
+        datoTom = YearMonth.now().plusMonths(10).atEndOfMonth(),
+        mottattdato = LocalDate.now(),
+        "1900000",
         123,
         null,
         "ENH",
@@ -52,7 +51,7 @@ fun oppretteBehandling(): Behandling {
         SøktAvType.BIDRAGSMOTTAKER,
         null,
         null,
-        virkningsDato = LocalDate.now().toDate(),
+        virkningsdato = LocalDate.now(),
     )
 }
 
@@ -60,23 +59,23 @@ fun oppretteBehandlingRoller(behandling: Behandling) =
     mutableSetOf(
         Rolle(
             ident = ROLLE_BM.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BIDRAGSMOTTAKER,
+            rolletype = Rolletype.BIDRAGSMOTTAKER,
             behandling = behandling,
-            fodtDato = null,
+            foedselsdato = LocalDate.now().minusMonths(29 * 13),
             opprettetDato = null,
         ),
         Rolle(
             ident = ROLLE_BP.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BIDRAGSPLIKTIG,
+            rolletype = Rolletype.BIDRAGSPLIKTIG,
             behandling = behandling,
-            fodtDato = null,
+            foedselsdato = LocalDate.now().minusMonths(33 * 11),
             opprettetDato = null,
         ),
         Rolle(
             ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
-            rolleType = Rolletype.BARN,
+            rolletype = Rolletype.BARN,
             behandling = behandling,
-            fodtDato = null,
+            foedselsdato = LocalDate.now().minusMonths(3 * 14),
             opprettetDato = null,
         ),
     )

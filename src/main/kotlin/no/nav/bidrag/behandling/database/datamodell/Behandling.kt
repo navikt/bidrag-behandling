@@ -1,5 +1,10 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import arrow.core.Either
+import arrow.core.NonEmptyList
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.raise.zipOrAccumulate
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -16,22 +21,23 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
-import java.util.Date
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity(name = "behandling")
 @SQLDelete(sql = "UPDATE behandling SET deleted = true WHERE id=?")
 @Where(clause = "deleted=false")
 class Behandling(
     @Enumerated(EnumType.STRING)
-    val behandlingType: Behandlingstype,
+    val behandlingstype: Behandlingstype,
     // TODO Endre til Vedtakstype
     @Enumerated(EnumType.STRING)
-    val soknadType: SoknadType,
-    val datoFom: Date,
-    val datoTom: Date,
-    val mottatDato: Date,
+    val soknadstype: Soknadstype,
+    val datoFom: LocalDate,
+    val datoTom: LocalDate,
+    val mottattdato: LocalDate,
     val saksnummer: String,
-    val soknadId: Long,
+    val soknadsid: Long,
     val soknadRefId: Long? = null,
     val behandlerEnhet: String,
     val opprettetAv: String,
@@ -40,29 +46,30 @@ class Behandling(
     @Enumerated(EnumType.STRING)
     val soknadFra: SøktAvType,
     @Enumerated(EnumType.STRING)
-    var stonadType: Stønadstype?,
+    var stonadstype: Stønadstype?,
     @Enumerated(EnumType.STRING)
-    var engangsbelopType: Engangsbeløptype?,
-    var vedtakId: Long? = null,
-    var virkningsDato: Date? = null,
+    var engangsbeloptype: Engangsbeløptype?,
+    var vedtaksid: Long? = null,
+    var virkningsdato: LocalDate? = null,
     @Enumerated(EnumType.STRING)
     var aarsak: ForskuddAarsakType? = null,
-    @Column(name = "VIRKNINGS_TIDSPUNKT_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
-    var virkningsTidspunktBegrunnelseMedIVedtakNotat: String? = null,
-    @Column(name = "VIRKNINGS_TIDSPUNKT_BEGRUNNELSE_KUN_I_NOTAT")
-    var virkningsTidspunktBegrunnelseKunINotat: String? = null,
-    @Column(name = "BOFORHOLD_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
-    var boforholdBegrunnelseMedIVedtakNotat: String? = null,
-    @Column(name = "BOFORHOLD_BEGRUNNELSE_KUN_I_NOTAT")
-    var boforholdBegrunnelseKunINotat: String? = null,
-    @Column(name = "INNTEKT_BEGRUNNELSE_MED_I_VEDTAK_NOTAT")
-    var inntektBegrunnelseMedIVedtakNotat: String? = null,
-    @Column(name = "INNTEKT_BEGRUNNELSE_KUN_I_NOTAT")
-    var inntektBegrunnelseKunINotat: String? = null,
+    @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_VEDTAK_OG_NOTAT")
+    var virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
+    @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_KUN_NOTAT")
+    var virkningstidspunktbegrunnelseKunINotat: String? = null,
+    @Column(name = "BOFORHOLDSBEGRUNNELSE_VEDTAK_OG_NOTAT")
+    var boforholdsbegrunnelseIVedtakOgNotat: String? = null,
+    @Column(name = "BOFORHOLDSBEGRUNNELSE_KUN_NOTAT")
+    var boforholdsbegrunnelseKunINotat: String? = null,
+    @Column(name = "INNTEKTSBEGRUNNELSE_VEDTAK_OG_NOTAT")
+    var inntektsbegrunnelseIVedtakOgNotat: String? = null,
+    @Column(name = "INNTEKTSBEGRUNNELSE_KUN_NOTAT")
+    var inntektsbegrunnelseKunINotat: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    var grunnlagspakkeId: Long? = null,
+    var grunnlagspakkeid: Long? = null,
+    var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
@@ -76,7 +83,7 @@ class Behandling(
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
     )
-    var husstandsBarn: MutableSet<HusstandsBarn> = mutableSetOf(),
+    var husstandsbarn: MutableSet<Husstandsbarn> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
@@ -104,8 +111,52 @@ class Behandling(
         cascade = [CascadeType.PERSIST, CascadeType.MERGE],
         orphanRemoval = true,
     )
-    var utvidetbarnetrygd: MutableSet<Utvidetbarnetrygd> = mutableSetOf(),
+    var utvidetBarnetrygd: MutableSet<UtvidetBarnetrygd> = mutableSetOf(),
     var deleted: Boolean = false,
 ) {
-    fun getSøknadsBarn() = roller.filter { it.rolleType == Rolletype.BARN }
+    fun getSøknadsbarn() = roller.filter { it.rolletype == Rolletype.BARN }
 }
+
+fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
+    either {
+        zipOrAccumulate(
+            { ensure(this@validere.id != null) { raise("Behandlingsid mangler") } },
+            { ensure(this@validere.datoTom != null) { raise("Til-dato mangler for behandling") } },
+            { ensure(this@validere.virkningsdato != null) { raise("Virkningsdato mangler for behandling") } },
+            { ensure(this@validere.saksnummer.isNotBlank()) { raise("Saksnummer mangler for behandling") } },
+            {
+                mapOrAccumulate(sivilstand) {
+                    ensure(it.datoFom != null) { raise("Til-dato mangler for sivilstand i behandling") }
+                }
+            },
+            {
+                mapOrAccumulate(inntekter.filter { it.taMed }) {
+                    ensure(it.datoFom != null) { raise("Til-dato mangler for sivilstand i behandling") }
+                    ensure(it.inntektstype != null) { raise("Inntektstype mangler for behandling") }
+                    it
+                }
+            },
+            {
+                mapOrAccumulate(utvidetBarnetrygd) {
+                    ensure(it.datoFom != null) { raise("Fra-dato mangler for utvidet barnetrygd i behandling") }
+                }
+            },
+            {
+                mapOrAccumulate(barnetillegg) {
+                    ensure(it.datoFom != null) { raise("Fra-dato mangler for barnetillegg i behandling") }
+                }
+            },
+            {
+                ensure(this@validere.husstandsbarn.size > 0) { raise("Husstandsbarn mangler i behandling") }
+                mapOrAccumulate(husstandsbarn.filter { it.medISaken }.flatMap { it.perioder }) {
+                    ensure(it.datoFom != null) { raise("Fra-dato mangler for husstandsbarnpreiode i behandling") }
+                    it
+                }
+            },
+        ) { _, _, _, _, _, _, _, _, _ ->
+            var behandling = this@validere
+            behandling.inntekter = inntekter
+            behandling.husstandsbarn = husstandsbarn
+            behandling
+        }
+    }
