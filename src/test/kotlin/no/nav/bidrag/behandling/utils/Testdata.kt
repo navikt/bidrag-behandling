@@ -61,10 +61,10 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
         forsendelseId = forsendelseId,
         saksnummer = SAKSNUMMER,
         behandlingInfo =
-        BehandlingInfoResponseDto(
-            soknadId = SOKNAD_ID.toString(),
-            erFattet = false,
-        ),
+            BehandlingInfoResponseDto(
+                soknadId = SOKNAD_ID.toString(),
+                erFattet = false,
+            ),
         forsendelseType = ForsendelseTypeTo.UTGÅENDE,
         status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
     )

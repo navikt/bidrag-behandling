@@ -6,7 +6,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.notat.NotatDto
-import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBarn1
@@ -19,7 +18,6 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.Date
 
 class NotatOpplysningerControllerTest : KontrollerTestRunner() {
     @Test
@@ -70,22 +68,22 @@ class NotatOpplysningerControllerTest : KontrollerTestRunner() {
                 notatResponse.parterISøknad.find { it.personident?.verdi == testdataBarn1[Rolle::ident.name] as String }!!
             barn1.navn shouldBe testdataBarn1[Rolle::navn.name] as String
             barn1.rolle shouldBe Rolletype.BARN
-            barn1.fødselsdato?.toDate() shouldBe testdataBarn1[Rolle::foedselsdato.name] as Date
+            barn1.fødselsdato shouldBe testdataBarn1[Rolle::foedselsdato.name]
 
             val inntekterBM =
                 notatResponse.inntekter.inntekterPerRolle.find { it.rolle == Rolletype.BIDRAGSMOTTAKER }!!
             inntekterBM.inntekterSomLeggesTilGrunn shouldHaveSize 3
 
             notatResponse.boforhold.barn[0].navn shouldBeIn
-                listOf(
-                    testdataBarn1[Rolle::navn.name] as String,
-                    testdataBarn2[Rolle::navn.name] as String,
-                )
+                    listOf(
+                        testdataBarn1[Rolle::navn.name] as String,
+                        testdataBarn2[Rolle::navn.name] as String,
+                    )
             notatResponse.boforhold.barn[1].navn shouldBeIn
-                listOf(
-                    testdataBarn1[Rolle::navn.name] as String,
-                    testdataBarn2[Rolle::navn.name] as String,
-                )
+                    listOf(
+                        testdataBarn1[Rolle::navn.name] as String,
+                        testdataBarn2[Rolle::navn.name] as String,
+                    )
         }
     }
 }

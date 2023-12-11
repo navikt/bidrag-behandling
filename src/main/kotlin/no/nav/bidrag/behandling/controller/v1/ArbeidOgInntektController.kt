@@ -14,7 +14,7 @@ private val log = KotlinLogging.logger {}
 
 data class ArbeidOgInntektLenkeRequest(
     val behandlingId: Long,
-    val ident: String
+    val ident: String,
 )
 
 @BehandlingRestControllerV1
@@ -39,25 +39,27 @@ class ArbeidOgInntektController(
     private fun hentAinntektLenke(request: ArbeidOgInntektLenkeRequest): String {
         val behandling = behandlingService.hentBehandlingById(request.behandlingId)
         val kodeverkContext =
-            "${ainntektUrl}/redirect/sok/a-inntekt"
-        val restTemplate: RestTemplate = RestTemplateBuilder()
-            .defaultHeader(
-                "Nav-A-inntekt-Filter",
-                if (behandling.behandlingstype == Behandlingstype.FORSKUDD) "BidragsforskuddA-Inntekt" else "BidragA-Inntekt"
-            )
-            .defaultHeader("Nav-Enhet", behandling.behandlerEnhet)
-            .defaultHeader("Nav-FagsakId", behandling.saksnummer)
-            .defaultHeader("Nav-Personident", request.ident)
-            .build()
+            "$ainntektUrl/redirect/sok/a-inntekt"
+        val restTemplate: RestTemplate =
+            RestTemplateBuilder()
+                .defaultHeader(
+                    "Nav-A-inntekt-Filter",
+                    if (behandling.behandlingstype == Behandlingstype.FORSKUDD) "BidragsforskuddA-Inntekt" else "BidragA-Inntekt",
+                )
+                .defaultHeader("Nav-Enhet", behandling.behandlerEnhet)
+                .defaultHeader("Nav-FagsakId", behandling.saksnummer)
+                .defaultHeader("Nav-Personident", request.ident)
+                .build()
         return restTemplate.getForEntity<String>(kodeverkContext).body!!
     }
 
     private fun hentArbeidsforholdLenke(request: ArbeidOgInntektLenkeRequest): String {
         val kodeverkContext =
-            "${ainntektUrl}/redirect/sok/arbeidstaker"
-        val restTemplate: RestTemplate = RestTemplateBuilder()
-            .defaultHeader("Nav-Personident", request.ident)
-            .build()
+            "$ainntektUrl/redirect/sok/arbeidstaker"
+        val restTemplate: RestTemplate =
+            RestTemplateBuilder()
+                .defaultHeader("Nav-Personident", request.ident)
+                .build()
         return restTemplate.getForEntity<String>(kodeverkContext).body!!
     }
 }

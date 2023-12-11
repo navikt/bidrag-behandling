@@ -62,26 +62,26 @@ class NotatOpplysningerService(
         return NotatDto(
             saksnummer = behandling.saksnummer,
             saksbehandlerNavn =
-            TokenUtils.hentSaksbehandlerIdent()
-                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
+                TokenUtils.hentSaksbehandlerIdent()
+                    ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
             virkningstidspunkt = behandling.tilVirkningstidspunkt(),
             boforhold =
-            Boforhold(
-                notat = behandling.tilNotatBoforhold(),
-                sivilstand = behandling.tilSivilstand(sivilstandGrunnlag),
-                barn =
-                behandling.husstandsbarn.sortedBy { it.ident }
-                    .map { it.tilBoforholdBarn(husstandGrunnlag) },
-            ),
+                Boforhold(
+                    notat = behandling.tilNotatBoforhold(),
+                    sivilstand = behandling.tilSivilstand(sivilstandGrunnlag),
+                    barn =
+                        behandling.husstandsbarn.sortedBy { it.ident }
+                            .map { it.tilBoforholdBarn(husstandGrunnlag) },
+                ),
             parterISøknad = behandling.roller.map(Rolle::tilPartISøknad),
             inntekter =
-            Inntekter(
-                notat = behandling.tilNotatInntekt(),
-                inntekterPerRolle =
-                behandling.roller.map {
-                    behandling.hentInntekterForIdent(it.ident!!, it.rolletype, arbeidsforhold)
-                },
-            ),
+                Inntekter(
+                    notat = behandling.tilNotatInntekt(),
+                    inntekterPerRolle =
+                        behandling.roller.map {
+                            behandling.hentInntekterForIdent(it.ident!!, it.rolletype, arbeidsforhold)
+                        },
+                ),
             vedtak = emptyList(),
         )
     }
@@ -108,32 +108,32 @@ private fun Behandling.tilNotatInntekt() =
 private fun Behandling.tilSivilstand(sivilstandGrunnlag: List<JsonNode>) =
     SivilstandNotat(
         opplysningerBruktTilBeregning =
-        sivilstand.sortedBy { it.datoFom }
-            .map(Sivilstand::tilSivilstandsperiode),
+            sivilstand.sortedBy { it.datoFom }
+                .map(Sivilstand::tilSivilstandsperiode),
         opplysningerFraFolkeregisteret =
-        sivilstandGrunnlag.map { periode ->
-            OpplysningerFraFolkeregisteret(
-                periode =
-                ÅrMånedsperiode(
-                    periode.get("datoFom").asText().takeIf { date -> date != "null" }
-                        ?.let { date -> LocalDate.parse(date) } ?: LocalDate.now(),
-                    periode.get("datoTom").asText().takeIf { date -> date != "null" }
-                        ?.let { date -> LocalDate.parse(date) },
-                ),
-                status =
-                periode.get("sivilstand")?.asText()
-                    ?.let { it1 -> Sivilstandskode.valueOf(it1) },
-            )
-        }.sortedBy { it.periode?.fom },
+            sivilstandGrunnlag.map { periode ->
+                OpplysningerFraFolkeregisteret(
+                    periode =
+                        ÅrMånedsperiode(
+                            periode.get("datoFom").asText().takeIf { date -> date != "null" }
+                                ?.let { date -> LocalDate.parse(date) } ?: LocalDate.now(),
+                            periode.get("datoTom").asText().takeIf { date -> date != "null" }
+                                ?.let { date -> LocalDate.parse(date) },
+                        ),
+                    status =
+                        periode.get("sivilstand")?.asText()
+                            ?.let { it1 -> Sivilstandskode.valueOf(it1) },
+                )
+            }.sortedBy { it.periode?.fom },
     )
 
 private fun Sivilstand.tilSivilstandsperiode() =
     OpplysningerBruktTilBeregning(
         periode =
-        ÅrMånedsperiode(
-            datoFom!!,
-            datoTom,
-        ),
+            ÅrMånedsperiode(
+                datoFom!!,
+                datoTom,
+            ),
         status = sivilstand,
         kilde = kilde.name,
     )
@@ -152,38 +152,38 @@ private fun Husstandsbarn.tilBoforholdBarn(husstandGrunnlag: List<JsonNode>) =
     BoforholdBarn(
         navn = navn!!,
         fødselsdato =
-        foedselsdato
-            ?: hentPersonFødselsdato(ident),
+            foedselsdato
+                ?: hentPersonFødselsdato(ident),
         opplysningerFraFolkeregisteret =
-        husstandGrunnlag.filter {
-            it.get("ident").textValue() == this.ident
-        }.flatMap {
-            it.get("perioder")?.toList()?.map { periode ->
-                OpplysningerFraFolkeregisteret(
-                    periode =
-                    ÅrMånedsperiode(
-                        LocalDate.parse(periode.get("fraDato").asText().split("T")[0]),
-                        periode.get("tilDato").asText().takeIf { date -> date != "null" }
-                            ?.let { date -> LocalDate.parse(date.split("T")[0]) },
-                    ),
-                    status =
-                    periode.get("bostatus")?.asText()
-                        ?.let { it1 -> Bostatuskode.valueOf(it1) },
-                )
-            } ?: emptyList()
-        },
+            husstandGrunnlag.filter {
+                it.get("ident").textValue() == this.ident
+            }.flatMap {
+                it.get("perioder")?.toList()?.map { periode ->
+                    OpplysningerFraFolkeregisteret(
+                        periode =
+                            ÅrMånedsperiode(
+                                LocalDate.parse(periode.get("fraDato").asText().split("T")[0]),
+                                periode.get("tilDato").asText().takeIf { date -> date != "null" }
+                                    ?.let { date -> LocalDate.parse(date.split("T")[0]) },
+                            ),
+                        status =
+                            periode.get("bostatus")?.asText()
+                                ?.let { it1 -> Bostatuskode.valueOf(it1) },
+                    )
+                } ?: emptyList()
+            },
         opplysningerBruktTilBeregning =
-        perioder.sortedBy { it.datoFom }.map { periode ->
-            OpplysningerBruktTilBeregning(
-                periode =
-                ÅrMånedsperiode(
-                    periode.datoFom!!,
-                    periode.datoTom,
-                ),
-                status = periode.bostatus,
-                kilde = periode.kilde.name,
-            )
-        },
+            perioder.sortedBy { it.datoFom }.map { periode ->
+                OpplysningerBruktTilBeregning(
+                    periode =
+                        ÅrMånedsperiode(
+                            periode.datoFom!!,
+                            periode.datoTom,
+                        ),
+                    status = periode.bostatus,
+                    kilde = periode.kilde.name,
+                )
+            },
     )
 
 private fun Rolle.tilPartISøknad() =
@@ -197,59 +197,60 @@ private fun Rolle.tilPartISøknad() =
 private fun Behandling.hentInntekterForIdent(
     ident: String,
     rolle: Rolletype,
-    arbeidsforhold: List<ArbeidsforholdDto>
+    arbeidsforhold: List<ArbeidsforholdDto>,
 ) = InntekterPerRolle(
     rolle = rolle,
     inntekterSomLeggesTilGrunn =
-    inntekter.sortedBy { it.datoFom }
-        .filter { it.ident == ident && it.taMed }
-        .map {
-            InntekterSomLeggesTilGrunn(
-                beløp = it.belop,
-                periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
-                beskrivelse = it.inntektstype.name,
-                inntektType = it.inntektstype,
-            )
-        },
-    barnetillegg =
-    if (rolle == Rolletype.BIDRAGSMOTTAKER) {
-        barnetillegg.sortedBy { it.datoFom }
+        inntekter.sortedBy { it.datoFom }
+            .filter { it.ident == ident && it.taMed }
             .map {
-                Barnetillegg(
-                    periode =
-                    ÅrMånedsperiode(
-                        it.datoFom!!.toLocalDate(),
-                        it.datoTom?.toLocalDate(),
-                    ),
-                    beløp = it.barnetillegg,
-                )
-            }
-    } else {
-        emptyList()
-    },
-    utvidetBarnetrygd =
-    if (rolle == Rolletype.BIDRAGSMOTTAKER) {
-        utvidetBarnetrygd.sortedBy { it.datoFom }
-            .map {
-                UtvidetBarnetrygd(
-                    periode =
-                    ÅrMånedsperiode(
-                        it.datoFom!!,
-                        it.datoTom,
-                    ),
+                InntekterSomLeggesTilGrunn(
                     beløp = it.belop,
+                    periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                    beskrivelse = it.inntektstype.name,
+                    inntektType = it.inntektstype,
                 )
-            }
-    } else {
-        emptyList()
-    },
-    arbeidsforhold = arbeidsforhold.filter { it.partPersonId == ident }
-        .map {
-            Arbeidsforhold(
-                periode = ÅrMånedsperiode(it.startdato!!, it.sluttdato),
-                arbeidsgiver = it.arbeidsgiverNavn ?: "-",
-                stillingProsent = it.ansettelsesdetaljer?.firstOrNull()?.avtaltStillingsprosent?.toString(),
-                lønnsendringDato = it.ansettelsesdetaljer?.firstOrNull()?.sisteLønnsendringDato
-            )
+            },
+    barnetillegg =
+        if (rolle == Rolletype.BIDRAGSMOTTAKER) {
+            barnetillegg.sortedBy { it.datoFom }
+                .map {
+                    Barnetillegg(
+                        periode =
+                            ÅrMånedsperiode(
+                                it.datoFom!!.toLocalDate(),
+                                it.datoTom?.toLocalDate(),
+                            ),
+                        beløp = it.barnetillegg,
+                    )
+                }
+        } else {
+            emptyList()
         },
+    utvidetBarnetrygd =
+        if (rolle == Rolletype.BIDRAGSMOTTAKER) {
+            utvidetBarnetrygd.sortedBy { it.datoFom }
+                .map {
+                    UtvidetBarnetrygd(
+                        periode =
+                            ÅrMånedsperiode(
+                                it.datoFom!!,
+                                it.datoTom,
+                            ),
+                        beløp = it.belop,
+                    )
+                }
+        } else {
+            emptyList()
+        },
+    arbeidsforhold =
+        arbeidsforhold.filter { it.partPersonId == ident }
+            .map {
+                Arbeidsforhold(
+                    periode = ÅrMånedsperiode(it.startdato!!, it.sluttdato),
+                    arbeidsgiver = it.arbeidsgiverNavn ?: "-",
+                    stillingProsent = it.ansettelsesdetaljer?.firstOrNull()?.avtaltStillingsprosent?.toString(),
+                    lønnsendringDato = it.ansettelsesdetaljer?.firstOrNull()?.sisteLønnsendringDato,
+                )
+            },
 )
