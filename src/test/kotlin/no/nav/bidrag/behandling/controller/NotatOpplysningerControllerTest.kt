@@ -75,15 +75,15 @@ class NotatOpplysningerControllerTest : KontrollerTestRunner() {
             inntekterBM.inntekterSomLeggesTilGrunn shouldHaveSize 3
 
             notatResponse.boforhold.barn[0].navn shouldBeIn
-                    listOf(
-                        testdataBarn1[Rolle::navn.name] as String,
-                        testdataBarn2[Rolle::navn.name] as String,
-                    )
+                listOf(
+                    testdataBarn1[Rolle::navn.name] as String,
+                    testdataBarn2[Rolle::navn.name] as String,
+                )
             notatResponse.boforhold.barn[1].navn shouldBeIn
-                    listOf(
-                        testdataBarn1[Rolle::navn.name] as String,
-                        testdataBarn2[Rolle::navn.name] as String,
-                    )
+                listOf(
+                    testdataBarn1[Rolle::navn.name] as String,
+                    testdataBarn2[Rolle::navn.name] as String,
+                )
         }
     }
 }
