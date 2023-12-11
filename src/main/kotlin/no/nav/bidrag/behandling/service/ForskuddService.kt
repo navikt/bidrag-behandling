@@ -20,7 +20,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -33,7 +32,8 @@ class ForskuddService(
     fun beregneForskudd(behandlingsid: Long): Forskuddsberegningrespons {
         val respons =
             either {
-                val behandling = behandlingService.hentBehandlingById(behandlingsid).validere().bind()
+                val behandling =
+                    behandlingService.hentBehandlingById(behandlingsid).validere().bind()
                 val resultat =
                     behandling.getSøknadsbarn().mapOrAccumulate {
                         val fødselsdato = finneFødselsdato(it.ident, it.foedselsdato)
@@ -43,7 +43,9 @@ class ForskuddService(
                             fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid)
                         }
 
-                        val rolleBm = behandling.roller.filter { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }.first()
+                        val rolleBm =
+                            behandling.roller.filter { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }
+                                .first()
                         val bm =
                             lagePersonobjekt(
                                 rolleBm.ident,
@@ -51,9 +53,12 @@ class ForskuddService(
                                 rolleBm.foedselsdato,
                                 "bidragsmottaker",
                             )
-                        val søknadsbarn = lagePersonobjekt(it.ident, it.navn, fødselsdato, "søknadsbarn-${it.id}")
-                        val øvrigeBarnIHusstand = oppretteGrunnlagForHusstandsbarn(behandling, it.ident!!)
-                        var beregnForskudd = behandling.tilBeregnGrunnlag(bm, søknadsbarn, øvrigeBarnIHusstand)
+                        val søknadsbarn =
+                            lagePersonobjekt(it.ident, it.navn, fødselsdato, "søknadsbarn-${it.id}")
+                        val øvrigeBarnIHusstand =
+                            oppretteGrunnlagForHusstandsbarn(behandling, it.ident!!)
+                        var beregnForskudd =
+                            behandling.tilBeregnGrunnlag(bm, søknadsbarn, øvrigeBarnIHusstand)
 
                         try {
                             bidragBeregnForskuddConsumer.beregnForskudd(beregnForskudd)
@@ -125,8 +130,7 @@ class ForskuddService(
         fødselsdato: LocalDate?,
     ): LocalDate? {
         return if (fødselsdato == null && ident != null) {
-            val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-            LocalDate.parse(bidragPersonConsumer.hentPerson(ident).fødselsdato, formatter)
+            hentPersonFødselsdato(ident)
         } else {
             fødselsdato
         }

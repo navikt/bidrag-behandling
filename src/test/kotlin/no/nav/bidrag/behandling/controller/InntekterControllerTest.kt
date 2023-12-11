@@ -4,20 +4,13 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import jakarta.persistence.EntityManager
-import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
 import no.nav.bidrag.behandling.dto.inntekt.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
-import org.hibernate.engine.spi.SessionImplementor
-import org.hibernate.resource.transaction.spi.TransactionStatus
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -39,9 +32,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingService: BehandlingService
 
-    @Autowired
-    lateinit var entityManager: EntityManager
-
     @BeforeEach
     fun oppsett() {
         behandlingRepository.deleteAll()
@@ -53,19 +43,12 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Test
         fun `skal hente inntekter for behandling`() {
             // given
-            var behandling = behandlingRepository.save(behandling())
-
-            var inntekt = inntekt(behandling)
-            inntekt.inntektsposter = inntektsposter(inntekt)
-            behandling.inntekter = setOf(inntekt).toMutableSet()
-            behandlingRepository.save(behandling)
-
-            var lagretBehandlingMedInntekter = behandlingRepository.findAll().iterator().next()
+            val behandling = testdataManager.opprettBehandling()
 
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
+                    "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     InntekterResponse::class.java,
@@ -76,23 +59,19 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body!!.inntekter.size shouldBeExactly 1
+                r1.body!!.inntekter.size shouldBeExactly 3
             }
         }
 
         @Test
         fun `skal returnere tom liste av inntekter for behandling som mangler inntekter`() {
             // given
-            var behandling = behandling()
-
-            behandlingRepository.save(behandling)
-
-            var lagretBehandlingUtenInntekter = behandlingRepository.findAll().iterator().next()
+            val behandling = testdataManager.opprettBehandling(false)
 
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${lagretBehandlingUtenInntekter.id}/inntekter",
+                    "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     InntekterResponse::class.java,
@@ -115,17 +94,16 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Transactional
         open fun `skal opprette inntekter`() {
             // given
-            lagreBehandlingIEgenTransaksjon(false)
-            var lagretBehandlingUtenInntekter = behandlingRepository.findAll().iterator().next()
+            val behandling = testdataManager.opprettBehandling(false)
 
-            assert(lagretBehandlingUtenInntekter.inntekter.size == 0)
+            assert(behandling.inntekter.size == 0)
 
             val inn = testInntektDto()
 
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${lagretBehandlingUtenInntekter.id}/inntekter",
+                    "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
                     HttpEntity(OppdatereInntekterRequest(setOf(inn), emptySet(), emptySet())),
                     InntekterResponse::class.java,
@@ -140,10 +118,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Transactional
         open fun `skal oppdatere eksisterende inntekter`() {
             // given
-            lagreBehandlingIEgenTransaksjon(true)
-            var lagretBehandlingMedInntekter = behandlingRepository.findAll().iterator().next()
+            val behandling = testdataManager.opprettBehandling(true)
 
-            assert(lagretBehandlingMedInntekter.inntekter.size > 0)
+            assert(behandling.inntekter.size > 0)
 
             // when
             val inntekt1 =
@@ -164,9 +141,15 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
+                    "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
-                    HttpEntity(OppdatereInntekterRequest(setOf(inntekt1, inntekt2), setOf(), setOf())),
+                    HttpEntity(
+                        OppdatereInntekterRequest(
+                            setOf(inntekt1, inntekt2),
+                            setOf(),
+                            setOf(),
+                        ),
+                    ),
                     InntekterResponse::class.java,
                 )
 
@@ -186,15 +169,14 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Transactional
         open fun `skal slette inntekter`() {
             // given
-            lagreBehandlingIEgenTransaksjon(true)
-            var lagretBehandlingMedInntekter = behandlingRepository.findAll().iterator().next()
+            val behandling = testdataManager.opprettBehandling(true)
 
-            assert(lagretBehandlingMedInntekter.inntekter.size > 0)
+            assert(behandling.inntekter.size > 0)
 
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${lagretBehandlingMedInntekter.id}/inntekter",
+                    "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
                     HttpEntity(OppdatereInntekterRequest(emptySet(), emptySet(), emptySet())),
                     InntekterResponse::class.java,
@@ -205,49 +187,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
             assertEquals(0, r.body!!.inntekter.size)
         }
     }
-
-    private fun lagreBehandlingIEgenTransaksjon(inkludereInntekter: Boolean) {
-        val sessionImplementor = entityManager.delegate as SessionImplementor
-        var transaction = sessionImplementor.transaction
-
-        var transactionStatus = transaction.status
-        if (TransactionStatus.NOT_ACTIVE == transactionStatus) {
-            transaction.begin()
-        }
-
-        var behandling = behandling()
-
-        if (inkludereInntekter) {
-            var inntekt = inntekt(behandling)
-            inntekt.inntektsposter = inntektsposter(inntekt)
-            behandling.inntekter = setOf(inntekt).toMutableSet()
-        }
-
-        entityManager?.persist(behandling)
-        transaction.commit()
-    }
-
-    private fun inntekt(behandling: Behandling) =
-        Inntekt(
-            Inntektsrapportering.INNTEKTSOPPLYSNINGER_ARBEIDSGIVER,
-            BigDecimal.valueOf(45000),
-            LocalDate.now().minusYears(1).withDayOfYear(1),
-            LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
-            "1234",
-            true,
-            true,
-            behandling = behandling,
-        )
-
-    private fun inntektsposter(inntekt: Inntekt): MutableSet<Inntektspost> =
-        setOf(
-            Inntektspost(
-                BigDecimal.valueOf(400000),
-                "lønnFraFluefiske",
-                "Lønn fra fluefiske",
-                inntekt = inntekt,
-            ),
-        ).toMutableSet()
 
     private fun testInntektDto() =
         InntektDto(
@@ -261,14 +200,4 @@ class InntekterControllerTest : KontrollerTestRunner() {
             true,
             setOf(InntektPost("ABC", "ABC", BigDecimal.TEN)),
         )
-
-    private fun behandling(): Behandling {
-        val behandling: Behandling =
-            behandlingRepository.save(
-                oppretteBehandling(),
-            )
-        return behandling
-    }
-
-    fun createBehandling(): Behandling = behandlingService.createBehandling(behandling())
 }

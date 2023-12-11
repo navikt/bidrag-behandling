@@ -14,6 +14,7 @@ env:
   BIDRAG_TILGANGGSKONTROLL_SCOPE: prod-gcp.bidrag.bidrag-tilgangskontroll
   BIDRAG_ORGANISASJON_SCOPE: prod-fss.bidrag.bidrag-organisasjon
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon.prod-fss-pub.nais.io/bidrag-organisasjon
+  ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt.prod-fss-pub.nais.io/api/v2
   TOPIC_VEDTAK: bidrag.vedtak
 kafka:
   pool: nav-prod
@@ -42,3 +43,4 @@ outbound-access-apps:
 outbound-access-hosts:
   - bidrag-person.prod-fss-pub.nais.io
   - bidrag-organisasjon.prod-fss-pub.nais.io
+  - arbeid-og-inntekt.prod-fss-pub.nais.io

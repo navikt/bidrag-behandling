@@ -15,6 +15,7 @@ env:
   TOPIC_VEDTAK: bidrag.vedtak-feature
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
+  ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt-q1.dev-fss-pub.nais.io/api/v2
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
   pool: nav-dev
@@ -43,3 +44,4 @@ outbound-access-apps:
 outbound-access-hosts:
   - bidrag-person-feature.dev-fss-pub.nais.io
   - bidrag-organisasjon-feature.dev-fss-pub.nais.io
+  - arbeid-og-inntekt-q1.dev-fss-pub.nais.io

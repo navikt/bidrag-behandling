@@ -7,13 +7,13 @@ import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
 import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
 import java.util.Date
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class OpplysningerServiceTest : TestContainerRunner() {
     @Autowired
@@ -25,7 +25,7 @@ class OpplysningerServiceTest : TestContainerRunner() {
     @Test
     fun `hente opplysninger`() {
         val res = opplysningerService.hentSistAktiv(1, OpplysningerType.BOFORHOLD)
-        assertFalse(res.isPresent)
+        assertNull(res)
     }
 
     @Test
@@ -52,9 +52,9 @@ class OpplysningerServiceTest : TestContainerRunner() {
             )
         val opp4 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
 
-        val option = opplysningerService.hentSistAktiv(b.id!!, OpplysningerType.BOFORHOLD)
+        val opplysninger = opplysningerService.hentSistAktiv(b.id!!, OpplysningerType.BOFORHOLD)
 
-        assertTrue(option.isPresent)
-        assertEquals(opp4.id, option.get().id)
+        assertNotNull(opplysninger)
+        assertEquals(opp4.id, opplysninger.id)
     }
 }

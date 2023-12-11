@@ -41,7 +41,12 @@ class DeprecatedOpplysningerController(val opplysningerService: OpplysningerServ
         @RequestBody(required = true) addOpplysningerRequest: AddOpplysningerRequest,
     ): OpplysningerDto {
         val (_, _, opplysningerType, data, hentetDato) = addOpplysningerRequest
-        return opplysningerService.opprett(behandlingId, opplysningerType, data, hentetDato.toDate())
+        return opplysningerService.opprett(
+            behandlingId,
+            opplysningerType,
+            data,
+            hentetDato.toDate(),
+        )
             .toDto()
     }
 
@@ -69,6 +74,6 @@ class DeprecatedOpplysningerController(val opplysningerService: OpplysningerServ
         return opplysningerService.hentSistAktiv(
             behandlingId,
             opplysningerType,
-        ).orElseThrow { behandlingNotFoundException(behandlingId) }.toDto()
+        )?.toDto() ?: behandlingNotFoundException(behandlingId)
     }
 }
