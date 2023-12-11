@@ -93,7 +93,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
         personident: String,
         navn: String = "Navn Navnesen",
-        shouldContaintPersonIdent: Boolean = false
+        shouldContaintPersonIdent: Boolean = false,
     ) {
         var postRequest = WireMock.post(WireMock.urlMatching("/bidrag-person/informasjon"))
 
@@ -129,19 +129,19 @@ class StubUtils {
                             toJsonString(
                                 BeregnGrunnlag(
                                     periode =
-                                    ÅrMånedsperiode(
-                                        LocalDate.now().minusMonths(6),
-                                        LocalDate.now().plusMonths(6),
-                                    ),
+                                        ÅrMånedsperiode(
+                                            LocalDate.now().minusMonths(6),
+                                            LocalDate.now().plusMonths(6),
+                                        ),
                                     søknadsbarnReferanse = "123",
                                     grunnlagListe =
-                                    listOf(
-                                        Grunnlag(
-                                            referanse = "abra_cadabra",
-                                            type = Grunnlagstype.BARNETILLEGG,
-                                            grunnlagsreferanseListe = listOf("123"),
+                                        listOf(
+                                            Grunnlag(
+                                                referanse = "abra_cadabra",
+                                                type = Grunnlagstype.BARNETILLEGG,
+                                                grunnlagsreferanseListe = listOf("123"),
+                                            ),
                                         ),
-                                    ),
                                 ),
                             ),
                         ),

@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
 import no.nav.bidrag.behandling.dto.inntekt.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -20,6 +21,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -141,7 +143,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUri()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
-                    HttpEntity(OppdatereInntekterRequest(setOf(inntekt1, inntekt2), setOf(), setOf())),
+                    HttpEntity(
+                        OppdatereInntekterRequest(
+                            setOf(inntekt1, inntekt2),
+                            setOf(),
+                            setOf(),
+                        ),
+                    ),
                     InntekterResponse::class.java,
                 )
 

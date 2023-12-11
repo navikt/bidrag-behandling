@@ -6,14 +6,18 @@ import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
-import no.nav.bidrag.behandling.database.datamodell.HusstandsBarn
-import no.nav.bidrag.behandling.database.datamodell.HusstandsBarnPeriode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.InntektPostDomain
+import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -21,7 +25,6 @@ import no.nav.bidrag.domene.ident.Personident
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.Date
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
@@ -33,24 +36,24 @@ val testdataBM =
     mapOf(
         Rolle::navn.name to "Oran Mappe",
         Rolle::ident.name to "1232134544",
-        Rolle::rolleType.name to Rolletype.BIDRAGSMOTTAKER,
-        Rolle::fodtDato.name to LocalDate.parse("2020-03-01").toDate(),
+        Rolle::rolletype.name to Rolletype.BIDRAGSMOTTAKER,
+        Rolle::foedselsdato.name to LocalDate.parse("2020-03-01"),
     )
 
 val testdataBarn1 =
     mapOf<String, Any>(
         Rolle::navn.name to "Kran Mappe",
         Rolle::ident.name to "6216464366",
-        Rolle::rolleType.name to Rolletype.BARN,
-        Rolle::fodtDato.name to LocalDate.parse("2020-03-01").toDate(),
+        Rolle::rolletype.name to Rolletype.BARN,
+        Rolle::foedselsdato.name to LocalDate.parse("2020-03-01"),
     )
 
 val testdataBarn2 =
     mapOf<String, Any>(
         Rolle::navn.name to "Gran Mappe",
         Rolle::ident.name to "123312312",
-        Rolle::rolleType.name to Rolletype.BARN,
-        Rolle::fodtDato.name to LocalDate.parse("2018-05-09").toDate(),
+        Rolle::rolletype.name to Rolletype.BARN,
+        Rolle::foedselsdato.name to LocalDate.parse("2018-05-09"),
     )
 
 fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
@@ -58,10 +61,10 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
         forsendelseId = forsendelseId,
         saksnummer = SAKSNUMMER,
         behandlingInfo =
-            BehandlingInfoResponseDto(
-                soknadId = SOKNAD_ID.toString(),
-                erFattet = false,
-            ),
+        BehandlingInfoResponseDto(
+            soknadId = SOKNAD_ID.toString(),
+            erFattet = false,
+        ),
         forsendelseType = ForsendelseTypeTo.UTGÅENDE,
         status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
     )
@@ -69,10 +72,10 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
 fun oppretteBehandling(): Behandling {
     return Behandling(
         Behandlingstype.FORSKUDD,
-        SoknadType.FASTSETTELSE,
-        datoFom = YearMonth.parse("2022-08").atEndOfMonth().toDate(),
-        datoTom = YearMonth.now().plusMonths(10).atEndOfMonth().toDate(),
-        mottatDato = LocalDate.parse("2023-03-15").toDate(),
+        Soknadstype.FASTSETTELSE,
+        datoFom = YearMonth.parse("2022-08").atEndOfMonth(),
+        datoTom = YearMonth.now().plusMonths(10).atEndOfMonth(),
+        mottattdato = LocalDate.parse("2023-03-15"),
         SAKSNUMMER,
         SOKNAD_ID,
         null,
@@ -83,7 +86,7 @@ fun oppretteBehandling(): Behandling {
         SøktAvType.BIDRAGSMOTTAKER,
         Stønadstype.FORSKUDD,
         null,
-        virkningsDato = LocalDate.parse("2023-02-01").toDate(),
+        virkningsdato = LocalDate.parse("2023-02-01"),
     )
 }
 
@@ -91,10 +94,10 @@ fun opprettInntekt(
     behandling: Behandling,
     data: Map<String, Any>,
 ) = Inntekt(
-    Inntektsrapportering.AINNTEKT_BEREGNET_12MND.name,
+    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
     BigDecimal.valueOf(45000),
-    LocalDate.now().minusYears(1).withDayOfYear(1).toDate(),
-    LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31).toDate(),
+    LocalDate.now().minusYears(1).withDayOfYear(1),
+    LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
     data[Rolle::ident.name] as String,
     true,
     true,
@@ -106,30 +109,30 @@ fun opprettInntekter(
     data: Map<String, Any>,
 ) = mutableSetOf(
     Inntekt(
-        Inntektsrapportering.AINNTEKT_BEREGNET_12MND.name,
+        Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
         BigDecimal.valueOf(45000),
-        LocalDate.parse("2023-01-01").toDate(),
-        LocalDate.parse("2023-12-31").toDate(),
+        LocalDate.parse("2023-01-01"),
+        LocalDate.parse("2023-12-31"),
         data[Rolle::ident.name] as String,
         true,
         true,
         behandling = behandling,
     ),
     Inntekt(
-        Inntektsrapportering.LIGNINGSINNTEKT.name,
+        Inntektsrapportering.LIGNINGSINNTEKT,
         BigDecimal.valueOf(33000),
-        LocalDate.parse("2023-01-01").toDate(),
-        LocalDate.parse("2023-12-31").toDate(),
+        LocalDate.parse("2023-01-01"),
+        LocalDate.parse("2023-12-31"),
         data[Rolle::ident.name] as String,
         true,
         true,
         behandling = behandling,
     ),
     Inntekt(
-        Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT.name,
+        Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
         BigDecimal.valueOf(55000),
-        LocalDate.parse("2022-01-01").toDate(),
-        LocalDate.parse("2022-12-31").toDate(),
+        LocalDate.parse("2022-01-01"),
+        LocalDate.parse("2022-12-31"),
         data[Rolle::ident.name] as String,
         false,
         true,
@@ -137,9 +140,9 @@ fun opprettInntekter(
     ),
 )
 
-fun opprettInntektsposter(inntekt: Inntekt): MutableSet<InntektPostDomain> =
+fun opprettInntektsposter(inntekt: Inntekt): MutableSet<Inntektspost> =
     setOf(
-        InntektPostDomain(
+        Inntektspost(
             BigDecimal.valueOf(400000),
             "lønnFraFluefiske",
             "Lønn fra fluefiske",
@@ -155,8 +158,8 @@ fun opprettSivilstand(
 ): Sivilstand {
     return Sivilstand(
         behandling = behandling,
-        datoFom = datoFom.toDate(),
-        datoTom = datoTom?.toDate(),
+        datoFom = datoFom,
+        datoTom = datoTom,
         sivilstand = sivilstand,
         kilde = Kilde.OFFENTLIG,
     )
@@ -169,40 +172,40 @@ fun opprettRolle(
     return Rolle(
         navn = data[Rolle::navn.name] as String,
         ident = data[Rolle::ident.name] as String,
-        rolleType = data[Rolle::rolleType.name] as Rolletype,
+        rolletype = data[Rolle::rolletype.name] as Rolletype,
         behandling = behandling,
-        fodtDato = data[Rolle::fodtDato.name] as Date,
-        opprettetDato = LocalDate.now().toDate(),
+        foedselsdato = data[Rolle::foedselsdato.name] as LocalDate,
+        opprettetDato = LocalDate.now(),
     )
 }
 
 fun opprettHusstandsbarn(
     behandling: Behandling,
     data: Map<String, Any>,
-): HusstandsBarn {
+): Husstandsbarn {
     val husstandsbarn =
-        HusstandsBarn(
+        Husstandsbarn(
             navn = data[Rolle::navn.name] as String,
             ident = data[Rolle::ident.name] as String,
             medISaken = true,
             behandling = behandling,
-            foedselsDato = data[Rolle::fodtDato.name] as Date,
+            foedselsdato = data[Rolle::foedselsdato.name] as LocalDate,
         )
     husstandsbarn.perioder =
         mutableSetOf(
-            HusstandsBarnPeriode(
-                datoFom = LocalDate.parse("2023-01-01").toDate(),
-                datoTom = LocalDate.parse("2023-05-31").toDate(),
+            Husstandsbarnperiode(
+                datoFom = LocalDate.parse("2023-01-01"),
+                datoTom = LocalDate.parse("2023-05-31"),
                 bostatus = Bostatuskode.MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
-                husstandsBarn = husstandsbarn,
+                husstandsbarn = husstandsbarn,
             ),
-            HusstandsBarnPeriode(
-                datoFom = LocalDate.parse("2023-05-31").toDate(),
+            Husstandsbarnperiode(
+                datoFom = LocalDate.parse("2023-05-31"),
                 datoTom = null,
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
-                husstandsBarn = husstandsbarn,
+                husstandsbarn = husstandsbarn,
             ),
         )
     return husstandsbarn

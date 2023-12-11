@@ -45,7 +45,7 @@ fun Behandling.tilGrunnlagSivilstand(bm: Grunnlag): Set<Grunnlag> {
             innhold =
                 POJONode(
                     SivilstandPeriode(
-                        sivilstand = it.sivilstand.tilSivilstandskodeForBeregning(),
+                        sivilstand = it.sivilstand,
                         periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
                     ),
                 ),
@@ -58,8 +58,13 @@ fun Behandling.tilGrunnlagBostatus(grunnlagBarn: Set<Grunnlag>): Set<Grunnlag> {
     val mapper = jacksonObjectMapper()
     grunnlagBarn.forEach {
         val barn = mapper.treeToValue(it.innhold, Person::class.java)
-        val bostatusperioderForBarn = this.husstandsbarn.filter { hb -> hb.ident == barn.ident.verdi }.first()
-        bostatusperiodegrunnlag + oppretteGrunnlagForBostatusperioder(it.referanse!!, bostatusperioderForBarn.perioder)
+        val bostatusperioderForBarn =
+            this.husstandsbarn.filter { hb -> hb.ident == barn.ident.verdi }.first()
+        bostatusperiodegrunnlag +
+            oppretteGrunnlagForBostatusperioder(
+                it.referanse!!,
+                bostatusperioderForBarn.perioder,
+            )
     }
     return bostatusperiodegrunnlag
 }

@@ -28,17 +28,17 @@ class NotatOpplysningerControllerTest : KontrollerTestRunner() {
         stubUtils.stubHentePersoninfo(
             personident = testdataBM[Rolle::ident.name] as String,
             navn = testdataBM[Rolle::navn.name] as String,
-            shouldContaintPersonIdent = true
+            shouldContaintPersonIdent = true,
         )
         stubUtils.stubHentePersoninfo(
             personident = testdataBarn1[Rolle::ident.name] as String,
             navn = testdataBarn1[Rolle::navn.name] as String,
-            shouldContaintPersonIdent = true
+            shouldContaintPersonIdent = true,
         )
         stubUtils.stubHentePersoninfo(
             personident = testdataBarn2[Rolle::ident.name] as String,
             navn = testdataBarn2[Rolle::navn.name] as String,
-            shouldContaintPersonIdent = true
+            shouldContaintPersonIdent = true,
         )
         val r1 =
             httpHeaderTestRestTemplate.exchange(
@@ -70,21 +70,22 @@ class NotatOpplysningerControllerTest : KontrollerTestRunner() {
                 notatResponse.parterISøknad.find { it.personident?.verdi == testdataBarn1[Rolle::ident.name] as String }!!
             barn1.navn shouldBe testdataBarn1[Rolle::navn.name] as String
             barn1.rolle shouldBe Rolletype.BARN
-            barn1.fødselsdato?.toDate() shouldBe testdataBarn1[Rolle::fodtDato.name] as Date
+            barn1.fødselsdato?.toDate() shouldBe testdataBarn1[Rolle::foedselsdato.name] as Date
 
             val inntekterBM =
                 notatResponse.inntekter.inntekterPerRolle.find { it.rolle == Rolletype.BIDRAGSMOTTAKER }!!
             inntekterBM.inntekterSomLeggesTilGrunn shouldHaveSize 3
 
-            notatResponse.boforhold.barn[0].navn shouldBeIn listOf(
-                testdataBarn1[Rolle::navn.name] as String,
-                testdataBarn2[Rolle::navn.name] as String
-            )
-            notatResponse.boforhold.barn[1].navn shouldBeIn listOf(
-                testdataBarn1[Rolle::navn.name] as String,
-                testdataBarn2[Rolle::navn.name] as String
-            )
+            notatResponse.boforhold.barn[0].navn shouldBeIn
+                listOf(
+                    testdataBarn1[Rolle::navn.name] as String,
+                    testdataBarn2[Rolle::navn.name] as String,
+                )
+            notatResponse.boforhold.barn[1].navn shouldBeIn
+                listOf(
+                    testdataBarn1[Rolle::navn.name] as String,
+                    testdataBarn2[Rolle::navn.name] as String,
+                )
         }
-
     }
 }

@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import java.time.LocalDate
 
 // TODO: koble sammen med rolletabellen
@@ -19,7 +20,8 @@ class Sivilstand(
     val behandling: Behandling,
     val datoFom: LocalDate? = null,
     val datoTom: LocalDate? = null,
-    val sivilstand: String,
+    @Enumerated(EnumType.STRING)
+    val sivilstand: Sivilstandskode,
     @Enumerated(EnumType.STRING)
     val kilde: Kilde,
     @Id

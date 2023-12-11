@@ -12,9 +12,9 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun opprettBehandling(inkluderInntekter: Boolean = true): Behandling {
         val behandling = oppretteBehandling()
-        behandling.virkningsTidspunktBegrunnelseMedIVedtakNotat = "notat virkning med i vedtak"
-        behandling.virkningsTidspunktBegrunnelseKunINotat = "notat virkning"
-        behandling.husstandsBarn =
+        behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
+        behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
+        behandling.husstandsbarn =
             mutableSetOf(
                 opprettHusstandsbarn(behandling, testdataBarn1),
                 opprettHusstandsbarn(behandling, testdataBarn2),
@@ -44,7 +44,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
         if (inkluderInntekter) {
             behandling.inntekter = opprettInntekter(behandling, testdataBM)
             behandling.inntekter.forEach {
-                it.inntektPostListe = opprettInntektsposter(it)
+                it.inntektsposter = opprettInntektsposter(it)
             }
         }
 
