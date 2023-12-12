@@ -14,23 +14,23 @@ data class HusstandsbarnDto(
     @Schema(required = true)
     val perioder: Set<HusstandsBarnPeriodeDto>,
     val ident: String? = null,
-    val navn: String? = null,
+    var navn: String? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val foedselsdato: LocalDate? = null,
+    val foedselsdato: LocalDate,
+    val fødselsdato: LocalDate = foedselsdato,
 )
 
-fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
+fun Set<HusstandsbarnDto>.toHustandsbarndDto() :  Set<no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto> =
+
     this.map {
-        val barn =
-            Husstandsbarn(
-                behandling,
-                it.medISak,
-                it.id,
-                it.ident,
-                it.navn,
-                it.foedselsdato!!,
-            )
-        barn.perioder = it.perioder.toDomain(barn).toMutableSet()
-        barn
-    }.toMutableSet()
+        no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto(
+            id = it.id,
+            medISak = it.medISak,
+            perioder = it.perioder.toHusstandsbarnperiodeDto(),
+            ident = it.ident,
+            navn = it.navn,
+            fødselsdato = it.fødselsdato
+        )
+    }.toSet()
+
