@@ -57,6 +57,7 @@ enum class ForskuddAarsakType(val beskrivelse: String) {
     HF("Fra søknadstidspunkt"),
     BF("Fra samlivsbrudd"),
     KF("Fra samme måned som inntekten ble redusert"),
+    PA("Privat avtale"),
     QF("Revurdering måneden etter"),
     MF("Søknadstidspunkt endring"),
     PF("Tidligere feilaktig avslag"),
