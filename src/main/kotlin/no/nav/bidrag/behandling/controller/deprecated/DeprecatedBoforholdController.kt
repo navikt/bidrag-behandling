@@ -3,12 +3,10 @@ package no.nav.bidrag.behandling.controller.deprecated
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.deprecated.dto.BoforholdResponse
-import no.nav.bidrag.behandling.deprecated.dto.UpdateBoforholdRequest
-import no.nav.bidrag.behandling.deprecated.dto.toDomain
+import no.nav.bidrag.behandling.deprecated.dto.OppdatereBoforholdRequest
+import no.nav.bidrag.behandling.deprecated.dto.toHustandsbarndDto
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
-import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -26,16 +24,15 @@ class DeprecatedBoforholdController(private val behandlingService: BehandlingSer
     )
     fun oppdatereBoforhold(
         @PathVariable behandlingId: Long,
-        @RequestBody updateBoforholdRequest: UpdateBoforholdRequest,
+        @RequestBody updateBoforholdRequest: OppdatereBoforholdRequest,
     ): BoforholdResponse {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         behandlingService.updateBoforhold(
             behandlingId,
-            updateBoforholdRequest.husstandsBarn.toDomain(behandling),
-            updateBoforholdRequest.sivilstand.toSivilstandDomain(behandling),
-            updateBoforholdRequest.boforholdBegrunnelseKunINotat,
-            updateBoforholdRequest.boforholdBegrunnelseMedIVedtakNotat,
+            updateBoforholdRequest.husstandsBarn.toHustandsbarndDto(),
+            updateBoforholdRequest.sivilstand,
+            updateBoforholdRequest.boforholdsbegrunnelseKunINotat,
+            updateBoforholdRequest.boforholdsbegrunnelseIVedtakOgNotat,
         )
 
         val updatedBehandling = behandlingService.hentBehandlingById(behandlingId)

@@ -151,8 +151,8 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             behandlingService.updateBoforhold(
                 createdBehandling.id!!,
-                husstandsBarn.toDomain(createdBehandling),
-                sivilstand.toSivilstandDomain(createdBehandling),
+                husstandsBarn,
+                sivilstand,
                 notat,
                 medIVedtak,
             )

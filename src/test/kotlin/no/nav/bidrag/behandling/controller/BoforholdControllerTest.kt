@@ -65,7 +65,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
         // 2.2
         val boforholdData =
-            OppdatereBoforholdRequest(husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //
+            OppdatereBoforholdRequest(emptySet(), husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling/${behandling.body!!.id}/boforhold",

@@ -26,12 +26,11 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         @PathVariable behandlingId: Long,
         @RequestBody oppdatereBoforholdRequest: OppdatereBoforholdRequest,
     ): BoforholdResponse {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         behandlingService.updateBoforhold(
             behandlingId,
-            oppdatereBoforholdRequest.husstandsbarn.toDomain(behandling),
-            oppdatereBoforholdRequest.sivilstand.toSivilstandDomain(behandling),
+            oppdatereBoforholdRequest.husstandsbarn,
+            oppdatereBoforholdRequest.sivilstand,
             oppdatereBoforholdRequest.boforholdsbegrunnelseKunINotat,
             oppdatereBoforholdRequest.boforholdsbegrunnelseIVedtakOgNotat,
         )

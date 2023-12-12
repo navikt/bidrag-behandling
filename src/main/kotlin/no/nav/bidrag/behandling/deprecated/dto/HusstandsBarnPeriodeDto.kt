@@ -2,8 +2,6 @@ package no.nav.bidrag.behandling.deprecated.dto
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.time.LocalDate
@@ -22,13 +20,13 @@ data class HusstandsBarnPeriodeDto(
     val kilde: Kilde,
 )
 
-fun Set<HusstandsBarnPeriodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
+fun Set<HusstandsBarnPeriodeDto>.toHusstandsbarnperiodeDto(): Set<no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto> =
     this.map {
-        Husstandsbarnperiode(
-            husstandsBarn,
-            it.datoFom,
-            it.datoTom,
-            it.bostatus!!,
-            it.kilde,
+        no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto(
+            id = it.id,
+            datoFom = it.datoFom,
+            datoTom = it.datoTom,
+            bostatus = it.bostatus!!,
+            kilde = it.kilde,
         )
     }.toSet()
