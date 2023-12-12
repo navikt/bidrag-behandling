@@ -1,8 +1,11 @@
 package no.nav.bidrag.behandling.controller.v1
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.domene.ident.Personident
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.web.bind.annotation.PostMapping
@@ -22,21 +25,14 @@ class ArbeidOgInntektController(
     @Value("\${ARBEID_OG_INNTEKT_URL}") private val ainntektUrl: String,
     private val behandlingService: BehandlingService,
 ) {
-    @PostMapping("/arbeidOgInntekt/ainntekt")
-    fun ainntektLenke(
+    @PostMapping("/arbeidoginntekt/ainntekt")
+    @Operation(
+        description = "Generer lenke for ainntekt-søk med filter for behandling og personident oppgitt i forespørsel",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun genererAinntektLenke(
         @RequestBody request: ArbeidOgInntektLenkeRequest,
     ): String {
-        return hentAinntektLenke(request)
-    }
-
-    @PostMapping("/arbeidOgInntekt/arbeidsforhold")
-    fun arbeidsforholdLenke(
-        @RequestBody request: ArbeidOgInntektLenkeRequest,
-    ): String {
-        return hentArbeidsforholdLenke(request)
-    }
-
-    private fun hentAinntektLenke(request: ArbeidOgInntektLenkeRequest): String {
         val behandling = behandlingService.hentBehandlingById(request.behandlingId)
         val kodeverkContext =
             "$ainntektUrl/redirect/sok/a-inntekt"
@@ -53,12 +49,19 @@ class ArbeidOgInntektController(
         return restTemplate.getForEntity<String>(kodeverkContext).body!!
     }
 
-    private fun hentArbeidsforholdLenke(request: ArbeidOgInntektLenkeRequest): String {
+    @PostMapping("/arbeidoginntekt/aareg")
+    @Operation(
+        description = "Generer lenke for aareg-søk for personident oppgitt i forespørsel",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun genererAaregLenke(
+        @RequestBody request: Personident,
+    ): String {
         val kodeverkContext =
             "$ainntektUrl/redirect/sok/arbeidstaker"
         val restTemplate: RestTemplate =
             RestTemplateBuilder()
-                .defaultHeader("Nav-Personident", request.ident)
+                .defaultHeader("Nav-Personident", request.verdi)
                 .build()
         return restTemplate.getForEntity<String>(kodeverkContext).body!!
     }
