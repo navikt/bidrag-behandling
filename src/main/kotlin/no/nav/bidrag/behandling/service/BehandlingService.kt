@@ -10,16 +10,20 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilVedtakType
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
+import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toRolle
+import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.toUtvidetBarnetrygdDomain
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.springframework.stereotype.Service
@@ -161,28 +165,48 @@ class BehandlingService(
         virkningstidspunktbegrunnelseMedIVedtakOgNotat,
     )
 
+    @Transactional
     fun updateBoforhold(
         behandlingsid: Long,
-        husstandsbarn: MutableSet<Husstandsbarn>,
-        sivilstand: MutableSet<Sivilstand>,
+        husstandsbarn: Set<HusstandsbarnDto>,
+        sivilstand: Set<SivilstandDto>,
         boforholdsbegrunnelseKunINotat: String?,
         boforholdsbegrunnelseMedIVedtakOgNotat: String?,
-    ) = behandlingRepository.save(
-        behandlingRepository.findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }
-            .let {
-                it.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
-                it.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
+    ) {
 
-                it.husstandsbarn.clear()
-                it.husstandsbarn.addAll(husstandsbarn)
+        var behandling = hentBehandlingById(behandlingsid)
+        behandling.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
+        behandling.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
 
-                it.sivilstand.clear()
-                it.sivilstand.addAll(sivilstand)
+        behandling.husstandsbarn.clear()
+        behandling.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
 
-                it
-            },
-    )
+        behandling.husstandsbarn.clear()
+        behandling.husstandsbarn.addAll(husstandsbarn.toDomain(behandling))
+
+        behandling.sivilstand.clear()
+        behandling.sivilstand.addAll(sivilstand.toSivilstandDomain(behandling))
+
+        /*
+                behandlingRepository.save(
+                    behandlingRepository.findBehandlingById(behandlingsid)
+                        .orElseThrow { behandlingNotFoundException(behandlingsid) }
+                        .let {
+                            it.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
+                            it.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
+
+                            it.husstandsbarn.clear()
+                            it.husstandsbarn.addAll(husstandsbarn.toDomain(it))
+
+                            it.sivilstand.clear()
+                            it.sivilstand.addAll(sivilstand.toSivilstandDomain(it))
+
+                            it
+                        },
+                )
+
+         */
+    }
 
     @Transactional
     fun oppdaterVedtakId(

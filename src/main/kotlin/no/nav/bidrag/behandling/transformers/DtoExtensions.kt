@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
@@ -110,17 +111,35 @@ fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
         )
     }.toSet()
 
-fun Set<Husstandsbarn>.toHusstandsBarnDto() =
-    this.map {
+fun Set<Husstandsbarn>.toHusstandsBarnDto(): Set<HusstandsbarnDto> {
+
+    val offentlige = this.map {
         HusstandsbarnDto(
-            it.id!!,
+            it.id,
             it.medISaken,
-            it.perioder.toHusstandsBarnPeriodeDto(),
+            it.perioder.toHusstandsBarnPeriodeDto().filter { p -> p.kilde == Kilde.OFFENTLIG }
+                .sortedByDescending { p -> p.kilde }.sortedBy { periode -> periode.datoFom }.toSet(),
             it.ident,
             it.navn,
             it.foedselsdato,
         )
-    }.toSet()
+    }.sortedBy { barn -> barn.fødselsdato }.toSet()
+
+    val manuelle = this.map {
+        HusstandsbarnDto(
+            it.id,
+            it.medISaken,
+            it.perioder.toHusstandsBarnPeriodeDto().filter { p -> p.kilde != Kilde.OFFENTLIG }
+                .sortedByDescending { p -> p.kilde }.sortedBy { periode -> periode.datoFom }.toSet(),
+            it.ident,
+            it.navn,
+            it.foedselsdato,
+        )
+    }.sortedBy { barn -> barn.fødselsdato }.toMutableSet()
+
+    return offentlige + manuelle
+
+}
 
 fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
     this.map {

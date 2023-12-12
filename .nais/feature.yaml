@@ -7,7 +7,7 @@ env:
   BIDRAG_BEREGN_FORSKUDD_URL: http://bidrag-beregn-forskudd-rest
   BIDRAG_BEREGN_FORSKUDD_SCOPE: dev-gcp.bidrag.bidrag-beregn-forskudd-rest
   BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag-feature
-  BIDRAG_GRUNNLAG_URL_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
+  BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
   BIDRAG_FORSENDELSE_URL: http://bidrag-dokument-forsendelse-feature
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
