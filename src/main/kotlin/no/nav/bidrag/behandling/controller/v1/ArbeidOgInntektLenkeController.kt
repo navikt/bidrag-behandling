@@ -54,7 +54,9 @@ class ArbeidOgInntektController(
         description = "Generer lenke for aareg-søk for personident oppgitt i forespørsel",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun genererAaregLenke(@RequestBody request: Personident): String {
+    fun genererAaregLenke(
+        @RequestBody request: Personident,
+    ): String {
         val kodeverkContext =
             "$ainntektUrl/redirect/sok/arbeidstaker"
         val restTemplate: RestTemplate =
