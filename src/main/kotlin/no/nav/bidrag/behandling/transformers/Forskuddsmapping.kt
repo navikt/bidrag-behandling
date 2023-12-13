@@ -25,14 +25,15 @@ fun Behandling.tilBeregnGrunnlag(
 ): BeregnGrunnlag {
     val personobjekterBarn = listOf(søknadsbarn) + øvrigeBarnIHusstand
 
+    val bostatusBarn = this.tilGrunnlagBostatus(personobjekterBarn.toSet())
+    val inntektBm = this.tilGrunnlagInntekt(bm)
+    val sivilstandBm = this.tilGrunnlagSivilstand(bm)
+
     return BeregnGrunnlag(
         periode = ÅrMånedsperiode(this.virkningsdato!!, this.datoTom),
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
-            personobjekterBarn +
-                this.tilGrunnlagBostatus(
-                    personobjekterBarn.toSet(),
-                ) + this.tilGrunnlagInntekt(bm) + this.tilGrunnlagSivilstand(bm),
+        personobjekterBarn + bostatusBarn + inntektBm + sivilstandBm,
     )
 }
 
@@ -43,12 +44,12 @@ fun Behandling.tilGrunnlagSivilstand(bm: Grunnlag): Set<Grunnlag> {
             referanse = "sivilstand-${bm.referanse}",
             type = Grunnlagstype.SIVILSTAND_PERIODE,
             innhold =
-                POJONode(
-                    SivilstandPeriode(
-                        sivilstand = it.sivilstand.tilSivilstandskodeForBeregning(),
-                        periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
-                    ),
+            POJONode(
+                SivilstandPeriode(
+                    sivilstand = it.sivilstand.tilSivilstandskodeForBeregning(),
+                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
                 ),
+            ),
         )
     }.toSet()
 }
@@ -59,7 +60,7 @@ fun Behandling.tilGrunnlagBostatus(grunnlagBarn: Set<Grunnlag>): Set<Grunnlag> {
     grunnlagBarn.forEach {
         val barn = mapper.treeToValue(it.innhold, Person::class.java)
         val bostatusperioderForBarn = this.husstandsbarn.filter { hb -> hb.ident == barn.ident.verdi }.first()
-        bostatusperiodegrunnlag + oppretteGrunnlagForBostatusperioder(it.referanse!!, bostatusperioderForBarn.perioder)
+        bostatusperiodegrunnlag.addAll(oppretteGrunnlagForBostatusperioder(it.referanse!!, bostatusperioderForBarn.perioder))
     }
     return bostatusperiodegrunnlag
 }
@@ -73,23 +74,24 @@ private fun oppretteGrunnlagForBostatusperioder(
     Bostatuskode.values().forEach {
         val husstandsbarnperioder = husstandsbarnperioder.filter { p -> p.bostatus == it }
         husstandsbarnperioder.forEach {
-            bostatusperiodegrunnlag +
+            bostatusperiodegrunnlag.add(
                 Grunnlag(
                     grunnlagsreferanseListe = listOf(personreferanse),
                     referanse = "bostatus-$personreferanse",
                     type = Grunnlagstype.BOSTATUS_PERIODE,
                     innhold =
-                        POJONode(
-                            BostatusPeriode(
-                                bostatus = it.bostatus!!,
-                                manueltRegistrert = it.kilde == Kilde.MANUELL,
-                                periode =
-                                    ÅrMånedsperiode(
-                                        it.datoFom!!, it.datoTom,
-                                    ),
+                    POJONode(
+                        BostatusPeriode(
+                            bostatus = it.bostatus!!,
+                            manueltRegistrert = it.kilde == Kilde.MANUELL,
+                            periode =
+                            ÅrMånedsperiode(
+                                it.datoFom!!, it.datoTom,
                             ),
                         ),
+                    ),
                 )
+            )
         }
     }
 
@@ -107,16 +109,16 @@ fun Behandling.tilGrunnlagInntekt(bm: Grunnlag): Set<Grunnlag> {
                 referanse = "Inntekt_${it.inntektstype}_${it.datoFom?.toCompactString()}",
                 grunnlagsreferanseListe = listOf(bm.referanse!!),
                 innhold =
-                    POJONode(
-                        BeregningInntektRapporteringPeriode(
-                            beløp = it.belop,
-                            periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
-                            inntektsrapportering = it.inntektstype,
-                            manueltRegistrert = !it.fraGrunnlag,
-                            valgt = it.taMed,
-                            gjelderBarn = null,
-                        ),
+                POJONode(
+                    BeregningInntektRapporteringPeriode(
+                        beløp = it.belop,
+                        periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                        inntektsrapportering = it.inntektstype,
+                        manueltRegistrert = !it.fraGrunnlag,
+                        valgt = it.taMed,
+                        gjelderBarn = null,
                     ),
+                ),
             )
         }.toSet()
 }
