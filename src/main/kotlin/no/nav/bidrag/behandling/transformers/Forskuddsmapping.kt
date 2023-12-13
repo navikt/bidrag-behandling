@@ -25,14 +25,15 @@ fun Behandling.tilBeregnGrunnlag(
 ): BeregnGrunnlag {
     val personobjekterBarn = listOf(søknadsbarn) + øvrigeBarnIHusstand
 
+    val bostatusBarn = this.tilGrunnlagBostatus(personobjekterBarn.toSet())
+    val inntektBm = this.tilGrunnlagInntekt(bm)
+    val sivilstandBm = this.tilGrunnlagSivilstand(bm)
+
     return BeregnGrunnlag(
-        periode = ÅrMånedsperiode(this.virkningsdato!!, this.datoTom),
+        periode = ÅrMånedsperiode(this.virkningsdato!!, this.datoTom.plusDays(1)),
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
-            personobjekterBarn +
-                this.tilGrunnlagBostatus(
-                    personobjekterBarn.toSet(),
-                ) + this.tilGrunnlagInntekt(bm) + this.tilGrunnlagSivilstand(bm),
+            personobjekterBarn + bostatusBarn + inntektBm + sivilstandBm,
     )
 }
 
@@ -54,19 +55,12 @@ fun Behandling.tilGrunnlagSivilstand(bm: Grunnlag): Set<Grunnlag> {
 }
 
 fun Behandling.tilGrunnlagBostatus(grunnlagBarn: Set<Grunnlag>): Set<Grunnlag> {
-    var bostatusperiodegrunnlag = mutableSetOf<Grunnlag>()
     val mapper = jacksonObjectMapper()
-    grunnlagBarn.forEach {
+    return grunnlagBarn.flatMap {
         val barn = mapper.treeToValue(it.innhold, Person::class.java)
-        val bostatusperioderForBarn =
-            this.husstandsbarn.filter { hb -> hb.ident == barn.ident.verdi }.first()
-        bostatusperiodegrunnlag +
-            oppretteGrunnlagForBostatusperioder(
-                it.referanse!!,
-                bostatusperioderForBarn.perioder,
-            )
-    }
-    return bostatusperiodegrunnlag
+        val bostatusperioderForBarn = this.husstandsbarn.filter { hb -> hb.ident == barn.ident.verdi }.first()
+        oppretteGrunnlagForBostatusperioder(it.referanse!!, bostatusperioderForBarn.perioder)
+    }.toSet()
 }
 
 private fun oppretteGrunnlagForBostatusperioder(
@@ -78,7 +72,7 @@ private fun oppretteGrunnlagForBostatusperioder(
     Bostatuskode.values().forEach {
         val husstandsbarnperioder = husstandsbarnperioder.filter { p -> p.bostatus == it }
         husstandsbarnperioder.forEach {
-            bostatusperiodegrunnlag +
+            bostatusperiodegrunnlag.add(
                 Grunnlag(
                     grunnlagsreferanseListe = listOf(personreferanse),
                     referanse = "bostatus-$personreferanse",
@@ -90,11 +84,13 @@ private fun oppretteGrunnlagForBostatusperioder(
                                 manueltRegistrert = it.kilde == Kilde.MANUELL,
                                 periode =
                                     ÅrMånedsperiode(
-                                        it.datoFom!!, it.datoTom,
+                                        it.datoFom!!,
+                                        it.datoTom?.plusDays(1),
                                     ),
                             ),
                         ),
-                )
+                ),
+            )
         }
     }
 
