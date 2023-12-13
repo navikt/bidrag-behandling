@@ -33,7 +33,7 @@ fun Behandling.tilBeregnGrunnlag(
         periode = ÅrMånedsperiode(this.virkningsdato!!, this.datoTom),
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
-        personobjekterBarn + bostatusBarn + inntektBm + sivilstandBm,
+            personobjekterBarn + bostatusBarn + inntektBm + sivilstandBm,
     )
 }
 
@@ -44,12 +44,12 @@ fun Behandling.tilGrunnlagSivilstand(bm: Grunnlag): Set<Grunnlag> {
             referanse = "sivilstand-${bm.referanse}",
             type = Grunnlagstype.SIVILSTAND_PERIODE,
             innhold =
-            POJONode(
-                SivilstandPeriode(
-                    sivilstand = it.sivilstand,
-                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
+                POJONode(
+                    SivilstandPeriode(
+                        sivilstand = it.sivilstand,
+                        periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
+                    ),
                 ),
-            ),
         )
     }.toSet()
 }
@@ -80,17 +80,18 @@ private fun oppretteGrunnlagForBostatusperioder(
                     referanse = "bostatus-$personreferanse",
                     type = Grunnlagstype.BOSTATUS_PERIODE,
                     innhold =
-                    POJONode(
-                        BostatusPeriode(
-                            bostatus = it.bostatus!!,
-                            manueltRegistrert = it.kilde == Kilde.MANUELL,
-                            periode =
-                            ÅrMånedsperiode(
-                                it.datoFom!!, it.datoTom,
+                        POJONode(
+                            BostatusPeriode(
+                                bostatus = it.bostatus!!,
+                                manueltRegistrert = it.kilde == Kilde.MANUELL,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        it.datoFom!!,
+                                        it.datoTom,
+                                    ),
                             ),
                         ),
-                    ),
-                )
+                ),
             )
         }
     }
@@ -109,16 +110,16 @@ fun Behandling.tilGrunnlagInntekt(bm: Grunnlag): Set<Grunnlag> {
                 referanse = "Inntekt_${it.inntektstype}_${it.datoFom?.toCompactString()}",
                 grunnlagsreferanseListe = listOf(bm.referanse!!),
                 innhold =
-                POJONode(
-                    BeregningInntektRapporteringPeriode(
-                        beløp = it.belop,
-                        periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
-                        inntektsrapportering = it.inntektstype,
-                        manueltRegistrert = !it.fraGrunnlag,
-                        valgt = it.taMed,
-                        gjelderBarn = null,
+                    POJONode(
+                        BeregningInntektRapporteringPeriode(
+                            beløp = it.belop,
+                            periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                            inntektsrapportering = it.inntektstype,
+                            manueltRegistrert = !it.fraGrunnlag,
+                            valgt = it.taMed,
+                            gjelderBarn = null,
+                        ),
                     ),
-                ),
             )
         }.toSet()
 }
