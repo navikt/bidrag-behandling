@@ -16,9 +16,29 @@ enum class Kilde {
 
 @Schema(enumAsRef = true)
 enum class OpplysningerType {
-    INNTEKTSOPPLYSNINGER,
+    /**Typer for opplysninger som er bearbeidet av frontend eller bidrag-inntekt*/
+    INNTEKT_BEARBEIDET,
+    BOFORHOLD_BEARBEIDET,
+
+    /**Typer for opplysninger hentet fra bidrag-grunnlag*/
+    INNTEKT,
+    ARBEIDSFORHOLD,
+    HUSSTANDSMEDLEMMER,
+    SIVILSTAND,
+
+    @Deprecated("", replaceWith = ReplaceWith("BOFORHOLD_BEARBEIDET"))
     BOFORHOLD,
+
+    @Deprecated("", replaceWith = ReplaceWith("INNTEKT_BEARBEIDET"))
+    INNTEKTSOPPLYSNINGER,
 }
+
+fun OpplysningerType.getOrMigrate() =
+    when (this) {
+        OpplysningerType.BOFORHOLD -> OpplysningerType.BOFORHOLD_BEARBEIDET
+        OpplysningerType.INNTEKTSOPPLYSNINGER -> OpplysningerType.INNTEKT_BEARBEIDET
+        else -> this
+    }
 
 @Schema(enumAsRef = true)
 enum class Behandlingstype {

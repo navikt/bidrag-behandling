@@ -8,6 +8,7 @@ import java.time.LocalDate
 data class VirkningstidspunktResponse(
     val virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
     val virkningstidspunktsbegrunnelseKunINotat: String? = null,
+    @Schema(name = "årsak")
     val årsak: ForskuddAarsakType? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")

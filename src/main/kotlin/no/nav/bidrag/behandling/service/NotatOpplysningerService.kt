@@ -1,14 +1,15 @@
 package no.nav.bidrag.behandling.service
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.hentData
+import no.nav.bidrag.behandling.database.opplysninger.BoforholdBearbeidet
+import no.nav.bidrag.behandling.database.opplysninger.BoforholdHusstandBearbeidet
+import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
+import no.nav.bidrag.behandling.database.opplysninger.SivilstandBearbeidet
 import no.nav.bidrag.behandling.dto.notat.Arbeidsforhold
 import no.nav.bidrag.behandling.dto.notat.Barnetillegg
 import no.nav.bidrag.behandling.dto.notat.Boforhold
@@ -27,17 +28,12 @@ import no.nav.bidrag.behandling.dto.notat.Virkningstidspunkt
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
-import no.nav.bidrag.domene.enums.person.Bostatuskode
-import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
 import org.springframework.stereotype.Service
-import java.time.LocalDate
 import java.time.YearMonth
-
-private val objectmapper = ObjectMapper().findAndRegisterModules().registerKotlinModule()
 
 @Service
 class NotatOpplysningerService(
@@ -46,19 +42,14 @@ class NotatOpplysningerService(
 ) {
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val opplysningerBoforholdJson =
-            opplysningerService.hentSistAktiv(behandlingId, OpplysningerType.BOFORHOLD)
-                ?.let { objectmapper.readTree(it.data) }
-        val husstandGrunnlag = opplysningerBoforholdJson?.get("husstand")?.toList() ?: emptyList()
-        val sivilstandGrunnlag =
-            opplysningerBoforholdJson?.get("sivilstand")?.toList() ?: emptyList()
+        val opplysningerBoforhold =
+            opplysningerService.hentSistAktiv(behandlingId, OpplysningerType.BOFORHOLD_BEARBEIDET)
+                ?.hentData()
+                ?: BoforholdBearbeidet()
 
-        val opplysningerInntektJson =
-            opplysningerService.hentSistAktiv(behandlingId, OpplysningerType.INNTEKTSOPPLYSNINGER)
-                ?.let { objectmapper.readTree(it.data) }
-        val arbeidsforhold: List<ArbeidsforholdDto> =
-            opplysningerInntektJson?.get("arbeidsforhold")?.toString()
-                ?.let { objectmapper.readValue(it) } ?: emptyList()
+        val opplysningerInntekt: InntektsopplysningerBearbeidet =
+            opplysningerService.hentSistAktiv(behandlingId, OpplysningerType.INNTEKT_BEARBEIDET)
+                .hentData() ?: InntektsopplysningerBearbeidet()
         return NotatDto(
             saksnummer = behandling.saksnummer,
             saksbehandlerNavn =
@@ -68,10 +59,10 @@ class NotatOpplysningerService(
             boforhold =
                 Boforhold(
                     notat = behandling.tilNotatBoforhold(),
-                    sivilstand = behandling.tilSivilstand(sivilstandGrunnlag),
+                    sivilstand = behandling.tilSivilstand(opplysningerBoforhold.sivilstand),
                     barn =
                         behandling.husstandsbarn.sortedBy { it.ident }
-                            .map { it.tilBoforholdBarn(husstandGrunnlag) },
+                            .map { it.tilBoforholdBarn(opplysningerBoforhold.husstand) },
                 ),
             parterISøknad = behandling.roller.map(Rolle::tilPartISøknad),
             inntekter =
@@ -79,7 +70,11 @@ class NotatOpplysningerService(
                     notat = behandling.tilNotatInntekt(),
                     inntekterPerRolle =
                         behandling.roller.map {
-                            behandling.hentInntekterForIdent(it.ident!!, it.rolletype, arbeidsforhold)
+                            behandling.hentInntekterForIdent(
+                                it.ident!!,
+                                it.rolletype,
+                                opplysningerInntekt.arbeidsforhold,
+                            )
                         },
                 ),
             vedtak = emptyList(),
@@ -105,24 +100,20 @@ private fun Behandling.tilNotatInntekt() =
         intern = inntektsbegrunnelseKunINotat,
     )
 
-private fun Behandling.tilSivilstand(sivilstandGrunnlag: List<JsonNode>) =
+private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandBearbeidet>) =
     SivilstandNotat(
         opplysningerBruktTilBeregning =
             sivilstand.sortedBy { it.datoFom }
                 .map(Sivilstand::tilSivilstandsperiode),
         opplysningerFraFolkeregisteret =
-            sivilstandGrunnlag.map { periode ->
+            sivilstandOpplysninger.map { periode ->
                 OpplysningerFraFolkeregisteret(
                     periode =
                         ÅrMånedsperiode(
-                            periode.get("datoFom").asText().takeIf { date -> date != "null" }
-                                ?.let { date -> LocalDate.parse(date) } ?: LocalDate.now(),
-                            periode.get("datoTom").asText().takeIf { date -> date != "null" }
-                                ?.let { date -> LocalDate.parse(date) },
+                            periode.datoFom,
+                            periode.datoTom,
                         ),
-                    status =
-                        periode.get("sivilstand")?.asText()
-                            ?.let { it1 -> Sivilstandskode.valueOf(it1) },
+                    status = periode.sivilstand,
                 )
             }.sortedBy { it.periode?.fom },
     )
@@ -148,29 +139,26 @@ private fun Behandling.tilVirkningstidspunkt() =
         notat = tilNotatVirkningstidspunkt(),
     )
 
-private fun Husstandsbarn.tilBoforholdBarn(husstandGrunnlag: List<JsonNode>) =
+private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdHusstandBearbeidet>) =
     BoforholdBarn(
         navn = navn!!,
         fødselsdato =
             foedselsdato
                 ?: hentPersonFødselsdato(ident),
         opplysningerFraFolkeregisteret =
-            husstandGrunnlag.filter {
-                it.get("ident").textValue() == this.ident
+            opplysningerBoforhold.filter {
+                it.ident == this.ident
             }.flatMap {
-                it.get("perioder")?.toList()?.map { periode ->
+                it.perioder.map { periode ->
                     OpplysningerFraFolkeregisteret(
                         periode =
                             ÅrMånedsperiode(
-                                LocalDate.parse(periode.get("fraDato").asText().split("T")[0]),
-                                periode.get("tilDato").asText().takeIf { date -> date != "null" }
-                                    ?.let { date -> LocalDate.parse(date.split("T")[0]) },
+                                periode.fraDato.toLocalDate(),
+                                periode.tilDato?.toLocalDate(),
                             ),
-                        status =
-                            periode.get("bostatus")?.asText()
-                                ?.let { it1 -> Bostatuskode.valueOf(it1) },
+                        status = periode.bostatus,
                     )
-                } ?: emptyList()
+                }
             },
         opplysningerBruktTilBeregning =
             perioder.sortedBy { it.datoFom }.map { periode ->
