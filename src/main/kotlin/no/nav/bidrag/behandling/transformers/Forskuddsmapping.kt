@@ -30,7 +30,7 @@ fun Behandling.tilBeregnGrunnlag(
     val sivilstandBm = this.tilGrunnlagSivilstand(bm)
 
     return BeregnGrunnlag(
-        periode = ÅrMånedsperiode(this.virkningsdato!!, this.datoTom),
+        periode = ÅrMånedsperiode(this.virkningsdato!!, this.datoTom.plusDays(1)),
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
             personobjekterBarn + bostatusBarn + inntektBm + sivilstandBm,
@@ -55,14 +55,12 @@ fun Behandling.tilGrunnlagSivilstand(bm: Grunnlag): Set<Grunnlag> {
 }
 
 fun Behandling.tilGrunnlagBostatus(grunnlagBarn: Set<Grunnlag>): Set<Grunnlag> {
-    var bostatusperiodegrunnlag = mutableSetOf<Grunnlag>()
     val mapper = jacksonObjectMapper()
-    grunnlagBarn.forEach {
+    return grunnlagBarn.flatMap {
         val barn = mapper.treeToValue(it.innhold, Person::class.java)
         val bostatusperioderForBarn = this.husstandsbarn.filter { hb -> hb.ident == barn.ident.verdi }.first()
-        bostatusperiodegrunnlag.addAll(oppretteGrunnlagForBostatusperioder(it.referanse!!, bostatusperioderForBarn.perioder))
-    }
-    return bostatusperiodegrunnlag
+        oppretteGrunnlagForBostatusperioder(it.referanse!!, bostatusperioderForBarn.perioder)
+    }.toSet()
 }
 
 private fun oppretteGrunnlagForBostatusperioder(
@@ -87,7 +85,7 @@ private fun oppretteGrunnlagForBostatusperioder(
                                 periode =
                                     ÅrMånedsperiode(
                                         it.datoFom!!,
-                                        it.datoTom,
+                                        it.datoTom?.plusDays(1),
                                     ),
                             ),
                         ),
