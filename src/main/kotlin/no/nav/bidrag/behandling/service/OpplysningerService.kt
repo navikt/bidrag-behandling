@@ -43,7 +43,6 @@ class OpplysningerService(
     ): Opplysninger? =
         opplysningerRepository.findTopByBehandlingIdAndOpplysningerTypeOrderByTsDescIdDesc(
             behandlingId,
-            opplysningerType.getOrMigrate()
+            opplysningerType.getOrMigrate(),
         )
-
 }

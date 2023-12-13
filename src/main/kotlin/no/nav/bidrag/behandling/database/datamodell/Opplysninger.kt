@@ -36,15 +36,15 @@ class Opplysninger(
     val id: Long? = null,
 )
 
-inline fun <reified T> Opplysninger?.hentData(): T? = when (this?.opplysningerType) {
-    OpplysningerType.INNTEKTSOPPLYSNINGER, OpplysningerType.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
-    OpplysningerType.BOFORHOLD, OpplysningerType.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-    OpplysningerType.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
-    OpplysningerType.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
-    OpplysningerType.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdDto>>() as T
-    OpplysningerType.INNTEKT -> konverterData<List<InntektGrunnlag>>() as T
-    else -> null
-}
+inline fun <reified T> Opplysninger?.hentData(): T? =
+    when (this?.opplysningerType) {
+        OpplysningerType.INNTEKTSOPPLYSNINGER, OpplysningerType.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
+        OpplysningerType.BOFORHOLD, OpplysningerType.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
+        OpplysningerType.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
+        OpplysningerType.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
+        OpplysningerType.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdDto>>() as T
+        OpplysningerType.INNTEKT -> konverterData<List<InntektGrunnlag>>() as T
+        else -> null
+    }
 
-inline fun <reified T> Opplysninger?.konverterData(): T? =
-    this?.data?.let { objectmapper.readValue(it) }
+inline fun <reified T> Opplysninger?.konverterData(): T? = this?.data?.let { objectmapper.readValue(it) }

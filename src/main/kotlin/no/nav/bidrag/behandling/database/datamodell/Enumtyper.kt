@@ -33,11 +33,12 @@ enum class OpplysningerType {
     INNTEKTSOPPLYSNINGER,
 }
 
-fun OpplysningerType.getOrMigrate() = when (this) {
-    OpplysningerType.BOFORHOLD -> OpplysningerType.BOFORHOLD_BEARBEIDET
-    OpplysningerType.INNTEKTSOPPLYSNINGER -> OpplysningerType.INNTEKT_BEARBEIDET
-    else -> this
-}
+fun OpplysningerType.getOrMigrate() =
+    when (this) {
+        OpplysningerType.BOFORHOLD -> OpplysningerType.BOFORHOLD_BEARBEIDET
+        OpplysningerType.INNTEKTSOPPLYSNINGER -> OpplysningerType.INNTEKT_BEARBEIDET
+        else -> this
+    }
 
 @Schema(enumAsRef = true)
 enum class Behandlingstype {

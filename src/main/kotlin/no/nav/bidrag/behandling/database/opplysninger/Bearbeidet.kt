@@ -11,37 +11,37 @@ import java.time.LocalDateTime
 
 data class BoforholdBearbeidet(
     val husstand: List<BoforholdHusstandBearbeidet> = emptyList(),
-    val sivilstand: List<SivilstandBearbeidet> = emptyList()
+    val sivilstand: List<SivilstandBearbeidet> = emptyList(),
 )
 
 data class SivilstandBearbeidet(
     val datoFom: LocalDate,
     val datoTom: LocalDate? = null,
-    val sivilstand: Sivilstandskode
+    val sivilstand: Sivilstandskode,
 )
 
 data class BoforholdHusstandBearbeidet(
     val foedselsdato: LocalDate?,
     val ident: String,
     val navn: String?,
-    val perioder: List<BoforholdBearbeidetPeriode> = emptyList()
+    val perioder: List<BoforholdBearbeidetPeriode> = emptyList(),
 )
 
 data class BoforholdBearbeidetPeriode(
     val fraDato: LocalDateTime,
     val tilDato: LocalDateTime?,
-    val bostatus: Bostatuskode
+    val bostatus: Bostatuskode,
 )
 
 data class InntektsopplysningerBearbeidet(
     val inntekt: List<InntektBearbeidet> = emptyList(),
     val utvidetbarnetrygd: List<UtvidetBarnetrygdOgSmaabarnstilleggDto> = emptyList(),
     val barnetillegg: List<BarnetilleggDto> = emptyList(),
-    val arbeidsforhold: List<ArbeidsforholdDto> = emptyList()
+    val arbeidsforhold: List<ArbeidsforholdDto> = emptyList(),
 )
 
 data class InntektBearbeidet(
     val ident: String,
     val versjon: String?,
-    val summertAarsinntektListe: List<SummertÅrsinntekt>
+    val summertAarsinntektListe: List<SummertÅrsinntekt>,
 )

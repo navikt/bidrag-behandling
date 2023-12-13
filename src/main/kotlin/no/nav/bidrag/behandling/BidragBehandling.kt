@@ -13,10 +13,11 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 
 const val PROFILE_NAIS = "nais"
 val SECURE_LOGGER: Logger = LoggerFactory.getLogger("secureLogger")
-val objectmapper = ObjectMapper().findAndRegisterModules().registerKotlinModule()
-    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    .configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true)
-    .configure(DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES, false)
+val objectmapper =
+    ObjectMapper().findAndRegisterModules().registerKotlinModule()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true)
+        .configure(DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES, false)
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
 @EnableJwtTokenValidation(ignore = ["org.springframework", "org.springdoc"])
