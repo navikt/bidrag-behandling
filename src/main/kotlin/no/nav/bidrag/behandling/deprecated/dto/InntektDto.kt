@@ -44,8 +44,8 @@ fun Set<InntektDto>.toInntektDto(): Set<no.nav.bidrag.behandling.dto.inntekt.Inn
         )
     }.toSet()
 
-fun tilInntektsrapportering(inntektstype: String) : Inntektsrapportering {
-    when(inntektstype) {
+fun tilInntektsrapportering(inntektstype: String): Inntektsrapportering {
+    when (inntektstype) {
         "LOENNSINNTEKT" -> return Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER
         "NAERINGSINNTEKT" -> return Inntektsrapportering.NÆRINGSINNTEKT_MANUELT_BEREGNET
         InntektType.EKSTRA_SMAABARNSTILLEGG.name -> return Inntektsrapportering.SMÅBARNSTILLEGG
