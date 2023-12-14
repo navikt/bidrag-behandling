@@ -28,5 +28,5 @@ fun HusstandsbarnDto.toHusstandsbarnDto(): no.nav.bidrag.behandling.dto.husstand
         perioder = this.perioder.toHusstandsbarnperiodeDto(),
         ident = this.ident,
         navn = this.navn,
-        fødselsdato = this.fødselsdato
+        fødselsdato = this.fødselsdato,
     )

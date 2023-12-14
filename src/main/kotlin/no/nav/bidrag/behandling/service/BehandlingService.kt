@@ -55,15 +55,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadsid,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.behandlingstype.name,
-                    stonadType = behandling.stonadstype,
-                    engangsBelopType = behandling.engangsbeloptype,
-                    vedtakType = behandling.soknadstype.tilVedtakType(),
-                ),
+                    BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadsid,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.behandlingstype.name,
+                        stonadType = behandling.stonadstype,
+                        engangsBelopType = behandling.engangsbeloptype,
+                        vedtakType = behandling.soknadstype.tilVedtakType(),
+                    ),
             ),
         )
     }
@@ -175,7 +175,6 @@ class BehandlingService(
         boforholdsbegrunnelseKunINotat: String?,
         boforholdsbegrunnelseMedIVedtakOgNotat: String?,
     ) {
-
         var behandling = hentBehandlingById(behandlingsid)
         behandling.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
         behandling.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
