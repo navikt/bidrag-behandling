@@ -5,9 +5,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
 import no.nav.bidrag.behandling.dto.boforhold.OppdatereBoforholdRequest
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
-import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -35,13 +33,13 @@ class BoforholdController(private val behandlingService: BehandlingService) {
             oppdatereBoforholdRequest.boforholdsbegrunnelseIVedtakOgNotat,
         )
 
-        val updatedBehandling = behandlingService.hentBehandlingById(behandlingId)
+        val oppdatertBehandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(
-            updatedBehandling.husstandsbarn.toHusstandsBarnDto(),
-            updatedBehandling.sivilstand.toSivilstandDto(),
-            updatedBehandling.boforholdsbegrunnelseIVedtakOgNotat,
-            updatedBehandling.boforholdsbegrunnelseKunINotat,
+            oppdatertBehandling.husstandsbarn.toHusstandsBarnDto(oppdatertBehandling),
+            oppdatertBehandling.sivilstand.toSivilstandDto(),
+            oppdatertBehandling.boforholdsbegrunnelseIVedtakOgNotat,
+            oppdatertBehandling.boforholdsbegrunnelseKunINotat,
         )
     }
 
@@ -57,7 +55,7 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(
-            behandling.husstandsbarn.toHusstandsBarnDto(),
+            behandling.husstandsbarn.toHusstandsBarnDto(behandling),
             behandling.sivilstand.toSivilstandDto(),
             behandling.boforholdsbegrunnelseIVedtakOgNotat,
             behandling.boforholdsbegrunnelseKunINotat,

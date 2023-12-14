@@ -2,9 +2,6 @@ package no.nav.bidrag.behandling.deprecated.dto
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.transformers.toDomain
 import java.time.LocalDate
 
 data class HusstandsbarnDto(
@@ -21,16 +18,15 @@ data class HusstandsbarnDto(
     val fødselsdato: LocalDate = foedselsdato,
 )
 
-fun Set<HusstandsbarnDto>.toHustandsbarndDto() :  Set<no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto> =
+fun Set<HusstandsbarnDto>.toHustandsbarndDto(): Set<no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto> =
+    this.map { it.toHusstandsbarnDto() }.toSet()
 
-    this.map {
-        no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto(
-            id = it.id,
-            medISak = it.medISak,
-            perioder = it.perioder.toHusstandsbarnperiodeDto(),
-            ident = it.ident,
-            navn = it.navn,
-            fødselsdato = it.fødselsdato
-        )
-    }.toSet()
-
+fun HusstandsbarnDto.toHusstandsbarnDto(): no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto =
+    no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto(
+        id = this.id,
+        medISak = this.medISak,
+        perioder = this.perioder.toHusstandsbarnperiodeDto(),
+        ident = this.ident,
+        navn = this.navn,
+        fødselsdato = this.fødselsdato
+    )

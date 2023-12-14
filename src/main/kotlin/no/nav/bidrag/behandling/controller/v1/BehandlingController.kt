@@ -195,7 +195,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling.roller.map {
             RolleDto(it.id!!, it.rolletype, it.ident, it.navn, it.foedselsdato, it.opprettetDato)
         }.toSet(),
-        behandling.husstandsbarn.toHusstandsBarnDto(),
+        behandling.husstandsbarn.toHusstandsBarnDto(behandling),
         behandling.sivilstand.toSivilstandDto(),
         behandling.virkningsdato,
         behandling.soknadRefId,

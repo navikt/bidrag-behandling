@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
@@ -35,7 +34,7 @@ fun Set<Sivilstand>.toSivilstandDto() =
             it.sivilstand,
             it.kilde,
         )
-    }.toSet()
+    }.sortedBy { it.datoFom }.toSet()
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     this.map {
@@ -109,35 +108,36 @@ fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
         )
     }.toSet()
 
-fun Set<Husstandsbarn>.toHusstandsBarnDto(): Set<HusstandsbarnDto> {
+fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<HusstandsbarnDto> {
 
-    val offentlige = this.map {
-        HusstandsbarnDto(
-            it.id,
-            it.medISaken,
-            it.perioder.toHusstandsBarnPeriodeDto().filter { p -> p.kilde == Kilde.OFFENTLIG }
-                .sortedByDescending { p -> p.kilde }.sortedBy { periode -> periode.datoFom }.toSet(),
-            it.ident,
-            it.navn,
-            it.foedselsdato,
-        )
-    }.sortedBy { barn -> barn.fødselsdato }.toSet()
+    val identerSøknadsbarn = behandling.getSøknadsbarn().map { sb -> sb.ident!! }.toSet()
 
-    val manuelle = this.map {
-        HusstandsbarnDto(
-            it.id,
-            it.medISaken,
-            it.perioder.toHusstandsBarnPeriodeDto().filter { p -> p.kilde != Kilde.OFFENTLIG }
-                .sortedByDescending { p -> p.kilde }.sortedBy { periode -> periode.datoFom }.toSet(),
-            it.ident,
-            it.navn,
-            it.foedselsdato,
-        )
-    }.sortedBy { barn -> barn.fødselsdato }.toMutableSet()
+    val søknadsbarn = this.filter { !it.ident.isNullOrBlank() && identerSøknadsbarn.contains(it.ident) }.map {
+        it.toDto()
+    }.sortedBy { it.fødselsdato }.toSet()
 
-    return offentlige + manuelle
+    val ikkeSøknadsbarnMenErMedISaken =
+        this.filter { it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }.map { it.toDto() }
+            .sortedBy { it.fødselsdato }.toSet()
+
+
+    val andreHusstandsbarn =
+        this.filter { !it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }.map { it.toDto() }
+            .sortedBy { it.fødselsdato }.toSet()
+
+    return søknadsbarn + ikkeSøknadsbarnMenErMedISaken + andreHusstandsbarn
 
 }
+
+fun Husstandsbarn.toDto(): HusstandsbarnDto =
+    HusstandsbarnDto(
+        this.id,
+        this.medISaken,
+        this.perioder.toHusstandsBarnPeriodeDto().sortedBy { periode -> periode.datoFom }.toSet(),
+        this.ident,
+        this.navn,
+        this.foedselsdato,
+    )
 
 fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
     this.map {
