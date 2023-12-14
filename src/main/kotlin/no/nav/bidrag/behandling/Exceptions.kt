@@ -13,6 +13,9 @@ fun behandlingNotFoundException(behandlingId: Long): Nothing =
 class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) :
     RuntimeException(melding, throwable)
 
+class BeregningAvResultatForBehandlingFeilet(val feilmeldinger: List<String>) :
+    HttpClientErrorException(HttpStatus.BAD_REQUEST)
+
 fun fantIkkeSak(saksnummer: String): Nothing =
     throw HttpClientErrorException(
         HttpStatus.BAD_REQUEST,
@@ -26,7 +29,7 @@ fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
     )
 
 fun valideringAvBehandlingFeilet(valideringsfeil: List<String>): Nothing =
-    throw HttpClientErrorException(HttpStatus.BAD_REQUEST, valideringsfeil.toString())
+    throw BeregningAvResultatForBehandlingFeilet(valideringsfeil)
 
 fun rolleManglerFødselsdato(rolletype: Rolletype): Nothing =
     throw HttpClientErrorException(
