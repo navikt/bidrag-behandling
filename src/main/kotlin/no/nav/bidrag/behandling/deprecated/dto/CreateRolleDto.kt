@@ -69,7 +69,7 @@ fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
         rolletype = this.rolleType.toRolletype(),
         ident,
         fodtDato?.toLocalDate() ?: hentPersonFødselsdato(ident)
-        ?: rolleManglerFødselsdato(rolleType.toRolletype()),
+            ?: rolleManglerFødselsdato(rolleType.toRolletype()),
         this.opprettetDato?.toLocalDate(),
         navn = this.navn,
     )
