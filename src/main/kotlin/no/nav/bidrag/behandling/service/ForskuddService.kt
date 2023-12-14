@@ -7,6 +7,7 @@ import mu.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.validere
 import no.nav.bidrag.behandling.dto.beregning.ForskuddberegningResultatBarn
 import no.nav.bidrag.behandling.dto.beregning.Forskuddsberegningrespons
@@ -24,8 +25,6 @@ import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
 private val LOGGER = KotlinLogging.logger {}
-
-private fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""
 
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
@@ -45,7 +44,7 @@ class ForskuddService(
                     behandling.getSøknadsbarn().mapOrAccumulate {
                         val fødselsdato =
                             finneFødselsdato(it.ident, it.foedselsdato)
-                            // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                                // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                                 ?: fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid)
 
                         val rolleBm =
@@ -74,8 +73,12 @@ class ForskuddService(
                             val errors =
                                 e.responseHeaders?.get("error")?.joinToString("\r\n") { message ->
                                     val split = message.split(":")
-                                    if (split.size > 1) split.takeLast(split.size - 1)
-                                        .joinToString(" ").trim() else split.first()
+                                    if (split.size > 1) {
+                                        split.takeLast(split.size - 1)
+                                            .joinToString(" ").trim()
+                                    } else {
+                                        split.first()
+                                    }
                                 }
                             raise(errors ?: e.message!!)
                         } catch (e: Exception) {
@@ -105,7 +108,7 @@ class ForskuddService(
             .map {
                 val fødselsdato =
                     finneFødselsdato(it.ident, it.foedselsdato)
-                    // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                        // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                         ?: fantIkkeFødselsdatoTilSøknadsbarn(behandling.id!!)
 
                 lagePersonobjekt(it.ident, it.navn, fødselsdato, "husstandsbarn-${it.id}")
@@ -124,13 +127,13 @@ class ForskuddService(
             referanse = "person-$referanse",
             type = Grunnlagstype.PERSON,
             innhold =
-            POJONode(
-                Person(
-                    ident = Personident(personident),
-                    navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
-                    fødselsdato = fødselsdato,
+                POJONode(
+                    Person(
+                        ident = Personident(personident),
+                        navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
+                        fødselsdato = fødselsdato,
+                    ),
                 ),
-            ),
         )
     }
 

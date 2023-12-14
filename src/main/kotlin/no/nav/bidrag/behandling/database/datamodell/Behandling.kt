@@ -139,9 +139,12 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                 val bm = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
                 val bp = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
                 ensure(this@validere.inntekter.any { it.taMed && it.ident == bm?.ident }) { raise("Mangler inntekter for bidragsmottaker") }
-                ensure(this@validere.behandlingstype == Behandlingstype.FORSKUDD || this@validere.inntekter.any { it.taMed && it.ident == bp?.ident }) {
+                ensure(
+                    this@validere.behandlingstype == Behandlingstype.FORSKUDD ||
+                        this@validere.inntekter.any { it.taMed && it.ident == bp?.ident },
+                ) {
                     raise(
-                        "Mangler innteker for bidragspliktig"
+                        "Mangler innteker for bidragspliktig",
                     )
                 }
             },
@@ -160,7 +163,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                 this@validere.husstandsbarn.filter { it.medISaken }.forEach {
                     ensure(it.perioder.isNotEmpty()) {
                         raise(
-                            "Mangler perioder for husstandsbarn ${it.hentNavn()}/${it.ident}"
+                            "Mangler perioder for husstandsbarn ${it.hentNavn()}/${it.ident}",
                         )
                     }
                 }
@@ -168,19 +171,17 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                 roller.filter { it.rolletype == Rolletype.BARN }.forEach { barn ->
                     ensure(this@validere.husstandsbarn.any { it.ident == barn.ident }) {
                         raise(
-                            "Søknadsbarn ${barn.hentNavn()}/${barn.ident} mangler informasjon om boforhold"
+                            "Søknadsbarn ${barn.hentNavn()}/${barn.ident} mangler informasjon om boforhold",
                         )
                     }
                 }
-
 
                 mapOrAccumulate(husstandsbarn.filter { it.medISaken }.flatMap { it.perioder }) {
                     ensure(it.datoFom != null) { raise("Fra-dato mangler for husstandsbarnpreiode i behandling") }
                     it
                 }
             },
-
-            ) { _, _, _, _, _, _, _, _, _ ->
+        ) { _, _, _, _, _, _, _, _, _ ->
             var behandling = this@validere
             behandling.inntekter = inntekter
             behandling.husstandsbarn = husstandsbarn

@@ -28,8 +28,7 @@ fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
         "Fant ikke fødselsdato til søknadsbarn i behandling med id $behandlingsid",
     )
 
-fun valideringAvBehandlingFeilet(valideringsfeil: List<String>): Nothing =
-    throw BeregningAvResultatForBehandlingFeilet(valideringsfeil)
+fun valideringAvBehandlingFeilet(valideringsfeil: List<String>): Nothing = throw BeregningAvResultatForBehandlingFeilet(valideringsfeil)
 
 fun rolleManglerFødselsdato(rolletype: Rolletype): Nothing =
     throw HttpClientErrorException(

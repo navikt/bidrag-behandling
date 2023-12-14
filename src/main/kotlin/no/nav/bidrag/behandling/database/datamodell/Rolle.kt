@@ -34,4 +34,4 @@ class Rolle(
     val deleted: Boolean = false,
 )
 
-fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident)
+fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""

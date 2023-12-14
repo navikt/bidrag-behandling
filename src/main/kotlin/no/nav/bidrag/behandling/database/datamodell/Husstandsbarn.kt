@@ -30,8 +30,7 @@ class Husstandsbarn(
         fetch = FetchType.EAGER,
         mappedBy = "husstandsbarn",
         cascade = [CascadeType.PERSIST, CascadeType.MERGE],
-        orphanRemoval = true
-    ,
+        orphanRemoval = true,
     )
     var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
 )
