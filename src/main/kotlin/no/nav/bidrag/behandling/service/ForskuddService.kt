@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.dto.beregning.Forskuddsberegningrespons
 import no.nav.bidrag.behandling.dto.beregning.ResultatRolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.transformers.tilBeregnGrunnlag
-import no.nav.bidrag.behandling.transformers.tilReferanse
 import no.nav.bidrag.behandling.valideringAvBehandlingFeilet
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -56,10 +55,10 @@ class ForskuddService(
                                 rolleBm.ident,
                                 rolleBm.navn,
                                 rolleBm.foedselsdato,
-                                rolleBm.tilReferanse(),
+                                "bidragsmottaker",
                             )
                         val søknadsbarn =
-                            lagePersonobjekt(it.ident, it.navn, fødselsdato, it.tilReferanse())
+                            lagePersonobjekt(it.ident, it.navn, fødselsdato, "søkandsbarn-${it.id}")
                         val øvrigeBarnIHusstand =
                             oppretteGrunnlagForHusstandsbarn(behandling, it.ident!!)
                         val beregnForskudd =
