@@ -6,9 +6,7 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.database.repository.HusstandsbarnRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
-import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
@@ -35,8 +33,6 @@ private val log = KotlinLogging.logger {}
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
-    private val husstandsbarnRepository: HusstandsbarnRepository,
-    private val sivilstandRepository: SivilstandRepository,
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
@@ -179,15 +175,11 @@ class BehandlingService(
         behandling.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
         behandling.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
 
-        // husstandsbarnRepository.deleteByBehandlingId(behandlingsid)
         behandling.husstandsbarn.clear()
         behandling.husstandsbarn.addAll(husstandsbarn.toDomain(behandling))
-        // husstandsbarn.toDomain(behandling).forEach { husstandsbarnRepository.save(it) }
 
-        // sivilstandRepository.deleteByBehandlingId(behandlingsid)
         behandling.sivilstand.clear()
         behandling.sivilstand.addAll(sivilstand.toSivilstandDomain(behandling))
-        // sivilstand.toSivilstandDomain(behandling).forEach { sivilstandRepository.save(it) }
 
         behandlingRepository.save(behandling)
     }
