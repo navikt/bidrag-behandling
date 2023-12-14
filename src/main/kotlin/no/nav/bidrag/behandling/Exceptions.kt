@@ -1,12 +1,17 @@
 package no.nav.bidrag.behandling
 
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 
 fun behandlingNotFoundException(behandlingId: Long): Nothing =
-    throw HttpClientErrorException(HttpStatus.NOT_FOUND, "Fant ikke behandling med id $behandlingId")
+    throw HttpClientErrorException(
+        HttpStatus.NOT_FOUND,
+        "Fant ikke behandling med id $behandlingId",
+    )
 
-class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) : RuntimeException(melding, throwable)
+class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) :
+    RuntimeException(melding, throwable)
 
 fun fantIkkeSak(saksnummer: String): Nothing =
     throw HttpClientErrorException(
@@ -22,3 +27,9 @@ fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
 
 fun valideringAvBehandlingFeilet(valideringsfeil: List<String>): Nothing =
     throw HttpClientErrorException(HttpStatus.BAD_REQUEST, valideringsfeil.toString())
+
+fun rolleManglerFødselsdato(rolletype: Rolletype): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Rolle med type $rolletype mangler fødselsdato",
+    )

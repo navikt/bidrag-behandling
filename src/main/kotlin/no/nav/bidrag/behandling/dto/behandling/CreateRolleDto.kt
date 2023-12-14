@@ -23,7 +23,7 @@ data class CreateRolleDto(
     )
     val navn: String?,
     @Schema(type = "String", format = "date", description = "F.eks fødselsdato")
-    val fødselsdato: LocalDate,
+    val fødselsdato: LocalDate?,
     @Schema(type = "String", format = "date", description = "Opprettetdato")
     val opprettetdato: LocalDate?,
     val erSlettet: Boolean = false,

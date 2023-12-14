@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.behandling.SyncRollerRequest
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
@@ -193,7 +194,14 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandling.soknadsid,
         behandling.behandlerEnhet,
         behandling.roller.map {
-            RolleDto(it.id!!, it.rolletype, it.ident, it.navn, it.foedselsdato, it.opprettetDato)
+            RolleDto(
+                it.id!!,
+                it.rolletype,
+                it.ident,
+                it.navn ?: hentPersonVisningsnavn(it.ident),
+                it.foedselsdato,
+                it.opprettetDato,
+            )
         }.toSet(),
         behandling.husstandsbarn.toHusstandsBarnDto(),
         behandling.sivilstand.toSivilstandDto(),
