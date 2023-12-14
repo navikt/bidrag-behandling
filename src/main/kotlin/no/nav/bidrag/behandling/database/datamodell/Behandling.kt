@@ -125,6 +125,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
             { ensure(this@validere.virkningsdato != null) { raise("Virkningsdato mangler for behandling") } },
             { ensure(this@validere.saksnummer.isNotBlank()) { raise("Saksnummer mangler for behandling") } },
             {
+                ensure(this@validere.sivilstand.size > 0) { raise("Sivilstand mangler i behandling") }
                 mapOrAccumulate(sivilstand) {
                     ensure(it.datoFom != null) { raise("Til-dato mangler for sivilstand i behandling") }
                 }
@@ -135,25 +136,51 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                     ensure(it.inntektstype != null) { raise("Inntektstype mangler for behandling") }
                     it
                 }
+                val bm = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+                val bp = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+                ensure(this@validere.inntekter.any { it.taMed && it.ident == bm?.ident }) { raise("Mangler inntekter for bidragsmottaker") }
+                ensure(this@validere.behandlingstype == Behandlingstype.FORSKUDD || this@validere.inntekter.any { it.taMed && it.ident == bp?.ident }) {
+                    raise(
+                        "Mangler innteker for bidragspliktig"
+                    )
+                }
             },
             {
                 mapOrAccumulate(utvidetBarnetrygd) {
-                    ensure(it.datoFom != null) { raise("Fra-dato mangler for utvidet barnetrygd i behandling") }
+                    ensure(it.datoFom != null) { raise("Fra-dato mangler for utvidet barnetrygd") }
                 }
             },
             {
                 mapOrAccumulate(barnetillegg) {
-                    ensure(it.datoFom != null) { raise("Fra-dato mangler for barnetillegg i behandling") }
+                    ensure(it.datoFom != null) { raise("Fra-dato mangler for barnetillegg") }
                 }
             },
             {
-                ensure(this@validere.husstandsbarn.size > 0) { raise("Husstandsbarn mangler i behandling") }
+                ensure(this@validere.husstandsbarn.size > 0) { raise("Husstandsbarn mangler") }
+                this@validere.husstandsbarn.filter { it.medISaken }.forEach {
+                    ensure(it.perioder.isNotEmpty()) {
+                        raise(
+                            "Mangler perioder for husstandsbarn ${it.hentNavn()}/${it.ident}"
+                        )
+                    }
+                }
+
+                roller.filter { it.rolletype == Rolletype.BARN }.forEach { barn ->
+                    ensure(this@validere.husstandsbarn.any { it.ident == barn.ident }) {
+                        raise(
+                            "Søknadsbarn ${barn.hentNavn()}/${barn.ident} mangler informasjon om boforhold"
+                        )
+                    }
+                }
+
+
                 mapOrAccumulate(husstandsbarn.filter { it.medISaken }.flatMap { it.perioder }) {
                     ensure(it.datoFom != null) { raise("Fra-dato mangler for husstandsbarnpreiode i behandling") }
                     it
                 }
             },
-        ) { _, _, _, _, _, _, _, _, _ ->
+
+            ) { _, _, _, _, _, _, _, _, _ ->
             var behandling = this@validere
             behandling.inntekter = inntekter
             behandling.husstandsbarn = husstandsbarn
