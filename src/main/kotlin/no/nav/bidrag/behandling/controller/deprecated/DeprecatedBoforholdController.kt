@@ -38,7 +38,7 @@ class DeprecatedBoforholdController(private val behandlingService: BehandlingSer
         val updatedBehandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(
-            updatedBehandling.husstandsbarn.toHusstandsBarnDto(),
+            updatedBehandling.husstandsbarn.toHusstandsBarnDto(updatedBehandling),
             updatedBehandling.sivilstand.toSivilstandDto(),
             updatedBehandling.boforholdsbegrunnelseIVedtakOgNotat,
             updatedBehandling.boforholdsbegrunnelseKunINotat,
@@ -57,7 +57,7 @@ class DeprecatedBoforholdController(private val behandlingService: BehandlingSer
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         return BoforholdResponse(
-            behandling.husstandsbarn.toHusstandsBarnDto(),
+            behandling.husstandsbarn.toHusstandsBarnDto(behandling),
             behandling.sivilstand.toSivilstandDto(),
             behandling.boforholdsbegrunnelseIVedtakOgNotat,
             behandling.boforholdsbegrunnelseKunINotat,
