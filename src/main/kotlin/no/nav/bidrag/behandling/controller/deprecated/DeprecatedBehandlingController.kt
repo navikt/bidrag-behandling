@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
@@ -65,9 +66,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
 
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller.toCreateRolleDto()) &&
-                ingenVoksneUtenIdent(
-                    createBehandling.roller.toCreateRolleDto(),
-                ),
+                    ingenVoksneUtenIdent(
+                        createBehandling.roller.toCreateRolleDto(),
+                    ),
         )
 
         val opprettetAv =
@@ -106,9 +107,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         val behandlingDo = behandlingService.createBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
-                "soknadType ${createBehandling.soknadType} " +
-                "og soknadFra ${createBehandling.soknadFra} " +
-                "med id ${behandlingDo.id} "
+                    "soknadType ${createBehandling.soknadType} " +
+                    "og soknadFra ${createBehandling.soknadFra} " +
+                    "med id ${behandlingDo.id} "
         }
         return CreateBehandlingResponse(behandlingDo.id!!)
     }
@@ -135,7 +136,10 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
     fun syncRoller(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: SyncRollerRequest,
-    ) = behandlingService.syncRoller(behandlingId, request.roller.toSet().toCreateRolleDto().toList())
+    ) = behandlingService.syncRoller(
+        behandlingId,
+        request.roller.toSet().toCreateRolleDto().toList()
+    )
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/vedtak/{vedtakId}")
@@ -230,7 +234,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
                 it.id!!,
                 RolleTypeDto.valueOf(it.rolletype.name),
                 it.ident,
-                it.navn,
+                it.navn ?: hentPersonVisningsnavn(it.ident),
                 it.foedselsdato.toDate(),
                 it.opprettetDato?.toDate(),
             )
@@ -255,6 +259,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
     }
 
     private fun ingenVoksneUtenIdent(roller: Set<CreateRolleDto>): Boolean {
-        return roller.filter { r -> r.rolletype != Rolletype.BARN && r.ident.isNullOrBlank() }.none()
+        return roller.filter { r -> r.rolletype != Rolletype.BARN && r.ident.isNullOrBlank() }
+            .none()
     }
 }

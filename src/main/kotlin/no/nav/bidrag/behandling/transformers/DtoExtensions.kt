@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
+import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -201,7 +202,7 @@ fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
         behandling,
         rolletype = this.rolletype,
         this.ident,
-        this.fødselsdato,
+        this.fødselsdato ?: hentPersonFødselsdato(this.ident)!!,
         this.opprettetdato,
         navn = this.navn,
     )
