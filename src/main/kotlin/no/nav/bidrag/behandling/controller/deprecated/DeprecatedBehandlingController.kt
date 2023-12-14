@@ -66,9 +66,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
 
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller.toCreateRolleDto()) &&
-                    ingenVoksneUtenIdent(
-                        createBehandling.roller.toCreateRolleDto(),
-                    ),
+                ingenVoksneUtenIdent(
+                    createBehandling.roller.toCreateRolleDto(),
+                ),
         )
 
         val opprettetAv =
@@ -107,9 +107,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         val behandlingDo = behandlingService.createBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
-                    "soknadType ${createBehandling.soknadType} " +
-                    "og soknadFra ${createBehandling.soknadFra} " +
-                    "med id ${behandlingDo.id} "
+                "soknadType ${createBehandling.soknadType} " +
+                "og soknadFra ${createBehandling.soknadFra} " +
+                "med id ${behandlingDo.id} "
         }
         return CreateBehandlingResponse(behandlingDo.id!!)
     }
@@ -138,7 +138,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         @Valid @RequestBody(required = true) request: SyncRollerRequest,
     ) = behandlingService.syncRoller(
         behandlingId,
-        request.roller.toSet().toCreateRolleDto().toList()
+        request.roller.toSet().toCreateRolleDto().toList(),
     )
 
     @Suppress("unused")

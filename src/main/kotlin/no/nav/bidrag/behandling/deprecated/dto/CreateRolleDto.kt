@@ -46,8 +46,9 @@ fun Set<CreateRolleDto>.toCreateRolleDto(): Set<no.nav.bidrag.behandling.dto.beh
     this.map {
         no.nav.bidrag.behandling.dto.behandling.CreateRolleDto(
             rolletype = it.rolleType.toRolletype(),
-            fødselsdato = it.fodtDato?.toLocalDate() ?: hentPersonFødselsdato(it.ident)
-            ?: rolleManglerFødselsdato(it.rolleType.toRolletype()),
+            fødselsdato =
+                it.fodtDato?.toLocalDate() ?: hentPersonFødselsdato(it.ident)
+                    ?: rolleManglerFødselsdato(it.rolleType.toRolletype()),
             opprettetdato = it.opprettetDato?.toLocalDate(),
             ident = it.ident,
             navn = it.navn,
@@ -70,7 +71,7 @@ fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
         rolletype = this.rolleType.toRolletype(),
         this.ident,
         this.fodtDato?.toLocalDate() ?: hentPersonFødselsdato(this.ident)
-        ?: rolleManglerFødselsdato(rolleType.toRolletype()),
+            ?: rolleManglerFødselsdato(rolleType.toRolletype()),
         this.opprettetDato?.toLocalDate(),
         navn = this.navn,
     )

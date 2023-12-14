@@ -7,7 +7,7 @@ import org.springframework.web.client.HttpClientErrorException
 fun behandlingNotFoundException(behandlingId: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.NOT_FOUND,
-        "Fant ikke behandling med id $behandlingId"
+        "Fant ikke behandling med id $behandlingId",
     )
 
 class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) :
