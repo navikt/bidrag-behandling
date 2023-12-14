@@ -239,7 +239,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
                 it.opprettetDato?.toDate(),
             )
         }.toSet(),
-        behandling.husstandsbarn.toHusstandsBarnDto(),
+        behandling.husstandsbarn.toHusstandsBarnDto(behandling),
         behandling.sivilstand.toSivilstandDto(),
         behandling.virkningsdato,
         behandling.soknadRefId,

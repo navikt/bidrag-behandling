@@ -203,7 +203,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 it.opprettetDato,
             )
         }.toSet(),
-        behandling.husstandsbarn.toHusstandsBarnDto(),
+        behandling.husstandsbarn.toHusstandsBarnDto(behandling),
         behandling.sivilstand.toSivilstandDto(),
         behandling.virkningsdato,
         behandling.soknadRefId,

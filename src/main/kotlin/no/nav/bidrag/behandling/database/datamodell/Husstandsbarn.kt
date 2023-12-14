@@ -25,6 +25,11 @@ class Husstandsbarn(
     val ident: String? = null,
     val navn: String? = null,
     val foedselsdato: LocalDate,
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "husstandsbarn", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "husstandsbarn",
+        cascade = [CascadeType.PERSIST, CascadeType.MERGE],
+        orphanRemoval = true,
+    )
     var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
 )

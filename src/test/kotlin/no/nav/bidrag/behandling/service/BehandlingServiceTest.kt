@@ -17,9 +17,7 @@ import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
-import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toLocalDate
-import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -151,8 +149,8 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             behandlingService.updateBoforhold(
                 createdBehandling.id!!,
-                husstandsBarn.toDomain(createdBehandling),
-                sivilstand.toSivilstandDomain(createdBehandling),
+                husstandsBarn,
+                sivilstand,
                 notat,
                 medIVedtak,
             )

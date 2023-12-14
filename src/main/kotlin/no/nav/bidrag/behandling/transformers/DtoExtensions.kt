@@ -36,7 +36,7 @@ fun Set<Sivilstand>.toSivilstandDto() =
             it.sivilstand,
             it.kilde,
         )
-    }.toSet()
+    }.sortedBy { it.datoFom }.toSet()
 
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     this.map {
@@ -110,17 +110,34 @@ fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
         )
     }.toSet()
 
-fun Set<Husstandsbarn>.toHusstandsBarnDto() =
-    this.map {
-        HusstandsbarnDto(
-            it.id!!,
-            it.medISaken,
-            it.perioder.toHusstandsBarnPeriodeDto(),
-            it.ident,
-            it.navn,
-            it.foedselsdato,
-        )
-    }.toSet()
+fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<HusstandsbarnDto> {
+    val identerSøknadsbarn = behandling.getSøknadsbarn().map { sb -> sb.ident!! }.toSet()
+
+    val søknadsbarn =
+        this.filter { !it.ident.isNullOrBlank() && identerSøknadsbarn.contains(it.ident) }.map {
+            it.toDto()
+        }.sortedBy { it.fødselsdato }.toSet()
+
+    val ikkeSøknadsbarnMenErMedISaken =
+        this.filter { it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }.map { it.toDto() }
+            .sortedBy { it.fødselsdato }.toSet()
+
+    val andreHusstandsbarn =
+        this.filter { !it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }.map { it.toDto() }
+            .sortedBy { it.fødselsdato }.toSet()
+
+    return søknadsbarn + ikkeSøknadsbarnMenErMedISaken + andreHusstandsbarn
+}
+
+fun Husstandsbarn.toDto(): HusstandsbarnDto =
+    HusstandsbarnDto(
+        this.id,
+        this.medISaken,
+        this.perioder.toHusstandsBarnPeriodeDto().sortedBy { periode -> periode.datoFom }.toSet(),
+        this.ident,
+        this.navn,
+        this.foedselsdato,
+    )
 
 fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
     this.map {

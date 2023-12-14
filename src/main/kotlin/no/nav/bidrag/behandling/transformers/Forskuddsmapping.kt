@@ -8,8 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
-import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
@@ -120,15 +118,4 @@ fun Behandling.tilGrunnlagInntekt(bm: Grunnlag): Set<Grunnlag> {
                     ),
             )
         }.toSet()
-}
-
-fun String.tilSivilstandskodeForBeregning(): Sivilstandskode {
-    return when (this) {
-        SivilstandskodePDL.GIFT.name, SivilstandskodePDL.REGISTRERT_PARTNER.name, Sivilstandskode.GIFT_SAMBOER.name,
-        -> Sivilstandskode.GIFT_SAMBOER
-
-        else -> {
-            Sivilstandskode.BOR_ALENE_MED_BARN
-        }
-    }
 }

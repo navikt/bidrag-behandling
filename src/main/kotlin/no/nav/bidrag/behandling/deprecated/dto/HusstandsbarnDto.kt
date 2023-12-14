@@ -2,9 +2,6 @@ package no.nav.bidrag.behandling.deprecated.dto
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.transformers.toDomain
 import java.time.LocalDate
 
 data class HusstandsbarnDto(
@@ -14,23 +11,22 @@ data class HusstandsbarnDto(
     @Schema(required = true)
     val perioder: Set<HusstandsBarnPeriodeDto>,
     val ident: String? = null,
-    val navn: String? = null,
+    var navn: String? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val foedselsdato: LocalDate? = null,
+    val foedselsdato: LocalDate,
+    val fødselsdato: LocalDate = foedselsdato,
 )
 
-fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
-    this.map {
-        val barn =
-            Husstandsbarn(
-                behandling,
-                it.medISak,
-                it.id,
-                it.ident,
-                it.navn,
-                it.foedselsdato!!,
-            )
-        barn.perioder = it.perioder.toDomain(barn).toMutableSet()
-        barn
-    }.toMutableSet()
+fun Set<HusstandsbarnDto>.toHustandsbarndDto(): Set<no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto> =
+    this.map { it.toHusstandsbarnDto() }.toSet()
+
+fun HusstandsbarnDto.toHusstandsbarnDto(): no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto =
+    no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto(
+        id = this.id,
+        medISak = this.medISak,
+        perioder = this.perioder.toHusstandsbarnperiodeDto(),
+        ident = this.ident,
+        navn = this.navn,
+        fødselsdato = this.fødselsdato,
+    )
