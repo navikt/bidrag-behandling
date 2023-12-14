@@ -179,13 +179,17 @@ class BehandlingService(
         behandling.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
         behandling.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
 
-        husstandsbarnRepository.deleteByBehandlingId(behandlingsid)
+        // husstandsbarnRepository.deleteByBehandlingId(behandlingsid)
         behandling.husstandsbarn.clear()
-        husstandsbarn.toDomain(behandling).forEach { husstandsbarnRepository.save(it) }
+        behandling.husstandsbarn.addAll(husstandsbarn.toDomain(behandling))
+        // husstandsbarn.toDomain(behandling).forEach { husstandsbarnRepository.save(it) }
 
-        sivilstandRepository.deleteByBehandlingId(behandlingsid)
+        // sivilstandRepository.deleteByBehandlingId(behandlingsid)
         behandling.sivilstand.clear()
-        sivilstand.toSivilstandDomain(behandling).forEach { sivilstandRepository.save(it) }
+        behandling.sivilstand.addAll(sivilstand.toSivilstandDomain(behandling))
+        // sivilstand.toSivilstandDomain(behandling).forEach { sivilstandRepository.save(it) }
+
+        behandlingRepository.save(behandling)
     }
 
     @Transactional

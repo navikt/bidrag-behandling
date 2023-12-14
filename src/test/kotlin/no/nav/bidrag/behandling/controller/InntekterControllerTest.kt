@@ -41,7 +41,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester endepunkt for henting av inntekter")
     open inner class HenteInntekter {
         @Test
-        fun `skal hente inntekter for behandling`() {
+        open fun `skal hente inntekter for behandling`() {
             // given
             val behandling = testdataManager.opprettBehandling()
 
