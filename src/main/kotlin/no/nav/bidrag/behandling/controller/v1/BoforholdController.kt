@@ -24,7 +24,6 @@ class BoforholdController(private val behandlingService: BehandlingService) {
         @PathVariable behandlingId: Long,
         @RequestBody oppdatereBoforholdRequest: OppdatereBoforholdRequest,
     ): BoforholdResponse {
-
         behandlingService.updateBoforhold(
             behandlingId,
             oppdatereBoforholdRequest.husstandsbarn,

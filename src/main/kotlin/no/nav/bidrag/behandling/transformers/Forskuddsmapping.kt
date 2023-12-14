@@ -8,8 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
-import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
@@ -34,7 +32,6 @@ fun Behandling.tilBeregnGrunnlag(
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
             personobjekterBarn + bostatusBarn + inntektBm + sivilstandBm,
-
     )
 }
 
@@ -45,12 +42,12 @@ fun Behandling.tilGrunnlagSivilstand(bm: Grunnlag): Set<Grunnlag> {
             referanse = "sivilstand-${bm.referanse}",
             type = Grunnlagstype.SIVILSTAND_PERIODE,
             innhold =
-            POJONode(
-                SivilstandPeriode(
-                    sivilstand = it.sivilstand,
-                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
+                POJONode(
+                    SivilstandPeriode(
+                        sivilstand = it.sivilstand,
+                        periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
+                    ),
                 ),
-            ),
         )
     }.toSet()
 }
@@ -109,17 +106,16 @@ fun Behandling.tilGrunnlagInntekt(bm: Grunnlag): Set<Grunnlag> {
                 referanse = "Inntekt_${it.inntektstype}_${it.datoFom?.toCompactString()}",
                 grunnlagsreferanseListe = listOf(bm.referanse!!),
                 innhold =
-                POJONode(
-                    BeregningInntektRapporteringPeriode(
-                        beløp = it.belop,
-                        periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
-                        inntektsrapportering = it.inntektstype,
-                        manueltRegistrert = !it.fraGrunnlag,
-                        valgt = it.taMed,
-                        gjelderBarn = null,
+                    POJONode(
+                        BeregningInntektRapporteringPeriode(
+                            beløp = it.belop,
+                            periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                            inntektsrapportering = it.inntektstype,
+                            manueltRegistrert = !it.fraGrunnlag,
+                            valgt = it.taMed,
+                            gjelderBarn = null,
+                        ),
                     ),
-                ),
             )
         }.toSet()
 }
-

@@ -13,5 +13,4 @@ data class OppdatereBoforholdRequest(
     val sivilstand: Set<SivilstandDto>,
     val boforholdsbegrunnelseIVedtakOgNotat: String? = null,
     val boforholdsbegrunnelseKunINotat: String? = null,
-
 )

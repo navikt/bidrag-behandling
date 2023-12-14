@@ -26,7 +26,6 @@ class DeprecatedBoforholdController(private val behandlingService: BehandlingSer
         @PathVariable behandlingId: Long,
         @RequestBody updateBoforholdRequest: OppdatereBoforholdRequest,
     ): BoforholdResponse {
-
         behandlingService.updateBoforhold(
             behandlingId,
             updateBoforholdRequest.husstandsBarn.toHustandsbarndDto(),

@@ -109,24 +109,22 @@ fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
     }.toSet()
 
 fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<HusstandsbarnDto> {
-
     val identerSøknadsbarn = behandling.getSøknadsbarn().map { sb -> sb.ident!! }.toSet()
 
-    val søknadsbarn = this.filter { !it.ident.isNullOrBlank() && identerSøknadsbarn.contains(it.ident) }.map {
-        it.toDto()
-    }.sortedBy { it.fødselsdato }.toSet()
+    val søknadsbarn =
+        this.filter { !it.ident.isNullOrBlank() && identerSøknadsbarn.contains(it.ident) }.map {
+            it.toDto()
+        }.sortedBy { it.fødselsdato }.toSet()
 
     val ikkeSøknadsbarnMenErMedISaken =
         this.filter { it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }.map { it.toDto() }
             .sortedBy { it.fødselsdato }.toSet()
-
 
     val andreHusstandsbarn =
         this.filter { !it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }.map { it.toDto() }
             .sortedBy { it.fødselsdato }.toSet()
 
     return søknadsbarn + ikkeSøknadsbarnMenErMedISaken + andreHusstandsbarn
-
 }
 
 fun Husstandsbarn.toDto(): HusstandsbarnDto =
