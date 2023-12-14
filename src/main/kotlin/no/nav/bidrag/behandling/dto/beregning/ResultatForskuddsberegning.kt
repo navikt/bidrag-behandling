@@ -4,11 +4,11 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import java.time.LocalDate
 
-data class Forskuddsberegningrespons(
-    val resultatBarn: List<ForskuddberegningResultatBarn> = emptyList(),
+data class ResultatForskuddsberegning(
+    val resultatBarn: List<ResultatForskuddsberegningBarn> = emptyList(),
 )
 
-data class ForskuddberegningResultatBarn(
+data class ResultatForskuddsberegningBarn(
     val barn: ResultatRolle,
     val resultat: BeregnetForskuddResultat,
 )

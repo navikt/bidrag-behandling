@@ -9,8 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.validere
-import no.nav.bidrag.behandling.dto.beregning.ForskuddberegningResultatBarn
-import no.nav.bidrag.behandling.dto.beregning.Forskuddsberegningrespons
+import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.beregning.ResultatRolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.transformers.tilBeregnGrunnlag
@@ -35,7 +35,7 @@ class ForskuddService(
     private val behandlingService: BehandlingService,
     private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
 ) {
-    fun beregneForskudd(behandlingsid: Long): Forskuddsberegningrespons {
+    fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
         val respons =
             either {
                 val behandling =
@@ -64,7 +64,7 @@ class ForskuddService(
                             behandling.tilBeregnGrunnlag(bm, søknadsbarn, øvrigeBarnIHusstand)
 
                         try {
-                            ForskuddberegningResultatBarn(
+                            ResultatForskuddsberegningBarn(
                                 it.mapTilResultatBarn(),
                                 bidragBeregnForskuddConsumer.beregnForskudd(beregnForskudd),
                             )
@@ -97,7 +97,7 @@ class ForskuddService(
             }
         }
 
-        return Forskuddsberegningrespons(respons.getOrNull() ?: emptyList())
+        return ResultatForskuddsberegning(respons.getOrNull() ?: emptyList())
     }
 
     private fun oppretteGrunnlagForHusstandsbarn(

@@ -115,6 +115,10 @@ class Behandling(
     var deleted: Boolean = false,
 ) {
     fun getSøknadsbarn() = roller.filter { it.rolletype == Rolletype.BARN }
+
+    fun getBidragsmottaker() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+
+    fun getBidragspliktig() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 }
 
 fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
@@ -136,8 +140,8 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                     ensure(it.inntektstype != null) { raise("Inntektstype mangler for behandling") }
                     it
                 }
-                val bm = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
-                val bp = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+                val bm = getBidragsmottaker()
+                val bp = getBidragspliktig()
                 ensure(this@validere.inntekter.any { it.taMed && it.ident == bm?.ident }) { raise("Mangler inntekter for bidragsmottaker") }
                 ensure(
                     this@validere.behandlingstype == Behandlingstype.FORSKUDD ||

@@ -6,12 +6,16 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.beregning.Forskuddsberegningrespons
+import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -19,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import java.math.BigDecimal
 import java.time.LocalDate
 
 class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
@@ -33,9 +38,9 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal beregne forskudd for validert behandling`() {
         // given
-        var behandling = oppretteBehandling()
+        val behandling = oppretteBehandling()
         behandling.roller = oppretteBehandlingRoller(behandling)
-        var husstandsbarn =
+        val husstandsbarn =
             Husstandsbarn(
                 behandling = behandling,
                 medISaken = true,
@@ -43,7 +48,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 navn = "Lavransdottir",
                 foedselsdato = LocalDate.now().minusMonths(140),
             )
-        var husstandsbarnperiode =
+        val husstandsbarnperiode =
             Husstandsbarnperiode(
                 husstandsbarn = husstandsbarn,
                 datoFom = LocalDate.now().minusMonths(5),
@@ -51,8 +56,29 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 bostatus = Bostatuskode.MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
             )
+        val sivilstand =
+            Sivilstand(
+                sivilstand = Sivilstandskode.BOR_ALENE_MED_BARN,
+                behandling = behandling,
+                datoFom = LocalDate.now().minusMonths(12),
+                datoTom = null,
+                kilde = Kilde.OFFENTLIG,
+            )
+        val inntekter =
+            Inntekt(
+                belop = BigDecimal(1000),
+                datoTom = null,
+                datoFom = LocalDate.now().minusMonths(12),
+                ident = behandling.getBidragsmottaker()!!.ident!!,
+                taMed = true,
+                fraGrunnlag = false,
+                behandling = behandling,
+                inntektstype = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+            )
         husstandsbarn.perioder = mutableSetOf(husstandsbarnperiode)
         behandling.husstandsbarn = mutableSetOf(husstandsbarn)
+        behandling.inntekter = mutableSetOf(inntekter)
+        behandling.sivilstand = mutableSetOf(sivilstand)
         behandlingRepository.save(behandling)
 
         // when
@@ -61,7 +87,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                Forskuddsberegningrespons::class.java,
+                ResultatForskuddsberegning::class.java,
             )
 
         // then
@@ -83,7 +109,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                Forskuddsberegningrespons::class.java,
+                ResultatForskuddsberegning::class.java,
             )
 
         // then
@@ -91,7 +117,13 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             returnert shouldNotBe null
             returnert.statusCode shouldBe HttpStatus.BAD_REQUEST
             returnert.body shouldBe null
-            returnert.headers["Warning"]?.get(0) shouldBe "Validering feilet - [Husstandsbarn mangler i behandling]"
+            returnert.headers["Warning"]?.shouldBe(
+                listOf(
+                    "Sivilstand mangler i behandling",
+                    "Mangler inntekter for bidragsmottaker",
+                    "Husstandsbarn mangler",
+                ),
+            )
         }
     }
 
@@ -108,7 +140,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                Forskuddsberegningrespons::class.java,
+                ResultatForskuddsberegning::class.java,
             )
 
         // then

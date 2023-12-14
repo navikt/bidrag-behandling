@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.controller.v1
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
-import no.nav.bidrag.behandling.dto.beregning.Forskuddsberegningrespons
+import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForskuddService
 import org.springframework.http.HttpStatus
@@ -26,7 +26,7 @@ class BehandlingBeregnForskuddController(
     )
     fun beregnForskudd(
         @PathVariable behandlingsid: Long,
-    ): Forskuddsberegningrespons {
+    ): ResultatForskuddsberegning {
         LOGGER.info("Beregner forskudd for behandling med id $behandlingsid")
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
