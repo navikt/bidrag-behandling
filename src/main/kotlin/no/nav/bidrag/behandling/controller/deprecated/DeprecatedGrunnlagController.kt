@@ -5,10 +5,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
+import no.nav.bidrag.behandling.deprecated.dto.tilOpplysningerDto
 import no.nav.bidrag.behandling.dto.opplysninger.AddOpplysningerRequest
-import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
-import no.nav.bidrag.behandling.service.OpplysningerService
+import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.transformers.toDto
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,7 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @Deprecated("Bruk v1")
 @DeprecatedBehandlingRestController
-class DeprecatedOpplysningerController(val opplysningerService: OpplysningerService) {
+class DeprecatedGrunnlagController(val grunnlagService: GrunnlagService) {
+
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
     @Operation(
@@ -41,17 +43,17 @@ class DeprecatedOpplysningerController(val opplysningerService: OpplysningerServ
         @RequestBody(required = true) addOpplysningerRequest: AddOpplysningerRequest,
     ): OpplysningerDto {
         val (_, _, opplysningerType, data, hentetDato) = addOpplysningerRequest
-        return opplysningerService.opprett(
+        return grunnlagService.opprett(
             behandlingId,
             opplysningerType,
             data,
-            hentetDato.toDate(),
+            hentetDato.atStartOfDay(),
         )
-            .toDto()
+            .toDto().tilOpplysningerDto()
     }
 
     @Suppress("unused")
-    @GetMapping("/behandling/{behandlingId}/opplysninger/{opplysningerType}/aktiv")
+    @GetMapping("/behandling/{behandlingId}/opplysninger/{grunnlagstype}/aktiv")
     @Operation(
         description = "Hente aktive opplysninger til behandling",
         security = [SecurityRequirement(name = "bearer-key")],
@@ -69,11 +71,11 @@ class DeprecatedOpplysningerController(val opplysningerService: OpplysningerServ
     )
     fun hentAktiv(
         @PathVariable behandlingId: Long,
-        @PathVariable opplysningerType: OpplysningerType,
+        @PathVariable grunnlagstype: Grunnlagstype,
     ): OpplysningerDto {
-        return opplysningerService.hentSistAktiv(
+        return grunnlagService.hentSistAktiv(
             behandlingId,
-            opplysningerType,
-        )?.toDto() ?: behandlingNotFoundException(behandlingId)
+            grunnlagstype,
+        )?.toDto()?.tilOpplysningerDto() ?: behandlingNotFoundException(behandlingId)
     }
 }

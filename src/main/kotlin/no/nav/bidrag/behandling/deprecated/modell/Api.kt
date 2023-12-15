@@ -18,9 +18,21 @@ enum class SoknadType {
     ENDRING_MOTTAKER,
 }
 
-data class BoforholdResponse(
-    val husstandsBarn: Set<HusstandsbarnDto>,
-    val sivilstand: Set<SivilstandDto>,
-    val boforholdBegrunnelseMedIVedtakNotat: String? = null,
-    val boforholdBegrunnelseKunINotat: String? = null,
-)
+@Schema(enumAsRef = true)
+enum class OpplysningerType {
+    /**Typer for opplysninger som er bearbeidet av frontend eller bidrag-inntekt*/
+    INNTEKT_BEARBEIDET,
+    BOFORHOLD_BEARBEIDET,
+
+    /**Typer for opplysninger hentet fra bidrag-grunnlag*/
+    INNTEKT,
+    ARBEIDSFORHOLD,
+    HUSSTANDSMEDLEMMER,
+    SIVILSTAND,
+
+    @Deprecated("", replaceWith = ReplaceWith("BOFORHOLD_BEARBEIDET"))
+    BOFORHOLD,
+
+    @Deprecated("", replaceWith = ReplaceWith("INNTEKT_BEARBEIDET"))
+    INNTEKTSOPPLYSNINGER,
+}

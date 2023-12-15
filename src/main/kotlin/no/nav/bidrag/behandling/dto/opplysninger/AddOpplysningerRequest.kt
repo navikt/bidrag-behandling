@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.opplysninger
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import java.time.LocalDate
 
 data class AddOpplysningerRequest(
@@ -12,7 +12,7 @@ data class AddOpplysningerRequest(
     @Schema(required = true, nullable = false)
     val aktiv: Boolean,
     @Schema(required = true, nullable = false)
-    val opplysningerType: OpplysningerType,
+    val grunnlagstype: Grunnlagstype,
     @Schema(type = "string", description = "data", required = true, nullable = false)
     @field:NotBlank
     val data: String,

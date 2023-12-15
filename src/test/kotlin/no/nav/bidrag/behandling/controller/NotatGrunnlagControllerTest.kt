@@ -19,7 +19,7 @@ import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.YearMonth
 
-class NotatOpplysningerControllerTest : KontrollerTestRunner() {
+class NotatGrunnlagControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal hente opplysninger for notat`() {
         val behandling = testdataManager.opprettBehandling()
