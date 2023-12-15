@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.dto.opplysninger
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class GrunnlagDto(

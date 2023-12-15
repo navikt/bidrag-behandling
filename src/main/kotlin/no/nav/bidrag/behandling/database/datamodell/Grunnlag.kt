@@ -19,7 +19,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandDto
 import java.time.LocalDateTime
-import java.util.Date
 
 @Entity(name = "grunnlag")
 class Grunnlag(

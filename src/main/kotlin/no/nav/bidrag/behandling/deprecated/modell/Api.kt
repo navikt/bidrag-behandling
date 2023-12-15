@@ -1,8 +1,6 @@
 package no.nav.bidrag.behandling.deprecated.modell
 
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 
 @Schema(enumAsRef = true)
 enum class SoknadType {

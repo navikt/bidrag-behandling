@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
 import no.nav.bidrag.behandling.deprecated.dto.tilOpplysningerDto
 import no.nav.bidrag.behandling.dto.opplysninger.AddOpplysningerRequest
 import no.nav.bidrag.behandling.service.GrunnlagService
-import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.behandling.transformers.toDto
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody
 @Deprecated("Bruk v1")
 @DeprecatedBehandlingRestController
 class DeprecatedGrunnlagController(val grunnlagService: GrunnlagService) {
-
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
     @Operation(

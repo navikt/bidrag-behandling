@@ -16,10 +16,11 @@ data class OpplysningerDto(
     val hentetDato: LocalDate,
 )
 
-fun GrunnlagDto.tilOpplysningerDto(): OpplysningerDto = OpplysningerDto(
-    id = this.id,
-    behandlingId = this.behandlingsid,
-    opplysningerType = OpplysningerType.valueOf(this.grunnlagstype.name),
-    data = this.data,
-    hentetDato = this.innhentet.toLocalDate(),
-)
+fun GrunnlagDto.tilOpplysningerDto(): OpplysningerDto =
+    OpplysningerDto(
+        id = this.id,
+        behandlingId = this.behandlingsid,
+        opplysningerType = OpplysningerType.valueOf(this.grunnlagstype.name),
+        data = this.data,
+        hentetDato = this.innhentet.toLocalDate(),
+    )

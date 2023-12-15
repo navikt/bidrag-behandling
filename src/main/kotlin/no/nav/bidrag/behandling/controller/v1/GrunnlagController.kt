@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PathVariable
 
 @BehandlingRestControllerV1
 class GrunnlagController(val grunnlagService: GrunnlagService) {
-
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}/grunnlag/{grunnlagstype}/aktiv")
     @Operation(
