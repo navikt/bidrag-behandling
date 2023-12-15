@@ -101,7 +101,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal returnere httpkode 400 dersom behandling mangler informasjon om husstandsbarn`() {
         // given
-        var behandling = lagreBehandlingMedRoller()
+        val behandling = lagreBehandlingMedRoller()
 
         // when
         val returnert =
@@ -132,7 +132,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     fun `skal videreføre BAD_REQUEST fra bidrag-beregn-forskudd-rest`() {
         // given
         stubUtils.stubBeregneForskudd(HttpStatus.BAD_REQUEST)
-        var behandling = lagreBehandlingMedRoller()
+        val behandling = lagreBehandlingMedRoller()
 
         // when
         val returnert =
@@ -152,7 +152,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     }
 
     private fun lagreBehandlingMedRoller(): Behandling {
-        var behandling = oppretteBehandling()
+        val behandling = oppretteBehandling()
         behandling.roller = oppretteBehandlingRoller(behandling)
         return behandlingRepository.save(behandling)
     }

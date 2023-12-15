@@ -6,10 +6,8 @@ import mu.KotlinLogging
 import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForskuddService
-import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.client.HttpClientErrorException
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -30,8 +28,6 @@ class BehandlingBeregnForskuddController(
         LOGGER.info("Beregner forskudd for behandling med id $behandlingsid")
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
-        if (behandling.id == null) throw HttpClientErrorException(HttpStatus.NOT_FOUND)
-
-        return forskuddService.beregneForskudd(behandling.id)
+        return forskuddService.beregneForskudd(behandling.id!!)
     }
 }

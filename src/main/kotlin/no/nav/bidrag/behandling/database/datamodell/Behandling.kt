@@ -126,7 +126,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
         zipOrAccumulate(
             { ensure(this@validere.id != null) { raise("Behandlingsid mangler") } },
             { ensure(this@validere.datoTom != null) { raise("Til-dato mangler for behandling") } },
-            { ensure(this@validere.virkningsdato != null) { raise("Virkningsdato mangler for behandling") } },
+            { ensure(this@validere.virkningsdato != null) { raise("Mangler virkningsdato") } },
             { ensure(this@validere.saksnummer.isNotBlank()) { raise("Saksnummer mangler for behandling") } },
             {
                 ensure(this@validere.sivilstand.size > 0) { raise("Sivilstand mangler i behandling") }
@@ -143,13 +143,12 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                 val bm = getBidragsmottaker()
                 val bp = getBidragspliktig()
                 ensure(this@validere.inntekter.any { it.taMed && it.ident == bm?.ident }) { raise("Mangler inntekter for bidragsmottaker") }
-                ensure(
-                    this@validere.behandlingstype == Behandlingstype.FORSKUDD ||
-                        this@validere.inntekter.any { it.taMed && it.ident == bp?.ident },
-                ) {
-                    raise(
-                        "Mangler innteker for bidragspliktig",
-                    )
+                if (behandlingstype != Behandlingstype.FORSKUDD) {
+                    ensure(this@validere.inntekter.any { it.taMed && it.ident == bp?.ident }) {
+                        raise(
+                            "Mangler innteker for bidragspliktig",
+                        )
+                    }
                 }
             },
             {
@@ -163,7 +162,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                 }
             },
             {
-                ensure(this@validere.husstandsbarn.size > 0) { raise("Husstandsbarn mangler") }
+                ensure(this@validere.husstandsbarn.size > 0) { raise("Mangler informasjon om husstandsbarn") }
                 this@validere.husstandsbarn.filter { it.medISaken }.forEach {
                     ensure(it.perioder.isNotEmpty()) {
                         raise(
@@ -186,7 +185,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                 }
             },
         ) { _, _, _, _, _, _, _, _, _ ->
-            var behandling = this@validere
+            val behandling = this@validere
             behandling.inntekter = inntekter
             behandling.husstandsbarn = husstandsbarn
             behandling
