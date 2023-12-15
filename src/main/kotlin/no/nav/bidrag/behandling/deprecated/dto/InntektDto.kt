@@ -56,12 +56,23 @@ fun tilInntektsrapportering(inntektstype: String): Inntektsrapportering {
     return Inntektsrapportering.valueOf(inntektstype)
 }
 
+fun tilInntektType(inntektsrapportering: Inntektsrapportering): String {
+    when (inntektsrapportering) {
+        Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER -> return "LOENNSINNTEKT"
+        Inntektsrapportering.NÆRINGSINNTEKT_MANUELT_BEREGNET -> return "NAERINGSINNTEKT"
+        Inntektsrapportering.SMÅBARNSTILLEGG -> return  InntektType.EKSTRA_SMAABARNSTILLEGG.name
+        Inntektsrapportering.KONTANTSTØTTE  -> return InntektType.KONTANTSTOTTE.name
+        Inntektsrapportering.YTELSE_FRA_OFFENTLIG_MANUELT_BEREGNET -> return  "YTELSE_FRA_OFFENTLIGE"
+        else -> {return inntektsrapportering.name}
+    }
+}
+
 fun Set<no.nav.bidrag.behandling.dto.inntekt.InntektDto>.toDepreactedInntektDto(): Set<InntektDto> =
     this.map {
         InntektDto(
             id = it.id,
             taMed = it.taMed,
-            inntektType = it.inntektstype.name,
+            inntektType = tilInntektType(it.inntektstype),
             belop = it.beløp,
             datoFom = it.datoFom!!,
             datoTom = it.datoTom,
