@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.service.ForskuddService
+import no.nav.bidrag.behandling.service.BeregningService
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 
@@ -14,7 +14,7 @@ private val LOGGER = KotlinLogging.logger {}
 @BehandlingRestControllerV1
 class BehandlingBeregnForskuddController(
     private val behandlingService: BehandlingService,
-    private val forskuddService: ForskuddService,
+    private val beregningService: BeregningService,
 ) {
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingsid}/beregn")
@@ -28,6 +28,6 @@ class BehandlingBeregnForskuddController(
         LOGGER.info("Beregner forskudd for behandling med id $behandlingsid")
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
-        return forskuddService.beregneForskudd(behandling.id!!)
+        return beregningService.beregneForskudd(behandling.id!!)
     }
 }

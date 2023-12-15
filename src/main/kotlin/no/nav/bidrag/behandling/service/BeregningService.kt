@@ -31,7 +31,7 @@ private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), foedselsdato)
 
 @Service
-class ForskuddService(
+class BeregningService(
     private val behandlingService: BehandlingService,
     private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
 ) {

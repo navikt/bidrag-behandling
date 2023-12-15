@@ -16,7 +16,7 @@ class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) :
 class BeregningAvResultatForBehandlingFeilet(val feilmeldinger: List<String>) :
     HttpClientErrorException(
         HttpStatus.BAD_REQUEST,
-        "Beregning av resultat feilet med: ${feilmeldinger.joinToString(",")}",
+        "Beregning av resultat feilet med: ${feilmeldinger.joinToString(", ")}",
     )
 
 fun fantIkkeSak(saksnummer: String): Nothing =

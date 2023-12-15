@@ -119,33 +119,39 @@ class StubUtils {
         )
     }
 
-    fun stubBeregneForskudd(status: HttpStatus = HttpStatus.OK) {
+    fun stubBeregneForskudd(
+        status: HttpStatus = HttpStatus.OK,
+        headers: Map<String, String> = emptyMap(),
+    ) {
+        val response =
+            aClosedJsonResponse()
+                .withStatus(status.value())
+                .withBody(
+                    toJsonString(
+                        BeregnGrunnlag(
+                            periode =
+                                ÅrMånedsperiode(
+                                    LocalDate.now().minusMonths(6),
+                                    LocalDate.now().plusMonths(6),
+                                ),
+                            søknadsbarnReferanse = "123",
+                            grunnlagListe =
+                                listOf(
+                                    Grunnlag(
+                                        referanse = "abra_cadabra",
+                                        type = Grunnlagstype.BARNETILLEGG,
+                                        grunnlagsreferanseListe = listOf("123"),
+                                    ),
+                                ),
+                        ),
+                    ),
+                )
+        headers.forEach {
+            response.withHeader(it.key, it.value)
+        }
         WireMock.stubFor(
             WireMock.post(WireMock.urlMatching("/beregn/forskudd"))
-                .willReturn(
-                    aClosedJsonResponse()
-                        .withStatus(status.value())
-                        .withBody(
-                            toJsonString(
-                                BeregnGrunnlag(
-                                    periode =
-                                        ÅrMånedsperiode(
-                                            LocalDate.now().minusMonths(6),
-                                            LocalDate.now().plusMonths(6),
-                                        ),
-                                    søknadsbarnReferanse = "123",
-                                    grunnlagListe =
-                                        listOf(
-                                            Grunnlag(
-                                                referanse = "abra_cadabra",
-                                                type = Grunnlagstype.BARNETILLEGG,
-                                                grunnlagsreferanseListe = listOf("123"),
-                                            ),
-                                        ),
-                                ),
-                            ),
-                        ),
-                ),
+                .willReturn(response),
         )
     }
 

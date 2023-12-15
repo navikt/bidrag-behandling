@@ -180,7 +180,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                 }
 
                 mapOrAccumulate(husstandsbarn.filter { it.medISaken }.flatMap { it.perioder }) {
-                    ensure(it.datoFom != null) { raise("Fra-dato mangler for husstandsbarnpreiode i behandling") }
+                    ensure(it.datoFom != null) { raise("Fra-dato mangler for husstandsbarnperiode i behandling") }
                     it
                 }
             },
