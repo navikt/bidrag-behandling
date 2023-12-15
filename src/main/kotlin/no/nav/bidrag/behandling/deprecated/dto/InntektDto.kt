@@ -60,10 +60,12 @@ fun tilInntektType(inntektsrapportering: Inntektsrapportering): String {
     when (inntektsrapportering) {
         Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER -> return "LOENNSINNTEKT"
         Inntektsrapportering.NÆRINGSINNTEKT_MANUELT_BEREGNET -> return "NAERINGSINNTEKT"
-        Inntektsrapportering.SMÅBARNSTILLEGG -> return  InntektType.EKSTRA_SMAABARNSTILLEGG.name
-        Inntektsrapportering.KONTANTSTØTTE  -> return InntektType.KONTANTSTOTTE.name
-        Inntektsrapportering.YTELSE_FRA_OFFENTLIG_MANUELT_BEREGNET -> return  "YTELSE_FRA_OFFENTLIGE"
-        else -> {return inntektsrapportering.name}
+        Inntektsrapportering.SMÅBARNSTILLEGG -> return InntektType.EKSTRA_SMAABARNSTILLEGG.name
+        Inntektsrapportering.KONTANTSTØTTE -> return InntektType.KONTANTSTOTTE.name
+        Inntektsrapportering.YTELSE_FRA_OFFENTLIG_MANUELT_BEREGNET -> return "YTELSE_FRA_OFFENTLIGE"
+        else -> {
+            return inntektsrapportering.name
+        }
     }
 }
 
