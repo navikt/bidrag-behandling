@@ -97,3 +97,19 @@ enum class ForskuddAarsakType(val beskrivelse: String) {
     OPPH_UTLAND("Opph.utland"),
     UTENL_YTELSE("Utenl.ytelse"),
 }
+
+val årsakskoderAvslag =
+    listOf(
+        ForskuddAarsakType.ANNET_AVSLAG,
+        ForskuddAarsakType.PGA_BARNEPENSJ,
+        ForskuddAarsakType.BARNS_EKTESKAP,
+        ForskuddAarsakType.BARNS_INNTEKT,
+        ForskuddAarsakType.PGA_YTELSE_FTRL,
+        ForskuddAarsakType.FULLT_UNDERH_OFF,
+        ForskuddAarsakType.IKKE_OMSORG,
+        ForskuddAarsakType.IKKE_OPPH_I_RIKET,
+        ForskuddAarsakType.MANGL_DOK,
+        ForskuddAarsakType.PGA_SAMMENFL,
+        ForskuddAarsakType.OPPH_UTLAND,
+        ForskuddAarsakType.UTENL_YTELSE,
+    )

@@ -5,10 +5,13 @@ import arrow.core.raise.either
 import com.fasterxml.jackson.databind.node.POJONode
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.validere
-import no.nav.bidrag.behandling.dto.beregning.Forskuddsberegningrespons
+import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegningBarn
+import no.nav.bidrag.behandling.dto.beregning.ResultatRolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.transformers.tilBeregnGrunnlag
 import no.nav.bidrag.behandling.valideringAvBehandlingFeilet
@@ -23,29 +26,29 @@ import java.time.LocalDate
 
 private val LOGGER = KotlinLogging.logger {}
 
+private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
+
+private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), foedselsdato)
+
 @Service
-class ForskuddService(
+class BeregningService(
     private val behandlingService: BehandlingService,
     private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
-    private val bidragPersonConsumer: BidragPersonConsumer,
 ) {
-    fun beregneForskudd(behandlingsid: Long): Forskuddsberegningrespons {
+    fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
         val respons =
             either {
                 val behandling =
                     behandlingService.hentBehandlingById(behandlingsid).validere().bind()
                 val resultat =
                     behandling.getSøknadsbarn().mapOrAccumulate {
-                        val fødselsdato = finneFødselsdato(it.ident, it.foedselsdato)
-
-                        // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
-                        if (fødselsdato == null) {
-                            fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid)
-                        }
+                        val fødselsdato =
+                            finneFødselsdato(it.ident, it.foedselsdato)
+                                // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                                ?: fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid)
 
                         val rolleBm =
-                            behandling.roller.filter { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }
-                                .first()
+                            behandling.roller.first { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }
                         val bm =
                             lagePersonobjekt(
                                 rolleBm.ident,
@@ -54,17 +57,29 @@ class ForskuddService(
                                 "bidragsmottaker",
                             )
                         val søknadsbarn =
-                            lagePersonobjekt(it.ident, it.navn, fødselsdato, "søknadsbarn-${it.id}")
+                            lagePersonobjekt(it.ident, it.navn, fødselsdato, "søkandsbarn-${it.id}")
                         val øvrigeBarnIHusstand =
                             oppretteGrunnlagForHusstandsbarn(behandling, it.ident!!)
-                        var beregnForskudd =
+                        val beregnForskudd =
                             behandling.tilBeregnGrunnlag(bm, søknadsbarn, øvrigeBarnIHusstand)
 
                         try {
-                            bidragBeregnForskuddConsumer.beregnForskudd(beregnForskudd)
+                            ResultatForskuddsberegningBarn(
+                                it.mapTilResultatBarn(),
+                                bidragBeregnForskuddConsumer.beregnForskudd(beregnForskudd),
+                            )
                         } catch (e: HttpClientErrorException) {
                             LOGGER.warn { e }
-                            val errors = e.responseHeaders?.get("error")?.joinToString("\r\n")
+                            val errors =
+                                e.responseHeaders?.get("error")?.joinToString("\r\n") { message ->
+                                    val split = message.split(":")
+                                    if (split.size > 1) {
+                                        split.takeLast(split.size - 1)
+                                            .joinToString(" ").trim()
+                                    } else {
+                                        split.first()
+                                    }
+                                }
                             raise(errors ?: e.message!!)
                         } catch (e: Exception) {
                             LOGGER.warn { e }
@@ -82,25 +97,22 @@ class ForskuddService(
             }
         }
 
-        return Forskuddsberegningrespons(respons.getOrNull())
+        return ResultatForskuddsberegning(respons.getOrNull() ?: emptyList())
     }
 
     private fun oppretteGrunnlagForHusstandsbarn(
         behandling: Behandling,
         personidentSøknadsbarn: String,
     ): Set<Grunnlag> {
-        val grunnlag = HashSet<Grunnlag>()
-        behandling.husstandsbarn.filter { barn -> barn.ident != personidentSøknadsbarn }.forEach {
-            val fødselsdato = finneFødselsdato(it.ident, it.foedselsdato)
+        return behandling.husstandsbarn.filter { barn -> barn.ident != personidentSøknadsbarn }
+            .map {
+                val fødselsdato =
+                    finneFødselsdato(it.ident, it.foedselsdato)
+                        // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                        ?: fantIkkeFødselsdatoTilSøknadsbarn(behandling.id!!)
 
-            // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
-            if (fødselsdato == null) {
-                fantIkkeFødselsdatoTilSøknadsbarn(behandling.id!!)
-            }
-            grunnlag.add(lagePersonobjekt(it.ident, it.navn, fødselsdato, "husstandsbarn-${it.id}"))
-        }
-
-        return grunnlag
+                lagePersonobjekt(it.ident, it.navn, fødselsdato, "husstandsbarn-${it.id}")
+            }.toSet()
     }
 
     private fun lagePersonobjekt(
@@ -109,7 +121,7 @@ class ForskuddService(
         fødselsdato: LocalDate,
         referanse: String,
     ): Grunnlag {
-        var personident = ident ?: ""
+        val personident = ident ?: ""
 
         return Grunnlag(
             referanse = "person-$referanse",
@@ -118,7 +130,7 @@ class ForskuddService(
                 POJONode(
                     Person(
                         ident = Personident(personident),
-                        navn = navn ?: "",
+                        navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
                         fødselsdato = fødselsdato,
                     ),
                 ),

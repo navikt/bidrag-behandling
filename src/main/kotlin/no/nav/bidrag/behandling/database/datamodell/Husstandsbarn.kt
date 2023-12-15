@@ -10,6 +10,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import java.time.LocalDate
 
 @Entity(name = "barn_i_husstand")
@@ -33,3 +34,5 @@ class Husstandsbarn(
     )
     var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
 )
+
+fun Husstandsbarn.hentNavn() = navn ?: hentPersonVisningsnavn(ident)
