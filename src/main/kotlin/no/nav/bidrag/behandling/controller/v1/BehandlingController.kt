@@ -57,12 +57,13 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     ): OpprettBehandlingResponse {
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
-                    ingenVoksneUtenIdent(opprettBehandling.roller),
+                ingenVoksneUtenIdent(opprettBehandling.roller),
         )
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
-            "${OpprettBehandlingRequest::stønadstype.name} eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen"
+            "${OpprettBehandlingRequest::stønadstype.name} " +
+                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -98,10 +99,10 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         val behandlingDo = behandlingService.opprettBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " +
-                    "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
-                    "soknadType ${opprettBehandling.vedtakstype} " +
-                    "og soknadFra ${opprettBehandling.søknadFra} " +
-                    "med id ${behandlingDo.id} "
+                "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
+                "soknadType ${opprettBehandling.vedtakstype} " +
+                "og soknadFra ${opprettBehandling.søknadFra} " +
+                "med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -198,16 +199,16 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         soknadsid = behandling.soknadsid,
         behandlerenhet = behandling.behandlerEnhet,
         roller =
-        behandling.roller.map {
-            RolleDto(
-                it.id!!,
-                it.rolletype,
-                it.ident,
-                it.navn ?: hentPersonVisningsnavn(it.ident),
-                it.foedselsdato,
-                it.opprettetDato,
-            )
-        }.toSet(),
+            behandling.roller.map {
+                RolleDto(
+                    it.id!!,
+                    it.rolletype,
+                    it.ident,
+                    it.navn ?: hentPersonVisningsnavn(it.ident),
+                    it.foedselsdato,
+                    it.opprettetDato,
+                )
+            }.toSet(),
         husstandsbarn = behandling.husstandsbarn.toHusstandsBarnDto(behandling),
         sivilstand = behandling.sivilstand.toSivilstandDto(),
         virkningsdato = behandling.virkningsdato,

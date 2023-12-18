@@ -129,7 +129,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
             {
                 ensure(this@validere.datoTom == null || this@validere.datoTom.isAfter(this@validere.datoFom)) {
                     raise(
-                        "Til dato må være etter fra dato"
+                        "Til dato må være etter fra dato",
                     )
                 }
             },
