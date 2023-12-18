@@ -23,7 +23,7 @@ data class BehandlingDto(
     val datoFom: LocalDate,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoTom: LocalDate,
+    val datoTom: LocalDate? = null,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val mottatDato: LocalDate,

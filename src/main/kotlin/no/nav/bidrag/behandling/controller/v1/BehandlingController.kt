@@ -8,11 +8,11 @@ import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.OppdaterRollerRequest
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingRequest
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.behandling.SyncRollerRequest
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -53,11 +53,17 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     fun oppretteBehandling(
         @Valid
         @RequestBody(required = true)
-        createBehandling: CreateBehandlingRequest,
-    ): CreateBehandlingResponse {
+        opprettBehandling: OpprettBehandlingRequest,
+    ): OpprettBehandlingResponse {
         Validate.isTrue(
-            ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller) &&
-                ingenVoksneUtenIdent(createBehandling.roller),
+            ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
+                ingenVoksneUtenIdent(opprettBehandling.roller),
+        )
+
+        Validate.isTrue(
+            opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
+            "${OpprettBehandlingRequest::stønadstype.name} " +
+                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -67,39 +73,38 @@ class BehandlingController(private val behandlingService: BehandlingService) {
                 ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         val behandling =
             Behandling(
-                behandlingstype = createBehandling.behandlingstype,
-                soknadstype = createBehandling.søknadstype,
-                datoFom = createBehandling.datoFom,
-                datoTom = createBehandling.datoTom,
-                mottattdato = createBehandling.mottattdato,
-                saksnummer = createBehandling.saksnummer,
-                soknadsid = createBehandling.søknadsid,
-                soknadRefId = createBehandling.søknadsreferanseid,
-                behandlerEnhet = createBehandling.behandlerenhet,
-                soknadFra = createBehandling.søknadFra,
-                stonadstype = createBehandling.stønadstype,
-                engangsbeloptype = createBehandling.engangsbeløpstype,
+                vedtakstype = opprettBehandling.vedtakstype,
+                datoFom = opprettBehandling.datoFom,
+                mottattdato = opprettBehandling.mottattdato,
+                saksnummer = opprettBehandling.saksnummer,
+                soknadsid = opprettBehandling.søknadsid,
+                soknadRefId = opprettBehandling.søknadsreferanseid,
+                behandlerEnhet = opprettBehandling.behandlerenhet,
+                soknadFra = opprettBehandling.søknadFra,
+                stonadstype = opprettBehandling.stønadstype,
+                engangsbeloptype = opprettBehandling.engangsbeløpstype,
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = TokenUtils.hentApplikasjonsnavn() ?: "ukjent",
             )
         val roller =
             HashSet(
-                createBehandling.roller.map {
+                opprettBehandling.roller.map {
                     it.toRolle(behandling)
                 },
             )
 
         behandling.roller.addAll(roller)
 
-        val behandlingDo = behandlingService.createBehandling(behandling)
+        val behandlingDo = behandlingService.opprettBehandling(behandling)
         LOGGER.info {
-            "Opprettet behandling for behandlingType ${createBehandling.behandlingstype} " +
-                "soknadType ${createBehandling.søknadstype} " +
-                "og soknadFra ${createBehandling.søknadFra} " +
+            "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " +
+                "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
+                "soknadType ${opprettBehandling.vedtakstype} " +
+                "og soknadFra ${opprettBehandling.søknadFra} " +
                 "med id ${behandlingDo.id} "
         }
-        return CreateBehandlingResponse(behandlingDo.id!!)
+        return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
     @Suppress("unused")
@@ -116,14 +121,14 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     }
 
     @Suppress("unused")
-    @PutMapping("/behandling/{behandlingId}/roller/sync")
+    @PutMapping("/behandling/{behandlingId}/roller")
     @Operation(
         description = "Sync fra behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun synkronisereRoller(
+    fun oppdaterRoller(
         @PathVariable behandlingId: Long,
-        @Valid @RequestBody(required = true) request: SyncRollerRequest,
+        @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
     ) = behandlingService.syncRoller(behandlingId, request.roller)
 
     @Suppress("unused")
@@ -182,39 +187,40 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         behandlingId: Long,
         behandling: Behandling,
     ) = BehandlingDto(
-        behandlingId,
-        behandling.behandlingstype,
-        behandling.soknadstype,
-        behandling.vedtaksid != null,
-        behandling.datoFom,
-        behandling.datoTom,
-        behandling.mottattdato,
-        behandling.soknadFra,
-        behandling.saksnummer,
-        behandling.soknadsid,
-        behandling.behandlerEnhet,
-        behandling.roller.map {
-            RolleDto(
-                it.id!!,
-                it.rolletype,
-                it.ident,
-                it.navn ?: hentPersonVisningsnavn(it.ident),
-                it.foedselsdato,
-                it.opprettetDato,
-            )
-        }.toSet(),
-        behandling.husstandsbarn.toHusstandsBarnDto(behandling),
-        behandling.sivilstand.toSivilstandDto(),
-        behandling.virkningsdato,
-        behandling.soknadRefId,
-        behandling.grunnlagspakkeid,
-        behandling.aarsak,
-        behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
-        behandling.virkningstidspunktbegrunnelseKunINotat,
-        behandling.boforholdsbegrunnelseIVedtakOgNotat,
-        behandling.boforholdsbegrunnelseKunINotat,
-        behandling.inntektsbegrunnelseIVedtakOgNotat,
-        behandling.inntektsbegrunnelseKunINotat,
+        id = behandlingId,
+        vedtakstype = behandling.vedtakstype,
+        søknadType = behandling.vedtakstype,
+        erVedtakFattet = behandling.vedtaksid != null,
+        datoFom = behandling.datoFom,
+        datoTom = behandling.datoTom,
+        mottattdato = behandling.mottattdato,
+        soknadFraType = behandling.soknadFra,
+        saksnummer = behandling.saksnummer,
+        soknadsid = behandling.soknadsid,
+        behandlerenhet = behandling.behandlerEnhet,
+        roller =
+            behandling.roller.map {
+                RolleDto(
+                    it.id!!,
+                    it.rolletype,
+                    it.ident,
+                    it.navn ?: hentPersonVisningsnavn(it.ident),
+                    it.foedselsdato,
+                    it.opprettetDato,
+                )
+            }.toSet(),
+        husstandsbarn = behandling.husstandsbarn.toHusstandsBarnDto(behandling),
+        sivilstand = behandling.sivilstand.toSivilstandDto(),
+        virkningsdato = behandling.virkningsdato,
+        soknadRefId = behandling.soknadRefId,
+        grunnlagspakkeid = behandling.grunnlagspakkeid,
+        årsak = behandling.aarsak,
+        virkningstidspunktsbegrunnelseIVedtakOgNotat = behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
+        virkningstidspunktsbegrunnelseKunINotat = behandling.virkningstidspunktbegrunnelseKunINotat,
+        boforholdsbegrunnelseIVedtakOgNotat = behandling.boforholdsbegrunnelseIVedtakOgNotat,
+        boforholdsbegrunnelseKunINotat = behandling.boforholdsbegrunnelseKunINotat,
+        inntektsbegrunnelseIVedtakOgNotat = behandling.inntektsbegrunnelseIVedtakOgNotat,
+        inntektsbegrunnelseKunINotat = behandling.inntektsbegrunnelseKunINotat,
     )
 
     @Suppress("unused")
@@ -238,13 +244,12 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         return behandlingService.hentBehandlinger().map { behandlingDto(it.id!!, it) }
     }
 
-    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<CreateRolleDto>): Boolean {
-        return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident.isNullOrBlank() }
+    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
+        return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
             .none { r -> r.navn.isNullOrBlank() }
     }
 
-    private fun ingenVoksneUtenIdent(roller: Set<CreateRolleDto>): Boolean {
-        return roller.filter { r -> r.rolletype != Rolletype.BARN && r.ident.isNullOrBlank() }
-            .none()
+    private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
+        return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
     }
 }

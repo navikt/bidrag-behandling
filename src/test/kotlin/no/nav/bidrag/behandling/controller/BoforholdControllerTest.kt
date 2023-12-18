@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
 import no.nav.bidrag.behandling.dto.boforhold.OppdatereBoforholdRequest
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
@@ -21,13 +21,13 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     fun `skal lagre boforhold data`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
                     opprettetDato = LocalDate.now().minusMonths(8),
@@ -35,7 +35,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 ),
             )
 
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+        val testBehandlingMedNull =
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -43,14 +44,22 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                CreateBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
         // 2.1 Prepare husstandsBarn
 
         val perioder =
-            setOf(HusstandsbarnperiodeDto(null, null, null, Bostatuskode.IKKE_MED_FORELDER, Kilde.OFFENTLIG))
+            setOf(
+                HusstandsbarnperiodeDto(
+                    null,
+                    null,
+                    null,
+                    Bostatuskode.IKKE_MED_FORELDER,
+                    Kilde.OFFENTLIG,
+                ),
+            )
         val husstandsBarn =
             setOf(
                 HusstandsbarnDto(
@@ -65,7 +74,13 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
         // 2.2
         val boforholdData =
-            OppdatereBoforholdRequest(emptySet(), husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //
+            OppdatereBoforholdRequest(
+                emptySet(),
+                husstandsBarn,
+                emptySet(),
+                "med i vedtak",
+                "kun i notat",
+            ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling/${behandling.body!!.id}/boforhold",

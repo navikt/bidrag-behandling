@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import java.util.Date
 
 enum class CreateRolleRolleType {
@@ -42,13 +43,12 @@ data class CreateRolleDto(
     val erSlettet: Boolean = false,
 )
 
-fun Set<CreateRolleDto>.toCreateRolleDto(): Set<no.nav.bidrag.behandling.dto.behandling.CreateRolleDto> =
+fun Set<CreateRolleDto>.toOpprettRolleDto(): Set<no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto> =
     this.map {
-        no.nav.bidrag.behandling.dto.behandling.CreateRolleDto(
+        no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto(
             rolletype = it.rolleType.toRolletype(),
             fødselsdato = it.fodtDato?.toLocalDate(),
-            opprettetdato = it.opprettetDato?.toLocalDate(),
-            ident = it.ident,
+            ident = it.ident?.let { ident -> Personident(ident) },
             navn = it.navn,
         )
     }.toSet()
@@ -70,6 +70,5 @@ fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
         ident,
         fodtDato?.toLocalDate() ?: hentPersonFødselsdato(ident)
             ?: rolleManglerFødselsdato(rolleType.toRolletype()),
-        this.opprettetDato?.toLocalDate(),
         navn = this.navn,
     )

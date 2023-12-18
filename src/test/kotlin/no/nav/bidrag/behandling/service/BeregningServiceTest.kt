@@ -45,10 +45,11 @@ class BeregningServiceTest {
             bidragBeregnForskuddConsumer.beregnForskudd(
                 withArg {
                     it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
-                    it.periode!!.til shouldBe YearMonth.from(behandling.datoTom.plusDays(1))
+                    it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
                     it.grunnlagListe!! shouldHaveSize 7
 
-                    val personer = it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.PERSON }
+                    val personer =
+                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.PERSON }
                     personer shouldHaveSize 2
                     personer.any {
                         objectmapper.treeToValue(
@@ -74,10 +75,11 @@ class BeregningServiceTest {
             bidragBeregnForskuddConsumer.beregnForskudd(
                 withArg {
                     it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
-                    it.periode!!.til shouldBe YearMonth.from(behandling.datoTom.plusDays(1))
+                    it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
                     it.grunnlagListe!! shouldHaveSize 7
 
-                    val personer = it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.PERSON }
+                    val personer =
+                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.PERSON }
                     personer shouldHaveSize 2
                     personer.any {
                         objectmapper.treeToValue(

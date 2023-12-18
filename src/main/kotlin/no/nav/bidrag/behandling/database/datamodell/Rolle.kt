@@ -26,7 +26,7 @@ class Rolle(
     val rolletype: Rolletype,
     val ident: String?,
     val foedselsdato: LocalDate,
-    val opprettetDato: LocalDate?,
+    val opprettetDato: LocalDate = LocalDate.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

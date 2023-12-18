@@ -4,22 +4,17 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
-import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 
-data class CreateBehandlingRequest(
+data class OpprettBehandlingRequest(
     @Schema(required = true)
-    val behandlingstype: Behandlingstype,
-    @Schema(required = true)
-    val søknadstype: Soknadstype,
+    val vedtakstype: Vedtakstype,
     @Schema(required = true)
     val datoFom: LocalDate,
-    @Schema(required = true)
-    val datoTom: LocalDate,
     @Schema(required = true)
     val mottattdato: LocalDate,
     @Schema(required = true)
@@ -31,7 +26,7 @@ data class CreateBehandlingRequest(
     @field:Size(min = 4, max = 4, message = "Enhet må være 4 tegn")
     val behandlerenhet: String,
     @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
-    val roller: Set<@Valid CreateRolleDto>,
+    val roller: Set<@Valid OpprettRolleDto>,
     @Schema(required = true)
     var stønadstype: Stønadstype?,
     @Schema(required = true)

@@ -15,6 +15,7 @@ import no.nav.bidrag.transport.behandling.beregning.felles.grunnlag.BeregningInn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
+import java.time.LocalDate
 
 fun Behandling.tilBeregnGrunnlag(
     bm: Grunnlag,
@@ -33,7 +34,7 @@ fun Behandling.tilBeregnGrunnlag(
 
     val inntekterBarn = this.tilGrunnlagInntekt(søknadsbarn)
     return BeregnGrunnlag(
-        periode = ÅrMånedsperiode(this.virkningsdato!!, this.datoTom.plusDays(1)),
+        periode = ÅrMånedsperiode(this.virkningsdato!!, this.datoTom?.plusDays(1) ?: LocalDate.MAX),
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
             personobjekterBarn + bostatusBarn + inntektBm + sivilstandBm + inntekterBarn,

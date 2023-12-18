@@ -131,7 +131,7 @@ private fun Sivilstand.tilSivilstandsperiode() =
 
 private fun Behandling.tilVirkningstidspunkt() =
     Virkningstidspunkt(
-        søknadstype = soknadstype.name,
+        søknadstype = vedtakstype.name,
         søktAv = soknadFra,
         mottattDato = YearMonth.from(mottattdato),
         søktFraDato = YearMonth.from(datoFom),

@@ -5,9 +5,10 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
+import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
@@ -16,7 +17,6 @@ import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
-import no.nav.bidrag.behandling.transformers.tilVedtakType
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toInntektDomain
@@ -37,7 +37,7 @@ class BehandlingService(
     private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
 ) {
-    fun createBehandling(behandling: Behandling): Behandling =
+    fun opprettBehandling(behandling: Behandling): Behandling =
         behandlingRepository.save(behandling)
             .let {
                 opprettForsendelseForBehandling(it)
@@ -55,10 +55,10 @@ class BehandlingService(
                         behandlingId = behandling.id,
                         soknadId = behandling.soknadsid,
                         soknadFra = behandling.soknadFra,
-                        behandlingType = behandling.behandlingstype.name,
+                        behandlingType = behandling.tilBehandlingstype(),
                         stonadType = behandling.stonadstype,
                         engangsBelopType = behandling.engangsbeloptype,
-                        vedtakType = behandling.soknadstype.tilVedtakType(),
+                        vedtakType = behandling.vedtakstype,
                     ),
             ),
         )
@@ -193,7 +193,7 @@ class BehandlingService(
     @Transactional
     fun syncRoller(
         behandlingId: Long,
-        roller: List<CreateRolleDto>,
+        roller: List<OpprettRolleDto>,
     ) {
         val existingRoller = rolleRepository.findRollerByBehandlingId(behandlingId)
 
@@ -202,12 +202,12 @@ class BehandlingService(
         val rollerSomLeggesTil =
             roller.filter { r ->
                 // not deleted and behandling.roller doesn't contain it yet
-                !r.erSlettet && !existingRoller.any { br -> br.ident == r.ident }
+                !r.erSlettet && !existingRoller.any { br -> br.ident == r.ident?.verdi }
             }
 
         behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
 
-        val identsSomSkalSlettes = roller.filter { r -> r.erSlettet }.map { it.ident }
+        val identsSomSkalSlettes = roller.filter { r -> r.erSlettet }.map { it.ident?.verdi }
         behandling.roller.removeIf { r -> identsSomSkalSlettes.contains(r.ident) }
 
         behandlingRepository.save(behandling)

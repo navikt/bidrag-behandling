@@ -19,6 +19,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import java.time.LocalDate
@@ -29,12 +30,9 @@ import java.time.LocalDateTime
 @Where(clause = "deleted=false")
 class Behandling(
     @Enumerated(EnumType.STRING)
-    val behandlingstype: Behandlingstype,
-    // TODO Endre til Vedtakstype
-    @Enumerated(EnumType.STRING)
-    val soknadstype: Soknadstype,
+    val vedtakstype: Vedtakstype,
     val datoFom: LocalDate,
-    val datoTom: LocalDate,
+    val datoTom: LocalDate? = null,
     val mottattdato: LocalDate,
     val saksnummer: String,
     val soknadsid: Long,
@@ -121,11 +119,19 @@ class Behandling(
     fun getBidragspliktig() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 }
 
+fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
+
 fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
     either {
         zipOrAccumulate(
             { ensure(this@validere.id != null) { raise("Behandlingsid mangler") } },
-            { ensure(this@validere.datoTom != null) { raise("Til-dato mangler for behandling") } },
+            {
+                ensure(this@validere.datoTom == null || this@validere.datoTom.isAfter(this@validere.datoFom)) {
+                    raise(
+                        "Til dato må være etter fra dato",
+                    )
+                }
+            },
             { ensure(this@validere.virkningsdato != null) { raise("Mangler virkningsdato") } },
             { ensure(this@validere.saksnummer.isNotBlank()) { raise("Saksnummer mangler for behandling") } },
             {
@@ -143,7 +149,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                 val bm = getBidragsmottaker()
                 val bp = getBidragspliktig()
                 ensure(this@validere.inntekter.any { it.taMed && it.ident == bm?.ident }) { raise("Mangler inntekter for bidragsmottaker") }
-                if (behandlingstype != Behandlingstype.FORSKUDD) {
+                if (stonadstype != Stønadstype.FORSKUDD) {
                     ensure(this@validere.inntekter.any { it.taMed && it.ident == bp?.ident }) {
                         raise(
                             "Mangler innteker for bidragspliktig",
