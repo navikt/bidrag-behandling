@@ -7,17 +7,17 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Soknadstype
+import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.deprecated.dto.BehandlingDto
 import no.nav.bidrag.behandling.deprecated.dto.CreateBehandlingRequest
 import no.nav.bidrag.behandling.deprecated.dto.RolleDto
 import no.nav.bidrag.behandling.deprecated.dto.RolleTypeDto
 import no.nav.bidrag.behandling.deprecated.dto.SyncRollerRequest
-import no.nav.bidrag.behandling.deprecated.dto.toCreateRolleDto
+import no.nav.bidrag.behandling.deprecated.dto.toOpprettRolleDto
 import no.nav.bidrag.behandling.deprecated.dto.toRolle
 import no.nav.bidrag.behandling.deprecated.modell.SoknadType
-import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.apache.commons.lang3.Validate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -61,13 +62,13 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         @Valid
         @RequestBody(required = true)
         createBehandling: CreateBehandlingRequest,
-    ): CreateBehandlingResponse {
-        ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller.toCreateRolleDto())
+    ): OpprettBehandlingResponse {
+        ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller.toOpprettRolleDto())
 
         Validate.isTrue(
-            ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller.toCreateRolleDto()) &&
+            ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller.toOpprettRolleDto()) &&
                 ingenVoksneUtenIdent(
-                    createBehandling.roller.toCreateRolleDto(),
+                    createBehandling.roller.toOpprettRolleDto(),
                 ),
         )
 
@@ -79,8 +80,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
 
         val behandling =
             Behandling(
-                behandlingstype = createBehandling.behandlingType,
-                soknadstype = Soknadstype.valueOf(createBehandling.soknadType.name),
+                vedtakstype = Vedtakstype.valueOf(createBehandling.soknadType.name),
                 datoFom = createBehandling.datoFom.toLocalDate(),
                 datoTom = createBehandling.datoTom.toLocalDate(),
                 mottattdato = createBehandling.mottatDato.toLocalDate(),
@@ -104,14 +104,14 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
 
         behandling.roller.addAll(roller)
 
-        val behandlingDo = behandlingService.createBehandling(behandling)
+        val behandlingDo = behandlingService.opprettBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
                 "soknadType ${createBehandling.soknadType} " +
                 "og soknadFra ${createBehandling.soknadFra} " +
                 "med id ${behandlingDo.id} "
         }
-        return CreateBehandlingResponse(behandlingDo.id!!)
+        return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
     @Suppress("unused")
@@ -138,7 +138,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         @Valid @RequestBody(required = true) request: SyncRollerRequest,
     ) = behandlingService.syncRoller(
         behandlingId,
-        request.roller.toSet().toCreateRolleDto().toList(),
+        request.roller.toSet().toOpprettRolleDto().toList(),
     )
 
     @Suppress("unused")
@@ -219,8 +219,8 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         behandling: Behandling,
     ) = BehandlingDto(
         behandlingId,
-        behandling.behandlingstype,
-        SoknadType.valueOf(behandling.soknadstype.name),
+        behandling.toBehandlingstype(),
+        SoknadType.valueOf(behandling.vedtakstype.name),
         behandling.vedtaksid != null,
         behandling.datoFom,
         behandling.datoTom,
@@ -253,13 +253,16 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         behandling.inntektsbegrunnelseKunINotat,
     )
 
-    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<CreateRolleDto>): Boolean {
-        return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident.isNullOrBlank() }
+    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
+        return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
             .none { r -> r.navn.isNullOrBlank() }
     }
 
-    private fun ingenVoksneUtenIdent(roller: Set<CreateRolleDto>): Boolean {
-        return roller.filter { r -> r.rolletype != Rolletype.BARN && r.ident.isNullOrBlank() }
-            .none()
+    private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
+        return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
     }
 }
+
+fun Behandling.toBehandlingstype(): Behandlingstype =
+    (stonadstype?.name ?: engangsbeloptype?.name)?.let { Behandlingstype.valueOf(it) }
+        ?: Behandlingstype.FORSKUDD

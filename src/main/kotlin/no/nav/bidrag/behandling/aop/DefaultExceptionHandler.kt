@@ -21,9 +21,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ControllerAdvice
 @Suppress("unused")
-class ExceptionHandler {
+class DefaultExceptionHandler {
     companion object {
-        private val LOGGER = LoggerFactory.getLogger(DefaultRestControllerAdvice::class.java)
+        private val LOGGER = LoggerFactory.getLogger(DefaultExceptionHandler::class.java)
     }
 
     @ResponseBody
@@ -43,12 +43,12 @@ class ExceptionHandler {
             }
         val errorMessage =
             validationError?.fieldErrors?.joinToString(", ") { "${it.field}: ${it.message}" }
-                ?: "ukjent feil"
+                ?: exception.message
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .header(
                 HttpHeaders.WARNING,
-                "Forespørselen inneholder ugyldig verdi: $errorMessage",
+                errorMessage,
             )
             .build<Any>()
     }

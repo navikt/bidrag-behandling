@@ -3,8 +3,8 @@ package no.nav.bidrag.behandling.controller.v1
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import mu.KotlinLogging
-import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -40,7 +40,7 @@ class ArbeidOgInntektController(
             RestTemplateBuilder()
                 .defaultHeader(
                     "Nav-A-inntekt-Filter",
-                    if (behandling.behandlingstype == Behandlingstype.FORSKUDD) "BidragsforskuddA-Inntekt" else "BidragA-Inntekt",
+                    if (behandling.stonadstype == Stønadstype.FORSKUDD) "BidragsforskuddA-Inntekt" else "BidragA-Inntekt",
                 )
                 .defaultHeader("Nav-Enhet", behandling.behandlerEnhet)
                 .defaultHeader("Nav-FagsakId", behandling.saksnummer)

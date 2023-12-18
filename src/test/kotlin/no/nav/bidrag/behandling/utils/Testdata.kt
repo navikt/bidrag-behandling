@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -14,7 +13,6 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDate
@@ -24,6 +22,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -75,8 +74,7 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
 
 fun oppretteBehandling(id: Long? = null): Behandling {
     return Behandling(
-        Behandlingstype.FORSKUDD,
-        Soknadstype.FASTSETTELSE,
+        Vedtakstype.FASTSETTELSE,
         datoFom = YearMonth.parse("2022-02").atEndOfMonth(),
         datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
@@ -228,7 +226,6 @@ fun oppretteBehandlingRoller(
                 rolletype = Rolletype.BIDRAGSMOTTAKER,
                 behandling = behandling,
                 foedselsdato = LocalDate.now().minusMonths(29 * 13),
-                opprettetDato = null,
                 id = if (generateId) (1).toLong() else null,
             ),
             Rolle(
@@ -236,7 +233,6 @@ fun oppretteBehandlingRoller(
                 rolletype = Rolletype.BARN,
                 behandling = behandling,
                 foedselsdato = LocalDate.now().minusMonths(3 * 14),
-                opprettetDato = null,
                 id = if (generateId) (2).toLong() else null,
             ),
             Rolle(
@@ -244,7 +240,6 @@ fun oppretteBehandlingRoller(
                 rolletype = Rolletype.BARN,
                 behandling = behandling,
                 foedselsdato = LocalDate.now().minusMonths(3 * 14),
-                opprettetDato = null,
                 id = if (generateId) (3).toLong() else null,
             ),
         )
@@ -256,7 +251,6 @@ fun oppretteBehandlingRoller(
                 rolletype = Rolletype.BIDRAGSPLIKTIG,
                 behandling = behandling,
                 foedselsdato = LocalDate.now().minusMonths(29 * 14),
-                opprettetDato = null,
                 id = if (generateId) (4).toLong() else null,
             ),
         )
