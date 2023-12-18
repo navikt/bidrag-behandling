@@ -121,7 +121,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 ved ugyldig behandling id`() {
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/1232132/opplysninger/${OpplysningerType.BOFORHOLD.name}/aktiv",
+                "${rootUri()}/behandling/1232132/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,

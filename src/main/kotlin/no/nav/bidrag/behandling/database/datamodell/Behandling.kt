@@ -30,7 +30,6 @@ import java.time.LocalDateTime
 @Where(clause = "deleted=false")
 class Behandling(
     @Enumerated(EnumType.STRING)
-    @Column(name = "soknadstype")
     val vedtakstype: Vedtakstype,
     val datoFom: LocalDate,
     val datoTom: LocalDate? = null,

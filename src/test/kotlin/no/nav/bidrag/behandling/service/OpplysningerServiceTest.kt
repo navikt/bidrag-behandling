@@ -24,7 +24,7 @@ class OpplysningerServiceTest : TestContainerRunner() {
 
     @Test
     fun `hente opplysninger`() {
-        val res = opplysningerService.hentSistAktiv(1, OpplysningerType.BOFORHOLD)
+        val res = opplysningerService.hentSistAktiv(1, OpplysningerType.BOFORHOLD_BEARBEIDET)
         assertNull(res)
     }
 
@@ -49,9 +49,16 @@ class OpplysningerServiceTest : TestContainerRunner() {
                     stonadstype = Stønadstype.FORSKUDD,
                 ),
             )
-        val opp4 = opplysningerService.opprett(b.id!!, OpplysningerType.BOFORHOLD, "data", Date(1))
+        val opp4 =
+            opplysningerService.opprett(
+                b.id!!,
+                OpplysningerType.BOFORHOLD_BEARBEIDET,
+                "data",
+                Date(1),
+            )
 
-        val opplysninger = opplysningerService.hentSistAktiv(b.id!!, OpplysningerType.BOFORHOLD)
+        val opplysninger =
+            opplysningerService.hentSistAktiv(b.id!!, OpplysningerType.BOFORHOLD_BEARBEIDET)
 
         assertNotNull(opplysninger)
         assertEquals(opp4.id, opplysninger.id)
