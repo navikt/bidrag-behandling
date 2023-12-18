@@ -28,7 +28,7 @@
     <kotlin-logging-jvm.version>3.0.5</kotlin-logging-jvm.version>
     <flyway.version>10.2.0</flyway.version>
     <jackson.version>2.16.0</jackson.version>
-    <testcontainers.version>1.19.2</testcontainers.version>
+    <testcontainers.version>1.19.3</testcontainers.version>
     <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
     <skipOwasp>false</skipOwasp>
   </properties>
