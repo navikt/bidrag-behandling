@@ -8,7 +8,7 @@ import java.time.LocalDate
 data class OpplysningerDto(
     val id: Long,
     val behandlingId: Long,
-    val opplysningerType: OpplysningerType,
+    val type: OpplysningerType,
     val data: String,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")

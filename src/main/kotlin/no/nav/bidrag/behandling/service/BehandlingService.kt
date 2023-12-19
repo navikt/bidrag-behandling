@@ -99,8 +99,6 @@ class BehandlingService(
         behandlingRepository.findBehandlingById(behandlingId)
             .orElseThrow { behandlingNotFoundException(behandlingId) }
 
-    fun hentBehandlinger(): List<Behandling> = behandlingRepository.hentBehandlinger()
-
     @Transactional
     fun oppdaterInntekter(
         behandlingsid: Long,

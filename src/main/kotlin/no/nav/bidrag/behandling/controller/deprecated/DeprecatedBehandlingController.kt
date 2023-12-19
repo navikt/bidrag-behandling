@@ -166,27 +166,6 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
     }
 
     @Suppress("unused")
-    @GetMapping("/behandling")
-    @Operation(
-        description = "Hente en liste av alle behandlinger",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Hentet behandlinger"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandlinger"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
-            ),
-        ],
-    )
-    fun hentBehandlinger(): List<BehandlingDto> {
-        return behandlingService.hentBehandlinger().map { behandlingDto(it.id!!, it) }
-    }
-
-    @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}")
     @Operation(
         description = "Hente en behandling",

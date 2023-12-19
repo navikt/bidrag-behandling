@@ -45,4 +45,12 @@ class OpplysningerService(
             behandlingId,
             opplysningerType.getOrMigrate(),
         )
+
+    fun hentAlleSistAktiv(behandlingId: Long): List<Opplysninger> =
+        OpplysningerType.entries.toTypedArray().mapNotNull {
+            opplysningerRepository.findTopByBehandlingIdAndOpplysningerTypeOrderByTsDescIdDesc(
+                behandlingId,
+                it,
+            )
+        }
 }
