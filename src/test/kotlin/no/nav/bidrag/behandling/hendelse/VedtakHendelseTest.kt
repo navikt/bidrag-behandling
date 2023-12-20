@@ -4,14 +4,12 @@ import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
-import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
+import no.nav.bidrag.behandling.utils.ROLLE_BA_2
 import no.nav.bidrag.behandling.utils.ROLLE_BM
-import no.nav.bidrag.behandling.utils.ROLLE_BP
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
@@ -73,9 +71,9 @@ class VedtakHendelseTest : CommonTestRunner() {
         stubUtils.Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BP.fødselsnummer?.verdi}\"")
-        stubUtils.Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_1.fødselsnummer?.verdi}\"")
+        stubUtils.Verify()
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_2.fødselsnummer?.verdi}\"")
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
         stubUtils.Verify().forsendelseSlettet("2")
@@ -117,11 +115,10 @@ class VedtakHendelseTest : CommonTestRunner() {
             opprettetAv = "Z99999",
             opprettetAvNavn = "Saksbehandler Navn",
             kildeapplikasjon = "bisys",
-            behandlingstype = Behandlingstype.BIDRAG18AAR,
             engangsbeloptype = null,
             mottattdato = LocalDate.now(),
             soknadFra = SøktAvType.BIDRAGSMOTTAKER,
-            soknadstype = Soknadstype.FASTSETTELSE,
+            vedtakstype = Vedtakstype.FASTSETTELSE,
             stonadstype = Stønadstype.BIDRAG18AAR,
         )
 

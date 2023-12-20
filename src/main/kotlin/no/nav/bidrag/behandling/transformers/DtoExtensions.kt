@@ -9,9 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
-import no.nav.bidrag.behandling.dto.behandling.CreateRolleDto
+import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
@@ -23,7 +22,6 @@ import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 
@@ -119,11 +117,13 @@ fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<Husstands
         }.sortedBy { it.fødselsdato }.toSet()
 
     val ikkeSøknadsbarnMenErMedISaken =
-        this.filter { it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }.map { it.toDto() }
+        this.filter { it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }
+            .map { it.toDto() }
             .sortedBy { it.fødselsdato }.toSet()
 
     val andreHusstandsbarn =
-        this.filter { !it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }.map { it.toDto() }
+        this.filter { !it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }
+            .map { it.toDto() }
             .sortedBy { it.fødselsdato }.toSet()
 
     return søknadsbarn + ikkeSøknadsbarnMenErMedISaken + andreHusstandsbarn
@@ -215,26 +215,12 @@ fun Behandling.tilForsendelseRolleDto() =
         )
     }
 
-fun CreateRolleDto.toRolle(behandling: Behandling): Rolle =
+fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
     Rolle(
         behandling,
         rolletype = this.rolletype,
-        this.ident,
-        this.fødselsdato ?: hentPersonFødselsdato(ident) ?: rolleManglerFødselsdato(rolletype),
-        this.opprettetdato,
+        this.ident?.verdi,
+        this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
+            ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
     )
-
-fun Soknadstype.tilVedtakType(): Vedtakstype =
-    when (this) {
-        Soknadstype.FASTSETTELSE -> Vedtakstype.FASTSETTELSE
-        Soknadstype.REVURDERING -> Vedtakstype.REVURDERING
-        Soknadstype.ALDERSJUSTERING -> Vedtakstype.ALDERSJUSTERING
-        Soknadstype.ALDERSOPPHØR -> Vedtakstype.ALDERSOPPHØR
-        Soknadstype.ENDRING -> Vedtakstype.ENDRING
-        Soknadstype.ENDRING_MOTTAKER -> Vedtakstype.ENDRING_MOTTAKER
-        Soknadstype.KLAGE -> Vedtakstype.KLAGE
-        Soknadstype.OPPHØR -> Vedtakstype.OPPHØR
-        Soknadstype.INDEKSREGULERING -> Vedtakstype.INDEKSREGULERING
-        Soknadstype.INNKREVING -> Vedtakstype.INNKREVING
-    }

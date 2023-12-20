@@ -17,7 +17,8 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
 
     @Test
     fun `skal oppdatere virknings tidspunkt data`() {
-        val behandling = behandlingService.createBehandling(BehandlingServiceTest.prepareBehandling())
+        val behandling =
+            behandlingService.opprettBehandling(BehandlingServiceTest.prepareBehandling())
 
         val req =
             OppdatereVirkningsTidspunktRequestTest(

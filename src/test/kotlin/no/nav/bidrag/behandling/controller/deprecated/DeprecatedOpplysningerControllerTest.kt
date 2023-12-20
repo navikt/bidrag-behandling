@@ -1,22 +1,14 @@
-package no.nav.bidrag.behandling.controller.deprecated
+package no.nav.bidrag.behandling.controller
 
-import no.nav.bidrag.behandling.controller.v1.BehandlingControllerTest
-import no.nav.bidrag.behandling.controller.v1.CreateRolleDtoTest
-import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
-import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
-import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
-import no.nav.bidrag.behandling.deprecated.modell.tilGrunnlagstype
-import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.service.GrunnlagService
+import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import java.time.LocalDate
 import kotlin.test.Ignore
 
@@ -29,28 +21,25 @@ data class AddOpplysningerRequest(
 )
 
 class OpplysningerControllerTest : KontrollerTestRunner() {
-
-    @Autowired
-    private lateinit var grunnlagService: GrunnlagService
-
     @Test
     fun `skal opprette og oppdatere opplysninger`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(568),
                 ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+        val testBehandlingMedNull =
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -58,7 +47,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                CreateBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
@@ -68,13 +57,10 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         skalOppretteOpplysninger(behandlingId, "opp", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
         skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
 
-        val grunnlag =
-            grunnlagService.hentSistAktiv(behandlingId, OpplysningerType.BOFORHOLD_BEARBEIDET.tilGrunnlagstype())
-
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD_BEARBEIDET/aktiv",
+                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -88,20 +74,19 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal ikke være mulig å opprette flere aktive opplysninger`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(429),
                 ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+        val testBehandlingMedNull =
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -109,26 +94,24 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                CreateBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
         val behandlingId = behandling.body!!.id
 
         // 2. Create new opplysninger opp and opp1
-        skalOppretteOpplysninger(behandlingId, "opp", true, OpplysningerType.BOFORHOLD)
-        skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD)
+        skalOppretteOpplysninger(behandlingId, "opp", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
 
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD_BEARBEIDET/aktiv",
+                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
             )
-
-
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
         Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
         Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
@@ -138,7 +121,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 ved ugyldig behandling id`() {
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/1232132/opplysninger/${OpplysningerType.BOFORHOLD.name}/aktiv",
+                "${rootUri()}/behandling/1232132/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -150,20 +133,21 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 hvis opplysninger ikke eksisterer for en gitt behandling`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(471),
                 ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+        val testBehandlingMedNull =
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -171,14 +155,14 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                CreateBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
         // 2. Check
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.body!!.id}/opplysninger/${OpplysningerType.BOFORHOLD.name}/aktiv",
+                "${rootUri()}/behandling/${behandling.body!!.id}/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -203,50 +187,44 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal opprette og oppdatere opplysninger1`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    navn = "Bip",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    navn = "Bob",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(409),
                 ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+        val testBehandlingMedNull =
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
-        var behandling: ResponseEntity<CreateBehandlingResponse>? = null
-        try {
+        val behandling =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUri()}/behandling",
+                HttpMethod.POST,
+                HttpEntity(testBehandlingMedNull),
+                OpprettBehandlingResponse::class.java,
+            )
+        Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
-              behandling =   httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling",
-                    HttpMethod.POST,
-                    HttpEntity(testBehandlingMedNull),
-                    CreateBehandlingResponse::class.java,
-                )
-        } catch (e:Exception) {
-            e.printStackTrace()
-        }
-        Assertions.assertEquals(HttpStatus.OK, behandling?.statusCode)
-
-        val behandlingId = behandling?.body!!.id
+        val behandlingId = behandling.body!!.id
 
         // 2. Create new opplysninger opp and opp1
-        skalOppretteOpplysninger(behandlingId, "opp", false, OpplysningerType.BOFORHOLD)
-        skalOppretteOpplysninger(behandlingId, "opp1", false, OpplysningerType.BOFORHOLD)
-        skalOppretteOpplysninger(behandlingId, "inn0", false, OpplysningerType.INNTEKTSOPPLYSNINGER)
-        skalOppretteOpplysninger(behandlingId, "inn1", false, OpplysningerType.INNTEKTSOPPLYSNINGER)
+        skalOppretteOpplysninger(behandlingId, "opp", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "opp1", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "inn0", false, OpplysningerType.INNTEKT_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "inn1", false, OpplysningerType.INNTEKT_BEARBEIDET)
 
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.BOFORHOLD.name}/aktiv",
+                "${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -258,7 +236,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         // 4. Assert that inn1 is active
         val oppAktivResult2 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.INNTEKTSOPPLYSNINGER.name}/aktiv",
+                "${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.INNTEKT_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,

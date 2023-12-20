@@ -3,16 +3,16 @@ package no.nav.bidrag.behandling.controller.deprecated
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,25 +23,24 @@ import java.time.LocalDate
 import kotlin.test.Ignore
 import kotlin.test.assertNotNull
 
-data class CreateBehandlingRequestTest(
-    val behandlingstype: Behandlingstype,
+data class OpprettBehandlingRequestTest(
+    val vedtakstype: Vedtakstype,
     val stønadstype: Stønadstype,
     val søknadstype: Soknadstype,
     val datoFom: LocalDate,
-    val datoTom: LocalDate,
     val mottattdato: LocalDate,
     val søknadFra: SøktAvType,
     val saksnummer: String?,
     val behandlerenhet: String,
-    val roller: Set<CreateRolleDtoTest>,
+    val roller: Set<OppprettRolleDtoTest>,
 )
 
-data class CreateRolleDtoTest(
+data class OppprettRolleDtoTest(
     val rolletype: Rolletype,
     val ident: String?,
-    val opprettetDato: LocalDate?,
     val navn: String? = null,
     val fødselsdato: LocalDate,
+    val opprettetDato: LocalDate? = null,
 )
 
 @Suppress("NonAsciiCharacters")
@@ -54,23 +53,23 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal opprette en behandling med null opprettetDato`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "1234",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(101),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(456),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val behandlingReq = createBehandlingRequestTest("1900000", "en12", roller)
@@ -80,7 +79,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(behandlingReq),
-                CreateBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val opprettetBehandling = behandlingService.hentBehandlingById(behandlingRes.body!!.id)
@@ -93,18 +92,23 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal opprette en behandling med null opprettetDato og så hente den`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(Rolletype.BARN, "1234", opprettetDato = null, fødselsdato = LocalDate.now().minusMonths(136)),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
+                    Rolletype.BARN,
+                    "1234",
+                    fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
+                ),
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(555),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val behandlingReq = createBehandlingRequestTest("1900000", "en12", roller)
@@ -114,7 +118,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(behandlingReq),
-                CreateBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
@@ -132,7 +136,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
     @Test
     fun `skal oppdatere behandling`() {
-        val b = behandlingService.createBehandling(BehandlingServiceTest.prepareBehandling())
+        val b = behandlingService.opprettBehandling(BehandlingServiceTest.prepareBehandling())
 
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
@@ -159,17 +163,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal opprette en behandling`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(499),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("1900000", "en12", roller)
@@ -189,17 +193,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettForsendelse()
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(511),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("1900000", "en12", roller)
@@ -220,17 +224,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettForsendelse()
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(609),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedNull =
@@ -259,17 +263,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettForsendelse(status = HttpStatus.BAD_REQUEST)
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(542),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("1900000", "en12", roller)
@@ -287,10 +291,9 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal opprette en behandling og oppdatere vedtak id`() {
         val behandling =
-            behandlingService.createBehandling(
+            behandlingService.opprettBehandling(
                 Behandling(
-                    Behandlingstype.FORSKUDD,
-                    Soknadstype.FASTSETTELSE,
+                    Vedtakstype.FASTSETTELSE,
                     LocalDate.now().minusMonths(5),
                     LocalDate.now().plusMonths(5),
                     LocalDate.now(),
@@ -302,7 +305,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                     "Navn Navnesen",
                     "bisys",
                     SøktAvType.VERGE,
-                    null,
+                    Stønadstype.FORSKUDD,
                     null,
                 ),
             )
@@ -326,11 +329,11 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 "1900000",
                 "en12",
                 setOf(
-                    CreateRolleDtoTest(
+                    OppprettRolleDtoTest(
                         Rolletype.BARN,
                         "abc1s",
-                        opprettetDato = LocalDate.now().minusMonths(8),
                         fødselsdato = LocalDate.now().minusMonths(136),
+                        opprettetDato = LocalDate.now().minusMonths(8),
                     ),
                 ),
             )
@@ -364,17 +367,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         // given
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     null,
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(399),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("1900000", "en12", roller)
@@ -396,18 +399,18 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal opprette behandling som inkluderer barn med navn men uten ident`() { // given
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     null,
-                    opprettetDato = LocalDate.now().minusMonths(8),
-                    fødselsdato = LocalDate.now().minusMonths(136),
                     navn = "Ola Dunk",
+                    fødselsdato = LocalDate.now().minusMonths(136),
+                    LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(682),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("1900000", "en12", roller)
@@ -430,18 +433,18 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         // given
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "1235",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     null,
                     navn = "Ola Dunk",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(529),
+                    LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("1900000", "en12", roller)
@@ -464,17 +467,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med rolle med blank ident`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "   ",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(555),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedNull = createBehandlingRequestTest("1900000", "en12", roller)
@@ -493,17 +496,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med blank sak`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(444),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedBlank = createBehandlingRequestTest("   ", "en12", roller)
@@ -521,17 +524,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med blank sak1`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(478),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedBlank = createBehandlingRequestTest("", "en12", roller)
@@ -549,17 +552,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med lang sak`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(533),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val testBehandlingMedBlank = createBehandlingRequestTest("123456789", "en12", roller)
@@ -577,17 +580,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med ugyldig enhet`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(500),
+                    opprettetDato = LocalDate.now().minusMonths(8),
                 ),
             )
         val b = createBehandlingRequestTest(null, "12312312312", roller)
@@ -605,22 +608,19 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         fun createBehandlingRequestTest(
             saksnummer: String?,
             enhet: String,
-            roller: Set<CreateRolleDtoTest>,
-        ): CreateBehandlingRequestTest {
-            val testBehandling =
-                CreateBehandlingRequestTest(
-                    Behandlingstype.FORSKUDD,
-                    Stønadstype.FORSKUDD,
-                    Soknadstype.FASTSETTELSE,
-                    LocalDate.now().minusMonths(4),
-                    LocalDate.now().plusMonths(4),
-                    LocalDate.now(),
-                    SøktAvType.BIDRAGSMOTTAKER,
-                    saksnummer,
-                    enhet,
-                    roller,
-                )
-            return testBehandling
+            roller: Set<OppprettRolleDtoTest>,
+        ): OpprettBehandlingRequestTest {
+            return OpprettBehandlingRequestTest(
+                Vedtakstype.FASTSETTELSE,
+                Stønadstype.FORSKUDD,
+                Soknadstype.FASTSETTELSE,
+                LocalDate.now().minusMonths(4),
+                LocalDate.now(),
+                SøktAvType.BIDRAGSMOTTAKER,
+                saksnummer,
+                enhet,
+                roller,
+            )
         }
     }
 }
