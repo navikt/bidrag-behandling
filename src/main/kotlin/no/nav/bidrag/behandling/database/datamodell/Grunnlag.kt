@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -18,6 +19,7 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandDto
+import java.io.Serializable
 import java.time.LocalDateTime
 
 @Entity(name = "grunnlag")
@@ -27,13 +29,16 @@ class Grunnlag(
     val behandling: Behandling,
     @Enumerated(EnumType.STRING)
     val type: Grunnlagstype,
-    @Column(insertable = false, updatable = false)
-    val data: String,
+    @Column(columnDefinition = "jsonb")
+    val data: Jsonb,
     val innhentet: LocalDateTime,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 )
+
+@Embeddable
+class Jsonb(var innhold: String) : Serializable
 
 inline fun <reified T> Grunnlag?.hentData(): T? =
     when (this?.type) {
@@ -46,4 +51,4 @@ inline fun <reified T> Grunnlag?.hentData(): T? =
         else -> null
     }
 
-inline fun <reified T> Grunnlag?.konverterData(): T? = this?.data?.let { objectmapper.readValue(it) }
+inline fun <reified T> Grunnlag?.konverterData(): T? = this?.data?.let { objectmapper.readValue(it.innhold) }

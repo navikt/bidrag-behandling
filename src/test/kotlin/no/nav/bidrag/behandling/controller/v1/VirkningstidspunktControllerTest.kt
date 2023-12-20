@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.dto.virkningstidspunkt.VirkningstidspunktResponse
@@ -29,7 +29,7 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
 
         val respons =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/virkningstidspunkt",
+                "${rootUriV1()}/behandling/${behandling.id}/virkningstidspunkt",
                 HttpMethod.PUT,
                 HttpEntity(req),
                 VirkningstidspunktResponse::class.java,

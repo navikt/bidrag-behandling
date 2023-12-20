@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -75,7 +75,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(behandlingReq),
                 CreateBehandlingResponse::class.java,
@@ -109,7 +109,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(behandlingReq),
                 CreateBehandlingResponse::class.java,
@@ -118,7 +118,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandlingRes.body!!.id}",
+                "${rootUriV1()}/behandling/${behandlingRes.body!!.id}",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 BehandlingDto::class.java,
@@ -134,7 +134,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/" + b.id,
+                "${rootUriV1()}/behandling/" + b.id,
                 HttpMethod.PUT,
                 HttpEntity(UpdateBehandlingRequest(123L)),
                 Void::class.java,
@@ -143,7 +143,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val updatedBehandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${b!!.id}",
+                "${rootUriV1()}/behandling/${b!!.id}",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 BehandlingDto::class.java,
@@ -174,7 +174,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -204,7 +204,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -240,7 +240,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -274,7 +274,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -308,7 +308,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val vedtaksid: Long = 1
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/vedtak/$vedtaksid",
+                "${rootUriV1()}/behandling/${behandling.id}/vedtak/$vedtaksid",
                 HttpMethod.PUT,
                 HttpEntity.EMPTY,
                 Void::class.java,
@@ -335,7 +335,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -349,7 +349,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -380,7 +380,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         // when
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -413,7 +413,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         // when
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -447,7 +447,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         // when
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -479,7 +479,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 Void::class.java,
@@ -507,7 +507,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val testBehandlingMedBlank = createBehandlingRequestTest("   ", "en12", roller)
         val responseMedBlank =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedBlank),
                 Void::class.java,
@@ -535,7 +535,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val testBehandlingMedBlank = createBehandlingRequestTest("", "en12", roller)
         val responseMedBlank =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedBlank),
                 Void::class.java,
@@ -563,7 +563,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val testBehandlingMedBlank = createBehandlingRequestTest("123456789", "en12", roller)
         val responseMedBlank =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedBlank),
                 Void::class.java,
@@ -591,7 +591,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         val b = createBehandlingRequestTest(null, "12312312312", roller)
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(b),
                 Void::class.java,

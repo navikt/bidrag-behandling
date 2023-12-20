@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -22,6 +22,10 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     val stubUtils: StubUtils = StubUtils()
 
     protected fun rootUri(): String {
+        return "http://localhost:$port/api"
+    }
+
+    protected fun rootUriV1(): String {
         return "http://localhost:$port/api/v1"
     }
 

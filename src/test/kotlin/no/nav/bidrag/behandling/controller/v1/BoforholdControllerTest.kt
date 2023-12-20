@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
@@ -40,7 +40,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 CreateBehandlingResponse::class.java,
@@ -68,7 +68,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             OppdatereBoforholdRequest(emptySet(), husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.body!!.id}/boforhold",
+                "${rootUriV1()}/behandling/${behandling.body!!.id}/boforhold",
                 HttpMethod.PUT,
                 HttpEntity(boforholdData),
                 BoforholdResponse::class.java,

@@ -6,9 +6,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
 import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
 import no.nav.bidrag.behandling.deprecated.dto.tilOpplysningerDto
-import no.nav.bidrag.behandling.dto.opplysninger.AddOpplysningerRequest
+import no.nav.bidrag.behandling.deprecated.modell.tilGrunnlagstype
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.toDto
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @Deprecated("Bruk v1")
 @DeprecatedBehandlingRestController
-class DeprecatedGrunnlagController(val grunnlagService: GrunnlagService) {
+class DeprecatedOpplysningerController(val grunnlagService: GrunnlagService) {
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
     @Operation(
@@ -41,13 +42,15 @@ class DeprecatedGrunnlagController(val grunnlagService: GrunnlagService) {
         @RequestBody(required = true) addOpplysningerRequest: AddOpplysningerRequest,
     ): OpplysningerDto {
         val (_, _, opplysningerType, data, hentetDato) = addOpplysningerRequest
-        return grunnlagService.opprett(
+        val opplysninger =  grunnlagService.opprett(
             behandlingId,
-            opplysningerType,
+            opplysningerType.tilGrunnlagstype(),
             data,
             hentetDato.atStartOfDay(),
         )
             .toDto().tilOpplysningerDto()
+
+        return opplysninger
     }
 
     @Suppress("unused")
@@ -71,9 +74,7 @@ class DeprecatedGrunnlagController(val grunnlagService: GrunnlagService) {
         @PathVariable behandlingId: Long,
         @PathVariable grunnlagstype: Grunnlagstype,
     ): OpplysningerDto {
-        return grunnlagService.hentSistAktiv(
-            behandlingId,
-            grunnlagstype,
-        )?.toDto()?.tilOpplysningerDto() ?: behandlingNotFoundException(behandlingId)
+        var grunnlag = grunnlagService.hentSistAktiv(behandlingId, grunnlagstype)
+        return grunnlag?.toDto()?.tilOpplysningerDto() ?: behandlingNotFoundException(behandlingId)
     }
 }

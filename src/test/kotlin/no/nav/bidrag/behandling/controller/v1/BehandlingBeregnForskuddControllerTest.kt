@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
@@ -58,7 +58,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 Forskuddsberegningrespons::class.java,
@@ -80,7 +80,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 Forskuddsberegningrespons::class.java,
@@ -105,7 +105,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 Forskuddsberegningrespons::class.java,

@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
@@ -30,7 +30,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         stubUtils.stubTilgangskontrollTema()
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/forsendelse/init",
+                "${rootUriV1()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
                     InitalizeForsendelseRequest(
@@ -97,7 +97,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         header.contentType = MediaType.APPLICATION_JSON
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/forsendelse/init",
+                "${rootUriV1()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
                     """
@@ -193,7 +193,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         stubUtils.stubTilgangskontrollTema()
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/forsendelse/init",
+                "${rootUriV1()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
                     InitalizeForsendelseRequest(
@@ -241,7 +241,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         stubUtils.stubTilgangskontrollTema()
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/forsendelse/init",
+                "${rootUriV1()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
                     InitalizeForsendelseRequest(

@@ -1,26 +1,38 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.deprecated
 
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.controller.v1.BehandlingControllerTest
+import no.nav.bidrag.behandling.controller.v1.CreateRolleDtoTest
+import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
+import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
+import no.nav.bidrag.behandling.deprecated.modell.tilGrunnlagstype
 import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
+import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import java.time.LocalDate
 import kotlin.test.Ignore
 
 data class AddOpplysningerRequest(
     val behandlingId: Long,
     val aktiv: Boolean,
-    val grunnlagstype: Grunnlagstype,
+    val opplysningerType: OpplysningerType,
     val data: String,
     val hentetDato: String,
 )
 
-class GrunnlagControllerTest : KontrollerTestRunner() {
+class OpplysningerControllerTest : KontrollerTestRunner() {
+
+    @Autowired
+    private lateinit var grunnlagService: GrunnlagService
+
     @Test
     fun `skal opprette og oppdatere opplysninger`() {
         val roller =
@@ -53,19 +65,22 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
         val behandlingId = behandling.body!!.id
 
         // 2. Create new opplysninger opp and opp1
-        skalOppretteOpplysninger(behandlingId, "opp", false, Grunnlagstype.BOFORHOLD)
-        skalOppretteOpplysninger(behandlingId, "opp1", true, Grunnlagstype.BOFORHOLD)
+        skalOppretteOpplysninger(behandlingId, "opp", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
+
+        val grunnlag =
+            grunnlagService.hentSistAktiv(behandlingId, OpplysningerType.BOFORHOLD_BEARBEIDET.tilGrunnlagstype())
 
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv",
+                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD_BEARBEIDET/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                GrunnlagDto::class.java,
+                OpplysningerDto::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
-        Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingsid)
+        Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
         Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
     }
 
@@ -101,19 +116,21 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
         val behandlingId = behandling.body!!.id
 
         // 2. Create new opplysninger opp and opp1
-        skalOppretteOpplysninger(behandlingId, "opp", true, Grunnlagstype.BOFORHOLD)
-        skalOppretteOpplysninger(behandlingId, "opp1", true, Grunnlagstype.BOFORHOLD)
+        skalOppretteOpplysninger(behandlingId, "opp", true, OpplysningerType.BOFORHOLD)
+        skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD)
 
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv",
+                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD_BEARBEIDET/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                GrunnlagDto::class.java,
+                OpplysningerDto::class.java,
             )
+
+
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
-        Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingsid)
+        Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
         Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
     }
 
@@ -121,10 +138,10 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 ved ugyldig behandling id`() {
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/1232132/opplysninger/${Grunnlagstype.BOFORHOLD.name}/aktiv",
+                "${rootUri()}/behandling/1232132/opplysninger/${OpplysningerType.BOFORHOLD.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                GrunnlagDto::class.java,
+                OpplysningerDto::class.java,
             )
         Assertions.assertEquals(HttpStatus.NOT_FOUND, r.statusCode)
     }
@@ -161,10 +178,10 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
         // 2. Check
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.body!!.id}/opplysninger/${Grunnlagstype.BOFORHOLD.name}/aktiv",
+                "${rootUri()}/behandling/${behandling.body!!.id}/opplysninger/${OpplysningerType.BOFORHOLD.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                GrunnlagDto::class.java,
+                OpplysningerDto::class.java,
             )
         Assertions.assertEquals(HttpStatus.NOT_FOUND, r.statusCode)
     }
@@ -177,7 +194,7 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/1232132/opplysninger/ERROR/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                GrunnlagDto::class.java,
+                OpplysningerDto::class.java,
             )
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, r.statusCode)
     }
@@ -189,12 +206,14 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
                 CreateRolleDtoTest(
                     Rolletype.BARN,
                     "123",
+                    navn = "Bip",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
                 CreateRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
+                    navn = "Bob",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(409),
                 ),
@@ -202,45 +221,50 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
         val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
-        val behandling =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
-                HttpMethod.POST,
-                HttpEntity(testBehandlingMedNull),
-                CreateBehandlingResponse::class.java,
-            )
-        Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
+        var behandling: ResponseEntity<CreateBehandlingResponse>? = null
+        try {
 
-        val behandlingId = behandling.body!!.id
+              behandling =   httpHeaderTestRestTemplate.exchange(
+                    "${rootUri()}/behandling",
+                    HttpMethod.POST,
+                    HttpEntity(testBehandlingMedNull),
+                    CreateBehandlingResponse::class.java,
+                )
+        } catch (e:Exception) {
+            e.printStackTrace()
+        }
+        Assertions.assertEquals(HttpStatus.OK, behandling?.statusCode)
+
+        val behandlingId = behandling?.body!!.id
 
         // 2. Create new opplysninger opp and opp1
-        skalOppretteOpplysninger(behandlingId, "opp", false, Grunnlagstype.BOFORHOLD)
-        skalOppretteOpplysninger(behandlingId, "opp1", false, Grunnlagstype.BOFORHOLD)
-        skalOppretteOpplysninger(behandlingId, "inn0", false, Grunnlagstype.INNTEKTSOPPLYSNINGER)
-        skalOppretteOpplysninger(behandlingId, "inn1", false, Grunnlagstype.INNTEKTSOPPLYSNINGER)
+        skalOppretteOpplysninger(behandlingId, "opp", false, OpplysningerType.BOFORHOLD)
+        skalOppretteOpplysninger(behandlingId, "opp1", false, OpplysningerType.BOFORHOLD)
+        skalOppretteOpplysninger(behandlingId, "inn0", false, OpplysningerType.INNTEKTSOPPLYSNINGER)
+        skalOppretteOpplysninger(behandlingId, "inn1", false, OpplysningerType.INNTEKTSOPPLYSNINGER)
 
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/${Grunnlagstype.BOFORHOLD.name}/aktiv",
+                "${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.BOFORHOLD.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                GrunnlagDto::class.java,
+                OpplysningerDto::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
-        Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingsid)
+        Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
         Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
 
         // 4. Assert that inn1 is active
         val oppAktivResult2 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/${Grunnlagstype.INNTEKTSOPPLYSNINGER.name}/aktiv",
+                "${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.INNTEKTSOPPLYSNINGER.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                GrunnlagDto::class.java,
+                OpplysningerDto::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult2.statusCode)
-        Assertions.assertEquals(behandlingId, oppAktivResult2.body!!.behandlingsid)
+        Assertions.assertEquals(behandlingId, oppAktivResult2.body!!.behandlingId)
         Assertions.assertEquals("inn1", oppAktivResult2.body!!.data)
     }
 
@@ -248,21 +272,21 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
         behandlingId: Long,
         data: String,
         aktiv: Boolean,
-        grunnlagstype: Grunnlagstype,
-    ): GrunnlagDto {
-        val opplysninger = createOpplysninger(behandlingId, data, aktiv, grunnlagstype)
+        opplysningerType: OpplysningerType,
+    ): OpplysningerDto {
+        val opplysninger = createOpplysninger(behandlingId, data, aktiv, opplysningerType)
 
         val opp =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling/$behandlingId/opplysninger",
                 HttpMethod.POST,
                 HttpEntity(opplysninger),
-                GrunnlagDto::class.java,
+                OpplysningerDto::class.java,
             )
 
         Assertions.assertEquals(HttpStatus.OK, opp.statusCode)
         val body = opp.body!!
-        Assertions.assertEquals(behandlingId, body.behandlingsid)
+        Assertions.assertEquals(behandlingId, body.behandlingId)
 
         return body
     }
@@ -271,10 +295,10 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
         behandlingId: Long,
         data: String,
         aktiv: Boolean,
-        grunnlagstype: Grunnlagstype,
+        opplysningerType: OpplysningerType,
     ): AddOpplysningerRequest {
         val opplysninger =
-            AddOpplysningerRequest(behandlingId, aktiv, grunnlagstype, data, "2025-02-01")
+            AddOpplysningerRequest(behandlingId, aktiv, opplysningerType, data, "2025-02-01")
         return opplysninger
     }
 }

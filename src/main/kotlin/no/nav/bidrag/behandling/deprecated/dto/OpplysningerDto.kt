@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.deprecated.dto
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
+import no.nav.bidrag.behandling.deprecated.modell.tilOpplysningerType
 import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
 import java.time.LocalDate
 
@@ -20,7 +21,7 @@ fun GrunnlagDto.tilOpplysningerDto(): OpplysningerDto =
     OpplysningerDto(
         id = this.id,
         behandlingId = this.behandlingsid,
-        opplysningerType = OpplysningerType.valueOf(this.grunnlagstype.name),
+        opplysningerType = this.grunnlagstype.tilOpplysningerType(),
         data = this.data,
         hentetDato = this.innhentet.toLocalDate(),
     )

@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.ints.shouldBeExactly
@@ -48,7 +48,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}/inntekter",
+                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     InntekterResponse::class.java,
@@ -71,7 +71,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}/inntekter",
+                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     InntekterResponse::class.java,
@@ -103,7 +103,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}/inntekter",
+                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
                     HttpEntity(OppdatereInntekterRequest(setOf(inn), emptySet(), emptySet())),
                     InntekterResponse::class.java,
@@ -141,7 +141,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}/inntekter",
+                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdatereInntekterRequest(
@@ -176,7 +176,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}/inntekter",
+                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
                     HttpMethod.PUT,
                     HttpEntity(OppdatereInntekterRequest(emptySet(), emptySet(), emptySet())),
                     InntekterResponse::class.java,

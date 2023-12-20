@@ -202,7 +202,7 @@ fun Grunnlag.toDto(): GrunnlagDto {
         this.id!!,
         this.behandling.id!!,
         this.type,
-        this.data,
+        this.data.innhold,
         this.innhentet,
     )
 }

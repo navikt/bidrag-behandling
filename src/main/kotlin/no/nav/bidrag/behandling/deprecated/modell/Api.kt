@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.deprecated.modell
 
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 
 @Schema(enumAsRef = true)
 enum class SoknadType {
@@ -34,3 +35,7 @@ enum class OpplysningerType {
     @Deprecated("", replaceWith = ReplaceWith("INNTEKT_BEARBEIDET"))
     INNTEKTSOPPLYSNINGER,
 }
+
+fun Grunnlagstype.tilOpplysningerType(): OpplysningerType = OpplysningerType.valueOf(this.name)
+
+fun OpplysningerType.tilGrunnlagstype(): Grunnlagstype = Grunnlagstype.valueOf(this.name)

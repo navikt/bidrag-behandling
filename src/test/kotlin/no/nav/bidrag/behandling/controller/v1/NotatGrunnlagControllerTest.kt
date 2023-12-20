@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeIn
@@ -40,7 +40,7 @@ class NotatGrunnlagControllerTest : KontrollerTestRunner() {
         )
         val r1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/notat/${behandling.id}",
+                "${rootUriV1()}/notat/${behandling.id}",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 NotatDto::class.java,

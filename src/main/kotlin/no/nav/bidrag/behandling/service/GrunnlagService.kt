@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.database.datamodell.Jsonb
 import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
@@ -30,7 +31,7 @@ class GrunnlagService(
                     Grunnlag(
                         it,
                         grunnlagstype.getOrMigrate(),
-                        data,
+                        data =  Jsonb(data),
                         innhentet,
                     ),
                 )
