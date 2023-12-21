@@ -33,23 +33,26 @@ data class BehandlingDto(
     val søknadRefId: Long? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    val virkningsdato: LocalDate? = null,
     val grunnlagspakkeid: Long? = null,
-    @Schema(name = "årsak")
-    val årsak: ForskuddAarsakType? = null,
+    val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDto,
     val boforhold: BoforholdDto,
     val opplysninger: List<OpplysningerDto>,
-    val notatVirkningstidspunkt: BehandlingNotatInnholdDto,
+)
+
+data class VirkningstidspunktDto(
+    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val virkningsdato: LocalDate? = null,
+    @Schema(name = "årsak")
+    val årsak: ForskuddAarsakType? = null,
     val notat: BehandlingNotatDto,
 )
 
 data class BoforholdDto(
     val husstandsbarn: Set<HusstandsbarnDto>,
     val sivilstand: Set<SivilstandDto>,
-    val notat: BehandlingNotatInnholdDto,
+    val notat: BehandlingNotatDto,
 )
 
 data class InntekterDto(
@@ -58,16 +61,10 @@ data class InntekterDto(
     val utvidetbarnetrygd: Set<UtvidetBarnetrygdDto>,
     val kontantstøtte: Set<InntektDto>,
     val småbarnstillegg: Set<InntektDto>,
-    val notat: BehandlingNotatInnholdDto,
+    val notat: BehandlingNotatDto,
 )
 
 data class BehandlingNotatDto(
-    val virkningstidspunkt: BehandlingNotatInnholdDto,
-    val boforhold: BehandlingNotatInnholdDto,
-    val inntekt: BehandlingNotatInnholdDto,
-)
-
-data class BehandlingNotatInnholdDto(
     val kunINotat: String? = null,
     val medIVedtaket: String? = null,
 )

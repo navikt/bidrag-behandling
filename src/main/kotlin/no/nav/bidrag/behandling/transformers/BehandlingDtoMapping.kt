@@ -4,10 +4,10 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.BehandlingNotatDto
-import no.nav.bidrag.behandling.dto.behandling.BehandlingNotatInnholdDto
 import no.nav.bidrag.behandling.dto.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.behandling.InntekterDto
 import no.nav.bidrag.behandling.dto.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 
 fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
@@ -18,7 +18,6 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
         engangsbeløptype = engangsbeloptype,
         erVedtakFattet = vedtaksid != null,
         søktFomDato = søktFomDato,
-        virkningsdato = virkningsdato,
         mottattdato = mottattdato,
         søktAv = soknadFra,
         saksnummer = saksnummer,
@@ -37,13 +36,22 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
             }.toSet(),
         søknadRefId = soknadRefId,
         grunnlagspakkeid = grunnlagspakkeid,
-        årsak = aarsak,
+        virkningstidspunkt =
+            VirkningstidspunktDto(
+                virkningsdato = virkningsdato,
+                årsak = aarsak,
+                notat =
+                    BehandlingNotatDto(
+                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
+                        medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                    ),
+            ),
         boforhold =
             BoforholdDto(
                 husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
                 sivilstand = sivilstand.toSivilstandDto(),
                 notat =
-                    BehandlingNotatInnholdDto(
+                    BehandlingNotatDto(
                         medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
                         kunINotat = boforholdsbegrunnelseKunINotat,
                     ),
@@ -56,33 +64,10 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
                 småbarnstillegg = emptySet(),
                 kontantstøtte = emptySet(),
                 notat =
-                    BehandlingNotatInnholdDto(
+                    BehandlingNotatDto(
                         medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
                         kunINotat = inntektsbegrunnelseKunINotat,
                     ),
             ),
         opplysninger = opplysninger.map(Opplysninger::toDto),
-        notatVirkningstidspunkt =
-            BehandlingNotatInnholdDto(
-                medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-                kunINotat = virkningstidspunktbegrunnelseKunINotat,
-            ),
-        notat =
-            BehandlingNotatDto(
-                virkningstidspunkt =
-                    BehandlingNotatInnholdDto(
-                        medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
-                    ),
-                boforhold =
-                    BehandlingNotatInnholdDto(
-                        medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                        kunINotat = boforholdsbegrunnelseKunINotat,
-                    ),
-                inntekt =
-                    BehandlingNotatInnholdDto(
-                        medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                        kunINotat = inntektsbegrunnelseKunINotat,
-                    ),
-            ),
     )
