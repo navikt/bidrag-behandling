@@ -31,7 +31,7 @@ class GrunnlagService(
                     Grunnlag(
                         it,
                         grunnlagstype.getOrMigrate(),
-                        data =  Jsonb(data),
+                        data = Jsonb(data),
                         innhentet,
                     ),
                 )

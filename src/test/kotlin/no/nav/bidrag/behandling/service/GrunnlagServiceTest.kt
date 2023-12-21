@@ -2,13 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/service/GrunnlagServiceTest.kt
-import no.nav.bidrag.behandling.database.datamodell.Behandlingstype
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
-import no.nav.bidrag.behandling.database.datamodell.Soknadstype
-=======
-import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/service/OpplysningerServiceTest.kt
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -30,11 +24,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     @Test
     fun `hente opplysninger`() {
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/service/GrunnlagServiceTest.kt
-        val res = grunnlagService.hentSistAktiv(1, Grunnlagstype.BOFORHOLD)
-=======
-        val res = opplysningerService.hentSistAktiv(1, OpplysningerType.BOFORHOLD_BEARBEIDET)
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/service/OpplysningerServiceTest.kt
+        val res = grunnlagService.hentSistAktiv(1, Grunnlagstype.BOFORHOLD_BEARBEIDET)
         assertNull(res)
     }
 
@@ -59,22 +49,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     stonadstype = Stønadstype.FORSKUDD,
                 ),
             )
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/service/GrunnlagServiceTest.kt
+
         val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "data", LocalDateTime.now())
-
-        val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD)
-=======
-        val opp4 =
-            opplysningerService.opprett(
-                b.id!!,
-                OpplysningerType.BOFORHOLD_BEARBEIDET,
-                "data",
-                Date(1),
-            )
-
-        val opplysninger =
-            opplysningerService.hentSistAktiv(b.id!!, OpplysningerType.BOFORHOLD_BEARBEIDET)
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/service/OpplysningerServiceTest.kt
+        val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD_BEARBEIDET)
 
         assertNotNull(opplysninger)
         assertEquals(opp4.id, opplysninger.id)

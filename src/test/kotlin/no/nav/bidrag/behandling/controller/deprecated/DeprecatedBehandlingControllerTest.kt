@@ -44,8 +44,7 @@ data class OppprettRolleDtoTest(
 )
 
 @Suppress("NonAsciiCharacters")
-class BehandlingControllerTest : KontrollerTestRunner() {
-
+class DeprecatedBehandlingControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingService: BehandlingService
 

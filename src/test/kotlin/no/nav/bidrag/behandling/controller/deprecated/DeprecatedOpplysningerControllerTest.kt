@@ -1,8 +1,9 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.deprecated
 
-import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
+import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
+import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
+import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -39,7 +40,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 ),
             )
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            DeprecatedBehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -86,7 +87,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 ),
             )
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            DeprecatedBehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -147,7 +148,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 ),
             )
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            DeprecatedBehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -201,7 +202,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 ),
             )
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            DeprecatedBehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =

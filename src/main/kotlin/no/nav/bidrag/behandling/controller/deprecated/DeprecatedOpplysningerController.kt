@@ -42,13 +42,14 @@ class DeprecatedOpplysningerController(val grunnlagService: GrunnlagService) {
         @RequestBody(required = true) addOpplysningerRequest: AddOpplysningerRequest,
     ): OpplysningerDto {
         val (_, _, opplysningerType, data, hentetDato) = addOpplysningerRequest
-        val opplysninger =  grunnlagService.opprett(
-            behandlingId,
-            opplysningerType.tilGrunnlagstype(),
-            data,
-            hentetDato.atStartOfDay(),
-        )
-            .toDto().tilOpplysningerDto()
+        val opplysninger =
+            grunnlagService.opprett(
+                behandlingId,
+                opplysningerType.tilGrunnlagstype(),
+                data,
+                hentetDato.atStartOfDay(),
+            )
+                .toDto().tilOpplysningerDto()
 
         return opplysninger
     }
