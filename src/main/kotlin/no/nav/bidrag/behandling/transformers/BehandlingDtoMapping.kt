@@ -42,8 +42,8 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
                 årsak = aarsak,
                 notat =
                     BehandlingNotatDto(
-                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
                         medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
                     ),
             ),
         boforhold =
