@@ -4,8 +4,8 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Soknadstype
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -140,7 +140,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling/" + b.id,
                 HttpMethod.PUT,
-                HttpEntity(UpdateBehandlingRequest(123L)),
+                HttpEntity(OppdaterBehandlingRequest(123L)),
                 Void::class.java,
             )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
@@ -309,12 +309,14 @@ class BehandlingControllerTest : KontrollerTestRunner() {
             )
 
         val vedtaksid: Long = 1
+        val oppdaterBehandlingRequest = OppdaterBehandlingRequest(vedtaksid = vedtaksid)
+
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/vedtak/$vedtaksid",
+                "${rootUri()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
-                HttpEntity.EMPTY,
-                Void::class.java,
+                HttpEntity(oppdaterBehandlingRequest),
+                BehandlingDto::class.java,
             )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
         assertEquals(vedtaksid, behandlingService.hentBehandlingById(behandling.id!!).vedtaksid)

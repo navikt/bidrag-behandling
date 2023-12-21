@@ -31,7 +31,8 @@ import java.time.LocalDateTime
 class Behandling(
     @Enumerated(EnumType.STRING)
     val vedtakstype: Vedtakstype,
-    val datoFom: LocalDate,
+    @Column(name = "dato_fom")
+    val søktFomDato: LocalDate,
     val datoTom: LocalDate? = null,
     val mottattdato: LocalDate,
     val saksnummer: String,
@@ -126,7 +127,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
         zipOrAccumulate(
             { ensure(this@validere.id != null) { raise("Behandlingsid mangler") } },
             {
-                ensure(this@validere.datoTom == null || this@validere.datoTom.isAfter(this@validere.datoFom)) {
+                ensure(this@validere.datoTom == null || this@validere.datoTom.isAfter(this@validere.søktFomDato)) {
                     raise(
                         "Til dato må være etter fra dato",
                     )

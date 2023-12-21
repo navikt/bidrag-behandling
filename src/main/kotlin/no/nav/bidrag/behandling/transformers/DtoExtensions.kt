@@ -46,6 +46,8 @@ fun Set<Barnetillegg>.toBarnetilleggDto() =
         BarnetilleggDto(
             it.id,
             it.ident,
+            // TODO: Sett dette til gjelderBarn ident
+            it.ident,
             it.barnetillegg,
             it.datoFom?.toLocalDate(),
             it.datoTom?.toLocalDate(),

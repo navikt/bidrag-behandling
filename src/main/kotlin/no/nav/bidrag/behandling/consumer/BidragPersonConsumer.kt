@@ -1,9 +1,9 @@
 package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.PERSON_CACHE
-import no.nav.bidrag.behandling.dto.HentPersonRequest
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.person.PersonDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -22,6 +22,6 @@ class BidragPersonConsumer(
 
     @BrukerCacheable(PERSON_CACHE)
     fun hentPerson(ident: String): PersonDto {
-        return postForNonNullEntity(hentPersonUri, HentPersonRequest(ident))
+        return postForNonNullEntity(hentPersonUri, PersonDto(Personident(ident)))
     }
 }

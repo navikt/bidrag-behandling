@@ -11,6 +11,7 @@ data class InntektDto(
     val id: Long? = null,
     @Schema(required = true)
     val taMed: Boolean,
+    @Schema(required = true)
     val inntektstype: Inntektsrapportering,
     @Schema(required = true)
     val beløp: BigDecimal,

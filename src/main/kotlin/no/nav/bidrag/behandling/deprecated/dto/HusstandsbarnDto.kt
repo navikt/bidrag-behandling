@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.deprecated.dto
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
@@ -14,8 +15,8 @@ data class HusstandsbarnDto(
     var navn: String? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val foedselsdato: LocalDate,
-    val fødselsdato: LocalDate = foedselsdato,
+    @JsonAlias("foedselsdato")
+    val fødselsdato: LocalDate,
 )
 
 fun Set<HusstandsbarnDto>.toHustandsbarndDto(): Set<no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto> =

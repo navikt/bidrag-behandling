@@ -16,9 +16,9 @@ import no.nav.bidrag.behandling.deprecated.dto.SyncRollerRequest
 import no.nav.bidrag.behandling.deprecated.dto.toOpprettRolleDto
 import no.nav.bidrag.behandling.deprecated.dto.toRolle
 import no.nav.bidrag.behandling.deprecated.modell.SoknadType
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.toDate
@@ -81,7 +81,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         val behandling =
             Behandling(
                 vedtakstype = Vedtakstype.valueOf(createBehandling.soknadType.name),
-                datoFom = createBehandling.datoFom.toLocalDate(),
+                søktFomDato = createBehandling.datoFom.toLocalDate(),
                 datoTom = createBehandling.datoTom.toLocalDate(),
                 mottattdato = createBehandling.mottatDato.toLocalDate(),
                 saksnummer = createBehandling.saksnummer,
@@ -122,9 +122,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
     )
     fun updateBehandling(
         @PathVariable behandlingId: Long,
-        @Valid @RequestBody(required = true) request: UpdateBehandlingRequest,
+        @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
     ) {
-        behandlingService.updateBehandling(behandlingId, request.grunnlagspakkeId)
+        behandlingService.oppdaterGrunnlagspakkeid(behandlingId, request.grunnlagspakkeId)
     }
 
     @Suppress("unused")
@@ -166,27 +166,6 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
     }
 
     @Suppress("unused")
-    @GetMapping("/behandling")
-    @Operation(
-        description = "Hente en liste av alle behandlinger",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Hentet behandlinger"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandlinger"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
-            ),
-        ],
-    )
-    fun hentBehandlinger(): List<BehandlingDto> {
-        return behandlingService.hentBehandlinger().map { behandlingDto(it.id!!, it) }
-    }
-
-    @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}")
     @Operation(
         description = "Hente en behandling",
@@ -222,7 +201,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         behandling.toBehandlingstype(),
         SoknadType.valueOf(behandling.vedtakstype.name),
         behandling.vedtaksid != null,
-        behandling.datoFom,
+        behandling.søktFomDato,
         behandling.datoTom,
         behandling.mottattdato,
         behandling.soknadFra,
