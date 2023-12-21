@@ -5,15 +5,15 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigDecimal
 import java.time.LocalDate
 
+// TODO: Ikke sett gjelderBarn lik ident etter depractated apier er fjernet. Dette gjøres for bakoverkompatibilitet
 data class BarnetilleggDto(
     val id: Long? = null,
     @Schema(
         required = true,
-        description = "Bidragsmottaker eller bidragspliktig som mottar barnetillegget"
+        description = "Bidragsmottaker eller bidragspliktig som mottar barnetillegget",
     )
     val ident: String,
     @Schema(required = true, description = "Hvilken barn barnetillegget mottas for")
-    // TODO: Ikke sett lik ident etter depractated apier er fjernet. Dette gjøres for bakoverkompatibilitet
     val gjelderBarn: String = ident,
     @Schema(required = true)
     val barnetillegg: BigDecimal,

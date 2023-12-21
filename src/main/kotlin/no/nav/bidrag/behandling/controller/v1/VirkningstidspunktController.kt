@@ -51,5 +51,4 @@ class VirkningstidspunktController(private val behandlingService: BehandlingServ
             behandling.virkningsdato,
         )
     }
-
 }

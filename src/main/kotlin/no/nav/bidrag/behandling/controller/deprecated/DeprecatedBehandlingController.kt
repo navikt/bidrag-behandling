@@ -67,9 +67,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
 
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller.toOpprettRolleDto()) &&
-                    ingenVoksneUtenIdent(
-                        createBehandling.roller.toOpprettRolleDto(),
-                    ),
+                ingenVoksneUtenIdent(
+                    createBehandling.roller.toOpprettRolleDto(),
+                ),
         )
 
         val opprettetAv =
@@ -107,9 +107,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         val behandlingDo = behandlingService.opprettBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
-                    "soknadType ${createBehandling.soknadType} " +
-                    "og soknadFra ${createBehandling.soknadFra} " +
-                    "med id ${behandlingDo.id} "
+                "soknadType ${createBehandling.soknadType} " +
+                "og soknadFra ${createBehandling.soknadFra} " +
+                "med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }

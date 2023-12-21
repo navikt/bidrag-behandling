@@ -25,61 +25,64 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
         søknadsid = soknadsid,
         behandlerenhet = behandlerEnhet,
         roller =
-        roller.map {
-            RolleDto(
-                it.id!!,
-                it.rolletype,
-                it.ident,
-                it.navn ?: hentPersonVisningsnavn(it.ident),
-                it.foedselsdato,
-                it.opprettetDato,
-            )
-        }.toSet(),
+            roller.map {
+                RolleDto(
+                    it.id!!,
+                    it.rolletype,
+                    it.ident,
+                    it.navn ?: hentPersonVisningsnavn(it.ident),
+                    it.foedselsdato,
+                    it.opprettetDato,
+                )
+            }.toSet(),
         søknadRefId = soknadRefId,
         grunnlagspakkeid = grunnlagspakkeid,
         årsak = aarsak,
         boforhold =
-        BoforholdDto(
-            husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
-            sivilstand = sivilstand.toSivilstandDto(),
-            notat = BehandlingNotatInnholdDto(
-                medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                kunINotat = boforholdsbegrunnelseKunINotat,
-            )
-        ),
+            BoforholdDto(
+                husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
+                sivilstand = sivilstand.toSivilstandDto(),
+                notat =
+                    BehandlingNotatInnholdDto(
+                        medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                        kunINotat = boforholdsbegrunnelseKunINotat,
+                    ),
+            ),
         inntekter =
-        InntekterDto(
-            inntekter = inntekter.toInntektDto(),
-            utvidetbarnetrygd = utvidetBarnetrygd.toUtvidetBarnetrygdDto(),
-            barnetillegg = barnetillegg.toBarnetilleggDto(),
-            småbarnstillegg = emptySet(),
-            kontantstøtte = emptySet(),
-            notat = BehandlingNotatInnholdDto(
-                medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                kunINotat = inntektsbegrunnelseKunINotat,
-            )
-        ),
+            InntekterDto(
+                inntekter = inntekter.toInntektDto(),
+                utvidetbarnetrygd = utvidetBarnetrygd.toUtvidetBarnetrygdDto(),
+                barnetillegg = barnetillegg.toBarnetilleggDto(),
+                småbarnstillegg = emptySet(),
+                kontantstøtte = emptySet(),
+                notat =
+                    BehandlingNotatInnholdDto(
+                        medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+                        kunINotat = inntektsbegrunnelseKunINotat,
+                    ),
+            ),
         opplysninger = opplysninger.map(Opplysninger::toDto),
-        notatVirkningstidspunkt = BehandlingNotatInnholdDto(
-            medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-            kunINotat = virkningstidspunktbegrunnelseKunINotat,
-        ),
-        notat =
-        BehandlingNotatDto(
-            virkningstidspunkt =
+        notatVirkningstidspunkt =
             BehandlingNotatInnholdDto(
                 medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
                 kunINotat = virkningstidspunktbegrunnelseKunINotat,
             ),
-            boforhold =
-            BehandlingNotatInnholdDto(
-                medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                kunINotat = boforholdsbegrunnelseKunINotat,
+        notat =
+            BehandlingNotatDto(
+                virkningstidspunkt =
+                    BehandlingNotatInnholdDto(
+                        medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
+                    ),
+                boforhold =
+                    BehandlingNotatInnholdDto(
+                        medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                        kunINotat = boforholdsbegrunnelseKunINotat,
+                    ),
+                inntekt =
+                    BehandlingNotatInnholdDto(
+                        medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+                        kunINotat = inntektsbegrunnelseKunINotat,
+                    ),
             ),
-            inntekt =
-            BehandlingNotatInnholdDto(
-                medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                kunINotat = inntektsbegrunnelseKunINotat,
-            ),
-        ),
     )

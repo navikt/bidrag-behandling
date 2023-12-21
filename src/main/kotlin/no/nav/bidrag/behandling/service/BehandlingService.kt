@@ -40,7 +40,7 @@ class BehandlingService(
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
-    private val opplysningerService: OpplysningerService
+    private val opplysningerService: OpplysningerService,
 ) {
     fun opprettBehandling(behandling: Behandling): Behandling =
         behandlingRepository.save(behandling)
@@ -56,15 +56,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadsid,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.tilBehandlingstype(),
-                    stonadType = behandling.stonadstype,
-                    engangsBelopType = behandling.engangsbeloptype,
-                    vedtakType = behandling.vedtakstype,
-                ),
+                    BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadsid,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.tilBehandlingstype(),
+                        stonadType = behandling.stonadstype,
+                        engangsBelopType = behandling.engangsbeloptype,
+                        vedtakType = behandling.vedtakstype,
+                    ),
             ),
         )
     }
@@ -74,7 +74,7 @@ class BehandlingService(
     @Transactional
     fun oppdaterBehandlingV1(
         behandlingsid: Long,
-        oppdaterBehandling: OppdaterBehandlingRequest
+        oppdaterBehandling: OppdaterBehandlingRequest,
     ): BehandlingDto =
         behandlingRepository.save(
             behandlingRepository.findBehandlingById(behandlingsid)
@@ -107,8 +107,8 @@ class BehandlingService(
                             it.utvidetBarnetrygd.clear()
                             it.utvidetBarnetrygd.addAll(
                                 inntekter.utvidetbarnetrygd.toUtvidetBarnetrygdDomain(
-                                    it
-                                )
+                                    it,
+                                ),
                             )
                         }
                         it.inntektsbegrunnelseKunINotat =
