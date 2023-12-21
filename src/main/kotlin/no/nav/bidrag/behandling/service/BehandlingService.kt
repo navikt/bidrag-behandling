@@ -294,16 +294,6 @@ class BehandlingService(
         }
     }
 
-    fun oppdaterBehandling(
-        behandlingId: Long,
-        grunnlagspakkeId: Long?,
-    ) {
-        hentBehandlingById(behandlingId).let {
-            it.grunnlagspakkeid = grunnlagspakkeId
-            behandlingRepository.save(it)
-        }
-    }
-
     fun oppfriskeGrunnlagsdata(grunlagspakkeid: Long) {
         val grunnlagspakke = bidragGrunnlagConsumer.henteGrunnlagspakke(grunlagspakkeid)
     }
