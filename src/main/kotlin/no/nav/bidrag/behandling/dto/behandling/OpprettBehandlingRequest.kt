@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.behandling
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -13,11 +14,9 @@ import java.time.LocalDate
 data class OpprettBehandlingRequest(
     @Schema(required = true)
     val vedtakstype: Vedtakstype,
-    @Schema(required = false, deprecated = true)
-    @Deprecated("", replaceWith = ReplaceWith("søktFomDato"))
-    val datoFom: LocalDate,
     @Schema(required = true)
-    val søktFomDato: LocalDate = datoFom,
+    @JsonAlias("datoFom")
+    val søktFomDato: LocalDate,
     @Schema(required = true)
     val mottattdato: LocalDate,
     @Schema(required = true)
