@@ -107,7 +107,7 @@ class VedtakHendelseTest : CommonTestRunner() {
 
     private fun opprettBehandling() =
         Behandling(
-            datoFom = LocalDate.now(),
+            søktFomDato = LocalDate.now(),
             datoTom = LocalDate.now(),
             saksnummer = SAKSNUMMER,
             soknadsid = 123123L,

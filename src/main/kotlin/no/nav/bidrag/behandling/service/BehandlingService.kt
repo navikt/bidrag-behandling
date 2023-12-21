@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import mu.KotlinLogging
+import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -8,6 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
+import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
@@ -16,6 +19,7 @@ import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
+import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
 import no.nav.bidrag.behandling.transformers.toDomain
@@ -36,6 +40,7 @@ class BehandlingService(
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
+    private val opplysningerService: OpplysningerService,
 ) {
     fun opprettBehandling(behandling: Behandling): Behandling =
         behandlingRepository.save(behandling)
@@ -65,6 +70,70 @@ class BehandlingService(
     }
 
     fun deleteBehandlingById(behandlingId: Long) = behandlingRepository.deleteById(behandlingId)
+
+    @Transactional
+    fun oppdaterBehandlingV1(
+        behandlingsid: Long,
+        oppdaterBehandling: OppdaterBehandlingRequest,
+    ): BehandlingDto =
+        behandlingRepository.save(
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+                .let {
+                    log.info { "Oppdaterer behandling $behandlingsid" }
+                    SECURE_LOGGER.info("Oppdaterer behandling $behandlingsid for forespørsel $oppdaterBehandling")
+                    it.grunnlagspakkeid = oppdaterBehandling.grunnlagspakkeId ?: it.grunnlagspakkeid
+                    it.vedtaksid = oppdaterBehandling.vedtaksid ?: it.vedtaksid
+                    oppdaterBehandling.virkningstidspunkt?.let { vt ->
+                        log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
+                        it.aarsak = vt.årsak
+                        it.virkningsdato = vt.virkningsdato
+                        it.virkningstidspunktbegrunnelseKunINotat =
+                            vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
+                        it.virkningstidspunktsbegrunnelseIVedtakOgNotat = vt.notat?.medIVedtaket
+                            ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
+                    }
+                    oppdaterBehandling.inntekter?.let { inntekter ->
+                        log.info { "Oppdaterer inntekter for behandling $behandlingsid" }
+                        inntekter.inntekter?.run {
+                            it.inntekter.clear()
+                            it.inntekter.addAll(inntekter.inntekter.toInntektDomain(it))
+                        }
+                        inntekter.barnetillegg?.run {
+                            it.barnetillegg.clear()
+                            it.barnetillegg.addAll(inntekter.barnetillegg.toBarnetilleggDomain(it))
+                        }
+                        inntekter.utvidetbarnetrygd?.run {
+                            it.utvidetBarnetrygd.clear()
+                            it.utvidetBarnetrygd.addAll(
+                                inntekter.utvidetbarnetrygd.toUtvidetBarnetrygdDomain(
+                                    it,
+                                ),
+                            )
+                        }
+                        it.inntektsbegrunnelseKunINotat =
+                            inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
+                        it.inntektsbegrunnelseIVedtakOgNotat =
+                            inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
+                    }
+                    oppdaterBehandling.boforhold?.let { bf ->
+                        log.info { "Oppdaterer informasjon om boforhold for behandling $behandlingsid" }
+                        bf.sivilstand?.run {
+                            it.sivilstand.clear()
+                            it.sivilstand.addAll(bf.sivilstand.toSivilstandDomain(it))
+                        }
+                        bf.husstandsbarn?.run {
+                            it.husstandsbarn.clear()
+                            it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
+                        }
+                        it.boforholdsbegrunnelseKunINotat =
+                            bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
+                        it.boforholdsbegrunnelseIVedtakOgNotat =
+                            bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
+                    }
+                    it
+                },
+        ).tilBehandlingDto(opplysningerService.hentAlleSistAktiv(behandlingsid))
 
     fun oppdaterBehandling(
         behandlingsid: Long,
@@ -98,8 +167,6 @@ class BehandlingService(
     fun hentBehandlingById(behandlingId: Long): Behandling =
         behandlingRepository.findBehandlingById(behandlingId)
             .orElseThrow { behandlingNotFoundException(behandlingId) }
-
-    fun hentBehandlinger(): List<Behandling> = behandlingRepository.hentBehandlinger()
 
     @Transactional
     fun oppdaterInntekter(
@@ -217,7 +284,7 @@ class BehandlingService(
         }
     }
 
-    fun updateBehandling(
+    fun oppdaterGrunnlagspakkeid(
         behandlingId: Long,
         grunnlagspakkeId: Long?,
     ) {

@@ -134,7 +134,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         søknadstype = vedtakstype.name,
         søktAv = soknadFra,
         mottattDato = YearMonth.from(mottattdato),
-        søktFraDato = YearMonth.from(datoFom),
+        søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningsdato,
         notat = tilNotatVirkningstidspunkt(),
     )

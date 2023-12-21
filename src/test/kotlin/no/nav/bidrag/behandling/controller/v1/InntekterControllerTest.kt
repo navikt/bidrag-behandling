@@ -5,9 +5,10 @@ import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.behandling.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
-import no.nav.bidrag.behandling.dto.inntekt.InntekterResponse
-import no.nav.bidrag.behandling.dto.inntekt.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -48,10 +49,14 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
                     "${rootUriV1()}/behandling/${behandling.id}/inntekter",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
-                    InntekterResponse::class.java,
+                    BehandlingDto::class.java,
                 )
 
             // then
@@ -59,7 +64,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body!!.inntekter.size shouldBeExactly 3
+                r1.body!!.inntekter.inntekter.size shouldBeExactly 3
             }
         }
 
@@ -71,10 +76,14 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
                     "${rootUriV1()}/behandling/${behandling.id}/inntekter",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
-                    InntekterResponse::class.java,
+                    BehandlingDto::class.java,
                 )
 
             // then
@@ -82,7 +91,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body!!.inntekter.size shouldBeExactly 0
+                r1.body!!.inntekter.inntekter.size shouldBeExactly 0
             }
         }
     }
@@ -103,15 +112,26 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
                     "${rootUriV1()}/behandling/${behandling.id}/inntekter",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
                     HttpMethod.PUT,
-                    HttpEntity(OppdatereInntekterRequest(setOf(inn), emptySet(), emptySet())),
-                    InntekterResponse::class.java,
+                    HttpEntity(
+                        OppdaterBehandlingRequest(
+                            inntekter =
+                                no.nav.bidrag.behandling.dto.behandling.OppdatereInntekterRequest(
+                                    inntekter = setOf(inn),
+                                ),
+                        ),
+                    ),
+                    BehandlingDto::class.java,
                 )
 
             // then
             assertEquals(HttpStatus.OK, r.statusCode)
-            assertEquals(1, r.body!!.inntekter.size)
+            assertEquals(1, r.body!!.inntekter.inntekter.size)
         }
 
         @Test
@@ -141,24 +161,32 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
                     "${rootUriV1()}/behandling/${behandling.id}/inntekter",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
                     HttpMethod.PUT,
                     HttpEntity(
-                        OppdatereInntekterRequest(
-                            setOf(inntekt1, inntekt2),
-                            setOf(),
-                            setOf(),
+                        OppdaterBehandlingRequest(
+                            inntekter =
+                                OppdatereInntekterRequest(
+                                    setOf(inntekt1, inntekt2),
+                                    setOf(),
+                                    setOf(),
+                                ),
                         ),
                     ),
-                    InntekterResponse::class.java,
+                    BehandlingDto::class.java,
                 )
 
+            val inntekter = r1.body!!.inntekter!!
             // then
             assertEquals(HttpStatus.OK, r1.statusCode)
-            assertEquals(2, r1.body!!.inntekter.size)
-            assertNotNull(r1.body!!.inntekter.find { it.inntektstype == Inntektsrapportering.DAGPENGER && it.inntektsposter.size == 2 })
+            assertEquals(2, inntekter.inntekter.size)
+            assertNotNull(inntekter.inntekter.find { it.inntektstype == Inntektsrapportering.DAGPENGER && it.inntektsposter.size == 2 })
             assertNotNull(
-                r1.body!!.inntekter.find {
+                inntekter.inntekter.find {
                     it.inntektstype == Inntektsrapportering.INNTEKTSOPPLYSNINGER_ARBEIDSGIVER &&
                         it.inntektsposter.size == 1
                 },
@@ -176,15 +204,28 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
                     "${rootUriV1()}/behandling/${behandling.id}/inntekter",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
                     HttpMethod.PUT,
-                    HttpEntity(OppdatereInntekterRequest(emptySet(), emptySet(), emptySet())),
-                    InntekterResponse::class.java,
+                    HttpEntity(
+                        OppdaterBehandlingRequest(
+                            inntekter =
+                                OppdatereInntekterRequest(
+                                    emptySet(),
+                                    emptySet(),
+                                    emptySet(),
+                                ),
+                        ),
+                    ),
+                    BehandlingDto::class.java,
                 )
 
             // then
             assertEquals(HttpStatus.OK, r.statusCode)
-            assertEquals(0, r.body!!.inntekter.size)
+            assertEquals(0, r.body!!.inntekter.inntekter.size)
         }
     }
 

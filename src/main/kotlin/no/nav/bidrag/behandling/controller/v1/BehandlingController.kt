@@ -8,17 +8,15 @@ import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.transformers.toHusstandsBarnDto
+import no.nav.bidrag.behandling.service.OpplysningerService
+import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.behandling.transformers.toRolle
-import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -32,7 +30,10 @@ import org.springframework.web.bind.annotation.RequestBody
 private val LOGGER = KotlinLogging.logger {}
 
 @BehandlingRestControllerV1
-class BehandlingController(private val behandlingService: BehandlingService) {
+class BehandlingController(
+    private val behandlingService: BehandlingService,
+    private val opplysningerService: OpplysningerService,
+) {
     @Suppress("unused")
     @PostMapping("/behandling")
     @Operation(
@@ -74,7 +75,7 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         val behandling =
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
-                datoFom = opprettBehandling.datoFom,
+                søktFomDato = opprettBehandling.søktFomDato,
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
@@ -115,10 +116,8 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     )
     fun oppdatereBehandling(
         @PathVariable behandlingId: Long,
-        @Valid @RequestBody(required = true) request: UpdateBehandlingRequest,
-    ) {
-        behandlingService.updateBehandling(behandlingId, request.grunnlagspakkeId)
-    }
+        @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
+    ): BehandlingDto = behandlingService.oppdaterBehandlingV1(behandlingId, request)
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/roller")
@@ -130,30 +129,6 @@ class BehandlingController(private val behandlingService: BehandlingService) {
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
     ) = behandlingService.syncRoller(behandlingId, request.roller)
-
-    @Suppress("unused")
-    @PutMapping("/behandling/{behandlingId}/vedtak/{vedtakId}")
-    @Operation(
-        description = "Oppdaterer vedtak id",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Oppdaterer behandling med ny vedtak id",
-            ),
-        ],
-    )
-    fun oppdatereVedtaksid(
-        @PathVariable behandlingId: Long,
-        @PathVariable vedtakId: Long,
-    ) {
-        behandlingService.oppdaterVedtakId(behandlingId, vedtakId)
-    }
 
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}")
@@ -175,73 +150,9 @@ class BehandlingController(private val behandlingService: BehandlingService) {
     fun hentBehandling(
         @PathVariable behandlingId: Long,
     ): BehandlingDto {
-        return findBehandlingById(behandlingId)
-    }
-
-    private fun findBehandlingById(behandlingId: Long): BehandlingDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        return behandlingDto(behandlingId, behandling)
-    }
-
-    private fun behandlingDto(
-        behandlingId: Long,
-        behandling: Behandling,
-    ) = BehandlingDto(
-        id = behandlingId,
-        vedtakstype = behandling.vedtakstype,
-        søknadType = behandling.vedtakstype,
-        erVedtakFattet = behandling.vedtaksid != null,
-        datoFom = behandling.datoFom,
-        datoTom = behandling.datoTom,
-        mottattdato = behandling.mottattdato,
-        soknadFraType = behandling.soknadFra,
-        saksnummer = behandling.saksnummer,
-        soknadsid = behandling.soknadsid,
-        behandlerenhet = behandling.behandlerEnhet,
-        roller =
-            behandling.roller.map {
-                RolleDto(
-                    it.id!!,
-                    it.rolletype,
-                    it.ident,
-                    it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.foedselsdato,
-                    it.opprettetDato,
-                )
-            }.toSet(),
-        husstandsbarn = behandling.husstandsbarn.toHusstandsBarnDto(behandling),
-        sivilstand = behandling.sivilstand.toSivilstandDto(),
-        virkningsdato = behandling.virkningsdato,
-        soknadRefId = behandling.soknadRefId,
-        grunnlagspakkeid = behandling.grunnlagspakkeid,
-        årsak = behandling.aarsak,
-        virkningstidspunktsbegrunnelseIVedtakOgNotat = behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
-        virkningstidspunktsbegrunnelseKunINotat = behandling.virkningstidspunktbegrunnelseKunINotat,
-        boforholdsbegrunnelseIVedtakOgNotat = behandling.boforholdsbegrunnelseIVedtakOgNotat,
-        boforholdsbegrunnelseKunINotat = behandling.boforholdsbegrunnelseKunINotat,
-        inntektsbegrunnelseIVedtakOgNotat = behandling.inntektsbegrunnelseIVedtakOgNotat,
-        inntektsbegrunnelseKunINotat = behandling.inntektsbegrunnelseKunINotat,
-    )
-
-    @Suppress("unused")
-    @GetMapping("/behandling")
-    @Operation(
-        description = "Hente en liste av alle behandlinger",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Hentet behandlinger"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandlinger"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
-            ),
-        ],
-    )
-    fun hentBehandlinger(): List<BehandlingDto> {
-        return behandlingService.hentBehandlinger().map { behandlingDto(it.id!!, it) }
+        val opplysninger = opplysningerService.hentAlleSistAktiv(behandlingId)
+        return behandling.tilBehandlingDto(opplysninger)
     }
 
     private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
