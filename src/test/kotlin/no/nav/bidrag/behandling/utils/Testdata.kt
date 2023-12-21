@@ -64,10 +64,10 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
         forsendelseId = forsendelseId,
         saksnummer = SAKSNUMMER,
         behandlingInfo =
-            BehandlingInfoResponseDto(
-                soknadId = SOKNAD_ID.toString(),
-                erFattet = false,
-            ),
+        BehandlingInfoResponseDto(
+            soknadId = SOKNAD_ID.toString(),
+            erFattet = false,
+        ),
         forsendelseType = ForsendelseTypeTo.UTGÅENDE,
         status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
     )
@@ -75,7 +75,7 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
 fun oppretteBehandling(id: Long? = null): Behandling {
     return Behandling(
         Vedtakstype.FASTSETTELSE,
-        datoFom = YearMonth.parse("2022-02").atEndOfMonth(),
+        søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
         SAKSNUMMER,

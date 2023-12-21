@@ -331,7 +331,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         fun `skal opprette en behandling med grunnlagspakkeId`() {
             val b = createBehandling()
 
-            behandlingService.updateBehandling(b.id!!, 123L)
+            behandlingService.oppdaterBehandling(b.id!!, 123L)
 
             assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeid)
         }

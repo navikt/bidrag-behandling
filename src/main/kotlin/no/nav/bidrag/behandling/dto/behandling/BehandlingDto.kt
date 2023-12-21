@@ -9,6 +9,8 @@ import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 
@@ -16,18 +18,12 @@ import java.time.LocalDate
 data class BehandlingDto(
     val id: Long,
     val vedtakstype: Vedtakstype,
+    val stønadstype: Stønadstype? = null,
+    val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoFom: LocalDate,
-    @Schema(
-        type = "string",
-        format = "date",
-        example = "01.12.2025",
-        description = "Dato til behandlingen varer til. Hvis det er null så betyr det at det ikke er noe sluttdato",
-    )
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoTom: LocalDate? = null,
+    val søktFomDato: LocalDate,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val mottattdato: LocalDate,
@@ -41,22 +37,28 @@ data class BehandlingDto(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningsdato: LocalDate? = null,
     val grunnlagspakkeid: Long? = null,
+    @Schema(name = "årsak")
     val årsak: ForskuddAarsakType? = null,
     val inntekter: InntekterDto,
     val boforhold: BoforholdDto,
     val opplysninger: List<OpplysningerDto>,
+    val notatVirkningstidspunkt: BehandlingNotatInnholdDto,
     val notat: BehandlingNotatDto,
 )
 
 data class BoforholdDto(
     val husstandsbarn: Set<HusstandsbarnDto>,
     val sivilstand: Set<SivilstandDto>,
+    val notat: BehandlingNotatInnholdDto,
 )
 
 data class InntekterDto(
     val inntekter: Set<InntektDto>,
     val barnetillegg: Set<BarnetilleggDto>,
     val utvidetbarnetrygd: Set<UtvidetBarnetrygdDto>,
+    val kontantstøtte: Set<InntektDto>,
+    val småbarnstillegg: Set<InntektDto>,
+    val notat: BehandlingNotatInnholdDto,
 )
 
 data class BehandlingNotatDto(

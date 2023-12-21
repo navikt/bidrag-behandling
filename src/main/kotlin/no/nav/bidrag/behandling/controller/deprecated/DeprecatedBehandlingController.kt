@@ -16,9 +16,9 @@ import no.nav.bidrag.behandling.deprecated.dto.SyncRollerRequest
 import no.nav.bidrag.behandling.deprecated.dto.toOpprettRolleDto
 import no.nav.bidrag.behandling.deprecated.dto.toRolle
 import no.nav.bidrag.behandling.deprecated.modell.SoknadType
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.toDate
@@ -67,9 +67,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
 
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(createBehandling.roller.toOpprettRolleDto()) &&
-                ingenVoksneUtenIdent(
-                    createBehandling.roller.toOpprettRolleDto(),
-                ),
+                    ingenVoksneUtenIdent(
+                        createBehandling.roller.toOpprettRolleDto(),
+                    ),
         )
 
         val opprettetAv =
@@ -81,7 +81,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         val behandling =
             Behandling(
                 vedtakstype = Vedtakstype.valueOf(createBehandling.soknadType.name),
-                datoFom = createBehandling.datoFom.toLocalDate(),
+                søktFomDato = createBehandling.datoFom.toLocalDate(),
                 datoTom = createBehandling.datoTom.toLocalDate(),
                 mottattdato = createBehandling.mottatDato.toLocalDate(),
                 saksnummer = createBehandling.saksnummer,
@@ -107,9 +107,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         val behandlingDo = behandlingService.opprettBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for behandlingType ${createBehandling.behandlingType} " +
-                "soknadType ${createBehandling.soknadType} " +
-                "og soknadFra ${createBehandling.soknadFra} " +
-                "med id ${behandlingDo.id} "
+                    "soknadType ${createBehandling.soknadType} " +
+                    "og soknadFra ${createBehandling.soknadFra} " +
+                    "med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -122,9 +122,9 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
     )
     fun updateBehandling(
         @PathVariable behandlingId: Long,
-        @Valid @RequestBody(required = true) request: UpdateBehandlingRequest,
+        @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
     ) {
-        behandlingService.updateBehandling(behandlingId, request.grunnlagspakkeId)
+        behandlingService.oppdaterGrunnlagspakkeid(behandlingId, request.grunnlagspakkeId)
     }
 
     @Suppress("unused")
@@ -201,7 +201,7 @@ class DeprecatedBehandlingController(private val behandlingService: BehandlingSe
         behandling.toBehandlingstype(),
         SoknadType.valueOf(behandling.vedtakstype.name),
         behandling.vedtaksid != null,
-        behandling.datoFom,
+        behandling.søktFomDato,
         behandling.datoTom,
         behandling.mottattdato,
         behandling.soknadFra,

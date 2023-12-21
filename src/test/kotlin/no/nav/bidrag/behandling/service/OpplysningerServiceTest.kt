@@ -34,7 +34,7 @@ class OpplysningerServiceTest : TestContainerRunner() {
             behandlingService.opprettBehandling(
                 Behandling(
                     Vedtakstype.FASTSETTELSE,
-                    datoFom = LocalDate.now().minusMonths(3),
+                    søktFomDato = LocalDate.now().minusMonths(3),
                     datoTom = LocalDate.now().plusMonths(2),
                     mottattdato = LocalDate.now(),
                     "123",

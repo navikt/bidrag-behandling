@@ -13,8 +13,11 @@ import java.time.LocalDate
 data class OpprettBehandlingRequest(
     @Schema(required = true)
     val vedtakstype: Vedtakstype,
-    @Schema(required = true)
+    @Schema(required = false, deprecated = true)
+    @Deprecated("", replaceWith = ReplaceWith("søktFomDato"))
     val datoFom: LocalDate,
+    @Schema(required = true)
+    val søktFomDato: LocalDate = datoFom,
     @Schema(required = true)
     val mottattdato: LocalDate,
     @Schema(required = true)

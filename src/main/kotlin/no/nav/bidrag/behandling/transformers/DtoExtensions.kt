@@ -46,6 +46,8 @@ fun Set<Barnetillegg>.toBarnetilleggDto() =
         BarnetilleggDto(
             it.id,
             it.ident,
+            // TODO: Sett dette til gjelderBarn ident
+            it.ident,
             it.barnetillegg,
             it.datoFom?.toLocalDate(),
             it.datoTom?.toLocalDate(),
@@ -221,6 +223,6 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
         rolletype = this.rolletype,
         this.ident?.verdi,
         this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-            ?: rolleManglerFødselsdato(rolletype),
+        ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
     )

@@ -8,11 +8,11 @@ import jakarta.validation.Valid
 import mu.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.behandling.UpdateBehandlingRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.OpplysningerService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
@@ -58,13 +58,13 @@ class BehandlingController(
     ): OpprettBehandlingResponse {
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
-                ingenVoksneUtenIdent(opprettBehandling.roller),
+                    ingenVoksneUtenIdent(opprettBehandling.roller),
         )
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
             "${OpprettBehandlingRequest::stønadstype.name} " +
-                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
+                    "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -75,7 +75,7 @@ class BehandlingController(
         val behandling =
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
-                datoFom = opprettBehandling.datoFom,
+                søktFomDato = opprettBehandling.søktFomDato,
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
@@ -100,10 +100,10 @@ class BehandlingController(
         val behandlingDo = behandlingService.opprettBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " +
-                "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
-                "soknadType ${opprettBehandling.vedtakstype} " +
-                "og soknadFra ${opprettBehandling.søknadFra} " +
-                "med id ${behandlingDo.id} "
+                    "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
+                    "soknadType ${opprettBehandling.vedtakstype} " +
+                    "og soknadFra ${opprettBehandling.søknadFra} " +
+                    "med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -116,10 +116,8 @@ class BehandlingController(
     )
     fun oppdatereBehandling(
         @PathVariable behandlingId: Long,
-        @Valid @RequestBody(required = true) request: UpdateBehandlingRequest,
-    ) {
-        behandlingService.updateBehandling(behandlingId, request.grunnlagspakkeId)
-    }
+        @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
+    ): BehandlingDto = behandlingService.oppdaterBehandlingV1(behandlingId, request)
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/roller")
@@ -131,30 +129,7 @@ class BehandlingController(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
     ) = behandlingService.syncRoller(behandlingId, request.roller)
-
-    @Suppress("unused")
-    @PutMapping("/behandling/{behandlingId}/vedtak/{vedtakId}")
-    @Operation(
-        description = "Oppdaterer vedtak id",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
-            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
-            ApiResponse(
-                responseCode = "403",
-                description = "Oppdaterer behandling med ny vedtak id",
-            ),
-        ],
-    )
-    fun oppdatereVedtaksid(
-        @PathVariable behandlingId: Long,
-        @PathVariable vedtakId: Long,
-    ) {
-        behandlingService.oppdaterVedtakId(behandlingId, vedtakId)
-    }
+    
 
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}")
