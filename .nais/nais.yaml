@@ -1,7 +1,7 @@
 apiVersion: "nais.io/v1alpha1"
 kind: "Application"
 metadata:
-  name: { { name } }
+  name: {{ name }}
   namespace: bidrag
   labels:
     team: bidrag
@@ -17,23 +17,23 @@ spec:
   accessPolicy:
     inbound:
       rules:
-      { { #each azure_access_inbound}}
-          - application: {{this.application } }
-      namespace: {{this.namespace}}
-      cluster: {{this.cluster}}
+      {{#each azure_access_inbound}}
+          - application: {{this.application}}
+            namespace: {{this.namespace}}
+            cluster: {{this.cluster}}
       {{/each}}
     outbound:
       external:
-      { { #each outbound-access-hosts}}
-          - host: {{this } }
+      {{#each outbound-access-hosts}}
+          - host: {{this}}
       {{/each}}
       rules:
-      { { #each outbound-access-apps}}
-          - application: {{this } }
+      {{#each outbound-access-apps}}
+          - application: {{this}}
       {{/each}}
   secureLogs:
     enabled: true
-  image: { { image } }
+  image: {{ image }}
   liveness:
     path: /actuator/health
     initialDelay: 20
@@ -55,22 +55,22 @@ spec:
       memory: 512Mi
       cpu: 200m
   ingresses:
-  { { #each ingresses as |url|}}
-      - {{url } }
+  {{#each ingresses as |url|}}
+    - {{url}}
   {{/each}}
   env:
-  { { #each env}}
-      - name: {{@key } }
-  value: "{{this}}"
+  {{#each env}}
+     - name: {{@key}}
+       value: "{{this}}"
   {{/each}}
   kafka:
-    pool: { { kafka.pool } }
+    pool: {{ kafka.pool }}
   gcp:
     sqlInstances:
-      - name: { { database.dbname } }
+      - name: {{ database.dbname }}
         type: POSTGRES_15
-        diskAutoresize: { { database.autoResize } }
-        tier: { { database.tier } }
+        diskAutoresize: {{ database.autoResize }}
+        tier: {{ database.tier }}
         databases:
           - name: bidrag-behandling
             envVarPrefix: DB
