@@ -22,7 +22,9 @@ class BehandlingBeregnForskuddController(
         description = "Beregn forskudd",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    fun beregnForskudd(@PathVariable behandlingsid: Long): ResultatForskuddsberegning {
+    fun beregnForskudd(
+        @PathVariable behandlingsid: Long,
+    ): ResultatForskuddsberegning {
         LOGGER.info("Beregner forskudd for behandling med id $behandlingsid")
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 

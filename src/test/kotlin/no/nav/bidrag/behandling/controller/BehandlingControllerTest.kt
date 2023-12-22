@@ -26,7 +26,7 @@ data class OpprettBehandlingRequestTest(
     val vedtakstype: Vedtakstype,
     val stønadstype: Stønadstype,
     val søknadstype: Soknadstype,
-    val datoFom: LocalDate,
+    val søktFomDato: LocalDate,
     val mottattdato: LocalDate,
     val søknadFra: SøktAvType,
     val saksnummer: String?,

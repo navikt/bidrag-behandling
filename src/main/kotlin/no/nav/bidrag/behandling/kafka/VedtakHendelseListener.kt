@@ -34,14 +34,14 @@ class VedtakHendelseListener(
         val behandling = behandlingService.hentBehandlingById(vedtak.behandlingId!!)
         log.info {
             "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. Lagrer vedtakId på behandling og " +
-                    "oppretter forsendelser for vedtaket"
+                "oppretter forsendelser for vedtaket"
         }
 
         behandlingService.oppdaterBehandling(
             vedtak.behandlingId!!,
             OppdaterBehandlingRequest(
-                vedtaksid = vedtak.id.toLong()
-            )
+                vedtaksid = vedtak.id.toLong(),
+            ),
         ) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
         opprettForsendelse(vedtak, behandling)
     }
@@ -55,15 +55,15 @@ class VedtakHendelseListener(
                 saksnummer = vedtak.saksnummer,
                 enhet = vedtak.enhetsnummer?.verdi,
                 behandlingInfo =
-                BehandlingInfoDto(
-                    soknadId = vedtak.soknadId ?: behandling.soknadsid,
-                    vedtakId = vedtak.id.toLong(),
-                    soknadFra = behandling.soknadFra,
-                    stonadType = vedtak.stonadType,
-                    engangsBelopType = vedtak.engangsbelopType,
-                    erFattetBeregnet = true,
-                    vedtakType = vedtak.type,
-                ),
+                    BehandlingInfoDto(
+                        soknadId = vedtak.soknadId ?: behandling.soknadsid,
+                        vedtakId = vedtak.id.toLong(),
+                        soknadFra = behandling.soknadFra,
+                        stonadType = vedtak.stonadType,
+                        engangsBelopType = vedtak.engangsbelopType,
+                        erFattetBeregnet = true,
+                        vedtakType = vedtak.type,
+                    ),
                 roller = behandling.tilForsendelseRolleDto(),
             ),
         )

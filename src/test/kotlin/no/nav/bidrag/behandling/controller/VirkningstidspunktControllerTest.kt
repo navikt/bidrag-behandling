@@ -26,15 +26,16 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
 
         val req =
             OppdaterBehandlingRequest(
-                virkningstidspunkt = OppdaterVirkningstidspunkt(
+                virkningstidspunkt =
+                OppdaterVirkningstidspunkt(
                     årsak = ForskuddAarsakType.KF,
                     virkningsdato = LocalDate.parse("2025-12-27"),
-                    notat = OppdaterNotat(
-                        "MED I VEDTAK",
+                    notat =
+                    OppdaterNotat(
                         "KUN I NOTAT",
-                    )
-                )
-
+                        "MED I VEDTAK"
+                    ),
+                ),
             )
 
         val respons =

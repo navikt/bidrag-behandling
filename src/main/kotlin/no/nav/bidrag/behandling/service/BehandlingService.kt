@@ -49,15 +49,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadsid,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.tilBehandlingstype(),
-                    stonadType = behandling.stonadstype,
-                    engangsBelopType = behandling.engangsbeloptype,
-                    vedtakType = behandling.vedtakstype,
-                ),
+                    BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadsid,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.tilBehandlingstype(),
+                        stonadType = behandling.stonadstype,
+                        engangsBelopType = behandling.engangsbeloptype,
+                        vedtakType = behandling.vedtakstype,
+                    ),
             ),
         )
     }
@@ -127,7 +127,6 @@ class BehandlingService(
                     it
                 },
         ).tilBehandlingDto(opplysningerService.hentAlleSistAktiv(behandlingsid))
-
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
         behandlingRepository.findBehandlingById(behandlingId)
