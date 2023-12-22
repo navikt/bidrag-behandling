@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -59,7 +60,7 @@ data class InntekterDto(
     val inntekter: Set<InntektDto>,
     val barnetillegg: Set<BarnetilleggDto>,
     val utvidetbarnetrygd: Set<UtvidetBarnetrygdDto>,
-    val kontantstøtte: Set<InntektDto>,
+    val kontantstøtte: Set<KontantstøtteDto>,
     val småbarnstillegg: Set<InntektDto>,
     val notat: BehandlingNotatDto,
 )

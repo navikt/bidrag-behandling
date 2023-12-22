@@ -109,9 +109,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         OppdaterBehandlingRequest(
                             inntekter =
-                                no.nav.bidrag.behandling.dto.behandling.OppdatereInntekterRequest(
-                                    inntekter = setOf(inn),
-                                ),
+                            OppdatereInntekterRequest(
+                                inntekter = setOf(inn),
+                            ),
                         ),
                     ),
                     BehandlingDto::class.java,
@@ -135,10 +135,10 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 testInntektDto().copy(
                     id = null,
                     inntektsposter =
-                        setOf(
-                            InntektPost("ABC1", "ABC1", BigDecimal.TEN),
-                            InntektPost("ABC2", "ABC2", BigDecimal.TEN),
-                        ),
+                    setOf(
+                        InntektPost("ABC1", "ABC1", BigDecimal.TEN),
+                        InntektPost("ABC2", "ABC2", BigDecimal.TEN),
+                    ),
                 )
 
             val inntekt2 =
@@ -154,11 +154,11 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         OppdaterBehandlingRequest(
                             inntekter =
-                                OppdatereInntekterRequest(
-                                    setOf(inntekt1, inntekt2),
-                                    setOf(),
-                                    setOf(),
-                                ),
+                            OppdatereInntekterRequest(
+                                setOf(inntekt1, inntekt2),
+                                setOf(),
+                                setOf(),
+                            ),
                         ),
                     ),
                     BehandlingDto::class.java,
@@ -172,7 +172,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             assertNotNull(
                 inntekter.inntekter.find {
                     it.inntektstype == Inntektsrapportering.INNTEKTSOPPLYSNINGER_ARBEIDSGIVER &&
-                        it.inntektsposter.size == 1
+                            it.inntektsposter.size == 1
                 },
             )
         }
@@ -193,11 +193,11 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         OppdaterBehandlingRequest(
                             inntekter =
-                                OppdatereInntekterRequest(
-                                    emptySet(),
-                                    emptySet(),
-                                    emptySet(),
-                                ),
+                            OppdatereInntekterRequest(
+                                emptySet(),
+                                emptySet(),
+                                emptySet(),
+                            ),
                         ),
                     ),
                     BehandlingDto::class.java,

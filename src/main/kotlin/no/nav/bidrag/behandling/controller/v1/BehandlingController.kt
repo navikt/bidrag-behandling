@@ -58,13 +58,13 @@ class BehandlingController(
     ): OpprettBehandlingResponse {
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
-                ingenVoksneUtenIdent(opprettBehandling.roller),
+                    ingenVoksneUtenIdent(opprettBehandling.roller),
         )
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
             "${OpprettBehandlingRequest::stønadstype.name} " +
-                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
+                    "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -100,10 +100,10 @@ class BehandlingController(
         val behandlingDo = behandlingService.opprettBehandling(behandling)
         LOGGER.info {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " +
-                "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
-                "soknadType ${opprettBehandling.vedtakstype} " +
-                "og soknadFra ${opprettBehandling.søknadFra} " +
-                "med id ${behandlingDo.id} "
+                    "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
+                    "soknadType ${opprettBehandling.vedtakstype} " +
+                    "og soknadFra ${opprettBehandling.søknadFra} " +
+                    "med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -117,7 +117,7 @@ class BehandlingController(
     fun oppdatereBehandling(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
-    ): BehandlingDto = behandlingService.oppdaterBehandlingV1(behandlingId, request)
+    ): BehandlingDto = behandlingService.oppdaterBehandling(behandlingId, request)
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/roller")

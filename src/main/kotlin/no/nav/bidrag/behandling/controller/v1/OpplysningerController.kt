@@ -35,7 +35,7 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
             ),
         ],
     )
-    fun addOpplysningerData(
+    fun leggTilOpplysninger(
         @PathVariable behandlingId: Long,
         @RequestBody(required = true) addOpplysningerRequest: AddOpplysningerRequest,
     ): OpplysningerDto {

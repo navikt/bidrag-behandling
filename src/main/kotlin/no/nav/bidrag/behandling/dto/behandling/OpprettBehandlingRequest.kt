@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.dto.behandling
 
-import com.fasterxml.jackson.annotation.JsonAlias
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -15,7 +14,6 @@ data class OpprettBehandlingRequest(
     @Schema(required = true)
     val vedtakstype: Vedtakstype,
     @Schema(required = true)
-    @JsonAlias("datoFom")
     val søktFomDato: LocalDate,
     @Schema(required = true)
     val mottattdato: LocalDate,
