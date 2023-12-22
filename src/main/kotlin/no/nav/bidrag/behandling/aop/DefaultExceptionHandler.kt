@@ -73,11 +73,7 @@ class DefaultExceptionHandler {
 
     private fun getErrorMessage(exception: HttpStatusCodeException): String {
         val errorMessage = StringBuilder()
-        if (exception.statusText == null) {
-            errorMessage.append("Det skjedde en feil ved kall mot ekstern tjeneste: ")
-        } else {
-            errorMessage.append("Validering feilet")
-        }
+        errorMessage.append("Validering feilet")
         exception.responseHeaders?.get(HttpHeaders.WARNING)?.firstOrNull()
             ?.let { errorMessage.append(it) }
         if (exception.statusText.isNotEmpty()) {

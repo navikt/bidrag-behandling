@@ -109,7 +109,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         OppdaterBehandlingRequest(
                             inntekter =
-                                no.nav.bidrag.behandling.dto.behandling.OppdatereInntekterRequest(
+                                OppdatereInntekterRequest(
                                     inntekter = setOf(inn),
                                 ),
                         ),
