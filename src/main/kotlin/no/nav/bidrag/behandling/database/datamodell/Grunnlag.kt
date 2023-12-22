@@ -19,6 +19,8 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandDto
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.io.Serializable
 import java.time.LocalDateTime
 
@@ -29,7 +31,8 @@ class Grunnlag(
     val behandling: Behandling,
     @Enumerated(EnumType.STRING)
     val type: Grunnlagstype,
-    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "data")
     val data: Jsonb,
     val innhentet: LocalDateTime,
     @Id

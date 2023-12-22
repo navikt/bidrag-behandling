@@ -7,7 +7,7 @@ import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
-import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
+import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -37,7 +37,7 @@ data class BehandlingDto(
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDto,
     val boforhold: BoforholdDto,
-    val opplysninger: List<OpplysningerDto>,
+    val opplysninger: List<GrunnlagDto>,
 )
 
 data class VirkningstidspunktDto(

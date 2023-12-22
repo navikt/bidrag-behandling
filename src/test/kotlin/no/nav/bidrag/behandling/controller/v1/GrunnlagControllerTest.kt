@@ -12,10 +12,8 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
-import kotlin.test.Ignore
 
 class GrunnlagControllerTest : KontrollerTestRunner() {
-
     @Test
     fun `skal returnere 404 ved ugyldig behandling id`() {
         val r =

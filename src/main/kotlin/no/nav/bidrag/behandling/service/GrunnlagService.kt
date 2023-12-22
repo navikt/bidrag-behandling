@@ -41,9 +41,21 @@ class GrunnlagService(
     fun hentSistAktiv(
         behandlingsid: Long,
         grunnlagstype: Grunnlagstype,
-    ): Grunnlag? =
-        grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
-            behandlingsid,
-            grunnlagstype.getOrMigrate(),
-        )
+    ): Grunnlag? {
+        val grunnlag =
+            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                behandlingsid,
+                grunnlagstype.getOrMigrate(),
+            )
+
+        return grunnlag
+    }
+
+    fun hentAlleSistAktiv(behandlingId: Long): List<Grunnlag> =
+        Grunnlagstype.entries.toTypedArray().mapNotNull {
+            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                behandlingId,
+                it,
+            )
+        }
 }

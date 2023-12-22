@@ -53,7 +53,6 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
         // 2.1 Prepare husstandsBarn
-
         val perioder =
             setOf(
                 HusstandsbarnperiodeDto(
@@ -89,11 +88,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/BoforholdControllerTest.kt
-                "${rootUriV1()}/behandling/${behandling.body!!.id}/boforhold",
-=======
-                "${rootUri()}/behandling/${behandling.body!!.id}",
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/BoforholdControllerTest.kt
+                "${rootUriV1()}/behandling/${behandling.body!!.id}",
                 HttpMethod.PUT,
                 HttpEntity(OppdaterBehandlingRequest(boforhold = boforholdData)),
                 BehandlingDto::class.java,

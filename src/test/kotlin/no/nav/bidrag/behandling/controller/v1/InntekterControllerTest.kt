@@ -4,12 +4,13 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
-import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.junit.jupiter.api.BeforeEach
@@ -26,12 +27,16 @@ import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class InntekterControllerTest : KontrollerTestRunner() {
-    @Autowired
-    lateinit var behandlingRepository: BehandlingRepository
+class InntekterControllerTest : TestContainerRunner() {
+    fun rootUriV1(): String {
+        return "http://localhost:$port/api/v1"
+    }
 
     @Autowired
-    lateinit var behandlingService: BehandlingService
+    lateinit var testdataManager: TestdataManager
+
+    @Autowired
+    lateinit var behandlingRepository: BehandlingRepository
 
     @BeforeEach
     fun oppsett() {
@@ -49,11 +54,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
-                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
-=======
-                    "${rootUri()}/behandling/${behandling.id}",
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     BehandlingDto::class.java,
@@ -76,11 +77,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
-                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
-=======
-                    "${rootUri()}/behandling/${behandling.id}",
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     BehandlingDto::class.java,
@@ -112,11 +109,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
-                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
-=======
-                    "${rootUri()}/behandling/${behandling.id}",
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(
@@ -161,11 +154,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
-                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
-=======
-                    "${rootUri()}/behandling/${behandling.id}",
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(
@@ -204,11 +193,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
-<<<<<<< HEAD:src/test/kotlin/no/nav/bidrag/behandling/controller/v1/InntekterControllerTest.kt
-                    "${rootUriV1()}/behandling/${behandling.id}/inntekter",
-=======
-                    "${rootUri()}/behandling/${behandling.id}",
->>>>>>> main:src/test/kotlin/no/nav/bidrag/behandling/controller/InntekterControllerTest.kt
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
-@Deprecated("Bruk endepunktene i BoforholdController /api/v1/boforhold")
+@Deprecated("")
 @DeprecatedBehandlingRestController
 class DeprecatedBoforholdController(private val behandlingService: BehandlingService) {
     @Suppress("unused")

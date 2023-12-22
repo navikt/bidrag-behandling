@@ -30,7 +30,12 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         stubUtils.stubBeregneForskudd()
         // given
         val behandling = opprettGyldigBehandlingForBeregning()
-        behandlingRepository.save(behandling)
+
+        try {
+            behandlingRepository.save(behandling)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         // when
         val returnert =

@@ -40,7 +40,7 @@ class BehandlingService(
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
-    private val opplysningerService: OpplysningerService,
+    private val grunnlagService: GrunnlagService,
 ) {
     fun opprettBehandling(behandling: Behandling): Behandling =
         behandlingRepository.save(behandling)
@@ -133,7 +133,7 @@ class BehandlingService(
                     }
                     it
                 },
-        ).tilBehandlingDto(opplysningerService.hentAlleSistAktiv(behandlingsid))
+        ).tilBehandlingDto(grunnlagService.hentAlleSistAktiv(behandlingsid))
 
     fun oppdaterBehandling(
         behandlingsid: Long,

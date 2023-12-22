@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.controller.deprecated
 
+import no.nav.bidrag.behandling.controller.BehandlingControllerTest
+import no.nav.bidrag.behandling.controller.OppprettRolleDtoTest
 import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
 import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
@@ -40,12 +42,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 ),
             )
         val testBehandlingMedNull =
-            DeprecatedBehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 OpprettBehandlingResponse::class.java,
@@ -61,7 +63,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv",
+                "${rootUriV1()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -87,12 +89,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 ),
             )
         val testBehandlingMedNull =
-            DeprecatedBehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 OpprettBehandlingResponse::class.java,
@@ -108,7 +110,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv",
+                "${rootUriV1()}/behandling/$behandlingId/opplysninger/BOFORHOLD/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -122,7 +124,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 ved ugyldig behandling id`() {
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/1232132/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
+                "${rootUriV1()}/behandling/1232132/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -148,12 +150,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 ),
             )
         val testBehandlingMedNull =
-            DeprecatedBehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 OpprettBehandlingResponse::class.java,
@@ -163,7 +165,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         // 2. Check
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.body!!.id}/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
+                "${rootUriV1()}/behandling/${behandling.body!!.id}/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -176,7 +178,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal returnere 400 ved ugyldig type`() {
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/1232132/opplysninger/ERROR/aktiv",
+                "${rootUriV1()}/behandling/1232132/opplysninger/ERROR/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -202,12 +204,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 ),
             )
         val testBehandlingMedNull =
-            DeprecatedBehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 OpprettBehandlingResponse::class.java,
@@ -225,7 +227,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
+                "${rootUriV1()}/behandling/$behandlingId/opplysninger/${OpplysningerType.BOFORHOLD_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -237,7 +239,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         // 4. Assert that inn1 is active
         val oppAktivResult2 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger/${OpplysningerType.INNTEKT_BEARBEIDET.name}/aktiv",
+                "${rootUriV1()}/behandling/$behandlingId/opplysninger/${OpplysningerType.INNTEKT_BEARBEIDET.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 OpplysningerDto::class.java,
@@ -257,7 +259,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
 
         val opp =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/$behandlingId/opplysninger",
+                "${rootUriV1()}/behandling/$behandlingId/opplysninger",
                 HttpMethod.POST,
                 HttpEntity(opplysninger),
                 OpplysningerDto::class.java,
