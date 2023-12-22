@@ -1,11 +1,11 @@
 package no.nav.bidrag.behandling.controller.v1
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
-import mu.KotlinLogging
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OppdaterRollerRequest

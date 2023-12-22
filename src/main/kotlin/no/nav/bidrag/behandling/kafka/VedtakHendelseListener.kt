@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
@@ -78,7 +78,7 @@ class VedtakHendelseListener(
         try {
             return objectMapper.readValue(melding.value(), VedtakHendelse::class.java)
         } catch (e: Exception) {
-            log.error("Det skjedde en feil ved konverting av melding fra hendelse", e)
+            log.error(e) { "Det skjedde en feil ved konverting av melding fra hendelse" }
             throw KunneIkkeLeseMeldingFraHendelse(e.message, e)
         }
     }

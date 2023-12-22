@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.service
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
