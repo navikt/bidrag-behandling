@@ -1,8 +1,8 @@
 package no.nav.bidrag.behandling.controller.v1
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import mu.KotlinLogging
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
