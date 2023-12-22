@@ -10,6 +10,8 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingRequest
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
@@ -21,7 +23,10 @@ import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.toUtvidetBarnetrygdDomain
+import no.nav.bidrag.commons.security.utils.TokenUtils
+import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import org.apache.commons.lang3.Validate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -41,6 +46,59 @@ class BehandlingService(
                 opprettForsendelseForBehandling(it)
                 it
             }
+
+    fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
+        Validate.isTrue(
+            ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
+                ingenVoksneUtenIdent(opprettBehandling.roller),
+        )
+
+        Validate.isTrue(
+            opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
+            "${OpprettBehandlingRequest::stønadstype.name} " +
+                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
+        )
+
+        val opprettetAv =
+            TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
+        val opprettetAvNavn =
+            TokenUtils.hentSaksbehandlerIdent()
+                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
+        val behandling =
+            Behandling(
+                vedtakstype = opprettBehandling.vedtakstype,
+                søktFomDato = opprettBehandling.søktFomDato,
+                mottattdato = opprettBehandling.mottattdato,
+                saksnummer = opprettBehandling.saksnummer,
+                soknadsid = opprettBehandling.søknadsid,
+                soknadRefId = opprettBehandling.søknadsreferanseid,
+                behandlerEnhet = opprettBehandling.behandlerenhet,
+                soknadFra = opprettBehandling.søknadFra,
+                stonadstype = opprettBehandling.stønadstype,
+                engangsbeloptype = opprettBehandling.engangsbeløpstype,
+                opprettetAv = opprettetAv,
+                opprettetAvNavn = opprettetAvNavn,
+                kildeapplikasjon = TokenUtils.hentApplikasjonsnavn() ?: "ukjent",
+            )
+        val roller =
+            HashSet(
+                opprettBehandling.roller.map {
+                    it.toRolle(behandling)
+                },
+            )
+
+        behandling.roller.addAll(roller)
+
+        val behandlingDo = opprettBehandling(behandling)
+        log.info {
+            "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " +
+                "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
+                "vedtakstype ${opprettBehandling.vedtakstype} " +
+                "og søknadFra ${opprettBehandling.søknadFra} " +
+                "med id ${behandlingDo.id} "
+        }
+        return OpprettBehandlingResponse(behandlingDo.id!!)
+    }
 
     private fun opprettForsendelseForBehandling(behandling: Behandling) {
         forsendelseService.slettEllerOpprettForsendelse(
@@ -161,5 +219,14 @@ class BehandlingService(
 
     fun oppfriskeGrunnlagsdata(grunlagspakkeid: Long) {
         val grunnlagspakke = bidragGrunnlagConsumer.henteGrunnlagspakke(grunlagspakkeid)
+    }
+
+    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
+        return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
+            .none { r -> r.navn.isNullOrBlank() }
+    }
+
+    private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
+        return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
     }
 }
