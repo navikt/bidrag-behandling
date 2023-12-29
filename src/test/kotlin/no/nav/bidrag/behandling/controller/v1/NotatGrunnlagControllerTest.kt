@@ -55,7 +55,7 @@ class NotatGrunnlagControllerTest : KontrollerTestRunner() {
             notatResponse.saksbehandlerNavn shouldBe "Fornavn Etternavn"
             notatResponse.virkningstidspunkt.søktAv shouldBe SøktAvType.BIDRAGSMOTTAKER
             notatResponse.virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2023-02-01")
-            notatResponse.virkningstidspunkt.søktFraDato shouldBe YearMonth.parse("2022-08")
+            notatResponse.virkningstidspunkt.søktFraDato shouldBe YearMonth.parse("2022-02")
             notatResponse.virkningstidspunkt.mottattDato shouldBe YearMonth.parse("2023-03")
             notatResponse.virkningstidspunkt.notat.medIVedtaket shouldBe "notat virkning med i vedtak"
             notatResponse.virkningstidspunkt.notat.intern shouldBe "notat virkning"

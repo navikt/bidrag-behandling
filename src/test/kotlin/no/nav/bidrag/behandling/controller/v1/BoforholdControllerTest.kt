@@ -1,9 +1,11 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.behandling.dto.behandling.CreateBehandlingResponse
-import no.nav.bidrag.behandling.dto.boforhold.BoforholdResponse
-import no.nav.bidrag.behandling.dto.boforhold.OppdatereBoforholdRequest
+import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBoforholdRequest
+import no.nav.bidrag.behandling.dto.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -21,13 +23,13 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     fun `skal lagre boforhold data`() {
         val roller =
             setOf(
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BARN,
                     "123",
                     opprettetDato = LocalDate.now().minusMonths(8),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                CreateRolleDtoTest(
+                OppprettRolleDtoTest(
                     Rolletype.BIDRAGSMOTTAKER,
                     "123",
                     opprettetDato = LocalDate.now().minusMonths(8),
@@ -35,22 +37,31 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 ),
             )
 
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+        val testBehandlingMedNull =
+            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling",
+                "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                CreateBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
         // 2.1 Prepare husstandsBarn
 
         val perioder =
-            setOf(HusstandsbarnperiodeDto(null, null, null, Bostatuskode.IKKE_MED_FORELDER, Kilde.OFFENTLIG))
+            setOf(
+                HusstandsbarnperiodeDto(
+                    null,
+                    null,
+                    null,
+                    Bostatuskode.IKKE_MED_FORELDER,
+                    Kilde.OFFENTLIG,
+                ),
+            )
         val husstandsBarn =
             setOf(
                 HusstandsbarnDto(
@@ -65,17 +76,25 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
         // 2.2
         val boforholdData =
-            OppdatereBoforholdRequest(emptySet(), husstandsBarn, emptySet(), "med i vedtak", "kun i notat") //
+            OppdaterBoforholdRequest(
+                husstandsBarn,
+                emptySet(),
+                notat =
+                    OppdaterNotat(
+                        "med i vedtak",
+                        "kun i notat",
+                    ),
+            ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/${behandling.body!!.id}/boforhold",
+                "${rootUri()}/behandling/${behandling.body!!.id}",
                 HttpMethod.PUT,
-                HttpEntity(boforholdData),
-                BoforholdResponse::class.java,
+                HttpEntity(OppdaterBehandlingRequest(boforhold = boforholdData)),
+                BehandlingDto::class.java,
             )
 
-        assertEquals(1, boforholdResponse.body!!.husstandsbarn.size)
-        val husstandsBarnDto = boforholdResponse.body!!.husstandsbarn.iterator().next()
+        assertEquals(1, boforholdResponse.body!!.boforhold.husstandsbarn.size)
+        val husstandsBarnDto = boforholdResponse.body!!.boforhold.husstandsbarn.iterator().next()
         assertEquals("ident", husstandsBarnDto.ident)
         assertEquals(1, husstandsBarnDto.perioder.size)
     }

@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
@@ -25,10 +26,12 @@ class Rolle(
     val rolletype: Rolletype,
     val ident: String?,
     val foedselsdato: LocalDate,
-    val opprettetDato: LocalDate?,
+    val opprettetDato: LocalDate = LocalDate.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     val navn: String? = null,
     val deleted: Boolean = false,
 )
+
+fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""

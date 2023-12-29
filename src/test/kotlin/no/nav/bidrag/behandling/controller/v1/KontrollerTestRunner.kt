@@ -4,9 +4,9 @@ import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.TestdataManager
-import no.nav.bidrag.commons.web.test.HttpHeaderTestRestTemplate
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
 
 abstract class KontrollerTestRunner : CommonTestRunner() {
@@ -14,7 +14,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     private val port = 0
 
     @Autowired
-    lateinit var httpHeaderTestRestTemplate: HttpHeaderTestRestTemplate
+    lateinit var httpHeaderTestRestTemplate: TestRestTemplate
 
     @Autowired
     lateinit var testdataManager: TestdataManager

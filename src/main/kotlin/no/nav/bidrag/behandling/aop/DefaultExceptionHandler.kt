@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.aop
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
+import no.nav.bidrag.behandling.BeregningAvResultatForBehandlingFeilet
+import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.core.convert.ConversionFailedException
@@ -19,7 +21,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ControllerAdvice
 @Suppress("unused")
-class ExceptionHandler {
+class DefaultExceptionHandler {
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(DefaultExceptionHandler::class.java)
+    }
+
     @ResponseBody
     @ExceptionHandler(
         value = [
@@ -37,12 +43,12 @@ class ExceptionHandler {
             }
         val errorMessage =
             validationError?.fieldErrors?.joinToString(", ") { "${it.field}: ${it.message}" }
-                ?: "ukjent feil"
+                ?: exception.message
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .header(
                 HttpHeaders.WARNING,
-                "Forespørselen inneholder ugyldig verdi: $errorMessage",
+                errorMessage,
             )
             .build<Any>()
     }
@@ -56,14 +62,20 @@ class ExceptionHandler {
             .build<Any>()
     }
 
+    @ResponseBody
+    @ExceptionHandler(BeregningAvResultatForBehandlingFeilet::class)
+    fun handleBeregningAvResultatForBehandlingFeilet(exception: BeregningAvResultatForBehandlingFeilet): ResponseEntity<*> {
+        LOGGER.warn(exception.message, exception)
+        val response = ResponseEntity.status(exception.statusCode)
+        exception.feilmeldinger.forEach { response.header(HttpHeaders.WARNING, it) }
+        return response.build<Any>()
+    }
+
     private fun getErrorMessage(exception: HttpStatusCodeException): String {
         val errorMessage = StringBuilder()
-        if (exception.statusText == null) {
-            errorMessage.append("Det skjedde en feil ved kall mot ekstern tjeneste: ")
-        } else {
-            errorMessage.append("Validering feilet")
-        }
-        exception.responseHeaders?.get(HttpHeaders.WARNING)?.firstOrNull()?.let { errorMessage.append(it) }
+        errorMessage.append("Validering feilet")
+        exception.responseHeaders?.get(HttpHeaders.WARNING)?.firstOrNull()
+            ?.let { errorMessage.append(it) }
         if (exception.statusText.isNotEmpty()) {
             errorMessage.append(" - ")
             errorMessage.append(exception.statusText)
@@ -82,7 +94,8 @@ class ExceptionHandler {
     private fun parseMethodArgumentNotValidException(ex: MethodArgumentNotValidException): Error {
         val error = Error(HttpStatus.BAD_REQUEST.value(), "validation error")
         ex.fieldErrors.forEach {
-            val message: String = if (it.defaultMessage == null) it.toString() else it.defaultMessage!!
+            val message: String =
+                if (it.defaultMessage == null) it.toString() else it.defaultMessage!!
             error.addFieldError(it.objectName, it.field, message)
         }
         return error

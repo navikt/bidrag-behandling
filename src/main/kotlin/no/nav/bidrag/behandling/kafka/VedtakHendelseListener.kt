@@ -1,15 +1,21 @@
 package no.nav.bidrag.behandling.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
+import no.nav.bidrag.behandling.transformers.behandlingId
+import no.nav.bidrag.behandling.transformers.engangsbeløptype
+import no.nav.bidrag.behandling.transformers.erFattetFraBidragBehandling
+import no.nav.bidrag.behandling.transformers.saksnummer
+import no.nav.bidrag.behandling.transformers.stønadstype
+import no.nav.bidrag.behandling.transformers.søknadsid
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
-import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
@@ -36,9 +42,11 @@ class VedtakHendelseListener(
                 "oppretter forsendelser for vedtaket"
         }
 
-        behandlingService.oppdaterVedtakId(
+        behandlingService.oppdaterBehandling(
             vedtak.behandlingId!!,
-            vedtak.id.toLong(),
+            OppdaterBehandlingRequest(
+                vedtaksid = vedtak.id.toLong(),
+            ),
         ) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
         opprettForsendelse(vedtak, behandling)
     }
@@ -53,11 +61,11 @@ class VedtakHendelseListener(
                 enhet = vedtak.enhetsnummer?.verdi,
                 behandlingInfo =
                     BehandlingInfoDto(
-                        soknadId = vedtak.soknadId ?: behandling.soknadsid,
+                        soknadId = vedtak.søknadsid ?: behandling.soknadsid,
                         vedtakId = vedtak.id.toLong(),
                         soknadFra = behandling.soknadFra,
-                        stonadType = vedtak.stonadType,
-                        engangsBelopType = vedtak.engangsbelopType,
+                        stonadType = vedtak.stønadstype,
+                        engangsBelopType = vedtak.engangsbeløptype,
                         erFattetBeregnet = true,
                         vedtakType = vedtak.type,
                     ),
@@ -70,29 +78,8 @@ class VedtakHendelseListener(
         try {
             return objectMapper.readValue(melding.value(), VedtakHendelse::class.java)
         } catch (e: Exception) {
-            log.error("Det skjedde en feil ved konverting av melding fra hendelse", e)
+            log.error(e) { "Det skjedde en feil ved konverting av melding fra hendelse" }
             throw KunneIkkeLeseMeldingFraHendelse(e.message, e)
         }
     }
 }
-
-val VedtakHendelse.stonadType get() = this.stønadsendringListe?.firstOrNull()?.type
-val VedtakHendelse.engangsbelopType get() = this.engangsbeløpListe?.firstOrNull()?.type
-val VedtakHendelse.soknadId
-    get() =
-        this.behandlingsreferanseListe?.find {
-            it.kilde == BehandlingsrefKilde.BISYS_SØKNAD.name
-        }?.referanse?.toLong()
-val VedtakHendelse.behandlingId
-    get() =
-        this.behandlingsreferanseListe?.find {
-            it.kilde == BehandlingsrefKilde.BEHANDLING_ID.name
-        }?.referanse?.toLong()
-
-fun VedtakHendelse.erFattetFraBidragBehandling() = behandlingId != null
-
-val VedtakHendelse.saksnummer
-    get(): String =
-        stønadsendringListe?.firstOrNull()?.sak?.verdi
-            ?: engangsbeløpListe?.firstOrNull()?.sak?.verdi
-            ?: throw RuntimeException("Vedtak hendelse med id $id mangler saksnummer")
