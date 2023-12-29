@@ -31,7 +31,7 @@ class GrunnlagService(
                     Grunnlag(
                         it,
                         grunnlagstype.getOrMigrate(),
-                        data =  Jsonb(data),
+                        data = Jsonb(data),
                         innhentet,
                     ),
                 )
@@ -46,4 +46,12 @@ class GrunnlagService(
             behandlingsid,
             grunnlagstype.getOrMigrate(),
         )
+
+    fun hentAlleSistAktiv(behandlingId: Long): List<Grunnlag> =
+        Grunnlagstype.entries.toTypedArray().mapNotNull {
+            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                behandlingId,
+                it,
+            )
+        }
 }

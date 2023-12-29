@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
 import no.nav.bidrag.behandling.deprecated.modell.tilOpplysningerType
-import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
+import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagDto
 import java.time.LocalDate
 
 data class OpplysningerDto(
