@@ -26,8 +26,8 @@
     <kotest.version>5.8.0</kotest.version>
     <mockk.version>4.0.2</mockk.version>
     <kotlin-logging-jvm.version>6.0.1</kotlin-logging-jvm.version>
-    <flyway.version>10.2.0</flyway.version>
-    <jackson.version>2.16.0</jackson.version>
+    <flyway.version>10.4.1</flyway.version>
+    <jackson.version>2.16.1</jackson.version>
     <testcontainers.version>1.19.3</testcontainers.version>
     <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
     <skipOwasp>false</skipOwasp>
@@ -434,7 +434,7 @@
           <dependency>
             <groupId>com.pinterest.ktlint</groupId>
             <artifactId>ktlint-cli</artifactId>
-            <version>1.0.1</version>
+            <version>1.1.0</version>
           </dependency>
           <!-- additional 3rd party ruleset(s) can be specified here -->
         </dependencies>
