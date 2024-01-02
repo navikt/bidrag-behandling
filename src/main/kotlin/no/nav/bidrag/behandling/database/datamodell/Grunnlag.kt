@@ -22,7 +22,6 @@ import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
 
 @Entity(name = "grunnlag")
-
 class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)

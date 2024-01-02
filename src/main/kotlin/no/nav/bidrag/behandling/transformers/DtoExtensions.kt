@@ -223,6 +223,6 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
         rolletype = this.rolletype,
         this.ident?.verdi,
         this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-        ?: rolleManglerFødselsdato(rolletype),
+            ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
     )
