@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeIn
@@ -19,7 +19,7 @@ import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.YearMonth
 
-class NotatOpplysningerControllerTest : KontrollerTestRunner() {
+class NotatGrunnlagControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal hente opplysninger for notat`() {
         val behandling = testdataManager.opprettBehandling()

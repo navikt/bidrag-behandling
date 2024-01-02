@@ -14,6 +14,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity(name = "rolle")
 @SQLDelete(sql = "UPDATE rolle SET deleted = true WHERE id=?")
@@ -26,7 +27,7 @@ class Rolle(
     val rolletype: Rolletype,
     val ident: String?,
     val foedselsdato: LocalDate,
-    val opprettetDato: LocalDate = LocalDate.now(),
+    val opprettet: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

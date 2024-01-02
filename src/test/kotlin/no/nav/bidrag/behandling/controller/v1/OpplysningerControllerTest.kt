@@ -1,45 +1,36 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
-import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
+import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
+import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
+import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
-import kotlin.test.Ignore
-
-data class AddOpplysningerRequest(
-    val behandlingId: Long,
-    val aktiv: Boolean,
-    val opplysningerType: OpplysningerType,
-    val data: String,
-    val hentetDato: String,
-)
 
 class OpplysningerControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal opprette og oppdatere opplysninger`() {
         val roller =
             setOf(
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BARN,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(568),
                 ),
             )
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.oppretteBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -74,19 +65,19 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal ikke være mulig å opprette flere aktive opplysninger`() {
         val roller =
             setOf(
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BARN,
-                    "123",
+                    Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
-                    "123",
+                    Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(429),
                 ),
             )
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.oppretteBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -133,21 +124,19 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 hvis opplysninger ikke eksisterer for en gitt behandling`() {
         val roller =
             setOf(
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BARN,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(471),
                 ),
             )
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.oppretteBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -171,37 +160,22 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     }
 
     @Test
-    @Ignore // Må fikses i validerings logikken
-    fun `skal returnere 400 ved ugyldig type`() {
-        val r =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/1232132/opplysninger/ERROR/aktiv",
-                HttpMethod.GET,
-                HttpEntity.EMPTY,
-                OpplysningerDto::class.java,
-            )
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, r.statusCode)
-    }
-
-    @Test
     fun `skal opprette og oppdatere opplysninger1`() {
         val roller =
             setOf(
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BARN,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(409),
                 ),
             )
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.oppretteBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
@@ -245,6 +219,14 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         Assertions.assertEquals(behandlingId, oppAktivResult2.body!!.behandlingId)
         Assertions.assertEquals("inn1", oppAktivResult2.body!!.data)
     }
+
+    data class AddOpplysningerRequest(
+        val behandlingId: Long,
+        val aktiv: Boolean,
+        val opplysningerType: OpplysningerType,
+        val data: String,
+        val hentetDato: String,
+    )
 
     private fun skalOppretteOpplysninger(
         behandlingId: Long,
