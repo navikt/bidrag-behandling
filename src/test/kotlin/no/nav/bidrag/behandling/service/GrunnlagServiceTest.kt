@@ -23,11 +23,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     @Test
     fun `hente opplysninger`() {
-<<<<<<< HEAD
-        val res = grunnlagService.hentSistAktiv(1, Grunnlagstype.BOFORHOLD_BEARBEIDET)
-=======
         val res = grunnlagService.hentSistAktiv(1, Grunnlagstype.BOFORHOLD)
->>>>>>> jsonb-merge
         assertNull(res)
     }
 
@@ -52,15 +48,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     stonadstype = null,
                 ),
             )
-<<<<<<< HEAD
 
         val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "data", LocalDateTime.now())
-        val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD_BEARBEIDET)
-=======
-        val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "data", LocalDateTime.now())
-
         val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD)
->>>>>>> jsonb-merge
 
         assertNotNull(opplysninger)
         assertEquals(opp4.id, opplysninger.id)

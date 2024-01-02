@@ -45,10 +45,6 @@ class SpringTestRunner {
             .forEach(WireMockServer::resetRequests)
     }
 
-    fun rootUri(): String {
-        return LOCALHOST + port
-    }
-
     protected fun getPort(): String {
         return port.toString()
     }

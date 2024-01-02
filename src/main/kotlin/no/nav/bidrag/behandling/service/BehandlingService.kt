@@ -185,38 +185,6 @@ class BehandlingService(
                     it
                 },
         ).tilBehandlingDto(grunnlagService.hentAlleSistAktiv(behandlingsid))
-<<<<<<< HEAD
-
-    fun oppdaterBehandling(
-        behandlingsid: Long,
-        virkningstidspunktBegrunnelseMedIVedtakNotat: String? = null,
-        virkningstidspunktBegrunnelseKunINotat: String? = null,
-        boforholdsbegrunnelseMedIVedtakOgNotat: String? = null,
-        boforholdsbegrunnelseKunINotat: String? = null,
-        inntektsbegrunnelseMedIVedtakNotat: String? = null,
-        inntektsbegrunnelseKunINotat: String? = null,
-        årsak: ForskuddAarsakType? = null,
-        virkningsdato: LocalDate? = null,
-    ): Behandling =
-        behandlingRepository.save(
-            behandlingRepository.findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
-                .let {
-                    it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
-                        virkningstidspunktBegrunnelseMedIVedtakNotat
-                    it.virkningstidspunktbegrunnelseKunINotat =
-                        virkningstidspunktBegrunnelseKunINotat
-                    it.boforholdsbegrunnelseIVedtakOgNotat = boforholdsbegrunnelseMedIVedtakOgNotat
-                    it.boforholdsbegrunnelseKunINotat = boforholdsbegrunnelseKunINotat
-                    it.inntektsbegrunnelseIVedtakOgNotat = inntektsbegrunnelseMedIVedtakNotat
-                    it.inntektsbegrunnelseKunINotat = inntektsbegrunnelseKunINotat
-                    it.aarsak = årsak
-                    it.virkningsdato = virkningsdato
-                    it
-                },
-        )
-=======
->>>>>>> jsonb-merge
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
         behandlingRepository.findBehandlingById(behandlingId)

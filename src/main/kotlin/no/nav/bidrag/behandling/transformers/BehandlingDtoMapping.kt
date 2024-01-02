@@ -30,7 +30,6 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =
                     it.ident,
                     it.navn ?: hentPersonVisningsnavn(it.ident),
                     it.foedselsdato,
-                    it.opprettetDato,
                 )
             }.toSet(),
         søknadRefId = soknadRefId,

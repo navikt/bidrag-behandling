@@ -52,13 +52,6 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     val stubUtils: StubUtils = StubUtils()
 
     protected fun rootUri(): String {
-<<<<<<< HEAD
-        return "http://localhost:$port/api"
-    }
-
-    fun rootUriV1(): String {
-=======
->>>>>>> jsonb-merge
         return "http://localhost:$port/api/v1"
     }
 

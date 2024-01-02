@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
-import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
+import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagDto
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.toDto
 import org.springframework.web.bind.annotation.GetMapping

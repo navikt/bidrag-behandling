@@ -9,10 +9,6 @@ import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
-<<<<<<< HEAD
-import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
-=======
->>>>>>> jsonb-merge
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype

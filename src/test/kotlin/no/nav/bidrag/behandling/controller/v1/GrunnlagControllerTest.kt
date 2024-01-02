@@ -1,11 +1,11 @@
 package no.nav.bidrag.behandling.controller.v1
 
-import no.nav.bidrag.behandling.controller.BehandlingControllerTest
-import no.nav.bidrag.behandling.controller.OppprettRolleDtoTest
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
+import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagDto
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -18,7 +18,7 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 ved ugyldig behandling id`() {
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/1232132/grunnlag/${Grunnlagstype.BOFORHOLD.name}/aktiv",
+                "${rootUri()}/behandling/1232132/grunnlag/${Grunnlagstype.BOFORHOLD.name}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 GrunnlagDto::class.java,
@@ -30,25 +30,23 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
     fun `skal returnere 404 hvis opplysninger ikke eksisterer for en gitt behandling`() {
         val roller =
             setOf(
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BARN,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(471),
                 ),
             )
-        val testBehandlingMedNull = BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+        val testBehandlingMedNull = BehandlingControllerTest.oppretteBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling",
+                "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 OpprettBehandlingResponse::class.java,
@@ -58,7 +56,7 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
         // 2. Check
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/${behandling.body!!.id}/grunnlag/${Grunnlagstype.BOFORHOLD_BEARBEIDET}/aktiv",
+                "${rootUri()}/behandling/${behandling.body!!.id}/grunnlag/${Grunnlagstype.BOFORHOLD_BEARBEIDET}/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 GrunnlagDto::class.java,
@@ -70,7 +68,7 @@ class GrunnlagControllerTest : KontrollerTestRunner() {
     fun `skal returnere 400 ved ugyldig type`() {
         val r =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/1232132/grunnlag/ERROR/aktiv",
+                "${rootUri()}/behandling/1232132/grunnlag/ERROR/aktiv",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 GrunnlagDto::class.java,

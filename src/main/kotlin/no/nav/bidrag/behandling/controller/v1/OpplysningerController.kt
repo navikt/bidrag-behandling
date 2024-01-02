@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.controller.v1.BehandlingRestControllerV1
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
 import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
@@ -17,10 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
-<<<<<<< HEAD:src/main/kotlin/no/nav/bidrag/behandling/controller/v1/OpplysningerController.kt
-=======
 @Deprecated("Unødvendig å kalle ettersom backend foretar innhenting av grunnlag")
->>>>>>> jsonb-merge:src/main/kotlin/no/nav/bidrag/behandling/controller/deprecated/DeprecatedOpplysningerController.kt
 @BehandlingRestControllerV1
 class OpplysningerController(val grunnlagService: GrunnlagService) {
     @Suppress("unused")
@@ -50,11 +46,7 @@ class OpplysningerController(val grunnlagService: GrunnlagService) {
             Grunnlagstype.valueOf(opplysningerType.name),
             data,
             hentetDato.atStartOfDay(),
-<<<<<<< HEAD:src/main/kotlin/no/nav/bidrag/behandling/controller/v1/OpplysningerController.kt
         ).tilOpplysningerDto()
-=======
-        ).toDto().tilOpplysningerDto()
->>>>>>> jsonb-merge:src/main/kotlin/no/nav/bidrag/behandling/controller/deprecated/DeprecatedOpplysningerController.kt
     }
 
     @Suppress("unused")
@@ -81,10 +73,6 @@ class OpplysningerController(val grunnlagService: GrunnlagService) {
         return grunnlagService.hentSistAktiv(
             behandlingId,
             Grunnlagstype.valueOf(opplysningerType.name),
-<<<<<<< HEAD:src/main/kotlin/no/nav/bidrag/behandling/controller/v1/OpplysningerController.kt
         )?.tilOpplysningerDto() ?: behandlingNotFoundException(behandlingId)
-=======
-        )?.toDto()?.tilOpplysningerDto() ?: behandlingNotFoundException(behandlingId)
->>>>>>> jsonb-merge:src/main/kotlin/no/nav/bidrag/behandling/controller/deprecated/DeprecatedOpplysningerController.kt
     }
 }

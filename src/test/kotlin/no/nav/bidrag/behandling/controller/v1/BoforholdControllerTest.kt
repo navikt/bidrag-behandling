@@ -1,12 +1,5 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
-<<<<<<< HEAD
-import no.nav.bidrag.behandling.controller.BehandlingControllerTest
-import no.nav.bidrag.behandling.controller.OppprettRolleDtoTest
-=======
-import no.nav.bidrag.behandling.controller.v1.BehandlingControllerTest
-import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
->>>>>>> jsonb-merge
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
@@ -93,11 +86,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
-<<<<<<< HEAD
-                "${rootUriV1()}/behandling/${behandling.body!!.id}",
-=======
                 "${rootUri()}/behandling/${behandling.body!!.id}",
->>>>>>> jsonb-merge
                 HttpMethod.PUT,
                 HttpEntity(OppdaterBehandlingRequest(boforhold = boforholdData)),
                 BehandlingDto::class.java,

@@ -26,6 +26,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 
 val SAKSNUMMER = "1233333"
@@ -178,7 +179,7 @@ fun opprettRolle(
         rolletype = data[Rolle::rolletype.name] as Rolletype,
         behandling = behandling,
         foedselsdato = data[Rolle::foedselsdato.name] as LocalDate,
-        opprettetDato = LocalDate.now(),
+        opprettet = LocalDateTime.now(),
     )
 }
 
@@ -336,23 +337,3 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
     behandling.sivilstand = mutableSetOf(sivilstand)
     return behandling
 }
-
-fun opprettBarnetillegg(
-    behandling: Behandling,
-    ident: String = ROLLE_BA_1.fødselsnummer!!.verdi,
-) = Barnetillegg(
-    behandling = behandling,
-    ident = ident,
-    barnetillegg = BigDecimal(1000),
-    datoFom = LocalDate.parse("2022-01-01").toDate(),
-    datoTom = null,
-)
-
-fun opprettUtvidetbarnetrygd(behandling: Behandling) =
-    UtvidetBarnetrygd(
-        behandling = behandling,
-        belop = BigDecimal(1000),
-        datoFom = LocalDate.parse("2022-01-01"),
-        deltBosted = false,
-        datoTom = null,
-    )

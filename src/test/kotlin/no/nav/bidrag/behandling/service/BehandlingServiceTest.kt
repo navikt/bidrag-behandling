@@ -40,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.util.Calendar
 
@@ -606,7 +607,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                             it.rolletype,
                             it.ident,
                             it.foedselsdato,
-                            it.opprettetDato,
+                            it.opprettet,
                         )
                     },
                 )
@@ -622,21 +623,21 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Rolletype.BIDRAGSMOTTAKER,
                     "123344",
                     LocalDate.now().minusMonths(1025),
-                    LocalDate.now().minusMonths(2),
+                    LocalDateTime.now().minusMonths(2),
                 ),
                 Rolle(
                     behandling,
                     Rolletype.BIDRAGSPLIKTIG,
                     "44332211",
                     LocalDate.now().minusMonths(1068),
-                    LocalDate.now().minusMonths(2),
+                    LocalDateTime.now().minusMonths(2),
                 ),
                 Rolle(
                     behandling,
                     Rolletype.BARN,
                     "1111",
                     LocalDate.now().minusMonths(154),
-                    LocalDate.now().minusMonths(2),
+                    LocalDateTime.now().minusMonths(2),
                 ),
             )
         }
