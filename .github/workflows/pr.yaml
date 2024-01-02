@@ -15,3 +15,18 @@ jobs:
     with:
       nais_variabler_filnavn: main.yaml
       maven_options: -B -q -fae -Pit
+
+  deploy_unleash:
+    runs-on: ubuntu-latest
+    name: Deploy unleash
+    needs: build-deploy
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy unleash to dev-gcp
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/unleash.yaml
+          VARS: .nais/main.yaml
