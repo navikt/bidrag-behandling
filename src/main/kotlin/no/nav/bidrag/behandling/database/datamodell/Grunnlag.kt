@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -18,33 +19,39 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandDto
-import java.util.Date
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
+import java.io.Serializable
+import java.time.LocalDateTime
 
-@Entity(name = "opplysninger")
-class Opplysninger(
+@Entity(name = "grunnlag")
+class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
     @Enumerated(EnumType.STRING)
-    val opplysningerType: OpplysningerType,
-    val data: String,
-    val hentetDato: Date,
-    @Column(insertable = false, updatable = false)
-    val ts: Date? = null,
+    val type: Grunnlagstype,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "data")
+    val data: Jsonb,
+    val innhentet: LocalDateTime,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 )
 
-inline fun <reified T> Opplysninger?.hentData(): T? =
-    when (this?.opplysningerType) {
-        OpplysningerType.INNTEKTSOPPLYSNINGER, OpplysningerType.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
-        OpplysningerType.BOFORHOLD, OpplysningerType.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-        OpplysningerType.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
-        OpplysningerType.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
-        OpplysningerType.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdDto>>() as T
-        OpplysningerType.INNTEKT -> konverterData<List<InntektGrunnlag>>() as T
+@Embeddable
+class Jsonb(var innhold: String) : Serializable
+
+inline fun <reified T> Grunnlag?.hentData(): T? =
+    when (this?.type) {
+        Grunnlagstype.INNTEKTSOPPLYSNINGER, Grunnlagstype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
+        Grunnlagstype.BOFORHOLD, Grunnlagstype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
+        Grunnlagstype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
+        Grunnlagstype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
+        Grunnlagstype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdDto>>() as T
+        Grunnlagstype.INNTEKT -> konverterData<List<InntektGrunnlag>>() as T
         else -> null
     }
 
-inline fun <reified T> Opplysninger?.konverterData(): T? = this?.data?.let { objectmapper.readValue(it) }
+inline fun <reified T> Grunnlag?.konverterData(): T? = this?.data?.let { objectmapper.readValue(it.innhold) }

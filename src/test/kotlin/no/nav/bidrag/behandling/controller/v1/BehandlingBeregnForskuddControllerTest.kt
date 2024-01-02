@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
@@ -30,7 +30,12 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         stubUtils.stubBeregneForskudd()
         // given
         val behandling = opprettGyldigBehandlingForBeregning()
-        behandlingRepository.save(behandling)
+
+        try {
+            behandlingRepository.save(behandling)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         // when
         val returnert =

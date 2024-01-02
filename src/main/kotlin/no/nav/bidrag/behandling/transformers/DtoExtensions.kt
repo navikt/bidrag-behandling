@@ -2,23 +2,23 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
-import no.nav.bidrag.behandling.database.datamodell.Opplysninger
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
-import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -199,13 +199,13 @@ fun Set<Inntekt>.toInntektDto() =
         )
     }.toSet()
 
-fun Opplysninger.toDto(): OpplysningerDto {
-    return OpplysningerDto(
+fun Grunnlag.toDto(): GrunnlagDto {
+    return GrunnlagDto(
         this.id!!,
         this.behandling.id!!,
-        this.opplysningerType,
-        this.data,
-        this.hentetDato.toLocalDate(),
+        this.type,
+        this.data.innhold,
+        this.innhentet,
     )
 }
 

@@ -15,7 +15,7 @@ enum class Kilde {
 }
 
 @Schema(enumAsRef = true)
-enum class OpplysningerType {
+enum class Grunnlagstype {
     /**Typer for opplysninger som er bearbeidet av frontend eller bidrag-inntekt*/
     INNTEKT_BEARBEIDET,
     BOFORHOLD_BEARBEIDET,
@@ -33,10 +33,10 @@ enum class OpplysningerType {
     INNTEKTSOPPLYSNINGER,
 }
 
-fun OpplysningerType.getOrMigrate() =
+fun Grunnlagstype.getOrMigrate() =
     when (this) {
-        OpplysningerType.BOFORHOLD -> OpplysningerType.BOFORHOLD_BEARBEIDET
-        OpplysningerType.INNTEKTSOPPLYSNINGER -> OpplysningerType.INNTEKT_BEARBEIDET
+        Grunnlagstype.BOFORHOLD -> Grunnlagstype.BOFORHOLD_BEARBEIDET
+        Grunnlagstype.INNTEKTSOPPLYSNINGER -> Grunnlagstype.INNTEKT_BEARBEIDET
         else -> this
     }
 

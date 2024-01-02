@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller
+package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo

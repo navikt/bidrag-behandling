@@ -1,12 +1,11 @@
 package no.nav.bidrag.behandling.hendelse
 
-import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
 import io.kotest.matchers.shouldBe
+import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
-import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BA_2
 import no.nav.bidrag.behandling.utils.ROLLE_BM
@@ -34,9 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class VedtakHendelseTest : CommonTestRunner() {
-    val stubUtils: StubUtils = StubUtils()
-
+class VedtakHendelseTest : TestContainerRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
 

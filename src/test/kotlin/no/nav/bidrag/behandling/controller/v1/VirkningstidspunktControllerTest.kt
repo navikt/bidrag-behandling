@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
+import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest

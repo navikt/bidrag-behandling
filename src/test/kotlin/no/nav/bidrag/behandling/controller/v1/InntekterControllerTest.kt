@@ -4,12 +4,13 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
-import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.junit.jupiter.api.BeforeEach
@@ -28,10 +29,10 @@ import kotlin.test.assertNotNull
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
-    lateinit var behandlingRepository: BehandlingRepository
+    override lateinit var testdataManager: TestdataManager
 
     @Autowired
-    lateinit var behandlingService: BehandlingService
+    lateinit var behandlingRepository: BehandlingRepository
 
     @BeforeEach
     fun oppsett() {

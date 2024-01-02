@@ -2,29 +2,28 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
-import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
-import java.util.Date
+import java.time.LocalDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class OpplysningerServiceTest : TestContainerRunner() {
+class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
-    lateinit var opplysningerService: OpplysningerService
+    lateinit var grunnlagService: GrunnlagService
 
     @Autowired
     lateinit var behandlingService: BehandlingService
 
     @Test
     fun `hente opplysninger`() {
-        val res = opplysningerService.hentSistAktiv(1, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        val res = grunnlagService.hentSistAktiv(1, Grunnlagstype.BOFORHOLD)
         assertNull(res)
     }
 
@@ -46,19 +45,12 @@ class OpplysningerServiceTest : TestContainerRunner() {
                     "bisys",
                     SøktAvType.VERGE,
                     engangsbeloptype = Engangsbeløptype.ETTERGIVELSE,
-                    stonadstype = Stønadstype.FORSKUDD,
+                    stonadstype = null,
                 ),
             )
-        val opp4 =
-            opplysningerService.opprett(
-                b.id!!,
-                OpplysningerType.BOFORHOLD_BEARBEIDET,
-                "data",
-                Date(1),
-            )
 
-        val opplysninger =
-            opplysningerService.hentSistAktiv(b.id!!, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "data", LocalDateTime.now())
+        val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD)
 
         assertNotNull(opplysninger)
         assertEquals(opp4.id, opplysninger.id)

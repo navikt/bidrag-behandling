@@ -29,6 +29,7 @@
     <flyway.version>10.4.1</flyway.version>
     <jackson.version>2.16.1</jackson.version>
     <testcontainers.version>1.19.3</testcontainers.version>
+    <spring-boot-testcontainers.version>3.2.1</spring-boot-testcontainers.version>
     <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
     <skipOwasp>false</skipOwasp>
   </properties>
@@ -166,6 +167,11 @@
       <artifactId>flyway-database-postgresql</artifactId>
       <version>${flyway.version}</version>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+      <version>${spring-boot-testcontainers.version}</version>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
