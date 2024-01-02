@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.persistence.Column
-import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -19,29 +18,25 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandDto
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
-import java.io.Serializable
+import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
 
 @Entity(name = "grunnlag")
+
 class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
     @Enumerated(EnumType.STRING)
     val type: Grunnlagstype,
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "data")
-    val data: Jsonb,
+    @Column(name = "data", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    val data: String,
     val innhentet: LocalDateTime,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 )
-
-@Embeddable
-class Jsonb(var innhold: String) : Serializable
 
 inline fun <reified T> Grunnlag?.hentData(): T? =
     when (this?.type) {
@@ -54,4 +49,4 @@ inline fun <reified T> Grunnlag?.hentData(): T? =
         else -> null
     }
 
-inline fun <reified T> Grunnlag?.konverterData(): T? = this?.data?.let { objectmapper.readValue(it.innhold) }
+inline fun <reified T> Grunnlag?.konverterData(): T? = this?.data?.let { objectmapper.readValue(it) }
