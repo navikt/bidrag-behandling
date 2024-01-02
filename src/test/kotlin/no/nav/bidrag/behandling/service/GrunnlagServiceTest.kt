@@ -49,7 +49,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 ),
             )
 
-        val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "data", LocalDateTime.now())
+        val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "{\"test\": \"opp\"}", LocalDateTime.now())
         val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD)
 
         assertNotNull(opplysninger)
