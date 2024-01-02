@@ -21,6 +21,6 @@ fun Grunnlag.tilOpplysningerDto() =
         id = this.id!!,
         behandlingId = this.behandling.id!!,
         type = OpplysningerType.valueOf(this.type.name),
-        data = this.data.innhold,
+        data = this.data,
         hentetDato = this.innhentet.toLocalDate(),
     )

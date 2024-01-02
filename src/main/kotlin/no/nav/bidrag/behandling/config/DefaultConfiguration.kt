@@ -1,5 +1,10 @@
 package no.nav.bidrag.behandling.config
 
+import io.getunleash.DefaultUnleash
+import io.getunleash.UnleashContext
+import io.getunleash.UnleashContextProvider
+import io.getunleash.strategy.DefaultStrategy
+import io.getunleash.util.UnleashConfig
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
 import io.swagger.v3.oas.annotations.info.Info
@@ -10,9 +15,13 @@ import no.nav.bidrag.commons.web.DefaultCorsFilter
 import no.nav.bidrag.commons.web.UserMdcFilter
 import no.nav.security.token.support.client.spring.oauth2.EnableOAuth2Client
 import no.nav.security.token.support.spring.api.EnableJwtTokenValidation
+import org.slf4j.MDC
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Scope
 
 @EnableAspectJAutoProxy
 @OpenAPIDefinition(
@@ -24,4 +33,39 @@ import org.springframework.context.annotation.Import
 @EnableJwtTokenValidation
 @EnableOAuth2Client(cacheEnabled = true)
 @Import(CorrelationIdFilter::class, DefaultCorsFilter::class, UserMdcFilter::class)
-class DefaultConfiguration
+class DefaultConfiguration {
+
+    @Bean
+    fun unleashConfig(
+        @Value("\${NAIS_APP_NAME}") appName: String,
+        @Value("\${UNLEASH_SERVER_API_URL}") apiUrl: String,
+        @Value("\${UNLEASH_SERVER_API_TOKEN}") apiToken: String,
+        @Value("\${UNLEASH_SERVER_API_ENV}") environment: String,
+    ) = UnleashConfig.builder()
+        .appName(appName)
+        .unleashAPI("$apiUrl/api/")
+        .instanceId(appName)
+        .environment(environment)
+        .synchronousFetchOnInitialisation(true)
+        .apiKey(apiToken)
+        .unleashContextProvider(DefaultUnleashContextProvider())
+        .build();
+
+    @Bean
+    @Scope("prototype")
+    fun unleashInstance(unleashConfig: UnleashConfig) = DefaultUnleash(unleashConfig, DefaultStrategy())
+}
+
+class DefaultUnleashContextProvider : UnleashContextProvider {
+
+    override fun getContext(): UnleashContext {
+        val userId = MDC.get("user")
+        return UnleashContext.builder()
+            .userId(userId)
+            .addProperty("consumerApp", MDC.get("applicationKey"))
+            .addProperty("Bidragteamet", userId)
+            .addProperty("inforingsgruppen", userId)
+            .addProperty("testbrukere", userId)
+            .build()
+    }
+}

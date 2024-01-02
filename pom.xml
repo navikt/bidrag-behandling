@@ -268,7 +268,11 @@
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>io.getunleash</groupId>
+      <artifactId>unleash-client-java</artifactId>
+      <version>9.2.0</version>
+    </dependency>
     <!--Logging-->
     <dependency>
       <groupId>io.github.oshai</groupId>
