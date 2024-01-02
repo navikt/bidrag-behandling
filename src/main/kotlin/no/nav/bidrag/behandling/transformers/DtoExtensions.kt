@@ -13,12 +13,12 @@ import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
-import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.rolle.Rolletype

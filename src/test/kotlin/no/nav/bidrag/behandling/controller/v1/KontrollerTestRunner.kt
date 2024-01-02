@@ -4,9 +4,9 @@ import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.TestdataManager
-import no.nav.bidrag.commons.web.test.HttpHeaderTestRestTemplate
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -44,7 +44,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     private val port = 0
 
     @Autowired
-    lateinit var httpHeaderTestRestTemplate: HttpHeaderTestRestTemplate
+    lateinit var httpHeaderTestRestTemplate: TestRestTemplate
 
     @Autowired
     lateinit var testdataManager: TestdataManager
@@ -52,10 +52,13 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     val stubUtils: StubUtils = StubUtils()
 
     protected fun rootUri(): String {
+<<<<<<< HEAD
         return "http://localhost:$port/api"
     }
 
     fun rootUriV1(): String {
+=======
+>>>>>>> jsonb-merge
         return "http://localhost:$port/api/v1"
     }
 

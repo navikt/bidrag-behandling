@@ -40,7 +40,7 @@ class NotatGrunnlagControllerTest : KontrollerTestRunner() {
         )
         val r1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/notat/${behandling.id}",
+                "${rootUri()}/notat/${behandling.id}",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 NotatDto::class.java,

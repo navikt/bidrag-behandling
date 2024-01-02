@@ -3,14 +3,18 @@ package no.nav.bidrag.behandling.dto.behandling
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
+import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.dto.opplysninger.GrunnlagDto
+=======
+>>>>>>> jsonb-merge
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
-import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 
@@ -18,7 +22,6 @@ import java.time.LocalDate
 data class BehandlingDto(
     val id: Long,
     val vedtakstype: Vedtakstype,
-    val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
     @Schema(type = "string", format = "date", example = "01.12.2025")
@@ -59,7 +62,7 @@ data class InntekterDto(
     val inntekter: Set<InntektDto>,
     val barnetillegg: Set<BarnetilleggDto>,
     val utvidetbarnetrygd: Set<UtvidetBarnetrygdDto>,
-    val kontantstøtte: Set<InntektDto>,
+    val kontantstøtte: Set<KontantstøtteDto>,
     val småbarnstillegg: Set<InntektDto>,
     val notat: BehandlingNotatDto,
 )

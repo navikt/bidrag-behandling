@@ -1,10 +1,14 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.TestContainerRunner
+=======
+import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
+>>>>>>> jsonb-merge
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
@@ -54,7 +58,11 @@ class InntekterControllerTest : TestContainerRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD
                     "${rootUriV1()}/behandling/${behandling.id}",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> jsonb-merge
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     BehandlingDto::class.java,
@@ -77,7 +85,11 @@ class InntekterControllerTest : TestContainerRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD
                     "${rootUriV1()}/behandling/${behandling.id}",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> jsonb-merge
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     BehandlingDto::class.java,
@@ -109,12 +121,16 @@ class InntekterControllerTest : TestContainerRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD
                     "${rootUriV1()}/behandling/${behandling.id}",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> jsonb-merge
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(
                             inntekter =
-                                no.nav.bidrag.behandling.dto.behandling.OppdatereInntekterRequest(
+                                OppdatereInntekterRequest(
                                     inntekter = setOf(inn),
                                 ),
                         ),
@@ -154,7 +170,11 @@ class InntekterControllerTest : TestContainerRunner() {
 
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD
                     "${rootUriV1()}/behandling/${behandling.id}",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> jsonb-merge
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(
@@ -193,7 +213,11 @@ class InntekterControllerTest : TestContainerRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD
                     "${rootUriV1()}/behandling/${behandling.id}",
+=======
+                    "${rootUri()}/behandling/${behandling.id}",
+>>>>>>> jsonb-merge
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(

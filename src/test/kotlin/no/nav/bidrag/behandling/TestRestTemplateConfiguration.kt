@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling
 
 import com.nimbusds.jose.JOSEObjectType
-import no.nav.bidrag.commons.web.test.HttpHeaderTestRestTemplate
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,11 +22,13 @@ class TestRestTemplateConfiguration {
     private lateinit var clientId: String
 
     @Bean
-    fun httpHeaderTestRestTemplate(): HttpHeaderTestRestTemplate {
-        val testRestTemplate = TestRestTemplate(RestTemplateBuilder())
-        val httpHeaderTestRestTemplate = HttpHeaderTestRestTemplate(testRestTemplate)
-        httpHeaderTestRestTemplate.add(HttpHeaders.AUTHORIZATION) { generateBearerToken() }
-        return httpHeaderTestRestTemplate
+    fun httpHeaderTestRestTemplate(): TestRestTemplate {
+        return TestRestTemplate(
+            RestTemplateBuilder().additionalInterceptors({ request, body, execution ->
+                request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
+                execution.execute(request, body)
+            }),
+        )
     }
 
     protected fun generateBearerToken(): String {

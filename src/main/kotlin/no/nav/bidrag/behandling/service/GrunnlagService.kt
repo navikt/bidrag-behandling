@@ -41,6 +41,7 @@ class GrunnlagService(
     fun hentSistAktiv(
         behandlingsid: Long,
         grunnlagstype: Grunnlagstype,
+<<<<<<< HEAD
     ): Grunnlag? {
         val grunnlag =
             grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
@@ -50,6 +51,13 @@ class GrunnlagService(
 
         return grunnlag
     }
+=======
+    ): Grunnlag? =
+        grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+            behandlingsid,
+            grunnlagstype.getOrMigrate(),
+        )
+>>>>>>> jsonb-merge
 
     fun hentAlleSistAktiv(behandlingId: Long): List<Grunnlag> =
         Grunnlagstype.entries.toTypedArray().mapNotNull {

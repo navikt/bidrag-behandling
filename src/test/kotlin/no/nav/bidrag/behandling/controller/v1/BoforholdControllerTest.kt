@@ -1,17 +1,24 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.controller.BehandlingControllerTest
 import no.nav.bidrag.behandling.controller.OppprettRolleDtoTest
+=======
+import no.nav.bidrag.behandling.controller.v1.BehandlingControllerTest
+import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
+>>>>>>> jsonb-merge
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -25,27 +32,25 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     fun `skal lagre boforhold data`() {
         val roller =
             setOf(
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BARN,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OppprettRolleDtoTest(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
-                    "123",
-                    opprettetDato = LocalDate.now().minusMonths(8),
+                    Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(529),
                 ),
             )
 
         val testBehandlingMedNull =
-            BehandlingControllerTest.createBehandlingRequestTest("1900000", "en12", roller)
+            BehandlingControllerTest.oppretteBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling",
+                "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 OpprettBehandlingResponse::class.java,
@@ -88,7 +93,11 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
+<<<<<<< HEAD
                 "${rootUriV1()}/behandling/${behandling.body!!.id}",
+=======
+                "${rootUri()}/behandling/${behandling.body!!.id}",
+>>>>>>> jsonb-merge
                 HttpMethod.PUT,
                 HttpEntity(OppdaterBehandlingRequest(boforhold = boforholdData)),
                 BehandlingDto::class.java,

@@ -5,7 +5,6 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
-import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,7 +23,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     @Test
     fun `hente opplysninger`() {
+<<<<<<< HEAD
         val res = grunnlagService.hentSistAktiv(1, Grunnlagstype.BOFORHOLD_BEARBEIDET)
+=======
+        val res = grunnlagService.hentSistAktiv(1, Grunnlagstype.BOFORHOLD)
+>>>>>>> jsonb-merge
         assertNull(res)
     }
 
@@ -46,12 +49,18 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     "bisys",
                     SøktAvType.VERGE,
                     engangsbeloptype = Engangsbeløptype.ETTERGIVELSE,
-                    stonadstype = Stønadstype.FORSKUDD,
+                    stonadstype = null,
                 ),
             )
+<<<<<<< HEAD
 
         val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "data", LocalDateTime.now())
         val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD_BEARBEIDET)
+=======
+        val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "data", LocalDateTime.now())
+
+        val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD)
+>>>>>>> jsonb-merge
 
         assertNotNull(opplysninger)
         assertEquals(opp4.id, opplysninger.id)

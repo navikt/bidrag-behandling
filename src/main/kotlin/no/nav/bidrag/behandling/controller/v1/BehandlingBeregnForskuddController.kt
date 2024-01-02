@@ -1,8 +1,8 @@
 package no.nav.bidrag.behandling.controller.v1
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import mu.KotlinLogging
 import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
@@ -25,7 +25,7 @@ class BehandlingBeregnForskuddController(
     fun beregnForskudd(
         @PathVariable behandlingsid: Long,
     ): ResultatForskuddsberegning {
-        LOGGER.info("Beregner forskudd for behandling med id $behandlingsid")
+        LOGGER.info { "Beregner forskudd for behandling med id $behandlingsid" }
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
         return beregningService.beregneForskudd(behandling.id!!)
