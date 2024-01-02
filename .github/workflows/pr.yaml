@@ -19,7 +19,6 @@ jobs:
   deploy_unleash:
     runs-on: ubuntu-latest
     name: Deploy unleash
-    needs: build-deploy
 
     steps:
       - uses: actions/checkout@v4
