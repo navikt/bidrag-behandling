@@ -45,8 +45,8 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         val behandlingId = behandling.body!!.id
 
         // 2. Create new opplysninger opp and opp1
-        skalOppretteOpplysninger(behandlingId, "opp", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
-        skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp\"}", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp1\"}", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
 
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
@@ -58,7 +58,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
             )
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
         Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
-        Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
+        Assertions.assertEquals("{\"test\": \"opp1\"}", oppAktivResult1.body!!.data)
     }
 
     @Test
@@ -92,8 +92,8 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         val behandlingId = behandling.body!!.id
 
         // 2. Create new opplysninger opp and opp1
-        skalOppretteOpplysninger(behandlingId, "opp", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
-        skalOppretteOpplysninger(behandlingId, "opp1", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp\"}", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp2\"}", true, OpplysningerType.BOFORHOLD_BEARBEIDET)
 
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
@@ -105,7 +105,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
             )
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
         Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
-        Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
+        Assertions.assertEquals("{\"test\": \"opp2\"}", oppAktivResult1.body!!.data)
     }
 
     @Test
@@ -190,10 +190,10 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         val behandlingId = behandling.body!!.id
 
         // 2. Create new opplysninger opp and opp1
-        skalOppretteOpplysninger(behandlingId, "opp", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
-        skalOppretteOpplysninger(behandlingId, "opp1", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
-        skalOppretteOpplysninger(behandlingId, "inn0", false, OpplysningerType.INNTEKT_BEARBEIDET)
-        skalOppretteOpplysninger(behandlingId, "inn1", false, OpplysningerType.INNTEKT_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp\"}", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp1\"}", false, OpplysningerType.BOFORHOLD_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "{\"test\": \"inn1\"}", false, OpplysningerType.INNTEKT_BEARBEIDET)
+        skalOppretteOpplysninger(behandlingId, "{\"test\": \"inn2\"}", false, OpplysningerType.INNTEKT_BEARBEIDET)
 
         // 3. Assert that opp1 is active
         val oppAktivResult1 =
@@ -205,7 +205,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
             )
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult1.statusCode)
         Assertions.assertEquals(behandlingId, oppAktivResult1.body!!.behandlingId)
-        Assertions.assertEquals("opp1", oppAktivResult1.body!!.data)
+        Assertions.assertEquals("{\"test\": \"opp1\"}", oppAktivResult1.body!!.data)
 
         // 4. Assert that inn1 is active
         val oppAktivResult2 =
@@ -217,7 +217,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
             )
         Assertions.assertEquals(HttpStatus.OK, oppAktivResult2.statusCode)
         Assertions.assertEquals(behandlingId, oppAktivResult2.body!!.behandlingId)
-        Assertions.assertEquals("inn1", oppAktivResult2.body!!.data)
+        Assertions.assertEquals("{\"test\": \"inn2\"}", oppAktivResult2.body!!.data)
     }
 
     data class AddOpplysningerRequest(
