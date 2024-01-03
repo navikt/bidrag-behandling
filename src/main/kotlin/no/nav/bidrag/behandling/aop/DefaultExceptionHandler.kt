@@ -41,14 +41,16 @@ class DefaultExceptionHandler {
                 is MethodArgumentNotValidException -> parseMethodArgumentNotValidException(cause)
                 else -> null
             }
-        val errorMessage =
+        val feilmelding =
             validationError?.fieldErrors?.joinToString(", ") { "${it.field}: ${it.message}" }
                 ?: exception.message
+
+        LOGGER.error(feilmelding, exception)
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .header(
                 HttpHeaders.WARNING,
-                errorMessage,
+                feilmelding,
             )
             .build<Any>()
     }
@@ -56,9 +58,10 @@ class DefaultExceptionHandler {
     @ResponseBody
     @ExceptionHandler(HttpStatusCodeException::class)
     fun handleHttpClientErrorException(exception: HttpStatusCodeException): ResponseEntity<*> {
-        val errorMessage = getErrorMessage(exception)
+        val feilmelding = getErrorMessage(exception)
+        LOGGER.warn(feilmelding, exception)
         return ResponseEntity.status(exception.statusCode)
-            .header(HttpHeaders.WARNING, errorMessage)
+            .header(HttpHeaders.WARNING, feilmelding)
             .build<Any>()
     }
 
