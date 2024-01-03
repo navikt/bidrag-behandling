@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.service
 import arrow.core.mapOrAccumulate
 import arrow.core.raise.either
 import com.fasterxml.jackson.databind.node.POJONode
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle

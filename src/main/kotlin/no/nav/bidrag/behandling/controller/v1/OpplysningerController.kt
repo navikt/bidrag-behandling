@@ -5,19 +5,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
-import no.nav.bidrag.behandling.dto.opplysninger.AddOpplysningerRequest
-import no.nav.bidrag.behandling.dto.opplysninger.OpplysningerDto
-import no.nav.bidrag.behandling.service.OpplysningerService
-import no.nav.bidrag.behandling.transformers.toDate
-import no.nav.bidrag.behandling.transformers.toDto
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
+import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
+import no.nav.bidrag.behandling.deprecated.dto.tilOpplysningerDto
+import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
+import no.nav.bidrag.behandling.service.GrunnlagService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
+@Deprecated("Unødvendig å kalle ettersom backend foretar innhenting av grunnlag")
 @BehandlingRestControllerV1
-class OpplysningerController(val opplysningerService: OpplysningerService) {
+class OpplysningerController(val grunnlagService: GrunnlagService) {
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
     @Operation(
@@ -40,13 +41,12 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
         @RequestBody(required = true) addOpplysningerRequest: AddOpplysningerRequest,
     ): OpplysningerDto {
         val (_, _, opplysningerType, data, hentetDato) = addOpplysningerRequest
-        return opplysningerService.opprett(
+        return grunnlagService.opprett(
             behandlingId,
-            opplysningerType,
+            Grunnlagstype.valueOf(opplysningerType.name),
             data,
-            hentetDato.toDate(),
-        )
-            .toDto()
+            hentetDato.atStartOfDay(),
+        ).tilOpplysningerDto()
     }
 
     @Suppress("unused")
@@ -70,9 +70,9 @@ class OpplysningerController(val opplysningerService: OpplysningerService) {
         @PathVariable behandlingId: Long,
         @PathVariable opplysningerType: OpplysningerType,
     ): OpplysningerDto {
-        return opplysningerService.hentSistAktiv(
+        return grunnlagService.hentSistAktiv(
             behandlingId,
-            opplysningerType,
-        )?.toDto() ?: behandlingNotFoundException(behandlingId)
+            Grunnlagstype.valueOf(opplysningerType.name),
+        )?.tilOpplysningerDto() ?: behandlingNotFoundException(behandlingId)
     }
 }
