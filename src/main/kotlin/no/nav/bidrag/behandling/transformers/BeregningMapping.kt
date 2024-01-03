@@ -110,7 +110,7 @@ fun Behandling.tilGrunnlagInntekt(gjelder: Grunnlag): Set<Grunnlag> {
                     POJONode(
                         BeregningInntektRapporteringPeriode(
                             beløp = it.belop,
-                            periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                            periode = ÅrMånedsperiode(it.datoFom, it.datoTom?.plusDays(1)),
                             inntektsrapportering = it.inntektstype,
                             manueltRegistrert = !it.fraGrunnlag,
                             valgt = it.taMed,
@@ -139,7 +139,7 @@ fun Behandling.tilGrunnlagInntektKontantstøtte(
                     POJONode(
                         BeregningInntektRapporteringPeriode(
                             beløp = it.belop,
-                            periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                            periode = ÅrMånedsperiode(it.datoFom, it.datoTom?.plusDays(1)),
                             inntektsrapportering = it.inntektstype,
                             manueltRegistrert = !it.fraGrunnlag,
                             valgt = it.taMed,
@@ -172,7 +172,7 @@ fun Behandling.tilGrunnlagBarnetillegg(
                             periode =
                                 ÅrMånedsperiode(
                                     it.datoFom!!.toLocalDate(),
-                                    it.datoTom?.toLocalDate(),
+                                    it.datoTom?.toLocalDate()?.plusDays(1),
                                 ),
                             inntektsrapportering = Inntektsrapportering.SMÅBARNSTILLEGG,
                             // TODO: Mangler informasjon for å sette dette
@@ -197,7 +197,7 @@ fun Behandling.tilGrunnlagUtvidetbarnetrygd(bm: Grunnlag) =
                 POJONode(
                     BeregningInntektRapporteringPeriode(
                         beløp = it.belop,
-                        periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
+                        periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
                         inntektsrapportering = Inntektsrapportering.UTVIDET_BARNETRYGD,
                         // TODO: Mangler informasjon for å sette dette
                         manueltRegistrert = false,
