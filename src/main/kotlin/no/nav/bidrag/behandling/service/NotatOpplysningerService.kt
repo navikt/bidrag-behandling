@@ -1,8 +1,8 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.OpplysningerType
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.hentData
@@ -38,17 +38,17 @@ import java.time.YearMonth
 @Service
 class NotatOpplysningerService(
     private val behandlingService: BehandlingService,
-    private val opplysningerService: OpplysningerService,
+    private val grunnlagService: GrunnlagService,
 ) {
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val opplysningerBoforhold =
-            opplysningerService.hentSistAktiv(behandlingId, OpplysningerType.BOFORHOLD_BEARBEIDET)
+            grunnlagService.hentSistAktiv(behandlingId, Grunnlagstype.BOFORHOLD_BEARBEIDET)
                 ?.hentData()
                 ?: BoforholdBearbeidet()
 
         val opplysningerInntekt: InntektsopplysningerBearbeidet =
-            opplysningerService.hentSistAktiv(behandlingId, OpplysningerType.INNTEKT_BEARBEIDET)
+            grunnlagService.hentSistAktiv(behandlingId, Grunnlagstype.INNTEKT_BEARBEIDET)
                 .hentData() ?: InntektsopplysningerBearbeidet()
         return NotatDto(
             saksnummer = behandling.saksnummer,

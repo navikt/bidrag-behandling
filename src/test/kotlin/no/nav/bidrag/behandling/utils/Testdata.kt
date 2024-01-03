@@ -4,7 +4,6 @@ import no.nav.bidrag.behandling.consumer.BehandlingInfoResponseDto
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
-import no.nav.bidrag.behandling.database.datamodell.Barnetillegg
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
@@ -13,9 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
-import no.nav.bidrag.behandling.transformers.toDate
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -26,6 +23,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 
 val SAKSNUMMER = "1233333"
@@ -178,7 +176,7 @@ fun opprettRolle(
         rolletype = data[Rolle::rolletype.name] as Rolletype,
         behandling = behandling,
         foedselsdato = data[Rolle::foedselsdato.name] as LocalDate,
-        opprettetDato = LocalDate.now(),
+        opprettet = LocalDateTime.now(),
     )
 }
 
@@ -336,23 +334,3 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
     behandling.sivilstand = mutableSetOf(sivilstand)
     return behandling
 }
-
-fun opprettBarnetillegg(
-    behandling: Behandling,
-    ident: String = ROLLE_BA_1.fødselsnummer!!.verdi,
-) = Barnetillegg(
-    behandling = behandling,
-    ident = ident,
-    barnetillegg = BigDecimal(1000),
-    datoFom = LocalDate.parse("2022-01-01").toDate(),
-    datoTom = null,
-)
-
-fun opprettUtvidetbarnetrygd(behandling: Behandling) =
-    UtvidetBarnetrygd(
-        behandling = behandling,
-        belop = BigDecimal(1000),
-        datoFom = LocalDate.parse("2022-01-01"),
-        deltBosted = false,
-        datoTom = null,
-    )

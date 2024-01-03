@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Opplysninger
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.behandling.BoforholdDto
@@ -10,11 +10,10 @@ import no.nav.bidrag.behandling.dto.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 
-fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
+fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =
     BehandlingDto(
         id = id!!,
         vedtakstype = vedtakstype,
-        stønadstype = stonadstype,
         engangsbeløptype = engangsbeloptype,
         erVedtakFattet = vedtaksid != null,
         søktFomDato = søktFomDato,
@@ -31,7 +30,6 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
                     it.ident,
                     it.navn ?: hentPersonVisningsnavn(it.ident),
                     it.foedselsdato,
-                    it.opprettetDato,
                 )
             }.toSet(),
         søknadRefId = soknadRefId,
@@ -69,5 +67,5 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Opplysninger>) =
                         kunINotat = inntektsbegrunnelseKunINotat,
                     ),
             ),
-        opplysninger = opplysninger.map(Opplysninger::toDto),
+        opplysninger = opplysninger.map(Grunnlag::toDto),
     )

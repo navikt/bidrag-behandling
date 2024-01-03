@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.dto.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.service.OpplysningerService
+import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -25,7 +25,7 @@ private val LOGGER = KotlinLogging.logger {}
 @BehandlingRestControllerV1
 class BehandlingController(
     private val behandlingService: BehandlingService,
-    private val opplysningerService: OpplysningerService,
+    private val grunnlagService: GrunnlagService,
 ) {
     @Suppress("unused")
     @PostMapping("/behandling")
@@ -59,7 +59,10 @@ class BehandlingController(
     fun oppdatereBehandling(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
-    ): BehandlingDto = behandlingService.oppdaterBehandling(behandlingId, request)
+    ): BehandlingDto {
+        val behandling = behandlingService.oppdaterBehandling(behandlingId, request)
+        return behandling
+    }
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/roller")
@@ -88,7 +91,7 @@ class BehandlingController(
         @PathVariable behandlingId: Long,
     ): BehandlingDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val opplysninger = opplysningerService.hentAlleSistAktiv(behandlingId)
+        val opplysninger = grunnlagService.hentAlleSistAktiv(behandlingId)
         return behandling.tilBehandlingDto(opplysninger)
     }
 }
