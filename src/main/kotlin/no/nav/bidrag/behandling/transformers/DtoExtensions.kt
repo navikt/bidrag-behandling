@@ -13,7 +13,7 @@ import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
-import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagDto
+import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
@@ -199,8 +199,8 @@ fun Set<Inntekt>.toInntektDto() =
         )
     }.toSet()
 
-fun Grunnlag.toDto(): GrunnlagDto {
-    return GrunnlagDto(
+fun Grunnlag.toDto(): GrunnlagsdataDto {
+    return GrunnlagsdataDto(
         this.id!!,
         this.behandling.id!!,
         this.type,

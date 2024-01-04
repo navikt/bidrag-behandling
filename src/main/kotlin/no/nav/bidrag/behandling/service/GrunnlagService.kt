@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
@@ -18,7 +18,7 @@ class GrunnlagService(
     @Transactional
     fun opprett(
         behandlingId: Long,
-        grunnlagstype: Grunnlagstype,
+        grunnlagsdatatype: Grunnlagsdatatype,
         data: String,
         innhentet: LocalDateTime,
     ): Grunnlag {
@@ -29,7 +29,7 @@ class GrunnlagService(
                 return grunnlagRepository.save<Grunnlag>(
                     Grunnlag(
                         it,
-                        grunnlagstype.getOrMigrate(),
+                        grunnlagsdatatype.getOrMigrate(),
                         data = data,
                         innhentet,
                     ),
@@ -39,15 +39,15 @@ class GrunnlagService(
 
     fun hentSistAktiv(
         behandlingsid: Long,
-        grunnlagstype: Grunnlagstype,
+        grunnlagsdatatype: Grunnlagsdatatype,
     ): Grunnlag? =
         grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
             behandlingsid,
-            grunnlagstype.getOrMigrate(),
+            grunnlagsdatatype.getOrMigrate(),
         )
 
     fun hentAlleSistAktiv(behandlingId: Long): List<Grunnlag> =
-        Grunnlagstype.entries.toTypedArray().mapNotNull {
+        Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
             grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
                 behandlingId,
                 it,
