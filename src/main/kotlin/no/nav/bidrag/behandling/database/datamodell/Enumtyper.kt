@@ -14,7 +14,7 @@ enum class Kilde {
     OFFENTLIG,
 }
 
-@Schema(enumAsRef = true)
+@Schema(enumAsRef = true, name = "OpplysningerType")
 enum class Grunnlagsdatatype {
     /**Typer for opplysninger som er bearbeidet av frontend eller bidrag-inntekt*/
     INNTEKT_BEARBEIDET,

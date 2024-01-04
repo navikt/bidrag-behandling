@@ -1,9 +1,10 @@
 package no.nav.bidrag.behandling.deprecated.dto
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import no.nav.bidrag.behandling.deprecated.modell.OpplysningerType
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import java.time.LocalDate
 
 data class AddOpplysningerRequest(
@@ -12,7 +13,8 @@ data class AddOpplysningerRequest(
     @Schema(required = true, nullable = false)
     val aktiv: Boolean,
     @Schema(required = true, nullable = false)
-    val opplysningerType: OpplysningerType,
+    @JsonAlias("opplysningerType")
+    val grunnlagstype: Grunnlagsdatatype,
     @Schema(type = "string", description = "data", required = true, nullable = false)
     @field:NotBlank
     val data: String,
