@@ -14,6 +14,7 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =
     BehandlingDto(
         id = id!!,
         vedtakstype = vedtakstype,
+        stønadstype = stonadstype,
         engangsbeløptype = engangsbeloptype,
         erVedtakFattet = vedtaksid != null,
         søktFomDato = søktFomDato,
