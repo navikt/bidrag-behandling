@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
 import no.nav.bidrag.behandling.deprecated.dto.OpplysningerDto
 import no.nav.bidrag.behandling.deprecated.dto.tilOpplysningerDto
@@ -43,7 +43,7 @@ class OpplysningerController(val grunnlagService: GrunnlagService) {
         val (_, _, opplysningerType, data, hentetDato) = addOpplysningerRequest
         return grunnlagService.opprett(
             behandlingId,
-            Grunnlagstype.valueOf(opplysningerType.name),
+            Grunnlagsdatatype.valueOf(opplysningerType.name),
             data,
             hentetDato.atStartOfDay(),
         ).tilOpplysningerDto()
@@ -72,7 +72,7 @@ class OpplysningerController(val grunnlagService: GrunnlagService) {
     ): OpplysningerDto {
         return grunnlagService.hentSistAktiv(
             behandlingId,
-            Grunnlagstype.valueOf(opplysningerType.name),
+            Grunnlagsdatatype.valueOf(opplysningerType.name),
         )?.tilOpplysningerDto() ?: behandlingNotFoundException(behandlingId)
     }
 }

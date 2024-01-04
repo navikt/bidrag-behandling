@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
@@ -43,12 +43,12 @@ class NotatOpplysningerService(
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val opplysningerBoforhold =
-            grunnlagService.hentSistAktiv(behandlingId, Grunnlagstype.BOFORHOLD_BEARBEIDET)
+            grunnlagService.hentSistAktiv(behandlingId, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
                 ?.hentData()
                 ?: BoforholdBearbeidet()
 
         val opplysningerInntekt: InntektsopplysningerBearbeidet =
-            grunnlagService.hentSistAktiv(behandlingId, Grunnlagstype.INNTEKT_BEARBEIDET)
+            grunnlagService.hentSistAktiv(behandlingId, Grunnlagsdatatype.INNTEKT_BEARBEIDET)
                 .hentData() ?: InntektsopplysningerBearbeidet()
         return NotatDto(
             saksnummer = behandling.saksnummer,
