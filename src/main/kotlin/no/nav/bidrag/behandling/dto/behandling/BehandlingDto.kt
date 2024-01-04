@@ -11,8 +11,8 @@ import no.nav.bidrag.behandling.dto.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 
 // TODO: Flytt dette til bidrag-transport
