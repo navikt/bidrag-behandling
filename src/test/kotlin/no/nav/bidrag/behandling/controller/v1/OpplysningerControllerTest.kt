@@ -54,7 +54,11 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp\"}", false, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
         skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp1\"}", true, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
 
-        val oppAktivResult1 = grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(behandlingId, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
+        val oppAktivResult1 =
+            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                behandlingId,
+                Grunnlagsdatatype.BOFORHOLD_BEARBEIDET,
+            )
 
         Assertions.assertEquals("{\"test\": \"opp1\"}", oppAktivResult1!!.data)
     }
@@ -94,7 +98,11 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp2\"}", true, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
 
         // 3. Assert that opp1 is active
-        val oppAktivResult1 = grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(behandlingId, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
+        val oppAktivResult1 =
+            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                behandlingId,
+                Grunnlagsdatatype.BOFORHOLD_BEARBEIDET,
+            )
 
         Assertions.assertEquals("{\"test\": \"opp2\"}", oppAktivResult1!!.data)
     }
@@ -136,11 +144,19 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         skalOppretteOpplysninger(behandlingId, "{\"test\": \"inn2\"}", false, Grunnlagsdatatype.INNTEKT_BEARBEIDET)
 
         // 3. Assert that opp1 is active
-        val oppAktivResult1 = grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(behandlingId, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
+        val oppAktivResult1 =
+            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                behandlingId,
+                Grunnlagsdatatype.BOFORHOLD_BEARBEIDET,
+            )
         Assertions.assertEquals("{\"test\": \"opp1\"}", oppAktivResult1?.data)
 
         // 4. Assert that inn1 is active
-        val oppAktivResult2 = grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(behandlingId, Grunnlagsdatatype.INNTEKT_BEARBEIDET)
+        val oppAktivResult2 =
+            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                behandlingId,
+                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            )
         Assertions.assertEquals("{\"test\": \"inn2\"}", oppAktivResult2!!.data)
     }
 
