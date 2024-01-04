@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -22,6 +23,7 @@ import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
 
 @Entity(name = "grunnlag")
+@Schema(name = "GrunnlagEntity")
 class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
