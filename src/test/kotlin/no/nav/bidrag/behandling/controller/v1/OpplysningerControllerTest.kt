@@ -54,7 +54,6 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp\"}", false, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
         skalOppretteOpplysninger(behandlingId, "{\"test\": \"opp1\"}", true, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
 
-
         val oppAktivResult1 = grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(behandlingId, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
 
         Assertions.assertEquals("{\"test\": \"opp1\"}", oppAktivResult1!!.data)

@@ -45,5 +45,4 @@ class OpplysningerController(val grunnlagService: GrunnlagService) {
             hentetDato.atStartOfDay(),
         ).toDto()
     }
-
 }
