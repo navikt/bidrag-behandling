@@ -34,7 +34,6 @@ import org.springframework.context.annotation.Scope
 @EnableOAuth2Client(cacheEnabled = true)
 @Import(CorrelationIdFilter::class, DefaultCorsFilter::class, UserMdcFilter::class)
 class DefaultConfiguration {
-
     @Bean
     fun unleashConfig(
         @Value("\${NAIS_APP_NAME}") appName: String,
@@ -49,7 +48,7 @@ class DefaultConfiguration {
         .synchronousFetchOnInitialisation(true)
         .apiKey(apiToken)
         .unleashContextProvider(DefaultUnleashContextProvider())
-        .build();
+        .build()
 
     @Bean
     @Scope("prototype")
@@ -57,7 +56,6 @@ class DefaultConfiguration {
 }
 
 class DefaultUnleashContextProvider : UnleashContextProvider {
-
     override fun getContext(): UnleashContext {
         val userId = MDC.get("user")
         return UnleashContext.builder()
