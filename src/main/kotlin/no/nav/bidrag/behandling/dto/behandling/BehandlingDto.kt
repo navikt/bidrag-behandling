@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.behandling
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
-import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagDto
+import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.inntekt.InntektDto
@@ -38,7 +38,7 @@ data class BehandlingDto(
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDto,
     val boforhold: BoforholdDto,
-    val opplysninger: List<GrunnlagDto>,
+    val opplysninger: List<GrunnlagsdataDto>,
 )
 
 data class VirkningstidspunktDto(

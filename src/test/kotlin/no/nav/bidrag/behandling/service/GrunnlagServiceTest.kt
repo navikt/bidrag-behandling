@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -23,7 +23,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     @Test
     fun `hente opplysninger`() {
-        val res = grunnlagService.hentSistAktiv(1, Grunnlagstype.BOFORHOLD)
+        val res = grunnlagService.hentSistAktiv(1, Grunnlagsdatatype.BOFORHOLD)
         assertNull(res)
     }
 
@@ -49,8 +49,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 ),
             )
 
-        val opp4 = grunnlagService.opprett(b.id!!, Grunnlagstype.BOFORHOLD, "{\"test\": \"opp\"}", LocalDateTime.now())
-        val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagstype.BOFORHOLD)
+        val opp4 = grunnlagService.opprett(b.id!!, Grunnlagsdatatype.BOFORHOLD, "{\"test\": \"opp\"}", LocalDateTime.now())
+        val opplysninger = grunnlagService.hentSistAktiv(b.id!!, Grunnlagsdatatype.BOFORHOLD)
 
         assertNotNull(opplysninger)
         assertEquals(opp4.id, opplysninger.id)

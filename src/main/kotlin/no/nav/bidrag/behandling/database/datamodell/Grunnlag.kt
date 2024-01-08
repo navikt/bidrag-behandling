@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -22,13 +23,13 @@ import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
 
 @Entity(name = "grunnlag")
-
+@Schema(name = "GrunnlagEntity")
 class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
     @Enumerated(EnumType.STRING)
-    val type: Grunnlagstype,
+    val type: Grunnlagsdatatype,
     @Column(name = "data", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     val data: String,
@@ -40,12 +41,12 @@ class Grunnlag(
 
 inline fun <reified T> Grunnlag?.hentData(): T? =
     when (this?.type) {
-        Grunnlagstype.INNTEKTSOPPLYSNINGER, Grunnlagstype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
-        Grunnlagstype.BOFORHOLD, Grunnlagstype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-        Grunnlagstype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
-        Grunnlagstype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
-        Grunnlagstype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdDto>>() as T
-        Grunnlagstype.INNTEKT -> konverterData<List<InntektGrunnlag>>() as T
+        Grunnlagsdatatype.INNTEKTSOPPLYSNINGER, Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
+        Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
+        Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
+        Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
+        Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdDto>>() as T
+        Grunnlagsdatatype.INNTEKT -> konverterData<List<InntektGrunnlag>>() as T
         else -> null
     }
 
