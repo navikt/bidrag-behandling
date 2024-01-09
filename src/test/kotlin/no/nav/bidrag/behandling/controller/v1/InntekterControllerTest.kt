@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
+import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -210,7 +211,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     }
 
     private fun testInntektDto() =
-        no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
+        InntektDto(
             null,
             true,
             Inntektsrapportering.DAGPENGER,

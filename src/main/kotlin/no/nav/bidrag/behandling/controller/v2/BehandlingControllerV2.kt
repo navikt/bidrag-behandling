@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import java.time.LocalDate
 
 @BehandlingRestControllerV2
-class BehandlingControllerV2() {
+class BehandlingControllerV2 {
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}")
     @Operation(

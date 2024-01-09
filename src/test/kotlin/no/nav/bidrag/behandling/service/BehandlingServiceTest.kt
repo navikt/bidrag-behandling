@@ -17,6 +17,9 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
+import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -414,7 +417,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         OppdatereInntekterRequest(
                             inntekter =
                                 mutableSetOf(
-                                    no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
+                                    InntektDto(
                                         taMed = true,
                                         inntektstype = Inntektsrapportering.KAPITALINNTEKT,
                                         beløp = BigDecimal.valueOf(4000),
@@ -427,7 +430,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                                 ),
                             barnetillegg =
                                 mutableSetOf(
-                                    no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
+                                    BarnetilleggDto(
                                         ident = "123",
                                         barnetillegg = BigDecimal.TEN,
                                         datoFom = LocalDate.now().minusMonths(3),
@@ -436,7 +439,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                                 ),
                             utvidetbarnetrygd =
                                 mutableSetOf(
-                                    no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto(
+                                    UtvidetBarnetrygdDto(
                                         deltBosted = false,
                                         beløp = BigDecimal.TEN,
                                         datoFom = LocalDate.now().minusMonths(3),
@@ -481,7 +484,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         OppdatereInntekterRequest(
                             inntekter =
                                 mutableSetOf(
-                                    no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
+                                    InntektDto(
                                         taMed = true,
                                         inntektstype = Inntektsrapportering.KAPITALINNTEKT,
                                         beløp = BigDecimal.valueOf(4000),
@@ -494,7 +497,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                                 ),
                             barnetillegg =
                                 mutableSetOf(
-                                    no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
+                                    BarnetilleggDto(
                                         ident = "123",
                                         barnetillegg = BigDecimal.TEN,
                                         datoFom = LocalDate.now().minusMonths(3),
@@ -525,7 +528,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                             inntekter = emptySet(),
                             barnetillegg =
                                 mutableSetOf(
-                                    no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
+                                    BarnetilleggDto(
                                         ident = "123",
                                         barnetillegg = BigDecimal.TEN,
                                         datoFom = LocalDate.now().minusMonths(3),
