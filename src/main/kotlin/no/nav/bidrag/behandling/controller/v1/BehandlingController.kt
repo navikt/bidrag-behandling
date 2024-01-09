@@ -79,7 +79,7 @@ class BehandlingController(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequestV2,
     ): BehandlingDtoV2 {
-        //TODO: implementere
+        // TODO: implementere
         return responsstubbe()
     }
 
@@ -109,7 +109,6 @@ class BehandlingController(
     fun hentBehandlingV2(
         @PathVariable behandlingId: Long,
     ): BehandlingDtoV2 {
-
         // TODO: implementere
         return responsstubbe()
     }
@@ -150,7 +149,7 @@ class BehandlingController(
             virkningstidspunkt = VirkningstidspunktDto(notat = BehandlingNotatDto()),
             inntekter = InntekterDtoV2(emptySet(), BehandlingNotatDto()),
             boforhold = BoforholdDto(emptySet(), sivilstand = emptySet(), notat = BehandlingNotatDto()),
-            opplysninger = emptyList()
+            opplysninger = emptyList(),
         )
     }
 }

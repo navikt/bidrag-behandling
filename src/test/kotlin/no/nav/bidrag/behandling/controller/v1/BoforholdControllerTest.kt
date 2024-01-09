@@ -79,10 +79,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 husstandsBarn,
                 emptySet(),
                 notat =
-                no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                    "med i vedtak",
-                    "kun i notat",
-                ),
+                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                        "med i vedtak",
+                        "kun i notat",
+                    ),
             ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(

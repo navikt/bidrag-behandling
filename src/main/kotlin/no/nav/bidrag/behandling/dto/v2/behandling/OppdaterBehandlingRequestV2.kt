@@ -1,19 +1,10 @@
 package no.nav.bidrag.behandling.dto.v2.behandling
 
-import com.fasterxml.jackson.annotation.JsonFormat
-import com.fasterxml.jackson.annotation.JsonSetter
-import com.fasterxml.jackson.annotation.Nulls
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
-import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
-import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
-import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
-import java.time.LocalDate
 
 data class OppdaterBehandlingRequestV2(
     val grunnlagspakkeId: Long? = null,
@@ -22,6 +13,7 @@ data class OppdaterBehandlingRequestV2(
     val boforhold: OppdaterBoforholdRequest? = null,
     val inntekter: OppdatereInntekterRequestV2? = null,
 )
+
 @Schema(
     description = """
 For `inntekter`,

@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.dto.v2.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto

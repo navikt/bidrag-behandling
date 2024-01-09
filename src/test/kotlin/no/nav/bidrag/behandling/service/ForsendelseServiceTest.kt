@@ -60,17 +60,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.FORSKUDD,
-                    vedtakType = Vedtakstype.KLAGE,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.FORSKUDD,
+                        vedtakType = Vedtakstype.KLAGE,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
@@ -92,17 +92,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    engangsBelopType = Engangsbeløptype.GEBYR_MOTTAKER,
-                    vedtakType = Vedtakstype.ENDRING,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        engangsBelopType = Engangsbeløptype.GEBYR_MOTTAKER,
+                        vedtakType = Vedtakstype.ENDRING,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
@@ -122,17 +122,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    engangsBelopType = Engangsbeløptype.GEBYR_SKYLDNER,
-                    vedtakType = Vedtakstype.ENDRING,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        engangsBelopType = Engangsbeløptype.GEBYR_SKYLDNER,
+                        vedtakType = Vedtakstype.ENDRING,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
@@ -152,17 +152,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.BIDRAG,
-                    vedtakType = Vedtakstype.FASTSETTELSE,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.BIDRAG,
+                        vedtakType = Vedtakstype.FASTSETTELSE,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 2) {
@@ -181,17 +181,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.FORSKUDD,
-                    vedtakType = Vedtakstype.KLAGE,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.FORSKUDD,
+                        vedtakType = Vedtakstype.KLAGE,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
@@ -220,17 +220,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.BIDRAG,
-                    vedtakType = Vedtakstype.FASTSETTELSE,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.BIDRAG,
+                        vedtakType = Vedtakstype.FASTSETTELSE,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 2) {
@@ -271,17 +271,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.BIDRAG18AAR,
-                    vedtakType = Vedtakstype.FASTSETTELSE,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.BIDRAG18AAR,
+                        vedtakType = Vedtakstype.FASTSETTELSE,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
 
@@ -331,17 +331,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.FORSKUDD,
-                    vedtakType = Vedtakstype.FASTSETTELSE,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.FORSKUDD,
+                        vedtakType = Vedtakstype.FASTSETTELSE,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
 
@@ -359,17 +359,17 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.FORSKUDD,
-                    vedtakType = Vedtakstype.ENDRING,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.FORSKUDD,
+                        vedtakType = Vedtakstype.ENDRING,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
 
@@ -392,18 +392,18 @@ class ForsendelseServiceTest {
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.BIDRAG,
-                    vedtakType = Vedtakstype.FASTSETTELSE,
-                    erFattetBeregnet = true,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.BIDRAG,
+                        vedtakType = Vedtakstype.FASTSETTELSE,
+                        erFattetBeregnet = true,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
 
@@ -462,18 +462,18 @@ class ForsendelseServiceTest {
                 enhet = "4806",
                 behandlingStatus = no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus.FEILREGISTRERT,
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = SOKNAD_ID,
-                    stonadType = Stønadstype.BIDRAG,
-                    vedtakType = Vedtakstype.FASTSETTELSE,
-                    erFattetBeregnet = true,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = SOKNAD_ID,
+                        stonadType = Stønadstype.BIDRAG,
+                        vedtakType = Vedtakstype.FASTSETTELSE,
+                        erFattetBeregnet = true,
+                    ),
                 roller =
-                listOf(
-                    ROLLE_BM,
-                    ROLLE_BP,
-                    ROLLE_BA_1,
-                ),
+                    listOf(
+                        ROLLE_BM,
+                        ROLLE_BP,
+                        ROLLE_BA_1,
+                    ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 0) {

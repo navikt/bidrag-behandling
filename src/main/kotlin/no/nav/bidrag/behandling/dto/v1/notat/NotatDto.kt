@@ -42,15 +42,19 @@ data class Boforhold(
 )
 
 data class SivilstandNotat(
-    val opplysningerFraFolkeregisteret: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerFraFolkeregisteret<Sivilstandskode>> = emptyList(),
-    val opplysningerBruktTilBeregning: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerBruktTilBeregning<Sivilstandskode>> = emptyList(),
+    val opplysningerFraFolkeregisteret: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerFraFolkeregisteret<Sivilstandskode>> =
+        emptyList(),
+    val opplysningerBruktTilBeregning: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerBruktTilBeregning<Sivilstandskode>> =
+        emptyList(),
 )
 
 data class BoforholdBarn(
     val navn: String,
     val fødselsdato: LocalDate?,
-    val opplysningerFraFolkeregisteret: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerFraFolkeregisteret<Bostatuskode>> = emptyList(),
-    val opplysningerBruktTilBeregning: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerBruktTilBeregning<Bostatuskode>> = emptyList(),
+    val opplysningerFraFolkeregisteret: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerFraFolkeregisteret<Bostatuskode>> =
+        emptyList(),
+    val opplysningerBruktTilBeregning: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerBruktTilBeregning<Bostatuskode>> =
+        emptyList(),
 )
 
 data class OpplysningerFraFolkeregisteret<T>(

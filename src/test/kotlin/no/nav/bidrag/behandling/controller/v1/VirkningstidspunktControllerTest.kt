@@ -28,15 +28,15 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
         val req =
             no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                 virkningstidspunkt =
-                no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
-                    årsak = ForskuddAarsakType.KF,
-                    virkningsdato = LocalDate.parse("2025-12-27"),
-                    notat =
-                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                        "KUN I NOTAT",
-                        "MED I VEDTAK",
+                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
+                        årsak = ForskuddAarsakType.KF,
+                        virkningsdato = LocalDate.parse("2025-12-27"),
+                        notat =
+                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                "KUN I NOTAT",
+                                "MED I VEDTAK",
+                            ),
                     ),
-                ),
             )
 
         val respons =

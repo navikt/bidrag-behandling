@@ -24,49 +24,49 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =
         søknadsid = soknadsid,
         behandlerenhet = behandlerEnhet,
         roller =
-        roller.map {
-            no.nav.bidrag.behandling.dto.v1.behandling.RolleDto(
-                it.id!!,
-                it.rolletype,
-                it.ident,
-                it.navn ?: hentPersonVisningsnavn(it.ident),
-                it.foedselsdato,
-            )
-        }.toSet(),
+            roller.map {
+                no.nav.bidrag.behandling.dto.v1.behandling.RolleDto(
+                    it.id!!,
+                    it.rolletype,
+                    it.ident,
+                    it.navn ?: hentPersonVisningsnavn(it.ident),
+                    it.foedselsdato,
+                )
+            }.toSet(),
         søknadRefId = soknadRefId,
         grunnlagspakkeid = grunnlagspakkeid,
         virkningstidspunkt =
-        no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto(
-            virkningsdato = virkningsdato,
-            årsak = aarsak,
-            notat =
-            no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
-                medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-                kunINotat = virkningstidspunktbegrunnelseKunINotat,
+            no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto(
+                virkningsdato = virkningsdato,
+                årsak = aarsak,
+                notat =
+                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
+                        medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
+                    ),
             ),
-        ),
         boforhold =
-        no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto(
-            husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
-            sivilstand = sivilstand.toSivilstandDto(),
-            notat =
-            no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
-                medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                kunINotat = boforholdsbegrunnelseKunINotat,
+            no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto(
+                husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
+                sivilstand = sivilstand.toSivilstandDto(),
+                notat =
+                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
+                        medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                        kunINotat = boforholdsbegrunnelseKunINotat,
+                    ),
             ),
-        ),
         inntekter =
-        no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto(
-            inntekter = inntekter.toInntektDto(),
-            utvidetbarnetrygd = utvidetBarnetrygd.toUtvidetBarnetrygdDto(),
-            barnetillegg = barnetillegg.toBarnetilleggDto(),
-            småbarnstillegg = emptySet(),
-            kontantstøtte = emptySet(),
-            notat =
-            no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
-                medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                kunINotat = inntektsbegrunnelseKunINotat,
+            no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto(
+                inntekter = inntekter.toInntektDto(),
+                utvidetbarnetrygd = utvidetBarnetrygd.toUtvidetBarnetrygdDto(),
+                barnetillegg = barnetillegg.toBarnetilleggDto(),
+                småbarnstillegg = emptySet(),
+                kontantstøtte = emptySet(),
+                notat =
+                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
+                        medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+                        kunINotat = inntektsbegrunnelseKunINotat,
+                    ),
             ),
-        ),
         opplysninger = opplysninger.map(Grunnlag::toDto),
     )

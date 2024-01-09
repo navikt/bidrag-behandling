@@ -60,15 +60,15 @@ class VedtakHendelseListener(
                 saksnummer = vedtak.saksnummer,
                 enhet = vedtak.enhetsnummer?.verdi,
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    soknadId = vedtak.søknadsid ?: behandling.soknadsid,
-                    vedtakId = vedtak.id.toLong(),
-                    soknadFra = behandling.soknadFra,
-                    stonadType = vedtak.stønadstype,
-                    engangsBelopType = vedtak.engangsbeløptype,
-                    erFattetBeregnet = true,
-                    vedtakType = vedtak.type,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        soknadId = vedtak.søknadsid ?: behandling.soknadsid,
+                        vedtakId = vedtak.id.toLong(),
+                        soknadFra = behandling.soknadFra,
+                        stonadType = vedtak.stønadstype,
+                        engangsBelopType = vedtak.engangsbeløptype,
+                        erFattetBeregnet = true,
+                        vedtakType = vedtak.type,
+                    ),
                 roller = behandling.tilForsendelseRolleDto(),
             ),
         )

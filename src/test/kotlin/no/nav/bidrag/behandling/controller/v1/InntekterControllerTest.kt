@@ -110,9 +110,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                             inntekter =
-                            no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                                inntekter = setOf(inn),
-                            ),
+                                no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                                    inntekter = setOf(inn),
+                                ),
                         ),
                     ),
                     no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
@@ -155,11 +155,11 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                             inntekter =
-                            no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                                setOf(inntekt1, inntekt2),
-                                setOf(),
-                                setOf(),
-                            ),
+                                no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                                    setOf(inntekt1, inntekt2),
+                                    setOf(),
+                                    setOf(),
+                                ),
                         ),
                     ),
                     no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
@@ -194,11 +194,11 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                             inntekter =
-                            no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                                emptySet(),
-                                emptySet(),
-                                emptySet(),
-                            ),
+                                no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                                    emptySet(),
+                                    emptySet(),
+                                    emptySet(),
+                                ),
                         ),
                     ),
                     no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,

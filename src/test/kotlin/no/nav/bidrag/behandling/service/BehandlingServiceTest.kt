@@ -158,15 +158,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                 createdBehandling.id!!,
                 no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                     boforhold =
-                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest(
-                        husstandsBarn,
-                        sivilstand,
-                        notat =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                            kunINotat = notat,
-                            medIVedtaket = medIVedtak,
+                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest(
+                            husstandsBarn,
+                            sivilstand,
+                            notat =
+                                no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                    kunINotat = notat,
+                                    medIVedtaket = medIVedtak,
+                                ),
                         ),
-                    ),
                 ),
             )
 
@@ -194,15 +194,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                 createdBehandling.id!!,
                 no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                     virkningstidspunkt =
-                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
-                        årsak = ForskuddAarsakType.BF,
-                        virkningsdato = null,
-                        notat =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                            notat,
-                            medIVedtak,
+                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
+                            årsak = ForskuddAarsakType.BF,
+                            virkningsdato = null,
+                            notat =
+                                no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                    notat,
+                                    medIVedtak,
+                                ),
                         ),
-                    ),
                 ),
             )
 
@@ -316,13 +316,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                     1234,
                     no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                         virkningstidspunkt =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
-                            notat =
-                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                                "New Notat",
-                                "Med i Vedtak",
+                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
+                                notat =
+                                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                        "New Notat",
+                                        "Med i Vedtak",
+                                    ),
                             ),
-                        ),
                     ),
                 )
             }
@@ -345,29 +345,29 @@ class BehandlingServiceTest : TestContainerRunner() {
                     createdBehandling.id!!,
                     no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                         virkningstidspunkt =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
-                            notat =
-                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                                notat,
-                                medIVedtak,
+                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
+                                notat =
+                                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                        notat,
+                                        medIVedtak,
+                                    ),
                             ),
-                        ),
                         inntekter =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                            notat =
-                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                                notat,
-                                medIVedtak,
+                            no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                                notat =
+                                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                        notat,
+                                        medIVedtak,
+                                    ),
                             ),
-                        ),
                         boforhold =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest(
-                            notat =
-                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                                notat,
-                                medIVedtak,
+                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest(
+                                notat =
+                                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                        notat,
+                                        medIVedtak,
+                                    ),
                             ),
-                        ),
                     ),
                 )
 
@@ -414,44 +414,44 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                     inntekter =
-                    no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                        inntekter =
-                        mutableSetOf(
-                            no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
-                                taMed = true,
-                                inntektstype = Inntektsrapportering.KAPITALINNTEKT,
-                                beløp = BigDecimal.valueOf(4000),
-                                datoFom = LocalDate.now().minusMonths(4),
-                                datoTom = LocalDate.now().plusMonths(4),
-                                ident = "123",
-                                fraGrunnlag = true,
-                                inntektsposter = emptySet(),
-                            ),
+                        no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                            inntekter =
+                                mutableSetOf(
+                                    no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
+                                        taMed = true,
+                                        inntektstype = Inntektsrapportering.KAPITALINNTEKT,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = "123",
+                                        fraGrunnlag = true,
+                                        inntektsposter = emptySet(),
+                                    ),
+                                ),
+                            barnetillegg =
+                                mutableSetOf(
+                                    no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
+                                        ident = "123",
+                                        barnetillegg = BigDecimal.TEN,
+                                        datoFom = LocalDate.now().minusMonths(3),
+                                        datoTom = LocalDate.now().plusMonths(3),
+                                    ),
+                                ),
+                            utvidetbarnetrygd =
+                                mutableSetOf(
+                                    no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto(
+                                        deltBosted = false,
+                                        beløp = BigDecimal.TEN,
+                                        datoFom = LocalDate.now().minusMonths(3),
+                                        datoTom = LocalDate.now().plusMonths(3),
+                                    ),
+                                ),
+                            notat =
+                                no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                    "Kun i Notat",
+                                    "Med i Vedtaket",
+                                ),
                         ),
-                        barnetillegg =
-                        mutableSetOf(
-                            no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
-                                ident = "123",
-                                barnetillegg = BigDecimal.TEN,
-                                datoFom = LocalDate.now().minusMonths(3),
-                                datoTom = LocalDate.now().plusMonths(3),
-                            ),
-                        ),
-                        utvidetbarnetrygd =
-                        mutableSetOf(
-                            no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto(
-                                deltBosted = false,
-                                beløp = BigDecimal.TEN,
-                                datoFom = LocalDate.now().minusMonths(3),
-                                datoTom = LocalDate.now().plusMonths(3),
-                            ),
-                        ),
-                        notat =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                            "Kun i Notat",
-                            "Med i Vedtaket",
-                        ),
-                    ),
                 ),
             )
 
@@ -481,35 +481,35 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                     inntekter =
-                    no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                        inntekter =
-                        mutableSetOf(
-                            no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
-                                taMed = true,
-                                inntektstype = Inntektsrapportering.KAPITALINNTEKT,
-                                beløp = BigDecimal.valueOf(4000),
-                                datoFom = LocalDate.now().minusMonths(4),
-                                datoTom = LocalDate.now().plusMonths(4),
-                                ident = "123",
-                                fraGrunnlag = true,
-                                inntektsposter = emptySet(),
-                            ),
+                        no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                            inntekter =
+                                mutableSetOf(
+                                    no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
+                                        taMed = true,
+                                        inntektstype = Inntektsrapportering.KAPITALINNTEKT,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = "123",
+                                        fraGrunnlag = true,
+                                        inntektsposter = emptySet(),
+                                    ),
+                                ),
+                            barnetillegg =
+                                mutableSetOf(
+                                    no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
+                                        ident = "123",
+                                        barnetillegg = BigDecimal.TEN,
+                                        datoFom = LocalDate.now().minusMonths(3),
+                                        datoTom = LocalDate.now().plusMonths(3),
+                                    ),
+                                ),
+                            notat =
+                                no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                    "not null",
+                                    "not null",
+                                ),
                         ),
-                        barnetillegg =
-                        mutableSetOf(
-                            no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
-                                ident = "123",
-                                barnetillegg = BigDecimal.TEN,
-                                datoFom = LocalDate.now().minusMonths(3),
-                                datoTom = LocalDate.now().plusMonths(3),
-                            ),
-                        ),
-                        notat =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                            "not null",
-                            "not null",
-                        ),
-                    ),
                 ),
             )
 
@@ -524,23 +524,23 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                     inntekter =
-                    no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                        inntekter = emptySet(),
-                        barnetillegg =
-                        mutableSetOf(
-                            no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
-                                ident = "123",
-                                barnetillegg = BigDecimal.TEN,
-                                datoFom = LocalDate.now().minusMonths(3),
-                                datoTom = LocalDate.now().plusMonths(3),
-                            ),
+                        no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                            inntekter = emptySet(),
+                            barnetillegg =
+                                mutableSetOf(
+                                    no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
+                                        ident = "123",
+                                        barnetillegg = BigDecimal.TEN,
+                                        datoFom = LocalDate.now().minusMonths(3),
+                                        datoTom = LocalDate.now().plusMonths(3),
+                                    ),
+                                ),
+                            notat =
+                                no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                                    "",
+                                    "",
+                                ),
                         ),
-                        notat =
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                            "",
-                            "",
-                        ),
-                    ),
                 ),
             )
 

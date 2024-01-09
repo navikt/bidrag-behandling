@@ -29,37 +29,37 @@ class ForsendelseService(
     private val ikkeOpprettVarslingForForskuddMedType =
         listOf(Vedtakstype.FASTSETTELSE, Vedtakstype.ENDRING)
 
-    fun slettEllerOpprettForsendelse(request: no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest): List<String> {
-        if (request.behandlingStatus == no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus.FEILREGISTRERT) {
+    fun slettEllerOpprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
+        if (request.behandlingStatus == BehandlingStatus.FEILREGISTRERT) {
             return slettForsendelse(request)
         }
 
         return opprettForsendelse(request)
     }
 
-    private fun slettForsendelse(request: no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest): List<String> {
+    private fun slettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         return slettVarselbrevUnderOpprettelse(
             request.saksnummer,
             request.behandlingInfo.soknadId,
         ).map { it.toString() }
     }
 
-    private fun opprettForsendelse(request: no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest): List<String> {
+    private fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         val opprettRequestTemplate =
-            no.nav.bidrag.behandling.dto.v1.forsendelse.OpprettForsendelseForespørsel(
+            OpprettForsendelseForespørsel(
                 behandlingInfo =
-                request.behandlingInfo
-                    .copy(
-                        barnIBehandling =
-                        request.roller
-                            .filter { it.type == Rolletype.BARN && !it.fødselsnummer?.verdi.isNullOrEmpty() }
-                            .map { it.fødselsnummer!!.verdi },
-                    ),
+                    request.behandlingInfo
+                        .copy(
+                            barnIBehandling =
+                                request.roller
+                                    .filter { it.type == Rolletype.BARN && !it.fødselsnummer?.verdi.isNullOrEmpty() }
+                                    .map { it.fødselsnummer!!.verdi },
+                        ),
                 saksnummer = request.saksnummer,
                 enhet = request.enhet,
                 tema =
-                request.tema
-                    ?: if (request.enhet == ENHET_FARSKAP && harTilgangTilTemaFar()) "FAR" else "BID",
+                    request.tema
+                        ?: if (request.enhet == ENHET_FARSKAP && harTilgangTilTemaFar()) "FAR" else "BID",
             )
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
@@ -73,7 +73,7 @@ class ForsendelseService(
                 val response =
                     bidragForsendelseConsumer.opprettForsendelse(
                         opprettRequestTemplate.copy(
-                            mottaker = no.nav.bidrag.behandling.dto.v1.forsendelse.MottakerDto(ident = it.fødselsnummer!!.verdi),
+                            mottaker = MottakerDto(ident = it.fødselsnummer!!.verdi),
                             gjelderIdent = it.fødselsnummer.verdi,
                         ),
                     )
@@ -110,7 +110,7 @@ class ForsendelseService(
 
     private fun harTilgangTilTemaFar() = tilgangskontrollConsumer.sjekkTilgangTema(tema = "FAR")
 
-    private fun skalOppretteForsendelseForSoknad(behandlingInfo: no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto): Boolean {
+    private fun skalOppretteForsendelseForSoknad(behandlingInfo: BehandlingInfoDto): Boolean {
         val erFattet = behandlingInfo.erFattetBeregnet != null
         if (erFattet) return true
         return !(
@@ -120,8 +120,8 @@ class ForsendelseService(
     }
 
     private fun opprettForRoller(
-        behandlingRoller: List<no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto>,
-        behandlingInfoDto: no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto,
+        behandlingRoller: List<ForsendelseRolleDto>,
+        behandlingInfoDto: BehandlingInfoDto,
     ): OpprettForsendelseForRollerListe {
         val roller = OpprettForsendelseForRollerListe()
         if (!skalOppretteForsendelseForSoknad(behandlingInfoDto)) return roller
@@ -149,16 +149,23 @@ class ForsendelseService(
     }
 }
 
-class OpprettForsendelseForRollerListe : MutableList<no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto> by mutableListOf() {
-    fun leggTil(rolle: no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto?) {
+class OpprettForsendelseForRollerListe :
+    MutableList<ForsendelseRolleDto> by mutableListOf() {
+    fun leggTil(rolle: ForsendelseRolleDto?) {
         if (rolle?.fødselsnummer == null) return
         val fødselsnummer = rolle.fødselsnummer
         if (fødselsnummer.verdi.isNotEmpty()) this.add(rolle)
     }
 }
 
-fun no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
+fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
 
-fun List<no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto? = this.find { it.type == rolleType }
+fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? =
+    this.find {
+        it.type == rolleType
+    }
 
-fun List<no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto>.hentBarn(): List<no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto> = this.filter { it.type == Rolletype.BARN }
+fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> =
+    this.filter {
+        it.type == Rolletype.BARN
+    }

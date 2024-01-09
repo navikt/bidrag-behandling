@@ -13,8 +13,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
-import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
@@ -41,29 +39,26 @@ class BehandlingService(
     private val grunnlagService: GrunnlagService,
 ) {
     fun opprettBehandling(behandling: Behandling): Behandling =
-        behandlingRepository.save(behandling)
-            .let {
-                opprettForsendelseForBehandling(it)
-                it
-            }
+        behandlingRepository.save(behandling).let {
+            opprettForsendelseForBehandling(it)
+            it
+        }
 
-    fun opprettBehandling(opprettBehandling: no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest): no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse {
+    fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
         Validate.isTrue(
-            ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
-                ingenVoksneUtenIdent(opprettBehandling.roller),
+            ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) && ingenVoksneUtenIdent(opprettBehandling.roller),
         )
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
-            "${no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest::stønadstype.name} " +
-                "eller ${no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
+            "${OpprettBehandlingRequest::stønadstype.name} " +
+                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} " +
+                "må være satt i forespørselen",
         )
 
-        val opprettetAv =
-            TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
+        val opprettetAv = TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
         val opprettetAvNavn =
-            TokenUtils.hentSaksbehandlerIdent()
-                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
+            TokenUtils.hentSaksbehandlerIdent()?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         val behandling =
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
@@ -91,13 +86,11 @@ class BehandlingService(
 
         val behandlingDo = opprettBehandling(behandling)
         log.info {
-            "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " +
-                "og engangsbeløptype ${opprettBehandling.engangsbeløpstype} " +
-                "vedtakstype ${opprettBehandling.vedtakstype} " +
-                "og søknadFra ${opprettBehandling.søknadFra} " +
-                "med id ${behandlingDo.id} "
+            "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " + "og engangsbeløptype " +
+                "${opprettBehandling.engangsbeløpstype} " + "vedtakstype ${opprettBehandling.vedtakstype} " +
+                "og søknadFra ${opprettBehandling.søknadFra} " + "med id ${behandlingDo.id} "
         }
-        return no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse(behandlingDo.id!!)
+        return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
     private fun opprettForsendelseForBehandling(behandling: Behandling) {
@@ -107,15 +100,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadsid,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.tilBehandlingstype(),
-                    stonadType = behandling.stonadstype,
-                    engangsBelopType = behandling.engangsbeloptype,
-                    vedtakType = behandling.vedtakstype,
-                ),
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadsid,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.tilBehandlingstype(),
+                        stonadType = behandling.stonadstype,
+                        engangsBelopType = behandling.engangsbeloptype,
+                        vedtakType = behandling.vedtakstype,
+                    ),
             ),
         )
     }
@@ -125,12 +118,11 @@ class BehandlingService(
     @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
-        oppdaterBehandling: no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest,
-    ): no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto =
+        oppdaterBehandling: OppdaterBehandlingRequest,
+    ): BehandlingDto =
         behandlingRepository.save(
             behandlingRepository.findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
-                .let {
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                     log.info { "Oppdaterer behandling $behandlingsid" }
                     SECURE_LOGGER.info("Oppdaterer behandling $behandlingsid for forespørsel $oppdaterBehandling")
                     it.grunnlagspakkeid = oppdaterBehandling.grunnlagspakkeId ?: it.grunnlagspakkeid
@@ -141,8 +133,8 @@ class BehandlingService(
                         it.virkningsdato = vt.virkningsdato
                         it.virkningstidspunktbegrunnelseKunINotat =
                             vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
-                        it.virkningstidspunktsbegrunnelseIVedtakOgNotat = vt.notat?.medIVedtaket
-                            ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
+                        it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
+                            vt.notat?.medIVedtaket ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
                     }
                     oppdaterBehandling.inntekter?.let { inntekter ->
                         log.info { "Oppdaterer inntekter for behandling $behandlingsid" }
@@ -162,8 +154,7 @@ class BehandlingService(
                                 ),
                             )
                         }
-                        it.inntektsbegrunnelseKunINotat =
-                            inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
+                        it.inntektsbegrunnelseKunINotat = inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
                         it.inntektsbegrunnelseIVedtakOgNotat =
                             inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
                     }
@@ -177,8 +168,7 @@ class BehandlingService(
                             it.husstandsbarn.clear()
                             it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
                         }
-                        it.boforholdsbegrunnelseKunINotat =
-                            bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
+                        it.boforholdsbegrunnelseKunINotat = bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
                         it.boforholdsbegrunnelseIVedtakOgNotat =
                             bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
                     }
@@ -187,13 +177,12 @@ class BehandlingService(
         ).tilBehandlingDto(grunnlagService.hentAlleSistAktiv(behandlingsid))
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
-        behandlingRepository.findBehandlingById(behandlingId)
-            .orElseThrow { behandlingNotFoundException(behandlingId) }
+        behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
 
     @Transactional
     fun syncRoller(
         behandlingId: Long,
-        roller: List<no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>,
+        roller: List<OpprettRolleDto>,
     ) {
         val existingRoller = rolleRepository.findRollerByBehandlingId(behandlingId)
 
@@ -221,12 +210,12 @@ class BehandlingService(
         val grunnlagspakke = bidragGrunnlagConsumer.henteGrunnlagspakke(grunlagspakkeid)
     }
 
-    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>): Boolean {
+    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
         return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
             .none { r -> r.navn.isNullOrBlank() }
     }
 
-    private fun ingenVoksneUtenIdent(roller: Set<no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>): Boolean {
+    private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
         return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
     }
 }
