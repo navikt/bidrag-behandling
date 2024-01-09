@@ -33,11 +33,11 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
-                    no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
+                    InitalizeForsendelseRequest(
                         saksnummer = SAKSNUMMER,
                         enhet = BidragEnhet.ENHET_FARSKAP,
                         behandlingInfo =
-                            no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                            BehandlingInfoDto(
                                 soknadId = SOKNAD_ID,
                                 stonadType = Stønadstype.FORSKUDD,
                             ),
@@ -196,11 +196,11 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
-                    no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
+                    InitalizeForsendelseRequest(
                         saksnummer = SAKSNUMMER,
                         enhet = BidragEnhet.ENHET_FARSKAP,
                         behandlingInfo =
-                            no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                            BehandlingInfoDto(
                                 soknadId = SOKNAD_ID,
                                 stonadType = Stønadstype.FORSKUDD,
                                 vedtakId = 1,
@@ -244,12 +244,12 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
-                    no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
+                    InitalizeForsendelseRequest(
                         saksnummer = SAKSNUMMER,
-                        behandlingStatus = no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus.FEILREGISTRERT,
+                        behandlingStatus = BehandlingStatus.FEILREGISTRERT,
                         enhet = BidragEnhet.ENHET_FARSKAP,
                         behandlingInfo =
-                            no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                            BehandlingInfoDto(
                                 soknadId = SOKNAD_ID,
                                 stonadType = Stønadstype.FORSKUDD,
                                 vedtakId = 1,

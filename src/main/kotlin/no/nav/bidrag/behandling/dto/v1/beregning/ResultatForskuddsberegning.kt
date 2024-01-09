@@ -5,11 +5,11 @@ import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddRes
 import java.time.LocalDate
 
 data class ResultatForskuddsberegning(
-    val resultatBarn: List<no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn> = emptyList(),
+    val resultatBarn: List<ResultatForskuddsberegningBarn> = emptyList(),
 )
 
 data class ResultatForskuddsberegningBarn(
-    val barn: no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle,
+    val barn: ResultatRolle,
     val resultat: BeregnetForskuddResultat,
 )
 

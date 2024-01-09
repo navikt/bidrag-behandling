@@ -5,7 +5,6 @@ import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
@@ -24,12 +23,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal opprette og oppdatere opplysninger`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(568),
@@ -44,7 +43,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
@@ -67,12 +66,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal ikke være mulig å opprette flere aktive opplysninger`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(429),
@@ -87,7 +86,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
@@ -111,12 +110,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal opprette og oppdatere opplysninger1`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(409),
@@ -131,7 +130,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 

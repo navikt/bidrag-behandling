@@ -19,7 +19,7 @@ class BidragForsendelseConsumer(
     private val bidragForsendelsedUri get() =
         UriComponentsBuilder.fromUri(bidragForsnendelseUrl).pathSegment("api").pathSegment("forsendelse")
 
-    fun opprettForsendelse(payload: no.nav.bidrag.behandling.dto.v1.forsendelse.OpprettForsendelseForespørsel): OpprettForsendelseRespons =
+    fun opprettForsendelse(payload: OpprettForsendelseForespørsel): OpprettForsendelseRespons =
         postForNonNullEntity(bidragForsendelsedUri.build().toUri(), payload)
 
     fun hentForsendelserISak(saksnummer: String): List<ForsendelseResponsTo> =

@@ -30,7 +30,7 @@ data class OpprettBehandlingRequestTest(
     val søknadFra: SøktAvType,
     val saksnummer: String?,
     val behandlerenhet: String,
-    val roller: Set<no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>,
+    val roller: Set<OpprettRolleDto>,
 )
 
 @Suppress("NonAsciiCharacters")
@@ -42,17 +42,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal opprette en behandling med null opprettetDato`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(101),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(456),
@@ -65,7 +65,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(behandlingReq),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val opprettetBehandling = behandlingService.hentBehandlingById(behandlingRes.body!!.id)
@@ -78,17 +78,17 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal opprette en behandling med null opprettetDato og så hente den`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(555),
@@ -101,7 +101,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(behandlingReq),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
@@ -110,7 +110,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandlingRes.body!!.id}",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                BehandlingDto::class.java,
             )
 
         assertNotNull(behandling.body)
@@ -125,7 +125,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling/" + b.id,
                 HttpMethod.PUT,
-                HttpEntity(no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(123L)),
+                HttpEntity(OppdaterBehandlingRequest(123L)),
                 Void::class.java,
             )
         assertEquals(HttpStatus.OK, behandlingRes.statusCode)
@@ -135,7 +135,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${b!!.id}",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                BehandlingDto::class.java,
             )
 
         assertNotNull(updatedBehandling.body)
@@ -146,12 +146,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal opprette en behandling`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(499),
@@ -174,12 +174,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettForsendelse()
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(511),
@@ -203,12 +203,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettForsendelse()
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(609),
@@ -240,12 +240,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettForsendelse(status = HttpStatus.BAD_REQUEST)
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(542),
@@ -287,14 +287,14 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val vedtaksid: Long = 1
         val oppdaterBehandlingRequest =
-            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(vedtaksid = vedtaksid)
+            OppdaterBehandlingRequest(vedtaksid = vedtaksid)
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
                 HttpEntity(oppdaterBehandlingRequest),
-                no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                BehandlingDto::class.java,
             )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
         assertEquals(vedtaksid, behandlingService.hentBehandlingById(behandling.id!!).vedtaksid)
@@ -307,7 +307,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 "1900000",
                 "en12",
                 setOf(
-                    no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                    OpprettRolleDto(
                         Rolletype.BARN,
                         Personident("12345678910"),
                         fødselsdato = LocalDate.now().minusMonths(136),
@@ -344,12 +344,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         // given
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     null,
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(399),
@@ -374,13 +374,13 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal opprette behandling som inkluderer barn med navn men uten ident`() { // given
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     null,
                     fødselsdato = LocalDate.now().minusMonths(136),
                     navn = "Ola Dunk",
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(682),
@@ -406,12 +406,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         // given
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12351234567"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     null,
                     navn = "Ola Dunk",
@@ -437,12 +437,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med blank sak`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(444),
@@ -463,12 +463,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med blank sak1`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(478),
@@ -489,12 +489,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med lang sak`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(533),
@@ -515,12 +515,12 @@ class BehandlingControllerTest : KontrollerTestRunner() {
     fun `skal ikke opprette en behandling med ugyldig enhet`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(500),
@@ -541,7 +541,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
         fun oppretteBehandlingRequestTest(
             saksnummer: String?,
             enhet: String,
-            roller: Set<no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>,
+            roller: Set<OpprettRolleDto>,
         ): OpprettBehandlingRequestTest {
             return OpprettBehandlingRequestTest(
                 Vedtakstype.FASTSETTELSE,

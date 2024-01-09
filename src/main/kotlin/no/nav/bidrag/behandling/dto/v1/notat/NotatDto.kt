@@ -14,11 +14,11 @@ import java.time.YearMonth
 data class NotatDto(
     val saksnummer: String,
     val saksbehandlerNavn: String?,
-    val virkningstidspunkt: no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt,
-    val boforhold: no.nav.bidrag.behandling.dto.v1.notat.Boforhold,
-    val parterISøknad: List<no.nav.bidrag.behandling.dto.v1.notat.ParterISøknad>,
-    val inntekter: no.nav.bidrag.behandling.dto.v1.notat.Inntekter,
-    val vedtak: List<no.nav.bidrag.behandling.dto.v1.notat.Vedtak>,
+    val virkningstidspunkt: Virkningstidspunkt,
+    val boforhold: Boforhold,
+    val parterISøknad: List<ParterISøknad>,
+    val inntekter: Inntekter,
+    val vedtak: List<Vedtak>,
 )
 
 data class Virkningstidspunkt(
@@ -27,7 +27,7 @@ data class Virkningstidspunkt(
     val mottattDato: YearMonth?,
     val søktFraDato: YearMonth?,
     val virkningstidspunkt: LocalDate?,
-    val notat: no.nav.bidrag.behandling.dto.v1.notat.Notat,
+    val notat: Notat,
 )
 
 data class Notat(
@@ -36,24 +36,24 @@ data class Notat(
 )
 
 data class Boforhold(
-    val barn: List<no.nav.bidrag.behandling.dto.v1.notat.BoforholdBarn> = emptyList(),
-    val sivilstand: no.nav.bidrag.behandling.dto.v1.notat.SivilstandNotat,
-    val notat: no.nav.bidrag.behandling.dto.v1.notat.Notat,
+    val barn: List<BoforholdBarn> = emptyList(),
+    val sivilstand: SivilstandNotat,
+    val notat: Notat,
 )
 
 data class SivilstandNotat(
-    val opplysningerFraFolkeregisteret: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerFraFolkeregisteret<Sivilstandskode>> =
+    val opplysningerFraFolkeregisteret: List<OpplysningerFraFolkeregisteret<Sivilstandskode>> =
         emptyList(),
-    val opplysningerBruktTilBeregning: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerBruktTilBeregning<Sivilstandskode>> =
+    val opplysningerBruktTilBeregning: List<OpplysningerBruktTilBeregning<Sivilstandskode>> =
         emptyList(),
 )
 
 data class BoforholdBarn(
     val navn: String,
     val fødselsdato: LocalDate?,
-    val opplysningerFraFolkeregisteret: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerFraFolkeregisteret<Bostatuskode>> =
+    val opplysningerFraFolkeregisteret: List<OpplysningerFraFolkeregisteret<Bostatuskode>> =
         emptyList(),
-    val opplysningerBruktTilBeregning: List<no.nav.bidrag.behandling.dto.v1.notat.OpplysningerBruktTilBeregning<Bostatuskode>> =
+    val opplysningerBruktTilBeregning: List<OpplysningerBruktTilBeregning<Bostatuskode>> =
         emptyList(),
 )
 
@@ -76,16 +76,16 @@ data class ParterISøknad(
 )
 
 data class Inntekter(
-    val inntekterPerRolle: List<no.nav.bidrag.behandling.dto.v1.notat.InntekterPerRolle>,
-    val notat: no.nav.bidrag.behandling.dto.v1.notat.Notat,
+    val inntekterPerRolle: List<InntekterPerRolle>,
+    val notat: Notat,
 )
 
 data class InntekterPerRolle(
     val rolle: Rolletype,
-    val arbeidsforhold: List<no.nav.bidrag.behandling.dto.v1.notat.Arbeidsforhold>,
-    val inntekterSomLeggesTilGrunn: List<no.nav.bidrag.behandling.dto.v1.notat.InntekterSomLeggesTilGrunn>,
-    val barnetillegg: List<no.nav.bidrag.behandling.dto.v1.notat.Barnetillegg>,
-    val utvidetBarnetrygd: List<no.nav.bidrag.behandling.dto.v1.notat.UtvidetBarnetrygd>,
+    val arbeidsforhold: List<Arbeidsforhold>,
+    val inntekterSomLeggesTilGrunn: List<InntekterSomLeggesTilGrunn>,
+    val barnetillegg: List<Barnetillegg>,
+    val utvidetBarnetrygd: List<UtvidetBarnetrygd>,
 )
 
 data class Arbeidsforhold(
@@ -115,7 +115,7 @@ data class UtvidetBarnetrygd(
 data class Vedtak(
     val navn: String,
     val fødselsdato: LocalDate,
-    val resultat: List<no.nav.bidrag.behandling.dto.v1.notat.Resultat>,
+    val resultat: List<Resultat>,
 )
 
 data class Resultat(

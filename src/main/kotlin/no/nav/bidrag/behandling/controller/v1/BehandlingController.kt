@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
@@ -91,7 +92,7 @@ class BehandlingController(
     )
     fun oppdaterRoller(
         @PathVariable behandlingId: Long,
-        @Valid @RequestBody(required = true) request: no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest,
+        @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
     ) = behandlingService.syncRoller(behandlingId, request.roller)
 
     @Suppress("unused")

@@ -43,7 +43,7 @@ class NotatGrunnlagControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/notat/${behandling.id}",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                no.nav.bidrag.behandling.dto.v1.notat.NotatDto::class.java,
+                NotatDto::class.java,
             )
 
         r1.statusCode shouldBe HttpStatus.OK

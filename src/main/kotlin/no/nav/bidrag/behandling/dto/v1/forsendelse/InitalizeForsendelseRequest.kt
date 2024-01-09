@@ -9,11 +9,11 @@ data class InitalizeForsendelseRequest(
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
     @field:Size(max = 7, message = "Saksnummer kan ikke være lengre enn 7 tegn")
     val saksnummer: String,
-    val behandlingInfo: no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto,
+    val behandlingInfo: BehandlingInfoDto,
     val enhet: String? = null,
     val tema: String? = null,
-    val roller: List<no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto>,
-    val behandlingStatus: no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus? = null,
+    val roller: List<ForsendelseRolleDto>,
+    val behandlingStatus: BehandlingStatus? = null,
 )
 
 data class ForsendelseRolleDto(

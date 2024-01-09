@@ -25,12 +25,12 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     fun `skal lagre boforhold data`() {
         val roller =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
+                OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(529),
@@ -46,14 +46,14 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
+                OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
         // 2.1 Prepare husstandsBarn
         val perioder =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto(
+                HusstandsbarnperiodeDto(
                     null,
                     null,
                     null,
@@ -63,7 +63,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             )
         val husstandsBarn =
             setOf(
-                no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto(
+                HusstandsbarnDto(
                     behandling.body!!.id,
                     true,
                     perioder,
@@ -75,21 +75,21 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
         // 2.2
         val boforholdData =
-            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest(
+            OppdaterBoforholdRequest(
                 husstandsBarn,
                 emptySet(),
                 notat =
-                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                        "med i vedtak",
-                        "kun i notat",
-                    ),
+                OppdaterNotat(
+                    "med i vedtak",
+                    "kun i notat",
+                ),
             ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/behandling/${behandling.body!!.id}",
                 HttpMethod.PUT,
-                HttpEntity(no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(boforhold = boforholdData)),
-                no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                HttpEntity(OppdaterBehandlingRequest(boforhold = boforholdData)),
+                BehandlingDto::class.java,
             )
 
         assertEquals(1, boforholdResponse.body!!.boforhold.husstandsbarn.size)

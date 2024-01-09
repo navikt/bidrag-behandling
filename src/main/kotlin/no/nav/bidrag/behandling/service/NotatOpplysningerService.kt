@@ -40,7 +40,7 @@ class NotatOpplysningerService(
     private val behandlingService: BehandlingService,
     private val grunnlagService: GrunnlagService,
 ) {
-    fun hentNotatOpplysninger(behandlingId: Long): no.nav.bidrag.behandling.dto.v1.notat.NotatDto {
+    fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val opplysningerBoforhold =
             grunnlagService.hentSistAktiv(behandlingId, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
@@ -50,14 +50,14 @@ class NotatOpplysningerService(
         val opplysningerInntekt: InntektsopplysningerBearbeidet =
             grunnlagService.hentSistAktiv(behandlingId, Grunnlagsdatatype.INNTEKT_BEARBEIDET)
                 .hentData() ?: InntektsopplysningerBearbeidet()
-        return no.nav.bidrag.behandling.dto.v1.notat.NotatDto(
+        return NotatDto(
             saksnummer = behandling.saksnummer,
             saksbehandlerNavn =
                 TokenUtils.hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
             virkningstidspunkt = behandling.tilVirkningstidspunkt(),
             boforhold =
-                no.nav.bidrag.behandling.dto.v1.notat.Boforhold(
+                Boforhold(
                     notat = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerBoforhold.sivilstand),
                     barn =
@@ -66,7 +66,7 @@ class NotatOpplysningerService(
                 ),
             parterISøknad = behandling.roller.map(Rolle::tilPartISøknad),
             inntekter =
-                no.nav.bidrag.behandling.dto.v1.notat.Inntekter(
+                Inntekter(
                     notat = behandling.tilNotatInntekt(),
                     inntekterPerRolle =
                         behandling.roller.map {
@@ -83,31 +83,31 @@ class NotatOpplysningerService(
 }
 
 private fun Behandling.tilNotatBoforhold() =
-    no.nav.bidrag.behandling.dto.v1.notat.Notat(
+    Notat(
         medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
         intern = boforholdsbegrunnelseKunINotat,
     )
 
 private fun Behandling.tilNotatVirkningstidspunkt() =
-    no.nav.bidrag.behandling.dto.v1.notat.Notat(
+    Notat(
         medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
         intern = virkningstidspunktbegrunnelseKunINotat,
     )
 
 private fun Behandling.tilNotatInntekt() =
-    no.nav.bidrag.behandling.dto.v1.notat.Notat(
+    Notat(
         medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
         intern = inntektsbegrunnelseKunINotat,
     )
 
 private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandBearbeidet>) =
-    no.nav.bidrag.behandling.dto.v1.notat.SivilstandNotat(
+    SivilstandNotat(
         opplysningerBruktTilBeregning =
             sivilstand.sortedBy { it.datoFom }
                 .map(Sivilstand::tilSivilstandsperiode),
         opplysningerFraFolkeregisteret =
             sivilstandOpplysninger.map { periode ->
-                no.nav.bidrag.behandling.dto.v1.notat.OpplysningerFraFolkeregisteret(
+                OpplysningerFraFolkeregisteret(
                     periode =
                         ÅrMånedsperiode(
                             periode.datoFom,
@@ -119,7 +119,7 @@ private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandBear
     )
 
 private fun Sivilstand.tilSivilstandsperiode() =
-    no.nav.bidrag.behandling.dto.v1.notat.OpplysningerBruktTilBeregning(
+    OpplysningerBruktTilBeregning(
         periode =
             ÅrMånedsperiode(
                 datoFom!!,
@@ -130,7 +130,7 @@ private fun Sivilstand.tilSivilstandsperiode() =
     )
 
 private fun Behandling.tilVirkningstidspunkt() =
-    no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt(
+    Virkningstidspunkt(
         søknadstype = vedtakstype.name,
         søktAv = soknadFra,
         mottattDato = YearMonth.from(mottattdato),
@@ -140,7 +140,7 @@ private fun Behandling.tilVirkningstidspunkt() =
     )
 
 private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdHusstandBearbeidet>) =
-    no.nav.bidrag.behandling.dto.v1.notat.BoforholdBarn(
+    BoforholdBarn(
         navn = navn!!,
         fødselsdato =
             foedselsdato
@@ -150,7 +150,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
                 it.ident == this.ident
             }.flatMap {
                 it.perioder.map { periode ->
-                    no.nav.bidrag.behandling.dto.v1.notat.OpplysningerFraFolkeregisteret(
+                    OpplysningerFraFolkeregisteret(
                         periode =
                             ÅrMånedsperiode(
                                 periode.fraDato.toLocalDate(),
@@ -162,7 +162,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
             },
         opplysningerBruktTilBeregning =
             perioder.sortedBy { it.datoFom }.map { periode ->
-                no.nav.bidrag.behandling.dto.v1.notat.OpplysningerBruktTilBeregning(
+                OpplysningerBruktTilBeregning(
                     periode =
                         ÅrMånedsperiode(
                             periode.datoFom!!,
@@ -175,7 +175,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
     )
 
 private fun Rolle.tilPartISøknad() =
-    no.nav.bidrag.behandling.dto.v1.notat.ParterISøknad(
+    ParterISøknad(
         rolle = rolletype,
         navn = hentPersonVisningsnavn(ident),
         fødselsdato = foedselsdato ?: hentPersonFødselsdato(ident),
@@ -186,13 +186,13 @@ private fun Behandling.hentInntekterForIdent(
     ident: String,
     rolle: Rolletype,
     arbeidsforhold: List<ArbeidsforholdDto>,
-) = no.nav.bidrag.behandling.dto.v1.notat.InntekterPerRolle(
+) = InntekterPerRolle(
     rolle = rolle,
     inntekterSomLeggesTilGrunn =
         inntekter.sortedBy { it.datoFom }
             .filter { it.ident == ident && it.taMed }
             .map {
-                no.nav.bidrag.behandling.dto.v1.notat.InntekterSomLeggesTilGrunn(
+                InntekterSomLeggesTilGrunn(
                     beløp = it.belop,
                     periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
                     beskrivelse = it.inntektstype.name,
@@ -203,7 +203,7 @@ private fun Behandling.hentInntekterForIdent(
         if (rolle == Rolletype.BIDRAGSMOTTAKER) {
             barnetillegg.sortedBy { it.datoFom }
                 .map {
-                    no.nav.bidrag.behandling.dto.v1.notat.Barnetillegg(
+                    Barnetillegg(
                         periode =
                             ÅrMånedsperiode(
                                 it.datoFom!!.toLocalDate(),
@@ -219,7 +219,7 @@ private fun Behandling.hentInntekterForIdent(
         if (rolle == Rolletype.BIDRAGSMOTTAKER) {
             utvidetBarnetrygd.sortedBy { it.datoFom }
                 .map {
-                    no.nav.bidrag.behandling.dto.v1.notat.UtvidetBarnetrygd(
+                    UtvidetBarnetrygd(
                         periode =
                             ÅrMånedsperiode(
                                 it.datoFom!!,
@@ -234,7 +234,7 @@ private fun Behandling.hentInntekterForIdent(
     arbeidsforhold =
         arbeidsforhold.filter { it.partPersonId == ident }
             .map {
-                no.nav.bidrag.behandling.dto.v1.notat.Arbeidsforhold(
+                Arbeidsforhold(
                     periode = ÅrMånedsperiode(it.startdato!!, it.sluttdato),
                     arbeidsgiver = it.arbeidsgiverNavn ?: "-",
                     stillingProsent = it.ansettelsesdetaljer?.firstOrNull()?.avtaltStillingsprosent?.toString(),

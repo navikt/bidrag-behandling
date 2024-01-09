@@ -26,17 +26,17 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
             behandlingService.opprettBehandling(BehandlingServiceTest.prepareBehandling())
 
         val req =
-            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
+            OppdaterBehandlingRequest(
                 virkningstidspunkt =
-                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
-                        årsak = ForskuddAarsakType.KF,
-                        virkningsdato = LocalDate.parse("2025-12-27"),
-                        notat =
-                            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
-                                "KUN I NOTAT",
-                                "MED I VEDTAK",
-                            ),
+                OppdaterVirkningstidspunkt(
+                    årsak = ForskuddAarsakType.KF,
+                    virkningsdato = LocalDate.parse("2025-12-27"),
+                    notat =
+                    OppdaterNotat(
+                        "KUN I NOTAT",
+                        "MED I VEDTAK",
                     ),
+                ),
             )
 
         val respons =
@@ -44,7 +44,7 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
                 HttpEntity(req),
-                no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                BehandlingDto::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, respons.statusCode)
 

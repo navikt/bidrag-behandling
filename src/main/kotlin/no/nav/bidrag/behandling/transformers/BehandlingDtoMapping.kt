@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 
 fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =
-    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto(
+    BehandlingDto(
         id = id!!,
         vedtakstype = vedtakstype,
         stønadstype = stonadstype,
@@ -24,49 +24,49 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =
         søknadsid = soknadsid,
         behandlerenhet = behandlerEnhet,
         roller =
-            roller.map {
-                no.nav.bidrag.behandling.dto.v1.behandling.RolleDto(
-                    it.id!!,
-                    it.rolletype,
-                    it.ident,
-                    it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.foedselsdato,
-                )
-            }.toSet(),
+        roller.map {
+            RolleDto(
+                it.id!!,
+                it.rolletype,
+                it.ident,
+                it.navn ?: hentPersonVisningsnavn(it.ident),
+                it.foedselsdato,
+            )
+        }.toSet(),
         søknadRefId = soknadRefId,
         grunnlagspakkeid = grunnlagspakkeid,
         virkningstidspunkt =
-            no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto(
-                virkningsdato = virkningsdato,
-                årsak = aarsak,
-                notat =
-                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
-                        medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
-                    ),
+        VirkningstidspunktDto(
+            virkningsdato = virkningsdato,
+            årsak = aarsak,
+            notat =
+            BehandlingNotatDto(
+                medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                kunINotat = virkningstidspunktbegrunnelseKunINotat,
             ),
+        ),
         boforhold =
-            no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto(
-                husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
-                sivilstand = sivilstand.toSivilstandDto(),
-                notat =
-                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
-                        medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                        kunINotat = boforholdsbegrunnelseKunINotat,
-                    ),
+        BoforholdDto(
+            husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
+            sivilstand = sivilstand.toSivilstandDto(),
+            notat =
+            BehandlingNotatDto(
+                medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                kunINotat = boforholdsbegrunnelseKunINotat,
             ),
+        ),
         inntekter =
-            no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto(
-                inntekter = inntekter.toInntektDto(),
-                utvidetbarnetrygd = utvidetBarnetrygd.toUtvidetBarnetrygdDto(),
-                barnetillegg = barnetillegg.toBarnetilleggDto(),
-                småbarnstillegg = emptySet(),
-                kontantstøtte = emptySet(),
-                notat =
-                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
-                        medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                        kunINotat = inntektsbegrunnelseKunINotat,
-                    ),
+        InntekterDto(
+            inntekter = inntekter.toInntektDto(),
+            utvidetbarnetrygd = utvidetBarnetrygd.toUtvidetBarnetrygdDto(),
+            barnetillegg = barnetillegg.toBarnetilleggDto(),
+            småbarnstillegg = emptySet(),
+            kontantstøtte = emptySet(),
+            notat =
+            BehandlingNotatDto(
+                medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+                kunINotat = inntektsbegrunnelseKunINotat,
             ),
+        ),
         opplysninger = opplysninger.map(Grunnlag::toDto),
     )

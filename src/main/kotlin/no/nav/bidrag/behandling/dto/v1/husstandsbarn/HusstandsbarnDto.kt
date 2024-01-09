@@ -9,7 +9,7 @@ data class HusstandsbarnDto(
     @Schema(required = true)
     val medISak: Boolean,
     @Schema(required = true)
-    val perioder: Set<no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto>,
+    val perioder: Set<HusstandsbarnperiodeDto>,
     val ident: String? = null,
     val navn: String? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")

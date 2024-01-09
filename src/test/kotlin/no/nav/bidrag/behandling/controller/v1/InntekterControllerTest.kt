@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
-import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -53,7 +52,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
-                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                    BehandlingDto::class.java,
                 )
 
             // then
@@ -76,7 +75,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
-                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                    BehandlingDto::class.java,
                 )
 
             // then
@@ -108,14 +107,14 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
+                        OppdaterBehandlingRequest(
                             inntekter =
-                                no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                                    inntekter = setOf(inn),
-                                ),
+                            OppdatereInntekterRequest(
+                                inntekter = setOf(inn),
+                            ),
                         ),
                     ),
-                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                    BehandlingDto::class.java,
                 )
 
             // then
@@ -136,10 +135,10 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 testInntektDto().copy(
                     id = null,
                     inntektsposter =
-                        setOf(
-                            InntektPost("ABC1", "ABC1", BigDecimal.TEN),
-                            InntektPost("ABC2", "ABC2", BigDecimal.TEN),
-                        ),
+                    setOf(
+                        InntektPost("ABC1", "ABC1", BigDecimal.TEN),
+                        InntektPost("ABC2", "ABC2", BigDecimal.TEN),
+                    ),
                 )
 
             val inntekt2 =
@@ -153,16 +152,16 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
+                        OppdaterBehandlingRequest(
                             inntekter =
-                                no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                                    setOf(inntekt1, inntekt2),
-                                    setOf(),
-                                    setOf(),
-                                ),
+                            OppdatereInntekterRequest(
+                                setOf(inntekt1, inntekt2),
+                                setOf(),
+                                setOf(),
+                            ),
                         ),
                     ),
-                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                    BehandlingDto::class.java,
                 )
 
             val inntekter = r1.body!!.inntekter!!
@@ -173,7 +172,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             assertNotNull(
                 inntekter.inntekter.find {
                     it.inntektstype == Inntektsrapportering.INNTEKTSOPPLYSNINGER_ARBEIDSGIVER &&
-                        it.inntektsposter.size == 1
+                            it.inntektsposter.size == 1
                 },
             )
         }
@@ -192,16 +191,16 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
-                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
+                        OppdaterBehandlingRequest(
                             inntekter =
-                                no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
-                                    emptySet(),
-                                    emptySet(),
-                                    emptySet(),
-                                ),
+                            OppdatereInntekterRequest(
+                                emptySet(),
+                                emptySet(),
+                                emptySet(),
+                            ),
                         ),
                     ),
-                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
+                    BehandlingDto::class.java,
                 )
 
             // then

@@ -26,7 +26,7 @@ data class OpprettBehandlingRequest(
     @field:Size(min = 4, max = 4, message = "Enhet må være 4 tegn")
     val behandlerenhet: String,
     @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
-    val roller: Set<@Valid no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>,
+    val roller: Set<@Valid OpprettRolleDto>,
     @Schema(required = true)
     var stønadstype: Stønadstype?,
     @Schema(required = true)

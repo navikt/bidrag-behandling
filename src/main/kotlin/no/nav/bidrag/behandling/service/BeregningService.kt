@@ -28,14 +28,14 @@ private val LOGGER = KotlinLogging.logger {}
 
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
-private fun Rolle.mapTilResultatBarn() = no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle(tilPersonident(), hentNavn(), foedselsdato)
+private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), foedselsdato)
 
 @Service
 class BeregningService(
     private val behandlingService: BehandlingService,
     private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
 ) {
-    fun beregneForskudd(behandlingsid: Long): no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning {
+    fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
         val respons =
             either {
                 val behandling =
@@ -44,7 +44,7 @@ class BeregningService(
                     behandling.getSøknadsbarn().mapOrAccumulate {
                         val fødselsdato =
                             finneFødselsdato(it.ident, it.foedselsdato)
-                                // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                            // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                                 ?: fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid)
 
                         val rolleBm =
@@ -64,7 +64,7 @@ class BeregningService(
                             behandling.tilBeregnGrunnlag(bm, søknadsbarn, øvrigeBarnIHusstand)
 
                         try {
-                            no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn(
+                            ResultatForskuddsberegningBarn(
                                 it.mapTilResultatBarn(),
                                 bidragBeregnForskuddConsumer.beregnForskudd(beregnForskudd),
                             )
@@ -97,7 +97,7 @@ class BeregningService(
             }
         }
 
-        return no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning(respons.getOrNull() ?: emptyList())
+        return ResultatForskuddsberegning(respons.getOrNull() ?: emptyList())
     }
 
     private fun oppretteGrunnlagForHusstandsbarn(
@@ -108,7 +108,7 @@ class BeregningService(
             .map {
                 val fødselsdato =
                     finneFødselsdato(it.ident, it.foedselsdato)
-                        // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                    // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                         ?: fantIkkeFødselsdatoTilSøknadsbarn(behandling.id!!)
 
                 lagePersonobjekt(it.ident, it.navn, fødselsdato, "husstandsbarn-${it.id}")
@@ -127,13 +127,13 @@ class BeregningService(
             referanse = "person-$referanse",
             type = Grunnlagstype.PERSON,
             innhold =
-                POJONode(
-                    Person(
-                        ident = Personident(personident),
-                        navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
-                        fødselsdato = fødselsdato,
-                    ),
+            POJONode(
+                Person(
+                    ident = Personident(personident),
+                    navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
+                    fødselsdato = fødselsdato,
                 ),
+            ),
         )
     }
 

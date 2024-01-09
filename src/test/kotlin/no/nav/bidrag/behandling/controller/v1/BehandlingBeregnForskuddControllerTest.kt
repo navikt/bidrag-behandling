@@ -28,6 +28,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal beregne forskudd for validert behandling`() {
         stubUtils.stubBeregneForskudd()
+
         // given
         val behandling = opprettGyldigBehandlingForBeregning()
 
@@ -43,7 +44,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning::class.java,
+                ResultatForskuddsberegning::class.java,
             )
 
         // then
@@ -65,7 +66,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning::class.java,
+                ResultatForskuddsberegning::class.java,
             )
 
         // then
@@ -98,7 +99,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning::class.java,
+                ResultatForskuddsberegning::class.java,
             )
 
         // then
