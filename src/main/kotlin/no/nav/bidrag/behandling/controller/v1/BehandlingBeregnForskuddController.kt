@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping
 
 private val LOGGER = KotlinLogging.logger {}
 
-@BehandlingRestController
+@BehandlingRestControllerV1
 class BehandlingBeregnForskuddController(
     private val behandlingService: BehandlingService,
     private val beregningService: BeregningService,

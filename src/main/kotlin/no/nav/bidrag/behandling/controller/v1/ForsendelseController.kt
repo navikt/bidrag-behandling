@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.service.ForsendelseService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
-@BehandlingRestController
+@BehandlingRestControllerV1
 class ForsendelseController(private val forsendelseService: ForsendelseService) {
     @Suppress("unused")
     @PostMapping("/forsendelse/init")

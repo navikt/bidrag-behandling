@@ -20,7 +20,7 @@ data class ArbeidOgInntektLenkeRequest(
     val ident: String,
 )
 
-@BehandlingRestController
+@BehandlingRestControllerV1
 class ArbeidOgInntektController(
     @Value("\${ARBEID_OG_INNTEKT_URL}") private val ainntektUrl: String,
     private val behandlingService: BehandlingService,

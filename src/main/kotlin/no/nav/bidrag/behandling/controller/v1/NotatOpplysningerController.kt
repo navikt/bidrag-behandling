@@ -5,7 +5,7 @@ import no.nav.bidrag.behandling.service.NotatOpplysningerService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 
-@BehandlingRestController
+@BehandlingRestControllerV1
 class NotatOpplysningerController(
     private val notatOpplysningerService: NotatOpplysningerService,
 ) {

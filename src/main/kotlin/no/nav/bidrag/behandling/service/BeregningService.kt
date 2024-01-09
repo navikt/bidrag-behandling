@@ -44,7 +44,7 @@ class BeregningService(
                     behandling.getSøknadsbarn().mapOrAccumulate {
                         val fødselsdato =
                             finneFødselsdato(it.ident, it.foedselsdato)
-                            // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                                // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                                 ?: fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid)
 
                         val rolleBm =
@@ -108,7 +108,7 @@ class BeregningService(
             .map {
                 val fødselsdato =
                     finneFødselsdato(it.ident, it.foedselsdato)
-                    // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                        // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                         ?: fantIkkeFødselsdatoTilSøknadsbarn(behandling.id!!)
 
                 lagePersonobjekt(it.ident, it.navn, fødselsdato, "husstandsbarn-${it.id}")
@@ -127,13 +127,13 @@ class BeregningService(
             referanse = "person-$referanse",
             type = Grunnlagstype.PERSON,
             innhold =
-            POJONode(
-                Person(
-                    ident = Personident(personident),
-                    navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
-                    fødselsdato = fødselsdato,
+                POJONode(
+                    Person(
+                        ident = Personident(personident),
+                        navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
+                        fødselsdato = fødselsdato,
+                    ),
                 ),
-            ),
         )
     }
 

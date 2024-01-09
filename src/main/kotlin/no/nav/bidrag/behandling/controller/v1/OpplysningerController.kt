@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
 @Deprecated("Unødvendig å kalle ettersom backend foretar innhenting av grunnlag")
-@BehandlingRestController
+@BehandlingRestControllerV1
 class OpplysningerController(val grunnlagService: GrunnlagService) {
     @Suppress("unused")
     @PostMapping("/behandling/{behandlingId}/opplysninger")
