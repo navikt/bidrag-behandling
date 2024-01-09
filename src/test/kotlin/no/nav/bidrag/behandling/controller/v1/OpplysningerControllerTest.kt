@@ -3,9 +3,9 @@ package no.nav.bidrag.behandling.controller.v1
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
-import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagsdataDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
@@ -24,12 +24,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal opprette og oppdatere opplysninger`() {
         val roller =
             setOf(
-                OpprettRolleDto(
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OpprettRolleDto(
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(568),
@@ -44,7 +44,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                OpprettBehandlingResponse::class.java,
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
@@ -67,12 +67,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal ikke være mulig å opprette flere aktive opplysninger`() {
         val roller =
             setOf(
-                OpprettRolleDto(
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OpprettRolleDto(
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(429),
@@ -87,7 +87,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                OpprettBehandlingResponse::class.java,
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
@@ -111,12 +111,12 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
     fun `skal opprette og oppdatere opplysninger1`() {
         val roller =
             setOf(
-                OpprettRolleDto(
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
                     Rolletype.BARN,
                     Personident("12345678910"),
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
-                OpprettRolleDto(
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     Personident("12345678911"),
                     fødselsdato = LocalDate.now().minusMonths(409),
@@ -131,7 +131,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
-                OpprettBehandlingResponse::class.java,
+                no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
 
@@ -165,7 +165,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
         data: String,
         aktiv: Boolean,
         opplysningerType: Grunnlagsdatatype,
-    ): GrunnlagsdataDto {
+    ): no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto {
         val opplysninger = createOpplysninger(behandlingId, data, aktiv, opplysningerType)
 
         val opp =
@@ -173,7 +173,7 @@ class OpplysningerControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/$behandlingId/opplysninger",
                 HttpMethod.POST,
                 HttpEntity(opplysninger),
-                GrunnlagsdataDto::class.java,
+                no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto::class.java,
             )
 
         Assertions.assertEquals(HttpStatus.OK, opp.statusCode)

@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -28,10 +28,18 @@ import java.time.YearMonth
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
-val ROLLE_BM = ForsendelseRolleDto(Personident("313213213"), type = Rolletype.BIDRAGSMOTTAKER)
-val ROLLE_BA_1 = ForsendelseRolleDto(Personident("1344124"), type = Rolletype.BARN)
-val ROLLE_BA_2 = ForsendelseRolleDto(Personident("54545454545"), type = Rolletype.BARN)
-val ROLLE_BP = ForsendelseRolleDto(Personident("213244124"), type = Rolletype.BIDRAGSPLIKTIG)
+val ROLLE_BM = no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto(
+    Personident("313213213"),
+    type = Rolletype.BIDRAGSMOTTAKER
+)
+val ROLLE_BA_1 =
+    no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto(Personident("1344124"), type = Rolletype.BARN)
+val ROLLE_BA_2 =
+    no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto(Personident("54545454545"), type = Rolletype.BARN)
+val ROLLE_BP = no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto(
+    Personident("213244124"),
+    type = Rolletype.BIDRAGSPLIKTIG
+)
 
 val testdataBM =
     mapOf(

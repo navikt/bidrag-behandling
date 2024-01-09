@@ -3,9 +3,9 @@ package no.nav.bidrag.behandling.controller.v1
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingStatus
-import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
+import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BM
 import no.nav.bidrag.behandling.utils.ROLLE_BP
@@ -33,20 +33,20 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
-                    InitalizeForsendelseRequest(
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                         saksnummer = SAKSNUMMER,
                         enhet = BidragEnhet.ENHET_FARSKAP,
                         behandlingInfo =
-                            BehandlingInfoDto(
-                                soknadId = SOKNAD_ID,
-                                stonadType = Stønadstype.FORSKUDD,
-                            ),
+                        no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                            soknadId = SOKNAD_ID,
+                            stonadType = Stønadstype.FORSKUDD,
+                        ),
                         roller =
-                            listOf(
-                                ROLLE_BM,
-                                ROLLE_BP,
-                                ROLLE_BA_1,
-                            ),
+                        listOf(
+                            ROLLE_BM,
+                            ROLLE_BP,
+                            ROLLE_BA_1,
+                        ),
                     ),
                 ),
                 List::class.java,
@@ -196,21 +196,21 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
-                    InitalizeForsendelseRequest(
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                         saksnummer = SAKSNUMMER,
                         enhet = BidragEnhet.ENHET_FARSKAP,
                         behandlingInfo =
-                            BehandlingInfoDto(
-                                soknadId = SOKNAD_ID,
-                                stonadType = Stønadstype.FORSKUDD,
-                                vedtakId = 1,
-                            ),
+                        no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                            soknadId = SOKNAD_ID,
+                            stonadType = Stønadstype.FORSKUDD,
+                            vedtakId = 1,
+                        ),
                         roller =
-                            listOf(
-                                ROLLE_BM,
-                                ROLLE_BP,
-                                ROLLE_BA_1,
-                            ),
+                        listOf(
+                            ROLLE_BM,
+                            ROLLE_BP,
+                            ROLLE_BA_1,
+                        ),
                     ),
                 ),
                 List::class.java,
@@ -244,22 +244,22 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/forsendelse/init",
                 HttpMethod.POST,
                 HttpEntity(
-                    InitalizeForsendelseRequest(
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                         saksnummer = SAKSNUMMER,
-                        behandlingStatus = BehandlingStatus.FEILREGISTRERT,
+                        behandlingStatus = no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus.FEILREGISTRERT,
                         enhet = BidragEnhet.ENHET_FARSKAP,
                         behandlingInfo =
-                            BehandlingInfoDto(
-                                soknadId = SOKNAD_ID,
-                                stonadType = Stønadstype.FORSKUDD,
-                                vedtakId = 1,
-                            ),
+                        no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                            soknadId = SOKNAD_ID,
+                            stonadType = Stønadstype.FORSKUDD,
+                            vedtakId = 1,
+                        ),
                         roller =
-                            listOf(
-                                ROLLE_BM,
-                                ROLLE_BP,
-                                ROLLE_BA_1,
-                            ),
+                        listOf(
+                            ROLLE_BM,
+                            ROLLE_BP,
+                            ROLLE_BA_1,
+                        ),
                     ),
                 ),
                 List::class.java,

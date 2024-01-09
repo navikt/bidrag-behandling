@@ -6,10 +6,10 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OppdatereInntekterRequest
-import no.nav.bidrag.behandling.dto.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
+import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -53,7 +53,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
-                    BehandlingDto::class.java,
+                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
                 )
 
             // then
@@ -76,7 +76,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
-                    BehandlingDto::class.java,
+                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
                 )
 
             // then
@@ -108,14 +108,14 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
-                        OppdaterBehandlingRequest(
+                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                             inntekter =
-                                OppdatereInntekterRequest(
-                                    inntekter = setOf(inn),
-                                ),
+                            no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                                inntekter = setOf(inn),
+                            ),
                         ),
                     ),
-                    BehandlingDto::class.java,
+                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
                 )
 
             // then
@@ -153,16 +153,16 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
-                        OppdaterBehandlingRequest(
+                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                             inntekter =
-                                OppdatereInntekterRequest(
-                                    setOf(inntekt1, inntekt2),
-                                    setOf(),
-                                    setOf(),
-                                ),
+                            no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                                setOf(inntekt1, inntekt2),
+                                setOf(),
+                                setOf(),
+                            ),
                         ),
                     ),
-                    BehandlingDto::class.java,
+                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
                 )
 
             val inntekter = r1.body!!.inntekter!!
@@ -192,16 +192,16 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUri()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
-                        OppdaterBehandlingRequest(
+                        no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                             inntekter =
-                                OppdatereInntekterRequest(
-                                    emptySet(),
-                                    emptySet(),
-                                    emptySet(),
-                                ),
+                            no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest(
+                                emptySet(),
+                                emptySet(),
+                                emptySet(),
+                            ),
                         ),
                     ),
-                    BehandlingDto::class.java,
+                    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
                 )
 
             // then
@@ -211,7 +211,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     }
 
     private fun testInntektDto() =
-        InntektDto(
+        no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
             null,
             true,
             Inntektsrapportering.DAGPENGER,

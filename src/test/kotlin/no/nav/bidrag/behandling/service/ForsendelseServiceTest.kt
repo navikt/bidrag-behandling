@@ -13,9 +13,9 @@ import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingStatus
-import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
+import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BM
 import no.nav.bidrag.behandling.utils.ROLLE_BP
@@ -56,21 +56,21 @@ class ForsendelseServiceTest {
     fun `Skal opprette forsendelse for behandling med tema FAR når enhet er farskap`() {
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.FORSKUDD,
-                        vedtakType = Vedtakstype.KLAGE,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.FORSKUDD,
+                    vedtakType = Vedtakstype.KLAGE,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
@@ -88,21 +88,21 @@ class ForsendelseServiceTest {
     fun `Skal opprette forsendelse for gebyr behandling for bidragsmottaker`() {
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        engangsBelopType = Engangsbeløptype.GEBYR_MOTTAKER,
-                        vedtakType = Vedtakstype.ENDRING,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    engangsBelopType = Engangsbeløptype.GEBYR_MOTTAKER,
+                    vedtakType = Vedtakstype.ENDRING,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
@@ -118,21 +118,21 @@ class ForsendelseServiceTest {
     fun `Skal opprette forsendelse for gebyr behandling for bidragspliktig`() {
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        engangsBelopType = Engangsbeløptype.GEBYR_SKYLDNER,
-                        vedtakType = Vedtakstype.ENDRING,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    engangsBelopType = Engangsbeløptype.GEBYR_SKYLDNER,
+                    vedtakType = Vedtakstype.ENDRING,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
@@ -148,21 +148,21 @@ class ForsendelseServiceTest {
     fun `Skal opprette forsendelse for behandling med tema BID når enhet er farskap men person ikke har tilgang`() {
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns false
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.BIDRAG,
-                        vedtakType = Vedtakstype.FASTSETTELSE,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.BIDRAG,
+                    vedtakType = Vedtakstype.FASTSETTELSE,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 2) {
@@ -177,21 +177,21 @@ class ForsendelseServiceTest {
     @Test
     fun `Skal opprette forsendelse for behandling med type FORSKUDD og vedtakType KLAGE`() {
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.FORSKUDD,
-                        vedtakType = Vedtakstype.KLAGE,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.FORSKUDD,
+                    vedtakType = Vedtakstype.KLAGE,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
@@ -216,21 +216,21 @@ class ForsendelseServiceTest {
     @Test
     fun `Skal opprette forsendelse for behandling med type BIDRAG`() {
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.BIDRAG,
-                        vedtakType = Vedtakstype.FASTSETTELSE,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.BIDRAG,
+                    vedtakType = Vedtakstype.FASTSETTELSE,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 2) {
@@ -267,21 +267,21 @@ class ForsendelseServiceTest {
     @Test
     fun `Skal opprette forsendelse for behandling med type BIDRAG 18 år`() {
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.BIDRAG18AAR,
-                        vedtakType = Vedtakstype.FASTSETTELSE,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.BIDRAG18AAR,
+                    vedtakType = Vedtakstype.FASTSETTELSE,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
 
@@ -327,21 +327,21 @@ class ForsendelseServiceTest {
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
 
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.FORSKUDD,
-                        vedtakType = Vedtakstype.FASTSETTELSE,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.FORSKUDD,
+                    vedtakType = Vedtakstype.FASTSETTELSE,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
 
@@ -355,21 +355,21 @@ class ForsendelseServiceTest {
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
 
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.FORSKUDD,
-                        vedtakType = Vedtakstype.ENDRING,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.FORSKUDD,
+                    vedtakType = Vedtakstype.ENDRING,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
 
@@ -388,22 +388,22 @@ class ForsendelseServiceTest {
                 opprettForsendelseResponsUnderOpprettelse(4).copy(forsendelseType = ForsendelseTypeTo.NOTAT),
             )
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.BIDRAG,
-                        vedtakType = Vedtakstype.FASTSETTELSE,
-                        erFattetBeregnet = true,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.BIDRAG,
+                    vedtakType = Vedtakstype.FASTSETTELSE,
+                    erFattetBeregnet = true,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
 
@@ -457,23 +457,23 @@ class ForsendelseServiceTest {
                 opprettForsendelseResponsUnderOpprettelse(4).copy(forsendelseType = ForsendelseTypeTo.NOTAT),
             )
         val request =
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = SAKSNUMMER,
                 enhet = "4806",
-                behandlingStatus = BehandlingStatus.FEILREGISTRERT,
+                behandlingStatus = no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus.FEILREGISTRERT,
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
-                        stonadType = Stønadstype.BIDRAG,
-                        vedtakType = Vedtakstype.FASTSETTELSE,
-                        erFattetBeregnet = true,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    soknadId = SOKNAD_ID,
+                    stonadType = Stønadstype.BIDRAG,
+                    vedtakType = Vedtakstype.FASTSETTELSE,
+                    erFattetBeregnet = true,
+                ),
                 roller =
-                    listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
-                    ),
+                listOf(
+                    ROLLE_BM,
+                    ROLLE_BP,
+                    ROLLE_BA_1,
+                ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 0) {

@@ -2,10 +2,10 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import org.junit.jupiter.api.Assertions
@@ -26,17 +26,17 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
             behandlingService.opprettBehandling(BehandlingServiceTest.prepareBehandling())
 
         val req =
-            OppdaterBehandlingRequest(
+            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                 virkningstidspunkt =
-                    OppdaterVirkningstidspunkt(
-                        årsak = ForskuddAarsakType.KF,
-                        virkningsdato = LocalDate.parse("2025-12-27"),
-                        notat =
-                            OppdaterNotat(
-                                "KUN I NOTAT",
-                                "MED I VEDTAK",
-                            ),
+                no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt(
+                    årsak = ForskuddAarsakType.KF,
+                    virkningsdato = LocalDate.parse("2025-12-27"),
+                    notat =
+                    no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat(
+                        "KUN I NOTAT",
+                        "MED I VEDTAK",
                     ),
+                ),
             )
 
         val respons =
@@ -44,7 +44,7 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
                 HttpEntity(req),
-                BehandlingDto::class.java,
+                no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, respons.statusCode)
 

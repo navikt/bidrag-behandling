@@ -2,16 +2,16 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.BehandlingNotatDto
-import no.nav.bidrag.behandling.dto.behandling.BoforholdDto
-import no.nav.bidrag.behandling.dto.behandling.InntekterDto
-import no.nav.bidrag.behandling.dto.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.behandling.VirkningstidspunktDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
+import no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 
 fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =
-    BehandlingDto(
+    no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto(
         id = id!!,
         vedtakstype = vedtakstype,
         stønadstype = stonadstype,
@@ -24,49 +24,49 @@ fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =
         søknadsid = soknadsid,
         behandlerenhet = behandlerEnhet,
         roller =
-            roller.map {
-                RolleDto(
-                    it.id!!,
-                    it.rolletype,
-                    it.ident,
-                    it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.foedselsdato,
-                )
-            }.toSet(),
+        roller.map {
+            no.nav.bidrag.behandling.dto.v1.behandling.RolleDto(
+                it.id!!,
+                it.rolletype,
+                it.ident,
+                it.navn ?: hentPersonVisningsnavn(it.ident),
+                it.foedselsdato,
+            )
+        }.toSet(),
         søknadRefId = soknadRefId,
         grunnlagspakkeid = grunnlagspakkeid,
         virkningstidspunkt =
-            VirkningstidspunktDto(
-                virkningsdato = virkningsdato,
-                årsak = aarsak,
-                notat =
-                    BehandlingNotatDto(
-                        medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
-                    ),
+        no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto(
+            virkningsdato = virkningsdato,
+            årsak = aarsak,
+            notat =
+            no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
+                medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                kunINotat = virkningstidspunktbegrunnelseKunINotat,
             ),
+        ),
         boforhold =
-            BoforholdDto(
-                husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
-                sivilstand = sivilstand.toSivilstandDto(),
-                notat =
-                    BehandlingNotatDto(
-                        medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                        kunINotat = boforholdsbegrunnelseKunINotat,
-                    ),
+        no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto(
+            husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
+            sivilstand = sivilstand.toSivilstandDto(),
+            notat =
+            no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
+                medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                kunINotat = boforholdsbegrunnelseKunINotat,
             ),
+        ),
         inntekter =
-            InntekterDto(
-                inntekter = inntekter.toInntektDto(),
-                utvidetbarnetrygd = utvidetBarnetrygd.toUtvidetBarnetrygdDto(),
-                barnetillegg = barnetillegg.toBarnetilleggDto(),
-                småbarnstillegg = emptySet(),
-                kontantstøtte = emptySet(),
-                notat =
-                    BehandlingNotatDto(
-                        medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                        kunINotat = inntektsbegrunnelseKunINotat,
-                    ),
+        no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto(
+            inntekter = inntekter.toInntektDto(),
+            utvidetbarnetrygd = utvidetBarnetrygd.toUtvidetBarnetrygdDto(),
+            barnetillegg = barnetillegg.toBarnetilleggDto(),
+            småbarnstillegg = emptySet(),
+            kontantstøtte = emptySet(),
+            notat =
+            no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto(
+                medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+                kunINotat = inntektsbegrunnelseKunINotat,
             ),
+        ),
         opplysninger = opplysninger.map(Grunnlag::toDto),
     )

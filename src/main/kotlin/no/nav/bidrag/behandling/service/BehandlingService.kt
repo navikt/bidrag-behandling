@@ -8,13 +8,13 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
-import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
@@ -47,7 +47,7 @@ class BehandlingService(
                 it
             }
 
-    fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
+    fun opprettBehandling(opprettBehandling: no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest): no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse {
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
                 ingenVoksneUtenIdent(opprettBehandling.roller),
@@ -55,8 +55,8 @@ class BehandlingService(
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
-            "${OpprettBehandlingRequest::stønadstype.name} " +
-                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
+            "${no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest::stønadstype.name} " +
+                "eller ${no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -97,25 +97,25 @@ class BehandlingService(
                 "og søknadFra ${opprettBehandling.søknadFra} " +
                 "med id ${behandlingDo.id} "
         }
-        return OpprettBehandlingResponse(behandlingDo.id!!)
+        return no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
     private fun opprettForsendelseForBehandling(behandling: Behandling) {
         forsendelseService.slettEllerOpprettForsendelse(
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = behandling.saksnummer,
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        behandlingId = behandling.id,
-                        soknadId = behandling.soknadsid,
-                        soknadFra = behandling.soknadFra,
-                        behandlingType = behandling.tilBehandlingstype(),
-                        stonadType = behandling.stonadstype,
-                        engangsBelopType = behandling.engangsbeloptype,
-                        vedtakType = behandling.vedtakstype,
-                    ),
+                no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    behandlingId = behandling.id,
+                    soknadId = behandling.soknadsid,
+                    soknadFra = behandling.soknadFra,
+                    behandlingType = behandling.tilBehandlingstype(),
+                    stonadType = behandling.stonadstype,
+                    engangsBelopType = behandling.engangsbeloptype,
+                    vedtakType = behandling.vedtakstype,
+                ),
             ),
         )
     }
@@ -125,8 +125,8 @@ class BehandlingService(
     @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
-        oppdaterBehandling: OppdaterBehandlingRequest,
-    ): BehandlingDto =
+        oppdaterBehandling: no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest,
+    ): no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto =
         behandlingRepository.save(
             behandlingRepository.findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
@@ -193,7 +193,7 @@ class BehandlingService(
     @Transactional
     fun syncRoller(
         behandlingId: Long,
-        roller: List<OpprettRolleDto>,
+        roller: List<no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>,
     ) {
         val existingRoller = rolleRepository.findRollerByBehandlingId(behandlingId)
 
@@ -221,12 +221,12 @@ class BehandlingService(
         val grunnlagspakke = bidragGrunnlagConsumer.henteGrunnlagspakke(grunlagspakkeid)
     }
 
-    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
+    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>): Boolean {
         return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
             .none { r -> r.navn.isNullOrBlank() }
     }
 
-    private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
+    private fun ingenVoksneUtenIdent(roller: Set<no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto>): Boolean {
         return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
     }
 }

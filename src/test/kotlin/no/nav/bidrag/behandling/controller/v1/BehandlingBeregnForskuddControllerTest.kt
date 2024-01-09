@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
 import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
@@ -43,7 +43,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                ResultatForskuddsberegning::class.java,
+                no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning::class.java,
             )
 
         // then
@@ -65,7 +65,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                ResultatForskuddsberegning::class.java,
+                no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning::class.java,
             )
 
         // then
@@ -98,7 +98,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUri()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                ResultatForskuddsberegning::class.java,
+                no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning::class.java,
             )
 
         // then

@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
-import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
+import no.nav.bidrag.behandling.dto.v1.forsendelse.OpprettForsendelseForespørsel
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.dokument.AvvikType
 import no.nav.bidrag.transport.dokument.Avvikshendelse
@@ -19,7 +19,7 @@ class BidragForsendelseConsumer(
     private val bidragForsendelsedUri get() =
         UriComponentsBuilder.fromUri(bidragForsnendelseUrl).pathSegment("api").pathSegment("forsendelse")
 
-    fun opprettForsendelse(payload: OpprettForsendelseForespørsel): OpprettForsendelseRespons =
+    fun opprettForsendelse(payload: no.nav.bidrag.behandling.dto.v1.forsendelse.OpprettForsendelseForespørsel): OpprettForsendelseRespons =
         postForNonNullEntity(bidragForsendelsedUri.build().toUri(), payload)
 
     fun hentForsendelserISak(saksnummer: String): List<ForsendelseResponsTo> =

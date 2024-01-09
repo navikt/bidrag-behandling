@@ -9,9 +9,9 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.validere
-import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
-import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegningBarn
-import no.nav.bidrag.behandling.dto.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.transformers.tilBeregnGrunnlag
 import no.nav.bidrag.behandling.valideringAvBehandlingFeilet
@@ -28,14 +28,15 @@ private val LOGGER = KotlinLogging.logger {}
 
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
-private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), foedselsdato)
+private fun Rolle.mapTilResultatBarn() =
+    no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle(tilPersonident(), hentNavn(), foedselsdato)
 
 @Service
 class BeregningService(
     private val behandlingService: BehandlingService,
     private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
 ) {
-    fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
+    fun beregneForskudd(behandlingsid: Long): no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning {
         val respons =
             either {
                 val behandling =
@@ -64,7 +65,7 @@ class BeregningService(
                             behandling.tilBeregnGrunnlag(bm, søknadsbarn, øvrigeBarnIHusstand)
 
                         try {
-                            ResultatForskuddsberegningBarn(
+                            no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn(
                                 it.mapTilResultatBarn(),
                                 bidragBeregnForskuddConsumer.beregnForskudd(beregnForskudd),
                             )
@@ -97,7 +98,7 @@ class BeregningService(
             }
         }
 
-        return ResultatForskuddsberegning(respons.getOrNull() ?: emptyList())
+        return no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning(respons.getOrNull() ?: emptyList())
     }
 
     private fun oppretteGrunnlagForHusstandsbarn(

@@ -3,12 +3,11 @@ package no.nav.bidrag.behandling.controller.v1
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
-import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.ForsendelseService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
-@BehandlingRestControllerV1
+@BehandlingRestController
 class ForsendelseController(private val forsendelseService: ForsendelseService) {
     @Suppress("unused")
     @PostMapping("/forsendelse/init")
@@ -21,7 +20,7 @@ class ForsendelseController(private val forsendelseService: ForsendelseService) 
     fun opprettForsendelse(
         @Valid
         @RequestBody(required = true)
-        request: InitalizeForsendelseRequest,
+        request: no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest,
     ): List<String> {
         return forsendelseService.slettEllerOpprettForsendelse(request)
     }

@@ -9,7 +9,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.util.visningsnavn
 import org.springframework.web.bind.annotation.GetMapping
 
-@BehandlingRestControllerV1
+@BehandlingRestController
 class VisningsnavnController {
     @Suppress("unused")
     @GetMapping("/visningsnavn")
