@@ -18,14 +18,11 @@ import java.time.LocalDate
 @Entity(name = "inntekt")
 class Inntekt(
     @Enumerated(EnumType.STRING)
-    val type: Inntektsrapportering,
-    val beløp: BigDecimal,
+    val inntektsrapportering: Inntektsrapportering,
+    val belop: BigDecimal,
     val datoFom: LocalDate,
     val datoTom: LocalDate?,
-    val opprinneligFom: LocalDate?,
-    val opprinneligTom: LocalDate?,
     val ident: String,
-    val gjelderBarn: String,
     @Enumerated(EnumType.STRING)
     val kilde: Kilde,
     val taMed: Boolean,
@@ -37,4 +34,7 @@ class Inntekt(
     val behandling: Behandling? = null,
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.ALL], orphanRemoval = true)
     var inntektsposter: MutableSet<Inntektspost> = mutableSetOf(),
+    val gjelderBarn: String? = null,
+    val opprinneligFom: LocalDate? = null,
+    val opprinneligTom: LocalDate? = null,
 )

@@ -17,10 +17,9 @@ import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
 import no.nav.bidrag.behandling.transformers.toDomain
-import no.nav.bidrag.behandling.transformers.toInntektDomain
+import no.nav.bidrag.behandling.transformers.tilInntekt
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
-import no.nav.bidrag.behandling.transformers.toUtvidetBarnetrygdDomain
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -140,16 +139,16 @@ class BehandlingService(
                         log.info { "Oppdaterer inntekter for behandling $behandlingsid" }
                         inntekter.inntekter?.run {
                             it.inntekter.clear()
-                            it.inntekter.addAll(inntekter.inntekter.toInntektDomain(it))
+                            it.inntekter.addAll(inntekter.inntekter.tilInntekt(it))
                         }
                         inntekter.barnetillegg?.run {
                             it.barnetillegg.clear()
-                            it.barnetillegg.addAll(inntekter.barnetillegg.toBarnetilleggDomain(it))
+                            it.barnetillegg.addAll(inntekter.barnetillegg.tilInntekt(it))
                         }
                         inntekter.utvidetbarnetrygd?.run {
                             it.utvidetBarnetrygd.clear()
                             it.utvidetBarnetrygd.addAll(
-                                inntekter.utvidetbarnetrygd.toUtvidetBarnetrygdDomain(
+                                inntekter.utvidetbarnetrygd.tilInntekt(
                                     it,
                                 ),
                             )
