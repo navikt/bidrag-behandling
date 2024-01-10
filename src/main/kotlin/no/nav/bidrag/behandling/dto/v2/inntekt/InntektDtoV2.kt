@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -36,5 +35,5 @@ data class InntektDtoV2(
     @Schema(required = true)
     val kilde: Kilde,
     @Schema(required = true)
-    val inntektsposter: Set<InntektPost>,
+    val inntektsposter: Set<InntektspostDtoV2>,
 )
