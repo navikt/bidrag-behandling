@@ -217,6 +217,6 @@ fun no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto.toRolle(behandlin
         rolletype = this.rolletype,
         this.ident?.verdi,
         this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-        ?: rolleManglerFødselsdato(rolletype),
+            ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
     )
