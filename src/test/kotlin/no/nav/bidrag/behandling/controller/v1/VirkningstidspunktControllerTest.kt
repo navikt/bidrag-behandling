@@ -2,10 +2,10 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import org.junit.jupiter.api.Assertions

@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
-import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
+import no.nav.bidrag.behandling.dto.v1.forsendelse.OpprettForsendelseForespørsel
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.dokument.AvvikType
 import no.nav.bidrag.transport.dokument.Avvikshendelse

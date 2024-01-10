@@ -5,7 +5,7 @@ import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.dto.notat.NotatDto
+import no.nav.bidrag.behandling.dto.v1.notat.NotatDto
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBarn1

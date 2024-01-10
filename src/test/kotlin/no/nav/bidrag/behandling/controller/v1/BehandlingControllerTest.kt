@@ -2,10 +2,10 @@ package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -286,7 +286,8 @@ class BehandlingControllerTest : KontrollerTestRunner() {
             )
 
         val vedtaksid: Long = 1
-        val oppdaterBehandlingRequest = OppdaterBehandlingRequest(vedtaksid = vedtaksid)
+        val oppdaterBehandlingRequest =
+            OppdaterBehandlingRequest(vedtaksid = vedtaksid)
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
