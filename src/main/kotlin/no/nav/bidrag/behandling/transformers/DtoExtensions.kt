@@ -10,12 +10,6 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
-import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
-import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
@@ -43,7 +37,7 @@ fun Set<no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto>.toSivilstandDo
 
 fun Set<Barnetillegg>.toBarnetilleggDto() =
     this.map {
-        no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto(
+        BarnetilleggDto(
             it.id,
             it.ident,
             // TODO: Sett dette til gjelderBarn ident
@@ -54,7 +48,7 @@ fun Set<Barnetillegg>.toBarnetilleggDto() =
         )
     }.toSet()
 
-fun Set<no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto>.toUtvidetBarnetrygdDomain(behandling: Behandling) =
+fun Set<UtvidetBarnetrygdDto>.toUtvidetBarnetrygdDomain(behandling: Behandling) =
     this.map {
         UtvidetBarnetrygd(
             behandling,
@@ -67,7 +61,7 @@ fun Set<no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto>.toUtvidetB
 
 fun Set<UtvidetBarnetrygd>.toUtvidetBarnetrygdDto() =
     this.map {
-        no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto(
+        UtvidetBarnetrygdDto(
             it.id,
             it.deltBosted,
             it.belop,
@@ -76,7 +70,7 @@ fun Set<UtvidetBarnetrygd>.toUtvidetBarnetrygdDto() =
         )
     }.toSet()
 
-fun Set<no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto>.toBarnetilleggDomain(behandling: Behandling) =
+fun Set<BarnetilleggDto>.toBarnetilleggDomain(behandling: Behandling) =
     this.map {
         Barnetillegg(
             behandling,
@@ -156,7 +150,7 @@ fun Set<no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto>.toDomain
         barn
     }.toMutableSet()
 
-fun Set<no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto>.toInntektDomain(behandling: Behandling) =
+fun Set<InntektDto>.toInntektDomain(behandling: Behandling) =
     this.map {
         val inntekt =
             Inntekt(
@@ -186,7 +180,7 @@ fun Set<Inntektspost>.toInntektPost() =
 
 fun Set<Inntekt>.toInntektDto() =
     this.map {
-        no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto(
+        InntektDto(
             it.id,
             it.taMed,
             it.inntektstype,
@@ -223,6 +217,6 @@ fun no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto.toRolle(behandlin
         rolletype = this.rolletype,
         this.ident?.verdi,
         this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-            ?: rolleManglerFødselsdato(rolletype),
+        ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
     )
