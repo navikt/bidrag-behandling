@@ -6,6 +6,6 @@ import java.math.BigDecimal
 data class InntektspostDtoV2(
     val kode: String,
     val visningsnavn: String,
-    val inntektstyper: Set<Inntektstype>,
-    val beløp: BigDecimal,
+    val inntektstype: Inntektstype,
+    val beløp: BigDecimal?,
 )

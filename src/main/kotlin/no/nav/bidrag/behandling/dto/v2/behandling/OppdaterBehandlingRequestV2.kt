@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 
 data class OppdaterBehandlingRequestV2(
     val grunnlagspakkeId: Long? = null,
@@ -23,6 +24,6 @@ For `inntekter`,
 """,
 )
 data class OppdatereInntekterRequestV2(
-    val inntekter: Set<InntektDto>? = null,
+    val inntekter: Set<InntektDtoV2>? = null,
     val notat: OppdaterNotat? = null,
 )
