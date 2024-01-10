@@ -18,12 +18,16 @@ import java.time.LocalDate
 @Entity(name = "inntekt")
 class Inntekt(
     @Enumerated(EnumType.STRING)
-    val inntektstype: Inntektsrapportering,
-    val belop: BigDecimal,
+    val type: Inntektsrapportering,
+    val beløp: BigDecimal,
     val datoFom: LocalDate,
     val datoTom: LocalDate?,
+    val opprinneligFom: LocalDate?,
+    val opprinneligTom: LocalDate?,
     val ident: String,
-    val fraGrunnlag: Boolean,
+    val gjelderBarn: String,
+    @Enumerated(EnumType.STRING)
+    val kilde: Kilde,
     val taMed: Boolean,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

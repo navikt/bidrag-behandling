@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigDecimal
 import java.time.LocalDate
 
-// TODO: Ikke sett gjelderBarn lik ident etter depractated apier er fjernet. Dette gjøres for bakoverkompatibilitet
+@Deprecated("Bruk InntektDto")
 data class BarnetilleggDto(
     val id: Long? = null,
     @Schema(
