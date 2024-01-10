@@ -14,7 +14,7 @@ data class InntektDtoV2(
     @Schema(required = true)
     val taMed: Boolean,
     @Schema(required = true)
-    val inntektstype: Inntektsrapportering,
+    val type: Inntektsrapportering,
     @Schema(required = true)
     val beløp: BigDecimal,
     @Schema(type = "string", format = "date", example = "2024-01-01")
