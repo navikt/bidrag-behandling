@@ -1,16 +1,15 @@
 package no.nav.bidrag.behandling.controller.v1
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OppdaterRollerRequest
-import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
@@ -19,8 +18,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-
-private val LOGGER = KotlinLogging.logger {}
 
 @BehandlingRestControllerV1
 class BehandlingController(

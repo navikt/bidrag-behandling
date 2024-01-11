@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
-import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagsdataDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.toDto
 import org.springframework.web.bind.annotation.PathVariable

@@ -6,12 +6,12 @@ import no.nav.bidrag.behandling.consumer.BidragForsendelseConsumer
 import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingStatus
-import no.nav.bidrag.behandling.dto.forsendelse.ForsendelseRolleDto
-import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
-import no.nav.bidrag.behandling.dto.forsendelse.MottakerDto
-import no.nav.bidrag.behandling.dto.forsendelse.OpprettForsendelseForespørsel
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
+import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.v1.forsendelse.MottakerDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.OpprettForsendelseForespørsel
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -149,7 +149,8 @@ class ForsendelseService(
     }
 }
 
-class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mutableListOf() {
+class OpprettForsendelseForRollerListe :
+    MutableList<ForsendelseRolleDto> by mutableListOf() {
     fun leggTil(rolle: ForsendelseRolleDto?) {
         if (rolle?.fødselsnummer == null) return
         val fødselsnummer = rolle.fødselsnummer
@@ -159,6 +160,12 @@ class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mut
 
 fun BehandlingInfoDto.typeForsendelse() = if (this.erVedtakFattet()) "vedtak" else "varsel"
 
-fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? = this.find { it.type == rolleType }
+fun List<ForsendelseRolleDto>.hentRolle(rolleType: Rolletype): ForsendelseRolleDto? =
+    this.find {
+        it.type == rolleType
+    }
 
-fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> = this.filter { it.type == Rolletype.BARN }
+fun List<ForsendelseRolleDto>.hentBarn(): List<ForsendelseRolleDto> =
+    this.filter {
+        it.type == Rolletype.BARN
+    }

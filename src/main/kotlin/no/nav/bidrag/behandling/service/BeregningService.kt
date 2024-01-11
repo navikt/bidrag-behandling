@@ -10,9 +10,9 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.validere
-import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
-import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegningBarn
-import no.nav.bidrag.behandling.dto.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.transformers.tilBeregnGrunnlag
 import no.nav.bidrag.behandling.valideringAvBehandlingFeilet

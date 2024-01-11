@@ -2,12 +2,12 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.BehandlingNotatDto
-import no.nav.bidrag.behandling.dto.behandling.BoforholdDto
-import no.nav.bidrag.behandling.dto.behandling.InntekterDto
-import no.nav.bidrag.behandling.dto.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.behandling.VirkningstidspunktDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
+import no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 
 fun Behandling.tilBehandlingDto(opplysninger: List<Grunnlag>) =

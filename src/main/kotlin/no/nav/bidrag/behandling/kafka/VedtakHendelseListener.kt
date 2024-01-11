@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
-import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.transformers.behandlingId
@@ -44,7 +44,7 @@ class VedtakHendelseListener(
 
         behandlingService.oppdaterBehandling(
             vedtak.behandlingId!!,
-            OppdaterBehandlingRequest(
+            no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest(
                 vedtaksid = vedtak.id.toLong(),
             ),
         ) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
@@ -56,11 +56,11 @@ class VedtakHendelseListener(
         behandling: Behandling,
     ) {
         forsendelseService.slettEllerOpprettForsendelse(
-            InitalizeForsendelseRequest(
+            no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer,
                 enhet = vedtak.enhetsnummer?.verdi,
                 behandlingInfo =
-                    BehandlingInfoDto(
+                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
                         soknadId = vedtak.søknadsid ?: behandling.soknadsid,
                         vedtakId = vedtak.id.toLong(),
                         soknadFra = behandling.soknadFra,

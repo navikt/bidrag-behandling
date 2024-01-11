@@ -1,14 +1,14 @@
 package no.nav.bidrag.behandling.controller.v1
 
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.behandling.dto.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.behandling.OppdaterBoforholdRequest
-import no.nav.bidrag.behandling.dto.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnDto
-import no.nav.bidrag.behandling.dto.husstandsbarn.HusstandsbarnperiodeDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident

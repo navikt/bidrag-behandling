@@ -13,9 +13,9 @@ import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingInfoDto
-import no.nav.bidrag.behandling.dto.forsendelse.BehandlingStatus
-import no.nav.bidrag.behandling.dto.forsendelse.InitalizeForsendelseRequest
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
+import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BM
 import no.nav.bidrag.behandling.utils.ROLLE_BP

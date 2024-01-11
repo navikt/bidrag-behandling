@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
 import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
@@ -28,6 +28,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal beregne forskudd for validert behandling`() {
         stubUtils.stubBeregneForskudd()
+
         // given
         val behandling = opprettGyldigBehandlingForBeregning()
 

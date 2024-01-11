@@ -3,9 +3,9 @@ package no.nav.bidrag.behandling.controller.v1
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
-import no.nav.bidrag.behandling.dto.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.grunnlag.GrunnlagsdataDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
