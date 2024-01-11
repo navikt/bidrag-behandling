@@ -4,7 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
+=======
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
+>>>>>>> main
 
 data class OppdaterBehandlingRequestV2(
     val grunnlagspakkeId: Long? = null,
@@ -23,6 +27,10 @@ For `inntekter`,
 """,
 )
 data class OppdatereInntekterRequestV2(
+<<<<<<< HEAD
     val inntekter: Set<InntektDto>? = null,
+=======
+    val inntekter: Set<InntektDtoV2>? = null,
+>>>>>>> main
     val notat: OppdaterNotat? = null,
 )

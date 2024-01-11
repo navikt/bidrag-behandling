@@ -9,11 +9,15 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
+=======
+import no.nav.bidrag.behandling.database.datamodell.UtvidetBarnetrygd
+>>>>>>> main
 import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
@@ -26,7 +30,7 @@ import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 
 fun Set<Sivilstand>.toSivilstandDto() =
     this.map {
-        SivilstandDto(
+        no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto(
             it.id,
             it.datoFom,
             it.datoTom,
@@ -35,14 +39,14 @@ fun Set<Sivilstand>.toSivilstandDto() =
         )
     }.sortedBy { it.datoFom }.toSet()
 
-fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
+fun Set<no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     this.map {
         Sivilstand(behandling, it.datoFom, it.datoTom, it.sivilstand, it.kilde, it.id)
     }.toMutableSet()
 
 fun Set<Husstandsbarnperiode>.toHusstandsBarnPeriodeDto() =
     this.map {
-        HusstandsbarnperiodeDto(
+        no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto(
             it.id,
             it.datoFom,
             it.datoTom,
@@ -51,7 +55,7 @@ fun Set<Husstandsbarnperiode>.toHusstandsBarnPeriodeDto() =
         )
     }.toSet()
 
-fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
+fun Set<no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
     this.map {
         Husstandsbarnperiode(
             husstandsBarn,
@@ -62,7 +66,7 @@ fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
         )
     }.toSet()
 
-fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<HusstandsbarnDto> {
+fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto> {
     val identerSøknadsbarn = behandling.getSøknadsbarn().map { sb -> sb.ident!! }.toSet()
 
     val søknadsbarn =
@@ -83,8 +87,8 @@ fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<Husstands
     return søknadsbarn + ikkeSøknadsbarnMenErMedISaken + andreHusstandsbarn
 }
 
-fun Husstandsbarn.toDto(): HusstandsbarnDto =
-    HusstandsbarnDto(
+fun Husstandsbarn.toDto(): no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto =
+    no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto(
         this.id,
         this.medISaken,
         this.perioder.toHusstandsBarnPeriodeDto().sortedBy { periode -> periode.datoFom }.toSet(),
@@ -93,7 +97,7 @@ fun Husstandsbarn.toDto(): HusstandsbarnDto =
         this.foedselsdato,
     )
 
-fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
+fun Set<no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto>.toDomain(behandling: Behandling) =
     this.map {
         val barn =
             Husstandsbarn(
@@ -183,8 +187,8 @@ fun Set<Inntekt>.toInntektDto() =
         )
     }.toSet()
 
-fun Grunnlag.toDto(): GrunnlagsdataDto {
-    return GrunnlagsdataDto(
+fun Grunnlag.toDto(): no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto {
+    return no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto(
         this.id!!,
         this.behandling.id!!,
         this.type,
@@ -201,7 +205,7 @@ fun Behandling.tilForsendelseRolleDto() =
         )
     }
 
-fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
+fun no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
     Rolle(
         behandling,
         rolletype = this.rolletype,

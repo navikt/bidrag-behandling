@@ -4,8 +4,13 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+<<<<<<< HEAD
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
+=======
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
+import no.nav.bidrag.domene.ident.Personident
+>>>>>>> main
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -14,7 +19,11 @@ data class InntektDtoV2(
     @Schema(required = true)
     val taMed: Boolean,
     @Schema(required = true)
+<<<<<<< HEAD
     val type: Inntektsrapportering,
+=======
+    val rapporteringstype: Inntektsrapportering,
+>>>>>>> main
     @Schema(required = true)
     val beløp: BigDecimal,
     @Schema(type = "string", format = "date", example = "2024-01-01")
@@ -36,5 +45,11 @@ data class InntektDtoV2(
     @Schema(required = true)
     val kilde: Kilde,
     @Schema(required = true)
+<<<<<<< HEAD
     val inntektsposter: Set<InntektPost>,
+=======
+    val inntektsposter: Set<InntektspostDtoV2>,
+    @Schema(required = true)
+    val inntektstyper: Set<Inntektstype>,
+>>>>>>> main
 )
