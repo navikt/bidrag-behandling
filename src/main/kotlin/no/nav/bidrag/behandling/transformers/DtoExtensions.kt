@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -14,15 +13,13 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
-import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
-import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
-import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
+import java.math.BigDecimal
 
 fun Set<Sivilstand>.toSivilstandDto() =
     this.map {
@@ -108,78 +105,62 @@ fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
         barn
     }.toMutableSet()
 
-fun Set<InntektDto>.tilInntekt(behandling: Behandling) =
+fun Set<InntektDtoV2>.tilInntekt(behandling: Behandling) =
     this.map {
         val inntekt =
             Inntekt(
-                it.inntektstype,
-                it.beløp,
-                it.datoFom,
-                it.datoTom,
-                it.ident,
-                if (it.fraGrunnlag) Kilde.OFFENTLIG else Kilde.MANUELL,
-                it.taMed,
-                it.id,
-                behandling,
+                inntektsrapportering = it.rapporteringstype,
+                belop = it.beløp,
+                datoFom = it.datoFom,
+                datoTom = it.datoTom,
+                ident = it.ident.verdi,
+                gjelderBarn = it.gjelderBarn?.verdi,
+                kilde = it.kilde,
+                taMed = it.taMed,
+                id = it.id,
+                behandling = behandling,
             )
-        inntekt.inntektsposter = it.inntektsposter.toInntektPostDomain(inntekt).toMutableSet()
+        inntekt.inntektsposter = it.inntektsposter.tilInntektspost(inntekt).toMutableSet()
         inntekt
     }.toMutableSet()
 
-fun Set<BarnetilleggDto>.tilInntekt(behandling: Behandling) =
+fun Set<InntektspostDtoV2>.tilInntektspost(inntekt: Inntekt) =
     this.map {
-        Inntekt(
-            ident = it.ident,
-            gjelderBarn = it.gjelderBarn,
-            belop = it.barnetillegg,
-            datoFom = it.datoFom,
-            datoTom = it.datoTom,
-            behandling = behandling,
-            //TODO: Endre til Inntektsrapportering.BARNETILLEGG når denne er på plass
-            inntektsrapportering = Inntektsrapportering.PENSJON_KORRIGERT_BARNETILLEGG,
-            //TODO: Hente fra DTO når spesifisert
-            kilde = Kilde.MANUELL,
-            taMed = true,
+        Inntektspost(
+            it.beløp ?: BigDecimal.ZERO,
+            it.kode,
+            it.visningsnavn,
+            inntekt = inntekt,
+            inntektstype = it.inntektstype,
         )
     }
 
-fun Set<UtvidetBarnetrygdDto>.tilInntekt(behandling: Behandling) =
+fun Set<Inntektspost>.tilInntektspostDtoV2() =
     this.map {
-        Inntekt(
-            ident = behandling.roller.filter { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }.first().ident!!,
-            belop = it.beløp,
+        InntektspostDtoV2(
+            kode = it.kode,
+            visningsnavn = it.visningsnavn,
+            inntektstype = it.inntektstype,
+            beløp = it.beløp,
+        )
+    }
+
+fun Set<Inntekt>.tilInntektDtoV2() =
+    this.map {
+        InntektDtoV2(
+            id = it.id,
+            taMed = it.taMed,
+            rapporteringstype = it.inntektsrapportering,
+            beløp = it.belop,
             datoFom = it.datoFom,
             datoTom = it.datoTom,
-            behandling = behandling,
-            inntektsrapportering = Inntektsrapportering.UTVIDET_BARNETRYGD,
-            //TODO: Hente fra DTO når spesifisert
-            kilde = Kilde.MANUELL,
-            taMed = true,
-        )
-    }.toMutableSet()
-
-fun Set<InntektPost>.toInntektPostDomain(inntekt: Inntekt) =
-    this.map {
-        Inntektspost(it.beløp, it.kode, it.visningsnavn, inntekt = inntekt)
-    }.toSet()
-
-fun Set<Inntektspost>.toInntektPost() =
-    this.map {
-        InntektPost(it.kode, it.visningsnavn, it.beløp)
-    }.toSet()
-
-fun Set<Inntekt>.toInntektDto() =
-    this.map {
-        InntektDto(
-            it.id,
-            it.taMed,
-            it.inntektsrapportering,
-            it.belop,
-            it.datoFom,
-            it.datoTom,
-            it.ident,
-            it.kilde == Kilde.OFFENTLIG,
-            it.inntektsposter.toInntektPost(),
+            ident = Personident(it.ident),
+            gjelderBarn = it.gjelderBarn?.let { it1 -> Personident(it1) },
+            kilde = it.kilde,
+            inntektsposter = it.inntektsposter.tilInntektspostDtoV2().toSet(),
+            inntektstyper = it.inntektsrapportering.inneholderInntektstypeListe.toSet(),
+            opprinneligFom = it.opprinneligFom,
+            opprinneligTom = it.opprinneligTom,
         )
     }.toSet()
 
@@ -207,6 +188,6 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
         rolletype = this.rolletype,
         this.ident?.verdi,
         this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-        ?: rolleManglerFødselsdato(rolletype),
+            ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
     )

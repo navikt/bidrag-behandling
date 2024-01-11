@@ -13,6 +13,9 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
+import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
+import no.nav.bidrag.behandling.transformers.tilOppdaterBehandlingRequestV2
+import no.nav.bidrag.domene.ident.Personident
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -57,8 +60,15 @@ class BehandlingController(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
     ): BehandlingDto {
-        val behandling = behandlingService.oppdaterBehandling(behandlingId, request)
-        return behandling
+        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingId)
+        val personidentBm =
+            behandlingFørOppdatering.getBidragsmottaker()?.ident?.let { Personident(it) }
+                ?: throw IllegalArgumentException("Behandling mangler BM!")
+
+        val behandling =
+            behandlingService.oppdaterBehandling(behandlingId, request.tilOppdaterBehandlingRequestV2(personidentBm))
+
+        return behandling.tilBehandlingDto()
     }
 
     @Suppress("unused")
@@ -89,6 +99,6 @@ class BehandlingController(
     ): BehandlingDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val opplysninger = grunnlagService.hentAlleSistAktiv(behandlingId)
-        return behandling.tilBehandlingDto(opplysninger)
+        return behandling.tilBehandlingDtoV2(opplysninger).tilBehandlingDto()
     }
 }

@@ -19,7 +19,7 @@ data class KontantstøtteDto(
     val kontantstøtte: BigDecimal,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoFom: LocalDate?,
+    val datoFom: LocalDate,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,

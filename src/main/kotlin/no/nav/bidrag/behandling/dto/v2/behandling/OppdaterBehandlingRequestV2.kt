@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 
-
 data class OppdaterBehandlingRequestV2(
     val grunnlagspakkeId: Long? = null,
     val vedtaksid: Long? = null,

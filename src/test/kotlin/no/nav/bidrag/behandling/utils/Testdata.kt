@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -29,16 +30,16 @@ import java.time.YearMonth
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
 val ROLLE_BM =
-    no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto(
+    ForsendelseRolleDto(
         Personident("313213213"),
         type = Rolletype.BIDRAGSMOTTAKER,
     )
 val ROLLE_BA_1 =
-    no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto(Personident("1344124"), type = Rolletype.BARN)
+    ForsendelseRolleDto(Personident("1344124"), type = Rolletype.BARN)
 val ROLLE_BA_2 =
-    no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto(Personident("54545454545"), type = Rolletype.BARN)
+    ForsendelseRolleDto(Personident("54545454545"), type = Rolletype.BARN)
 val ROLLE_BP =
-    no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto(
+    ForsendelseRolleDto(
         Personident("213244124"),
         type = Rolletype.BIDRAGSPLIKTIG,
     )
@@ -110,7 +111,7 @@ fun opprettInntekt(
     LocalDate.now().minusYears(1).withDayOfYear(1),
     LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
     data[Rolle::ident.name] as String,
-    true,
+    Kilde.OFFENTLIG,
     true,
     behandling = behandling,
 )
@@ -125,7 +126,7 @@ fun opprettInntekter(
         LocalDate.parse("2023-01-01"),
         LocalDate.parse("2023-12-31"),
         data[Rolle::ident.name] as String,
-        true,
+        Kilde.OFFENTLIG,
         true,
         behandling = behandling,
     ),
@@ -135,7 +136,7 @@ fun opprettInntekter(
         LocalDate.parse("2023-01-01"),
         LocalDate.parse("2023-12-31"),
         data[Rolle::ident.name] as String,
-        true,
+        Kilde.OFFENTLIG,
         true,
         behandling = behandling,
     ),
@@ -145,7 +146,7 @@ fun opprettInntekter(
         LocalDate.parse("2022-01-01"),
         LocalDate.parse("2022-12-31"),
         data[Rolle::ident.name] as String,
-        false,
+        Kilde.MANUELL,
         true,
         behandling = behandling,
     ),
@@ -158,6 +159,7 @@ fun opprettInntektsposter(inntekt: Inntekt): MutableSet<Inntektspost> =
             "lønnFraFluefiske",
             "Lønn fra fluefiske",
             inntekt = inntekt,
+            inntektstype = Inntektstype.NÆRINGSINNTEKT,
         ),
     ).toMutableSet()
 
@@ -311,9 +313,9 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 datoFom = LocalDate.parse("2022-01-01"),
                 ident = behandling.getBidragsmottaker()!!.ident!!,
                 taMed = true,
-                fraGrunnlag = false,
+                kilde = Kilde.MANUELL,
                 behandling = behandling,
-                inntektstype = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                inntektsrapportering = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
                 id = if (generateId) (1).toLong() else null,
             ),
             Inntekt(
@@ -322,9 +324,9 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 datoFom = LocalDate.parse("2022-07-01"),
                 ident = behandling.getBidragsmottaker()!!.ident!!,
                 taMed = true,
-                fraGrunnlag = false,
+                kilde = Kilde.MANUELL,
                 behandling = behandling,
-                inntektstype = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 id = if (generateId) (2).toLong() else null,
             ),
             Inntekt(
@@ -333,9 +335,9 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 datoFom = LocalDate.parse("2022-01-01"),
                 ident = behandling.getBidragsmottaker()!!.ident!!,
                 taMed = false,
-                fraGrunnlag = true,
+                kilde = Kilde.OFFENTLIG,
                 behandling = behandling,
-                inntektstype = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                inntektsrapportering = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                 id = if (generateId) (3).toLong() else null,
             ),
         )
