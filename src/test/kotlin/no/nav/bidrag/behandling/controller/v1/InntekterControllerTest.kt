@@ -12,7 +12,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -138,8 +137,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     id = null,
                     inntektsposter =
                         setOf(
-                            InntektPost("ABC1", Inntektstype.LØNNSINNTEKT, beløp = BigDecimal.TEN, visningsnavn = "ABC1"),
-                            InntektPost("ABC2", visningsnavn = "ABC2", beløp = BigDecimal.TEN, inntekstype = Inntektstype.LØNNSINNTEKT),
+                            InntektPost("ABC1", beløp = BigDecimal.TEN, visningsnavn = "ABC1"),
+                            InntektPost("ABC2", visningsnavn = "ABC2", beløp = BigDecimal.TEN),
                         ),
                 )
 
@@ -221,6 +220,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
             LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
             "blablabla",
             true,
-            setOf(InntektPost(kode = "ABC", visningsnavn = "ABC", beløp = BigDecimal.TEN, inntekstype = Inntektstype.LØNNSINNTEKT)),
+            setOf(InntektPost(kode = "ABC", visningsnavn = "ABC", beløp = BigDecimal.TEN)),
         )
 }
