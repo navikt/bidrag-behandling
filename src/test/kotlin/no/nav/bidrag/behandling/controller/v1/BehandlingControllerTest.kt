@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.controller.v1
 
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
@@ -265,25 +266,42 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
     @Test
     fun `skal opprette en behandling og oppdatere vedtak id`() {
-        val behandling =
-            behandlingService.opprettBehandling(
-                Behandling(
-                    vedtakstype = Vedtakstype.FASTSETTELSE,
-                    LocalDate.now().minusMonths(5),
-                    LocalDate.now().plusMonths(5),
-                    LocalDate.now(),
-                    saksnummer = "2400000",
-                    123213L,
-                    null,
-                    "EN12",
-                    "Z9999",
-                    "Navn Navnesen",
-                    "bisys",
-                    SøktAvType.VERGE,
-                    Stønadstype.FORSKUDD,
-                    null,
+        var behandling =
+            Behandling(
+                vedtakstype = Vedtakstype.FASTSETTELSE,
+                LocalDate.now().minusMonths(5),
+                LocalDate.now().plusMonths(5),
+                LocalDate.now(),
+                saksnummer = "2400000",
+                123213L,
+                null,
+                "EN12",
+                "Z9999",
+                "Navn Navnesen",
+                "bisys",
+                SøktAvType.VERGE,
+                Stønadstype.FORSKUDD,
+                null,
+            )
+
+        behandling.roller =
+            mutableSetOf(
+                Rolle(
+                    ident = "12345678910",
+                    behandling = behandling,
+                    foedselsdato = LocalDate.now().minusMonths(133),
+                    rolletype = Rolletype.BARN,
+                ),
+                Rolle(
+                    ident = "12345678911",
+                    behandling = behandling,
+                    foedselsdato = LocalDate.now().minusMonths(333),
+                    rolletype = Rolletype.BIDRAGSMOTTAKER,
                 ),
             )
+
+        val lagretBehandling =
+            behandlingService.opprettBehandling(behandling)
 
         val vedtaksid: Long = 1
         val oppdaterBehandlingRequest =
@@ -291,13 +309,13 @@ class BehandlingControllerTest : KontrollerTestRunner() {
 
         val responseMedNull =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}",
+                "${rootUri()}/behandling/${lagretBehandling.id}",
                 HttpMethod.PUT,
                 HttpEntity(oppdaterBehandlingRequest),
                 BehandlingDto::class.java,
             )
         assertEquals(HttpStatus.OK, responseMedNull.statusCode)
-        assertEquals(vedtaksid, behandlingService.hentBehandlingById(behandling.id!!).vedtaksid)
+        assertEquals(vedtaksid, behandlingService.hentBehandlingById(lagretBehandling.id!!).vedtaksid)
     }
 
     @Test

@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -137,15 +138,15 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     id = null,
                     inntektsposter =
                         setOf(
-                            InntektPost("ABC1", "ABC1", BigDecimal.TEN),
-                            InntektPost("ABC2", "ABC2", BigDecimal.TEN),
+                            InntektPost("ABC1", Inntektstype.LØNNSINNTEKT, beløp = BigDecimal.TEN, visningsnavn = "ABC1"),
+                            InntektPost("ABC2", visningsnavn = "ABC2", beløp = BigDecimal.TEN, inntekstype = Inntektstype.LØNNSINNTEKT),
                         ),
                 )
 
             val inntekt2 =
                 testInntektDto().copy(
                     datoFom = LocalDate.now().minusMonths(5),
-                    inntektstype = Inntektsrapportering.INNTEKTSOPPLYSNINGER_ARBEIDSGIVER,
+                    inntektstype = Inntektsrapportering.LIGNINGSINNTEKT,
                 )
 
             val r1 =
@@ -172,7 +173,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             assertNotNull(inntekter.inntekter.find { it.inntektstype == Inntektsrapportering.DAGPENGER && it.inntektsposter.size == 2 })
             assertNotNull(
                 inntekter.inntekter.find {
-                    it.inntektstype == Inntektsrapportering.INNTEKTSOPPLYSNINGER_ARBEIDSGIVER &&
+                    it.inntektstype == Inntektsrapportering.LIGNINGSINNTEKT &&
                         it.inntektsposter.size == 1
                 },
             )
@@ -220,6 +221,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
             LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
             "blablabla",
             true,
-            setOf(InntektPost("ABC", "ABC", BigDecimal.TEN)),
+            setOf(InntektPost(kode = "ABC", visningsnavn = "ABC", beløp = BigDecimal.TEN, inntekstype = Inntektstype.LØNNSINNTEKT)),
         )
 }

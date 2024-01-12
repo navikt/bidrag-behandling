@@ -1,7 +1,5 @@
 package no.nav.bidrag.behandling.transformers
 
-import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto
@@ -18,10 +16,18 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import java.math.BigDecimal
+
+val rapporteringstyperSomIkkeSkalInkluderesIInntekt =
+    setOf(
+        Inntektsrapportering.BARNETILLEGG,
+        Inntektsrapportering.KONTANTSTØTTE,
+        Inntektsrapportering.SMÅBARNSTILLEGG,
+        Inntektsrapportering.UTVIDET_BARNETRYGD,
+    )
 
 fun BehandlingDtoV2.tilBehandlingDto() =
 
@@ -47,14 +53,6 @@ fun BehandlingDtoV2.tilBehandlingDto() =
     )
 
 fun InntekterDtoV2.tilInntekterDto(): InntekterDto {
-    val rapporteringstyperSomIkkeSkalInkluderesIInntekt =
-        setOf(
-            Inntektsrapportering.BARNETILLEGG,
-            Inntektsrapportering.KONTANTSTØTTE,
-            Inntektsrapportering.SMÅBARNSTILLEGG,
-            Inntektsrapportering.UTVIDET_BARNETRYGD,
-        )
-
     return InntekterDto(
         inntekter =
             inntekter.filter { !rapporteringstyperSomIkkeSkalInkluderesIInntekt.contains(it.rapporteringstype) }
@@ -132,19 +130,20 @@ fun OppdaterBehandlingRequest.tilOppdaterBehandlingRequestV2(personidentBm: Pers
 }
 
 fun OppdatereInntekterRequest.tilOppdatereInntekterRequestV2(personidentBm: Personident): OppdatereInntekterRequestV2 {
+    val inntekt = this.inntekter.orEmpty().map { i -> i.tilInntektDtoV2() }.toMutableSet()
     val barnetillegg = this.barnetillegg.orEmpty().map { bt -> bt.tilInntektDtoV2() }.toSet()
-    val kontantstøtte = this.kontantstøtte.orEmpty().map { bt -> bt.tilInntektDtoV2() }.toMutableSet()
+    val kontantstøtte = this.kontantstøtte.orEmpty().map { bt -> bt.tilInntektDtoV2() }.toSet()
     val utvidetBarnetrygd =
         this.utvidetbarnetrygd.orEmpty().map { ubt -> ubt.tilInntektDtoV2(personidentBm) }
-            .toMutableSet()
+            .toSet()
 
     return OppdatereInntekterRequestV2(
-        inntekter = barnetillegg + kontantstøtte + utvidetBarnetrygd,
+        inntekter = inntekt + barnetillegg + kontantstøtte + utvidetBarnetrygd,
         notat = this.notat,
     )
 }
 
-fun BarnetilleggDto.tilInntektDtoV2(): InntektDtoV2 =
+fun BarnetilleggDto.tilInntektDtoV2() =
     InntektDtoV2(
         taMed = true,
         rapporteringstype = Inntektsrapportering.BARNETILLEGG,
@@ -160,7 +159,38 @@ fun BarnetilleggDto.tilInntektDtoV2(): InntektDtoV2 =
         inntektstyper = Inntektsrapportering.BARNETILLEGG.inneholderInntektstypeListe.toSet(),
     )
 
-fun KontantstøtteDto.tilInntektDtoV2(): InntektDtoV2 =
+fun InntektDto.tilInntektDtoV2() =
+    InntektDtoV2(
+        taMed = true,
+        rapporteringstype = this.inntektstype,
+        beløp = this.beløp,
+        datoFom = this.datoFom,
+        datoTom = this.datoTom,
+        opprinneligFom = this.datoFom,
+        opprinneligTom = this.datoTom,
+        ident = Personident(this.ident),
+        gjelderBarn = null,
+        kilde = Kilde.MANUELL,
+        inntektsposter =
+            this.inntektsposter.tilInntektspostDtoV2(
+                this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {
+                    Inntektstype.LØNNSINNTEKT
+                },
+            ).toSet(),
+        inntektstyper = this.inntektstype.inneholderInntektstypeListe.toSet(),
+    )
+
+fun Set<InntektPost>.tilInntektspostDtoV2(inntektstype: Inntektstype) =
+    this.map {
+        InntektspostDtoV2(
+            kode = it.kode,
+            beløp = it.beløp,
+            visningsnavn = it.visningsnavn,
+            inntektstype = inntektstype,
+        )
+    }
+
+fun KontantstøtteDto.tilInntektDtoV2() =
     InntektDtoV2(
         taMed = true,
         rapporteringstype = Inntektsrapportering.KONTANTSTØTTE,
@@ -176,7 +206,7 @@ fun KontantstøtteDto.tilInntektDtoV2(): InntektDtoV2 =
         inntektstyper = Inntektsrapportering.KONTANTSTØTTE.inneholderInntektstypeListe.toSet(),
     )
 
-fun UtvidetBarnetrygdDto.tilInntektDtoV2(personidentBm: Personident): InntektDtoV2 =
+fun UtvidetBarnetrygdDto.tilInntektDtoV2(personidentBm: Personident) =
     InntektDtoV2(
         taMed = true,
         rapporteringstype = Inntektsrapportering.UTVIDET_BARNETRYGD,
@@ -191,58 +221,3 @@ fun UtvidetBarnetrygdDto.tilInntektDtoV2(personidentBm: Personident): InntektDto
         inntektsposter = emptySet(),
         inntektstyper = Inntektsrapportering.UTVIDET_BARNETRYGD.inneholderInntektstypeListe.toSet(),
     )
-
-fun Set<BarnetilleggDto>.tilInntekt(behandling: Behandling): List<Inntekt> =
-    this.map {
-        Inntekt(
-            ident = it.ident,
-            gjelderBarn = it.gjelderBarn,
-            belop = it.barnetillegg,
-            datoFom = it.datoFom,
-            datoTom = it.datoTom,
-            behandling = behandling,
-            // TODO: Endre til Inntektsrapportering.BARNETILLEGG når denne er på plass
-            inntektsrapportering = Inntektsrapportering.BARNETILLEGG,
-            // TODO: Hente fra DTO når spesifisert
-            kilde = Kilde.MANUELL,
-            taMed = true,
-        )
-    }
-
-fun Set<UtvidetBarnetrygdDto>.tilInntekt(behandling: Behandling) =
-    this.map {
-        Inntekt(
-            ident = behandling.roller.filter { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }.first().ident!!,
-            belop = it.beløp,
-            datoFom = it.datoFom,
-            datoTom = it.datoTom,
-            behandling = behandling,
-            inntektsrapportering = Inntektsrapportering.UTVIDET_BARNETRYGD,
-            // TODO: Hente fra DTO når spesifisert
-            kilde = Kilde.MANUELL,
-            taMed = true,
-        )
-    }.toMutableSet()
-
-fun Set<Inntekt>.tilBarnetilleggDto() =
-    this.map {
-        BarnetilleggDto(
-            it.id,
-            barnetillegg = it.belop,
-            datoFom = it.datoFom,
-            datoTom = it.datoTom,
-            ident = it.ident,
-            gjelderBarn = it.gjelderBarn!!,
-        )
-    }.toSet()
-
-fun Set<Inntekt>.tilUtvidetBarnetrygd() =
-    this.map {
-        UtvidetBarnetrygdDto(
-            it.id,
-            beløp = it.belop,
-            datoFom = it.datoFom,
-            datoTom = it.datoTom,
-            deltBosted = false,
-        )
-    }.toSet()
