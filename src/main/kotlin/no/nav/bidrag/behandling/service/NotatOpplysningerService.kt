@@ -31,7 +31,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import org.springframework.stereotype.Service
 import java.time.YearMonth
 
@@ -184,7 +184,7 @@ private fun Rolle.tilPartISøknad() =
 private fun Behandling.hentInntekterForIdent(
     ident: String,
     rolle: Rolletype,
-    arbeidsforhold: List<ArbeidsforholdDto>,
+    arbeidsforhold: List<ArbeidsforholdGrunnlagDto>,
 ) = InntekterPerRolle(
     rolle = rolle,
     inntekterSomLeggesTilGrunn =
@@ -239,8 +239,8 @@ private fun Behandling.hentInntekterForIdent(
                 Arbeidsforhold(
                     periode = ÅrMånedsperiode(it.startdato!!, it.sluttdato),
                     arbeidsgiver = it.arbeidsgiverNavn ?: "-",
-                    stillingProsent = it.ansettelsesdetaljer?.firstOrNull()?.avtaltStillingsprosent?.toString(),
-                    lønnsendringDato = it.ansettelsesdetaljer?.firstOrNull()?.sisteLønnsendringDato,
+                    stillingProsent = it.ansettelsesdetaljerListe?.firstOrNull()?.avtaltStillingsprosent?.toString(),
+                    lønnsendringDato = it.ansettelsesdetaljerListe?.firstOrNull()?.sisteLønnsendringDato,
                 )
             },
 )

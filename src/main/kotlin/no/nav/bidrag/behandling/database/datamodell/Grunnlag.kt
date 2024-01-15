@@ -16,7 +16,7 @@ import no.nav.bidrag.behandling.database.opplysninger.BoforholdBearbeidet
 import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
 import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.objectmapper
-import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandDto
 import org.hibernate.annotations.ColumnTransformer
@@ -45,7 +45,7 @@ inline fun <reified T> Grunnlag?.hentData(): T? =
         Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
         Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
         Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
-        Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdDto>>() as T
+        Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
         Grunnlagsdatatype.INNTEKT -> konverterData<List<InntektGrunnlag>>() as T
         else -> null
     }

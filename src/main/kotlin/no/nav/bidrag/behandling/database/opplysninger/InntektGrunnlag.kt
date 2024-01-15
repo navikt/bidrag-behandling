@@ -4,7 +4,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstotteDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.OvergangsstonadDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
 
@@ -14,6 +13,5 @@ data class InntektGrunnlag(
     val ubstListe: List<UtvidetBarnetrygdOgSmaabarnstilleggDto> = emptyList(),
     val barnetilleggListe: List<BarnetilleggDto> = emptyList(),
     val kontantstotteListe: List<KontantstotteDto> = emptyList(),
-    val overgangsstonadListe: List<OvergangsstonadDto> = emptyList(),
     val barnetilsynListe: List<BarnetilsynDto> = emptyList(),
 )
