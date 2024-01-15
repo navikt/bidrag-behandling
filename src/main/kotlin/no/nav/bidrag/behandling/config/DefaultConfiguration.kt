@@ -29,7 +29,5 @@ import org.springframework.http.client.observation.DefaultClientRequestObservati
 @Import(CorrelationIdFilter::class, DefaultCorsFilter::class, UserMdcFilter::class)
 class DefaultConfiguration {
     @Bean
-    fun clientRequestObservationConvention(): ClientRequestObservationConvention {
-        return DefaultClientRequestObservationConvention()
-    }
+    fun clientRequestObservationConvention(): ClientRequestObservationConvention = DefaultClientRequestObservationConvention()
 }
