@@ -161,7 +161,7 @@ fun BarnetilleggDto.tilInntektDtoV2() =
 
 fun InntektDto.tilInntektDtoV2() =
     InntektDtoV2(
-        taMed = true,
+        taMed = this.taMed,
         rapporteringstype = this.inntektstype,
         beløp = this.beløp,
         datoFom = this.datoFom,
@@ -170,7 +170,7 @@ fun InntektDto.tilInntektDtoV2() =
         opprinneligTom = this.datoTom,
         ident = Personident(this.ident),
         gjelderBarn = null,
-        kilde = Kilde.MANUELL,
+        kilde = if (this.fraGrunnlag == true) Kilde.OFFENTLIG else Kilde.MANUELL,
         inntektsposter =
             this.inntektsposter.tilInntektspostDtoV2(
                 this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {
