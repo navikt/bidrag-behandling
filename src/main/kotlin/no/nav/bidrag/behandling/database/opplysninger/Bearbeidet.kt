@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.database.opplysninger
 
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -37,7 +37,7 @@ data class InntektsopplysningerBearbeidet(
     val inntekt: List<InntektBearbeidet> = emptyList(),
     val utvidetbarnetrygd: List<UtvidetBarnetrygdOgSmaabarnstilleggDto> = emptyList(),
     val barnetillegg: List<BarnetilleggDto> = emptyList(),
-    val arbeidsforhold: List<ArbeidsforholdDto> = emptyList(),
+    val arbeidsforhold: List<ArbeidsforholdGrunnlagDto> = emptyList(),
 )
 
 data class InntektBearbeidet(

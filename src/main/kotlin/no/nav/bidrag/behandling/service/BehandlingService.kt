@@ -8,19 +8,17 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.transformers.tilBehandlingDto
+import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
-import no.nav.bidrag.behandling.transformers.toBarnetilleggDomain
+import no.nav.bidrag.behandling.transformers.tilInntekt
 import no.nav.bidrag.behandling.transformers.toDomain
-import no.nav.bidrag.behandling.transformers.toInntektDomain
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
-import no.nav.bidrag.behandling.transformers.toUtvidetBarnetrygdDomain
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -118,8 +116,8 @@ class BehandlingService(
     @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
-        oppdaterBehandling: OppdaterBehandlingRequest,
-    ): BehandlingDto =
+        oppdaterBehandling: OppdaterBehandlingRequestV2,
+    ): BehandlingDtoV2 =
         behandlingRepository.save(
             behandlingRepository.findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
@@ -140,19 +138,7 @@ class BehandlingService(
                         log.info { "Oppdaterer inntekter for behandling $behandlingsid" }
                         inntekter.inntekter?.run {
                             it.inntekter.clear()
-                            it.inntekter.addAll(inntekter.inntekter.toInntektDomain(it))
-                        }
-                        inntekter.barnetillegg?.run {
-                            it.barnetillegg.clear()
-                            it.barnetillegg.addAll(inntekter.barnetillegg.toBarnetilleggDomain(it))
-                        }
-                        inntekter.utvidetbarnetrygd?.run {
-                            it.utvidetBarnetrygd.clear()
-                            it.utvidetBarnetrygd.addAll(
-                                inntekter.utvidetbarnetrygd.toUtvidetBarnetrygdDomain(
-                                    it,
-                                ),
-                            )
+                            it.inntekter.addAll(inntekter.inntekter.tilInntekt(it))
                         }
                         it.inntektsbegrunnelseKunINotat = inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
                         it.inntektsbegrunnelseIVedtakOgNotat =
@@ -174,7 +160,7 @@ class BehandlingService(
                     }
                     it
                 },
-        ).tilBehandlingDto(grunnlagService.hentAlleSistAktiv(behandlingsid))
+        ).tilBehandlingDtoV2(grunnlagService.hentAlleSistAktiv(behandlingsid))
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
         behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }

@@ -25,13 +25,13 @@ import no.nav.bidrag.behandling.dto.v1.notat.ParterISøknad
 import no.nav.bidrag.behandling.dto.v1.notat.SivilstandNotat
 import no.nav.bidrag.behandling.dto.v1.notat.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt
-import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import org.springframework.stereotype.Service
 import java.time.YearMonth
 
@@ -143,8 +143,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
     BoforholdBarn(
         navn = navn!!,
         fødselsdato =
-            foedselsdato
-                ?: hentPersonFødselsdato(ident),
+        foedselsdato,
         opplysningerFraFolkeregisteret =
             opplysningerBoforhold.filter {
                 it.ident == this.ident
@@ -178,14 +177,14 @@ private fun Rolle.tilPartISøknad() =
     ParterISøknad(
         rolle = rolletype,
         navn = hentPersonVisningsnavn(ident),
-        fødselsdato = foedselsdato ?: hentPersonFødselsdato(ident),
+        fødselsdato = foedselsdato,
         personident = ident?.let { Personident(it) },
     )
 
 private fun Behandling.hentInntekterForIdent(
     ident: String,
     rolle: Rolletype,
-    arbeidsforhold: List<ArbeidsforholdDto>,
+    arbeidsforhold: List<ArbeidsforholdGrunnlagDto>,
 ) = InntekterPerRolle(
     rolle = rolle,
     inntekterSomLeggesTilGrunn =
@@ -195,21 +194,23 @@ private fun Behandling.hentInntekterForIdent(
                 InntekterSomLeggesTilGrunn(
                     beløp = it.belop,
                     periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
-                    beskrivelse = it.inntektstype.name,
-                    inntektType = it.inntektstype,
+                    beskrivelse = it.inntektsrapportering.name,
+                    inntektType = it.inntektsrapportering,
                 )
             },
     barnetillegg =
         if (rolle == Rolletype.BIDRAGSMOTTAKER) {
-            barnetillegg.sortedBy { it.datoFom }
+            inntekter.sortedBy { it.datoFom }
+                // TODO: Endre til
+                .filter { it.inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
                 .map {
                     Barnetillegg(
                         periode =
                             ÅrMånedsperiode(
-                                it.datoFom!!.toLocalDate(),
-                                it.datoTom?.toLocalDate(),
+                                it.datoFom,
+                                it.datoTom,
                             ),
-                        beløp = it.barnetillegg,
+                        beløp = it.belop,
                     )
                 }
         } else {
@@ -217,12 +218,13 @@ private fun Behandling.hentInntekterForIdent(
         },
     utvidetBarnetrygd =
         if (rolle == Rolletype.BIDRAGSMOTTAKER) {
-            utvidetBarnetrygd.sortedBy { it.datoFom }
+            inntekter.sortedBy { it.datoFom }
+                .filter { it.inntektsrapportering == Inntektsrapportering.UTVIDET_BARNETRYGD }
                 .map {
                     UtvidetBarnetrygd(
                         periode =
                             ÅrMånedsperiode(
-                                it.datoFom!!,
+                                it.datoFom,
                                 it.datoTom,
                             ),
                         beløp = it.belop,
@@ -237,8 +239,8 @@ private fun Behandling.hentInntekterForIdent(
                 Arbeidsforhold(
                     periode = ÅrMånedsperiode(it.startdato!!, it.sluttdato),
                     arbeidsgiver = it.arbeidsgiverNavn ?: "-",
-                    stillingProsent = it.ansettelsesdetaljer?.firstOrNull()?.avtaltStillingsprosent?.toString(),
-                    lønnsendringDato = it.ansettelsesdetaljer?.firstOrNull()?.sisteLønnsendringDato,
+                    stillingProsent = it.ansettelsesdetaljerListe?.firstOrNull()?.avtaltStillingsprosent?.toString(),
+                    lønnsendringDato = it.ansettelsesdetaljerListe?.firstOrNull()?.sisteLønnsendringDato,
                 )
             },
 )

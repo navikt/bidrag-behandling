@@ -10,9 +10,12 @@ import no.nav.bidrag.commons.web.DefaultCorsFilter
 import no.nav.bidrag.commons.web.UserMdcFilter
 import no.nav.security.token.support.client.spring.oauth2.EnableOAuth2Client
 import no.nav.security.token.support.spring.api.EnableJwtTokenValidation
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
+import org.springframework.http.client.observation.ClientRequestObservationConvention
+import org.springframework.http.client.observation.DefaultClientRequestObservationConvention
 
 @EnableAspectJAutoProxy
 @OpenAPIDefinition(
@@ -24,4 +27,7 @@ import org.springframework.context.annotation.Import
 @EnableJwtTokenValidation
 @EnableOAuth2Client(cacheEnabled = true)
 @Import(CorrelationIdFilter::class, DefaultCorsFilter::class, UserMdcFilter::class)
-class DefaultConfiguration
+class DefaultConfiguration {
+    @Bean
+    fun clientRequestObservationConvention(): ClientRequestObservationConvention = DefaultClientRequestObservationConvention()
+}

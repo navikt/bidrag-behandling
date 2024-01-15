@@ -97,20 +97,6 @@ class Behandling(
         orphanRemoval = true,
     )
     var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
-    @OneToMany(
-        fetch = FetchType.EAGER,
-        mappedBy = "behandling",
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
-    )
-    var barnetillegg: MutableSet<Barnetillegg> = mutableSetOf(),
-    @OneToMany(
-        fetch = FetchType.EAGER,
-        mappedBy = "behandling",
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
-    )
-    var utvidetBarnetrygd: MutableSet<UtvidetBarnetrygd> = mutableSetOf(),
     var deleted: Boolean = false,
 ) {
     fun getSøknadsbarn() = roller.filter { it.rolletype == Rolletype.BARN }
@@ -144,7 +130,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
             {
                 mapOrAccumulate(inntekter.filter { it.taMed }) {
                     ensure(it.datoFom != null) { raise("Til-dato mangler for sivilstand i behandling") }
-                    ensure(it.inntektstype != null) { raise("Inntektstype mangler for behandling") }
+                    ensure(it.inntektsrapportering != null) { raise("Inntektstype mangler for behandling") }
                     it
                 }
                 val bm = getBidragsmottaker()
@@ -156,16 +142,6 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                             "Mangler innteker for bidragspliktig",
                         )
                     }
-                }
-            },
-            {
-                mapOrAccumulate(utvidetBarnetrygd) {
-                    ensure(it.datoFom != null) { raise("Fra-dato mangler for utvidet barnetrygd") }
-                }
-            },
-            {
-                mapOrAccumulate(barnetillegg) {
-                    ensure(it.datoFom != null) { raise("Fra-dato mangler for barnetillegg") }
                 }
             },
             {
@@ -191,7 +167,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                     it
                 }
             },
-        ) { _, _, _, _, _, _, _, _, _ ->
+        ) { _, _, _, _, _, _, _ ->
             val behandling = this@validere
             behandling.inntekter = inntekter
             behandling.husstandsbarn = husstandsbarn
