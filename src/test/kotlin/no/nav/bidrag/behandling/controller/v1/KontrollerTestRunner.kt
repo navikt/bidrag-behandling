@@ -2,6 +2,9 @@ package no.nav.bidrag.behandling.controller.v1
 
 import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.ninjasquad.springmockk.MockkBean
+import io.getunleash.Unleash
+import io.mockk.every
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.TestdataManager
 import org.junit.jupiter.api.BeforeEach
@@ -49,6 +52,9 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     @Autowired
     lateinit var testdataManager: TestdataManager
 
+    @MockkBean
+    lateinit var unleashInstance: Unleash
+
     val stubUtils: StubUtils = StubUtils()
 
     protected fun rootUri(): String {
@@ -57,7 +63,9 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
 
     @BeforeEach
     fun initMocks() {
+        every { unleashInstance.isEnabled(any(), any<Boolean>()) } returns true
         WireMock.resetAllRequests()
+        stubUtils.stubUnleash()
         stubUtils.stubHentSaksbehandler()
         stubUtils.stubOpprettForsendelse()
         stubUtils.stubSlettForsendelse()

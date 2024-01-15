@@ -137,8 +137,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     id = null,
                     inntektsposter =
                         setOf(
-                            InntektPost("ABC1", "ABC1", BigDecimal.TEN),
-                            InntektPost("ABC2", "ABC2", BigDecimal.TEN),
+                            InntektPost("ABC1", null, "ABC1", BigDecimal.TEN),
+                            InntektPost("ABC2", null, "ABC2", BigDecimal.TEN),
                         ),
                 )
 
@@ -220,6 +220,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
             LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
             "blablabla",
             true,
-            setOf(InntektPost("ABC", "ABC", BigDecimal.TEN)),
+            setOf(InntektPost("ABC", null, "ABC", BigDecimal.TEN)),
         )
 }

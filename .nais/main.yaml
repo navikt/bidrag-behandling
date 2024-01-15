@@ -14,6 +14,7 @@ env:
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon.dev-fss-pub.nais.io/bidrag-organisasjon
+  BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
   TOPIC_VEDTAK: bidrag.vedtak-syntetisk
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt.dev-fss-pub.nais.io/api/v2
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
@@ -44,6 +45,7 @@ outbound-access-apps:
 outbound-access-hosts:
   - bidrag-person.dev-fss-pub.nais.io
   - bidrag-organisasjon.dev-fss-pub.nais.io
+  - bidrag-sjablon.dev-fss-pub.nais.io
   - arbeid-og-inntekt.dev-fss-pub.nais.io
 unleash:
   env: development

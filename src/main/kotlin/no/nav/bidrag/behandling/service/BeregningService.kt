@@ -5,7 +5,6 @@ import arrow.core.raise.either
 import com.fasterxml.jackson.databind.node.POJONode
 import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
-import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
@@ -16,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.transformers.tilBeregnGrunnlag
 import no.nav.bidrag.behandling.valideringAvBehandlingFeilet
+import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
@@ -34,11 +34,11 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 @Service
 class BeregningService(
     private val behandlingService: BehandlingService,
-    private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
+    private val beregnForskuddApi: BeregnForskuddApi,
     private val unleashInstance: Unleash,
 ) {
     fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
-        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak")
+        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", false)
         LOGGER.info { "Is fattevedtak enabled $isEnabled" }
         val respons =
             either {
@@ -70,7 +70,7 @@ class BeregningService(
                         try {
                             ResultatForskuddsberegningBarn(
                                 it.mapTilResultatBarn(),
-                                bidragBeregnForskuddConsumer.beregnForskudd(beregnForskudd),
+                                beregnForskuddApi.beregn(beregnForskudd),
                             )
                         } catch (e: HttpClientErrorException) {
                             LOGGER.warn { e }

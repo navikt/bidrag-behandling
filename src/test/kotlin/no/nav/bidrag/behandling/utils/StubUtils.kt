@@ -48,6 +48,16 @@ class StubUtils {
         }
     }
 
+    fun stubUnleash() {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlMatching("/unleash/api/client/features"))
+                .willReturn(
+                    aClosedJsonResponse().withStatus(HttpStatus.OK.value())
+                        .withBodyFile("unleash-response.json"),
+                ),
+        )
+    }
+
     fun stubOpprettForsendelse(
         forsendelseId: String = "12312321",
         status: HttpStatus = HttpStatus.OK,

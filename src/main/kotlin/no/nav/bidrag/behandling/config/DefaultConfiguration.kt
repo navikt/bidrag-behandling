@@ -28,7 +28,12 @@ import org.springframework.context.annotation.Scope
     info = Info(title = "bidrag-behandling", version = "v1"),
     security = [SecurityRequirement(name = "bearer-key")],
 )
-@SecurityScheme(bearerFormat = "JWT", name = "bearer-key", scheme = "bearer", type = SecuritySchemeType.HTTP)
+@SecurityScheme(
+    bearerFormat = "JWT",
+    name = "bearer-key",
+    scheme = "bearer",
+    type = SecuritySchemeType.HTTP,
+)
 @Configuration
 @EnableJwtTokenValidation
 @EnableOAuth2Client(cacheEnabled = true)
@@ -40,12 +45,13 @@ class DefaultConfiguration {
         @Value("\${UNLEASH_SERVER_API_URL}") apiUrl: String,
         @Value("\${UNLEASH_SERVER_API_TOKEN}") apiToken: String,
         @Value("\${UNLEASH_SERVER_API_ENV}") environment: String,
+        @Value("\${UNLEASH_FETCH_SYNC:true}") fetchInSync: Boolean,
     ) = UnleashConfig.builder()
         .appName(appName)
         .unleashAPI("$apiUrl/api/")
         .instanceId(appName)
         .environment(environment)
-        .synchronousFetchOnInitialisation(true)
+        .synchronousFetchOnInitialisation(fetchInSync)
         .apiKey(apiToken)
         .unleashContextProvider(DefaultUnleashContextProvider())
         .build()
@@ -60,10 +66,7 @@ class DefaultUnleashContextProvider : UnleashContextProvider {
         val userId = MDC.get("user")
         return UnleashContext.builder()
             .userId(userId)
-            .addProperty("consumerApp", MDC.get("applicationKey"))
-            .addProperty("Bidragteamet", userId)
-            .addProperty("inforingsgruppen", userId)
-            .addProperty("testbrukere", userId)
+            .appName(MDC.get("applicationKey"))
             .build()
     }
 }

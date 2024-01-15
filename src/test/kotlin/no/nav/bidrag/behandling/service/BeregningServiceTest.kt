@@ -7,11 +7,11 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.verify
-import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BA_2
 import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
+import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -27,14 +27,18 @@ class BeregningServiceTest {
     lateinit var behandlingService: BehandlingService
 
     @MockkBean
-    lateinit var bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer
+    lateinit var bidragBeregnForskuddConsumer: BeregnForskuddApi
     lateinit var beregningService: BeregningService
 
     @BeforeEach
     fun initMocks() {
         beregningService =
-            BeregningService(behandlingService, bidragBeregnForskuddConsumer, DefaultUnleash(UnleashConfig.builder().build()))
-        every { bidragBeregnForskuddConsumer.beregnForskudd(any()) } returns BeregnetForskuddResultat()
+            BeregningService(
+                behandlingService,
+                bidragBeregnForskuddConsumer,
+                DefaultUnleash(UnleashConfig.builder().build()),
+            )
+        every { bidragBeregnForskuddConsumer.beregn(any()) } returns BeregnetForskuddResultat()
     }
 
     @Test
@@ -44,7 +48,7 @@ class BeregningServiceTest {
 
         beregningService.beregneForskudd(1)
         verify {
-            bidragBeregnForskuddConsumer.beregnForskudd(
+            bidragBeregnForskuddConsumer.beregn(
                 withArg {
                     it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
@@ -74,7 +78,7 @@ class BeregningServiceTest {
                 },
             )
 
-            bidragBeregnForskuddConsumer.beregnForskudd(
+            bidragBeregnForskuddConsumer.beregn(
                 withArg {
                     it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
