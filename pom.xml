@@ -16,8 +16,8 @@
   <properties>
     <java.version>21</java.version>
     <kotlin.version>1.9.22</kotlin.version>
-    <bidrag-felles.version>2024.0116.132651</bidrag-felles.version>
-    <bidrag-beregn-felles.version>2024.01.16.101302</bidrag-beregn-felles.version>
+    <bidrag-felles.version>2024.01.16.170712</bidrag-felles.version>
+    <bidrag-beregn-felles.version>2024.01.16.170056</bidrag-beregn-felles.version>
     <h2.version>2.2.224</h2.version>
     <logback-encoder.version>7.4</logback-encoder.version>
     <token-support.version>3.2.0</token-support.version>
@@ -25,7 +25,7 @@
     <springframework-cloud.version>4.1.0</springframework-cloud.version>
     <kotest.version>5.8.0</kotest.version>
     <mockk.version>4.0.2</mockk.version>
-    <kotlin-logging-jvm.version>6.0.1</kotlin-logging-jvm.version>
+    <kotlin-logging-jvm.version>6.0.3</kotlin-logging-jvm.version>
     <flyway.version>10.4.1</flyway.version>
     <jackson.version>2.16.1</jackson.version>
     <testcontainers.version>1.19.3</testcontainers.version>
@@ -274,6 +274,12 @@
       <groupId>no.nav.bidrag</groupId>
       <artifactId>bidrag-commons-felles</artifactId>
       <version>${bidrag-felles.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.github.oshai</groupId>
+          <artifactId>kotlin-logging-jvm</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -286,6 +292,20 @@
       <groupId>no.nav.bidrag</groupId>
       <artifactId>bidrag-beregn-forskudd</artifactId>
       <version>${bidrag-beregn-felles.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>no.nav.bidrag</groupId>
+          <artifactId>bidrag-commons-felles</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>no.nav.bidrag</groupId>
+          <artifactId>bidrag-transport-felles</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!--Diverse-->
     <dependency>
