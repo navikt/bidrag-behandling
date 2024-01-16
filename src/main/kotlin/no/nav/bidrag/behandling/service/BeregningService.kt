@@ -4,7 +4,6 @@ import arrow.core.mapOrAccumulate
 import arrow.core.raise.either
 import com.fasterxml.jackson.databind.node.POJONode
 import io.github.oshai.kotlinlogging.KotlinLogging
-import no.nav.bidrag.behandling.consumer.BidragBeregnForskuddConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
@@ -15,13 +14,13 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.transformers.tilBeregnGrunnlag
 import no.nav.bidrag.behandling.valideringAvBehandlingFeilet
+import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import org.springframework.stereotype.Service
-import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
 private val LOGGER = KotlinLogging.logger {}
@@ -33,7 +32,7 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 @Service
 class BeregningService(
     private val behandlingService: BehandlingService,
-    private val bidragBeregnForskuddConsumer: BidragBeregnForskuddConsumer,
+    private val beregnForskuddApi: BeregnForskuddApi,
 ) {
     fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
         val respons =
@@ -66,21 +65,11 @@ class BeregningService(
                         try {
                             ResultatForskuddsberegningBarn(
                                 it.mapTilResultatBarn(),
-                                bidragBeregnForskuddConsumer.beregnForskudd(beregnForskudd),
+                                beregnForskuddApi.beregn(beregnForskudd),
                             )
-                        } catch (e: HttpClientErrorException) {
-                            LOGGER.warn { e }
-                            val errors =
-                                e.responseHeaders?.get("error")?.joinToString("\r\n") { message ->
-                                    val split = message.split(":")
-                                    if (split.size > 1) {
-                                        split.takeLast(split.size - 1)
-                                            .joinToString(" ").trim()
-                                    } else {
-                                        split.first()
-                                    }
-                                }
-                            raise(errors ?: e.message!!)
+                        } catch (e: IllegalArgumentException) {
+                            LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
+                            raise(e.message!!)
                         } catch (e: Exception) {
                             LOGGER.warn { e }
                             raise(e.message!!)

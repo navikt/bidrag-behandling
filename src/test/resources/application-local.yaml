@@ -2,7 +2,6 @@ PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
 BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
 BIDRAG_PERSON_URL: https://bidrag-person-feature.dev.adeo.no
 #BIDRAG_FORSENDELSE_URL: http://localhost:8999
-BIDRAG_BEREGN_FORSKUDD_URL: https://bidrag-beregn-forskudd-rest.intern.dev.nav.no
 BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
 BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll.intern.dev.nav.no
 BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll
@@ -14,7 +13,7 @@ AZURE_APP_CLIENT_SECRET: unset
 server.port: 8990
 NAIS_APP_NAME: bidrag-behandling
 DB_HOST: localhost
-DB_PORT: 5432
+DB_PORT: 5454
 DB_DATABASE: bidrag-behandling
 DB_USERNAME: cloudsqliamuser
 DB_PASSWORD: admin
@@ -33,3 +32,9 @@ KAFKA_BOOTSTRAP_SERVERS: localhost:9092
 KAFKA_GROUP_ID: bidrag-behandling
 KAFKA_BROKERS: localhost:9092
 TOPIC_VEDTAK: bidrag.vedtak-lokal
+UNLEASH_SERVER_API_ENV: development
+UNLEASH_SERVER_API_PROJECTS: default
+UNLEASH_SERVER_API_TOKEN: default:development.1e6c9bb7207ccbe375aaa4a3b11aae7c317f396f6d3b619dc2a003e9
+UNLEASH_SERVER_API_TYPE: CLIENT
+UNLEASH_SERVER_API_URL: https://bidrag-unleash-api.nav.cloud.nais.io
+BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon

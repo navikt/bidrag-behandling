@@ -5,17 +5,14 @@ import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.datatype.jsr310.deser.YearMonthDeserializer
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.commons.security.api.EnableSecurityConfiguration
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.organisasjon.EnableSaksbehandlernavnProvider
-import no.nav.bidrag.commons.web.HttpHeaderRestTemplate
 import no.nav.bidrag.commons.web.config.RestOperationsAzure
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
-import org.springframework.context.annotation.Scope
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -23,7 +20,7 @@ import java.time.format.DateTimeFormatter
 @Configuration
 @EnableSecurityConfiguration
 @EnableSaksbehandlernavnProvider
-@Import(RestOperationsAzure::class, AppContext::class)
+@Import(RestOperationsAzure::class, AppContext::class, BeregnForskuddApi::class)
 class RestConfig {
     @Bean
     fun jackson2ObjectMapperBuilder(): Jackson2ObjectMapperBuilder {
@@ -40,15 +37,5 @@ class RestConfig {
             .dateFormat(StdDateFormat())
             .failOnUnknownProperties(false)
             .serializationInclusion(JsonInclude.Include.NON_NULL)
-    }
-
-    @Bean
-    @Qualifier("base")
-    @Scope("prototype")
-    fun baseRestTemplate(): HttpHeaderRestTemplate {
-        val httpHeaderRestTemplate = HttpHeaderRestTemplate()
-        httpHeaderRestTemplate.requestFactory = HttpComponentsClientHttpRequestFactory()
-        httpHeaderRestTemplate.withDefaultHeaders()
-        return httpHeaderRestTemplate
     }
 }
