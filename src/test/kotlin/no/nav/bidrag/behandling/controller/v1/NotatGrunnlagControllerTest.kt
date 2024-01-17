@@ -4,40 +4,52 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.mockk.every
+import io.mockk.mockkStatic
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.notat.NotatDto
+import no.nav.bidrag.behandling.service.hentPerson
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.person.PersonDto
 import org.junit.jupiter.api.Test
+import org.springframework.context.annotation.Import
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.YearMonth
 
+@Import(AppContext::class)
 class NotatGrunnlagControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal hente opplysninger for notat`() {
         val behandling = testdataManager.opprettBehandling()
-        stubUtils.stubHentePersoninfo(
-            personident = testdataBM[Rolle::ident.name] as String,
-            navn = testdataBM[Rolle::navn.name] as String,
-            shouldContaintPersonIdent = true,
-        )
-        stubUtils.stubHentePersoninfo(
-            personident = testdataBarn1[Rolle::ident.name] as String,
-            navn = testdataBarn1[Rolle::navn.name] as String,
-            shouldContaintPersonIdent = true,
-        )
-        stubUtils.stubHentePersoninfo(
-            personident = testdataBarn2[Rolle::ident.name] as String,
-            navn = testdataBarn2[Rolle::navn.name] as String,
-            shouldContaintPersonIdent = true,
-        )
+        mockkStatic(::hentPerson)
+        every { hentPerson(testdataBM[Rolle::ident.name] as String) } returns
+            PersonDto(
+                ident = Personident(testdataBM[Rolle::ident.name] as String),
+                fødselsdato = LocalDate.now().minusMonths(500),
+                visningsnavn = testdataBM[Rolle::navn.name] as String,
+            )
+        every { hentPerson(testdataBarn1[Rolle::ident.name] as String) } returns
+            PersonDto(
+                ident = Personident(testdataBarn1[Rolle::ident.name] as String),
+                fødselsdato = LocalDate.now().minusMonths(500),
+                visningsnavn = testdataBarn1[Rolle::navn.name] as String,
+            )
+        every { hentPerson(testdataBarn2[Rolle::ident.name] as String) } returns
+            PersonDto(
+                ident = Personident(testdataBarn2[Rolle::ident.name] as String),
+                fødselsdato = LocalDate.now().minusMonths(500),
+                visningsnavn = testdataBarn2[Rolle::navn.name] as String,
+            )
         val r1 =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUri()}/notat/${behandling.id}",
