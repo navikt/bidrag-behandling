@@ -34,7 +34,4 @@ KAFKA_BROKERS: localhost:9092
 TOPIC_VEDTAK: bidrag.vedtak-lokal
 UNLEASH_SERVER_API_ENV: development
 UNLEASH_SERVER_API_PROJECTS: default
-UNLEASH_SERVER_API_TOKEN: default:development.1e6c9bb7207ccbe375aaa4a3b11aae7c317f396f6d3b619dc2a003e9
 UNLEASH_SERVER_API_TYPE: CLIENT
-UNLEASH_SERVER_API_URL: https://bidrag-unleash-api.nav.cloud.nais.io
-BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
