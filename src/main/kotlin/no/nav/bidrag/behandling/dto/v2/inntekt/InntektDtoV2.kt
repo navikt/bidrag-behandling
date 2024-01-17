@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.inntekt
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
@@ -25,10 +26,10 @@ data class InntektDtoV2(
     val datoTom: LocalDate?,
     @Schema(type = "string", format = "date", example = "2024-01-01")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val opprinneligFom: LocalDate,
+    val opprinneligFom: LocalDate?,
     @Schema(type = "string", format = "date", example = "2024-12-31")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val opprinneligTom: LocalDate,
+    val opprinneligTom: LocalDate?,
     @Schema(required = true)
     val ident: Personident,
     @Schema(required = false)
@@ -39,4 +40,9 @@ data class InntektDtoV2(
     val inntektsposter: Set<InntektspostDtoV2>,
     @Schema(required = true)
     val inntektstyper: Set<Inntektstype>,
+)
+
+data class InntekterDtoV2(
+    val inntekter: Set<InntektDtoV2>,
+    val notat: BehandlingNotatDto,
 )

@@ -2,11 +2,14 @@ package no.nav.bidrag.behandling.controller.v1
 
 import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
+import io.mockk.every
+import io.mockk.mockkObject
 import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.Unleash
 import io.mockk.every
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.TestdataManager
+import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
@@ -64,6 +67,8 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     @BeforeEach
     fun initMocks() {
         every { unleashInstance.isEnabled(any(), any<Boolean>()) } returns true
+        mockkObject(SaksbehandlernavnProvider)
+        every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"
         WireMock.resetAllRequests()
         stubUtils.stubUnleash()
         stubUtils.stubHentSaksbehandler()

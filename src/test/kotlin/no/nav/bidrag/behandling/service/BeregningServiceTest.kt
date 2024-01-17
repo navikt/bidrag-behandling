@@ -1,8 +1,6 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
-import io.getunleash.DefaultUnleash
-import io.getunleash.util.UnleashConfig
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -27,7 +25,7 @@ class BeregningServiceTest {
     lateinit var behandlingService: BehandlingService
 
     @MockkBean
-    lateinit var bidragBeregnForskuddConsumer: BeregnForskuddApi
+    lateinit var beregnForskuddApi: BeregnForskuddApi
     lateinit var beregningService: BeregningService
 
     @BeforeEach
@@ -35,10 +33,9 @@ class BeregningServiceTest {
         beregningService =
             BeregningService(
                 behandlingService,
-                bidragBeregnForskuddConsumer,
-                DefaultUnleash(UnleashConfig.builder().build()),
+                beregnForskuddApi,
             )
-        every { bidragBeregnForskuddConsumer.beregn(any()) } returns BeregnetForskuddResultat()
+        every { beregnForskuddApi.beregn(any()) } returns BeregnetForskuddResultat()
     }
 
     @Test
@@ -48,7 +45,7 @@ class BeregningServiceTest {
 
         beregningService.beregneForskudd(1)
         verify {
-            bidragBeregnForskuddConsumer.beregn(
+            beregnForskuddApi.beregn(
                 withArg {
                     it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
@@ -78,7 +75,7 @@ class BeregningServiceTest {
                 },
             )
 
-            bidragBeregnForskuddConsumer.beregn(
+            beregnForskuddApi.beregn(
                 withArg {
                     it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))

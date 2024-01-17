@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigDecimal
 import java.time.LocalDate
 
-// TODO: Ikke sett gjelderBarn lik ident etter depractated apier er fjernet. Dette gjøres for bakoverkompatibilitet
+@Deprecated("Bruk InntektDto")
 data class BarnetilleggDto(
     val id: Long? = null,
     @Schema(
@@ -19,7 +19,7 @@ data class BarnetilleggDto(
     val barnetillegg: BigDecimal,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoFom: LocalDate?,
+    val datoFom: LocalDate,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,

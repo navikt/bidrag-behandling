@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import arrow.core.mapOrAccumulate
 import arrow.core.raise.either
 import com.fasterxml.jackson.databind.node.POJONode
-import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -22,7 +21,6 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import org.springframework.stereotype.Service
-import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
 private val LOGGER = KotlinLogging.logger {}
@@ -35,11 +33,8 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 class BeregningService(
     private val behandlingService: BehandlingService,
     private val beregnForskuddApi: BeregnForskuddApi,
-    private val unleashInstance: Unleash,
 ) {
     fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
-        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", false)
-        LOGGER.info { "Is fattevedtak enabled $isEnabled" }
         val respons =
             either {
                 val behandling =
@@ -72,19 +67,9 @@ class BeregningService(
                                 it.mapTilResultatBarn(),
                                 beregnForskuddApi.beregn(beregnForskudd),
                             )
-                        } catch (e: HttpClientErrorException) {
-                            LOGGER.warn { e }
-                            val errors =
-                                e.responseHeaders?.get("error")?.joinToString("\r\n") { message ->
-                                    val split = message.split(":")
-                                    if (split.size > 1) {
-                                        split.takeLast(split.size - 1)
-                                            .joinToString(" ").trim()
-                                    } else {
-                                        split.first()
-                                    }
-                                }
-                            raise(errors ?: e.message!!)
+                        } catch (e: IllegalArgumentException) {
+                            LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
+                            raise(e.message!!)
                         } catch (e: Exception) {
                             LOGGER.warn { e }
                             raise(e.message!!)

@@ -22,6 +22,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Scope
+import org.springframework.http.client.observation.ClientRequestObservationConvention
+import org.springframework.http.client.observation.DefaultClientRequestObservationConvention
 
 @EnableAspectJAutoProxy
 @OpenAPIDefinition(
@@ -69,4 +71,8 @@ class DefaultUnleashContextProvider : UnleashContextProvider {
             .appName(MDC.get("applicationKey"))
             .build()
     }
+}
+class DefaultConfiguration {
+    @Bean
+    fun clientRequestObservationConvention(): ClientRequestObservationConvention = DefaultClientRequestObservationConvention()
 }

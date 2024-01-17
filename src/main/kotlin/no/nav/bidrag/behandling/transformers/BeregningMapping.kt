@@ -100,19 +100,19 @@ fun Behandling.tilGrunnlagInntekt(gjelder: Grunnlag): Set<Grunnlag> {
 
     return inntekter.asSequence().filter { i -> i.taMed }
         .filter { i -> i.ident == personidentGjelder.verdi }
-        .filter { i -> i.inntektstype != Inntektsrapportering.KONTANTSTØTTE }.map {
+        .filter { i -> i.inntektsrapportering != Inntektsrapportering.KONTANTSTØTTE }.map {
             Grunnlag(
                 type = Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE,
                 // Ta med gjelder referanse fordi samme type inntekt med samme datoFom kan inkluderes for BM/BP/BA
-                referanse = "Inntekt_${it.inntektstype}_${gjelder.referanse}_${it.datoFom.toCompactString()}",
+                referanse = "Inntekt_${it.inntektsrapportering}_${gjelder.referanse}_${it.datoFom.toCompactString()}",
                 grunnlagsreferanseListe = listOf(gjelder.referanse!!),
                 innhold =
                     POJONode(
                         BeregningInntektRapporteringPeriode(
                             beløp = it.belop,
                             periode = ÅrMånedsperiode(it.datoFom, it.datoTom?.plusDays(1)),
-                            inntektsrapportering = it.inntektstype,
-                            manueltRegistrert = !it.fraGrunnlag,
+                            inntektsrapportering = it.inntektsrapportering,
+                            manueltRegistrert = it.kilde == Kilde.MANUELL,
                             valgt = it.taMed,
                             gjelderBarn = null,
                         ),
@@ -130,18 +130,18 @@ fun Behandling.tilGrunnlagInntektKontantstøtte(
 
     return inntekter.asSequence().filter { i -> i.taMed }
         .filter { i -> i.ident == personidentGjelder.verdi }
-        .filter { i -> i.inntektstype == Inntektsrapportering.KONTANTSTØTTE }.map {
+        .filter { i -> i.inntektsrapportering == Inntektsrapportering.KONTANTSTØTTE }.map {
             Grunnlag(
                 type = Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE,
-                referanse = "Inntekt_${it.inntektstype}_${gjelder.referanse}_${it.datoFom.toCompactString()}",
+                referanse = "Inntekt_${it.inntektsrapportering}_${gjelder.referanse}_${it.datoFom.toCompactString()}",
                 grunnlagsreferanseListe = listOf(gjelder.referanse!!),
                 innhold =
                     POJONode(
                         BeregningInntektRapporteringPeriode(
                             beløp = it.belop,
                             periode = ÅrMånedsperiode(it.datoFom, it.datoTom?.plusDays(1)),
-                            inntektsrapportering = it.inntektstype,
-                            manueltRegistrert = !it.fraGrunnlag,
+                            inntektsrapportering = it.inntektsrapportering,
+                            manueltRegistrert = it.kilde == Kilde.MANUELL,
                             valgt = it.taMed,
                             gjelderBarn = søknadsbarn.referanse,
                         ),
@@ -156,23 +156,24 @@ fun Behandling.tilGrunnlagBarnetillegg(
 ): Set<Grunnlag> {
     val mapper = jacksonObjectMapper()
     val personidentSøknadsbarn = mapper.treeToValue(søknadsbarn.innhold, Person::class.java).ident
-    return barnetillegg.asSequence()
+    return inntekter.asSequence()
         .filter { it.ident == personidentSøknadsbarn.verdi }
+        .filter { it.inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
         .map {
             Grunnlag(
                 type = Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE,
                 referanse = "Inntekt_${Inntektsrapportering.SMÅBARNSTILLEGG}_${bm.referanse}_${
-                    it.datoFom?.toLocalDate()?.toCompactString()
+                    it.datoFom.toCompactString()
                 }",
                 grunnlagsreferanseListe = listOf(bm.referanse!!),
                 innhold =
                     POJONode(
                         BeregningInntektRapporteringPeriode(
-                            beløp = it.barnetillegg,
+                            beløp = it.belop,
                             periode =
                                 ÅrMånedsperiode(
-                                    it.datoFom!!.toLocalDate(),
-                                    it.datoTom?.toLocalDate()?.plusDays(1),
+                                    it.datoFom,
+                                    it.datoTom?.plusDays(1),
                                 ),
                             inntektsrapportering = Inntektsrapportering.SMÅBARNSTILLEGG,
                             // TODO: Mangler informasjon for å sette dette
@@ -186,7 +187,7 @@ fun Behandling.tilGrunnlagBarnetillegg(
 }
 
 fun Behandling.tilGrunnlagUtvidetbarnetrygd(bm: Grunnlag) =
-    utvidetBarnetrygd.asSequence().map {
+    inntekter.asSequence().filter { it.inntektsrapportering == Inntektsrapportering.UTVIDET_BARNETRYGD }.map {
         Grunnlag(
             type = Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE,
             referanse =
