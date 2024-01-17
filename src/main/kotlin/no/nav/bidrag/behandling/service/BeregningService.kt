@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import arrow.core.mapOrAccumulate
 import arrow.core.raise.either
 import com.fasterxml.jackson.databind.node.POJONode
+import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -33,8 +34,11 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 class BeregningService(
     private val behandlingService: BehandlingService,
     private val beregnForskuddApi: BeregnForskuddApi,
+    private val unleashInstance: Unleash,
 ) {
     fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
+        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", false)
+        LOGGER.info { "Is fattevedtak enabled $isEnabled" }
         val respons =
             either {
                 val behandling =

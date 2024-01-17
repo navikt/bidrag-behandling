@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
+import io.getunleash.DefaultUnleash
+import io.getunleash.util.UnleashConfig
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -34,6 +36,7 @@ class BeregningServiceTest {
             BeregningService(
                 behandlingService,
                 beregnForskuddApi,
+                DefaultUnleash(UnleashConfig.builder().build()),
             )
         every { beregnForskuddApi.beregn(any()) } returns BeregnetForskuddResultat()
     }
