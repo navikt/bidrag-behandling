@@ -44,6 +44,7 @@ outbound-access-hosts:
   - bidrag-organisasjon.dev-fss-pub.nais.io
   - bidrag-sjablon.dev-fss-pub.nais.io
   - arbeid-og-inntekt.dev-fss-pub.nais.io
+  - bidrag-unleash-api.nav.cloud.nais.io
 unleash:
   env: development
   secret_name: bidrag-behandling-unleash-api-token
