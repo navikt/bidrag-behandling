@@ -16,7 +16,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @Entity(name = "inntekt")
-class Inntekt(
+open class Inntekt(
     @Enumerated(EnumType.STRING)
     val inntektsrapportering: Inntektsrapportering,
     val belop: BigDecimal,
