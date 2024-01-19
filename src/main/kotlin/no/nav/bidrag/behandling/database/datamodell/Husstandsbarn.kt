@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import java.time.LocalDate
 
 @Entity(name = "barn_i_husstand")
-class Husstandsbarn(
+open class Husstandsbarn(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,

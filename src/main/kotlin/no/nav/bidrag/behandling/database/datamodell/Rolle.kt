@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 @Entity(name = "rolle")
 @SQLDelete(sql = "UPDATE rolle SET deleted = true WHERE id=?")
 @Where(clause = "deleted=false")
-class Rolle(
+open class Rolle(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
