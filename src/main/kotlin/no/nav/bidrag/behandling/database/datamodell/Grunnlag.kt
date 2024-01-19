@@ -24,7 +24,7 @@ import java.time.LocalDateTime
 
 @Entity(name = "grunnlag")
 @Schema(name = "GrunnlagEntity")
-class Grunnlag(
+open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,
@@ -34,6 +34,7 @@ class Grunnlag(
     @ColumnTransformer(write = "?::jsonb")
     val data: String,
     val innhentet: LocalDateTime,
+    val aktiv: LocalDateTime? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

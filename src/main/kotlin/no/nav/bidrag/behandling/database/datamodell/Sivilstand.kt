@@ -14,7 +14,7 @@ import java.time.LocalDate
 
 // TODO: koble sammen med rolletabellen
 @Entity(name = "sivilstand")
-class Sivilstand(
+open class Sivilstand(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     val behandling: Behandling,

@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 @Entity(name = "behandling")
 @SQLDelete(sql = "UPDATE behandling SET deleted = true WHERE id=?")
 @Where(clause = "deleted=false")
-class Behandling(
+open class Behandling(
     @Enumerated(EnumType.STRING)
     val vedtakstype: Vedtakstype,
     @Column(name = "dato_fom")

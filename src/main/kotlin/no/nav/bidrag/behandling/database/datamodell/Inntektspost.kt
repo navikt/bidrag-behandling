@@ -14,7 +14,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import java.math.BigDecimal
 
 @Entity(name = "inntektspost")
-class Inntektspost(
+open class Inntektspost(
     @Column(name = "belop")
     val beløp: BigDecimal,
     val kode: String,
