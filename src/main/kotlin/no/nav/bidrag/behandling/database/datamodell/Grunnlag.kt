@@ -27,17 +27,17 @@ import java.time.LocalDateTime
 open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
-    val behandling: Behandling,
+    open val behandling: Behandling,
     @Enumerated(EnumType.STRING)
-    val type: Grunnlagsdatatype,
+    open val type: Grunnlagsdatatype,
     @Column(name = "data", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
-    val data: String,
-    val innhentet: LocalDateTime,
-    val aktiv: LocalDateTime? = null,
+    open val data: String,
+    open val innhentet: LocalDateTime,
+    open val aktiv: LocalDateTime? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    open val id: Long? = null,
 )
 
 inline fun <reified T> Grunnlag?.hentData(): T? =

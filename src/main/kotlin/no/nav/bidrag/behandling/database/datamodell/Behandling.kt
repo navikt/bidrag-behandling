@@ -30,74 +30,74 @@ import java.time.LocalDateTime
 @Where(clause = "deleted=false")
 open class Behandling(
     @Enumerated(EnumType.STRING)
-    val vedtakstype: Vedtakstype,
+    open val vedtakstype: Vedtakstype,
     @Column(name = "dato_fom")
-    val søktFomDato: LocalDate,
-    val datoTom: LocalDate? = null,
-    val mottattdato: LocalDate,
-    val saksnummer: String,
-    val soknadsid: Long,
-    val soknadRefId: Long? = null,
-    val behandlerEnhet: String,
-    val opprettetAv: String,
-    val opprettetAvNavn: String? = null,
-    val kildeapplikasjon: String,
+    open val søktFomDato: LocalDate,
+    open val datoTom: LocalDate? = null,
+    open val mottattdato: LocalDate,
+    open val saksnummer: String,
+    open val soknadsid: Long,
+    open val soknadRefId: Long? = null,
+    open val behandlerEnhet: String,
+    open val opprettetAv: String,
+    open val opprettetAvNavn: String? = null,
+    open val kildeapplikasjon: String,
     @Enumerated(EnumType.STRING)
-    val soknadFra: SøktAvType,
+    open val soknadFra: SøktAvType,
     @Enumerated(EnumType.STRING)
-    var stonadstype: Stønadstype?,
+    open var stonadstype: Stønadstype?,
     @Enumerated(EnumType.STRING)
-    var engangsbeloptype: Engangsbeløptype?,
-    var vedtaksid: Long? = null,
-    var virkningsdato: LocalDate? = null,
+    open var engangsbeloptype: Engangsbeløptype?,
+    open var vedtaksid: Long? = null,
+    open var virkningsdato: LocalDate? = null,
     @Enumerated(EnumType.STRING)
-    var aarsak: ForskuddAarsakType? = null,
+    open var aarsak: ForskuddAarsakType? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_VEDTAK_OG_NOTAT")
-    var virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
+    open var virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_KUN_NOTAT")
-    var virkningstidspunktbegrunnelseKunINotat: String? = null,
+    open var virkningstidspunktbegrunnelseKunINotat: String? = null,
     @Column(name = "BOFORHOLDSBEGRUNNELSE_VEDTAK_OG_NOTAT")
-    var boforholdsbegrunnelseIVedtakOgNotat: String? = null,
+    open var boforholdsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "BOFORHOLDSBEGRUNNELSE_KUN_NOTAT")
-    var boforholdsbegrunnelseKunINotat: String? = null,
+    open var boforholdsbegrunnelseKunINotat: String? = null,
     @Column(name = "INNTEKTSBEGRUNNELSE_VEDTAK_OG_NOTAT")
-    var inntektsbegrunnelseIVedtakOgNotat: String? = null,
+    open var inntektsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "INNTEKTSBEGRUNNELSE_KUN_NOTAT")
-    var inntektsbegrunnelseKunINotat: String? = null,
+    open var inntektsbegrunnelseKunINotat: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-    var grunnlagspakkeid: Long? = null,
-    var grunnlagSistInnhentet: LocalDateTime? = null,
+    open val id: Long? = null,
+    open var grunnlagspakkeid: Long? = null,
+    open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
     )
-    var roller: MutableSet<Rolle> = mutableSetOf(),
+    open var roller: MutableSet<Rolle> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
-    var husstandsbarn: MutableSet<Husstandsbarn> = mutableSetOf(),
+    open var husstandsbarn: MutableSet<Husstandsbarn> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
-    var inntekter: MutableSet<Inntekt> = mutableSetOf(),
+    open var inntekter: MutableSet<Inntekt> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
-    var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
-    var deleted: Boolean = false,
+    open var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
+    open var deleted: Boolean = false,
 ) {
     fun getSøknadsbarn() = roller.filter { it.rolletype == Rolletype.BARN }
 
@@ -113,7 +113,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
         zipOrAccumulate(
             { ensure(this@validere.id != null) { raise("Behandlingsid mangler") } },
             {
-                ensure(this@validere.datoTom == null || this@validere.datoTom.isAfter(this@validere.søktFomDato)) {
+                ensure(this@validere.datoTom == null || this@validere.datoTom!!.isAfter(this@validere.søktFomDato)) {
                     raise(
                         "Til dato må være etter fra dato",
                     )
