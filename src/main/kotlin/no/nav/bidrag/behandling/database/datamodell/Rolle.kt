@@ -22,17 +22,17 @@ import java.time.LocalDateTime
 open class Rolle(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
-    val behandling: Behandling,
+    open val behandling: Behandling,
     @Enumerated(EnumType.STRING)
-    val rolletype: Rolletype,
-    val ident: String?,
-    val foedselsdato: LocalDate,
-    val opprettet: LocalDateTime = LocalDateTime.now(),
+    open val rolletype: Rolletype,
+    open val ident: String?,
+    open val foedselsdato: LocalDate,
+    open val opprettet: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-    val navn: String? = null,
-    val deleted: Boolean = false,
+    open val id: Long? = null,
+    open val navn: String? = null,
+    open val deleted: Boolean = false,
 )
 
 fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""

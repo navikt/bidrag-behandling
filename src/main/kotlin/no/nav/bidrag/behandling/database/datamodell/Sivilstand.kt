@@ -17,14 +17,14 @@ import java.time.LocalDate
 open class Sivilstand(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
-    val behandling: Behandling,
-    val datoFom: LocalDate? = null,
-    val datoTom: LocalDate? = null,
+    open val behandling: Behandling,
+    open val datoFom: LocalDate? = null,
+    open val datoTom: LocalDate? = null,
     @Enumerated(EnumType.STRING)
-    val sivilstand: Sivilstandskode,
+    open val sivilstand: Sivilstandskode,
     @Enumerated(EnumType.STRING)
-    val kilde: Kilde,
+    open val kilde: Kilde,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    open val id: Long? = null,
 )

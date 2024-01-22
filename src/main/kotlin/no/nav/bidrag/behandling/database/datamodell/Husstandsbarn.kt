@@ -17,22 +17,22 @@ import java.time.LocalDate
 open class Husstandsbarn(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
-    val behandling: Behandling,
+    open val behandling: Behandling,
     @Column(name = "med_i_saken")
-    val medISaken: Boolean,
+    open val medISaken: Boolean,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-    val ident: String? = null,
-    val navn: String? = null,
-    val foedselsdato: LocalDate,
+    open val id: Long? = null,
+    open val ident: String? = null,
+    open val navn: String? = null,
+    open val foedselsdato: LocalDate,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "husstandsbarn",
         cascade = [CascadeType.PERSIST, CascadeType.MERGE],
         orphanRemoval = true,
     )
-    var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
+    open var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
 )
 
 fun Husstandsbarn.hentNavn() = navn ?: hentPersonVisningsnavn(ident)
