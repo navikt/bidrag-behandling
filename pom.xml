@@ -40,7 +40,7 @@
     <jackson.version>2.16.1</jackson.version>
     <swagger.version>2.2.20</swagger.version>
     <jetbrains.annotations.version>23.0.0</jetbrains.annotations.version>
-    <nimbus-jose-jwt.version>9.37.1</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.37.3</nimbus-jose-jwt.version>
   </properties>
 
   <repositories>
