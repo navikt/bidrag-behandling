@@ -16,14 +16,14 @@ import java.time.LocalDate
 open class Husstandsbarnperiode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barn_i_husstand_id", nullable = false)
-    val husstandsbarn: Husstandsbarn,
-    val datoFom: LocalDate?,
-    val datoTom: LocalDate?,
+    open val husstandsbarn: Husstandsbarn,
+    open val datoFom: LocalDate?,
+    open val datoTom: LocalDate?,
     @Enumerated(EnumType.STRING)
-    val bostatus: Bostatuskode,
+    open val bostatus: Bostatuskode,
     @Enumerated(EnumType.STRING)
-    val kilde: Kilde,
+    open val kilde: Kilde,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    open val id: Long? = null,
 )

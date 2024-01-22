@@ -16,16 +16,16 @@ import java.math.BigDecimal
 @Entity(name = "inntektspost")
 open class Inntektspost(
     @Column(name = "belop")
-    val beløp: BigDecimal,
-    val kode: String,
-    val visningsnavn: String,
+    open val beløp: BigDecimal,
+    open val kode: String,
+    open val visningsnavn: String,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    open val id: Long? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inntekt_id", nullable = false)
-    val inntekt: Inntekt? = null,
+    open val inntekt: Inntekt? = null,
     // TODO: Endre til ikke nullbar
     @Enumerated(EnumType.STRING)
-    val inntektstype: Inntektstype?,
+    open val inntektstype: Inntektstype?,
 )
