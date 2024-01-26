@@ -68,7 +68,14 @@ open class Behandling(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
     open var grunnlagspakkeid: Long? = null,
-    open var grunnlagSistInnhentet: LocalDateTime? = null,
+    open var grunnlagSistKontrollert: LocalDateTime? = null,
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
+    open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",

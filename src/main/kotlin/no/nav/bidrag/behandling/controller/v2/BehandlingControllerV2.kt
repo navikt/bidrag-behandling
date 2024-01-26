@@ -70,7 +70,7 @@ class BehandlingControllerV2 {
             virkningstidspunkt = VirkningstidspunktDto(notat = BehandlingNotatDto()),
             inntekter = InntekterDtoV2(notat = BehandlingNotatDto()),
             boforhold = BoforholdDto(emptySet(), sivilstand = emptySet(), notat = BehandlingNotatDto()),
-            opplysninger = emptyList(),
+            grunnlag = emptySet(),
         )
     }
 }

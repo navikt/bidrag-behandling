@@ -98,7 +98,7 @@ class BehandlingController(
         @PathVariable behandlingId: Long,
     ): BehandlingDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val opplysninger = grunnlagService.hentAlleSistAktiv(behandlingId)
-        return behandling.tilBehandlingDtoV2(opplysninger).tilBehandlingDto()
+        val opplysninger = grunnlagService.hentAlleSistInnhentet(behandlingId)
+        return behandling.tilBehandlingDtoV2(opplysninger.toSet()).tilBehandlingDto()
     }
 }

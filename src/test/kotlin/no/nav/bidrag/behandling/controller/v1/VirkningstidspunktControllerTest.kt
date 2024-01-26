@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
@@ -18,12 +19,14 @@ import java.time.LocalDate
 
 class VirkningstidspunktControllerTest : KontrollerTestRunner() {
     @Autowired
+    lateinit var behandlingRepository: BehandlingRepository
+
+    @Autowired
     lateinit var behandlingService: BehandlingService
 
     @Test
     fun `skal oppdatere virknings tidspunkt data`() {
-        val behandling =
-            behandlingService.opprettBehandling(BehandlingServiceTest.prepareBehandling())
+        val behandling = behandlingRepository.save(BehandlingServiceTest.prepareBehandling())
 
         val req =
             OppdaterBehandlingRequest(

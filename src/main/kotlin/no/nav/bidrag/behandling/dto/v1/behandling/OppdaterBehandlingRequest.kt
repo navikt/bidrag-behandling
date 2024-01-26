@@ -20,6 +20,10 @@ data class OppdaterBehandlingRequest(
     val inntekter: OppdatereInntekterRequest? = null,
 )
 
+data class AktivereGrunnlagRequest(
+    val idTilGrunnlagSomSkalAktiveres: Set<Long> = emptySet(),
+)
+
 data class OppdaterVirkningstidspunkt(
     @Schema(
         name = "årsak",

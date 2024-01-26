@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.utils
+package no.nav.bidrag.behandling.utils.testdata
 
 import no.nav.bidrag.behandling.consumer.BehandlingInfoResponseDto
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
@@ -26,28 +26,25 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+
+val fødselsnummerBm = "33" + LocalDate.now().minusMonths(450).format(DateTimeFormatter.ofPattern("MMyy")) + "40405"
+val fødselsnummerBp = "34" + LocalDate.now().minusMonths(476).format(DateTimeFormatter.ofPattern("MMyy")) + "72320"
+val fødselsnummerBarn1 = "81" + LocalDate.now().minusMonths(88).format(DateTimeFormatter.ofPattern("MMyy")) + "28921"
+val fødselsnummerBarn2 = "82" + LocalDate.now().minusMonths(45).format(DateTimeFormatter.ofPattern("MMyy")) + "36333"
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
-val ROLLE_BM =
-    ForsendelseRolleDto(
-        Personident("313213213"),
-        type = Rolletype.BIDRAGSMOTTAKER,
-    )
-val ROLLE_BA_1 =
-    ForsendelseRolleDto(Personident("1344124"), type = Rolletype.BARN)
-val ROLLE_BA_2 =
-    ForsendelseRolleDto(Personident("54545454545"), type = Rolletype.BARN)
-val ROLLE_BP =
-    ForsendelseRolleDto(
-        Personident("213244124"),
-        type = Rolletype.BIDRAGSPLIKTIG,
-    )
+
+val ROLLE_BM = ForsendelseRolleDto(Personident(fødselsnummerBm), type = Rolletype.BIDRAGSMOTTAKER)
+val ROLLE_BP = ForsendelseRolleDto(Personident(fødselsnummerBp), type = Rolletype.BIDRAGSPLIKTIG)
+val ROLLE_BA_1 = ForsendelseRolleDto(Personident(fødselsnummerBarn1), type = Rolletype.BARN)
+val ROLLE_BA_2 = ForsendelseRolleDto(Personident(fødselsnummerBarn2), type = Rolletype.BARN)
 
 val testdataBM =
     mapOf(
         Rolle::navn.name to "Oran Mappe",
-        Rolle::ident.name to "1232134544",
+        Rolle::ident.name to fødselsnummerBm,
         Rolle::rolletype.name to Rolletype.BIDRAGSMOTTAKER,
         Rolle::foedselsdato.name to LocalDate.parse("2020-03-01"),
     )
@@ -55,7 +52,7 @@ val testdataBM =
 val testdataBarn1 =
     mapOf<String, Any>(
         Rolle::navn.name to "Kran Mappe",
-        Rolle::ident.name to "6216464366",
+        Rolle::ident.name to fødselsnummerBarn1,
         Rolle::rolletype.name to Rolletype.BARN,
         Rolle::foedselsdato.name to LocalDate.parse("2020-03-01"),
     )

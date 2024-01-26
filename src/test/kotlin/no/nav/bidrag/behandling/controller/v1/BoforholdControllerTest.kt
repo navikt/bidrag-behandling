@@ -23,16 +23,20 @@ import kotlin.test.assertEquals
 class BoforholdControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal lagre boforhold data`() {
+        val personidentBm = Personident("12345678911")
+        val personidentBarn = Personident("12345678910")
+        stubUtils.stubHenteGrunnlagOk(personidentBm, setOf(personidentBarn))
+
         val roller =
             setOf(
                 OpprettRolleDto(
                     Rolletype.BARN,
-                    Personident("12345678910"),
+                    personidentBarn,
                     fødselsdato = LocalDate.now().minusMonths(136),
                 ),
                 OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
-                    Personident("12345678911"),
+                    personidentBm,
                     fødselsdato = LocalDate.now().minusMonths(529),
                 ),
             )

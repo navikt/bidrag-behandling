@@ -101,7 +101,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                 )
 
-            val actualBehandling = behandlingService.opprettBehandling(behandling)
+            val actualBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(actualBehandling.id)
 
@@ -123,7 +123,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val notat = "New Notat"
             val medIVedtak = "med i vedtak"
 
-            val createdBehandling = behandlingService.opprettBehandling(behandling)
+            val createdBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(createdBehandling.id)
             assertNull(createdBehandling.aarsak)
@@ -183,7 +183,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val notat = "New Notat"
             val medIVedtak = "med i vedtak"
 
-            val createdBehandling = behandlingService.opprettBehandling(behandling)
+            val createdBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(createdBehandling.id)
             assertNull(createdBehandling.aarsak)
@@ -333,7 +333,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val notat = "New Notat"
             val medIVedtak = "med i vedtak"
 
-            val createdBehandling = behandlingService.opprettBehandling(behandling)
+            val createdBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(createdBehandling.id)
             assertNull(createdBehandling.aarsak)
@@ -608,6 +608,6 @@ class BehandlingServiceTest : TestContainerRunner() {
     fun createBehandling(): Behandling {
         val behandling = prepareBehandling()
 
-        return behandlingService.opprettBehandling(behandling)
+        return behandlingRepository.save(behandling)
     }
 }

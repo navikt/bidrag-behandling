@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -11,6 +10,7 @@ import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
@@ -31,12 +31,11 @@ private val log = KotlinLogging.logger {}
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
-    private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
     private val grunnlagService: GrunnlagService,
 ) {
-    fun opprettBehandling(behandling: Behandling): Behandling =
+    private fun opprettBehandling(behandling: Behandling): Behandling =
         behandlingRepository.save(behandling).let {
             opprettForsendelseForBehandling(it)
             it
@@ -49,9 +48,8 @@ class BehandlingService(
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
-            "${OpprettBehandlingRequest::stønadstype.name} " +
-                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} " +
-                "må være satt i forespørselen",
+            "${OpprettBehandlingRequest::stønadstype.name} eller " +
+                "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv = TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
@@ -81,12 +79,14 @@ class BehandlingService(
             )
 
         behandling.roller.addAll(roller)
-
         val behandlingDo = opprettBehandling(behandling)
+
+        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+
         log.info {
-            "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " + "og engangsbeløptype " +
-                "${opprettBehandling.engangsbeløpstype} " + "vedtakstype ${opprettBehandling.vedtakstype} " +
-                "og søknadFra ${opprettBehandling.søknadFra} " + "med id ${behandlingDo.id} "
+            "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
+                "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
+                "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -98,7 +98,7 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    BehandlingInfoDto(
                         behandlingId = behandling.id,
                         soknadId = behandling.soknadsid,
                         soknadFra = behandling.soknadFra,
@@ -160,7 +160,7 @@ class BehandlingService(
                     }
                     it
                 },
-        ).tilBehandlingDtoV2(grunnlagService.hentAlleSistAktiv(behandlingsid))
+        ).tilBehandlingDtoV2(grunnlagService.hentAlleSistInnhentet(behandlingsid).toSet())
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
         behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
@@ -192,10 +192,6 @@ class BehandlingService(
         }
     }
 
-    fun oppfriskeGrunnlagsdata(grunlagspakkeid: Long) {
-        val grunnlagspakke = bidragGrunnlagConsumer.henteGrunnlagspakke(grunlagspakkeid)
-    }
-
     private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
         return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
             .none { r -> r.navn.isNullOrBlank() }
@@ -203,5 +199,10 @@ class BehandlingService(
 
     private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
         return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
+    }
+
+    private fun forespørselInneholderBmOgBarn(roller: Set<OpprettRolleDto>): Boolean {
+        return roller.filter { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }
+            .isNotEmpty() && roller.filter { r -> r.rolletype == Rolletype.BARN }.isNotEmpty()
     }
 }

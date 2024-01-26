@@ -49,7 +49,7 @@ fun BehandlingDtoV2.tilBehandlingDto() =
         virkningstidspunkt = virkningstidspunkt,
         boforhold = boforhold,
         inntekter = inntekter.tilInntekterDto(),
-        opplysninger = opplysninger,
+        opplysninger = grunnlag.toList(),
     )
 
 fun InntekterDtoV2.tilInntekterDto(): InntekterDto {

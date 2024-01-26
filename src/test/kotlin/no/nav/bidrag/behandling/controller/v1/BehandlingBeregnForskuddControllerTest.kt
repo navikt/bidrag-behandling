@@ -9,9 +9,9 @@ import io.mockk.mockkObject
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
-import no.nav.bidrag.behandling.utils.oppretteBehandling
-import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregning
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
