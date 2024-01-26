@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.utils
+package no.nav.bidrag.behandling.utils.testdata
 
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling

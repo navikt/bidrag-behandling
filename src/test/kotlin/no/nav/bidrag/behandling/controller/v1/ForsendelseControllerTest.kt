@@ -6,12 +6,12 @@ import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
-import no.nav.bidrag.behandling.utils.ROLLE_BA_1
-import no.nav.bidrag.behandling.utils.ROLLE_BM
-import no.nav.bidrag.behandling.utils.ROLLE_BP
-import no.nav.bidrag.behandling.utils.SAKSNUMMER
-import no.nav.bidrag.behandling.utils.SOKNAD_ID
-import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.behandling.utils.testdata.ROLLE_BA_1
+import no.nav.bidrag.behandling.utils.testdata.ROLLE_BM
+import no.nav.bidrag.behandling.utils.testdata.ROLLE_BP
+import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
+import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.dokument.BidragEnhet
 import org.intellij.lang.annotations.Language
@@ -78,7 +78,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     "soknadType": null,
                     "soknadFra": null,
                     "vedtakType": null,
-                    "barnIBehandling":["1344124"]
+                    "barnIBehandling":["${ROLLE_BA_1.fødselsnummer?.verdi}"]
                 },
                 "opprettTittel": true
             }
@@ -166,7 +166,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     "soknadType": null,
                     "soknadFra": null,
                     "vedtakType": null,
-                    "barnIBehandling":["1344124"]
+                    "barnIBehandling":["${ROLLE_BA_1.fødselsnummer?.verdi}"]
                 },
                 "opprettTittel": true
             }

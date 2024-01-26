@@ -6,15 +6,23 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import com.google.gson.GsonBuilder
+import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
+import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer.Companion.oppretteGrunnlagsobjekterBarn
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
-import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.behandling.transformers.LocalDateTypeAdapter
+import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
+import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
+import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDto
 import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
@@ -185,6 +193,52 @@ class StubUtils {
                     ),
             ),
         )
+    }
+
+    fun stubHenteGrunnlagOk(
+        personidentBm: Personident,
+        personidentBarn: Set<Personident> = emptySet(),
+    ): StubMapping {
+        val requestJson = oppretteGrunnlagrequest(personidentBm, personidentBarn)
+
+        return WireMock.stubFor(
+            WireMock.post(WireMock.urlEqualTo("/hentgrunnlag"))
+                .withRequestBody(WireMock.equalToJson(requestJson))
+                .willReturn(
+                    aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withStatus(HttpStatus.OK.value())
+                        .withBodyFile("hente-grunnlagrespons.json"),
+                ),
+        )
+    }
+
+    private fun oppretteGrunnlagrequest(
+        personidentBm: Personident,
+        personidenterBarn: Set<Personident>,
+    ): String {
+        val spørring: List<GrunnlagRequestDto> =
+            when (personidenterBarn) {
+                emptySet<Personident>() -> BidragGrunnlagConsumer.oppretteGrunnlagsobjekterBm(personidentBm)
+                else ->
+                    BidragGrunnlagConsumer.oppretteGrunnlagsobjekterBm(personidentBm) +
+                        personidenterBarn.flatMap {
+                            oppretteGrunnlagsobjekterBarn(
+                                it,
+                            )
+                        }
+            }
+
+        return GsonBuilder().registerTypeAdapter(
+            LocalDate::class.java,
+            LocalDateTypeAdapter(),
+        ).create()
+            .toJson(
+                HentGrunnlagRequestDto(
+                    Formål.FORSKUDD,
+                    spørring,
+                ),
+            )
     }
 
     inner class Verify {

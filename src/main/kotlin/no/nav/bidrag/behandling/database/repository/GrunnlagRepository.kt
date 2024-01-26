@@ -9,4 +9,16 @@ interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
         behandlingId: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
     ): Grunnlag?
+
+    /*
+    @Modifying
+    @Query(
+        "update no.nav.bidrag.behandling.database.datamodell.Grunnlag g " +
+            "set g.endringskontrollert = :tidspunktForEndringskontroll where g.id = :id",
+    )
+    fun oppdatereTidspunktForEndringskontroll(
+        id: Long,
+        tidspunktForEndringskontroll: LocalDateTime,
+    )
+     */
 }

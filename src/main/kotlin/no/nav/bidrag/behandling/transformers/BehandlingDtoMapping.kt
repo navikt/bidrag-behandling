@@ -10,7 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 
-fun Behandling.tilBehandlingDtoV2(opplysninger: List<Grunnlag>) =
+fun Behandling.tilBehandlingDtoV2(grunnlag: Set<Grunnlag>) =
     BehandlingDtoV2(
         id = id!!,
         vedtakstype = vedtakstype,
@@ -64,5 +64,5 @@ fun Behandling.tilBehandlingDtoV2(opplysninger: List<Grunnlag>) =
                         kunINotat = inntektsbegrunnelseKunINotat,
                     ),
             ),
-        opplysninger = opplysninger.map(Grunnlag::toDto),
+        grunnlag = grunnlag.map(Grunnlag::toDto).toSet(),
     )

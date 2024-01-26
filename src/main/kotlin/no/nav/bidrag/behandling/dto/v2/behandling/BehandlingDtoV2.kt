@@ -35,5 +35,5 @@ data class BehandlingDtoV2(
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDto,
-    val opplysninger: List<GrunnlagsdataDto>,
+    val grunnlag: Set<GrunnlagsdataDto>,
 )

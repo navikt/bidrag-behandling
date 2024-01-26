@@ -1,5 +1,5 @@
 BIDRAG_PERSON_URL: http://localhost:${wiremock.server.port}/bidrag-person
-BIDRAG_GRUNNLAG_URL: http://localhost:${wiremock.server.port}/grunnlag
+BIDRAG_GRUNNLAG_URL: http://localhost:${wiremock.server.port}
 BIDRAG_FORSENDELSE_URL: http://localhost:${wiremock.server.port}/forsendelse
 BIDRAG_TILGANGSKONTROLL_URL: http://localhost:${wiremock.server.port}/tilgangskontroll
 BIDRAG_ORGANISASJON_URL: http://localhost:${wiremock.server.port}/organisasjon
