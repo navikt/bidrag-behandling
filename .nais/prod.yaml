@@ -14,6 +14,7 @@ env:
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon.prod-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.prod-fss-pub.nais.io/bidrag-sjablon
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt.prod-fss-pub.nais.io/api/v2
+  KODEVERK_URL: https://kodeverk.prod-fss-pub.nais.io
   TOPIC_VEDTAK: bidrag.vedtak
 kafka:
   pool: nav-prod
@@ -43,3 +44,4 @@ outbound-access-hosts:
   - bidrag-organisasjon.prod-fss-pub.nais.io
   - bidrag-sjablon.prod-fss-pub.nais.io
   - arbeid-og-inntekt.prod-fss-pub.nais.io
+  - kodeverk.prod-fss-pub.nais.io

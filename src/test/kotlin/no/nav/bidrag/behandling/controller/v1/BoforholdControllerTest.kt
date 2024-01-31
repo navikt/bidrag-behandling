@@ -26,6 +26,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         val personidentBm = Personident("12345678911")
         val personidentBarn = Personident("12345678910")
         stubUtils.stubHenteGrunnlagOk(personidentBm, setOf(personidentBarn))
+        stubUtils.stubKodeverkSkattegrunnlag()
+        stubUtils.stubKodeverkLønnsbeskrivelse()
+        stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+        stubUtils.stubKodeverkYtelsesbeskrivelser()
 
         val roller =
             setOf(

@@ -1,14 +1,20 @@
 package no.nav.bidrag.behandling.service
 
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.shouldBe
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
@@ -18,7 +24,9 @@ import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.behandling.utils.testdata.tilAinntektspostDto
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -26,6 +34,7 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -52,6 +61,9 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
 
+    @Autowired
+    lateinit var grunnlagRepository: GrunnlagRepository
+
     @PersistenceContext
     lateinit var entityManager: EntityManager
 
@@ -60,7 +72,40 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         fun `skal kaste 404 exception hvis behandlingen ikke er der`() {
             Assertions.assertThrows(HttpClientErrorException::class.java) {
-                behandlingService.hentBehandlingById(1234)
+                behandlingService.henteBehandling(1234)
+            }
+        }
+
+        @Test
+        fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
+            // gitt
+            val behandling = oppretteBehandling()
+
+            oppretteOgLagreGrunnlag(behandling, Grunnlagsdatatype.INNTEKT)
+
+            val personidentBm = Personident(behandling.getBidragsmottaker()!!.ident!!)
+
+            stubUtils.stubHentePersoninfo(personident = personidentBm.verdi)
+            stubUtils.stubHenteGrunnlagOk(
+                personidentBm,
+                behandling.getSøknadsbarn().map { Personident(it.ident!!) }.toSet(),
+            )
+            stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkLønnsbeskrivelse()
+            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+            stubUtils.stubKodeverkYtelsesbeskrivelser()
+
+            // hvis
+            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
+            // så
+            assertSoftly {
+                behandlingDto.aktiveGrunnlagsdata.size shouldBe 9
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
+                        g ->
+                    g.grunnlagsdatatype == Grunnlagsdatatype.INNTEKT
+                }.size shouldBe 1
             }
         }
     }
@@ -69,7 +114,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     open inner class OppretteBehandling {
         @Test
         fun `skal opprette en forskuddsbehandling`() {
-            val actualBehandling = createBehandling()
+            val actualBehandling = oppretteBehandling()
 
             assertNotNull(actualBehandling.id)
             assertEquals(Stønadstype.FORSKUDD, actualBehandling.stonadstype)
@@ -219,7 +264,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     open inner class SletteBehandling {
         @Test
         fun `delete behandling`() {
-            val behandling = createBehandling()
+            val behandling = oppretteBehandling()
             behandlingService.deleteBehandlingById(behandling.id!!)
 
             Assertions.assertThrows(HttpClientErrorException::class.java) {
@@ -232,7 +277,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     open inner class SynkronisereRoller {
         @Test
         fun `legge til flere roller`() {
-            val b = createBehandling()
+            val b = oppretteBehandling()
 
             behandlingService.syncRoller(
                 b.id!!,
@@ -251,7 +296,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         fun `behandling må synce roller og slette behandling`() {
-            val b = createBehandling()
+            val b = oppretteBehandling()
             behandlingService.syncRoller(
                 b.id!!,
                 listOf(
@@ -272,7 +317,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         fun `behandling må synce roller`() {
-            val b = createBehandling()
+            val b = oppretteBehandling()
             behandlingService.syncRoller(
                 b.id!!,
                 listOf(
@@ -381,7 +426,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         fun `skal opprette en behandling med grunnlagspakkeId`() {
-            val b = createBehandling()
+            val b = oppretteBehandling()
 
             behandlingService.oppdaterBehandling(
                 b.id!!,
@@ -398,7 +443,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     open inner class OppdatereInntekter {
         @Test
         fun `skal legge til inntekter`() {
-            val actualBehandling = createBehandling()
+            val actualBehandling = oppretteBehandling()
 
             assertNotNull(actualBehandling.id)
 
@@ -449,7 +494,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         open fun `skal slette inntekter`() {
             stubUtils.stubOpprettForsendelse()
 
-            val actualBehandling = createBehandling()
+            val actualBehandling = oppretteBehandling()
 
             assertNotNull(actualBehandling.id)
 
@@ -518,7 +563,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     @Test
     fun `delete behandling rolle`() {
-        val behandling = createBehandling()
+        val behandling = oppretteBehandling()
 
         assertEquals(3, behandling.roller.size)
         behandling.roller.removeIf { it.rolletype == Rolletype.BARN }
@@ -605,9 +650,48 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
     }
 
-    fun createBehandling(): Behandling {
+    fun oppretteBehandling(): Behandling {
         val behandling = prepareBehandling()
 
         return behandlingRepository.save(behandling)
+    }
+
+    private fun oppretteOgLagreGrunnlag(
+        behandling: Behandling,
+        grunnlagsdatatype: Grunnlagsdatatype,
+    ): Grunnlag {
+        val data =
+            when (grunnlagsdatatype) {
+                Grunnlagsdatatype.INNTEKT ->
+                    objektTilJson(
+                        GrunnlagInntekt(
+                            ainntekt =
+                                listOf(
+                                    AinntektGrunnlagDto(
+                                        personId = behandling.getBidragspliktig()?.ident!!,
+                                        periodeFra = behandling.søktFomDato,
+                                        periodeTil = behandling.søktFomDato.plusMonths(1),
+                                        ainntektspostListe =
+                                            listOf(
+                                                tilAinntektspostDto(
+                                                    beløp = BigDecimal(70000),
+                                                    fomDato = behandling.søktFomDato,
+                                                    tilDato = behandling.søktFomDato.plusMonths(1),
+                                                ),
+                                            ),
+                                    ),
+                                ),
+                        ),
+                    )
+
+                else -> {
+                    objektTilJson(GrunnlagInntekt())
+                }
+            }
+
+        val grunnlag =
+            Grunnlag(behandling = behandling, data = data, innhentet = LocalDateTime.now(), type = grunnlagsdatatype)
+
+        return grunnlagRepository.save(grunnlag)
     }
 }

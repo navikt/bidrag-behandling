@@ -1,5 +1,30 @@
 {
-  "ainntektListe": [],
+  "ainntektListe": [
+    {
+      "personId": "99057812345",
+      "periodeFra": "2021-01-01",
+      "periodeTil": "2021-02-01",
+      "aktiv": true,
+      "brukFra": "2021-11-27T00:00:00",
+      "brukTil": null,
+      "hentetTidspunkt": "2021-12-20T15:03:29.888769",
+      "ainntektspostListe": [
+        {
+          "utbetalingsperiode": "2021-01",
+          "opptjeningsperiodeFra": null,
+          "opptjeningsperiodeTil": null,
+          "opplysningspliktigId": "995277670",
+          "virksomhetId": "995277670",
+          "inntektType": "YTELSE_FRA_OFFENTLIGE",
+          "fordelType": "kontantytelse",
+          "beskrivelse": "ufoeretrygd",
+          "belop": 19939,
+          "etterbetalingsperiodeFra": null,
+          "etterbetalingsperiodeTil": null
+        }
+      ]
+    }
+  ],
   "arbeidsforholdListe": [
     {
       "partPersonId": "99057812345",
@@ -74,8 +99,27 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.151722999"
     }
   ],
-  "barnetilleggListe": [],
-  "barnetilsynListe": [],
+  "barnetilleggListe": [
+    {
+      "barnPersonId": "01057812300",
+      "partPersonId": "99057812345",
+      "periodeFra": "2021-01-01",
+      "periodeTil": "2021-02-01",
+      "barnetilleggType": "PENSJON",
+      "beløpBrutto": 3450,
+      "barnType": "FELLES",
+      "hentetTidspunkt": "2023-12-20T15:03:29.888769"
+    }
+  ],
+  "barnetilsynListe": [
+    {
+      "partPersonId": "99057812345",
+      "barnPersonId": "01057812300",
+      "beløp": 2700,
+      "periodeFra":  "2020-06-01",
+      "periodeTil":  "2023-07-01"
+    }
+  ],
   "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
   "husstandsmedlemmerOgEgneBarnListe": [
     {
@@ -103,7 +147,15 @@
       ]
     }
   ],
-  "kontantstøtteListe": [],
+  "kontantstøtteListe": [
+    {
+      "partPersonId": "99057812345",
+      "barnPersonId": "01057812300",
+      "periodeFra": "2020-06-01",
+      "periodeTil": "2023-07-01",
+      "beløp": 4000
+    }
+  ],
   "sivilstandListe": [
     {
       "personId": "99057812345",
@@ -138,5 +190,14 @@
       ]
     }
   ],
-  "ubstListe": []
+  "ubstListe": [
+    {
+      "personId": "99057812345",
+      "type": "UTVIDET_BARNETRYGD",
+      "periodeFra": "2020-06-01",
+      "periodeTil": "2023-07-01",
+      "beløp": 3000,
+      "manueltBeregnet": false
+    }
+  ]
 }

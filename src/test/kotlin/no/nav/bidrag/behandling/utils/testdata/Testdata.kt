@@ -22,6 +22,7 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -343,3 +344,21 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
     behandling.sivilstand = mutableSetOf(sivilstand)
     return behandling
 }
+
+fun tilAinntektspostDto(
+    beløp: BigDecimal = BigDecimal(40000),
+    fomDato: LocalDate,
+    tilDato: LocalDate,
+) = AinntektspostDto(
+    belop = beløp,
+    beskrivelse = null,
+    utbetalingsperiode = null,
+    opptjeningsperiodeFra = fomDato,
+    opptjeningsperiodeTil = tilDato,
+    etterbetalingsperiodeFra = null,
+    etterbetalingsperiodeTil = null,
+    fordelType = null,
+    inntektType = "YTELSE_FRA_OFFENTLIGE",
+    opplysningspliktigId = "995277670",
+    virksomhetId = "995277670",
+)

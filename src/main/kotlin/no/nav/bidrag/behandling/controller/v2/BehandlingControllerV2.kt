@@ -5,22 +5,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
-import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
-import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.GrunnlagService
+import no.nav.bidrag.domene.ident.Personident
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import java.time.LocalDate
 
 @BehandlingRestControllerV2
-class BehandlingControllerV2 {
+class BehandlingControllerV2(
+    private val behandlingService: BehandlingService,
+    private val grunnlagService: GrunnlagService,
+) {
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}")
     @Operation(
@@ -31,12 +30,16 @@ class BehandlingControllerV2 {
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequestV2,
     ): BehandlingDtoV2 {
-        // TODO: implementere
-        return responsstubbe()
+        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingId)
+
+        behandlingFørOppdatering.getBidragsmottaker()?.ident?.let { Personident(it) }
+            ?: throw IllegalArgumentException("Behandling mangler BM!")
+
+        return behandlingService.oppdaterBehandling(behandlingId, request)
     }
 
     @Suppress("unused")
-    @GetMapping("/behandling/{behandlingId}")
+    @GetMapping("/behandling/{behandlingsid}")
     @Operation(
         description = "Hente en behandling",
         security = [SecurityRequirement(name = "bearer-key")],
@@ -48,29 +51,8 @@ class BehandlingControllerV2 {
         ],
     )
     fun hentBehandlingV2(
-        @PathVariable behandlingId: Long,
+        @PathVariable behandlingsid: Long,
     ): BehandlingDtoV2 {
-        // TODO: implementere
-        return responsstubbe()
-    }
-
-    fun responsstubbe(): BehandlingDtoV2 {
-        val nå = LocalDate.now()
-        return BehandlingDtoV2(
-            0L,
-            vedtakstype = Vedtakstype.FASTSETTELSE,
-            erVedtakFattet = false,
-            søktFomDato = nå,
-            mottattdato = nå,
-            søktAv = SøktAvType.VERGE,
-            saksnummer = "1234567",
-            søknadsid = 1,
-            behandlerenhet = "4806",
-            roller = emptySet(),
-            virkningstidspunkt = VirkningstidspunktDto(notat = BehandlingNotatDto()),
-            inntekter = InntekterDtoV2(emptySet(), BehandlingNotatDto()),
-            boforhold = BoforholdDto(emptySet(), sivilstand = emptySet(), notat = BehandlingNotatDto()),
-            grunnlag = emptySet(),
-        )
+        return behandlingService.henteBehandling(behandlingsid)
     }
 }

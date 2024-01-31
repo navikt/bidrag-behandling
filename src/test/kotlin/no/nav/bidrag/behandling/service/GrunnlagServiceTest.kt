@@ -9,7 +9,10 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilArbeidsforholdGrunnlagDto
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilBarnetilleggGrunnlagDto
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilBarnetilsynGrunnlagDto
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilGrunnlagInntekt
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilKontantstøtteGrunnlagDto
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilRelatertPersonGrunnlagDto
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilSivilstandGrunnlagDto
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -41,10 +44,17 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var grunnlagService: GrunnlagService
 
+    val totaltAntallGrunnlag = 9
+
     @BeforeEach
     fun setup() {
         grunnlagRepository.deleteAll()
         behandlingRepository.deleteAll()
+
+        stubUtils.stubKodeverkSkattegrunnlag()
+        stubUtils.stubKodeverkLønnsbeskrivelse()
+        stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+        stubUtils.stubKodeverkYtelsesbeskrivelser()
     }
 
     @Nested
@@ -69,7 +79,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 oppdatertBehandling.isPresent shouldBe true
-                oppdatertBehandling.get().grunnlag.size shouldBe 4
+                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
             }
 
             val grunnlag =
@@ -86,6 +96,37 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagInntekt.skattegrunnlag shouldNotBe emptySet<SkattegrunnlagGrunnlagDto>()
                 grunnlagInntekt.skattegrunnlag.size shouldBe 1
                 grunnlagInntekt.skattegrunnlag[0].personId shouldBe "99057812345"
+            }
+        }
+
+        @Test
+        fun `skal sette til aktiv dersom ikke tidligere lagret`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
+            val barn =
+                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
+                    .sortedBy { it.verdi }.toSet()
+
+            stubUtils.stubHenteGrunnlagOk(bm, barn, true)
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
+            }
+
+            oppdatertBehandling.get().grunnlag.forEach {
+                assertSoftly {
+                    it.data shouldNotBe null
+                    it.aktiv shouldNotBe null
+                    it.aktiv?.toLocalDate() shouldBe LocalDate.now()
+                }
             }
         }
 
@@ -108,7 +149,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 oppdatertBehandling.isPresent shouldBe true
-                oppdatertBehandling.get().grunnlag.size shouldBe 4
+                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
             }
 
             val grunnlag =
@@ -150,7 +191,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 oppdatertBehandling.isPresent shouldBe true
-                oppdatertBehandling.get().grunnlag.size shouldBe 4
+                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
             }
 
             val grunnlag =
@@ -184,6 +225,74 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
+        fun `skal lagre yteslser`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
+            val barn =
+                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
+                    .sortedBy { it.verdi }.toSet()
+
+            stubUtils.stubHenteGrunnlagOk(bm, barn)
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
+            }
+
+            val grunnlagBarnetillegg =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.BARNETILLEGG,
+                )
+            grunnlagBarnetillegg shouldNotBe null
+            val barnetillegg = jsonTilBarnetilleggGrunnlagDto(grunnlagBarnetillegg?.data!!)
+            assertSoftly {
+                barnetillegg.size shouldBe 1
+            }
+
+            val grunnlagBarnetilsyn =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.BARNETILSYN,
+                )
+            grunnlagBarnetilsyn shouldNotBe null
+            val barnetilsyn = jsonTilBarnetilsynGrunnlagDto(grunnlagBarnetilsyn?.data!!)
+            assertSoftly {
+                barnetilsyn.size shouldBe 1
+            }
+
+            val grunnlagKontantstøtte =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.KONTANTSTØTTE,
+                )
+            grunnlagKontantstøtte shouldNotBe null
+            val kontantstøtte = jsonTilKontantstøtteGrunnlagDto(grunnlagKontantstøtte?.data!!)
+            assertSoftly {
+                kontantstøtte.size shouldBe 1
+            }
+
+            val grunnlagUtvidetBarnetrygdOgSmåbarnstillegg =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
+                )
+            grunnlagUtvidetBarnetrygdOgSmåbarnstillegg shouldNotBe null
+            val utvidetBarnetrygdOgSmåbarnstillegg =
+                jsonTilBarnetilsynGrunnlagDto(grunnlagUtvidetBarnetrygdOgSmåbarnstillegg?.data!!)
+            assertSoftly {
+                utvidetBarnetrygdOgSmåbarnstillegg.size shouldBe 1
+            }
+        }
+
+        @Test
         fun `skal lagre arbeidsforhold`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
@@ -202,7 +311,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 oppdatertBehandling.isPresent shouldBe true
-                oppdatertBehandling.get().grunnlag.size shouldBe 4
+                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
             }
 
             val grunnlag =
@@ -278,7 +387,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly {
-                nyesteGrunnlagPerType.size shouldBe 4
+                nyesteGrunnlagPerType.size shouldBe totaltAntallGrunnlag
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.HUSSTANDSMEDLEMMER }.size shouldBe 1
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.INNTEKT }.size shouldBe 1

@@ -21,6 +21,10 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import java.math.BigDecimal
 
+/**
+ * Inneholder omgjøringer som kreves for å støtte bakoverkompatibilitet. Fila skal kunne slettes når migrering til API V2 er fullført.
+ */
+
 val rapporteringstyperSomIkkeSkalInkluderesIInntekt =
     setOf(
         Inntektsrapportering.BARNETILLEGG,
@@ -49,7 +53,7 @@ fun BehandlingDtoV2.tilBehandlingDto() =
         virkningstidspunkt = virkningstidspunkt,
         boforhold = boforhold,
         inntekter = inntekter.tilInntekterDto(),
-        opplysninger = grunnlag.toList(),
+        opplysninger = aktiveGrunnlagsdata.toList(),
     )
 
 fun InntekterDtoV2.tilInntekterDto(): InntekterDto {
