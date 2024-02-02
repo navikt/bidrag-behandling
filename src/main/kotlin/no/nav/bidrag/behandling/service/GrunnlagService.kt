@@ -16,8 +16,9 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTil
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.tilKontantstøtte
 import no.nav.bidrag.behandling.transformers.tilSkattegrunnlagForLigningsår
+import no.nav.bidrag.behandling.transformers.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.tilSummerteMånedsOgÅrsinntekter
-import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygdOgSmåbarnstillegg
+import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
@@ -87,8 +88,15 @@ class GrunnlagService(
 
         lagreGrunnlagHvisEndret(
             behandling.id!!,
-            Grunnlagsdatatype.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
-            innhentetGrunnlag.ubstListe.toSet(),
+            Grunnlagsdatatype.SMÅBARNSTILLEGG,
+            innhentetGrunnlag.småbarnstilleggListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreGrunnlagHvisEndret(
+            behandling.id!!,
+            Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+            innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
 
@@ -105,7 +113,8 @@ class GrunnlagService(
                 ainntektsposter = innhentetGrunnlag.ainntektListe.flatMap { it.ainntektspostListe.tilAinntektsposter() },
                 kontantstøtteliste = innhentetGrunnlag.kontantstøtteListe.tilKontantstøtte(),
                 skattegrunnlagsliste = innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(),
-                utvidetBarnetrygdOgSmåbarnstilleggliste = innhentetGrunnlag.ubstListe.tilUtvidetBarnetrygdOgSmåbarnstillegg(),
+                småbarnstilleggliste = innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(),
+                utvidetBarnetrygdliste = innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(),
             )
 
         val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
@@ -169,8 +178,7 @@ class GrunnlagService(
         innhentetGrunnlag: Set<T>,
         hentetTidspunkt: LocalDateTime,
     ) {
-        val sistInnhentedeGrunnlagAvType: Set<T>? =
-            henteNyesteGrunnlagsdata(behandlingsid, grunnlagstype)
+        val sistInnhentedeGrunnlagAvType: Set<T>? = henteNyesteGrunnlagsdata(behandlingsid, grunnlagstype)
 
         if (sistInnhentedeGrunnlagAvType == null || innhentetGrunnlag != sistInnhentedeGrunnlagAvType) {
             opprett(
@@ -227,10 +235,7 @@ class GrunnlagService(
         val grunnlagsdata = hentSistInnhentet(behandlingsid, grunnlagstype)?.data
 
         return if (grunnlagsdata != null) {
-            Gson().fromJson(
-                hentSistInnhentet(behandlingsid, grunnlagstype)?.data,
-                typeinfo,
-            )
+            Gson().fromJson<Set<T>?>(grunnlagsdata, typeinfo).toSet()
         } else {
             null
         }

@@ -26,7 +26,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
         val personidentBm = Personident("99057812345")
         val personidentBarn = Personident("12345678910")
 
-        stubUtils.stubHenteGrunnlagOk(personidentBm, setOf(personidentBarn))
+        stubUtils.stubHenteGrunnlagOk()
 
         // when
         val returnertGrunnlag =

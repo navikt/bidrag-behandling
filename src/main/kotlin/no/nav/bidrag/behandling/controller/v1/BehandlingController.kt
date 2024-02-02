@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
-import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilOppdaterBehandlingRequestV2
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.web.bind.annotation.GetMapping
@@ -97,9 +96,7 @@ class BehandlingController(
     fun hentBehandling(
         @PathVariable behandlingId: Long,
     ): BehandlingDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val gjeldendeAktiveGrunnlagsdata = grunnlagService.henteGjeldendeAktiveGrunnlagsdatahenteGjeldendeAktiveGrunnlagsdata(behandlingId)
-        val grunnlagsdataEndretEtterAktivering = grunnlagService.hentAlleSistInnhentet(behandlingId).filter { g -> g.aktiv == null }
-        return behandling.tilBehandlingDtoV2(gjeldendeAktiveGrunnlagsdata, grunnlagsdataEndretEtterAktivering).tilBehandlingDto()
+        val behandling = behandlingService.henteBehandling(behandlingId)
+        return behandling.tilBehandlingDto()
     }
 }

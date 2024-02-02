@@ -86,10 +86,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val personidentBm = Personident(behandling.getBidragsmottaker()!!.ident!!)
 
             stubUtils.stubHentePersoninfo(personident = personidentBm.verdi)
-            stubUtils.stubHenteGrunnlagOk(
-                personidentBm,
-                behandling.getSøknadsbarn().map { Personident(it.ident!!) }.toSet(),
-            )
+            stubUtils.stubHenteGrunnlagOk()
             stubUtils.stubKodeverkSkattegrunnlag()
             stubUtils.stubKodeverkLønnsbeskrivelse()
             stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
@@ -100,7 +97,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly {
-                behandlingDto.aktiveGrunnlagsdata.size shouldBe 9
+                behandlingDto.aktiveGrunnlagsdata.size shouldBe 10
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
                         g ->

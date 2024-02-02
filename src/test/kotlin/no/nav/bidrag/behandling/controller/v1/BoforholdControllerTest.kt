@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.controller.v1
 
+import no.nav.bidrag.behandling.controller.v1.behandling.BehandlingControllerTest
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
@@ -25,11 +26,6 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     fun `skal lagre boforhold data`() {
         val personidentBm = Personident("12345678911")
         val personidentBarn = Personident("12345678910")
-        stubUtils.stubHenteGrunnlagOk(personidentBm, setOf(personidentBarn))
-        stubUtils.stubKodeverkSkattegrunnlag()
-        stubUtils.stubKodeverkLønnsbeskrivelse()
-        stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
-        stubUtils.stubKodeverkYtelsesbeskrivelser()
 
         val roller =
             setOf(
@@ -51,7 +47,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         // 1. Create new behandling
         val behandling =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling",
+                "${rootUriV1()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(testBehandlingMedNull),
                 OpprettBehandlingResponse::class.java,
@@ -94,7 +90,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.body!!.id}",
+                "${rootUriV1()}/behandling/${behandling.body!!.id}",
                 HttpMethod.PUT,
                 HttpEntity(OppdaterBehandlingRequest(boforhold = boforholdData)),
                 BehandlingDto::class.java,

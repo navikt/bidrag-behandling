@@ -23,7 +23,9 @@ fun Date.toLocalDate(): LocalDate {
 
 fun LocalDate.toCompactString(): String = this.format(formatterCommpact)
 
-class LocalDateTypeAdapter : JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
+class LocalDateTypeAdapter(datoformat: DateTimeFormatter? = null) : JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
+    private val datoformat: DateTimeFormatter = datoformat ?: formatter
+
     override fun serialize(
         objekt: LocalDate?,
         type: Type?,
@@ -37,7 +39,7 @@ class LocalDateTypeAdapter : JsonSerializer<LocalDate>, JsonDeserializer<LocalDa
         type: Type?,
         kontekst: JsonDeserializationContext?,
     ): LocalDate {
-        return LocalDate.parse(jsonelement?.asString, formatter)
+        return LocalDate.parse(jsonelement?.asString, datoformat)
     }
 }
 

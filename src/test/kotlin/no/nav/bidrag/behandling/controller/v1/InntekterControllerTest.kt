@@ -50,7 +50,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}",
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     BehandlingDto::class.java,
@@ -73,7 +73,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}",
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
                     BehandlingDto::class.java,
@@ -105,7 +105,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}",
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(
@@ -150,7 +150,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
             val r1 =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}",
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(
@@ -189,7 +189,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             // when
             val r =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUri()}/behandling/${behandling.id}",
+                    "${rootUriV1()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequest(

@@ -1,8 +1,5 @@
 package no.nav.bidrag.behandling.consumer
 
-import com.google.gson.GsonBuilder
-import no.nav.bidrag.behandling.transformers.LocalDateTimeTypeAdapter
-import no.nav.bidrag.behandling.transformers.LocalDateTypeAdapter
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.vedtak.Formål
@@ -64,7 +61,7 @@ class BidragGrunnlagConsumer(
                 periodeFra = fraDato,
                 periodeTil = tilDato,
             )
-        }.toList().sortedBy { r -> personident }
+        }.toList().sortedBy { personident }
 
         private fun finneFraDato(type: GrunnlagRequestType): LocalDate {
             val dagensDato = LocalDate.now()
@@ -106,17 +103,9 @@ class BidragGrunnlagConsumer(
     }
 
     private fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentGrunnlagDto {
-        val payload =
-            GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTimeTypeAdapter::class.java, LocalDateTimeTypeAdapter()).create()
-                .toJson(
-                    HentGrunnlagRequestDto(Formål.FORSKUDD, grunnlag),
-                )
-
         return postForNonNullEntity(
             bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),
-            payload,
+            HentGrunnlagRequestDto(formaal = Formål.FORSKUDD, grunnlagRequestDtoListe = grunnlag),
         )
     }
 }

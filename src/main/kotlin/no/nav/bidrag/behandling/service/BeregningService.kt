@@ -18,7 +18,7 @@ import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -92,7 +92,7 @@ class BeregningService(
     private fun oppretteGrunnlagForHusstandsbarn(
         behandling: Behandling,
         personidentSøknadsbarn: String,
-    ): Set<Grunnlag> {
+    ): Set<GrunnlagDto> {
         return behandling.husstandsbarn.filter { barn -> barn.ident != personidentSøknadsbarn }
             .map {
                 val fødselsdato =
@@ -109,10 +109,10 @@ class BeregningService(
         navn: String?,
         fødselsdato: LocalDate,
         referanse: String,
-    ): Grunnlag {
+    ): GrunnlagDto {
         val personident = ident ?: ""
 
-        return Grunnlag(
+        return GrunnlagDto(
             referanse = "person-$referanse",
             type = Grunnlagstype.PERSON,
             innhold =

@@ -44,7 +44,7 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
 
         val respons =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}",
+                "${rootUriV1()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
                 HttpEntity(req),
                 BehandlingDto::class.java,

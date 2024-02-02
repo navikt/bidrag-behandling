@@ -4,11 +4,13 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.Ainntektspost
 import no.nav.bidrag.transport.behandling.inntekt.request.Kontantstøtte
 import no.nav.bidrag.transport.behandling.inntekt.request.SkattegrunnlagForLigningsår
-import no.nav.bidrag.transport.behandling.inntekt.request.UtvidetBarnetrygdOgSmåbarnstillegg
+import no.nav.bidrag.transport.behandling.inntekt.request.Småbarnstillegg
+import no.nav.bidrag.transport.behandling.inntekt.request.UtvidetBarnetrygd
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
 import java.math.BigDecimal
 
@@ -41,13 +43,21 @@ fun List<SkattegrunnlagGrunnlagDto>.tilSkattegrunnlagForLigningsår(): List<Skat
         )
     }
 
-fun List<UtvidetBarnetrygdOgSmaabarnstilleggGrunnlagDto>.tilUtvidetBarnetrygdOgSmåbarnstillegg(): List<UtvidetBarnetrygdOgSmåbarnstillegg> =
+fun List<UtvidetBarnetrygdGrunnlagDto>.tilUtvidetBarnetrygd(): List<UtvidetBarnetrygd> =
     this.map {
-        UtvidetBarnetrygdOgSmåbarnstillegg(
-            type = it.type,
+        UtvidetBarnetrygd(
+            beløp = it.beløp,
             periodeFra = it.periodeFra,
             periodeTil = it.periodeTil,
+        )
+    }
+
+fun List<SmåbarnstilleggGrunnlagDto>.tilSmåbarnstillegg(): List<Småbarnstillegg> =
+    this.map {
+        Småbarnstillegg(
             beløp = it.beløp,
+            periodeFra = it.periodeFra,
+            periodeTil = it.periodeTil,
         )
     }
 
