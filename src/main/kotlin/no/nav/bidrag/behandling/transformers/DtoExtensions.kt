@@ -162,7 +162,7 @@ fun Set<Inntekt>.tilInntektDtoV2() =
             opprinneligFom = it.opprinneligFom,
             opprinneligTom = it.opprinneligTom,
         )
-    }.toSet()
+    }
 
 fun Grunnlag.toDto(): GrunnlagsdataDto {
     return GrunnlagsdataDto(

@@ -57,7 +57,7 @@ fun Behandling.tilBehandlingDtoV2(opplysninger: List<Grunnlag>) =
             ),
         inntekter =
             InntekterDtoV2(
-                inntekter = inntekter.tilInntektDtoV2(),
+                inntekter = inntekter.tilInntektDtoV2().toSet(),
                 notat =
                     BehandlingNotatDto(
                         medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
