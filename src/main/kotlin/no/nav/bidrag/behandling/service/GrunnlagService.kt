@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -21,13 +21,13 @@ class GrunnlagService(
         grunnlagsdatatype: Grunnlagsdatatype,
         data: String,
         innhentet: LocalDateTime,
-    ): Grunnlag {
+    ): BehandlingGrunnlag {
         behandlingRepository
             .findBehandlingById(behandlingId)
             .orElseThrow { behandlingNotFoundException(behandlingId) }
             .let {
-                return grunnlagRepository.save<Grunnlag>(
-                    Grunnlag(
+                return grunnlagRepository.save<BehandlingGrunnlag>(
+                    BehandlingGrunnlag(
                         it,
                         grunnlagsdatatype.getOrMigrate(),
                         data = data,
@@ -40,13 +40,13 @@ class GrunnlagService(
     fun hentSistAktiv(
         behandlingsid: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
-    ): Grunnlag? =
+    ): BehandlingGrunnlag? =
         grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
             behandlingsid,
             grunnlagsdatatype.getOrMigrate(),
         )
 
-    fun hentAlleSistAktiv(behandlingId: Long): List<Grunnlag> =
+    fun hentAlleSistAktiv(behandlingId: Long): List<BehandlingGrunnlag> =
         Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
             grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
                 behandlingId,

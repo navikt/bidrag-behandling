@@ -1,0 +1,619 @@
+{
+  "inntekt": [
+    {
+      "ident": "1344124",
+      "versjon": "",
+      "summertAarsinntektListe": [],
+      "summertMånedsinntektListe": []
+    },
+    {
+      "ident": "54545454545",
+      "versjon": "",
+      "summertAarsinntektListe": [],
+      "summertMånedsinntektListe": []
+    },
+    {
+      "ident": "313213213",
+      "versjon": "",
+      "summertAarsinntektListe": [
+        {
+          "datoFom": "01.01.2022",
+          "datoTom": "01.12.2022",
+          "periode": {
+            "fom": "2022-01",
+            "til": "2022-12"
+          },
+          "referanse": "",
+          "sumInntekt": 2859987,
+          "visningsnavn": "Lønn og trekk 2022",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 2859987,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "AINNTEKT"
+        },
+        {
+          "datoFom": "01.01.2023",
+          "datoTom": "01.12.2023",
+          "periode": {
+            "fom": "2023-01",
+            "til": "2023-12"
+          },
+          "referanse": "",
+          "sumInntekt": 31979987,
+          "visningsnavn": "Lønn og trekk 2023",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 31979987,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "AINNTEKT"
+        },
+        {
+          "datoFom": "01.01.2023",
+          "datoTom": "01.12.2023",
+          "periode": {
+            "fom": "2023-01",
+            "til": "2023-12"
+          },
+          "referanse": "",
+          "sumInntekt": 31979987,
+          "visningsnavn": "Lønn og trekk siste 12 mnd",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 31979987,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "AINNTEKT_BEREGNET_12MND"
+        },
+        {
+          "datoFom": "01.10.2023",
+          "datoTom": "01.12.2023",
+          "periode": {
+            "fom": "2023-10",
+            "til": "2023-12"
+          },
+          "referanse": "",
+          "sumInntekt": 8489000,
+          "visningsnavn": "Lønn og trekk siste 3 mnd",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 8489000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "AINNTEKT_BEREGNET_3MND"
+        },
+        {
+          "datoFom": "01.01.2021",
+          "datoTom": "01.12.2021",
+          "periode": {
+            "fom": "2021-01",
+            "til": "2021-12"
+          },
+          "referanse": "",
+          "sumInntekt": 0,
+          "visningsnavn": "Sigrun ligningsinntekt (LIGS) 2021",
+          "inntektPostListe": [],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "LIGNINGSINNTEKT"
+        },
+        {
+          "datoFom": "01.01.2022",
+          "datoTom": "01.12.2022",
+          "periode": {
+            "fom": "2022-01",
+            "til": "2022-12"
+          },
+          "referanse": "",
+          "sumInntekt": 5000,
+          "visningsnavn": "Sigrun ligningsinntekt (LIGS) 2022",
+          "inntektPostListe": [
+            {
+              "kode": "annenArbeidsinntekt",
+              "beløp": 5000,
+              "inntekstype": null,
+              "visningsnavn": "Annen arbeidsinntekt"
+            }
+          ],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "LIGNINGSINNTEKT"
+        },
+        {
+          "datoFom": "01.01.2023",
+          "datoTom": "01.12.2023",
+          "periode": {
+            "fom": "2023-01",
+            "til": "2023-12"
+          },
+          "referanse": "",
+          "sumInntekt": 16000,
+          "visningsnavn": "Sigrun ligningsinntekt (LIGS) 2023",
+          "inntektPostListe": [
+            {
+              "kode": "annenArbeidsinntekt",
+              "beløp": 6000,
+              "inntekstype": null,
+              "visningsnavn": "Annen arbeidsinntekt"
+            },
+            {
+              "kode": "arbeidsavklaringspenger",
+              "beløp": 10000,
+              "inntekstype": null,
+              "visningsnavn": "Arbeidsavklaringspenger"
+            }
+          ],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "LIGNINGSINNTEKT"
+        },
+        {
+          "datoFom": "01.01.2021",
+          "datoTom": "01.12.2021",
+          "periode": {
+            "fom": "2021-01",
+            "til": "2021-12"
+          },
+          "referanse": "",
+          "sumInntekt": 0,
+          "visningsnavn": "Sigrun kapitalinntekt (KAPS) 2021",
+          "inntektPostListe": [],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "KAPITALINNTEKT"
+        },
+        {
+          "datoFom": "01.01.2022",
+          "datoTom": "01.12.2022",
+          "periode": {
+            "fom": "2022-01",
+            "til": "2022-12"
+          },
+          "referanse": "",
+          "sumInntekt": 44000,
+          "visningsnavn": "Sigrun kapitalinntekt (KAPS) 2022",
+          "inntektPostListe": [
+            {
+              "kode": "annenSkattepliktigKapitalinntektFraAnnetFinansprodukt",
+              "beløp": 4000,
+              "inntekstype": null,
+              "visningsnavn": "Annen skattepliktig kapitalinntekt fra annet finansprodukt"
+            },
+            {
+              "kode": "annenSkattepliktigKapitalinntektFraVirtuellValuta",
+              "beløp": 40000,
+              "inntekstype": null,
+              "visningsnavn": "Annen skattepliktig kapitalinntekt fra virtuell valuta"
+            }
+          ],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "KAPITALINNTEKT"
+        },
+        {
+          "datoFom": "01.01.2023",
+          "datoTom": "01.12.2023",
+          "periode": {
+            "fom": "2023-01",
+            "til": "2023-12"
+          },
+          "referanse": "",
+          "sumInntekt": 85000,
+          "visningsnavn": "Sigrun kapitalinntekt (KAPS) 2023",
+          "inntektPostListe": [
+            {
+              "kode": "annenSkattepliktigKapitalinntektFraAnnetFinansprodukt",
+              "beløp": 5000,
+              "inntekstype": null,
+              "visningsnavn": "Annen skattepliktig kapitalinntekt fra annet finansprodukt"
+            },
+            {
+              "kode": "annenSkattepliktigKapitalinntektFraVirtuellValuta",
+              "beløp": 50000,
+              "inntekstype": null,
+              "visningsnavn": "Annen skattepliktig kapitalinntekt fra virtuell valuta"
+            },
+            {
+              "kode": "inntektFraGevinstOgTapskonto",
+              "beløp": 30000,
+              "inntekstype": null,
+              "visningsnavn": "Inntekt fra gevinst og tapskonto"
+            }
+          ],
+          "gjelderBarnPersonId": "",
+          "inntektRapportering": "KAPITALINNTEKT"
+        }
+      ],
+      "summertMånedsinntektListe": [
+        {
+          "sumInntekt": 104000,
+          "gjelderÅrMåned": "2022-01",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 104000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 104000,
+          "gjelderÅrMåned": "2022-02",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 104000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 104000,
+          "gjelderÅrMåned": "2022-03",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 104000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 104000,
+          "gjelderÅrMåned": "2022-04",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 104000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 407329,
+          "gjelderÅrMåned": "2022-05",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 407329,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 303329,
+          "gjelderÅrMåned": "2022-06",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 303329,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 465829,
+          "gjelderÅrMåned": "2022-07",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 465829,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 162500,
+          "gjelderÅrMåned": "2022-08",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 162500,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 162500,
+          "gjelderÅrMåned": "2022-09",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 162500,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 422500,
+          "gjelderÅrMåned": "2022-10",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 422500,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 260000,
+          "gjelderÅrMåned": "2022-11",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 260000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 260000,
+          "gjelderÅrMåned": "2022-12",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 260000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 6734000,
+          "gjelderÅrMåned": "2023-01",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 6734000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 234000,
+          "gjelderÅrMåned": "2023-02",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 234000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 234000,
+          "gjelderÅrMåned": "2023-03",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 234000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 234000,
+          "gjelderÅrMåned": "2023-04",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 234000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 10937329,
+          "gjelderÅrMåned": "2023-05",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 10937329,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 1499329,
+          "gjelderÅrMåned": "2023-06",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 1499329,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 8649329,
+          "gjelderÅrMåned": "2023-07",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 8649329,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 546000,
+          "gjelderÅrMåned": "2023-08",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 546000,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 789750,
+          "gjelderÅrMåned": "2023-09",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 789750,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 789750,
+          "gjelderÅrMåned": "2023-10",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 789750,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 666250,
+          "gjelderÅrMåned": "2023-11",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 666250,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        },
+        {
+          "sumInntekt": 666250,
+          "gjelderÅrMåned": "2023-12",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "beløp": 666250,
+              "inntekstype": null,
+              "visningsnavn": "Fastlønn"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "barnetillegg": [],
+  "arbeidsforhold": [
+    {
+      "sluttdato": null,
+      "startdato": "2002-11-03",
+      "partPersonId": "313213213",
+      "permisjonListe": [],
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "permitteringListe": [],
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2002-11",
+          "periodeTil": null,
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": null,
+          "arbeidsforholdType": "Forenklet",
+          "avtaltStillingsprosent": null,
+          "sisteLønnsendringDato": null,
+          "ansettelsesformBeskrivelse": null,
+          "arbeidstidsordningBeskrivelse": null,
+          "sisteStillingsprosentendringDato": null
+        }
+      ]
+    },
+    {
+      "sluttdato": null,
+      "startdato": "2003-12-08",
+      "partPersonId": "313213213",
+      "permisjonListe": [
+        {
+          "prosent": 100,
+          "sluttdato": "2024-01-01",
+          "startdato": "2023-11-01",
+          "beskrivelse": "Permisjon"
+        }
+      ],
+      "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
+      "permitteringListe": [
+        {
+          "prosent": 100,
+          "sluttdato": "2023-01-31",
+          "startdato": "2023-01-01",
+          "beskrivelse": "Permittering"
+        }
+      ],
+      "arbeidsgiverOrgnummer": "947064649",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2024-01",
+          "periodeTil": null,
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": 37.5,
+          "arbeidsforholdType": "Ordinaer",
+          "avtaltStillingsprosent": 75,
+          "sisteLønnsendringDato": null,
+          "ansettelsesformBeskrivelse": "Fast ansettelse",
+          "arbeidstidsordningBeskrivelse": "Ikke skift",
+          "sisteStillingsprosentendringDato": null
+        }
+      ]
+    },
+    {
+      "sluttdato": null,
+      "startdato": "2022-12-07",
+      "partPersonId": "313213213",
+      "permisjonListe": [],
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "permitteringListe": [],
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2022-12",
+          "periodeTil": null,
+          "yrkeBeskrivelse": "BYGNINGSSNEKKER",
+          "antallTimerPrUke": null,
+          "arbeidsforholdType": "Forenklet",
+          "avtaltStillingsprosent": null,
+          "sisteLønnsendringDato": null,
+          "ansettelsesformBeskrivelse": null,
+          "arbeidstidsordningBeskrivelse": null,
+          "sisteStillingsprosentendringDato": null
+        }
+      ]
+    }
+  ],
+  "utvidetbarnetrygd": []
+}

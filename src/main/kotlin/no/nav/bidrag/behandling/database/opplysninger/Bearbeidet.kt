@@ -5,6 +5,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -44,4 +45,5 @@ data class InntektBearbeidet(
     val ident: String,
     val versjon: String?,
     val summertAarsinntektListe: List<SummertÅrsinntekt>,
+    val summertMånedsinntektListe: List<SummertMånedsinntekt>,
 )

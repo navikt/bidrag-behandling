@@ -1,10 +1,13 @@
 package no.nav.bidrag.behandling.utils
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import no.nav.bidrag.behandling.consumer.BehandlingInfoResponseDto
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -13,19 +16,36 @@ import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.sak.Bidragssakstatus
+import no.nav.bidrag.domene.enums.sak.Sakskategori
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.organisasjon.Enhetsnummer
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.sak.BidragssakDto
+import no.nav.bidrag.transport.sak.RolleDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
+
+data class TestDataPerson(
+    val ident: String,
+    val navn: String,
+    val foedselsdato: LocalDate,
+    val rolletype: Rolletype,
+)
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
@@ -43,29 +63,41 @@ val ROLLE_BP =
         Personident("213244124"),
         type = Rolletype.BIDRAGSPLIKTIG,
     )
-
+val testdataBP =
+    TestDataPerson(
+        navn = "Kor Mappe",
+        ident = "213244124",
+        rolletype = Rolletype.BIDRAGSPLIKTIG,
+        foedselsdato = LocalDate.parse("2000-03-01"),
+    )
 val testdataBM =
-    mapOf(
-        Rolle::navn.name to "Oran Mappe",
-        Rolle::ident.name to "1232134544",
-        Rolle::rolletype.name to Rolletype.BIDRAGSMOTTAKER,
-        Rolle::foedselsdato.name to LocalDate.parse("2020-03-01"),
+    TestDataPerson(
+        navn = "Oran Mappe",
+        ident = "313213213",
+        rolletype = Rolletype.BIDRAGSMOTTAKER,
+        foedselsdato = LocalDate.parse("2020-03-01"),
     )
 
 val testdataBarn1 =
-    mapOf<String, Any>(
-        Rolle::navn.name to "Kran Mappe",
-        Rolle::ident.name to "6216464366",
-        Rolle::rolletype.name to Rolletype.BARN,
-        Rolle::foedselsdato.name to LocalDate.parse("2020-03-01"),
+    TestDataPerson(
+        navn = "Kran Mappe",
+        ident = "1344124",
+        rolletype = Rolletype.BARN,
+        foedselsdato = LocalDate.parse("2020-03-01"),
     )
-
 val testdataBarn2 =
-    mapOf<String, Any>(
-        Rolle::navn.name to "Gran Mappe",
-        Rolle::ident.name to "123312312",
-        Rolle::rolletype.name to Rolletype.BARN,
-        Rolle::foedselsdato.name to LocalDate.parse("2018-05-09"),
+    TestDataPerson(
+        navn = "Gran Mappe",
+        ident = "54545454545",
+        rolletype = Rolletype.BARN,
+        foedselsdato = LocalDate.parse("2018-05-09"),
+    )
+val testdataHusstandsmedlem1 =
+    TestDataPerson(
+        navn = "Huststand Gapp",
+        ident = "231323123123123123",
+        rolletype = Rolletype.BARN,
+        foedselsdato = LocalDate.parse("2001-05-09"),
     )
 
 fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
@@ -97,7 +129,8 @@ fun oppretteBehandling(id: Long? = null): Behandling {
         SøktAvType.BIDRAGSMOTTAKER,
         Stønadstype.FORSKUDD,
         null,
-        virkningsdato = LocalDate.parse("2023-02-01"),
+        årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
+        virkningstidspunkt = LocalDate.parse("2023-02-01"),
         id = id,
     )
 }
@@ -118,14 +151,14 @@ fun opprettInntekt(
 
 fun opprettInntekter(
     behandling: Behandling,
-    data: Map<String, Any>,
+    data: TestDataPerson,
 ) = mutableSetOf(
     Inntekt(
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
         BigDecimal.valueOf(45000),
         LocalDate.parse("2023-01-01"),
         LocalDate.parse("2023-12-31"),
-        data[Rolle::ident.name] as String,
+        data.ident,
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
@@ -135,7 +168,7 @@ fun opprettInntekter(
         BigDecimal.valueOf(33000),
         LocalDate.parse("2023-01-01"),
         LocalDate.parse("2023-12-31"),
-        data[Rolle::ident.name] as String,
+        data.ident,
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
@@ -145,7 +178,7 @@ fun opprettInntekter(
         BigDecimal.valueOf(55000),
         LocalDate.parse("2022-01-01"),
         LocalDate.parse("2022-12-31"),
-        data[Rolle::ident.name] as String,
+        data.ident,
         Kilde.MANUELL,
         true,
         behandling = behandling,
@@ -180,29 +213,29 @@ fun opprettSivilstand(
 
 fun opprettRolle(
     behandling: Behandling,
-    data: Map<String, Any>,
+    data: TestDataPerson,
 ): Rolle {
     return Rolle(
-        navn = data[Rolle::navn.name] as String,
-        ident = data[Rolle::ident.name] as String,
-        rolletype = data[Rolle::rolletype.name] as Rolletype,
+        navn = data.navn,
+        ident = data.ident,
+        rolletype = data.rolletype,
         behandling = behandling,
-        foedselsdato = data[Rolle::foedselsdato.name] as LocalDate,
+        foedselsdato = data.foedselsdato,
         opprettet = LocalDateTime.now(),
     )
 }
 
 fun opprettHusstandsbarn(
     behandling: Behandling,
-    data: Map<String, Any>,
+    data: TestDataPerson,
 ): Husstandsbarn {
     val husstandsbarn =
         Husstandsbarn(
-            navn = data[Rolle::navn.name] as String,
-            ident = data[Rolle::ident.name] as String,
+            navn = data.navn,
+            ident = data.ident,
             medISaken = true,
             behandling = behandling,
-            foedselsdato = data[Rolle::foedselsdato.name] as LocalDate,
+            foedselsdato = data.foedselsdato,
         )
     husstandsbarn.perioder =
         mutableSetOf(
@@ -232,24 +265,24 @@ fun oppretteBehandlingRoller(
     val roller =
         mutableSetOf(
             Rolle(
-                ident = ROLLE_BM.fødselsnummer?.verdi!!,
+                ident = testdataBM.ident,
                 rolletype = Rolletype.BIDRAGSMOTTAKER,
                 behandling = behandling,
-                foedselsdato = LocalDate.now().minusMonths(29 * 13),
+                foedselsdato = testdataBM.foedselsdato,
                 id = if (generateId) (1).toLong() else null,
             ),
             Rolle(
-                ident = ROLLE_BA_1.fødselsnummer?.verdi!!,
+                ident = testdataBarn1.ident,
                 rolletype = Rolletype.BARN,
                 behandling = behandling,
-                foedselsdato = LocalDate.now().minusMonths(3 * 14),
+                foedselsdato = testdataBarn1.foedselsdato,
                 id = if (generateId) (2).toLong() else null,
             ),
             Rolle(
-                ident = ROLLE_BA_2.fødselsnummer?.verdi!!,
+                ident = testdataBarn2.ident,
                 rolletype = Rolletype.BARN,
                 behandling = behandling,
-                foedselsdato = LocalDate.now().minusMonths(3 * 14),
+                foedselsdato = testdataBarn2.foedselsdato,
                 id = if (generateId) (3).toLong() else null,
             ),
         )
@@ -257,10 +290,10 @@ fun oppretteBehandlingRoller(
     if (medBp) {
         roller.add(
             Rolle(
-                ident = ROLLE_BP.fødselsnummer?.verdi!!,
+                ident = testdataBP.ident,
                 rolletype = Rolletype.BIDRAGSPLIKTIG,
                 behandling = behandling,
-                foedselsdato = LocalDate.now().minusMonths(29 * 14),
+                foedselsdato = testdataBP.foedselsdato,
                 id = if (generateId) (4).toLong() else null,
             ),
         )
@@ -268,12 +301,31 @@ fun oppretteBehandlingRoller(
     return roller
 }
 
+fun opprettSakForBehandling(behandling: Behandling): BidragssakDto {
+    return BidragssakDto(
+        eierfogd = Enhetsnummer(behandling.behandlerEnhet),
+        saksnummer = Saksnummer(behandling.saksnummer),
+        saksstatus = Bidragssakstatus.IN,
+        kategori = Sakskategori.N,
+        opprettetDato = LocalDate.now(),
+        levdeAdskilt = false,
+        ukjentPart = false,
+        roller =
+            behandling.roller.map {
+                RolleDto(
+                    fødselsnummer = Personident(it.ident!!),
+                    type = it.rolletype,
+                )
+            },
+    )
+}
+
 fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling {
     // given
     val behandling = oppretteBehandling(if (generateId) 1 else null)
     behandling.roller = oppretteBehandlingRoller(behandling, generateId)
     val husstandsbarn =
-        behandling.getSøknadsbarn().mapIndexed { i, it ->
+        behandling.søknadsbarn.mapIndexed { i, it ->
             val husstandsbarn =
                 Husstandsbarn(
                     behandling = behandling,
@@ -287,20 +339,36 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 mutableSetOf(
                     Husstandsbarnperiode(
                         husstandsbarn = husstandsbarn,
-                        datoFom = LocalDate.now().minusMonths(5),
-                        datoTom = LocalDate.now().plusMonths(3),
+                        datoFom = behandling.søktFomDato,
+                        datoTom = behandling.søktFomDato.plusMonths(3),
                         bostatus = Bostatuskode.MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        id = if (generateId) (i + 1).toLong() else null,
+                    ),
+                    Husstandsbarnperiode(
+                        husstandsbarn = husstandsbarn,
+                        datoFom = behandling.søktFomDato.plusMonths(3),
+                        datoTom = null,
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         kilde = Kilde.OFFENTLIG,
                         id = if (generateId) (i + 1).toLong() else null,
                     ),
                 )
             husstandsbarn
         }.toMutableSet()
+    husstandsbarn.add(
+        behandling.opprettHusstandsbarn(
+            behandling.søknadsbarn.size,
+            testdataHusstandsmedlem1.ident,
+            testdataHusstandsmedlem1.navn,
+            null,
+        ),
+    )
     val sivilstand =
         Sivilstand(
             sivilstand = Sivilstandskode.BOR_ALENE_MED_BARN,
             behandling = behandling,
-            datoFom = LocalDate.now().minusMonths(12),
+            datoFom = behandling.søktFomDato,
             datoTom = null,
             kilde = Kilde.OFFENTLIG,
             id = if (generateId) (1).toLong() else null,
@@ -311,7 +379,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 belop = BigDecimal(50000),
                 datoTom = LocalDate.parse("2022-06-30"),
                 datoFom = LocalDate.parse("2022-01-01"),
-                ident = behandling.getBidragsmottaker()!!.ident!!,
+                ident = behandling.bidragsmottaker!!.ident!!,
                 taMed = true,
                 kilde = Kilde.MANUELL,
                 behandling = behandling,
@@ -322,27 +390,129 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 belop = BigDecimal(60000),
                 datoTom = null,
                 datoFom = LocalDate.parse("2022-07-01"),
-                ident = behandling.getBidragsmottaker()!!.ident!!,
+                ident = behandling.bidragsmottaker!!.ident!!,
                 taMed = true,
                 kilde = Kilde.MANUELL,
                 behandling = behandling,
                 inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 id = if (generateId) (2).toLong() else null,
             ),
-            Inntekt(
-                belop = BigDecimal(60000),
-                datoTom = LocalDate.parse("2022-12-31"),
-                datoFom = LocalDate.parse("2022-01-01"),
-                ident = behandling.getBidragsmottaker()!!.ident!!,
-                taMed = false,
-                kilde = Kilde.OFFENTLIG,
-                behandling = behandling,
-                inntektsrapportering = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-                id = if (generateId) (3).toLong() else null,
-            ),
         )
+
+    val aInntekt =
+        Inntekt(
+            belop = BigDecimal(60000),
+            datoTom = LocalDate.parse("2022-12-31"),
+            datoFom = LocalDate.parse("2022-01-01"),
+            ident = behandling.bidragsmottaker!!.ident!!,
+            taMed = false,
+            kilde = Kilde.OFFENTLIG,
+            behandling = behandling,
+            inntektsrapportering = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+            id = if (generateId) (3).toLong() else null,
+        )
+    aInntekt.inntektsposter.addAll(opprettInntektsposter(aInntekt))
+    inntekter.add(aInntekt)
     behandling.husstandsbarn = husstandsbarn
     behandling.inntekter = inntekter
     behandling.sivilstand = mutableSetOf(sivilstand)
     return behandling
 }
+
+fun Behandling.opprettHusstandsbarn(
+    index: Int?,
+    ident: String,
+    navn: String?,
+    fødselsdato: LocalDate?,
+): Husstandsbarn {
+    val husstandsbarn =
+        Husstandsbarn(
+            behandling = this,
+            medISaken = true,
+            ident = ident,
+            navn = navn,
+            foedselsdato = fødselsdato ?: LocalDate.parse("2020-01-01"),
+            id = if (index != null) (index + 1).toLong() else null,
+        )
+    husstandsbarn.perioder =
+        mutableSetOf(
+            Husstandsbarnperiode(
+                husstandsbarn = husstandsbarn,
+                datoFom = søktFomDato,
+                datoTom = søktFomDato.plusMonths(3),
+                bostatus = Bostatuskode.MED_FORELDER,
+                kilde = Kilde.OFFENTLIG,
+                id = if (index != null) (index + 1).toLong() else null,
+            ),
+            Husstandsbarnperiode(
+                husstandsbarn = husstandsbarn,
+                datoFom = søktFomDato.plusMonths(3),
+                datoTom = null,
+                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                kilde = Kilde.OFFENTLIG,
+                id = if (index != null) (index + 1).toLong() else null,
+            ),
+        )
+    return husstandsbarn
+}
+
+fun opprettAlleAktiveGrunnlagFraFil(
+    behandling: Behandling,
+    filnavn: String,
+): List<BehandlingGrunnlag> {
+    return listOf(
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.HUSSTANDSMEDLEMMER),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.ARBEIDSFORHOLD),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.INNTEKT),
+        opprettBeregnetInntektFraFil(behandling, "beregnet_inntekt.json"),
+    )
+}
+
+fun opprettBeregnetInntektFraFil(
+    behandling: Behandling,
+    filnavn: String,
+): BehandlingGrunnlag {
+    val fil = hentFil("/__files/$filnavn")
+    return BehandlingGrunnlag(
+        behandling = behandling,
+        type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+        data = fil.readText(),
+        innhentet = LocalDateTime.now(),
+    )
+}
+
+fun opprettGrunnlagFraFil(
+    behandling: Behandling,
+    filnavn: String,
+    type: Grunnlagsdatatype,
+): BehandlingGrunnlag {
+    val fil = hentFil("/__files/$filnavn")
+    val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(fil)
+
+    val data =
+        when (type) {
+            Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> commonObjectmapper.writeValueAsString(grunnlag.husstandsmedlemmerOgEgneBarnListe)
+            Grunnlagsdatatype.SIVILSTAND -> commonObjectmapper.writeValueAsString(grunnlag.sivilstandListe)
+            Grunnlagsdatatype.ARBEIDSFORHOLD -> commonObjectmapper.writeValueAsString(grunnlag.arbeidsforholdListe)
+            // Inntekter er en subset av grunnlag så lagrer bare alt
+            Grunnlagsdatatype.INNTEKT -> commonObjectmapper.writeValueAsString(grunnlag)
+            else -> "{}"
+        }
+    return BehandlingGrunnlag(
+        behandling = behandling,
+        type = type,
+        data = data,
+        innhentet = LocalDateTime.now(),
+    )
+}
+
+fun sjablonResponse(): List<Sjablontall> {
+    val fil = hentFil("/__files/sjablon.json")
+    return commonObjectmapper.readValue(fil)
+}
+
+private fun hentFil(filsti: String) =
+    TestdataManager::class.java.getResource(
+        filsti,
+    ) ?: throw RuntimeException("Fant ingen fil på sti $filsti")

@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.transformers
+package no.nav.bidrag.behandling.transformers.vedtak
 
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse

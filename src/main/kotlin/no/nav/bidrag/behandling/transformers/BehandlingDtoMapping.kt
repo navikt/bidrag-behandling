@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
@@ -10,7 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 
-fun Behandling.tilBehandlingDtoV2(opplysninger: List<Grunnlag>) =
+fun Behandling.tilBehandlingDtoV2(opplysninger: List<BehandlingGrunnlag>) =
     BehandlingDtoV2(
         id = id!!,
         vedtakstype = vedtakstype,
@@ -37,8 +37,8 @@ fun Behandling.tilBehandlingDtoV2(opplysninger: List<Grunnlag>) =
         grunnlagspakkeid = grunnlagspakkeid,
         virkningstidspunkt =
             VirkningstidspunktDto(
-                virkningsdato = virkningsdato,
-                årsak = aarsak,
+                virkningsdato = virkningstidspunkt,
+                årsak = årsak,
                 notat =
                     BehandlingNotatDto(
                         medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
@@ -64,5 +64,5 @@ fun Behandling.tilBehandlingDtoV2(opplysninger: List<Grunnlag>) =
                         kunINotat = inntektsbegrunnelseKunINotat,
                     ),
             ),
-        opplysninger = opplysninger.map(Grunnlag::toDto),
+        opplysninger = opplysninger.map(BehandlingGrunnlag::toDto),
     )

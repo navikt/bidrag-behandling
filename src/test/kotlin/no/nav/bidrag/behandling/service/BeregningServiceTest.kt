@@ -15,6 +15,7 @@ import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -50,12 +51,12 @@ class BeregningServiceTest {
         verify {
             beregnForskuddApi.beregn(
                 withArg {
-                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
+                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
                     it.grunnlagListe!! shouldHaveSize 7
 
                     val personer =
-                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.PERSON }
+                        it.grunnlagListe!!.hentAllePersoner()
                     personer shouldHaveSize 2
                     personer.any {
                         objectmapper.treeToValue(
@@ -73,19 +74,19 @@ class BeregningServiceTest {
                     sivilstand shouldHaveSize 1
 
                     val inntekter =
-                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE }
+                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE }
                     inntekter shouldHaveSize 2
                 },
             )
 
             beregnForskuddApi.beregn(
                 withArg {
-                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
+                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
                     it.grunnlagListe!! shouldHaveSize 7
 
                     val personer =
-                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.PERSON }
+                        it.grunnlagListe!!.hentAllePersoner()
                     personer shouldHaveSize 2
                     personer.any {
                         objectmapper.treeToValue(
@@ -103,7 +104,7 @@ class BeregningServiceTest {
                     sivilstand shouldHaveSize 1
 
                     val inntekter =
-                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE }
+                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE }
                     inntekter shouldHaveSize 2
                 },
             )

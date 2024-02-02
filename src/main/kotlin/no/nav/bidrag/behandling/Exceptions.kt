@@ -25,6 +25,30 @@ fun fantIkkeSak(saksnummer: String): Nothing =
         "Sak med saksnummer $saksnummer finnes ikke",
     )
 
+fun rolleManglerIdent(
+    rolletype: Rolletype,
+    behandlingId: Long,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Manger personident for rolle $rolletype i behandling $behandlingId",
+    )
+
+fun manglerBosstatus(behandlingId: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Mangler bosstatus for søknadsbarn i behandling $behandlingId",
+    )
+
+fun manglerRolle(
+    rolletype: Rolletype,
+    behandlingId: Long? = -1,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Mangler rolle $rolletype i behandling $behandlingId",
+    )
+
 fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.INTERNAL_SERVER_ERROR,

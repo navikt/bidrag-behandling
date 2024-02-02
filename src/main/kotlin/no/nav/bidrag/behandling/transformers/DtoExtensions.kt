@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -60,7 +60,7 @@ fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
     }.toSet()
 
 fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<HusstandsbarnDto> {
-    val identerSøknadsbarn = behandling.getSøknadsbarn().map { sb -> sb.ident!! }.toSet()
+    val identerSøknadsbarn = behandling.søknadsbarn.map { sb -> sb.ident!! }.toSet()
 
     val søknadsbarn =
         this.filter { !it.ident.isNullOrBlank() && identerSøknadsbarn.contains(it.ident) }.map {
@@ -164,7 +164,7 @@ fun Set<Inntekt>.tilInntektDtoV2() =
         )
     }.toSet()
 
-fun Grunnlag.toDto(): GrunnlagsdataDto {
+fun BehandlingGrunnlag.toDto(): GrunnlagsdataDto {
     return GrunnlagsdataDto(
         this.id!!,
         this.behandling.id!!,

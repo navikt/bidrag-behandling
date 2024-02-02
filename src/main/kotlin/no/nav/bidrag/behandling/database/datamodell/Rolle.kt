@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import java.time.LocalDate
@@ -34,5 +35,7 @@ open class Rolle(
     open val navn: String? = null,
     open val deleted: Boolean = false,
 )
+
+fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
 fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""

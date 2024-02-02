@@ -6,7 +6,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockkStatic
-import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.notat.NotatDto
 import no.nav.bidrag.behandling.service.hentPerson
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
@@ -32,23 +31,23 @@ class NotatGrunnlagControllerTest : KontrollerTestRunner() {
     fun `skal hente opplysninger for notat`() {
         val behandling = testdataManager.opprettBehandling()
         mockkStatic(::hentPerson)
-        every { hentPerson(testdataBM[Rolle::ident.name] as String) } returns
+        every { hentPerson(testdataBM.ident) } returns
             PersonDto(
-                ident = Personident(testdataBM[Rolle::ident.name] as String),
+                ident = Personident(testdataBM.ident),
                 fødselsdato = LocalDate.now().minusMonths(500),
-                visningsnavn = testdataBM[Rolle::navn.name] as String,
+                visningsnavn = testdataBM.navn,
             )
-        every { hentPerson(testdataBarn1[Rolle::ident.name] as String) } returns
+        every { hentPerson(testdataBarn1.ident) } returns
             PersonDto(
-                ident = Personident(testdataBarn1[Rolle::ident.name] as String),
+                ident = Personident(testdataBarn1.ident),
                 fødselsdato = LocalDate.now().minusMonths(500),
-                visningsnavn = testdataBarn1[Rolle::navn.name] as String,
+                visningsnavn = testdataBarn1.navn,
             )
-        every { hentPerson(testdataBarn2[Rolle::ident.name] as String) } returns
+        every { hentPerson(testdataBarn2.ident) } returns
             PersonDto(
-                ident = Personident(testdataBarn2[Rolle::ident.name] as String),
+                ident = Personident(testdataBarn2.ident),
                 fødselsdato = LocalDate.now().minusMonths(500),
-                visningsnavn = testdataBarn2[Rolle::navn.name] as String,
+                visningsnavn = testdataBarn2.navn,
             )
         val r1 =
             httpHeaderTestRestTemplate.exchange(
@@ -77,10 +76,10 @@ class NotatGrunnlagControllerTest : KontrollerTestRunner() {
             notatResponse.boforhold.sivilstand.opplysningerBruktTilBeregning shouldHaveSize 2
 
             val barn1 =
-                notatResponse.parterISøknad.find { it.personident?.verdi == testdataBarn1[Rolle::ident.name] as String }!!
-            barn1.navn shouldBe testdataBarn1[Rolle::navn.name] as String
+                notatResponse.parterISøknad.find { it.personident?.verdi == testdataBarn1.ident }!!
+            barn1.navn shouldBe testdataBarn1.navn
             barn1.rolle shouldBe Rolletype.BARN
-            barn1.fødselsdato shouldBe testdataBarn1[Rolle::foedselsdato.name]
+            barn1.fødselsdato shouldBe testdataBarn1.foedselsdato
 
             val inntekterBM =
                 notatResponse.inntekter.inntekterPerRolle.find { it.rolle == Rolletype.BIDRAGSMOTTAKER }!!
@@ -88,13 +87,13 @@ class NotatGrunnlagControllerTest : KontrollerTestRunner() {
 
             notatResponse.boforhold.barn[0].navn shouldBeIn
                 listOf(
-                    testdataBarn1[Rolle::navn.name] as String,
-                    testdataBarn2[Rolle::navn.name] as String,
+                    testdataBarn1.navn,
+                    testdataBarn2.navn,
                 )
             notatResponse.boforhold.barn[1].navn shouldBeIn
                 listOf(
-                    testdataBarn1[Rolle::navn.name] as String,
-                    testdataBarn2[Rolle::navn.name] as String,
+                    testdataBarn1.navn,
+                    testdataBarn2.navn,
                 )
         }
     }

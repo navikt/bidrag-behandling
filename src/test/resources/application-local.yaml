@@ -35,3 +35,10 @@ TOPIC_VEDTAK: bidrag.vedtak-lokal
 UNLEASH_SERVER_API_ENV: development
 UNLEASH_SERVER_API_PROJECTS: default
 UNLEASH_SERVER_API_TYPE: CLIENT
+BIDRAG_SAK_URL: https://bidrag-sak.dev.intern.nav.no/bidrag-sak
+BIDRAG_VEDTAK_URL: http://localhost:8889
+BIDRAG_VEDTAK_URL2: https://bidrag-vedtak.intern.dev.nav.no
+BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak
+BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak
+UNLEASH_SERVER_API_URL: https://bidrag-unleash-api.nav.cloud.nais.io
+UNLEASH_SERVER_API_TOKEN: https://bidrag-unleash-api.nav.cloud.nais.io
