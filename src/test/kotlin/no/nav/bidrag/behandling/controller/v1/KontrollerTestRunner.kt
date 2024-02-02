@@ -55,8 +55,12 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
 
     val stubUtils: StubUtils = StubUtils()
 
-    protected fun rootUri(): String {
+    protected fun rootUriV1(): String {
         return "http://localhost:$port/api/v1"
+    }
+
+    protected fun rootUriV2(): String {
+        return "http://localhost:$port/api/v2"
     }
 
     @BeforeEach
@@ -70,10 +74,10 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubHentForsendelserForSak()
         stubUtils.stubTilgangskontrollTema()
         stubUtils.stubHentePersoninfo(personident = "12345")
-        stubUtils.stubBeregneForskudd()
         stubUtils.stubKodeverkSkattegrunnlag()
         stubUtils.stubKodeverkLønnsbeskrivelse()
         stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
         stubUtils.stubKodeverkYtelsesbeskrivelser()
+        stubUtils.stubHenteGrunnlagOk()
     }
 }

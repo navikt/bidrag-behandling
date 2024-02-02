@@ -70,7 +70,7 @@ class BeregningServiceTest {
                     sivilstand shouldHaveSize 1
 
                     val inntekter =
-                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE }
+                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE }
                     inntekter shouldHaveSize 2
                 },
             )
@@ -100,7 +100,7 @@ class BeregningServiceTest {
                     sivilstand shouldHaveSize 1
 
                     val inntekter =
-                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE }
+                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE }
                     inntekter shouldHaveSize 2
                 },
             )

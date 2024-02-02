@@ -19,6 +19,7 @@
           "fordelType": "kontantytelse",
           "beskrivelse": "ufoeretrygd",
           "belop": 19939,
+          "beløp": 19939,
           "etterbetalingsperiodeFra": null,
           "etterbetalingsperiodeTil": null
         }
@@ -190,7 +191,7 @@
       ]
     }
   ],
-  "ubstListe": [
+  "småbarnstilleggListe": [
     {
       "personId": "99057812345",
       "type": "UTVIDET_BARNETRYGD",
@@ -199,5 +200,13 @@
       "beløp": 3000,
       "manueltBeregnet": false
     }
-  ]
+  ],
+  "utvidetBarnetrygdListe": [{
+      "personId": "99057812345",
+      "beløp": 2500,
+      "periodeFra": "2020-06-01",
+      "periodeTil": "2023-07-01",
+      "manueltBeregnet": false
+  }],
+  "feilrapporteringListe": []
 }

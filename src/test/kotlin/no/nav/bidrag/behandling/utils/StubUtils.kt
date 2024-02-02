@@ -16,12 +16,8 @@ import no.nav.bidrag.behandling.transformers.LocalDateTypeAdapter
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
-import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
-import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDto
 import no.nav.bidrag.transport.person.PersonDto
@@ -29,6 +25,7 @@ import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Arrays
 
 class StubUtils {
@@ -37,23 +34,6 @@ class StubUtils {
             return aResponse()
                 .withHeader(HttpHeaders.CONNECTION, "close")
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-        }
-    }
-
-    fun <R> stubResponse(
-        url: String,
-        personResponse: R,
-    ) {
-        try {
-            WireMock.stubFor(
-                WireMock.post(url).willReturn(
-                    aClosedJsonResponse()
-                        .withStatus(HttpStatus.OK.value())
-                        .withBody(ObjectMapper().writeValueAsString(personResponse)),
-                ),
-            )
-        } catch (e: JsonProcessingException) {
-            Assert.fail(e.message)
         }
     }
 
@@ -198,42 +178,6 @@ class StubUtils {
         )
     }
 
-    fun stubBeregneForskudd(
-        status: HttpStatus = HttpStatus.OK,
-        headers: Map<String, String> = emptyMap(),
-    ) {
-        val response =
-            aClosedJsonResponse()
-                .withStatus(status.value())
-                .withBody(
-                    toJsonString(
-                        BeregnGrunnlag(
-                            periode =
-                                ÅrMånedsperiode(
-                                    LocalDate.now().minusMonths(6),
-                                    LocalDate.now().plusMonths(6),
-                                ),
-                            søknadsbarnReferanse = "123",
-                            grunnlagListe =
-                                listOf(
-                                    Grunnlag(
-                                        referanse = "abra_cadabra",
-                                        type = Grunnlagstype.BARNETILLEGG,
-                                        grunnlagsreferanseListe = listOf("123"),
-                                    ),
-                                ),
-                        ),
-                    ),
-                )
-        headers.forEach {
-            response.withHeader(it.key, it.value)
-        }
-        WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/beregn/forskudd"))
-                .willReturn(response),
-        )
-    }
-
     fun stubTilgangskontrollTema(
         result: Boolean = true,
         status: HttpStatus = HttpStatus.OK,
@@ -267,21 +211,28 @@ class StubUtils {
     }
 
     fun stubHenteGrunnlagOk(
-        personidentBm: Personident,
+        personidentBm: Personident? = null,
         personidentBarn: Set<Personident> = emptySet(),
         tomRespons: Boolean = false,
+        navnResponsfil: String = "hente-grunnlagrespons.json",
     ): StubMapping {
-        val requestJson = oppretteGrunnlagrequest(personidentBm, personidentBarn)
-
         val navnResponsfil =
             when (tomRespons) {
-                false -> "hente-grunnlagrespons.json"
+                false -> navnResponsfil
                 else -> "hente-grunnlag-tom-respons.json"
             }
 
+        val wiremock =
+            if (personidentBm == null) {
+                WireMock.post(WireMock.urlEqualTo("/hentgrunnlag"))
+            } else {
+                WireMock.post(
+                    WireMock.urlEqualTo("/hentgrunnlag"),
+                ).withRequestBody(WireMock.equalToJson(oppretteGrunnlagrequest(personidentBm, personidentBarn)))
+            }
+
         return WireMock.stubFor(
-            WireMock.post(WireMock.urlEqualTo("/hentgrunnlag"))
-                .withRequestBody(WireMock.equalToJson(requestJson))
+            wiremock
                 .willReturn(
                     aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                         .withStatus(HttpStatus.OK.value())
@@ -308,7 +259,7 @@ class StubUtils {
 
         return GsonBuilder().registerTypeAdapter(
             LocalDate::class.java,
-            LocalDateTypeAdapter(),
+            LocalDateTypeAdapter(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
         ).create()
             .toJson(
                 HentGrunnlagRequestDto(

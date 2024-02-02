@@ -53,7 +53,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 ResultatForskuddsberegning::class.java,
@@ -75,7 +75,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 ResultatForskuddsberegning::class.java,
@@ -106,7 +106,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 ResultatForskuddsberegning::class.java,

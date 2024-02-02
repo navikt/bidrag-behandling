@@ -5,10 +5,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
+import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -21,21 +23,21 @@ class BehandlingControllerV2(
     private val grunnlagService: GrunnlagService,
 ) {
     @Suppress("unused")
-    @PutMapping("/behandling/{behandlingId}")
+    @PutMapping("/behandling/{behandlingsid}")
     @Operation(
         description = "Oppdatere behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun oppdatereBehandlingV2(
-        @PathVariable behandlingId: Long,
+        @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequestV2,
     ): BehandlingDtoV2 {
-        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingId)
+        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingsid)
 
         behandlingFørOppdatering.getBidragsmottaker()?.ident?.let { Personident(it) }
             ?: throw IllegalArgumentException("Behandling mangler BM!")
 
-        return behandlingService.oppdaterBehandling(behandlingId, request)
+        return behandlingService.oppdaterBehandling(behandlingsid, request)
     }
 
     @Suppress("unused")
@@ -52,7 +54,8 @@ class BehandlingControllerV2(
     )
     fun hentBehandlingV2(
         @PathVariable behandlingsid: Long,
-    ): BehandlingDtoV2 {
-        return behandlingService.henteBehandling(behandlingsid)
+    ): BehandlingDto {
+        val respons = behandlingService.henteBehandling(behandlingsid).tilBehandlingDto()
+        return respons
     }
 }

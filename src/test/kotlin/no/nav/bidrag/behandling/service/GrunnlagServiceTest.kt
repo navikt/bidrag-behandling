@@ -1,32 +1,41 @@
 package no.nav.bidrag.behandling.service
 
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
+import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilArbeidsforholdGrunnlagDto
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilBarnetilleggGrunnlagDto
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilBarnetilsynGrunnlagDto
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilGrunnlagInntekt
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilKontantstøtteGrunnlagDto
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilRelatertPersonGrunnlagDto
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilSivilstandGrunnlagDto
+import no.nav.bidrag.behandling.transformers.LocalDateTimeTypeAdapter
+import no.nav.bidrag.behandling.transformers.LocalDateTypeAdapter
+import no.nav.bidrag.behandling.transformers.YearMonthTypeAdapter
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import java.lang.reflect.Type
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -44,7 +53,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var grunnlagService: GrunnlagService
 
-    val totaltAntallGrunnlag = 9
+    val totaltAntallGrunnlag = 10
 
     @BeforeEach
     fun setup() {
@@ -69,7 +78,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
                     .sortedBy { it.verdi }.toSet()
 
-            stubUtils.stubHenteGrunnlagOk(bm, barn)
+            stubUtils.stubHenteGrunnlagOk()
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -108,7 +117,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
                     .sortedBy { it.verdi }.toSet()
 
-            stubUtils.stubHenteGrunnlagOk(bm, barn, true)
+            stubUtils.stubHenteGrunnlagOk(tomRespons = true)
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -139,7 +148,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
                     .sortedBy { it.verdi }.toSet()
 
-            stubUtils.stubHenteGrunnlagOk(bm, barn)
+            stubUtils.stubHenteGrunnlagOk()
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -181,7 +190,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
                     .sortedBy { it.verdi }.toSet()
 
-            stubUtils.stubHenteGrunnlagOk(bm, barn)
+            stubUtils.stubHenteGrunnlagOk()
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -233,7 +242,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
                     .sortedBy { it.verdi }.toSet()
 
-            stubUtils.stubHenteGrunnlagOk(bm, barn)
+            stubUtils.stubHenteGrunnlagOk()
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -279,16 +288,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 kontantstøtte.size shouldBe 1
             }
 
-            val grunnlagUtvidetBarnetrygdOgSmåbarnstillegg =
+            val grunnlagUtvidetBarnetrygd =
                 grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
                     behandlingId = behandling.id!!,
-                    Grunnlagsdatatype.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
+                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
                 )
-            grunnlagUtvidetBarnetrygdOgSmåbarnstillegg shouldNotBe null
-            val utvidetBarnetrygdOgSmåbarnstillegg =
-                jsonTilBarnetilsynGrunnlagDto(grunnlagUtvidetBarnetrygdOgSmåbarnstillegg?.data!!)
+            grunnlagUtvidetBarnetrygd shouldNotBe null
+
+            val utvidetBarnetrygd =
+                jsonTilUtvidetBarnetrygdGrunnlagDto(grunnlagUtvidetBarnetrygd?.data!!)
             assertSoftly {
-                utvidetBarnetrygdOgSmåbarnstillegg.size shouldBe 1
+                utvidetBarnetrygd.size shouldBe 1
+            }
+
+            val grunnlagSmåbarnstillegg =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                )
+            grunnlagSmåbarnstillegg shouldNotBe null
+            val småbarnstillegg =
+                jsonTilSmåbarnstilleggGrunnlagDto(grunnlagSmåbarnstillegg?.data!!)
+            assertSoftly {
+                småbarnstillegg.size shouldBe 1
             }
         }
 
@@ -301,7 +323,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
                     .sortedBy { it.verdi }.toSet()
 
-            stubUtils.stubHenteGrunnlagOk(bm, barn)
+            stubUtils.stubHenteGrunnlagOk()
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -378,7 +400,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
                     .sortedBy { it.verdi }.toSet()
 
-            stubUtils.stubHenteGrunnlagOk(bm, barn)
+            stubUtils.stubHenteGrunnlagOk()
 
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
@@ -393,6 +415,122 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.INNTEKT }.size shouldBe 1
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.SIVILSTAND }.size shouldBe 1
             }
+        }
+    }
+
+    companion object {
+        fun jsonTilGrunnlagInntekt(json: String): GrunnlagInntekt =
+            GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson(
+                    json,
+                    GrunnlagInntekt::class.java,
+                )
+
+        fun jsonTilRelatertPersonGrunnlagDto(json: String): Set<RelatertPersonGrunnlagDto> {
+            val targetClassType: Type = object : TypeToken<ArrayList<RelatertPersonGrunnlagDto?>?>() {}.type
+
+            return GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson<Set<RelatertPersonGrunnlagDto>?>(
+                    json,
+                    targetClassType,
+                ).toSet()
+        }
+
+        fun jsonTilSivilstandGrunnlagDto(json: String): Set<SivilstandGrunnlagDto> {
+            val targetClassType: Type = object : TypeToken<ArrayList<SivilstandGrunnlagDto?>?>() {}.type
+
+            return GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson<Set<SivilstandGrunnlagDto>?>(
+                    json,
+                    targetClassType,
+                ).toSet()
+        }
+
+        fun jsonTilArbeidsforholdGrunnlagDto(json: String): Set<ArbeidsforholdGrunnlagDto> {
+            val targetClassType: Type = object : TypeToken<ArrayList<ArbeidsforholdGrunnlagDto?>?>() {}.type
+
+            return GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson<Set<ArbeidsforholdGrunnlagDto>?>(
+                    json,
+                    targetClassType,
+                ).toSet()
+        }
+
+        fun jsonTilBarnetilleggGrunnlagDto(json: String): Set<BarnetilleggGrunnlagDto> {
+            val targetClassType: Type = object : TypeToken<ArrayList<BarnetilleggGrunnlagDto?>?>() {}.type
+
+            return GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson<Set<BarnetilleggGrunnlagDto>?>(
+                    json,
+                    targetClassType,
+                ).toSet()
+        }
+
+        fun jsonTilBarnetilsynGrunnlagDto(json: String): Set<BarnetilsynGrunnlagDto> {
+            val targetClassType: Type = object : TypeToken<ArrayList<BarnetilsynGrunnlagDto?>?>() {}.type
+
+            return GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson<Set<BarnetilsynGrunnlagDto>?>(
+                    json,
+                    targetClassType,
+                ).toSet()
+        }
+
+        fun jsonTilKontantstøtteGrunnlagDto(json: String): Set<KontantstøtteGrunnlagDto> {
+            val targetClassType: Type = object : TypeToken<ArrayList<KontantstøtteGrunnlagDto?>?>() {}.type
+
+            return GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson<Set<KontantstøtteGrunnlagDto>?>(
+                    json,
+                    targetClassType,
+                ).toSet()
+        }
+
+        fun jsonTilUtvidetBarnetrygdGrunnlagDto(json: String): Set<UtvidetBarnetrygdGrunnlagDto> {
+            val targetClassType: Type = object : TypeToken<ArrayList<UtvidetBarnetrygdGrunnlagDto?>?>() {}.type
+
+            return GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson<Set<UtvidetBarnetrygdGrunnlagDto>?>(
+                    json,
+                    targetClassType,
+                ).toSet()
+        }
+
+        fun jsonTilSmåbarnstilleggGrunnlagDto(json: String): Set<SmåbarnstilleggGrunnlagDto> {
+            val targetClassType: Type = object : TypeToken<ArrayList<SmåbarnstilleggGrunnlagDto?>?>() {}.type
+
+            return GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .fromJson<Set<SmåbarnstilleggGrunnlagDto>?>(
+                    json,
+                    targetClassType,
+                ).toSet()
         }
     }
 }

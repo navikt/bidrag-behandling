@@ -28,7 +28,8 @@ enum class Grunnlagsdatatype {
     HUSSTANDSMEDLEMMER,
     KONTANTSTØTTE,
     SIVILSTAND,
-    UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
+    UTVIDET_BARNETRYGD,
+    SMÅBARNSTILLEGG,
 
     @Deprecated("", replaceWith = ReplaceWith("BOFORHOLD_BEARBEIDET"))
     BOFORHOLD,
