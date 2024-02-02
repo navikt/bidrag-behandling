@@ -6,18 +6,15 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import kotlin.test.assertEquals
 
@@ -45,14 +42,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             BehandlingControllerTest.oppretteBehandlingRequestTest("1900000", "en12", roller)
 
         // 1. Create new behandling
-        val behandling =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling",
-                HttpMethod.POST,
-                HttpEntity(testBehandlingMedNull),
-                OpprettBehandlingResponse::class.java,
-            )
-        Assertions.assertEquals(HttpStatus.OK, behandling.statusCode)
+        val behandling = testdataManager.opprettBehandling()
 
         // 2.1 Prepare husstandsBarn
         val perioder =
@@ -68,7 +58,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         val husstandsBarn =
             setOf(
                 HusstandsbarnDto(
-                    behandling.body!!.id,
+                    behandling.id,
                     true,
                     perioder,
                     "ident",
@@ -90,7 +80,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             ) //
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/${behandling.body!!.id}",
+                "${rootUriV1()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
                 HttpEntity(OppdaterBehandlingRequest(boforhold = boforholdData)),
                 BehandlingDto::class.java,

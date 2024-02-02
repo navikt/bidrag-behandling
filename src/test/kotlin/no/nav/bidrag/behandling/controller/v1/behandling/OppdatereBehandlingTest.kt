@@ -14,8 +14,10 @@ import kotlin.test.assertNotNull
 class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere behandling`() {
+        // gitt
         val b = behandlingRepository.save(BehandlingServiceTest.prepareBehandling())
 
+        // hvis
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV1()}/behandling/" + b.id,
@@ -23,18 +25,14 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 HttpEntity(OppdaterBehandlingRequest(123L)),
                 Void::class.java,
             )
+
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
-        val updatedBehandling =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/${b.id}",
-                HttpMethod.GET,
-                HttpEntity.EMPTY,
-                BehandlingDto::class.java,
-            )
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!)
 
-        assertNotNull(updatedBehandling.body)
-        Assertions.assertEquals(123L, updatedBehandling.body!!.grunnlagspakkeid)
+        assertNotNull(oppdatertBehandling)
+        Assertions.assertEquals(123L, oppdatertBehandling.get().grunnlagspakkeid)
     }
 
     @Test
