@@ -2,17 +2,18 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
 
 data class BehandlingDto(
@@ -45,7 +46,8 @@ data class VirkningstidspunktDto(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningsdato: LocalDate? = null,
     @Schema(name = "årsak")
-    val årsak: ForskuddAarsakType? = null,
+    val årsak: VirkningstidspunktÅrsakstype? = null,
+    val avslag: Resultatkode? = null,
     val notat: BehandlingNotatDto,
 )
 

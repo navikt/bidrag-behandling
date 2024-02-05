@@ -97,7 +97,7 @@ fun oppretteBehandling(id: Long? = null): Behandling {
         SøktAvType.BIDRAGSMOTTAKER,
         Stønadstype.FORSKUDD,
         null,
-        virkningsdato = LocalDate.parse("2023-02-01"),
+        virkningstidspunkt = LocalDate.parse("2023-02-01"),
         id = id,
     )
 }
@@ -273,7 +273,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
     val behandling = oppretteBehandling(if (generateId) 1 else null)
     behandling.roller = oppretteBehandlingRoller(behandling, generateId)
     val husstandsbarn =
-        behandling.getSøknadsbarn().mapIndexed { i, it ->
+        behandling.søknadsbarn.mapIndexed { i, it ->
             val husstandsbarn =
                 Husstandsbarn(
                     behandling = behandling,
@@ -311,7 +311,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 belop = BigDecimal(50000),
                 datoTom = LocalDate.parse("2022-06-30"),
                 datoFom = LocalDate.parse("2022-01-01"),
-                ident = behandling.getBidragsmottaker()!!.ident!!,
+                ident = behandling.bidragsmottaker!!.ident!!,
                 taMed = true,
                 kilde = Kilde.MANUELL,
                 behandling = behandling,
@@ -322,7 +322,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 belop = BigDecimal(60000),
                 datoTom = null,
                 datoFom = LocalDate.parse("2022-07-01"),
-                ident = behandling.getBidragsmottaker()!!.ident!!,
+                ident = behandling.bidragsmottaker!!.ident!!,
                 taMed = true,
                 kilde = Kilde.MANUELL,
                 behandling = behandling,
@@ -333,7 +333,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 belop = BigDecimal(60000),
                 datoTom = LocalDate.parse("2022-12-31"),
                 datoFom = LocalDate.parse("2022-01-01"),
-                ident = behandling.getBidragsmottaker()!!.ident!!,
+                ident = behandling.bidragsmottaker!!.ident!!,
                 taMed = false,
                 kilde = Kilde.OFFENTLIG,
                 behandling = behandling,

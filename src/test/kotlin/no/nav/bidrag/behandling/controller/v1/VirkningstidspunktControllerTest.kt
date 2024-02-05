@@ -1,13 +1,13 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
-import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,7 +29,7 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
             OppdaterBehandlingRequest(
                 virkningstidspunkt =
                     OppdaterVirkningstidspunkt(
-                        årsak = ForskuddAarsakType.KF,
+                        årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
                         virkningsdato = LocalDate.parse("2025-12-27"),
                         notat =
                             OppdaterNotat(
