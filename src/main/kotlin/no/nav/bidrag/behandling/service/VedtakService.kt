@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.vedtak.OmgjortBehandlingFraVedtak
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
@@ -27,6 +28,7 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -43,6 +45,16 @@ class VedtakService(
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
 ) {
+    fun omgjørVedtakTilBehandling(vedtakId: Long): OmgjortBehandlingFraVedtak? {
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+
+//        val behandling =
+//            Behandling(
+//                saksnummer = vedtak.saksnummer,
+//            )
+        return null
+    }
+
     fun fatteVedtak(behandlingId: Long): Int {
         val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", false)
         if (isEnabled.not()) {

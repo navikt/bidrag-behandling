@@ -512,7 +512,7 @@ fun sjablonResponse(): List<Sjablontall> {
     return commonObjectmapper.readValue(fil)
 }
 
-private fun hentFil(filsti: String) =
+fun hentFil(filsti: String) =
     TestdataManager::class.java.getResource(
         filsti,
     ) ?: throw RuntimeException("Fant ingen fil på sti $filsti")

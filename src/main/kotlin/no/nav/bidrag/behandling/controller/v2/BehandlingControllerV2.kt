@@ -11,6 +11,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
+import no.nav.bidrag.behandling.service.VedtakService
+import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,7 +22,28 @@ import org.springframework.web.bind.annotation.RequestBody
 import java.time.LocalDate
 
 @BehandlingRestControllerV2
-class BehandlingControllerV2 {
+class BehandlingControllerV2(private val vedtakService: VedtakService) {
+    @Suppress("unused")
+    @GetMapping("/behandling/vedtak/{vedtakId}")
+    @Operation(
+        description = "Omgjør vedtak til en behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Vedtak i form av behandling"),
+            ApiResponse(responseCode = "404", description = "Fant ikke vedtak med oppgitt vedtakid"),
+        ],
+    )
+    fun omgjørVedtakTilBehandling(
+        @PathVariable vedtakId: Long,
+    ): BehandlingDtoV2 {
+        val resultat =
+            vedtakService.omgjørVedtakTilBehandling(vedtakId)
+                ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
+        return resultat.behandling.tilBehandlingDtoV2(resultat.opplysninger)
+    }
+
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}")
     @Operation(
@@ -69,7 +92,12 @@ class BehandlingControllerV2 {
             roller = emptySet(),
             virkningstidspunkt = VirkningstidspunktDto(notat = BehandlingNotatDto()),
             inntekter = InntekterDtoV2(notat = BehandlingNotatDto()),
-            boforhold = BoforholdDto(emptySet(), sivilstand = emptySet(), notat = BehandlingNotatDto()),
+            boforhold =
+                BoforholdDto(
+                    emptySet(),
+                    sivilstand = emptySet(),
+                    notat = BehandlingNotatDto(),
+                ),
             opplysninger = emptyList(),
         )
     }

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.consumer
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -22,5 +23,10 @@ class BidragVedtakConsumer(
         postForNonNullEntity(
             bidragVedtakUri.build().toUri(),
             request,
+        )
+
+    fun hentVedtak(vedtakId: Long): VedtakDto? =
+        getForEntity(
+            bidragVedtakUri.pathSegment(vedtakId.toString()).build().toUri(),
         )
 }
