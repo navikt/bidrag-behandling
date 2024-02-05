@@ -43,12 +43,12 @@ data class InntektDtoV2(
 )
 
 data class InntekterDtoV2(
-    val barnetillegg: Set<InntekterDtoV2> = emptySet(),
-    val barnetilsyn: Set<InntekterDtoV2> = emptySet(),
-    val kontantstøtte: Set<InntekterDtoV2> = emptySet(),
-    val månedsinntekter: Set<InntekterDtoV2> = emptySet(),
-    val småbarnstillegg: Set<InntekterDtoV2> = emptySet(),
-    val årsinntekter: Set<InntekterDtoV2> = emptySet(),
+    val barnetillegg: Set<InntektDtoV2> = emptySet(),
+    val barnetilsyn: Set<InntektDtoV2> = emptySet(),
+    val kontantstøtte: Set<InntektDtoV2> = emptySet(),
+    val månedsinntekter: Set<InntektDtoV2> = emptySet(),
+    val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
+    val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val inntekter: Set<InntektDtoV2> = emptySet(),
     val notat: BehandlingNotatDto,
 )
