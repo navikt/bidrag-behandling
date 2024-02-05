@@ -16,9 +16,11 @@ import io.mockk.slot
 import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
+import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
 import no.nav.bidrag.behandling.utils.opprettSakForBehandling
+import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.sjablonResponse
 import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBarn1
@@ -35,6 +37,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
@@ -74,7 +77,6 @@ class VedtakserviceTest {
             BeregningService(
                 behandlingService,
                 BeregnForskuddApi(),
-                unleash,
             )
         vedtakService =
             VedtakService(
@@ -84,6 +86,15 @@ class VedtakserviceTest {
                 vedtakConsumer,
                 sakConsumer,
                 unleash,
+            )
+        every {
+            behandlingService.oppdaterBehandling(
+                any(),
+                any(),
+            )
+        } returns
+            oppretteBehandling(1).tilBehandlingDtoV2(
+                emptyList(),
             )
 
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
@@ -100,6 +111,8 @@ class VedtakserviceTest {
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
+        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         every { behandlingService.hentBehandlingById(any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
@@ -157,14 +170,14 @@ class VedtakserviceTest {
                     it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
                     it[0].skyldner.verdi shouldBe "NAV"
-                    it[0].grunnlagReferanseListe.shouldHaveSize(6)
+                    it[0].grunnlagReferanseListe.shouldHaveSize(8)
                     it[0].periodeListe.shouldHaveSize(4)
                 }
                 withClue("Stønadsendring søknadsbarn 2") {
                     it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
                     it[1].skyldner.verdi shouldBe "NAV"
-                    it[1].grunnlagReferanseListe.shouldHaveSize(6)
+                    it[1].grunnlagReferanseListe.shouldHaveSize(8)
                     it[1].periodeListe.shouldHaveSize(4)
                 }
             }
@@ -175,7 +188,7 @@ class VedtakserviceTest {
                 it.shouldContainPerson(testdataBarn2.ident)
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)) {
-                shouldHaveSize(1)
+                shouldHaveSize(2)
                 it.shouldContainPerson(testdataHusstandsmedlem1.ident)
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER)) {
@@ -192,12 +205,12 @@ class VedtakserviceTest {
                 val bostatusSøknadsbarn1 =
                     it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag!!.referanse)
                 bostatusSøknadsbarn1.shouldHaveSize(2)
-                with(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
+                assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
                     bostatus shouldBe Bostatuskode.MED_FORELDER
                     periode.fom shouldBe YearMonth.parse("2022-02")
                     periode.til shouldBe YearMonth.parse("2022-05")
                 }
-                with(bostatusSøknadsbarn1[1].innholdTilObjekt<BostatusPeriode>()) {
+                assertSoftly(bostatusSøknadsbarn1[1].innholdTilObjekt<BostatusPeriode>()) {
                     bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
                     periode.fom shouldBe YearMonth.parse("2022-05")
                     periode.til shouldBe null
@@ -223,7 +236,7 @@ class VedtakserviceTest {
                 it[0].grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
                 it[1].grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
                 it[2].grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
-                with(it[0].innholdTilObjekt<InntektsrapporteringPeriode>()) {
+                assertSoftly(it[0].innholdTilObjekt<InntektsrapporteringPeriode>()) {
                     periode.fom shouldBe YearMonth.parse("2022-01")
                     periode.til shouldBe YearMonth.parse("2022-07")
                     inntekstpostListe shouldHaveSize 0
@@ -232,7 +245,7 @@ class VedtakserviceTest {
                     valgt shouldBe true
                     manueltRegistrert shouldBe true
                 }
-                with(it[2].innholdTilObjekt<InntektsrapporteringPeriode>()) {
+                assertSoftly(it[2].innholdTilObjekt<InntektsrapporteringPeriode>()) {
                     periode.fom shouldBe YearMonth.parse("2022-01")
                     periode.til shouldBe YearMonth.parse("2023-01")
                     inntekstpostListe shouldHaveSize 1
@@ -248,10 +261,19 @@ class VedtakserviceTest {
                 it.grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
                 innhold.summertMånedsinntektListe.shouldHaveSize(24)
             }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
+                shouldHaveSize(6)
+                assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
+                    innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
+                    erMedIVedtaksdokumentet shouldBe false
+                    type shouldBe NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
+                }
+            }
 
+            hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 14
-            hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 4
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE) shouldHaveSize 13
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD_PERIODE) shouldHaveSize 3
@@ -296,7 +318,7 @@ class VedtakserviceTest {
 
 fun List<OpprettGrunnlagRequestDto>.hentPerson(ident: String) =
     hentGrunnlagstyper("PERSON_")
-        .find { grunnlag -> grunnlag.innholdTilObjekt<Person>().ident.verdi == ident }
+        .find { grunnlag -> grunnlag.innholdTilObjekt<Person>().ident?.verdi == ident }
 
 fun List<OpprettGrunnlagRequestDto>.shouldContainPerson(
     ident: String,
@@ -306,7 +328,7 @@ fun List<OpprettGrunnlagRequestDto>.shouldContainPerson(
         val person =
             filter { it.type.name.startsWith("PERSON_") }
                 .map { it.innholdTilObjekt<Person>() }
-                .find { it.ident.verdi == ident && (navn == null || it.navn == navn) }
+                .find { it.ident?.verdi == ident && (navn == null || it.navn == navn) }
         person shouldNotBe null
     }
 }

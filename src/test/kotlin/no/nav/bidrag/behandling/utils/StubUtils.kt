@@ -16,7 +16,9 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.person.PersonDto
+import no.nav.bidrag.transport.sak.BidragssakDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -68,6 +70,29 @@ class StubUtils {
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(OpprettForsendelseRespons(forsendelseId))),
+            ),
+        )
+    }
+
+    fun stubHentSak(
+        sakResponse: BidragssakDto,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlMatching("/sak/(.*)")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(sakResponse)),
+            ),
+        )
+    }
+
+    fun stubFatteVedtak(status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/vedtak/vedtak")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(OpprettVedtakResponseDto(1, emptyList()))),
             ),
         )
     }
@@ -256,6 +281,22 @@ class StubUtils {
                     WireMock.urlMatching("/forsendelse/api/forsendelse"),
                 )
             WireMock.verify(antall, verify)
+        }
+
+        fun fatteVedtakKalt() {
+            val verify =
+                WireMock.postRequestedFor(
+                    WireMock.urlMatching("/vedtak/vedtak"),
+                )
+            WireMock.verify(1, verify)
+        }
+
+        fun hentSakKalt(saksnummer: String) {
+            val verify =
+                WireMock.getRequestedFor(
+                    WireMock.urlMatching("/sak/sak/$saksnummer"),
+                )
+            WireMock.verify(1, verify)
         }
 
         fun opprettForsendelseIkkeKalt() {

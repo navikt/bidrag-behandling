@@ -193,7 +193,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
                         OppdaterVirkningstidspunkt(
-                            årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
+                            årsak = VirkningstidspunktÅrsakstype.FRA_MÅNED_ETTER_INNTEKTEN_ØKTE,
                             virkningsdato = null,
                             notat =
                                 OppdaterNotat(

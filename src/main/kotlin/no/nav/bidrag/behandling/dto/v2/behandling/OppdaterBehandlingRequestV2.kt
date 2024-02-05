@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 
 data class OppdaterBehandlingRequestV2(
     val grunnlagspakkeId: Long? = null,
-    val vedtaksid: Long? = null,
+    val vedtaksid: Int? = null,
     val virkningstidspunkt: OppdaterVirkningstidspunkt? = null,
     val boforhold: OppdaterBoforholdRequest? = null,
     val inntekter: OppdatereInntekterRequestV2? = null,

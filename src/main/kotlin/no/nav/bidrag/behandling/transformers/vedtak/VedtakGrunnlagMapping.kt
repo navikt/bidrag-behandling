@@ -85,22 +85,22 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt() =
 
 fun Behandling.byggGrunnlagNotater() =
     setOf(
-        virkningstidspunktbegrunnelseKunINotat?.let {
+        virkningstidspunktbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, false, it)
         },
-        virkningstidspunktsbegrunnelseIVedtakOgNotat?.let {
+        virkningstidspunktsbegrunnelseIVedtakOgNotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, true, it)
         },
-        boforholdsbegrunnelseKunINotat?.let {
+        boforholdsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.BOFORHOLD, false, it)
         },
-        boforholdsbegrunnelseIVedtakOgNotat?.let {
+        boforholdsbegrunnelseIVedtakOgNotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.BOFORHOLD, true, it)
         },
-        inntektsbegrunnelseKunINotat?.let {
+        inntektsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.INNTEKT, false, it)
         },
-        inntektsbegrunnelseIVedtakOgNotat?.let {
+        inntektsbegrunnelseIVedtakOgNotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.INNTEKT, true, it)
         },
     ).filterNotNull()

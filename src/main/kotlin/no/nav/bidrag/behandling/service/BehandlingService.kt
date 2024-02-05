@@ -129,7 +129,7 @@ class BehandlingService(
                     log.info { "Oppdaterer behandling $behandlingsid" }
                     SECURE_LOGGER.info("Oppdaterer behandling $behandlingsid for forespørsel $oppdaterBehandling")
                     it.grunnlagspakkeid = oppdaterBehandling.grunnlagspakkeId ?: it.grunnlagspakkeid
-                    it.vedtaksid = oppdaterBehandling.vedtaksid ?: it.vedtaksid
+                    it.vedtaksid = oppdaterBehandling.vedtaksid?.toLong() ?: it.vedtaksid
                     oppdaterBehandling.virkningstidspunkt?.let { vt ->
                         log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
                         it.årsak = vt.årsak

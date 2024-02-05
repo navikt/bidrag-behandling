@@ -27,10 +27,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
-val GrunnlagDto.personObjekt get() = commonObjectmapper.treeToValue(innhold, Person::class.java)
-val GrunnlagDto.personIdent get() = personObjekt.ident.verdi
+val GrunnlagDto.personObjekt get() = commonObjectmapper.treeToValue(innhold, Person::class.java)!!
+val GrunnlagDto.personIdent get() = personObjekt.ident!!.verdi
 
 fun Behandling.oppretteGrunnlagForHusstandsbarn(søknadsbarnIdent: String?): Set<GrunnlagDto> {
     return husstandsbarn.filter { barn -> barn.ident != søknadsbarnIdent }
@@ -38,6 +40,8 @@ fun Behandling.oppretteGrunnlagForHusstandsbarn(søknadsbarnIdent: String?): Set
 }
 
 fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(index: Long): GrunnlagDto {
+    val personnavn = navn ?: hentPersonVisningsnavn(relatertPersonPersonId)
+
     return GrunnlagDto(
         referanse =
             Grunnlagstype.PERSON_HUSSTANDSMEDLEM.tilPersonreferanse(
@@ -48,22 +52,20 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(index: Long): GrunnlagDto {
         innhold =
             POJONode(
                 Person(
-                    ident = Personident(relatertPersonPersonId ?: ""),
-                    navn = navn ?: hentPersonVisningsnavn(relatertPersonPersonId) ?: "",
+                    ident = relatertPersonPersonId?.let { Personident(it) },
+                    navn = if (relatertPersonPersonId.isNullOrEmpty()) personnavn else null,
                     fødselsdato =
                         finnFødselsdato(
                             relatertPersonPersonId,
                             fødselsdato,
                         ) // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
-                ),
+                ).valider(),
             ),
     )
 }
 
 fun Rolle.tilPersonGrunnlag(): GrunnlagDto {
-    val personident = ident ?: ""
-
     val grunnlagstype = rolletype.tilGrunnlagstype()
     return GrunnlagDto(
         referanse = grunnlagstype.tilPersonreferanse(foedselsdato.toCompactString(), id!!),
@@ -71,15 +73,15 @@ fun Rolle.tilPersonGrunnlag(): GrunnlagDto {
         innhold =
             POJONode(
                 Person(
-                    ident = Personident(personident),
-                    navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
+                    ident = ident?.let { Personident(it) },
+                    navn = if (ident == null) navn ?: hentPersonVisningsnavn(ident) else null,
                     fødselsdato =
                         finnFødselsdato(
                             ident,
                             foedselsdato,
                         ) // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(behandling.id ?: -1),
-                ),
+                ).valider(rolletype),
             ),
     )
 }
@@ -106,7 +108,8 @@ fun Behandling.tilGrunnlagBostatus(grunnlagBarn: Set<GrunnlagDto>): Set<Grunnlag
     return grunnlagBarn.flatMap {
         val barn: Person = it.innholdTilObjekt()
         val bostatusperioderForBarn =
-            this.husstandsbarn.find { hb -> hb.ident == barn.ident.verdi } ?: manglerBosstatus(id!!)
+            this.husstandsbarn.find { hb -> hb.ident == barn.ident?.verdi }
+                ?: manglerBosstatus(id!!)
         oppretteGrunnlagForBostatusperioder(it.referanse, bostatusperioderForBarn.perioder)
     }.toSet()
 }
@@ -115,7 +118,7 @@ fun Behandling.tilGrunnlagInntekt(
     gjelder: GrunnlagDto,
     søknadsbarn: GrunnlagDto? = null,
 ): Set<GrunnlagDto> {
-    val personidentGjelder = gjelder.personObjekt.ident
+    val personidentGjelder = gjelder.personObjekt.ident!!
     val søknadsbarnIdent = søknadsbarn?.personObjekt?.ident?.verdi
 
     return inntekter.asSequence()
@@ -133,10 +136,8 @@ fun Set<GrunnlagDto>.hentGrunnlagSomInneholderPeriode(periode: ÅrMånedsperiode
         grunnlagPeriode?.let { periode.omsluttesAv(it) } ?: true
     }
 
-private fun Husstandsbarn.tilPersonGrunnlag(): GrunnlagDto {
-    val personident = ident ?: ""
-
-    val rolle = this.behandling.roller.find { it.ident == personident }
+fun Husstandsbarn.tilPersonGrunnlag(): GrunnlagDto {
+    val rolle = this.behandling.roller.find { it.ident == ident }
     val grunnlagstype = rolle?.rolletype?.tilGrunnlagstype() ?: Grunnlagstype.PERSON_HUSSTANDSMEDLEM
     return GrunnlagDto(
         referanse =
@@ -148,15 +149,15 @@ private fun Husstandsbarn.tilPersonGrunnlag(): GrunnlagDto {
         innhold =
             POJONode(
                 Person(
-                    ident = Personident(personident),
-                    navn = navn ?: hentPersonVisningsnavn(ident) ?: "",
+                    ident = ident?.let { Personident(it) },
+                    navn = if (ident.isNullOrEmpty()) navn ?: hentPersonVisningsnavn(ident) else null,
                     fødselsdato =
                         finnFødselsdato(
                             ident,
                             foedselsdato,
                         ) // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(behandling.id ?: -1),
-                ),
+                ).valider(),
             ),
     )
 }
@@ -180,7 +181,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
                 inntekstpostListe =
                     inntektsposter.map {
                         InntektsrapporteringPeriode.Inntektspost(
-                            beløp = belop,
+                            beløp = it.beløp,
                             inntekstype = it.inntektstype,
                             kode = it.kode,
                         )
@@ -254,3 +255,13 @@ private fun Inntekt.tilGrunnlagreferanse(gjelder: GrunnlagDto) =
     } else {
         "inntekt_${inntektsrapportering}_${gjelder.referanse}_${datoFom.toCompactString()}"
     }
+
+fun Person.valider(rolle: Rolletype? = null): Person {
+    if ((ident == null || ident!!.verdi.isEmpty()) && !navn.isNullOrEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Person med fødselsdato $fødselsdato og rolle $rolle mangler ident men har ikke navn. Ident eller Navn må være satt",
+        )
+    }
+    return this
+}

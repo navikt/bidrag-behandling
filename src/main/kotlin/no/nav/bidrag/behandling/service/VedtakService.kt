@@ -1,9 +1,12 @@
 package no.nav.bidrag.behandling.service
 
 import io.getunleash.Unleash
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
@@ -24,9 +27,12 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
-import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDateTime
+
+private val LOGGER = KotlinLogging.logger {}
 
 @Service
 class VedtakService(
@@ -37,8 +43,17 @@ class VedtakService(
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
 ) {
-    fun fatteVedtak(behandlingId: Long): OpprettVedtakResponseDto {
+    fun fatteVedtak(behandlingId: Long): Int {
+        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", false)
+        if (isEnabled.not()) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Fattevedtak er ikke aktivert",
+            )
+        }
+
         val behandling = behandlingService.hentBehandlingById(behandlingId)
+        if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
 
         val sak = sakConsumer.hentSak(behandling.saksnummer)
         val grunnlag = grunnlagService.hentAlleSistAktiv(behandlingId)
@@ -90,6 +105,18 @@ class VedtakService(
                 opprettetAv = null,
             )
 
-        return vedtakConsumer.fatteVedtak(request)
+        val response = vedtakConsumer.fatteVedtak(request)
+        behandlingService.oppdaterBehandling(
+            behandlingId,
+            OppdaterBehandlingRequestV2(vedtaksid = response.vedtaksid),
+        )
+        LOGGER.info { "Fattet vedtak for behandling $behandlingId med vedtaksid ${response.vedtaksid}" }
+        return response.vedtaksid
     }
+
+    private fun Behandling.vedtakAlleredeFattet(): Nothing =
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Vedtak er allerede fattet for behandling $id med vedtakId $vedtaksid",
+        )
 }

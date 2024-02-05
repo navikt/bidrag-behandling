@@ -11,3 +11,7 @@ val skyldnerNav = Personident("NAV")
 fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto) =
     rolle.reellMottager?.personIdent()
         ?: find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }!!.let { Personident(it.ident!!) }
+
+fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? {
+    return if (this == null || this is String && this.trim().isEmpty()) null else block(this)
+}

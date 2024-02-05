@@ -116,13 +116,17 @@ fun InntektDtoV2.tilUtvidetBarnetrygdDto() =
 
 fun Set<InntektspostDtoV2>.tilInntektspostDto() =
     this.map {
-        InntektPost(kode = it.kode, visningsnavn = it.visningsnavn, beløp = it.beløp ?: BigDecimal.ZERO)
+        InntektPost(
+            kode = it.kode,
+            visningsnavn = it.visningsnavn,
+            beløp = it.beløp ?: BigDecimal.ZERO,
+        )
     }.toSet()
 
 fun OppdaterBehandlingRequest.tilOppdaterBehandlingRequestV2(personidentBm: Personident): OppdaterBehandlingRequestV2 {
     return OppdaterBehandlingRequestV2(
         grunnlagspakkeId = this.grunnlagspakkeId,
-        vedtaksid = this.vedtaksid,
+        vedtaksid = this.vedtaksid?.toInt(),
         virkningstidspunkt = this.virkningstidspunkt,
         boforhold = this.boforhold,
         inntekter = this.inntekter?.tilOppdatereInntekterRequestV2(personidentBm),

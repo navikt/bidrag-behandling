@@ -113,7 +113,5 @@ spring:
   flyway:
     enabled: true
     locations: classpath:/db/migration
-    baseline-version: 2.0.0
-    ignore-migration-patterns: "*:missing"
   jpa:
     database: postgresql

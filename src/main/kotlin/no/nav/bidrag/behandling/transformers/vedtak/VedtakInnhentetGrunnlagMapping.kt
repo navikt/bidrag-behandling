@@ -10,11 +10,10 @@ import no.nav.bidrag.behandling.database.datamodell.inntekt
 import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
 import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.transformers.personIdent
-import no.nav.bidrag.behandling.transformers.personObjekt
 import no.nav.bidrag.behandling.transformers.tilPersonGrunnlag
 import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
@@ -27,13 +26,13 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSivilstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSkattegrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSmåbarnstillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetUtvidetBarnetrygd
-import no.nav.bidrag.transport.behandling.felles.grunnlag.NULL_PERIODE_FRA
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import java.time.LocalDate
 
 fun List<BehandlingGrunnlag>.tilInnhentetArbeidsforhold(gjelder: GrunnlagDto): Set<GrunnlagDto> {
-    val personidentGjelder = gjelder.personObjekt.ident.verdi
+    val personidentGjelder = gjelder.personIdent
     return arbeidsforhold?.let { grunnlag ->
         grunnlag.hentData<List<ArbeidsforholdGrunnlagDto>>()
             ?.filter { it.partPersonId == personidentGjelder }
@@ -48,8 +47,8 @@ fun List<BehandlingGrunnlag>.tilInnhentetArbeidsforhold(gjelder: GrunnlagDto): S
                         POJONode(
                             InnhentetArbeidsforhold(
                                 periode =
-                                    ÅrMånedsperiode(
-                                        it.startdato ?: NULL_PERIODE_FRA,
+                                    Datoperiode(
+                                        it.startdato ?: LocalDate.MIN,
                                         it.sluttdato,
                                     ),
                                 hentetTidspunkt = grunnlag.innhentet,
@@ -104,7 +103,7 @@ fun List<BehandlingGrunnlag>.tilInnhentetArbeidsforhold(gjelder: GrunnlagDto): S
 }
 
 fun List<BehandlingGrunnlag>.tilInnhentetSivilstand(gjelder: GrunnlagDto): Set<GrunnlagDto> {
-    val personidentGjelder = gjelder.personObjekt.ident.verdi
+    val personidentGjelder = gjelder.personIdent
     return find { it.type == Grunnlagsdatatype.SIVILSTAND }?.let { grunnlag ->
         grunnlag.hentData<List<SivilstandGrunnlagDto>>()
             ?.filter { it.personId == personidentGjelder }
@@ -116,7 +115,7 @@ fun List<BehandlingGrunnlag>.tilInnhentetSivilstand(gjelder: GrunnlagDto): Set<G
                     innhold =
                         POJONode(
                             InnhentetSivilstand(
-                                periode = ÅrMånedsperiode(it.gyldigFom ?: NULL_PERIODE_FRA, null),
+                                periode = Datoperiode(it.gyldigFom ?: LocalDate.MIN, null),
                                 hentetTidspunkt = grunnlag.innhentet,
                                 grunnlag =
                                     InnhentetSivilstand.SivilstandPDL(
@@ -136,7 +135,7 @@ fun List<BehandlingGrunnlag>.tilInnhentetHusstandsmedlemmer(
     gjelder: GrunnlagDto,
     personobjekter: List<GrunnlagDto>,
 ): Set<GrunnlagDto> {
-    val personidentGjelder = gjelder.personObjekt.ident.verdi
+    val personidentGjelder = gjelder.personIdent
     return husstandmedlemmer?.let { grunnlag ->
         grunnlag.hentData<List<RelatertPersonGrunnlagDto>>()
             ?.filter { it.partPersonId == personidentGjelder }
@@ -155,26 +154,27 @@ fun List<BehandlingGrunnlag>.tilInnhentetHusstandsmedlemmer(
                             POJONode(
                                 InnhentetHusstandsmedlem(
                                     periode =
-                                        ÅrMånedsperiode(
-                                            it.periodeFra ?: NULL_PERIODE_FRA,
+                                        Datoperiode(
+                                            it.periodeFra ?: LocalDate.MIN,
                                             it.periodeTil,
                                         ),
                                     hentetTidspunkt = grunnlag.innhentet,
                                     grunnlag =
                                         InnhentetHusstandsmedlem.HusstandsmedlemPDL(
-                                            relatertPerson = relatertPersonObjekt?.referanse,
+                                            relatertPerson = relatertPersonObjekt.referanse,
                                             erBarnAvBmBp = relaterPerson.erBarnAvBmBp,
                                         ),
                                 ),
                             ),
                     )
+                    // Duplikat grunnlagsobjekter fjernes i ettertid
                 } + relatertPersonObjekt
             }
     }?.toSet() ?: emptySet()
 }
 
 fun List<BehandlingGrunnlag>.tilBeregnetInntekt(gjelder: GrunnlagDto): Set<GrunnlagDto> {
-    val personidentGjelder = gjelder.personObjekt.ident.verdi
+    val personidentGjelder = gjelder.personIdent
     return find { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }?.let { grunnlag ->
         grunnlag.hentData<InntektsopplysningerBearbeidet>()
             ?.inntekt
@@ -245,7 +245,7 @@ private fun List<BehandlingGrunnlag>.mapBarnetillegg(
                 innhold =
                     POJONode(
                         InnhentetBarnetillegg(
-                            periode = ÅrMånedsperiode(it.periodeFra, it.periodeTil),
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
                             hentetTidspunkt = grunnlag.innhentet,
                             grunnlag =
                                 InnhentetBarnetillegg.Barnetillegg(
@@ -270,12 +270,12 @@ private fun List<BehandlingGrunnlag>.mapBarnetilsyn(
         ?.map {
             GrunnlagDto(
                 referanse = "innhentet_barnetilsyn_${gjelder.referanse}_barn_${søknadsbarn.referanse}_${it.periodeFra.toCompactString()}",
-                type = Grunnlagstype.INNHENTET_INNTEKT_AORDNING_PERIODE,
+                type = Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN_PERIODE,
                 grunnlagsreferanseListe = listOf(gjelder.referanse, søknadsbarn.referanse),
                 innhold =
                     POJONode(
                         InnhentetBarnetilsyn(
-                            periode = ÅrMånedsperiode(it.periodeFra, it.periodeTil),
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
                             hentetTidspunkt = grunnlag.innhentet,
                             grunnlag =
                                 InnhentetBarnetilsyn.Barnetilsyn(
@@ -301,7 +301,7 @@ private fun List<BehandlingGrunnlag>.mapAinntekt(gjelder: GrunnlagDto) =
                     innhold =
                         POJONode(
                             InnhentetAinntekt(
-                                periode = ÅrMånedsperiode(it.periodeFra, it.periodeTil),
+                                periode = Datoperiode(it.periodeFra, it.periodeTil),
                                 hentetTidspunkt = grunnlag.innhentet,
                                 grunnlag =
                                     InnhentetAinntekt.AinntektInnhentet(
@@ -340,7 +340,7 @@ private fun List<BehandlingGrunnlag>.mapKontantstøtte(
                 innhold =
                     POJONode(
                         InnhentetKontantstøtte(
-                            periode = ÅrMånedsperiode(it.periodeFra, it.periodeTil),
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
                             hentetTidspunkt = grunnlag.innhentet,
                             grunnlag =
                                 InnhentetKontantstøtte.Kontantstøtte(
@@ -364,7 +364,7 @@ private fun List<BehandlingGrunnlag>.mapSmåbarnstillegg(gjelder: GrunnlagDto) =
                     innhold =
                         POJONode(
                             InnhentetSmåbarnstillegg(
-                                periode = ÅrMånedsperiode(it.periodeFra, it.periodeTil),
+                                periode = Datoperiode(it.periodeFra, it.periodeTil),
                                 hentetTidspunkt = grunnlag.innhentet,
                                 grunnlag =
                                     InnhentetSmåbarnstillegg.Småbarnstillegg(
@@ -388,7 +388,7 @@ private fun List<BehandlingGrunnlag>.mapUtvidetbarnetrygd(gjelder: GrunnlagDto) 
                     innhold =
                         POJONode(
                             InnhentetUtvidetBarnetrygd(
-                                periode = ÅrMånedsperiode(it.periodeFra, it.periodeTil),
+                                periode = Datoperiode(it.periodeFra, it.periodeTil),
                                 hentetTidspunkt = grunnlag.innhentet,
                                 grunnlag =
                                     InnhentetUtvidetBarnetrygd.UtvidetBarnetrygd(
@@ -412,7 +412,7 @@ private fun List<BehandlingGrunnlag>.mapSkattegrunnlag(gjelder: GrunnlagDto) =
                     innhold =
                         POJONode(
                             InnhentetSkattegrunnlag(
-                                periode = ÅrMånedsperiode(it.periodeFra, it.periodeTil),
+                                periode = Datoperiode(it.periodeFra, it.periodeTil),
                                 hentetTidspunkt = grunnlag.innhentet,
                                 grunnlag =
                                     InnhentetSkattegrunnlag.Skattegrunnlag(

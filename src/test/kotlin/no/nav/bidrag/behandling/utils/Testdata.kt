@@ -358,7 +358,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
         }.toMutableSet()
     husstandsbarn.add(
         behandling.opprettHusstandsbarn(
-            behandling.søknadsbarn.size,
+            if (generateId) behandling.søknadsbarn.size else null,
             testdataHusstandsmedlem1.ident,
             testdataHusstandsmedlem1.navn,
             null,

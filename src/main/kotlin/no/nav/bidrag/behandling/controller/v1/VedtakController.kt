@@ -25,6 +25,6 @@ class VedtakController(
         LOGGER.info { "Beregner forskudd for behandling med id $behandlingsid" }
 
         val respons = vedtakService.fatteVedtak(behandlingsid)
-        return respons.vedtaksid
+        return respons
     }
 }

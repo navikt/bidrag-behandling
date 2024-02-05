@@ -6,10 +6,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 
 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-val formatterCommpact = DateTimeFormatter.ofPattern("yyyyMMdd")
+val formatterCompact = DateTimeFormatter.ofPattern("yyyyMMdd")
 
 fun Date.toLocalDate(): LocalDate {
     return LocalDate.ofInstant(this.toInstant(), ZoneId.systemDefault())
 }
 
-fun LocalDate.toCompactString(): String = this.format(formatterCommpact)
+fun LocalDate.toCompactString(): String = this.format(formatterCompact)
