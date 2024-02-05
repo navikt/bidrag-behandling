@@ -2,11 +2,10 @@ package no.nav.bidrag.behandling.controller.v1
 
 import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
-import io.mockk.every
-import io.mockk.mockkObject
 import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.Unleash
 import io.mockk.every
+import io.mockk.mockkObject
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.TestdataManager
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider

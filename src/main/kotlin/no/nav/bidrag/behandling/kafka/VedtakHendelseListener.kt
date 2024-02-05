@@ -40,7 +40,8 @@ class VedtakHendelseListener(
             return
         }
         log.info {
-            "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}, behandlingId ${vedtak.behandlingId} og saksnummer ${vedtak.saksnummer}"
+            "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}, " +
+                "behandlingId ${vedtak.behandlingId} og saksnummer ${vedtak.saksnummer}"
         }
         val behandling = behandlingService.hentBehandlingById(vedtak.behandlingId!!)
         log.info {
