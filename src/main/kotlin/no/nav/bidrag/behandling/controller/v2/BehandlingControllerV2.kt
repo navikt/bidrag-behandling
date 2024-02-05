@@ -68,7 +68,7 @@ class BehandlingControllerV2 {
             behandlerenhet = "4806",
             roller = emptySet(),
             virkningstidspunkt = VirkningstidspunktDto(notat = BehandlingNotatDto()),
-            inntekter = InntekterDtoV2(emptySet(), BehandlingNotatDto()),
+            inntekter = InntekterDtoV2(notat = BehandlingNotatDto()),
             boforhold = BoforholdDto(emptySet(), sivilstand = emptySet(), notat = BehandlingNotatDto()),
             opplysninger = emptyList(),
         )
