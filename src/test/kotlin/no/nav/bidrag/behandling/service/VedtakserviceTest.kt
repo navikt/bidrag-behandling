@@ -73,6 +73,7 @@ class VedtakserviceTest {
 
     @BeforeEach
     fun initMocks() {
+        unleash.enableAll()
         beregningService =
             BeregningService(
                 behandlingService,
