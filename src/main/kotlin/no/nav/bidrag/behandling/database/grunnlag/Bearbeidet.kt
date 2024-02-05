@@ -4,7 +4,6 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -48,12 +47,8 @@ data class InntektBearbeidet(
     val summertAarsinntektListe: List<SummertÅrsinntekt>,
 )
 
-data class SummertMånedsOgÅrsinntekt(
-    val version: String,
+data class SummerteMånedsOgÅrsinntekter(
+    val versjon: String,
     val summerteMånedsinntekter: List<SummertMånedsinntekt>,
-    val summerteÅrsinntekter: List<SummertÅrsinntekt>
-)
-
-fun HentGrunnlagDto.tilSummertMånedsOgÅrsinntekt() = SummertMånedsOgÅrsinntekt(
-    summerteMånedsinntekter = this.
+    val summerteÅrsinntekter: List<SummertÅrsinntekt>,
 )

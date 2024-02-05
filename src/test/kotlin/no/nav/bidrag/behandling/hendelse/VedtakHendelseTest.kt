@@ -54,6 +54,7 @@ class VedtakHendelseTest : TestContainerRunner() {
         val behandlingRequest = opprettBehandling()
         behandlingRequest.roller = oppretteBehandlingRoller(behandlingRequest)
         val behandling = behandlingRepository.save(behandlingRequest)
+        stubUtils.stubHentePersoninfo(personident = behandling.getBidragsmottaker()!!.ident!!)
         vedtakHendelseListener.prossesserVedtakHendelse(
             opprettHendelseRecord(
                 opprettVedtakhendelse(

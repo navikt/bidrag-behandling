@@ -10,59 +10,63 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 
-fun Behandling.tilBehandlingDtoV2(grunnlag: Set<Grunnlag>) =
-    BehandlingDtoV2(
-        id = id!!,
-        vedtakstype = vedtakstype,
-        stønadstype = stonadstype,
-        engangsbeløptype = engangsbeloptype,
-        erVedtakFattet = vedtaksid != null,
-        søktFomDato = søktFomDato,
-        mottattdato = mottattdato,
-        søktAv = soknadFra,
-        saksnummer = saksnummer,
-        søknadsid = soknadsid,
-        behandlerenhet = behandlerEnhet,
-        roller =
-            roller.map {
-                RolleDto(
-                    it.id!!,
-                    it.rolletype,
-                    it.ident,
-                    it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.foedselsdato,
-                )
-            }.toSet(),
-        søknadRefId = soknadRefId,
-        grunnlagspakkeid = grunnlagspakkeid,
-        virkningstidspunkt =
-            VirkningstidspunktDto(
-                virkningsdato = virkningsdato,
-                årsak = aarsak,
-                notat =
-                    BehandlingNotatDto(
-                        medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-                        kunINotat = virkningstidspunktbegrunnelseKunINotat,
-                    ),
-            ),
-        boforhold =
-            BoforholdDto(
-                husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
-                sivilstand = sivilstand.toSivilstandDto(),
-                notat =
-                    BehandlingNotatDto(
-                        medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                        kunINotat = boforholdsbegrunnelseKunINotat,
-                    ),
-            ),
-        inntekter =
-            InntekterDtoV2(
-                inntekter = inntekter.tilInntektDtoV2().toSet(),
-                notat =
-                    BehandlingNotatDto(
-                        medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                        kunINotat = inntektsbegrunnelseKunINotat,
-                    ),
-            ),
-        grunnlag = grunnlag.map(Grunnlag::toDto).toSet(),
-    )
+// TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
+fun Behandling.tilBehandlingDtoV2(
+    gjeldendeAktiveGrunnlagsdata: List<Grunnlag>,
+    ikkeAktiverteEndringerIGrunnlagsdata: List<Grunnlag>,
+) = BehandlingDtoV2(
+    id = id!!,
+    vedtakstype = vedtakstype,
+    stønadstype = stonadstype,
+    engangsbeløptype = engangsbeloptype,
+    erVedtakFattet = vedtaksid != null,
+    søktFomDato = søktFomDato,
+    mottattdato = mottattdato,
+    søktAv = soknadFra,
+    saksnummer = saksnummer,
+    søknadsid = soknadsid,
+    behandlerenhet = behandlerEnhet,
+    roller =
+        roller.map {
+            RolleDto(
+                it.id!!,
+                it.rolletype,
+                it.ident,
+                it.navn ?: hentPersonVisningsnavn(it.ident),
+                it.foedselsdato,
+            )
+        }.toSet(),
+    søknadRefId = soknadRefId,
+    grunnlagspakkeid = grunnlagspakkeid,
+    virkningstidspunkt =
+        VirkningstidspunktDto(
+            virkningsdato = virkningsdato,
+            årsak = aarsak,
+            notat =
+                BehandlingNotatDto(
+                    medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                    kunINotat = virkningstidspunktbegrunnelseKunINotat,
+                ),
+        ),
+    boforhold =
+        BoforholdDto(
+            husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
+            sivilstand = sivilstand.toSivilstandDto(),
+            notat =
+                BehandlingNotatDto(
+                    medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                    kunINotat = boforholdsbegrunnelseKunINotat,
+                ),
+        ),
+    inntekter =
+        InntekterDtoV2(
+            inntekter = inntekter.tilInntektDtoV2().toSet(),
+            notat =
+                BehandlingNotatDto(
+                    medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+                    kunINotat = inntektsbegrunnelseKunINotat,
+                ),
+        ),
+    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.map(Grunnlag::toDto).toSet(),
+    ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata.map(Grunnlag::toDto).toSet(),
+)

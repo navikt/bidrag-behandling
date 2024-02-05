@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.transformers.LocalDateTypeAdapter
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Formål
@@ -127,6 +128,76 @@ class StubUtils {
         )
     }
 
+    fun stubKodeverkSkattegrunnlag(
+        response: KodeverkKoderBetydningerResponse? = null,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Summert.*")).willReturn(
+                if (response != null) {
+                    aClosedJsonResponse().withStatus(status.value()).withBody(
+                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                    )
+                } else {
+                    aClosedJsonResponse().withBodyFile("respons_kodeverk_summert_skattegrunnlag.json")
+                },
+            ),
+        )
+    }
+
+    fun stubKodeverkLønnsbeskrivelse(
+        response: KodeverkKoderBetydningerResponse? = null,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Loennsbeskrivelse.*")).willReturn(
+                if (response != null) {
+                    aClosedJsonResponse().withStatus(status.value()).withBody(
+                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                    )
+                } else {
+                    aClosedJsonResponse().withBodyFile("respons_kodeverk_loennsbeskrivelser.json")
+                },
+            ),
+        )
+    }
+
+    fun stubKodeverkYtelsesbeskrivelser(
+        response: KodeverkKoderBetydningerResponse? = null,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/YtelseFraOffentligeBeskrivelse.*")).willReturn(
+                if (response != null) {
+                    aClosedJsonResponse().withStatus(status.value()).withBody(
+                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                    )
+                } else {
+                    aClosedJsonResponse()
+                        .withBodyFile("respons_kodeverk_ytelserbeskrivelser.json")
+                },
+            ),
+        )
+    }
+
+    fun stubKodeverkNaeringsinntektsbeskrivelser(
+        response: KodeverkKoderBetydningerResponse? = null,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Naeringsinntektsbeskrivelse.*")).willReturn(
+                if (response != null) {
+                    aClosedJsonResponse().withStatus(status.value()).withBody(
+                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                    )
+                } else {
+                    aClosedJsonResponse()
+                        .withBodyFile("respons_kodeverk_naeringsinntektsbeskrivelse.json")
+                },
+            ),
+        )
+    }
+
     fun stubBeregneForskudd(
         status: HttpStatus = HttpStatus.OK,
         headers: Map<String, String> = emptyMap(),
@@ -198,17 +269,23 @@ class StubUtils {
     fun stubHenteGrunnlagOk(
         personidentBm: Personident,
         personidentBarn: Set<Personident> = emptySet(),
+        tomRespons: Boolean = false,
     ): StubMapping {
         val requestJson = oppretteGrunnlagrequest(personidentBm, personidentBarn)
+
+        val navnResponsfil =
+            when (tomRespons) {
+                false -> "hente-grunnlagrespons.json"
+                else -> "hente-grunnlag-tom-respons.json"
+            }
 
         return WireMock.stubFor(
             WireMock.post(WireMock.urlEqualTo("/hentgrunnlag"))
                 .withRequestBody(WireMock.equalToJson(requestJson))
                 .willReturn(
-                    aResponse()
-                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                         .withStatus(HttpStatus.OK.value())
-                        .withBodyFile("hente-grunnlagrespons.json"),
+                        .withBodyFile(navnResponsfil),
                 ),
         )
     }

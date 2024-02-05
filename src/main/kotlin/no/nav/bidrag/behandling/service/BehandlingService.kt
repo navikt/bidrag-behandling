@@ -160,7 +160,24 @@ class BehandlingService(
                     }
                     it
                 },
-        ).tilBehandlingDtoV2(grunnlagService.hentAlleSistInnhentet(behandlingsid).toSet())
+        )
+            .tilBehandlingDtoV2(
+                gjeldendeAktiveGrunnlagsdata =
+                    grunnlagService.henteGjeldendeAktiveGrunnlagsdatahenteGjeldendeAktiveGrunnlagsdata(behandlingsid),
+                ikkeAktiverteEndringerIGrunnlagsdata =
+                    grunnlagService.hentAlleSistInnhentet(behandlingsid).filter { g -> g.aktiv == null },
+            )
+
+    fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {
+        val behandling = hentBehandlingById(behandlingsid)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+        val gjeldendeAktiveGrunnlagsdata =
+            grunnlagService.henteGjeldendeAktiveGrunnlagsdatahenteGjeldendeAktiveGrunnlagsdata(behandlingsid)
+        val grunnlagsdataEndretEtterAktivering =
+            grunnlagService.hentAlleSistInnhentet(behandlingsid).filter { g -> g.aktiv == null }
+        return behandling.tilBehandlingDtoV2(gjeldendeAktiveGrunnlagsdata, grunnlagsdataEndretEtterAktivering)
+    }
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
         behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }

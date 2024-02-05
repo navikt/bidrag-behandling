@@ -99,7 +99,8 @@ class BidragGrunnlagConsumer(
         personidenterBarnIBehandling: List<Personident>,
     ): HentGrunnlagDto {
         val requestobjekterBarn: List<GrunnlagRequestDto> =
-            personidenterBarnIBehandling.flatMap { oppretteGrunnlagsobjekterBarn(Personident(it.verdi)) }.sortedBy { it.personId }
+            personidenterBarnIBehandling.flatMap { oppretteGrunnlagsobjekterBarn(Personident(it.verdi)) }
+                .sortedBy { it.personId }
 
         return henteGrunnlag(oppretteGrunnlagsobjekterBm(personidentBm) + requestobjekterBarn)
     }
@@ -112,6 +113,7 @@ class BidragGrunnlagConsumer(
                 .toJson(
                     HentGrunnlagRequestDto(Formål.FORSKUDD, grunnlag),
                 )
+
         return postForNonNullEntity(
             bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),
             payload,

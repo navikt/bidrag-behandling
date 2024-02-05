@@ -23,8 +23,12 @@ enum class Grunnlagsdatatype {
     /**Typer for opplysninger hentet fra bidrag-grunnlag*/
     INNTEKT,
     ARBEIDSFORHOLD,
+    BARNETILLEGG,
+    BARNETILSYN,
     HUSSTANDSMEDLEMMER,
+    KONTANTSTØTTE,
     SIVILSTAND,
+    UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
 
     @Deprecated("", replaceWith = ReplaceWith("BOFORHOLD_BEARBEIDET"))
     BOFORHOLD,

@@ -71,5 +71,9 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubTilgangskontrollTema()
         stubUtils.stubHentePersoninfo(personident = "12345")
         stubUtils.stubBeregneForskudd()
+        stubUtils.stubKodeverkSkattegrunnlag()
+        stubUtils.stubKodeverkLønnsbeskrivelse()
+        stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+        stubUtils.stubKodeverkYtelsesbeskrivelser()
     }
 }
