@@ -287,25 +287,15 @@
       <artifactId>bidrag-transport-felles</artifactId>
       <version>${bidrag-felles.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>no.nav.bidrag</groupId>
+      <artifactId>bidrag-sivilstand</artifactId>
+      <version>${bidrag-beregn-felles.version}</version>
+    </dependency>
     <dependency>
       <groupId>no.nav.bidrag</groupId>
       <artifactId>bidrag-beregn-forskudd</artifactId>
       <version>${bidrag-beregn-felles.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>no.nav.bidrag</groupId>
-          <artifactId>bidrag-commons-felles</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>no.nav.bidrag</groupId>
-          <artifactId>bidrag-transport-felles</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.errorprone</groupId>
-          <artifactId>error_prone_annotations</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <!--Diverse-->
     <dependency>
