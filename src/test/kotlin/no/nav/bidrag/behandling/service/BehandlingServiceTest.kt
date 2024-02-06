@@ -194,7 +194,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     virkningstidspunkt =
                         OppdaterVirkningstidspunkt(
                             årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
-                            virkningsdato = null,
+                            virkningstidspunkt = null,
                             notat =
                                 OppdaterNotat(
                                     notat,

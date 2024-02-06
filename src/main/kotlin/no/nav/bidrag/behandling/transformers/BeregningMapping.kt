@@ -10,9 +10,9 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
-import no.nav.bidrag.transport.behandling.beregning.felles.grunnlag.BeregningInntektRapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import java.time.LocalDate
@@ -113,7 +113,7 @@ fun Behandling.tilGrunnlagInntekt(gjelder: GrunnlagDto): Set<GrunnlagDto> {
                 grunnlagsreferanseListe = listOf(gjelder.referanse!!),
                 innhold =
                     POJONode(
-                        BeregningInntektRapporteringPeriode(
+                        InntektsrapporteringPeriode(
                             beløp = it.belop,
                             periode = ÅrMånedsperiode(it.datoFom, it.datoTom?.plusDays(1)),
                             inntektsrapportering = it.inntektsrapportering,
@@ -142,7 +142,7 @@ fun Behandling.tilGrunnlagInntektKontantstøtte(
                 grunnlagsreferanseListe = listOf(gjelder.referanse!!),
                 innhold =
                     POJONode(
-                        BeregningInntektRapporteringPeriode(
+                        InntektsrapporteringPeriode(
                             beløp = it.belop,
                             periode = ÅrMånedsperiode(it.datoFom, it.datoTom?.plusDays(1)),
                             inntektsrapportering = it.inntektsrapportering,
@@ -173,7 +173,7 @@ fun Behandling.tilGrunnlagBarnetillegg(
                 grunnlagsreferanseListe = listOf(bm.referanse!!),
                 innhold =
                     POJONode(
-                        BeregningInntektRapporteringPeriode(
+                        InntektsrapporteringPeriode(
                             beløp = it.belop,
                             periode =
                                 ÅrMånedsperiode(
@@ -202,7 +202,7 @@ fun Behandling.tilGrunnlagUtvidetbarnetrygd(bm: GrunnlagDto) =
                 grunnlagsreferanseListe = listOf(bm.referanse!!),
                 innhold =
                     POJONode(
-                        BeregningInntektRapporteringPeriode(
+                        InntektsrapporteringPeriode(
                             beløp = it.belop,
                             periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
                             inntektsrapportering = Inntektsrapportering.UTVIDET_BARNETRYGD,

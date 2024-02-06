@@ -44,9 +44,10 @@ data class BehandlingDto(
 data class VirkningstidspunktDto(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val virkningsdato: LocalDate? = null,
-    @Schema(name = "årsak")
+    val virkningstidspunkt: LocalDate? = null,
+    @Schema(name = "årsak", enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
+    @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
     val notat: BehandlingNotatDto,
 )

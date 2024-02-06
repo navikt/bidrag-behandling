@@ -134,7 +134,7 @@ class BehandlingService(
                         log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
                         it.årsak = vt.årsak
                         it.avslag = vt.avslag
-                        it.virkningstidspunkt = vt.virkningsdato
+                        it.virkningstidspunkt = vt.virkningstidspunkt
                         it.virkningstidspunktbegrunnelseKunINotat =
                             vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
                         it.virkningstidspunktsbegrunnelseIVedtakOgNotat =

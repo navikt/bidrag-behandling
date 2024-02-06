@@ -27,9 +27,13 @@ data class OppdaterVirkningstidspunkt(
         description =
             "Oppdater årsak. Hvis verdien er satt til null vil årsak bli slettet. " +
                 "Hvis verdien er satt til tom verdi eller ikke er satt vil det ikke bli gjort noe endringer",
+        enumAsRef = true,
     )
     @JsonSetter(nulls = Nulls.SKIP)
     val årsak: VirkningstidspunktÅrsakstype? = null,
+    @Schema(
+        enumAsRef = true,
+    )
     val avslag: Resultatkode? = null,
     @Schema(
         type = "string",
@@ -41,7 +45,7 @@ data class OppdaterVirkningstidspunkt(
     )
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonSetter(nulls = Nulls.SKIP)
-    val virkningsdato: LocalDate? = null,
+    val virkningstidspunkt: LocalDate? = null,
     val notat: OppdaterNotat? = null,
 )
 
