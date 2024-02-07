@@ -16,8 +16,8 @@
   <properties>
     <java.version>21</java.version>
     <kotlin.version>1.9.22</kotlin.version>
-    <bidrag-felles.version>2024.01.16.170712</bidrag-felles.version>
-    <bidrag-beregn-felles.version>2024.01.16.170056</bidrag-beregn-felles.version>
+    <bidrag-felles.version>2024.02.05.142254</bidrag-felles.version>
+    <bidrag-beregn-felles.version>2024.02.05.150213</bidrag-beregn-felles.version>
     <h2.version>2.2.224</h2.version>
     <logback-encoder.version>7.4</logback-encoder.version>
     <token-support.version>3.2.0</token-support.version>
@@ -287,20 +287,22 @@
       <artifactId>bidrag-transport-felles</artifactId>
       <version>${bidrag-felles.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>no.nav.bidrag</groupId>
+      <artifactId>bidrag-sivilstand</artifactId>
+      <version>${bidrag-beregn-felles.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>no.nav.bidrag</groupId>
       <artifactId>bidrag-beregn-forskudd</artifactId>
       <version>${bidrag-beregn-felles.version}</version>
       <exclusions>
-        <exclusion>
-          <groupId>no.nav.bidrag</groupId>
-          <artifactId>bidrag-commons-felles</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>no.nav.bidrag</groupId>
-          <artifactId>bidrag-transport-felles</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>

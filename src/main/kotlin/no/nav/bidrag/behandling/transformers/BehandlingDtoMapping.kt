@@ -37,8 +37,9 @@ fun Behandling.tilBehandlingDtoV2(opplysninger: List<Grunnlag>) =
         grunnlagspakkeid = grunnlagspakkeid,
         virkningstidspunkt =
             VirkningstidspunktDto(
-                virkningsdato = virkningsdato,
-                årsak = aarsak,
+                virkningstidspunkt = virkningstidspunkt,
+                årsak = årsak,
+                avslag = avslag,
                 notat =
                     BehandlingNotatDto(
                         medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,

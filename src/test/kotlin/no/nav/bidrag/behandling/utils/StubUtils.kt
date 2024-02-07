@@ -1,5 +1,6 @@
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.POJONode
 import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -14,7 +15,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
-import no.nav.bidrag.transport.behandling.beregning.felles.Grunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
@@ -137,10 +138,11 @@ class StubUtils {
                             søknadsbarnReferanse = "123",
                             grunnlagListe =
                                 listOf(
-                                    Grunnlag(
+                                    GrunnlagDto(
                                         referanse = "abra_cadabra",
                                         type = Grunnlagstype.BARNETILLEGG,
                                         grunnlagsreferanseListe = listOf("123"),
+                                        innhold = POJONode(""),
                                     ),
                                 ),
                         ),

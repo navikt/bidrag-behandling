@@ -1,12 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import io.swagger.v3.oas.annotations.media.Schema
-
-@Schema(enumAsRef = true)
-enum class Bostatustype {
-    IKKE_REGISTRERT_PA_ADRESSE,
-    REGISTRERT_PA_ADRESSE,
-}
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 
 @Schema(enumAsRef = true)
 enum class Kilde {
@@ -39,30 +34,6 @@ fun Grunnlagsdatatype.getOrMigrate() =
         Grunnlagsdatatype.INNTEKTSOPPLYSNINGER -> Grunnlagsdatatype.INNTEKT_BEARBEIDET
         else -> this
     }
-
-@Schema(enumAsRef = true)
-enum class Behandlingstype {
-    BIDRAG,
-    FORSKUDD,
-    BIDRAG18AAR,
-    EKTEFELLEBIDRAG,
-    MOTREGNING,
-    OPPFOSTRINGSBIDRAG,
-}
-
-@Schema(enumAsRef = true)
-enum class Soknadstype {
-    INDEKSREGULERING,
-    ALDERSJUSTERING,
-    OPPHØR,
-    ALDERSOPPHØR,
-    REVURDERING,
-    FASTSETTELSE,
-    INNKREVING,
-    KLAGE,
-    ENDRING,
-    ENDRING_MOTTAKER,
-}
 
 @Schema(enumAsRef = true)
 enum class ForskuddAarsakType(val beskrivelse: String) {
@@ -98,18 +69,25 @@ enum class ForskuddAarsakType(val beskrivelse: String) {
     UTENL_YTELSE("Utenl.ytelse"),
 }
 
-val årsakskoderAvslag =
-    listOf(
-        ForskuddAarsakType.ANNET_AVSLAG,
-        ForskuddAarsakType.PGA_BARNEPENSJ,
-        ForskuddAarsakType.BARNS_EKTESKAP,
-        ForskuddAarsakType.BARNS_INNTEKT,
-        ForskuddAarsakType.PGA_YTELSE_FTRL,
-        ForskuddAarsakType.FULLT_UNDERH_OFF,
-        ForskuddAarsakType.IKKE_OMSORG,
-        ForskuddAarsakType.IKKE_OPPH_I_RIKET,
-        ForskuddAarsakType.MANGL_DOK,
-        ForskuddAarsakType.PGA_SAMMENFL,
-        ForskuddAarsakType.OPPH_UTLAND,
-        ForskuddAarsakType.UTENL_YTELSE,
-    )
+fun String.tilÅrsakstype(): VirkningstidspunktÅrsakstype? {
+    return try {
+        VirkningstidspunktÅrsakstype.valueOf(this)
+    } catch (e: IllegalArgumentException) {
+        return VirkningstidspunktÅrsakstype.entries.find { it.legacyKode == this }
+//        VirkningstidspunktÅrsakstype.entries.find { it.legacyKode == this }
+//            ?: when (ForskuddAarsakType.valueOf(this)) {
+//                ForskuddAarsakType.PGA_BARNEPENSJ -> VirkningstidspunktÅrsakstype.PÅ_GRUNN_AV_BARNEPENSJON
+//                ForskuddAarsakType.BARNS_EKTESKAP -> VirkningstidspunktÅrsakstype.BARNETS_EKTESKAP
+//                ForskuddAarsakType.BARNS_INNTEKT -> VirkningstidspunktÅrsakstype.BARNETS_INNTEKT
+//                ForskuddAarsakType.PGA_YTELSE_FTRL -> VirkningstidspunktÅrsakstype.PÅ_GRUNN_AV_YTELSE_FRA_FOLKETRYGDEN
+//                ForskuddAarsakType.FULLT_UNDERH_OFF -> VirkningstidspunktÅrsakstype.FULLT_UNDERHOLDT_AV_OFFENTLIG
+//                ForskuddAarsakType.IKKE_OMSORG -> VirkningstidspunktÅrsakstype.IKKE_OMSORG
+//                ForskuddAarsakType.IKKE_OPPH_I_RIKET -> VirkningstidspunktÅrsakstype.IKKE_OPPHOLD_I_RIKET
+//                ForskuddAarsakType.MANGL_DOK -> VirkningstidspunktÅrsakstype.MANGLENDE_DOKUMENTASJON
+//                ForskuddAarsakType.PGA_SAMMENFL -> VirkningstidspunktÅrsakstype.PÅ_GRUNN_AV_SAMMENFLYTTING
+//                ForskuddAarsakType.OPPH_UTLAND -> VirkningstidspunktÅrsakstype.OPPHOLD_I_UTLANDET
+//                ForskuddAarsakType.UTENL_YTELSE -> VirkningstidspunktÅrsakstype.UTENLANDSK_YTELSE
+//                else -> null
+//            }
+    }
+}

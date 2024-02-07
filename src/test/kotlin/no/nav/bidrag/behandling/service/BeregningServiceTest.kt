@@ -47,7 +47,7 @@ class BeregningServiceTest {
         verify {
             beregnForskuddApi.beregn(
                 withArg {
-                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
+                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
                     it.grunnlagListe!! shouldHaveSize 7
 
@@ -70,14 +70,14 @@ class BeregningServiceTest {
                     sivilstand shouldHaveSize 1
 
                     val inntekter =
-                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE }
+                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE }
                     inntekter shouldHaveSize 2
                 },
             )
 
             beregnForskuddApi.beregn(
                 withArg {
-                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
+                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
                     it.grunnlagListe!! shouldHaveSize 7
 
@@ -100,7 +100,7 @@ class BeregningServiceTest {
                     sivilstand shouldHaveSize 1
 
                     val inntekter =
-                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.BEREGNING_INNTEKT_RAPPORTERING_PERIODE }
+                        it.grunnlagListe!!.filter { gl -> gl.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE }
                     inntekter shouldHaveSize 2
                 },
             )
