@@ -11,7 +11,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.behandling.transformers.tilOppdaterBehandlingRequestV2
 import no.nav.bidrag.domene.ident.Personident
@@ -24,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody
 @BehandlingRestControllerV1
 class BehandlingController(
     private val behandlingService: BehandlingService,
-    private val grunnlagService: GrunnlagService,
 ) {
     @Suppress("unused")
     @PostMapping("/behandling")

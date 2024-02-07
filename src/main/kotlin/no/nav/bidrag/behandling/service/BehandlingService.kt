@@ -163,7 +163,7 @@ class BehandlingService(
         )
             .tilBehandlingDtoV2(
                 gjeldendeAktiveGrunnlagsdata =
-                    grunnlagService.henteGjeldendeAktiveGrunnlagsdatahenteGjeldendeAktiveGrunnlagsdata(behandlingsid),
+                    grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid),
                 ikkeAktiverteEndringerIGrunnlagsdata =
                     grunnlagService.hentAlleSistInnhentet(behandlingsid).filter { g -> g.aktiv == null },
             )
@@ -173,7 +173,7 @@ class BehandlingService(
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
         val gjeldendeAktiveGrunnlagsdata =
-            grunnlagService.henteGjeldendeAktiveGrunnlagsdatahenteGjeldendeAktiveGrunnlagsdata(behandlingsid)
+            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid)
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.hentAlleSistInnhentet(behandlingsid).filter { g -> g.aktiv == null }
         return behandling.tilBehandlingDtoV2(gjeldendeAktiveGrunnlagsdata, grunnlagsdataEndretEtterAktivering)

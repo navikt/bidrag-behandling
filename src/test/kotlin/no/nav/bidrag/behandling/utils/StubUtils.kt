@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer.Companion.oppretteGrunnlagsobjekterBarn
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
 import no.nav.bidrag.behandling.transformers.LocalDateTypeAdapter
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
@@ -20,11 +21,13 @@ import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Arrays
 
@@ -215,13 +218,8 @@ class StubUtils {
         personidentBarn: Set<Personident> = emptySet(),
         tomRespons: Boolean = false,
         navnResponsfil: String = "hente-grunnlagrespons.json",
+        responsobjekt: HentGrunnlagDto? = null,
     ): StubMapping {
-        val navnResponsfil =
-            when (tomRespons) {
-                false -> navnResponsfil
-                else -> "hente-grunnlag-tom-respons.json"
-            }
-
         val wiremock =
             if (personidentBm == null) {
                 WireMock.post(WireMock.urlEqualTo("/hentgrunnlag"))
@@ -231,14 +229,39 @@ class StubUtils {
                 ).withRequestBody(WireMock.equalToJson(oppretteGrunnlagrequest(personidentBm, personidentBarn)))
             }
 
-        return WireMock.stubFor(
-            wiremock
-                .willReturn(
-                    aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                        .withStatus(HttpStatus.OK.value())
-                        .withBodyFile(navnResponsfil),
-                ),
-        )
+        val hentGrunnlagDto =
+            HentGrunnlagDto(
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                LocalDateTime.now(),
+            )
+
+        objektTilJson(hentGrunnlagDto)
+        val respons =
+            if (tomRespons && responsobjekt == null) {
+                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withStatus(HttpStatus.OK.value())
+                    .withBody(objektTilJson(hentGrunnlagDto))
+            } else if (!tomRespons && responsobjekt != null) {
+                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withStatus(HttpStatus.OK.value())
+                    .withBody(objektTilJson(responsobjekt))
+            } else {
+                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withStatus(HttpStatus.OK.value())
+                    .withBodyFile(navnResponsfil)
+            }
+
+        return WireMock.stubFor(wiremock.willReturn(respons))
     }
 
     private fun oppretteGrunnlagrequest(

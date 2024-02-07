@@ -1,7 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
@@ -9,9 +7,13 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
+import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
+import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.database.grunnlag.tilGrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.tilKontantstøtte
@@ -19,12 +21,12 @@ import no.nav.bidrag.behandling.transformers.tilSkattegrunnlagForLigningsår
 import no.nav.bidrag.behandling.transformers.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.tilSummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.lang.reflect.Type
 import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
@@ -131,7 +133,7 @@ class GrunnlagService(
         behandlingsid: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
     ): Grunnlag? {
-        return grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+        return grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
             behandlingsid,
             grunnlagsdatatype.getOrMigrate(),
         )
@@ -139,10 +141,10 @@ class GrunnlagService(
 
     fun hentAlleSistInnhentet(behandlingId: Long): List<Grunnlag> =
         Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
-            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(behandlingId, it)
+            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(behandlingId, it)
         }
 
-    fun henteGjeldendeAktiveGrunnlagsdatahenteGjeldendeAktiveGrunnlagsdata(behandlingId: Long): List<Grunnlag> =
+    fun henteGjeldendeAktiveGrunnlagsdata(behandlingId: Long): List<Grunnlag> =
         Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
             grunnlagRepository.findTopByBehandlingIdAndTypeOrderByAktivDescIdDesc(behandlingId, it)
         }
@@ -156,10 +158,8 @@ class GrunnlagService(
     ) {
         log.info { "Lagrer inntentet grunnlag $grunnlagsdatatype for behandling med id $behandlingsid" }
 
-        behandlingRepository
-            .findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }
-            .let {
+        behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 it.grunnlag.add(
                     Grunnlag(
                         it,
@@ -172,15 +172,41 @@ class GrunnlagService(
             }
     }
 
-    private fun <T> lagreGrunnlagHvisEndret(
+    private inline fun <reified T> lagreGrunnlagHvisEndret(
         behandlingsid: Long,
         grunnlagstype: Grunnlagsdatatype,
         innhentetGrunnlag: Set<T>,
         hentetTidspunkt: LocalDateTime,
     ) {
-        val sistInnhentedeGrunnlagAvType: Set<T>? = henteNyesteGrunnlagsdata(behandlingsid, grunnlagstype)
+        val sistInnhentedeGrunnlagAvType: Set<T> = henteNyesteGrunnlagsdatasett<T>(behandlingsid, grunnlagstype).toSet()
 
-        if (sistInnhentedeGrunnlagAvType == null || innhentetGrunnlag != sistInnhentedeGrunnlagAvType) {
+        if ((sistInnhentedeGrunnlagAvType.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
+            (sistInnhentedeGrunnlagAvType.isNotEmpty() && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
+        ) {
+            opprett(
+                behandlingsid = behandlingsid,
+                data = objektTilJson(innhentetGrunnlag),
+                grunnlagsdatatype = grunnlagstype,
+                innhentet = hentetTidspunkt,
+                aktiv = if (sistInnhentedeGrunnlagAvType.isEmpty() && innhentetGrunnlag.isNotEmpty()) LocalDateTime.now() else null,
+            )
+        } else {
+            log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandlingsid." }
+        }
+    }
+
+    private inline fun <reified T> lagreInntektHvisEndret(
+        behandlingsid: Long,
+        hentetTidspunkt: LocalDateTime,
+        grunnlagstype: Grunnlagsdatatype,
+        innhentetGrunnlag: T,
+    ) {
+        val sistInnhentedeGrunnlagAvType: T? =
+            henteNyesteGrunnlagsdataobjekt<T>(behandlingsid, grunnlagstype)
+
+        if ((sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)) ||
+            (sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
+        ) {
             opprett(
                 behandlingsid = behandlingsid,
                 data = objektTilJson(innhentetGrunnlag),
@@ -193,49 +219,39 @@ class GrunnlagService(
         }
     }
 
-    private fun <T> lagreInntektHvisEndret(
-        behandlingsid: Long,
-        hentetTidspunkt: LocalDateTime,
-        grunnlagstype: Grunnlagsdatatype,
-        innhentetGrunnlag: T,
-    ) {
-        val sistLagredeGrunnlagAvSammeType = tilGrunnlagsdata<T>(hentSistInnhentet(behandlingsid, grunnlagstype))
-
-        if (innhentetGrunnlag != sistLagredeGrunnlagAvSammeType) {
-            opprett(
-                behandlingsid = behandlingsid,
-                data = objektTilJson(innhentetGrunnlag),
-                grunnlagsdatatype = grunnlagstype,
-                innhentet = hentetTidspunkt,
-                aktiv = if (sistLagredeGrunnlagAvSammeType == null) LocalDateTime.now() else null,
-            )
-        } else {
-            log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandlingsid." }
+    fun <T> inneholderInntekter(grunnlag: T): Boolean {
+        return when (grunnlag) {
+            is GrunnlagInntekt -> grunnlag.ainntekt.isNotEmpty() || grunnlag.skattegrunnlag.isNotEmpty()
+            is SummerteMånedsOgÅrsinntekter -> grunnlag.summerteÅrsinntekter.isNotEmpty() || grunnlag.summerteMånedsinntekter.isNotEmpty()
+            else -> {
+                log.error { "Grunnlag er ikke en inntektstype" }
+                secureLogger.error { "Grunnlag $grunnlag er ikke en inntektstype" }
+                throw IllegalArgumentException("Grunnlag er ikke en inntektstype")
+            }
         }
     }
 
-    private fun <T> tilGrunnlagsdata(lagretGrunnlag: Grunnlag?): T {
-        val targetClassType: Type = object : TypeToken<T?>() {}.type
-
-        val lagretGrunnlagsdata: T =
-            Gson().fromJson(
-                lagretGrunnlag?.data,
-                targetClassType,
-            )
-
-        return lagretGrunnlagsdata
-    }
-
-    private fun <T> henteNyesteGrunnlagsdata(
+    private inline fun <reified T> henteNyesteGrunnlagsdatasett(
         behandlingsid: Long,
         grunnlagstype: Grunnlagsdatatype,
-    ): Set<T>? {
-        val typeinfo: Type = object : TypeToken<ArrayList<T>>() {}.type
-
+    ): Set<T> {
         val grunnlagsdata = hentSistInnhentet(behandlingsid, grunnlagstype)?.data
 
         return if (grunnlagsdata != null) {
-            Gson().fromJson<Set<T>?>(grunnlagsdata, typeinfo).toSet()
+            jsonListeTilObjekt<T>(grunnlagsdata)
+        } else {
+            emptySet()
+        }
+    }
+
+    private inline fun <reified T> henteNyesteGrunnlagsdataobjekt(
+        behandlingsid: Long,
+        grunnlagstype: Grunnlagsdatatype,
+    ): T? {
+        val grunnlagsdata = hentSistInnhentet(behandlingsid, grunnlagstype)?.data
+
+        return if (grunnlagsdata != null) {
+            jsonTilObjekt<T>(grunnlagsdata)
         } else {
             null
         }

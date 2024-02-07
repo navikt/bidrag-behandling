@@ -7,14 +7,12 @@ import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
-import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
@@ -24,9 +22,8 @@ import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
 import no.nav.bidrag.behandling.transformers.toLocalDate
-import no.nav.bidrag.behandling.utils.testdata.tilAinntektspostDto
+import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -34,7 +31,6 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -62,7 +58,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     lateinit var behandlingRepository: BehandlingRepository
 
     @Autowired
-    lateinit var grunnlagRepository: GrunnlagRepository
+    lateinit var testdataManager: TestdataManager
 
     @PersistenceContext
     lateinit var entityManager: EntityManager
@@ -77,11 +73,18 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
+        @Transactional
+        open fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
             // gitt
             val behandling = oppretteBehandling()
 
-            oppretteOgLagreGrunnlag(behandling, Grunnlagsdatatype.INNTEKT)
+            // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
+            testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
+                behandling.id!!,
+                Grunnlagsdatatype.INNTEKT,
+                LocalDate.of(2024, 1, 1).atStartOfDay(),
+                LocalDate.of(2024, 1, 1).atStartOfDay(),
+            )
 
             val personidentBm = Personident(behandling.getBidragsmottaker()!!.ident!!)
 
@@ -99,8 +102,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly {
                 behandlingDto.aktiveGrunnlagsdata.size shouldBe 10
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
-                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
-                        g ->
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter { g ->
                     g.grunnlagsdatatype == Grunnlagsdatatype.INNTEKT
                 }.size shouldBe 1
             }
@@ -651,44 +653,5 @@ class BehandlingServiceTest : TestContainerRunner() {
         val behandling = prepareBehandling()
 
         return behandlingRepository.save(behandling)
-    }
-
-    private fun oppretteOgLagreGrunnlag(
-        behandling: Behandling,
-        grunnlagsdatatype: Grunnlagsdatatype,
-    ): Grunnlag {
-        val data =
-            when (grunnlagsdatatype) {
-                Grunnlagsdatatype.INNTEKT ->
-                    objektTilJson(
-                        GrunnlagInntekt(
-                            ainntekt =
-                                listOf(
-                                    AinntektGrunnlagDto(
-                                        personId = behandling.getBidragspliktig()?.ident!!,
-                                        periodeFra = behandling.søktFomDato,
-                                        periodeTil = behandling.søktFomDato.plusMonths(1),
-                                        ainntektspostListe =
-                                            listOf(
-                                                tilAinntektspostDto(
-                                                    beløp = BigDecimal(70000),
-                                                    fomDato = behandling.søktFomDato,
-                                                    tilDato = behandling.søktFomDato.plusMonths(1),
-                                                ),
-                                            ),
-                                    ),
-                                ),
-                        ),
-                    )
-
-                else -> {
-                    objektTilJson(GrunnlagInntekt())
-                }
-            }
-
-        val grunnlag =
-            Grunnlag(behandling = behandling, data = data, innhentet = LocalDateTime.now(), type = grunnlagsdatatype)
-
-        return grunnlagRepository.save(grunnlag)
     }
 }

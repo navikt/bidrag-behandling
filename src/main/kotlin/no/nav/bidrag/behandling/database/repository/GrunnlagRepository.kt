@@ -5,7 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import org.springframework.data.repository.CrudRepository
 
 interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
-    fun findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+    fun findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
         behandlingId: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
     ): Grunnlag?

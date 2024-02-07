@@ -13,8 +13,6 @@ springdoc:
 
 spring.main.banner-mode: off
 
-KODEVERK_URL: https://kodeverk.prod-fss-pub.nais.io
-
 ---
 spring.config.activate.on-profile: nais,lokal-nais
 

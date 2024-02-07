@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.controller.v1.behandling
 
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -60,16 +59,9 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             // så
             Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
-            val behandling =
-                httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV1()}/behandling/${behandlingRes.body!!.id}",
-                    HttpMethod.GET,
-                    HttpEntity.EMPTY,
-                    BehandlingDto::class.java,
-                )
-
-            assertNotNull(behandling.body)
-            Assertions.assertEquals(3, behandling.body!!.roller.size)
+            val behandling = behandlingRepository.findBehandlingById(behandlingRes.body!!.id)
+            assertNotNull(behandling)
+            Assertions.assertEquals(3, behandling.get().roller.size)
         }
 
         @Test

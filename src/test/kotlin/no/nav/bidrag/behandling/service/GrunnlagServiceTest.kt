@@ -1,7 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import com.google.gson.GsonBuilder
-import com.google.gson.reflect.TypeToken
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -11,19 +9,22 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.transformers.LocalDateTimeTypeAdapter
-import no.nav.bidrag.behandling.transformers.LocalDateTypeAdapter
-import no.nav.bidrag.behandling.transformers.YearMonthTypeAdapter
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
-import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import org.assertj.core.api.Assertions.assertThat
@@ -32,7 +33,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import java.lang.reflect.Type
+import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -68,16 +70,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     @Nested
     @DisplayName("Teste oppdatereGrunnlagForBehandling")
-    open inner class OpdatereGrunnlagForBehandling {
+    open inner class OppdatereGrunnlagForBehandling {
         @Test
         fun `skal lagre skattegrunnlag`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
-            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
-            val barn =
-                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
-                    .sortedBy { it.verdi }.toSet()
-
             stubUtils.stubHenteGrunnlagOk()
 
             // hvis
@@ -92,14 +89,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.INNTEKT,
                 )
 
             assertThat(grunnlag?.data?.isNotEmpty())
 
-            val grunnlagInntekt = jsonTilGrunnlagInntekt(grunnlag?.data!!)
+            val grunnlagInntekt = jsonTilObjekt<GrunnlagInntekt>(grunnlag?.data!!)
 
             assertSoftly {
                 grunnlagInntekt.skattegrunnlag shouldNotBe emptySet<SkattegrunnlagGrunnlagDto>()
@@ -109,15 +106,239 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
+        @Transactional
+        open fun `skal ikke lagre ny innhenting av inntekt hvis ingen endringer`() {
+            // gitt
+            val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
+            val behandling = testdataManager.opprettBehandling(false)
+
+            val skattegrunnlag =
+                SkattegrunnlagGrunnlagDto(
+                    periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                    personId = behandling.getBidragsmottaker()!!.ident!!,
+                    skattegrunnlagspostListe =
+                        listOf(
+                            SkattegrunnlagspostDto(
+                                beløp = BigDecimal(450000),
+                                belop = BigDecimal(450000),
+                                inntektType = "renteinntektAvObligasjon",
+                                skattegrunnlagType = "ORINÆR",
+                            ),
+                        ),
+                )
+
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling.id!!,
+                Grunnlagsdatatype.INNTEKT,
+                innhentingstidspunkt,
+                innhentingstidspunkt,
+                grunnlagsdata =
+                    GrunnlagInntekt(
+                        ainntekt = emptyList(),
+                        skattegrunnlag = listOf(skattegrunnlag),
+                    ),
+            )
+
+            stubUtils.stubHenteGrunnlagOk(responsobjekt = tilHentGrunnlagDto(skattegrunnlag = listOf(skattegrunnlag)))
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlag.size shouldBe 2
+            }
+
+            val grunnlag =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.INNTEKT,
+                )
+
+            assertSoftly {
+                grunnlag shouldNotBe null
+                grunnlag?.data shouldNotBe emptySet<SmåbarnstilleggGrunnlagDto>()
+                grunnlag?.innhentet?.toLocalDate() shouldBe innhentingstidspunkt.toLocalDate()
+                grunnlag?.aktiv?.toLocalDate() shouldBe innhentingstidspunkt.toLocalDate()
+            }
+
+            val grunnlagInntekt = jsonTilObjekt<GrunnlagInntekt>(grunnlag?.data!!)
+
+            assertSoftly {
+                grunnlagInntekt.skattegrunnlag shouldNotBe emptySet<SkattegrunnlagGrunnlagDto>()
+                grunnlagInntekt.skattegrunnlag.size shouldBe 1
+                grunnlagInntekt.skattegrunnlag[0].personId shouldBe behandling.getBidragsmottaker()!!.ident
+            }
+        }
+
+        @Test
+        fun `skal ikke lagre ny innhenting av småbarnstillegg hvis ingen endringer`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+
+            val småbarnstillegg =
+                SmåbarnstilleggGrunnlagDto(
+                    beløp = BigDecimal(3700),
+                    manueltBeregnet = false,
+                    periodeFra = YearMonth.now().minusMonths(7).atDay(1),
+                    periodeTil = YearMonth.now().atDay(1),
+                    personId = behandling.getBidragsmottaker()!!.ident!!,
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    data = objektTilJson(setOf(småbarnstillegg)),
+                    innhentet = LocalDateTime.now().minusDays(1),
+                    aktiv = LocalDateTime.now().minusDays(1),
+                ),
+            )
+
+            behandlingRepository.save(behandling)
+
+            stubUtils.stubHenteGrunnlagOk(responsobjekt = tilHentGrunnlagDto(småbarnstillegg = listOf(småbarnstillegg)))
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlag.size shouldBe 2
+            }
+
+            val grunnlag =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                )
+
+            assertSoftly {
+                grunnlag shouldNotBe null
+                grunnlag?.data shouldNotBe emptySet<SmåbarnstilleggGrunnlagDto>()
+                grunnlag?.innhentet?.toLocalDate() shouldBe LocalDate.now().minusDays(1)
+                grunnlag?.aktiv?.toLocalDate() shouldBe LocalDate.now().minusDays(1)
+            }
+
+            assertThat(grunnlag?.data?.isNotEmpty())
+
+            val lagredeSmåbarnstillegg = jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(grunnlag?.data!!)
+
+            assertSoftly {
+                lagredeSmåbarnstillegg shouldNotBe emptySet<SmåbarnstilleggGrunnlagDto>()
+                lagredeSmåbarnstillegg.size shouldBe 1
+                lagredeSmåbarnstillegg.filter { sbt -> sbt.personId == behandling.getBidragsmottaker()!!.ident!! }.size shouldBe 1
+                lagredeSmåbarnstillegg.filter { sbt -> sbt.beløp == småbarnstillegg.beløp }.size shouldBe 1
+            }
+        }
+
+        @Test
+        fun `skal lagre tomt grunnlag uten å sette til aktiv dersom sist lagrede grunnlag ikke var tomt`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubHenteGrunnlagOk(tomRespons = true)
+
+            val småbarnstillegg =
+                SmåbarnstilleggGrunnlagDto(
+                    beløp = BigDecimal(3700),
+                    manueltBeregnet = false,
+                    periodeFra = YearMonth.now().minusMonths(7).atDay(1),
+                    periodeTil = YearMonth.now().atDay(1),
+                    personId = behandling.getBidragsmottaker()!!.ident!!,
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    data = objektTilJson(setOf(småbarnstillegg)),
+                    innhentet = LocalDateTime.now().minusDays(1),
+                    aktiv = LocalDateTime.now().minusDays(1),
+                ),
+            )
+
+            behandlingRepository.save(behandling)
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlag.size shouldBe 2
+            }
+
+            val grunnlag =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                )
+
+            assertSoftly {
+                jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(grunnlag!!.data) shouldBe emptySet()
+                grunnlag.aktiv shouldBe null
+            }
+
+            val gjeldendeAktiveGrunnlag = grunnlagRepository.findAll().filter { g -> g.aktiv != null }
+
+            gjeldendeAktiveGrunnlag.size shouldBe 1
+
+            val småbarnstilleggGrunnlagDto =
+                jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(gjeldendeAktiveGrunnlag.first().data)
+
+            assertSoftly {
+                småbarnstilleggGrunnlagDto shouldNotBe emptySet<SmåbarnstilleggGrunnlagDto>()
+                småbarnstilleggGrunnlagDto.size shouldBe 1
+                småbarnstilleggGrunnlagDto.filter { sbt -> sbt.personId == behandling.getBidragsmottaker()!!.ident!! }.size shouldBe 1
+                småbarnstilleggGrunnlagDto.filter { sbt -> sbt.beløp == småbarnstillegg.beløp }.size shouldBe 1
+            }
+        }
+
+        @Test
+        fun `skal ikke lagre tomt grunnlag dersom sist lagrede grunnlag var tomt`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubHenteGrunnlagOk(tomRespons = true)
+
+            val lagretGrunnlag = behandlingRepository.findBehandlingById(behandling.id!!).get().grunnlag
+
+            lagretGrunnlag.size shouldBe 0
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlag.size shouldBe 0
+            }
+
+            val grunnlag =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.INNTEKT,
+                )
+
+            grunnlag shouldBe null
+        }
+
+        @Test
         fun `skal sette til aktiv dersom ikke tidligere lagret`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
-            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
-            val barn =
-                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
-                    .sortedBy { it.verdi }.toSet()
 
-            stubUtils.stubHenteGrunnlagOk(tomRespons = true)
+            stubUtils.stubHenteGrunnlagOk()
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -143,10 +364,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
         fun `skal lagre husstandsmedlemmer`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
-            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
-            val barn =
-                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
-                    .sortedBy { it.verdi }.toSet()
 
             stubUtils.stubHenteGrunnlagOk()
 
@@ -162,11 +379,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
                 )
-            val husstandsmedlemmer = jsonTilRelatertPersonGrunnlagDto(grunnlag?.data!!)
+            val husstandsmedlemmer = jsonListeTilObjekt<RelatertPersonGrunnlagDto>(grunnlag?.data!!)
 
             assertSoftly {
                 husstandsmedlemmer.size shouldBe 2
@@ -185,10 +402,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
         fun `skal lagre sivilstand`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
-            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
-            val barn =
-                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
-                    .sortedBy { it.verdi }.toSet()
 
             stubUtils.stubHenteGrunnlagOk()
 
@@ -204,11 +417,59 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.SIVILSTAND,
                 )
-            val sivilstand = jsonTilSivilstandGrunnlagDto(grunnlag?.data!!)
+            val sivilstand = jsonListeTilObjekt<SivilstandGrunnlagDto>(grunnlag?.data!!)
+
+            assertSoftly {
+                sivilstand.size shouldBe 2
+                sivilstand.filter { s ->
+                    s.personId == "99057812345" && s.bekreftelsesdato ==
+                        LocalDate.of(
+                            2021,
+                            1,
+                            1,
+                        ) && s.gyldigFom ==
+                        LocalDate.of(
+                            2021,
+                            1,
+                            1,
+                        ) && s.master == "FREG" &&
+                        s.historisk == true && s.registrert ==
+                        LocalDateTime.parse(
+                            "2022-01-01T10:03:57.285",
+                            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                        ) && s.type == SivilstandskodePDL.GIFT
+                }.toSet().size shouldBe 1
+            }
+        }
+
+        @Test
+        fun `skal lagre småbarnstillegg`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+
+            stubUtils.stubHenteGrunnlagOk()
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
+            }
+
+            val grunnlag =
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
+                    behandlingId = behandling.id!!,
+                    Grunnlagsdatatype.SIVILSTAND,
+                )
+            val sivilstand = jsonListeTilObjekt<SivilstandGrunnlagDto>(grunnlag?.data!!)
 
             assertSoftly {
                 sivilstand.size shouldBe 2
@@ -237,11 +498,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
         fun `skal lagre yteslser`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
-            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
-            val barn =
-                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
-                    .sortedBy { it.verdi }.toSet()
-
             stubUtils.stubHenteGrunnlagOk()
 
             // hvis
@@ -256,59 +512,59 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagBarnetillegg =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.BARNETILLEGG,
                 )
             grunnlagBarnetillegg shouldNotBe null
-            val barnetillegg = jsonTilBarnetilleggGrunnlagDto(grunnlagBarnetillegg?.data!!)
+            val barnetillegg = jsonListeTilObjekt<BarnetilleggGrunnlagDto>(grunnlagBarnetillegg?.data!!)
             assertSoftly {
                 barnetillegg.size shouldBe 1
             }
 
             val grunnlagBarnetilsyn =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.BARNETILSYN,
                 )
             grunnlagBarnetilsyn shouldNotBe null
-            val barnetilsyn = jsonTilBarnetilsynGrunnlagDto(grunnlagBarnetilsyn?.data!!)
+            val barnetilsyn = jsonListeTilObjekt<BarnetilsynGrunnlagDto>(grunnlagBarnetilsyn?.data!!)
             assertSoftly {
                 barnetilsyn.size shouldBe 1
             }
 
             val grunnlagKontantstøtte =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.KONTANTSTØTTE,
                 )
             grunnlagKontantstøtte shouldNotBe null
-            val kontantstøtte = jsonTilKontantstøtteGrunnlagDto(grunnlagKontantstøtte?.data!!)
+            val kontantstøtte = jsonListeTilObjekt<KontantstøtteGrunnlagDto>(grunnlagKontantstøtte?.data!!)
             assertSoftly {
                 kontantstøtte.size shouldBe 1
             }
 
             val grunnlagUtvidetBarnetrygd =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.UTVIDET_BARNETRYGD,
                 )
             grunnlagUtvidetBarnetrygd shouldNotBe null
 
             val utvidetBarnetrygd =
-                jsonTilUtvidetBarnetrygdGrunnlagDto(grunnlagUtvidetBarnetrygd?.data!!)
+                jsonListeTilObjekt<UtvidetBarnetrygdGrunnlagDto>(grunnlagUtvidetBarnetrygd?.data!!)
             assertSoftly {
                 utvidetBarnetrygd.size shouldBe 1
             }
 
             val grunnlagSmåbarnstillegg =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
                 )
             grunnlagSmåbarnstillegg shouldNotBe null
             val småbarnstillegg =
-                jsonTilSmåbarnstilleggGrunnlagDto(grunnlagSmåbarnstillegg?.data!!)
+                jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(grunnlagSmåbarnstillegg?.data!!)
             assertSoftly {
                 småbarnstillegg.size shouldBe 1
             }
@@ -318,10 +574,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
         fun `skal lagre arbeidsforhold`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
-            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
-            val barn =
-                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
-                    .sortedBy { it.verdi }.toSet()
 
             stubUtils.stubHenteGrunnlagOk()
 
@@ -337,11 +589,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
                     behandlingId = behandling.id!!,
                     Grunnlagsdatatype.ARBEIDSFORHOLD,
                 )
-            val arbeidsforhold = jsonTilArbeidsforholdGrunnlagDto(grunnlag?.data!!)
+            val arbeidsforhold = jsonListeTilObjekt<ArbeidsforholdGrunnlagDto>(grunnlag?.data!!)
 
             assertSoftly {
                 arbeidsforhold.size shouldBe 3
@@ -395,10 +647,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal hente nyeste grunnlagsopplysning per type`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(true)
-            val bm = Personident(behandling.getBidragsmottaker()!!.ident!!)
-            val barn =
-                behandling.getSøknadsbarn().filter { r -> r.ident != null }.map { Personident(it.ident!!) }
-                    .sortedBy { it.verdi }.toSet()
 
             stubUtils.stubHenteGrunnlagOk()
 
@@ -419,118 +667,60 @@ class GrunnlagServiceTest : TestContainerRunner() {
     }
 
     companion object {
-        fun jsonTilGrunnlagInntekt(json: String): GrunnlagInntekt =
-            GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson(
-                    json,
-                    GrunnlagInntekt::class.java,
-                )
-
-        fun jsonTilRelatertPersonGrunnlagDto(json: String): Set<RelatertPersonGrunnlagDto> {
-            val targetClassType: Type = object : TypeToken<ArrayList<RelatertPersonGrunnlagDto?>?>() {}.type
-
-            return GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson<Set<RelatertPersonGrunnlagDto>?>(
-                    json,
-                    targetClassType,
-                ).toSet()
-        }
-
-        fun jsonTilSivilstandGrunnlagDto(json: String): Set<SivilstandGrunnlagDto> {
-            val targetClassType: Type = object : TypeToken<ArrayList<SivilstandGrunnlagDto?>?>() {}.type
-
-            return GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson<Set<SivilstandGrunnlagDto>?>(
-                    json,
-                    targetClassType,
-                ).toSet()
-        }
-
-        fun jsonTilArbeidsforholdGrunnlagDto(json: String): Set<ArbeidsforholdGrunnlagDto> {
-            val targetClassType: Type = object : TypeToken<ArrayList<ArbeidsforholdGrunnlagDto?>?>() {}.type
-
-            return GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson<Set<ArbeidsforholdGrunnlagDto>?>(
-                    json,
-                    targetClassType,
-                ).toSet()
-        }
-
-        fun jsonTilBarnetilleggGrunnlagDto(json: String): Set<BarnetilleggGrunnlagDto> {
-            val targetClassType: Type = object : TypeToken<ArrayList<BarnetilleggGrunnlagDto?>?>() {}.type
-
-            return GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson<Set<BarnetilleggGrunnlagDto>?>(
-                    json,
-                    targetClassType,
-                ).toSet()
-        }
-
-        fun jsonTilBarnetilsynGrunnlagDto(json: String): Set<BarnetilsynGrunnlagDto> {
-            val targetClassType: Type = object : TypeToken<ArrayList<BarnetilsynGrunnlagDto?>?>() {}.type
-
-            return GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson<Set<BarnetilsynGrunnlagDto>?>(
-                    json,
-                    targetClassType,
-                ).toSet()
-        }
-
-        fun jsonTilKontantstøtteGrunnlagDto(json: String): Set<KontantstøtteGrunnlagDto> {
-            val targetClassType: Type = object : TypeToken<ArrayList<KontantstøtteGrunnlagDto?>?>() {}.type
-
-            return GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson<Set<KontantstøtteGrunnlagDto>?>(
-                    json,
-                    targetClassType,
-                ).toSet()
-        }
-
-        fun jsonTilUtvidetBarnetrygdGrunnlagDto(json: String): Set<UtvidetBarnetrygdGrunnlagDto> {
-            val targetClassType: Type = object : TypeToken<ArrayList<UtvidetBarnetrygdGrunnlagDto?>?>() {}.type
-
-            return GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson<Set<UtvidetBarnetrygdGrunnlagDto>?>(
-                    json,
-                    targetClassType,
-                ).toSet()
-        }
-
-        fun jsonTilSmåbarnstilleggGrunnlagDto(json: String): Set<SmåbarnstilleggGrunnlagDto> {
-            val targetClassType: Type = object : TypeToken<ArrayList<SmåbarnstilleggGrunnlagDto?>?>() {}.type
-
-            return GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJson<Set<SmåbarnstilleggGrunnlagDto>?>(
-                    json,
-                    targetClassType,
-                ).toSet()
-        }
+        fun tilHentGrunnlagDto(
+            hentet: LocalDateTime = LocalDateTime.now(),
+            ainntekter: List<AinntektGrunnlagDto> = emptyList(),
+            arbeidsforhold: List<ArbeidsforholdGrunnlagDto> = emptyList(),
+            barnetillegg: List<BarnetilleggGrunnlagDto> = emptyList(),
+            barnetilsyn: List<BarnetilsynGrunnlagDto> = emptyList(),
+            feilrapportering: List<FeilrapporteringDto> = emptyList(),
+            husstandsmeldemmer: List<RelatertPersonGrunnlagDto> = emptyList(),
+            kontantstøtte: List<KontantstøtteGrunnlagDto> = emptyList(),
+            sivilstand: List<SivilstandGrunnlagDto> = emptyList(),
+            skattegrunnlag: List<SkattegrunnlagGrunnlagDto> = emptyList(),
+            småbarnstillegg: List<SmåbarnstilleggGrunnlagDto> = emptyList(),
+            utvidetBarnetrygd: List<UtvidetBarnetrygdGrunnlagDto> = emptyList(),
+        ) = HentGrunnlagDto(
+            ainntektListe = ainntekter,
+            arbeidsforholdListe = arbeidsforhold,
+            barnetilleggListe = barnetillegg,
+            barnetilsynListe = barnetilsyn,
+            feilrapporteringListe = feilrapportering,
+            hentetTidspunkt = hentet,
+            husstandsmedlemmerOgEgneBarnListe = husstandsmeldemmer,
+            kontantstøtteListe = kontantstøtte,
+            sivilstandListe = sivilstand,
+            skattegrunnlagListe = skattegrunnlag,
+            småbarnstilleggListe = småbarnstillegg,
+            utvidetBarnetrygdListe = utvidetBarnetrygd,
+        )
     }
 }
+
+fun HentGrunnlagDto.tilHentGrunnlagDto(
+    hentet: LocalDateTime = LocalDateTime.now(),
+    ainntekter: List<AinntektGrunnlagDto> = emptyList(),
+    arbeidsforhold: List<ArbeidsforholdGrunnlagDto> = emptyList(),
+    barnetillegg: List<BarnetilleggGrunnlagDto> = emptyList(),
+    barnetilsyn: List<BarnetilsynGrunnlagDto> = emptyList(),
+    feilrapportering: List<FeilrapporteringDto> = emptyList(),
+    husstandsmeldemmer: List<RelatertPersonGrunnlagDto> = emptyList(),
+    kontantstøtte: List<KontantstøtteGrunnlagDto> = emptyList(),
+    sivilstand: List<SivilstandGrunnlagDto> = emptyList(),
+    skattegrunnlag: List<SkattegrunnlagGrunnlagDto> = emptyList(),
+    småbarnstillegg: List<SmåbarnstilleggGrunnlagDto> = emptyList(),
+    utvidetBarnetrygd: List<UtvidetBarnetrygdGrunnlagDto> = emptyList(),
+) = HentGrunnlagDto(
+    ainntektListe = ainntekter,
+    arbeidsforholdListe = arbeidsforhold,
+    barnetilleggListe = barnetillegg,
+    barnetilsynListe = barnetilsyn,
+    feilrapporteringListe = feilrapportering,
+    hentetTidspunkt = hentet,
+    husstandsmedlemmerOgEgneBarnListe = husstandsmeldemmer,
+    kontantstøtteListe = kontantstøtte,
+    sivilstandListe = sivilstand,
+    skattegrunnlagListe = skattegrunnlag,
+    småbarnstilleggListe = småbarnstillegg,
+    utvidetBarnetrygdListe = utvidetBarnetrygd,
+)
