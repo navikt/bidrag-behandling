@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -43,9 +44,11 @@ data class BehandlingDto(
 data class VirkningstidspunktDto(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val virkningsdato: LocalDate? = null,
-    @Schema(name = "årsak")
+    val virkningstidspunkt: LocalDate? = null,
+    @Schema(name = "årsak", enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
+    @Schema(enumAsRef = true)
+    val avslag: Resultatkode? = null,
     val notat: BehandlingNotatDto,
 )
 

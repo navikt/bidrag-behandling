@@ -18,6 +18,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -58,8 +59,8 @@ open class Behandling(
     @Column(name = "aarsak")
     @Convert(converter = ÅrsakConverter::class)
     open var årsak: VirkningstidspunktÅrsakstype? = null,
-//    @Column(name = "avslag")
-//    open var avslag: Resultatkode? = null,
+    @Column(name = "avslag")
+    open var avslag: Resultatkode? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_VEDTAK_OG_NOTAT")
     open var virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_KUN_NOTAT")

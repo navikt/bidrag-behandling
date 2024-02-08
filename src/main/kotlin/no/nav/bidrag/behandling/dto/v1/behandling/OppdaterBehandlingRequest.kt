@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
 
@@ -26,9 +27,14 @@ data class OppdaterVirkningstidspunkt(
         description =
             "Oppdater årsak. Hvis verdien er satt til null vil årsak bli slettet. " +
                 "Hvis verdien er satt til tom verdi eller ikke er satt vil det ikke bli gjort noe endringer",
+        enumAsRef = true,
     )
     @JsonSetter(nulls = Nulls.SKIP)
     val årsak: VirkningstidspunktÅrsakstype? = null,
+    @Schema(
+        enumAsRef = true,
+    )
+    val avslag: Resultatkode? = null,
     @Schema(
         type = "string",
         format = "date",
@@ -39,7 +45,7 @@ data class OppdaterVirkningstidspunkt(
     )
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonSetter(nulls = Nulls.SKIP)
-    val virkningsdato: LocalDate? = null,
+    val virkningstidspunkt: LocalDate? = null,
     val notat: OppdaterNotat? = null,
 )
 

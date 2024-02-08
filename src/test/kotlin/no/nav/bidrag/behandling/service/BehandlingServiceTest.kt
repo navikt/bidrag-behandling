@@ -193,8 +193,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
                         OppdaterVirkningstidspunkt(
-                            årsak = VirkningstidspunktÅrsakstype.FRA_MÅNED_ETTER_INNTEKTEN_ØKTE,
-                            virkningsdato = null,
+                            årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
+                            virkningstidspunkt = null,
                             notat =
                                 OppdaterNotat(
                                     notat,
@@ -206,10 +206,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
-            assertEquals(
-                VirkningstidspunktÅrsakstype.FRA_MÅNED_ETTER_INNTEKTEN_ØKTE,
-                updatedBehandling.årsak,
-            )
+            assertEquals(VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL, updatedBehandling.årsak)
             assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
             assertEquals(
                 medIVedtak,
