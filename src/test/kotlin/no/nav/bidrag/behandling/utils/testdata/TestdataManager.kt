@@ -60,6 +60,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
         return behandlingRepository.save(behandling)
     }
 
+    @Transactional
     fun <T> oppretteOgLagreGrunnlag(
         behandlingsid: Long,
         grunnlagsdatatype: Grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
@@ -84,7 +85,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
                                 )
                             },
                         innhentet = innhentet,
-                        aktiv = aktiv ?: LocalDateTime.now(),
+                        aktiv = aktiv,
                     ),
                 )
             }

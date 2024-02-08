@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.controller.v1.behandling
 
 import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -24,6 +25,9 @@ data class OpprettBehandlingRequestTest(
 class BehandlingControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
+
+    @Autowired
+    lateinit var grunnlagRepository: GrunnlagRepository
 
     companion object {
         fun oppretteBehandlingRequestTest(

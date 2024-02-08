@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.dto.v2.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
@@ -13,7 +12,7 @@ data class OppdaterBehandlingRequestV2(
     val virkningstidspunkt: OppdaterVirkningstidspunkt? = null,
     val boforhold: OppdaterBoforholdRequest? = null,
     val inntekter: OppdatereInntekterRequestV2? = null,
-    val aktivereGrunnlagRequest: AktivereGrunnlagRequest? = null,
+    val aktivereGrunnlag: Set<Long> = emptySet(),
 )
 
 @Schema(

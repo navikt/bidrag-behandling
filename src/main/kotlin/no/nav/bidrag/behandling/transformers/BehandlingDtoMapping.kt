@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 fun Behandling.tilBehandlingDtoV2(
@@ -60,7 +61,23 @@ fun Behandling.tilBehandlingDtoV2(
         ),
     inntekter =
         InntekterDtoV2(
-            inntekter = inntekter.tilInntektDtoV2().toSet(),
+            barnetillegg =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
+                    .tilInntektDtoV2().toSet(),
+            // TODO: Asossiere med Inntektsrapportering.BARNETILSYN når denne er gjort tilgjengelig
+            barnetilsyn = emptySet(),
+            kontantstøtte =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.KONTANTSTØTTE }
+                    .tilInntektDtoV2().toSet(),
+            småbarnstillegg =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.SMÅBARNSTILLEGG }
+                    .tilInntektDtoV2().toSet(),
+            månedsinntekter =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.AINNTEKT }
+                    .tilInntektDtoV2().toSet(),
+            årsinntekter =
+                inntekter.filter { !eksplisitteYtelser.contains(it.inntektsrapportering) }.tilInntektDtoV2()
+                    .toSet(),
             notat =
                 BehandlingNotatDto(
                     medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
@@ -70,3 +87,6 @@ fun Behandling.tilBehandlingDtoV2(
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.map(Grunnlag::toDto).toSet(),
     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata.map(Grunnlag::toDto).toSet(),
 )
+
+val eksplisitteYtelser =
+    setOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.SMÅBARNSTILLEGG)

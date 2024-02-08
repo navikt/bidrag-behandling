@@ -77,6 +77,6 @@ class YearMonthTypeAdapter : JsonSerializer<YearMonth>, JsonDeserializer<YearMon
         type: Type?,
         kontekst: JsonDeserializationContext?,
     ): YearMonth {
-        return YearMonth.parse(jsonelement?.asString, formatter)
+        return YearMonth.parse(jsonelement?.asString, DateTimeFormatter.ofPattern("yyyy-MM"))
     }
 }

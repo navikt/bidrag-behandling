@@ -145,7 +145,7 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
         )
     }
 
-fun Set<Inntekt>.tilInntektDtoV2() =
+fun List<Inntekt>.tilInntektDtoV2() =
     this.map {
         InntektDtoV2(
             id = it.id,

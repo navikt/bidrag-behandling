@@ -129,6 +129,11 @@ class GrunnlagService(
         )
     }
 
+    @Transactional
+    fun aktivereGrunnlag(iderTilGrunnlagSomSkalAktiveres: Set<Long>) {
+        grunnlagRepository.aktivereGrunnlag(iderTilGrunnlagSomSkalAktiveres, LocalDateTime.now())
+    }
+
     fun hentSistInnhentet(
         behandlingsid: Long,
         grunnlagsdatatype: Grunnlagsdatatype,

@@ -58,21 +58,11 @@ fun BehandlingDtoV2.tilBehandlingDto() =
 
 fun InntekterDtoV2.tilInntekterDto(): InntekterDto {
     return InntekterDto(
-        inntekter =
-            inntekter.filter { !rapporteringstyperSomIkkeSkalInkluderesIInntekt.contains(it.rapporteringstype) }
-                .map { it.tilInntektDto() }.toSet(),
-        barnetillegg =
-            inntekter.filter { it.rapporteringstype == Inntektsrapportering.BARNETILLEGG }
-                .map { it.tilBarnetilleggDto() }.toSet(),
-        utvidetbarnetrygd =
-            inntekter.filter { it.rapporteringstype == Inntektsrapportering.UTVIDET_BARNETRYGD }
-                .map { it.tilUtvidetBarnetrygdDto() }.toSet(),
-        kontantstøtte =
-            inntekter.filter { it.rapporteringstype == Inntektsrapportering.KONTANTSTØTTE }
-                .map { it.tilKontantstøtteDto() }.toSet(),
-        småbarnstillegg =
-            inntekter.filter { it.rapporteringstype == Inntektsrapportering.SMÅBARNSTILLEGG }
-                .map { it.tilInntektDto() }.toSet(),
+        inntekter = årsinntekter.map { it.tilInntektDto() }.toSet(),
+        barnetillegg = barnetillegg.map { it.tilBarnetilleggDto() }.toSet(),
+        utvidetbarnetrygd = årsinntekter.map { it.tilUtvidetBarnetrygdDto() }.toSet(),
+        kontantstøtte = kontantstøtte.map { it.tilKontantstøtteDto() }.toSet(),
+        småbarnstillegg = småbarnstillegg.map { it.tilInntektDto() }.toSet(),
         notat = notat,
     )
 }

@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
@@ -46,6 +47,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.util.Calendar
+import kotlin.test.Ignore
 
 class BehandlingServiceTest : TestContainerRunner() {
     @MockBean
@@ -371,7 +373,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal oppdatere en behandling`() {
+        fun `skal oppdatere behandling`() {
             val behandling = prepareBehandling()
 
             val notat = "New Notat"
@@ -424,7 +426,31 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal opprette en behandling med grunnlagspakkeId`() {
+        @Ignore
+        open fun `skal aktivere valgte nyinnhenta grunnlag`() {
+            // gitt
+            val behandling = behandlingRepository.save(prepareBehandling())
+
+            testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
+                behandlingsid = behandling.id!!,
+                grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                aktiv = null,
+            )
+
+            val opppdatereBehandlingRequest = OppdaterBehandlingRequestV2(aktivereGrunnlag = setOf(behandling.id!!))
+
+            // hvis
+            behandlingService.oppdaterBehandling(behandling.id!!, opppdatereBehandlingRequest)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            oppdatertBehandling.get().grunnlag.first().aktiv shouldNotBe null
+        }
+
+        @Test
+        fun `skal oppdatere behandling med grunnlagspakkeId`() {
             val b = oppretteBehandling()
 
             behandlingService.oppdaterBehandling(

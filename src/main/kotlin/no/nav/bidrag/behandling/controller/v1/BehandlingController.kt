@@ -48,22 +48,22 @@ class BehandlingController(
     ): OpprettBehandlingResponse = behandlingService.opprettBehandling(opprettBehandling)
 
     @Suppress("unused")
-    @PutMapping("/behandling/{behandlingId}")
+    @PutMapping("/behandling/{behandlingsid}")
     @Operation(
         description = "Oppdatere behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun oppdatereBehandling(
-        @PathVariable behandlingId: Long,
+        @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
     ): BehandlingDto {
-        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingId)
+        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingsid)
         val personidentBm =
             behandlingFørOppdatering.getBidragsmottaker()?.ident?.let { Personident(it) }
                 ?: throw IllegalArgumentException("Behandling mangler BM!")
 
         val behandling =
-            behandlingService.oppdaterBehandling(behandlingId, request.tilOppdaterBehandlingRequestV2(personidentBm))
+            behandlingService.oppdaterBehandling(behandlingsid, request.tilOppdaterBehandlingRequestV2(personidentBm))
 
         return behandling.tilBehandlingDto()
     }

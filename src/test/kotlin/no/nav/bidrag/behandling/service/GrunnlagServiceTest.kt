@@ -611,6 +611,36 @@ class GrunnlagServiceTest : TestContainerRunner() {
     }
 
     @Nested
+    @DisplayName("Teste aktivering av grunnlag")
+    open inner class AktivereGrunnlag {
+        @Test
+        open fun `skal aktivere grunnlag`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
+                behandlingsid = behandling.id!!,
+                grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                aktiv = null,
+            )
+
+            val lagraIkkeAktiveGrunnlag =
+                grunnlagRepository.findAll().filter { it.aktiv == null }.map { it.id!! }.toSet()
+
+            // hvis
+            grunnlagService.aktivereGrunnlag(lagraIkkeAktiveGrunnlag)
+
+            // så
+            val aktiverteGrunnlag = grunnlagRepository.findById(lagraIkkeAktiveGrunnlag.first())
+
+            assertSoftly {
+                aktiverteGrunnlag.isPresent
+                aktiverteGrunnlag.get().aktiv?.toLocalDate() shouldBe LocalDate.now()
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("Teste hentSistInnhentet")
     open inner class HentSistInnhentet {
         @Test

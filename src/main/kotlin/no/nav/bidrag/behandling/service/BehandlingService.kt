@@ -116,16 +116,16 @@ class BehandlingService(
     @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
-        oppdaterBehandling: OppdaterBehandlingRequestV2,
-    ): BehandlingDtoV2 =
-        behandlingRepository.save(
+        request: OppdaterBehandlingRequestV2,
+    ): BehandlingDtoV2 {
+        return behandlingRepository.save(
             behandlingRepository.findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                     log.info { "Oppdaterer behandling $behandlingsid" }
-                    SECURE_LOGGER.info("Oppdaterer behandling $behandlingsid for forespørsel $oppdaterBehandling")
-                    it.grunnlagspakkeid = oppdaterBehandling.grunnlagspakkeId ?: it.grunnlagspakkeid
-                    it.vedtaksid = oppdaterBehandling.vedtaksid ?: it.vedtaksid
-                    oppdaterBehandling.virkningstidspunkt?.let { vt ->
+                    SECURE_LOGGER.info("Oppdaterer behandling $behandlingsid for forespørsel $request")
+                    it.grunnlagspakkeid = request.grunnlagspakkeId ?: it.grunnlagspakkeid
+                    it.vedtaksid = request.vedtaksid ?: it.vedtaksid
+                    request.virkningstidspunkt?.let { vt ->
                         log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
                         it.aarsak = vt.årsak
                         it.virkningsdato = vt.virkningsdato
@@ -134,7 +134,7 @@ class BehandlingService(
                         it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
                             vt.notat?.medIVedtaket ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
                     }
-                    oppdaterBehandling.inntekter?.let { inntekter ->
+                    request.inntekter?.let { inntekter ->
                         log.info { "Oppdaterer inntekter for behandling $behandlingsid" }
                         inntekter.inntekter?.run {
                             it.inntekter.clear()
@@ -144,7 +144,7 @@ class BehandlingService(
                         it.inntektsbegrunnelseIVedtakOgNotat =
                             inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
                     }
-                    oppdaterBehandling.boforhold?.let { bf ->
+                    request.boforhold?.let { bf ->
                         log.info { "Oppdaterer informasjon om boforhold for behandling $behandlingsid" }
                         bf.sivilstand?.run {
                             it.sivilstand.clear()
@@ -158,6 +158,12 @@ class BehandlingService(
                         it.boforholdsbegrunnelseIVedtakOgNotat =
                             bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
                     }
+                    request.aktivereGrunnlag.let { grunnlagsider ->
+                        if (grunnlagsider.isNotEmpty()) {
+                            log.info { "Aktiverer nyinnhenta grunnlag for behandling med id $behandlingsid" }
+                            grunnlagService.aktivereGrunnlag(grunnlagsider)
+                        }
+                    }
                     it
                 },
         )
@@ -167,6 +173,7 @@ class BehandlingService(
                 ikkeAktiverteEndringerIGrunnlagsdata =
                     grunnlagService.hentAlleSistInnhentet(behandlingsid).filter { g -> g.aktiv == null },
             )
+    }
 
     fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {
         val behandling = hentBehandlingById(behandlingsid)
