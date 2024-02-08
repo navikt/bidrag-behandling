@@ -25,14 +25,6 @@ import java.math.BigDecimal
  * Inneholder omgjøringer som kreves for å støtte bakoverkompatibilitet. Fila skal kunne slettes når migrering til API V2 er fullført.
  */
 
-val rapporteringstyperSomIkkeSkalInkluderesIInntekt =
-    setOf(
-        Inntektsrapportering.BARNETILLEGG,
-        Inntektsrapportering.KONTANTSTØTTE,
-        Inntektsrapportering.SMÅBARNSTILLEGG,
-        Inntektsrapportering.UTVIDET_BARNETRYGD,
-    )
-
 fun BehandlingDtoV2.tilBehandlingDto() =
 
     BehandlingDto(
