@@ -28,62 +28,63 @@ fun Behandling.tilBehandlingDtoV2(
     søknadsid = soknadsid,
     behandlerenhet = behandlerEnhet,
     roller =
-    roller.map {
-        RolleDto(
-            it.id!!,
-            it.rolletype,
-            it.ident,
-            it.navn ?: hentPersonVisningsnavn(it.ident),
-            it.foedselsdato,
-        )
-    }.toSet(),
+        roller.map {
+            RolleDto(
+                it.id!!,
+                it.rolletype,
+                it.ident,
+                it.navn ?: hentPersonVisningsnavn(it.ident),
+                it.foedselsdato,
+            )
+        }.toSet(),
     søknadRefId = soknadRefId,
     grunnlagspakkeid = grunnlagspakkeid,
     virkningstidspunkt =
-    VirkningstidspunktDto(
-        virkningsdato = virkningsdato,
-        årsak = aarsak,
-        notat =
-        BehandlingNotatDto(
-            medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-            kunINotat = virkningstidspunktbegrunnelseKunINotat,
+        VirkningstidspunktDto(
+            virkningsdato = virkningsdato,
+            årsak = aarsak,
+            notat =
+                BehandlingNotatDto(
+                    medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                    kunINotat = virkningstidspunktbegrunnelseKunINotat,
+                ),
         ),
-    ),
     boforhold =
-    BoforholdDto(
-        husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
-        sivilstand = sivilstand.toSivilstandDto(),
-        notat =
-        BehandlingNotatDto(
-            medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-            kunINotat = boforholdsbegrunnelseKunINotat,
+        BoforholdDto(
+            husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
+            sivilstand = sivilstand.toSivilstandDto(),
+            notat =
+                BehandlingNotatDto(
+                    medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                    kunINotat = boforholdsbegrunnelseKunINotat,
+                ),
         ),
-    ),
     inntekter =
-    InntekterDtoV2(
-        barnetillegg =
-        inntekter.filter { it.inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
-            .tilInntektDtoV2().toSet(),
-        barnetilsyn = inntekter.filter { it.inntektsrapportering == Inntektsrapportering.BARNETILSYN }.tilInntektDtoV2()
-            .toSet(),
-        kontantstøtte =
-        inntekter.filter { it.inntektsrapportering == Inntektsrapportering.KONTANTSTØTTE }
-            .tilInntektDtoV2().toSet(),
-        småbarnstillegg =
-        inntekter.filter { it.inntektsrapportering == Inntektsrapportering.SMÅBARNSTILLEGG }
-            .tilInntektDtoV2().toSet(),
-        månedsinntekter =
-        inntekter.filter { it.inntektsrapportering == Inntektsrapportering.AINNTEKT }
-            .tilInntektDtoV2().toSet(),
-        årsinntekter =
-        inntekter.filter { !eksplisitteYtelser.contains(it.inntektsrapportering) }.tilInntektDtoV2()
-            .toSet(),
-        notat =
-        BehandlingNotatDto(
-            medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-            kunINotat = inntektsbegrunnelseKunINotat,
+        InntekterDtoV2(
+            barnetillegg =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
+                    .tilInntektDtoV2().toSet(),
+            barnetilsyn =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.BARNETILSYN }.tilInntektDtoV2()
+                    .toSet(),
+            kontantstøtte =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.KONTANTSTØTTE }
+                    .tilInntektDtoV2().toSet(),
+            småbarnstillegg =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.SMÅBARNSTILLEGG }
+                    .tilInntektDtoV2().toSet(),
+            månedsinntekter =
+                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.AINNTEKT }
+                    .tilInntektDtoV2().toSet(),
+            årsinntekter =
+                inntekter.filter { !eksplisitteYtelser.contains(it.inntektsrapportering) }.tilInntektDtoV2()
+                    .toSet(),
+            notat =
+                BehandlingNotatDto(
+                    medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+                    kunINotat = inntektsbegrunnelseKunINotat,
+                ),
         ),
-    ),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.map(Grunnlag::toDto).toSet(),
     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata.map(Grunnlag::toDto).toSet(),
 )
