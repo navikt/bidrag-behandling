@@ -40,7 +40,7 @@ class BeregningService(
                 val behandling =
                     behandlingService.hentBehandlingById(behandlingsid).validere().bind()
                 val resultat =
-                    behandling.getSøknadsbarn().mapOrAccumulate {
+                    behandling.søknadsbarn.mapOrAccumulate {
                         val fødselsdato =
                             finneFødselsdato(it.ident, it.foedselsdato)
                                 // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent

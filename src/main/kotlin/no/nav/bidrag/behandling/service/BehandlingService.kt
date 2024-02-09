@@ -43,7 +43,10 @@ class BehandlingService(
 
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
         Validate.isTrue(
-            ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) && ingenVoksneUtenIdent(opprettBehandling.roller),
+            ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
+                ingenVoksneUtenIdent(
+                    opprettBehandling.roller,
+                ),
         )
 
         Validate.isTrue(
@@ -52,9 +55,11 @@ class BehandlingService(
                 "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
-        val opprettetAv = TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
+        val opprettetAv =
+            TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
         val opprettetAvNavn =
-            TokenUtils.hentSaksbehandlerIdent()?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
+            TokenUtils.hentSaksbehandlerIdent()
+                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         val behandling =
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
@@ -127,12 +132,14 @@ class BehandlingService(
                     it.vedtaksid = request.vedtaksid ?: it.vedtaksid
                     request.virkningstidspunkt?.let { vt ->
                         log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
-                        it.aarsak = vt.årsak
-                        it.virkningsdato = vt.virkningsdato
+                        it.årsak = vt.årsak
+                        it.avslag = vt.avslag
+                        it.virkningstidspunkt = vt.virkningstidspunkt
                         it.virkningstidspunktbegrunnelseKunINotat =
                             vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
                         it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
-                            vt.notat?.medIVedtaket ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
+                            vt.notat?.medIVedtaket
+                                ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
                     }
                     request.inntekter?.let { inntekter ->
                         log.info { "Oppdaterer inntekter for behandling $behandlingsid" }
@@ -140,7 +147,8 @@ class BehandlingService(
                             it.inntekter.clear()
                             it.inntekter.addAll(inntekter.inntekter.tilInntekt(it))
                         }
-                        it.inntektsbegrunnelseKunINotat = inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
+                        it.inntektsbegrunnelseKunINotat =
+                            inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
                         it.inntektsbegrunnelseIVedtakOgNotat =
                             inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
                     }
@@ -154,7 +162,8 @@ class BehandlingService(
                             it.husstandsbarn.clear()
                             it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
                         }
-                        it.boforholdsbegrunnelseKunINotat = bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
+                        it.boforholdsbegrunnelseKunINotat =
+                            bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
                         it.boforholdsbegrunnelseIVedtakOgNotat =
                             bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
                     }
@@ -187,7 +196,8 @@ class BehandlingService(
     }
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
-        behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
+        behandlingRepository.findBehandlingById(behandlingId)
+            .orElseThrow { behandlingNotFoundException(behandlingId) }
 
     @Transactional
     fun syncRoller(

@@ -5,8 +5,11 @@ import arrow.core.NonEmptyList
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.zipOrAccumulate
+import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Converter
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -15,11 +18,13 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import java.time.LocalDate
@@ -49,9 +54,13 @@ open class Behandling(
     @Enumerated(EnumType.STRING)
     open var engangsbeloptype: Engangsbeløptype?,
     open var vedtaksid: Long? = null,
-    open var virkningsdato: LocalDate? = null,
-    @Enumerated(EnumType.STRING)
-    open var aarsak: ForskuddAarsakType? = null,
+    @Column(name = "virkningsdato")
+    open var virkningstidspunkt: LocalDate? = null,
+    @Column(name = "aarsak")
+    @Convert(converter = ÅrsakConverter::class)
+    open var årsak: VirkningstidspunktÅrsakstype? = null,
+    @Column(name = "avslag")
+    open var avslag: Resultatkode? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_VEDTAK_OG_NOTAT")
     open var virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_KUN_NOTAT")
@@ -106,11 +115,9 @@ open class Behandling(
     open var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
     open var deleted: Boolean = false,
 ) {
-    fun getSøknadsbarn() = roller.filter { it.rolletype == Rolletype.BARN }
-
-    fun getBidragsmottaker() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
-
-    fun getBidragspliktig() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+    val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
+    val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+    val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 }
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
@@ -126,7 +133,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                     )
                 }
             },
-            { ensure(this@validere.virkningsdato != null) { raise("Mangler virkningsdato") } },
+            { ensure(this@validere.virkningstidspunkt != null) { raise("Mangler virkningsdato") } },
             { ensure(this@validere.saksnummer.isNotBlank()) { raise("Saksnummer mangler for behandling") } },
             {
                 ensure(this@validere.sivilstand.size > 0) { raise("Sivilstand mangler i behandling") }
@@ -140,11 +147,13 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                     ensure(it.inntektsrapportering != null) { raise("Inntektstype mangler for behandling") }
                     it
                 }
-                val bm = getBidragsmottaker()
-                val bp = getBidragspliktig()
-                ensure(this@validere.inntekter.any { it.taMed && it.ident == bm?.ident }) { raise("Mangler inntekter for bidragsmottaker") }
+                ensure(this@validere.inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {
+                    raise(
+                        "Mangler inntekter for bidragsmottaker",
+                    )
+                }
                 if (stonadstype != Stønadstype.FORSKUDD) {
-                    ensure(this@validere.inntekter.any { it.taMed && it.ident == bp?.ident }) {
+                    ensure(this@validere.inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
                         raise(
                             "Mangler innteker for bidragspliktig",
                         )
@@ -181,3 +190,14 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
             behandling
         }
     }
+
+@Converter
+open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {
+    override fun convertToDatabaseColumn(attribute: VirkningstidspunktÅrsakstype?): String? {
+        return attribute?.name
+    }
+
+    override fun convertToEntityAttribute(dbData: String?): VirkningstidspunktÅrsakstype? {
+        return dbData?.tilÅrsakstype()
+    }
+}

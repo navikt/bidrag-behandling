@@ -135,7 +135,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         søktAv = soknadFra,
         mottattDato = YearMonth.from(mottattdato),
         søktFraDato = YearMonth.from(søktFomDato),
-        virkningstidspunkt = virkningsdato,
+        virkningstidspunkt = virkningstidspunkt,
         notat = tilNotatVirkningstidspunkt(),
     )
 

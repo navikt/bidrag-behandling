@@ -7,8 +7,11 @@ import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
+=======
+>>>>>>> main
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -31,6 +34,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -172,7 +176,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val createdBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.aarsak)
+            assertNull(createdBehandling.årsak)
             assertEquals(0, createdBehandling.husstandsbarn.size)
             assertEquals(0, createdBehandling.sivilstand.size)
 
@@ -232,15 +236,15 @@ class BehandlingServiceTest : TestContainerRunner() {
             val createdBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.aarsak)
+            assertNull(createdBehandling.årsak)
 
             behandlingService.oppdaterBehandling(
                 createdBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
                         OppdaterVirkningstidspunkt(
-                            årsak = ForskuddAarsakType.BF,
-                            virkningsdato = null,
+                            årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
+                            virkningstidspunkt = null,
                             notat =
                                 OppdaterNotat(
                                     notat,
@@ -252,7 +256,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
-            assertEquals(ForskuddAarsakType.BF, updatedBehandling.aarsak)
+            assertEquals(VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL, updatedBehandling.årsak)
             assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
             assertEquals(
                 medIVedtak,
@@ -382,7 +386,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val createdBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.aarsak)
+            assertNull(createdBehandling.årsak)
 
             val oppdatertBehandling =
                 behandlingService.oppdaterBehandling(

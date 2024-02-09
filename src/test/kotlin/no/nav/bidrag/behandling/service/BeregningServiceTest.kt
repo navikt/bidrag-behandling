@@ -47,7 +47,7 @@ class BeregningServiceTest {
         verify {
             beregnForskuddApi.beregn(
                 withArg {
-                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
+                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
                     it.grunnlagListe!! shouldHaveSize 7
 
@@ -77,7 +77,7 @@ class BeregningServiceTest {
 
             beregnForskuddApi.beregn(
                 withArg {
-                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningsdato)
+                    it.periode!!.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
                     it.periode!!.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
                     it.grunnlagListe!! shouldHaveSize 7
 

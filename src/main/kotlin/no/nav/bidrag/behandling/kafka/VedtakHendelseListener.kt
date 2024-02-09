@@ -9,14 +9,14 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
-import no.nav.bidrag.behandling.transformers.behandlingId
 import no.nav.bidrag.behandling.transformers.engangsbeløptype
-import no.nav.bidrag.behandling.transformers.erFattetFraBidragBehandling
-import no.nav.bidrag.behandling.transformers.saksnummer
 import no.nav.bidrag.behandling.transformers.stønadstype
-import no.nav.bidrag.behandling.transformers.søknadsid
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
+import no.nav.bidrag.transport.behandling.vedtak.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
+import no.nav.bidrag.transport.behandling.vedtak.saksnummer
+import no.nav.bidrag.transport.behandling.vedtak.søknadId
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
@@ -32,14 +32,21 @@ class VedtakHendelseListener(
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
-
-        log.info { "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}" }
-
-        if (!vedtak.erFattetFraBidragBehandling()) return
+        if (!vedtak.erFattetGjennomBidragBehandling()) {
+            log.info {
+                "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. " +
+                    "Vedtak er ikke fattet gjennom bidrag-behandling. Ignorer hendelse"
+            }
+            return
+        }
+        log.info {
+            "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}, " +
+                "behandlingId ${vedtak.behandlingId} og saksnummer ${vedtak.saksnummer}"
+        }
         val behandling = behandlingService.hentBehandlingById(vedtak.behandlingId!!)
         log.info {
-            "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. Lagrer vedtakId på behandling og " +
-                "oppretter forsendelser for vedtaket"
+            "Lagrer vedtakId ${vedtak.id} på behandling ${vedtak.behandlingId} og " +
+                "oppretter forsendelse og notat for vedtaket"
         }
 
         behandlingService.oppdaterBehandling(
@@ -49,6 +56,7 @@ class VedtakHendelseListener(
             ),
         ) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
         opprettForsendelse(vedtak, behandling)
+        // TODO: Lagre notat for vedtaket
     }
 
     private fun opprettForsendelse(
@@ -57,11 +65,11 @@ class VedtakHendelseListener(
     ) {
         forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
-                saksnummer = vedtak.saksnummer,
+                saksnummer = vedtak.saksnummer!!,
                 enhet = vedtak.enhetsnummer?.verdi,
                 behandlingInfo =
                     BehandlingInfoDto(
-                        soknadId = vedtak.søknadsid ?: behandling.soknadsid,
+                        soknadId = vedtak.søknadId ?: behandling.soknadsid,
                         vedtakId = vedtak.id.toLong(),
                         soknadFra = behandling.soknadFra,
                         stonadType = vedtak.stønadstype,

@@ -60,7 +60,7 @@ fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
     }.toSet()
 
 fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<HusstandsbarnDto> {
-    val identerSøknadsbarn = behandling.getSøknadsbarn().map { sb -> sb.ident!! }.toSet()
+    val identerSøknadsbarn = behandling.søknadsbarn.map { sb -> sb.ident!! }.toSet()
 
     val søknadsbarn =
         this.filter { !it.ident.isNullOrBlank() && identerSøknadsbarn.contains(it.ident) }.map {
