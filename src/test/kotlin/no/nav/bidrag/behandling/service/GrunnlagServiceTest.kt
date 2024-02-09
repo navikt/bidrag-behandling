@@ -116,7 +116,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 SkattegrunnlagGrunnlagDto(
                     periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                     periodeTil = YearMonth.now().withMonth(1).atDay(1),
-                    personId = behandling.getBidragsmottaker()!!.ident!!,
+                    personId = behandling.bidragsmottaker!!.ident!!,
                     skattegrunnlagspostListe =
                         listOf(
                             SkattegrunnlagspostDto(
@@ -171,7 +171,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly {
                 grunnlagInntekt.skattegrunnlag shouldNotBe emptySet<SkattegrunnlagGrunnlagDto>()
                 grunnlagInntekt.skattegrunnlag.size shouldBe 1
-                grunnlagInntekt.skattegrunnlag[0].personId shouldBe behandling.getBidragsmottaker()!!.ident
+                grunnlagInntekt.skattegrunnlag[0].personId shouldBe behandling.bidragsmottaker!!.ident
             }
         }
 
@@ -186,7 +186,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     manueltBeregnet = false,
                     periodeFra = YearMonth.now().minusMonths(7).atDay(1),
                     periodeTil = YearMonth.now().atDay(1),
-                    personId = behandling.getBidragsmottaker()!!.ident!!,
+                    personId = behandling.bidragsmottaker!!.ident!!,
                 )
 
             behandling.grunnlag.add(
@@ -234,7 +234,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly {
                 lagredeSmåbarnstillegg shouldNotBe emptySet<SmåbarnstilleggGrunnlagDto>()
                 lagredeSmåbarnstillegg.size shouldBe 1
-                lagredeSmåbarnstillegg.filter { sbt -> sbt.personId == behandling.getBidragsmottaker()!!.ident!! }.size shouldBe 1
+                lagredeSmåbarnstillegg.filter { sbt -> sbt.personId == behandling.bidragsmottaker!!.ident!! }.size shouldBe 1
                 lagredeSmåbarnstillegg.filter { sbt -> sbt.beløp == småbarnstillegg.beløp }.size shouldBe 1
             }
         }
@@ -251,7 +251,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     manueltBeregnet = false,
                     periodeFra = YearMonth.now().minusMonths(7).atDay(1),
                     periodeTil = YearMonth.now().atDay(1),
-                    personId = behandling.getBidragsmottaker()!!.ident!!,
+                    personId = behandling.bidragsmottaker!!.ident!!,
                 )
 
             behandling.grunnlag.add(
@@ -298,7 +298,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly {
                 småbarnstilleggGrunnlagDto shouldNotBe emptySet<SmåbarnstilleggGrunnlagDto>()
                 småbarnstilleggGrunnlagDto.size shouldBe 1
-                småbarnstilleggGrunnlagDto.filter { sbt -> sbt.personId == behandling.getBidragsmottaker()!!.ident!! }.size shouldBe 1
+                småbarnstilleggGrunnlagDto.filter { sbt -> sbt.personId == behandling.bidragsmottaker!!.ident!! }.size shouldBe 1
                 småbarnstilleggGrunnlagDto.filter { sbt -> sbt.beløp == småbarnstillegg.beløp }.size shouldBe 1
             }
         }

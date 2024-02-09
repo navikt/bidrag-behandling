@@ -42,8 +42,8 @@ class GrunnlagService(
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         val innhentetGrunnlag =
             bidragGrunnlagConsumer.henteGrunnlagForBmOgBarnIBehandling(
-                Personident(behandling.getBidragsmottaker()!!.ident!!),
-                behandling.getSøknadsbarn().filter { it.ident != null }.map { Personident(it.ident!!) },
+                Personident(behandling.bidragsmottaker!!.ident!!),
+                behandling.søknadsbarn.filter { sb -> sb.ident != null }.map { Personident(it.ident!!) },
             )
 
         lagreGrunnlagHvisEndret(

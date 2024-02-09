@@ -1,6 +1,5 @@
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.POJONode
 import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -20,15 +19,9 @@ import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.ident.Personident
-<<<<<<< HEAD
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
-=======
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
->>>>>>> main
 import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
@@ -122,36 +115,6 @@ class StubUtils {
         response: KodeverkKoderBetydningerResponse? = null,
         status: HttpStatus = HttpStatus.OK,
     ) {
-<<<<<<< HEAD
-=======
-        val response =
-            aClosedJsonResponse()
-                .withStatus(status.value())
-                .withBody(
-                    toJsonString(
-                        BeregnGrunnlag(
-                            periode =
-                                ÅrMånedsperiode(
-                                    LocalDate.now().minusMonths(6),
-                                    LocalDate.now().plusMonths(6),
-                                ),
-                            søknadsbarnReferanse = "123",
-                            grunnlagListe =
-                                listOf(
-                                    GrunnlagDto(
-                                        referanse = "abra_cadabra",
-                                        type = Grunnlagstype.BARNETILLEGG,
-                                        grunnlagsreferanseListe = listOf("123"),
-                                        innhold = POJONode(""),
-                                    ),
-                                ),
-                        ),
-                    ),
-                )
-        headers.forEach {
-            response.withHeader(it.key, it.value)
-        }
->>>>>>> main
         WireMock.stubFor(
             WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Summert.*")).willReturn(
                 if (response != null) {

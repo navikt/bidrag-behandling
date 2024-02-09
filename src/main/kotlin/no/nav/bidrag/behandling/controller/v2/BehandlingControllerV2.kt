@@ -34,7 +34,7 @@ class BehandlingControllerV2(
     ): BehandlingDtoV2 {
         val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingsid)
 
-        behandlingFørOppdatering.getBidragsmottaker()?.ident?.let { Personident(it) }
+        behandlingFørOppdatering.bidragsmottaker?.ident?.let { Personident(it) }
             ?: throw IllegalArgumentException("Behandling mangler BM!")
 
         return behandlingService.oppdaterBehandling(behandlingsid, request)

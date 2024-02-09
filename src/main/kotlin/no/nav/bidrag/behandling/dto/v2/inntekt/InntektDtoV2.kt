@@ -48,12 +48,7 @@ data class InntekterDtoV2(
     val kontantstøtte: Set<InntektDtoV2> = emptySet(),
     val månedsinntekter: Set<InntektDtoV2> = emptySet(),
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
-<<<<<<< HEAD
-    val årsinntekter: Set<InntektDtoV2> = emptySet(),
-=======
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
-    val inntekter: Set<InntektDtoV2> = emptySet(),
->>>>>>> main
     val notat: BehandlingNotatDto,
 )

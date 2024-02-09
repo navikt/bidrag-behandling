@@ -7,11 +7,7 @@ import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-<<<<<<< HEAD
-import no.nav.bidrag.behandling.database.datamodell.ForskuddAarsakType
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
-=======
->>>>>>> main
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -92,7 +88,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 LocalDate.of(2024, 1, 1).atStartOfDay(),
             )
 
-            val personidentBm = Personident(behandling.getBidragsmottaker()!!.ident!!)
+            val personidentBm = Personident(behandling.bidragsmottaker!!.ident!!)
 
             stubUtils.stubHentePersoninfo(personident = personidentBm.verdi)
             stubUtils.stubHenteGrunnlagOk()

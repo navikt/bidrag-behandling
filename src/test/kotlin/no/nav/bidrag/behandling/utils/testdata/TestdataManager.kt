@@ -80,7 +80,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
                             } else {
                                 oppretteGrunnlagInntektsdata(
                                     grunnlagsdatatype,
-                                    it.getBidragsmottaker()!!.ident!!,
+                                    it.bidragsmottaker!!.ident!!,
                                     it.søktFomDato,
                                 )
                             },
