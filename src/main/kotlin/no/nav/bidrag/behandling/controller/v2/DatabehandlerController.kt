@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.RequestBody
 @Deprecated("Midlertidlig kontroller for proessering av grunnlagdata")
 class DatabehandlerController(private val behandlingService: BehandlingService) {
     @Suppress("unused")
-    @PostMapping("/databehandler/v2/sivilstand/{behandlingId}")
+    @PostMapping("/databehandler/sivilstand/{behandlingId}")
     fun konverterSivilstand(
         @PathVariable behandlingId: Long,
         @RequestBody request: List<SivilstandGrunnlagDto>,
     ): ResponseEntity<SivilstandBeregnet> {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        if (behandling.virkningstidspunkt == null) {
-            return ResponseEntity.notFound().build()
-        }
-        return SivilstandApi.beregn(behandling.virkningstidspunkt!!, request)
+        return SivilstandApi.beregn(
+            behandling.virkningstidspunkt ?: behandling.søktFomDato,
+            request,
+        )
             .let { ResponseEntity.ok(it) }
     }
 }
