@@ -3,8 +3,11 @@ package no.nav.bidrag.behandling.transformers.vedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
+import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.manglerRolle
 import no.nav.bidrag.behandling.rolleManglerIdent
@@ -110,6 +113,11 @@ fun Behandling.byggGrunnlagBarn(
     grunnlag: List<BehandlingGrunnlag>,
 ): Set<GrunnlagDto> {
     val bm = bidragsmottaker?.tilPersonGrunnlag() ?: manglerRolle(Rolletype.BIDRAGSMOTTAKER, id!!)
+    val beregnetInntekter =
+        grunnlag.find { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }
+            .konverterData<InntektsopplysningerBearbeidet>()
+    val inntektBm =
+        beregnetInntekter?.inntekt?.find { it.ident == bm.personIdent }
     val søknadsbarn = søknadsbarnRolle.tilPersonGrunnlag()
     val øvrigeBarnIHusstand = oppretteGrunnlagForHusstandsbarn(søknadsbarn.personIdent)
     val personobjekter = listOf(søknadsbarn) + øvrigeBarnIHusstand

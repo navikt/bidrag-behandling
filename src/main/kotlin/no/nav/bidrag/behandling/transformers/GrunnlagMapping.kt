@@ -25,6 +25,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
@@ -39,7 +40,7 @@ fun Behandling.oppretteGrunnlagForHusstandsbarn(søknadsbarnIdent: String?): Set
         .map(Husstandsbarn::tilPersonGrunnlag).toSet()
 }
 
-fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(index: Long): GrunnlagDto {
+fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(index: Int): GrunnlagDto {
     val personnavn = navn ?: hentPersonVisningsnavn(relatertPersonPersonId)
 
     return GrunnlagDto(
@@ -68,7 +69,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(index: Long): GrunnlagDto {
 fun Rolle.tilPersonGrunnlag(): GrunnlagDto {
     val grunnlagstype = rolletype.tilGrunnlagstype()
     return GrunnlagDto(
-        referanse = grunnlagstype.tilPersonreferanse(foedselsdato.toCompactString(), id!!),
+        referanse = grunnlagstype.tilPersonreferanse(foedselsdato.toCompactString(), id!!.toInt()),
         type = grunnlagstype,
         innhold =
             POJONode(
@@ -143,7 +144,7 @@ fun Husstandsbarn.tilPersonGrunnlag(): GrunnlagDto {
         referanse =
             grunnlagstype.tilPersonreferanse(
                 foedselsdato.toCompactString(),
-                rolle?.id ?: id!!,
+                (rolle?.id ?: id!!).toInt(),
             ),
         type = grunnlagstype,
         innhold =
@@ -169,7 +170,9 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
     type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
     // Ta med gjelder referanse fordi samme type inntekt med samme datoFom kan inkluderes for BM/BP/BA
     referanse = tilGrunnlagreferanse(gjelder),
-    grunnlagsreferanseListe = listOf(gjelder.referanse),
+    // Liste med referanser fra bidrag-inntekt
+    grunnlagsreferanseListe = listOf(""),
+    gjelderReferanse = gjelder.referanse,
     innhold =
         POJONode(
             InntektsrapporteringPeriode(
@@ -208,11 +211,6 @@ private fun Rolletype.tilGrunnlagstype() =
         Rolletype.REELMOTTAKER -> Grunnlagstype.PERSON_REELL_MOTTAKER
         else -> manglerRolle(this)
     }
-
-private fun Grunnlagstype.tilPersonreferanse(
-    fødseldato: String,
-    id: Long,
-) = "person_${this}_${fødseldato}_$id"
 
 private fun finnFødselsdato(
     ident: String?,

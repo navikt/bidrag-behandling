@@ -119,7 +119,7 @@ class VedtakService(
         val response = vedtakConsumer.fatteVedtak(request)
         behandlingService.oppdaterBehandling(
             behandlingId,
-            OppdaterBehandlingRequestV2(vedtaksid = response.vedtaksid),
+            OppdaterBehandlingRequestV2(vedtaksid = response.vedtaksid.toLong()),
         )
         LOGGER.info { "Fattet vedtak for behandling $behandlingId med vedtaksid ${response.vedtaksid}" }
         return response.vedtaksid

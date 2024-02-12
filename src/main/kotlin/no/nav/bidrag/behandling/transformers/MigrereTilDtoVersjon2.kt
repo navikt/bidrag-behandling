@@ -126,7 +126,7 @@ fun Set<InntektspostDtoV2>.tilInntektspostDto() =
 fun OppdaterBehandlingRequest.tilOppdaterBehandlingRequestV2(personidentBm: Personident): OppdaterBehandlingRequestV2 {
     return OppdaterBehandlingRequestV2(
         grunnlagspakkeId = this.grunnlagspakkeId,
-        vedtaksid = this.vedtaksid?.toInt(),
+        vedtaksid = this.vedtaksid,
         virkningstidspunkt = this.virkningstidspunkt,
         boforhold = this.boforhold,
         inntekter = this.inntekter?.tilOppdatereInntekterRequestV2(personidentBm),

@@ -175,7 +175,7 @@ class StubUtils {
                                 listOf(
                                     GrunnlagDto(
                                         referanse = "abra_cadabra",
-                                        type = Grunnlagstype.BARNETILLEGG,
+                                        type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
                                         grunnlagsreferanseListe = listOf("123"),
                                         innhold = POJONode(""),
                                     ),
