@@ -4,7 +4,6 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -17,12 +16,9 @@ class DatabehandlerController(private val behandlingService: BehandlingService) 
     fun konverterSivilstand(
         @PathVariable behandlingId: Long,
         @RequestBody request: List<SivilstandGrunnlagDto>,
-    ): ResponseEntity<SivilstandBeregnet> {
+    ): SivilstandBeregnet {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        return SivilstandApi.beregn(
-            behandling.virkningstidspunkt ?: behandling.søktFomDato,
-            request,
-        )
-            .let { ResponseEntity.ok(it) }
+        val virkningstidspunkt = behandling.virkningstidspunkt ?: behandling.søktFomDato
+        return SivilstandApi.beregn(virkningstidspunkt, request)
     }
 }
