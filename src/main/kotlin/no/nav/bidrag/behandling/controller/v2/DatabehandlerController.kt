@@ -30,17 +30,14 @@ class DatabehandlerController(
     private val inntektApi: InntektApi,
 ) {
     @Suppress("unused")
-    @PostMapping("/databehandler/v2/sivilstand/{behandlingId}")
+    @PostMapping("/databehandler/sivilstand/{behandlingId}")
     fun konverterSivilstand(
         @PathVariable behandlingId: Long,
         @RequestBody request: List<SivilstandGrunnlagDto>,
-    ): ResponseEntity<SivilstandBeregnet> {
+    ): SivilstandBeregnet {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        if (behandling.virkningstidspunkt == null) {
-            return ResponseEntity.notFound().build()
-        }
-        return SivilstandApi.beregn(behandling.virkningstidspunkt!!, request)
-            .let { ResponseEntity.ok(it) }
+        val virkningstidspunkt = behandling.virkningstidspunkt ?: behandling.søktFomDato
+        return SivilstandApi.beregn(virkningstidspunkt, request)
     }
 
     @Suppress("unused")
