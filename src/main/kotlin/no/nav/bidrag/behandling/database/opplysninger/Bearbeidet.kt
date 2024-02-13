@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.database.opplysninger
 
 import no.nav.bidrag.domene.enums.person.Bostatuskode
-import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
@@ -15,9 +15,8 @@ data class BoforholdBearbeidet(
 )
 
 data class SivilstandBearbeidet(
-    val datoFom: LocalDate,
-    val datoTom: LocalDate? = null,
-    val sivilstand: Sivilstandskode,
+    val gyldigFom: LocalDate,
+    val type: SivilstandskodePDL,
 )
 
 data class BoforholdHusstandBearbeidet(
