@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.notat
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.ident.Personident
@@ -42,7 +43,7 @@ data class Boforhold(
 )
 
 data class SivilstandNotat(
-    val opplysningerFraFolkeregisteret: List<OpplysningerFraFolkeregisteret<Sivilstandskode>> =
+    val opplysningerFraFolkeregisteret: List<OpplysningerFraFolkeregisteret<SivilstandskodePDL>> =
         emptyList(),
     val opplysningerBruktTilBeregning: List<OpplysningerBruktTilBeregning<Sivilstandskode>> =
         emptyList(),
