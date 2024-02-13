@@ -3,11 +3,15 @@ package no.nav.bidrag.behandling.transformers
 import com.fasterxml.jackson.databind.node.POJONode
 import com.fasterxml.jackson.module.kotlin.treeToValue
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.manglerBosstatus
 import no.nav.bidrag.behandling.manglerRolle
@@ -21,6 +25,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagPeriodeInnhold
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
@@ -35,7 +40,26 @@ import java.time.LocalDate
 val GrunnlagDto.personObjekt get() = commonObjectmapper.treeToValue(innhold, Person::class.java)!!
 val GrunnlagDto.personIdent get() = personObjekt.ident!!.verdi
 
-fun Behandling.oppretteGrunnlagForHusstandsbarn(søknadsbarnIdent: String?): Set<GrunnlagDto> {
+fun List<BehandlingGrunnlag>.hentGrunnlagsreferanserForInntekt(
+    gjelderIdent: String,
+    periode: ÅrMånedsperiode,
+    inntektsrapportering: Inntektsrapportering,
+    gjelderBarnIdent: String? = null,
+): List<Grunnlagsreferanse> {
+    val beregnetInntekter =
+        find { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }.konverterData<InntektsopplysningerBearbeidet>()
+    val inntekterGjelder = beregnetInntekter?.inntekt?.find { it.ident == gjelderIdent }
+    val inntekt =
+        inntekterGjelder?.summertAarsinntektListe?.find {
+            it.periode == periode &&
+                inntektsrapportering == it.inntektRapportering &&
+                (gjelderBarnIdent == null || gjelderBarnIdent == it.gjelderBarnPersonId)
+        }
+
+    return inntekt?.grunnlagsreferanseListe ?: emptyList()
+}
+
+fun Behandling.oppretteGrunnlagForHusstandsbarn(søknadsbarnIdent: String? = null): Set<GrunnlagDto> {
     return husstandsbarn.filter { barn -> barn.ident != søknadsbarnIdent }
         .map(Husstandsbarn::tilPersonGrunnlag).toSet()
 }
@@ -125,7 +149,7 @@ fun Behandling.tilGrunnlagInntekt(
     return inntekter.asSequence()
         .filtrerEtterGjelderOgBarn(personidentGjelder.verdi, søknadsbarnIdent)
         .map {
-            it.tilInntektsrapporteringPeriode(gjelder, søknadsbarn)
+            it.tilInntektsrapporteringPeriode(gjelder, søknadsbarn, grunnlagListe)
         }.toSet()
 }
 
@@ -166,12 +190,19 @@ fun Husstandsbarn.tilPersonGrunnlag(): GrunnlagDto {
 private fun Inntekt.tilInntektsrapporteringPeriode(
     gjelder: GrunnlagDto,
     søknadsbarn: GrunnlagDto?,
+    grunnlagListe: List<BehandlingGrunnlag> = emptyList(),
 ) = GrunnlagDto(
     type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
     // Ta med gjelder referanse fordi samme type inntekt med samme datoFom kan inkluderes for BM/BP/BA
     referanse = tilGrunnlagreferanse(gjelder),
     // Liste med referanser fra bidrag-inntekt
-    grunnlagsreferanseListe = listOf(""),
+    grunnlagsreferanseListe =
+        grunnlagListe.hentGrunnlagsreferanserForInntekt(
+            gjelder.personIdent,
+            ÅrMånedsperiode(opprinneligFom!!, opprinneligTom),
+            inntektsrapportering,
+            gjelderBarn,
+        ),
     gjelderReferanse = gjelder.referanse,
     innhold =
         POJONode(

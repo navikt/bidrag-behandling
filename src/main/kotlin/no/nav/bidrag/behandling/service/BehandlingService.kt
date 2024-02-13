@@ -171,9 +171,16 @@ class BehandlingService(
                 },
         ).tilBehandlingDtoV2(grunnlagService.hentAlleSistAktiv(behandlingsid))
 
-    fun hentBehandlingById(behandlingId: Long): Behandling =
-        behandlingRepository.findBehandlingById(behandlingId)
-            .orElseThrow { behandlingNotFoundException(behandlingId) }
+    fun hentBehandlingById(
+        behandlingId: Long,
+        populerGrunnlag: Boolean = false,
+    ): Behandling {
+        val behandling =
+            behandlingRepository.findBehandlingById(behandlingId)
+                .orElseThrow { behandlingNotFoundException(behandlingId) }
+        behandling.grunnlagListe = grunnlagService.hentAlleSistAktiv(behandlingId)
+        return behandling
+    }
 
     @Transactional
     fun syncRoller(

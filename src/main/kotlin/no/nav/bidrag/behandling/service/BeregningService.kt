@@ -30,7 +30,7 @@ class BeregningService(
         val respons =
             either {
                 val behandling =
-                    behandlingService.hentBehandlingById(behandlingsid).validere().bind()
+                    behandlingService.hentBehandlingById(behandlingsid, true).validere().bind()
                 val resultat =
                     behandling.søknadsbarn.mapOrAccumulate {
                         val beregnForskudd =

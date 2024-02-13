@@ -63,15 +63,14 @@ class VedtakService(
             )
         }
 
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        val behandling = behandlingService.hentBehandlingById(behandlingId, true)
         if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
 
         val sak = sakConsumer.hentSak(behandling.saksnummer)
-        val grunnlag = grunnlagService.hentAlleSistAktiv(behandlingId)
         val beregning = beregningService.beregneForskudd(behandlingId)
 
         val stønadsendringPeriode =
-            beregning.resultatBarn.map { it.byggStønadsendringerForVedtak(behandling, grunnlag) }
+            beregning.resultatBarn.map { it.byggStønadsendringerForVedtak(behandling) }
 
         val stønadsendringGrunnlagListe =
             behandling.byggGrunnlagNotater() + behandling.byggGrunnlagVirkningsttidspunkt() + behandling.byggGrunnlagSøknad()
