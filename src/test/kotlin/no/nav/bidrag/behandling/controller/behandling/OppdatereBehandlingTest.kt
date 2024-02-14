@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import org.junit.jupiter.api.Assertions
@@ -25,13 +26,13 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         // hvis
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/" + b.id,
+                "${rootUriV2()}/behandling/" + b.id,
                 HttpMethod.PUT,
                 HttpEntity(OppdaterBehandlingRequest(123L)),
-                Void::class.java,
+                BehandlingDtoV2::class.java,
             )
 
-        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        Assertions.assertEquals(HttpStatus.CREATED, behandlingRes.statusCode)
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!)
@@ -51,9 +52,9 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/" + b.id,
                 HttpMethod.PUT,
                 HttpEntity(OppdaterBehandlingRequest(123L)),
-                Void::class.java,
+                BehandlingDtoV2::class.java,
             )
-        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        Assertions.assertEquals(HttpStatus.CREATED, behandlingRes.statusCode)
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!)
@@ -88,10 +89,10 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                         grunnlagspakkeId = 123L,
                     ),
                 ),
-                Void::class.java,
+                BehandlingDtoV2::class.java,
             )
 
-        Assertions.assertEquals(HttpStatus.OK, respons.statusCode)
+        Assertions.assertEquals(HttpStatus.CREATED, respons.statusCode)
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)

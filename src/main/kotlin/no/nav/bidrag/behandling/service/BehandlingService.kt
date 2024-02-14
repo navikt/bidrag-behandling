@@ -23,9 +23,7 @@ import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.apache.commons.lang3.Validate
-import org.springframework.data.jpa.repository.Modifying
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 private val log = KotlinLogging.logger {}
@@ -48,15 +46,15 @@ class BehandlingService(
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
-                    ingenVoksneUtenIdent(
-                        opprettBehandling.roller,
-                    ),
+                ingenVoksneUtenIdent(
+                    opprettBehandling.roller,
+                ),
         )
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
             "${OpprettBehandlingRequest::stønadstype.name} eller " +
-                    "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
+                "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -94,8 +92,8 @@ class BehandlingService(
 
         log.info {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
-                    "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
-                    "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
+                "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
+                "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -107,15 +105,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadsid,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.tilBehandlingstype(),
-                    stonadType = behandling.stonadstype,
-                    engangsBelopType = behandling.engangsbeloptype,
-                    vedtakType = behandling.vedtakstype,
-                ),
+                    BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadsid,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.tilBehandlingstype(),
+                        stonadType = behandling.stonadstype,
+                        engangsBelopType = behandling.engangsbeloptype,
+                        vedtakType = behandling.vedtakstype,
+                    ),
             ),
         )
     }
@@ -133,6 +131,21 @@ class BehandlingService(
                 SECURE_LOGGER.info("Oppdatere behandling $behandlingsid for forespørsel $request")
                 it.grunnlagspakkeid = request.grunnlagspakkeId ?: it.grunnlagspakkeid
                 it.vedtaksid = request.vedtaksid ?: it.vedtaksid
+                request.aktivereGrunnlag.let { grunnlagsider ->
+                    if (grunnlagsider.isNotEmpty()) {
+                        log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
+                        grunnlagService.aktivereGrunnlag(grunnlagsider)
+                    }
+                }
+                request.inntekter?.let { inntekter ->
+                    log.info { "Oppdatere inntekter for behandling $behandlingsid" }
+                    inntektService.oppdatereInntekter(behandlingsid, request.inntekter)
+                    entityManager.refresh(it)
+                    it.inntektsbegrunnelseKunINotat =
+                        inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
+                    it.inntektsbegrunnelseIVedtakOgNotat =
+                        inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
+                }
                 request.virkningstidspunkt?.let { vt ->
                     log.info { "Oppdatere informasjon om virkningstidspunkt for behandling $behandlingsid" }
                     it.årsak = vt.årsak
@@ -144,14 +157,6 @@ class BehandlingService(
                         vt.notat?.medIVedtaket
                             ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
                 }
-                request.inntekter?.let { inntekter ->
-                    log.info { "Oppdatere inntekter for behandling $behandlingsid" }
-                    inntektService.oppdatereInntekter(behandlingsid, request.inntekter)
-                    it.inntektsbegrunnelseKunINotat =
-                        inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
-                    it.inntektsbegrunnelseIVedtakOgNotat =
-                        inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
-                }
                 request.boforhold?.let { bf ->
                     log.info { "Oppdatere informasjon om boforhold for behandling $behandlingsid" }
                     bf.sivilstand?.run {
@@ -162,21 +167,14 @@ class BehandlingService(
                         it.husstandsbarn.clear()
                         it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
                     }
+                    entityManager.merge(it)
                     it.boforholdsbegrunnelseKunINotat =
                         bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
                     it.boforholdsbegrunnelseIVedtakOgNotat =
                         bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
                 }
-                request.aktivereGrunnlag.let { grunnlagsider ->
-                    if (grunnlagsider.isNotEmpty()) {
-                        log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
-                        grunnlagService.aktivereGrunnlag(grunnlagsider)
-                    }
-                }
                 it
             }
-
-        entityManager.clear()
     }
 
     fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {

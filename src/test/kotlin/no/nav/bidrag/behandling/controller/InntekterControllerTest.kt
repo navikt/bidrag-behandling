@@ -1,13 +1,9 @@
 package no.nav.bidrag.behandling.controller
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
@@ -26,7 +22,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
-import kotlin.test.assertEquals
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -54,7 +49,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUriV2()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
-                    BehandlingDto::class.java,
+                    BehandlingDtoV2::class.java,
                 )
 
             // then
@@ -62,7 +57,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body!!.inntekter.inntekter.size shouldBeExactly 3
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 3
             }
         }
 
@@ -77,7 +72,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     "${rootUriV2()}/behandling/${behandling.id}",
                     HttpMethod.GET,
                     HttpEntity.EMPTY,
-                    BehandlingDto::class.java,
+                    BehandlingDtoV2::class.java,
                 )
 
             // then
@@ -85,7 +80,11 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body!!.inntekter.inntekter.size shouldBeExactly 0
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 0
+                r1.body?.inntekter?.barnetillegg?.size shouldBe 0
+                r1.body?.inntekter?.barnetilsyn?.size shouldBe 0
+                r1.body?.inntekter?.kontantstøtte?.size shouldBe 0
+                r1.body?.inntekter?.månedsinntekter?.size shouldBe 0
             }
         }
     }
@@ -95,7 +94,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
     open inner class OppdatereInntekter {
         @Test
         open fun `skal opprette inntekter`() {
-
             // given
             val behandling = testdataManager.opprettBehandling(false)
 
@@ -111,9 +109,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         OppdaterBehandlingRequestV2(
                             inntekter =
-                            OppdatereInntekterRequestV2(
-                                oppdatereManuelleInntekter = setOf(kontantstøtte),
-                            ),
+                                OppdatereInntekterRequestV2(
+                                    oppdatereManuelleInntekter = setOf(kontantstøtte),
+                                ),
                         ),
                     ),
                     BehandlingDtoV2::class.java,
@@ -126,7 +124,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r.statusCode shouldBe HttpStatus.CREATED
                 oppdatertBehandling.isPresent
                 oppdatertBehandling.get().inntekter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.filter { i -> i.inntektsrapportering == Inntektsrapportering.KONTANTSTØTTE }.size shouldBe 1
+                oppdatertBehandling.get().inntekter.filter { i ->
+                    i.inntektsrapportering == Inntektsrapportering.KONTANTSTØTTE
+                }.size shouldBe 1
             }
         }
 
@@ -197,28 +197,35 @@ class InntekterControllerTest : KontrollerTestRunner() {
             assert(behandling.inntekter.size > 0)
 
             // when
-            val r =
+            val respons =
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUriV2()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
-                        OppdaterBehandlingRequest(
+                        OppdaterBehandlingRequestV2(
                             inntekter =
-                            OppdatereInntekterRequest(
-                                emptySet(),
-                                emptySet(),
-                                emptySet(),
-                            ),
+                                OppdatereInntekterRequestV2(
+                                    sletteInntekter = behandling.inntekter.map { it.id!! }.toSet(),
+                                ),
                         ),
                     ),
-                    BehandlingDto::class.java,
+                    BehandlingDtoV2::class.java,
                 )
 
             // then
-            assertEquals(HttpStatus.OK, r.statusCode)
-            assertEquals(0, r.body!!.inntekter.inntekter.size)
+            assertSoftly {
+                respons shouldNotBe null
+                respons.statusCode shouldBe HttpStatus.CREATED
+                respons.body shouldNotBe null
+                respons.body?.inntekter?.årsinntekter?.size shouldBe 0
+                respons.body?.inntekter?.barnetillegg?.size shouldBe 0
+                respons.body?.inntekter?.barnetilsyn?.size shouldBe 0
+                respons.body?.inntekter?.kontantstøtte?.size shouldBe 0
+                respons.body?.inntekter?.månedsinntekter?.size shouldBe 0
+            }
         }
     }
+
     /*
         private fun testInntektDto() =
 
@@ -235,7 +242,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 gjelderBarn = Personident("012345678912"),
                 inntektsposter = setOf(InntektspostDtoV2(kode = "ABC", visningsnavn = "ABC", beløp = BigDecimal.TEN)),
             )
-    */
+     */
     private fun oppretteRequestForOppdateringAvManuellInntekt() =
         OppdatereManuellInntekt(
             type = Inntektsrapportering.KONTANTSTØTTE,

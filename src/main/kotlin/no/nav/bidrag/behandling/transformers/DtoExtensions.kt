@@ -107,18 +107,19 @@ fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
         barn
     }.toMutableSet()
 
-fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) =  Inntekt(
-            inntektsrapportering = this.type,
-            belop = this.beløp,
-            datoFom = this.datoFom,
-            datoTom = this.datoTom,
-            ident = this.ident.verdi,
-            gjelderBarn = this.gjelderBarn?.verdi,
-            kilde = Kilde.MANUELL,
-            taMed = this.taMed,
-            id = this.id,
-            behandling = behandling,
-        )
+fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) =
+    Inntekt(
+        inntektsrapportering = this.type,
+        belop = this.beløp,
+        datoFom = this.datoFom,
+        datoTom = this.datoTom,
+        ident = this.ident.verdi,
+        gjelderBarn = this.gjelderBarn?.verdi,
+        kilde = Kilde.MANUELL,
+        taMed = this.taMed,
+        id = this.id,
+        behandling = behandling,
+    )
 
 fun Set<InntektDtoV2>.konvertereTilInntekt(behandling: Behandling) =
     this.map {

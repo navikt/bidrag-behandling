@@ -161,104 +161,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandlingFetched.inntekter.iterator().next().belop,
             )
         }
-
-        @Test
-        fun `skal oppdatere boforhold data`() {
-            val behandling = prepareBehandling()
-
-            val notat = "New Notat"
-            val medIVedtak = "med i vedtak"
-
-            val createdBehandling = behandlingRepository.save(behandling)
-
-            assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.årsak)
-            assertEquals(0, createdBehandling.husstandsbarn.size)
-            assertEquals(0, createdBehandling.sivilstand.size)
-
-            val husstandsBarn =
-                setOf(
-                    HusstandsbarnDto(
-                        null,
-                        true,
-                        emptySet(),
-                        ident = "Manuelt",
-                        navn = "ident!",
-                        fødselsdato = LocalDate.now().minusMonths(156),
-                    ),
-                )
-            val sivilstand =
-                setOf(
-                    SivilstandDto(
-                        null,
-                        Calendar.getInstance().time.toLocalDate(),
-                        Calendar.getInstance().time.toLocalDate(),
-                        Sivilstandskode.BOR_ALENE_MED_BARN,
-                        Kilde.OFFENTLIG,
-                    ),
-                )
-
-            behandlingService.oppdaterBehandling(
-                createdBehandling.id!!,
-                OppdaterBehandlingRequestV2(
-                    boforhold =
-                    OppdaterBoforholdRequest(
-                        husstandsBarn,
-                        sivilstand,
-                        notat =
-                        OppdaterNotat(
-                            kunINotat = notat,
-                            medIVedtaket = medIVedtak,
-                        ),
-                    ),
-                ),
-            )
-
-            val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
-
-            assertEquals(1, updatedBehandling.husstandsbarn.size)
-            assertEquals(1, updatedBehandling.sivilstand.size)
-            assertEquals(notat, updatedBehandling.boforholdsbegrunnelseKunINotat)
-            assertEquals(medIVedtak, updatedBehandling.boforholdsbegrunnelseIVedtakOgNotat)
-        }
-
-        @Test
-        fun `skal oppdatere virkningstidspunkt data`() {
-            val behandling = prepareBehandling()
-
-            val notat = "New Notat"
-            val medIVedtak = "med i vedtak"
-
-            val createdBehandling = behandlingRepository.save(behandling)
-
-            assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.årsak)
-
-            behandlingService.oppdaterBehandling(
-                createdBehandling.id!!,
-                OppdaterBehandlingRequestV2(
-                    virkningstidspunkt =
-                    OppdaterVirkningstidspunkt(
-                        årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
-                        virkningstidspunkt = null,
-                        notat =
-                        OppdaterNotat(
-                            notat,
-                            medIVedtak,
-                        ),
-                    ),
-                ),
-            )
-
-            val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
-
-            assertEquals(VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL, updatedBehandling.årsak)
-            assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
-            assertEquals(
-                medIVedtak,
-                updatedBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
-            )
-        }
     }
 
     @Nested
@@ -354,22 +256,121 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Nested
     open inner class OppdatereBehandling {
         @Test
+        fun `skal oppdatere virkningstidspunkt data`() {
+            val behandling = prepareBehandling()
+
+            val notat = "New Notat"
+            val medIVedtak = "med i vedtak"
+
+            val createdBehandling = behandlingRepository.save(behandling)
+
+            assertNotNull(createdBehandling.id)
+            assertNull(createdBehandling.årsak)
+
+            behandlingService.oppdaterBehandling(
+                createdBehandling.id!!,
+                OppdaterBehandlingRequestV2(
+                    virkningstidspunkt =
+                        OppdaterVirkningstidspunkt(
+                            årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
+                            virkningstidspunkt = null,
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                    medIVedtak,
+                                ),
+                        ),
+                ),
+            )
+
+            val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
+
+            assertEquals(VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL, updatedBehandling.årsak)
+            assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
+            assertEquals(
+                medIVedtak,
+                updatedBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
+            )
+        }
+
+        @Test
         fun `skal caste 404 exception hvis behandlingen ikke er der - oppdater`() {
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.oppdaterBehandling(
                     1234,
                     OppdaterBehandlingRequestV2(
                         virkningstidspunkt =
-                        OppdaterVirkningstidspunkt(
-                            notat =
-                            OppdaterNotat(
-                                "New Notat",
-                                "Med i Vedtak",
+                            OppdaterVirkningstidspunkt(
+                                notat =
+                                    OppdaterNotat(
+                                        "New Notat",
+                                        "Med i Vedtak",
+                                    ),
                             ),
-                        ),
                     ),
                 )
             }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere boforhold data`() {
+            val behandling = prepareBehandling()
+
+            val notat = "New Notat"
+            val medIVedtak = "med i vedtak"
+
+            val createdBehandling = behandlingRepository.save(behandling)
+
+            assertNotNull(createdBehandling.id)
+            assertNull(createdBehandling.årsak)
+            assertEquals(0, createdBehandling.husstandsbarn.size)
+            assertEquals(0, createdBehandling.sivilstand.size)
+
+            val husstandsBarn =
+                setOf(
+                    HusstandsbarnDto(
+                        null,
+                        true,
+                        emptySet(),
+                        ident = "Manuelt",
+                        navn = "ident!",
+                        fødselsdato = LocalDate.now().minusMonths(156),
+                    ),
+                )
+            val sivilstand =
+                setOf(
+                    SivilstandDto(
+                        null,
+                        Calendar.getInstance().time.toLocalDate(),
+                        Calendar.getInstance().time.toLocalDate(),
+                        Sivilstandskode.BOR_ALENE_MED_BARN,
+                        Kilde.OFFENTLIG,
+                    ),
+                )
+
+            behandlingService.oppdaterBehandling(
+                createdBehandling.id!!,
+                OppdaterBehandlingRequestV2(
+                    boforhold =
+                        OppdaterBoforholdRequest(
+                            husstandsBarn,
+                            sivilstand,
+                            notat =
+                                OppdaterNotat(
+                                    kunINotat = notat,
+                                    medIVedtaket = medIVedtak,
+                                ),
+                        ),
+                ),
+            )
+
+            val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
+
+            assertEquals(1, updatedBehandling.husstandsbarn.size)
+            assertEquals(1, updatedBehandling.sivilstand.size)
+            assertEquals(notat, updatedBehandling.boforholdsbegrunnelseKunINotat)
+            assertEquals(medIVedtak, updatedBehandling.boforholdsbegrunnelseIVedtakOgNotat)
         }
 
         @Test
@@ -388,29 +389,29 @@ class BehandlingServiceTest : TestContainerRunner() {
                 createdBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
-                    OppdaterVirkningstidspunkt(
-                        notat =
-                        OppdaterNotat(
-                            notat,
-                            medIVedtak,
+                        OppdaterVirkningstidspunkt(
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                    medIVedtak,
+                                ),
                         ),
-                    ),
                     inntekter =
-                    OppdatereInntekterRequestV2(
-                        notat =
-                        OppdaterNotat(
-                            notat,
-                            medIVedtak,
+                        OppdatereInntekterRequestV2(
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                    medIVedtak,
+                                ),
                         ),
-                    ),
                     boforhold =
-                    OppdaterBoforholdRequest(
-                        notat =
-                        OppdaterNotat(
-                            notat,
-                            medIVedtak,
+                        OppdaterBoforholdRequest(
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                    medIVedtak,
+                                ),
                         ),
-                    ),
                 ),
             )
 
@@ -425,7 +426,21 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        @Ignore
+        fun `skal oppdatere behandling med grunnlagspakkeId`() {
+            val b = oppretteBehandling()
+
+            behandlingService.oppdaterBehandling(
+                b.id!!,
+                OppdaterBehandlingRequestV2(
+                    grunnlagspakkeId = 123L,
+                ),
+            )
+
+            assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeid)
+        }
+
+        @Test
+        @Ignore("Kontekstproblem - OK hvis kjøres alene - feiler sammen med andre tester")
         open fun `skal aktivere valgte nyinnhenta grunnlag`() {
             // gitt
             val behandling = behandlingRepository.save(prepareBehandling())
@@ -447,20 +462,6 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             oppdatertBehandling.get().grunnlag.first().aktiv shouldNotBe null
         }
-
-        @Test
-        fun `skal oppdatere behandling med grunnlagspakkeId`() {
-            val b = oppretteBehandling()
-
-            behandlingService.oppdaterBehandling(
-                b.id!!,
-                OppdaterBehandlingRequestV2(
-                    grunnlagspakkeId = 123L,
-                ),
-            )
-
-            assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeid)
-        }
     }
 
     @Nested
@@ -479,23 +480,23 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     inntekter =
-                    OppdatereInntekterRequestV2(
-                        oppdatereManuelleInntekter =
-                        mutableSetOf(
-                            OppdatereManuellInntekt(
-                                type = Inntektsrapportering.KAPITALINNTEKT,
-                                beløp = BigDecimal.valueOf(4000),
-                                datoFom = LocalDate.now().minusMonths(4),
-                                datoTom = LocalDate.now().plusMonths(4),
-                                ident = Personident("123"),
-                            ),
+                        OppdatereInntekterRequestV2(
+                            oppdatereManuelleInntekter =
+                                mutableSetOf(
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.KAPITALINNTEKT,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = Personident("123"),
+                                    ),
+                                ),
+                            notat =
+                                OppdaterNotat(
+                                    "Kun i Notat",
+                                    "Med i Vedtaket",
+                                ),
                         ),
-                        notat =
-                        OppdaterNotat(
-                            "Kun i Notat",
-                            "Med i Vedtaket",
-                        ),
-                    ),
                 ),
             )
 
@@ -521,23 +522,23 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     inntekter =
-                    OppdatereInntekterRequestV2(
-                        oppdatereManuelleInntekter =
-                        mutableSetOf(
-                            OppdatereManuellInntekt(
-                                type = Inntektsrapportering.KAPITALINNTEKT,
-                                beløp = BigDecimal.valueOf(4000),
-                                datoFom = LocalDate.now().minusMonths(4),
-                                datoTom = LocalDate.now().plusMonths(4),
-                                ident = Personident("123"),
-                            ),
+                        OppdatereInntekterRequestV2(
+                            oppdatereManuelleInntekter =
+                                mutableSetOf(
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.KAPITALINNTEKT,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = Personident("123"),
+                                    ),
+                                ),
+                            notat =
+                                OppdaterNotat(
+                                    "not null",
+                                    "not null",
+                                ),
                         ),
-                        notat =
-                        OppdaterNotat(
-                            "not null",
-                            "not null",
-                        ),
-                    ),
                 ),
             )
 
@@ -551,14 +552,9 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     inntekter =
-                    OppdatereInntekterRequestV2(
-                        oppdatereManuelleInntekter = emptySet(),
-                        notat =
-                        OppdaterNotat(
-                            "",
-                            "",
+                        OppdatereInntekterRequestV2(
+                            sletteInntekter = expectedBehandling.inntekter.map { it.id!! }.toSet(),
                         ),
-                    ),
                 ),
             )
 
@@ -566,8 +562,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingService.hentBehandlingById(actualBehandling.id!!)
 
             assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
-            assertEquals("", expectedBehandlingWithoutInntekter.inntektsbegrunnelseIVedtakOgNotat)
-            assertEquals("", expectedBehandlingWithoutInntekter.inntektsbegrunnelseKunINotat)
+            assertNotNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseIVedtakOgNotat)
+            assertNotNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseKunINotat)
         }
     }
 

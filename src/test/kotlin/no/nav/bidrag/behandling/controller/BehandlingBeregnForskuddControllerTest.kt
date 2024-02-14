@@ -42,13 +42,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal beregne forskudd for validert behandling`() {
         // given
-        val behandling = opprettGyldigBehandlingForBeregning()
-
-        try {
-            behandlingRepository.save(behandling)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        val behandling = behandlingRepository.save(opprettGyldigBehandlingForBeregning())
 
         // when
         val returnert =

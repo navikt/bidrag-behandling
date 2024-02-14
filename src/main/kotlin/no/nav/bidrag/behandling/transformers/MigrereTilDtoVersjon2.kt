@@ -141,9 +141,9 @@ fun OppdatereInntekterRequest.tilOppdatereInntekterRequestV2(personidentBm: Pers
 
     return OppdatereInntekterRequestV2(
         oppdatereManuelleInntekter =
-        inntekt.filter { inntektDto ->
-            Inntektsrapportering.entries.filter { i -> i.kanLeggesInnManuelt }.contains(inntektDto.type)
-        }.toSet() + barnetillegg + kontantstøtte + utvidetBarnetrygd,
+            inntekt.filter { inntektDto ->
+                Inntektsrapportering.entries.filter { i -> i.kanLeggesInnManuelt }.contains(inntektDto.type)
+            }.toSet() + barnetillegg + kontantstøtte + utvidetBarnetrygd,
         notat = this.notat,
     )
 }
@@ -177,11 +177,11 @@ fun InntektDto.tilInntektDtoV2() =
         gjelderBarn = null,
         kilde = if (this.fraGrunnlag == true) Kilde.OFFENTLIG else Kilde.MANUELL,
         inntektsposter =
-        this.inntektsposter.tilInntektspostDtoV2(
-            this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {
-                Inntektstype.LØNNSINNTEKT
-            },
-        ).toSet(),
+            this.inntektsposter.tilInntektspostDtoV2(
+                this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {
+                    Inntektstype.LØNNSINNTEKT
+                },
+            ).toSet(),
         inntektstyper = this.inntektstype.inneholderInntektstypeListe.toSet(),
     )
 

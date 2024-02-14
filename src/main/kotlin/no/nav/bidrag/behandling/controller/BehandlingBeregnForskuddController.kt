@@ -26,6 +26,7 @@ class BehandlingBeregnForskuddController(
         @PathVariable behandlingsid: Long,
     ): ResultatForskuddsberegning {
         LOGGER.info { "Beregner forskudd for behandling med id $behandlingsid" }
+
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
         return beregningService.beregneForskudd(behandling.id!!)

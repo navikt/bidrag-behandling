@@ -58,14 +58,16 @@ data class OppdatereManuellInntekt(
         description = "Ident til personen inntekten gjenlder for.",
         type = "String",
         example = "12345678910",
-        required = true
+        required = true,
     )
     val ident: Personident,
     @Schema(
-        description = "Ident til barnet en ytelse gjelder for. Benyttes kun for ytelser som er koblet til ett spesifikt barn, f.eks kontantstøtte",
+        description =
+            "Ident til barnet en ytelse gjelder for. " +
+                "sBenyttes kun for ytelser som er koblet til ett spesifikt barn, f.eks kontantstøtte",
         type = "String",
         example = "12345678910",
-        required = false
+        required = false,
     )
     val gjelderBarn: Personident? = null,
 )

@@ -30,10 +30,8 @@ open class Inntektspost(
     @Enumerated(EnumType.STRING)
     open val inntektstype: Inntektstype?,
 ) {
-    /*
     @PreRemove
-    private fun fjerneInntekt() {
+    private fun slette() {
         inntekt?.inntektsposter?.remove(this)
     }
-    */
 }

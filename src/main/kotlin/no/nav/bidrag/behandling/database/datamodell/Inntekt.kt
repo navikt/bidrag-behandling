@@ -11,7 +11,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.PreRemove
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -33,15 +32,9 @@ open class Inntekt(
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "behandling_id", nullable = false)
     open val behandling: Behandling? = null,
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.REMOVE], orphanRemoval = true)
     open var inntektsposter: MutableSet<Inntektspost> = mutableSetOf(),
     open val gjelderBarn: String? = null,
     open val opprinneligFom: LocalDate? = null,
     open val opprinneligTom: LocalDate? = null,
-) { /*
-    @PreRemove
-    private fun fjerneInntekt() {
-        inntektsposter.clear()
-        behandling?.inntekter?.remove(this)
-    }*/
-}
+)
