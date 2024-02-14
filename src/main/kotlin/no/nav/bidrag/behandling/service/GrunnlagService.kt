@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
+import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -37,96 +38,18 @@ class GrunnlagService(
     private val behandlingRepository: BehandlingRepository,
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val inntektApi: InntektApi,
+    private val inntektService: InntektService,
 ) {
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
-        val innhentetGrunnlag =
-            bidragGrunnlagConsumer.henteGrunnlagForBmOgBarnIBehandling(
-                Personident(behandling.bidragsmottaker!!.ident!!),
-                behandling.søknadsbarn.filter { sb -> sb.ident != null }.map { Personident(it.ident!!) },
+        val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+
+        grunnlagRequestobjekter.forEach {
+            henteOglagreGrunnlag(
+                behandling.id!!,
+                it,
             )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            Grunnlagsdatatype.ARBEIDSFORHOLD,
-            innhentetGrunnlag.arbeidsforholdListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            Grunnlagsdatatype.BARNETILLEGG,
-            innhentetGrunnlag.barnetilleggListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            Grunnlagsdatatype.BARNETILSYN,
-            innhentetGrunnlag.barnetilsynListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            Grunnlagsdatatype.KONTANTSTØTTE,
-            innhentetGrunnlag.kontantstøtteListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
-            innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            Grunnlagsdatatype.SIVILSTAND,
-            innhentetGrunnlag.sivilstandListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            Grunnlagsdatatype.SMÅBARNSTILLEGG,
-            innhentetGrunnlag.småbarnstilleggListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-            innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreInntektHvisEndret(
-            behandling.id!!,
-            innhentetGrunnlag.hentetTidspunkt,
-            Grunnlagsdatatype.INNTEKT,
-            innhentetGrunnlag.tilGrunnlagInntekt(),
-        )
-
-        val transformereInntekter =
-            TransformerInntekterRequest(
-                ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
-                ainntektsposter = innhentetGrunnlag.ainntektListe.flatMap { it.ainntektspostListe.tilAinntektsposter() },
-                kontantstøtteliste = innhentetGrunnlag.kontantstøtteListe.tilKontantstøtte(),
-                skattegrunnlagsliste = innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(),
-                småbarnstilleggliste = innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(),
-                utvidetBarnetrygdliste = innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(),
-            )
-
-        val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
-
-        lagreInntektHvisEndret(
-            behandling.id!!,
-            innhentetGrunnlag.hentetTidspunkt,
-            Grunnlagsdatatype.INNTEKT_BEARBEIDET,
-            sammenstilteInntekter.tilSummerteMånedsOgÅrsinntekter(),
-        )
+        }
     }
 
     @Transactional
@@ -153,6 +76,97 @@ class GrunnlagService(
         Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
             grunnlagRepository.findTopByBehandlingIdAndTypeOrderByAktivDescIdDesc(behandlingId, it)
         }
+
+    private fun henteOglagreGrunnlag(
+        behandlingsid: Long,
+        grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
+    ) {
+        val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
+
+        lagreGrunnlagHvisEndret(
+            behandlingsid,
+            Grunnlagsdatatype.ARBEIDSFORHOLD,
+            innhentetGrunnlag.arbeidsforholdListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreGrunnlagHvisEndret(
+            behandlingsid,
+            Grunnlagsdatatype.BARNETILLEGG,
+            innhentetGrunnlag.barnetilleggListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreGrunnlagHvisEndret(
+            behandlingsid,
+            Grunnlagsdatatype.BARNETILSYN,
+            innhentetGrunnlag.barnetilsynListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreGrunnlagHvisEndret(
+            behandlingsid,
+            Grunnlagsdatatype.KONTANTSTØTTE,
+            innhentetGrunnlag.kontantstøtteListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreGrunnlagHvisEndret(
+            behandlingsid,
+            Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+            innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreGrunnlagHvisEndret(
+            behandlingsid,
+            Grunnlagsdatatype.SIVILSTAND,
+            innhentetGrunnlag.sivilstandListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreGrunnlagHvisEndret(
+            behandlingsid,
+            Grunnlagsdatatype.SMÅBARNSTILLEGG,
+            innhentetGrunnlag.småbarnstilleggListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreGrunnlagHvisEndret(
+            behandlingsid,
+            Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+            innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
+            innhentetGrunnlag.hentetTidspunkt,
+        )
+
+        lagreInntektHvisEndret(
+            behandlingsid,
+            grunnlagsrequest.key,
+            innhentetGrunnlag.hentetTidspunkt,
+            Grunnlagsdatatype.INNTEKT,
+            innhentetGrunnlag.tilGrunnlagInntekt(),
+        )
+
+        val transformereInntekter =
+            TransformerInntekterRequest(
+                ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
+                ainntektsposter = innhentetGrunnlag.ainntektListe.flatMap { it.ainntektspostListe.tilAinntektsposter() },
+                kontantstøtteliste = innhentetGrunnlag.kontantstøtteListe.tilKontantstøtte(),
+                skattegrunnlagsliste = innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(),
+                småbarnstilleggliste = innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(),
+                utvidetBarnetrygdliste = innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(),
+            )
+
+        val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
+
+        lagreInntektHvisEndret(
+            behandlingsid,
+            grunnlagsrequest.key,
+            innhentetGrunnlag.hentetTidspunkt,
+            Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            sammenstilteInntekter.tilSummerteMånedsOgÅrsinntekter(),
+        )
+    }
 
     private fun opprett(
         behandlingsid: Long,
@@ -183,7 +197,8 @@ class GrunnlagService(
         innhentetGrunnlag: Set<T>,
         hentetTidspunkt: LocalDateTime,
     ) {
-        val sistInnhentedeGrunnlagAvType: Set<T> = henteNyesteGrunnlagsdatasett<T>(behandlingsid, grunnlagstype).toSet()
+        val sistInnhentedeGrunnlagAvType: Set<T> =
+            henteNyesteGrunnlagsdatasett<T>(behandlingsid, grunnlagstype).toSet()
 
         if ((sistInnhentedeGrunnlagAvType.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
             (sistInnhentedeGrunnlagAvType.isNotEmpty() && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
@@ -202,6 +217,7 @@ class GrunnlagService(
 
     private inline fun <reified T> lagreInntektHvisEndret(
         behandlingsid: Long,
+        personident: Personident,
         hentetTidspunkt: LocalDateTime,
         grunnlagstype: Grunnlagsdatatype,
         innhentetGrunnlag: T,
@@ -219,6 +235,15 @@ class GrunnlagService(
                 innhentet = hentetTidspunkt,
                 aktiv = if (sistInnhentedeGrunnlagAvType == null) LocalDateTime.now() else null,
             )
+
+            // Oppdatere inntektstabell med sammenstilte offentlige inntekter
+            if (Grunnlagsdatatype.INNTEKT_BEARBEIDET == grunnlagstype && sistInnhentedeGrunnlagAvType == null) {
+                inntektService.oppdatereInntekterFraGrunnlag(
+                    behandlingsid,
+                    personident,
+                    innhentetGrunnlag as SummerteMånedsOgÅrsinntekter,
+                )
+            }
         } else {
             log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandlingsid." }
         }

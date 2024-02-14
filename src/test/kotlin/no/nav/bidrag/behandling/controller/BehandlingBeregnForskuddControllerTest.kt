@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly

@@ -10,6 +10,18 @@ fun behandlingNotFoundException(behandlingId: Long): Nothing =
         "Fant ikke behandling med id $behandlingId",
     )
 
+fun inntektManglerBehandlingException(idInntekt: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.NOT_FOUND,
+        "Fant ikke behandling knyttet til inntekt med id $idInntekt",
+    )
+
+fun inntektIkkeFunnetException(idInntekt: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.NOT_FOUND,
+        "Fant ikke inntekt med id $idInntekt",
+    )
+
 class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) :
     RuntimeException(melding, throwable)
 

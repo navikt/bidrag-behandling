@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock

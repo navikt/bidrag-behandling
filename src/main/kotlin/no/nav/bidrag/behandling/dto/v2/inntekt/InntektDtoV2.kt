@@ -35,11 +35,11 @@ data class InntektDtoV2(
     @Schema(required = false)
     val gjelderBarn: Personident?,
     @Schema(required = true)
-    val kilde: Kilde,
+    val kilde: Kilde = Kilde.MANUELL,
     @Schema(required = true)
     val inntektsposter: Set<InntektspostDtoV2>,
     @Schema(required = true)
-    val inntektstyper: Set<Inntektstype>,
+    val inntektstyper: Set<Inntektstype> = emptySet(),
 )
 
 data class InntekterDtoV2(

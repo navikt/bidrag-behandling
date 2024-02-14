@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
+import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilOppdaterBehandlingRequestV2
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.web.bind.annotation.GetMapping
@@ -62,10 +63,8 @@ class BehandlingController(
             behandlingFørOppdatering.bidragsmottaker?.ident?.let { Personident(it) }
                 ?: throw IllegalArgumentException("Behandling mangler BM!")
 
-        val behandling =
-            behandlingService.oppdaterBehandling(behandlingsid, request.tilOppdaterBehandlingRequestV2(personidentBm))
-
-        return behandling.tilBehandlingDto()
+        behandlingService.oppdaterBehandling(behandlingsid, request.tilOppdaterBehandlingRequestV2(personidentBm))
+        return behandlingService.hentBehandlingById(behandlingsid).tilBehandlingDtoV2(emptyList(), emptyList()).tilBehandlingDto()
     }
 
     @Suppress("unused")

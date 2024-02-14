@@ -11,6 +11,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.PreRemove
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -20,16 +21,16 @@ open class Inntekt(
     @Enumerated(EnumType.STRING)
     open val inntektsrapportering: Inntektsrapportering,
     open val belop: BigDecimal,
-    open val datoFom: LocalDate,
-    open val datoTom: LocalDate?,
+    open var datoFom: LocalDate,
+    open var datoTom: LocalDate?,
     open val ident: String,
     @Enumerated(EnumType.STRING)
     open val kilde: Kilde,
-    open val taMed: Boolean,
+    open var taMed: Boolean,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "behandling_id", nullable = false)
     open val behandling: Behandling? = null,
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -37,4 +38,10 @@ open class Inntekt(
     open val gjelderBarn: String? = null,
     open val opprinneligFom: LocalDate? = null,
     open val opprinneligTom: LocalDate? = null,
-)
+) { /*
+    @PreRemove
+    private fun fjerneInntekt() {
+        inntektsposter.clear()
+        behandling?.inntekter?.remove(this)
+    }*/
+}

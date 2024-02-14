@@ -1,6 +1,6 @@
-package no.nav.bidrag.behandling.controller.v1.behandling
+package no.nav.bidrag.behandling.controller.behandling
 
-import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
+import no.nav.bidrag.behandling.controller.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto

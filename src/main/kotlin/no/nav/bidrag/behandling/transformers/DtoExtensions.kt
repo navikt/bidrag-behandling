@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -13,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
@@ -105,7 +107,20 @@ fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
         barn
     }.toMutableSet()
 
-fun Set<InntektDtoV2>.tilInntekt(behandling: Behandling) =
+fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) =  Inntekt(
+            inntektsrapportering = this.type,
+            belop = this.beløp,
+            datoFom = this.datoFom,
+            datoTom = this.datoTom,
+            ident = this.ident.verdi,
+            gjelderBarn = this.gjelderBarn?.verdi,
+            kilde = Kilde.MANUELL,
+            taMed = this.taMed,
+            id = this.id,
+            behandling = behandling,
+        )
+
+fun Set<InntektDtoV2>.konvertereTilInntekt(behandling: Behandling) =
     this.map {
         val inntekt =
             Inntekt(

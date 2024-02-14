@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.vedtak.Formål
@@ -91,18 +92,24 @@ class BidragGrunnlagConsumer(
         }
     }
 
-    fun henteGrunnlagForBmOgBarnIBehandling(
-        personidentBm: Personident,
-        personidenterBarnIBehandling: List<Personident>,
-    ): HentGrunnlagDto {
-        val requestobjekterBarn: List<GrunnlagRequestDto> =
-            personidenterBarnIBehandling.flatMap { oppretteGrunnlagsobjekterBarn(Personident(it.verdi)) }
-                .sortedBy { it.personId }
+    fun henteGrunnlagRequestobjekterForBehandling(behandling: Behandling): MutableMap<Personident, List<GrunnlagRequestDto>> {
+        val requestobjekterGrunnlag: MutableMap<Personident, List<GrunnlagRequestDto>> =
+            mutableMapOf(
+                Personident(
+                    behandling.bidragsmottaker!!.ident!!,
+                ) to oppretteGrunnlagsobjekterBm(Personident(behandling.bidragsmottaker!!.ident!!)),
+            )
 
-        return henteGrunnlag(oppretteGrunnlagsobjekterBm(personidentBm) + requestobjekterBarn)
+        var i = 1
+        behandling.søknadsbarn.filter { sb -> sb.ident != null }.map { Personident(it.ident!!) }.forEach {
+            requestobjekterGrunnlag[it] =
+                oppretteGrunnlagsobjekterBarn(Personident(it.verdi))
+        }
+
+        return requestobjekterGrunnlag
     }
 
-    private fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentGrunnlagDto {
+    fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentGrunnlagDto {
         return postForNonNullEntity(
             bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),
             HentGrunnlagRequestDto(formaal = Formål.FORSKUDD, grunnlagRequestDtoListe = grunnlag),

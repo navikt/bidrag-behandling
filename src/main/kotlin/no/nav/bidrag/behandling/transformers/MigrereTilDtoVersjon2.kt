@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
@@ -58,6 +59,18 @@ fun InntekterDtoV2.tilInntekterDto(): InntekterDto {
         notat = notat,
     )
 }
+
+fun InntektDtoV2.tilOppdatereManuellInntekt() =
+    OppdatereManuellInntekt(
+        id = id,
+        taMed = taMed,
+        type = rapporteringstype,
+        beløp = beløp,
+        datoFom = datoFom,
+        datoTom = datoTom,
+        ident = ident,
+        gjelderBarn = gjelderBarn,
+    )
 
 fun InntektDtoV2.tilInntektDto() =
     InntektDto(
@@ -116,15 +129,21 @@ fun OppdaterBehandlingRequest.tilOppdaterBehandlingRequestV2(personidentBm: Pers
 }
 
 fun OppdatereInntekterRequest.tilOppdatereInntekterRequestV2(personidentBm: Personident): OppdatereInntekterRequestV2 {
-    val inntekt = this.inntekter.orEmpty().map { i -> i.tilInntektDtoV2() }.toMutableSet()
-    val barnetillegg = this.barnetillegg.orEmpty().map { bt -> bt.tilInntektDtoV2() }.toSet()
-    val kontantstøtte = this.kontantstøtte.orEmpty().map { bt -> bt.tilInntektDtoV2() }.toSet()
+    val inntekt =
+        this.inntekter.orEmpty().map { i -> i.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toMutableSet()
+    val barnetillegg =
+        this.barnetillegg.orEmpty().map { bt -> bt.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toSet()
+    val kontantstøtte =
+        this.kontantstøtte.orEmpty().map { bt -> bt.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toSet()
     val utvidetBarnetrygd =
         this.utvidetbarnetrygd.orEmpty().map { ubt -> ubt.tilInntektDtoV2(personidentBm) }
-            .toSet()
+            .map { it.tilOppdatereManuellInntekt() }.toSet()
 
     return OppdatereInntekterRequestV2(
-        inntekter = inntekt + barnetillegg + kontantstøtte + utvidetBarnetrygd,
+        oppdatereManuelleInntekter =
+        inntekt.filter { inntektDto ->
+            Inntektsrapportering.entries.filter { i -> i.kanLeggesInnManuelt }.contains(inntektDto.type)
+        }.toSet() + barnetillegg + kontantstøtte + utvidetBarnetrygd,
         notat = this.notat,
     )
 }
@@ -158,11 +177,11 @@ fun InntektDto.tilInntektDtoV2() =
         gjelderBarn = null,
         kilde = if (this.fraGrunnlag == true) Kilde.OFFENTLIG else Kilde.MANUELL,
         inntektsposter =
-            this.inntektsposter.tilInntektspostDtoV2(
-                this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {
-                    Inntektstype.LØNNSINNTEKT
-                },
-            ).toSet(),
+        this.inntektsposter.tilInntektspostDtoV2(
+            this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {
+                Inntektstype.LØNNSINNTEKT
+            },
+        ).toSet(),
         inntektstyper = this.inntektstype.inneholderInntektstypeListe.toSet(),
     )
 

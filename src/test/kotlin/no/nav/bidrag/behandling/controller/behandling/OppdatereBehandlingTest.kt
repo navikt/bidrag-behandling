@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1.behandling
+package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe

@@ -1,6 +1,6 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
-import no.nav.bidrag.behandling.controller.v1.behandling.BehandlingControllerTest
+import no.nav.bidrag.behandling.controller.behandling.BehandlingControllerTest
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest

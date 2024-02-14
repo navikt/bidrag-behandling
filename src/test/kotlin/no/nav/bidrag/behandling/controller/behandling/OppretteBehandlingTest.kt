@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1.behandling
+package no.nav.bidrag.behandling.controller.behandling
 
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
