@@ -3,7 +3,7 @@
     "oppdatereManuelleInntekter": [
       {
         "taMed": true,
-        "rapporteringstype": "KONTANTSTØTTE",
+        "type": "KONTANTSTØTTE",
         "beløp": 2000,
         "datoFom": "2024-01-01",
         "datoTom": "2024-12-31",
