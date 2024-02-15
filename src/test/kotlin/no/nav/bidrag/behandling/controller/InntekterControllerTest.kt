@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.YearMonth
+import kotlin.test.Ignore
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -42,6 +43,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
+        @Ignore("Wiremock-problem kun på GCP")
         open fun `skal hente inntekter for behandling`() {
             // given
             val behandling = testdataManager.opprettBehandling(true)
@@ -65,6 +67,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         }
 
         @Test
+        @Ignore("Wiremock-problem kun på GCP")
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
