@@ -63,22 +63,22 @@ fun Behandling.tilBehandlingDtoV2(
     inntekter =
         InntekterDtoV2(
             barnetillegg =
-                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
+                inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
                     .tilInntektDtoV2().toSet(),
             barnetilsyn =
-                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.BARNETILSYN }.tilInntektDtoV2()
+                inntekter.filter { it.type == Inntektsrapportering.BARNETILSYN }.tilInntektDtoV2()
                     .toSet(),
             kontantstøtte =
-                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.KONTANTSTØTTE }
+                inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
                     .tilInntektDtoV2().toSet(),
             småbarnstillegg =
-                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.SMÅBARNSTILLEGG }
+                inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
                     .tilInntektDtoV2().toSet(),
             månedsinntekter =
-                inntekter.filter { it.inntektsrapportering == Inntektsrapportering.AINNTEKT }
+                inntekter.filter { it.type == Inntektsrapportering.AINNTEKT }
                     .tilInntektDtoV2().toSet(),
             årsinntekter =
-                inntekter.filter { !eksplisitteYtelser.contains(it.inntektsrapportering) }.tilInntektDtoV2()
+                inntekter.filter { !eksplisitteYtelser.contains(it.type) }.tilInntektDtoV2()
                     .toSet(),
             notat =
                 BehandlingNotatDto(

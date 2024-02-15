@@ -467,7 +467,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Nested
     open inner class OppdatereInntekter {
         @Test
-        fun `skal legge til inntekter`() {
+        fun `skal legge til inntekter manuelt`() {
             val actualBehandling = oppretteBehandling()
 
             assertNotNull(actualBehandling.id)
@@ -509,7 +509,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal slette inntekter`() {
+        open fun `skal slette manuelt oppretta inntekter`() {
             stubUtils.stubOpprettForsendelse()
 
             val actualBehandling = oppretteBehandling()

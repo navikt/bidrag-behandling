@@ -139,7 +139,7 @@ class BehandlingService(
                 }
                 request.inntekter?.let { inntekter ->
                     log.info { "Oppdatere inntekter for behandling $behandlingsid" }
-                    inntektService.oppdatereInntekter(behandlingsid, request.inntekter)
+                    inntektService.oppdatereInntekterManuelt(behandlingsid, request.inntekter)
                     entityManager.refresh(it)
                     it.inntektsbegrunnelseKunINotat =
                         inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat

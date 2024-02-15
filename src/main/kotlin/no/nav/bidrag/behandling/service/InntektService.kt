@@ -1,13 +1,13 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
-import no.nav.bidrag.behandling.inntektManglerBehandlingException
 import no.nav.bidrag.behandling.transformers.konvertereTilInntekt
 import no.nav.bidrag.behandling.transformers.tilInntekt
 import no.nav.bidrag.domene.ident.Personident
@@ -21,9 +21,10 @@ private val log = KotlinLogging.logger {}
 class InntektService(
     private val behandlingRepository: BehandlingRepository,
     private val inntektRepository: InntektRepository,
+    private val entityManager: EntityManager,
 ) {
     @Transactional
-    fun oppdatereInntekterFraGrunnlag(
+    fun lagreSammenstilteInntekter(
         behandlingsid: Long,
         personident: Personident,
         sammenstilteInntekter: SummerteMånedsOgÅrsinntekter,
@@ -32,17 +33,21 @@ class InntektService(
             behandlingRepository.findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
+        inntektRepository.sletteOffentligeInntekterFraBehandling(behandlingsid)
+
         inntektRepository.saveAll(
             sammenstilteInntekter.summerteÅrsinntekter.tilInntekt(
                 behandling,
                 personident,
             ) + sammenstilteInntekter.summerteMånedsinntekter.konvertereTilInntekt(behandling, personident),
         )
+
+        entityManager.refresh(behandling)
     }
 
     @Modifying
     @Transactional
-    fun oppdatereInntekter(
+    fun oppdatereInntekterManuelt(
         behandlingsid: Long,
         oppdatereInntekterRequest: OppdatereInntekterRequestV2,
     ) {
@@ -57,7 +62,7 @@ class InntektService(
         oppdatereInntekterRequest.oppdatereManuelleInntekter.forEach {
             if (it.id != null) {
                 val inntekt = inntektRepository.findById(it.id).orElseThrow { inntektIkkeFunnetException(it.id) }
-                it.tilInntekt(inntekt.behandling ?: inntektManglerBehandlingException(it.id))
+                it.tilInntekt(inntekt)
             } else {
                 val behandling =
                     behandlingRepository.findById(behandlingsid)

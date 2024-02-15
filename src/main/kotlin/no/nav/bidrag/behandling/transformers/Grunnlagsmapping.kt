@@ -27,7 +27,7 @@ fun List<SummertÅrsinntekt>.tilInntekt(
 ) = this.map {
     val inntekt =
         Inntekt(
-            inntektsrapportering = it.inntektRapportering,
+            type = it.inntektRapportering,
             belop = it.sumInntekt,
             behandling = behandling,
             ident = person.verdi,
@@ -49,7 +49,7 @@ fun List<SummertMånedsinntekt>.konvertereTilInntekt(
 ) = this.map {
     val inntekt =
         Inntekt(
-            inntektsrapportering = Inntektsrapportering.AINNTEKT,
+            type = Inntektsrapportering.AINNTEKT,
             belop = it.sumInntekt,
             behandling = behandling,
             ident = person.verdi,

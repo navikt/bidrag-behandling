@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 @Component
 class TestdataManager(private val behandlingRepository: BehandlingRepository) {
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun opprettBehandling(inkluderInntekter: Boolean = true): Behandling {
+    fun opprettBehandling(inkluderInntekter: Boolean = false): Behandling {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
         behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"

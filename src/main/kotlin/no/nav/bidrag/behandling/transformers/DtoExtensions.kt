@@ -107,9 +107,20 @@ fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
         barn
     }.toMutableSet()
 
+fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
+    inntekt.type = this.type
+    inntekt.belop = this.beløp
+    inntekt.datoFom = this.datoFom
+    inntekt.datoTom = this.datoTom
+    inntekt.gjelderBarn = this.gjelderBarn?.verdi
+    inntekt.kilde = Kilde.MANUELL
+    inntekt.taMed = this.taMed
+    return inntekt
+}
+
 fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) =
     Inntekt(
-        inntektsrapportering = this.type,
+        type = this.type,
         belop = this.beløp,
         datoFom = this.datoFom,
         datoTom = this.datoTom,
@@ -120,25 +131,6 @@ fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) =
         id = this.id,
         behandling = behandling,
     )
-
-fun Set<InntektDtoV2>.konvertereTilInntekt(behandling: Behandling) =
-    this.map {
-        val inntekt =
-            Inntekt(
-                inntektsrapportering = it.rapporteringstype,
-                belop = it.beløp,
-                datoFom = it.datoFom,
-                datoTom = it.datoTom,
-                ident = it.ident.verdi,
-                gjelderBarn = it.gjelderBarn?.verdi,
-                kilde = it.kilde,
-                taMed = it.taMed,
-                id = it.id,
-                behandling = behandling,
-            )
-        inntekt.inntektsposter = it.inntektsposter.tilInntektspost(inntekt).toMutableSet()
-        inntekt
-    }.toMutableSet()
 
 fun Set<InntektspostDtoV2>.tilInntektspost(inntekt: Inntekt) =
     this.map {
@@ -166,7 +158,7 @@ fun List<Inntekt>.tilInntektDtoV2() =
         InntektDtoV2(
             id = it.id,
             taMed = it.taMed,
-            rapporteringstype = it.inntektsrapportering,
+            rapporteringstype = it.type,
             beløp = it.belop,
             datoFom = it.datoFom,
             datoTom = it.datoTom,
@@ -174,7 +166,7 @@ fun List<Inntekt>.tilInntektDtoV2() =
             gjelderBarn = it.gjelderBarn?.let { it1 -> Personident(it1) },
             kilde = it.kilde,
             inntektsposter = it.inntektsposter.tilInntektspostDtoV2().toSet(),
-            inntektstyper = it.inntektsrapportering.inneholderInntektstypeListe.toSet(),
+            inntektstyper = it.type.inneholderInntektstypeListe.toSet(),
             opprinneligFom = it.opprinneligFom,
             opprinneligTom = it.opprinneligTom,
         )

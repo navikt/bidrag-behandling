@@ -194,15 +194,15 @@ private fun Behandling.hentInntekterForIdent(
                 InntekterSomLeggesTilGrunn(
                     beløp = it.belop,
                     periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
-                    beskrivelse = it.inntektsrapportering.name,
-                    inntektType = it.inntektsrapportering,
+                    beskrivelse = it.type.name,
+                    inntektType = it.type,
                 )
             },
     barnetillegg =
         if (rolle == Rolletype.BIDRAGSMOTTAKER) {
             inntekter.sortedBy { it.datoFom }
                 // TODO: Endre til
-                .filter { it.inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
+                .filter { it.type == Inntektsrapportering.BARNETILLEGG }
                 .map {
                     Barnetillegg(
                         periode =
@@ -219,7 +219,7 @@ private fun Behandling.hentInntekterForIdent(
     utvidetBarnetrygd =
         if (rolle == Rolletype.BIDRAGSMOTTAKER) {
             inntekter.sortedBy { it.datoFom }
-                .filter { it.inntektsrapportering == Inntektsrapportering.UTVIDET_BARNETRYGD }
+                .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
                 .map {
                     UtvidetBarnetrygd(
                         periode =

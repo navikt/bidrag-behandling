@@ -30,7 +30,7 @@ import java.time.YearMonth
 class NotatGrunnlagControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal hente opplysninger for notat`() {
-        val behandling = testdataManager.opprettBehandling()
+        val behandling = testdataManager.opprettBehandling(true)
         mockkStatic(::hentPerson)
         every { hentPerson(testdataBM[Rolle::ident.name] as String) } returns
             PersonDto(

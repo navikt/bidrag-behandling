@@ -12,4 +12,8 @@ interface InntektRepository : CrudRepository<Inntekt, Long> {
         behandlingsid: Long,
         ids: Set<Long>,
     )
+
+    @Modifying
+    @Query("delete from inntekt i where i.behandling.id = :behandlingsid and  i.kilde = 'OFFENTLIG'")
+    fun sletteOffentligeInntekterFraBehandling(behandlingsid: Long)
 }

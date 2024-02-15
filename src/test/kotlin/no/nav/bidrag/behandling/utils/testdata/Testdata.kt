@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -100,20 +101,6 @@ fun oppretteBehandling(id: Long? = null): Behandling {
     )
 }
 
-fun opprettInntekt(
-    behandling: Behandling,
-    data: Map<String, Any>,
-) = Inntekt(
-    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-    BigDecimal.valueOf(45000),
-    LocalDate.now().minusYears(1).withDayOfYear(1),
-    LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
-    data[Rolle::ident.name] as String,
-    Kilde.OFFENTLIG,
-    true,
-    behandling = behandling,
-)
-
 fun opprettInntekter(
     behandling: Behandling,
     data: Map<String, Any>,
@@ -189,6 +176,17 @@ fun opprettRolle(
         opprettet = LocalDateTime.now(),
     )
 }
+
+fun oppretteRequestForOppdateringAvManuellInntekt(idInntekt: Long? = null) =
+    OppdatereManuellInntekt(
+        id = idInntekt,
+        type = Inntektsrapportering.KONTANTSTØTTE,
+        beløp = BigDecimal(305203),
+        datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
+        datoTom = LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
+        ident = Personident("12345678910"),
+        gjelderBarn = Personident("01234567891"),
+    )
 
 fun opprettHusstandsbarn(
     behandling: Behandling,
@@ -313,7 +311,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 taMed = true,
                 kilde = Kilde.MANUELL,
                 behandling = behandling,
-                inntektsrapportering = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
                 id = if (generateId) (1).toLong() else null,
             ),
             Inntekt(
@@ -324,7 +322,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 taMed = true,
                 kilde = Kilde.MANUELL,
                 behandling = behandling,
-                inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 id = if (generateId) (2).toLong() else null,
             ),
             Inntekt(
@@ -335,7 +333,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
                 taMed = false,
                 kilde = Kilde.OFFENTLIG,
                 behandling = behandling,
-                inntektsrapportering = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                 id = if (generateId) (3).toLong() else null,
             ),
         )

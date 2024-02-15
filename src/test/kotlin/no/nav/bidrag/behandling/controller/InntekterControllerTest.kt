@@ -3,14 +3,17 @@ package no.nav.bidrag.behandling.controller
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
+import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
+import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -21,7 +24,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.time.LocalDate
+import java.time.YearMonth
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -36,12 +39,12 @@ class InntekterControllerTest : KontrollerTestRunner() {
     }
 
     @Nested
-    @DisplayName("Tester endepunkt for henting av inntekter")
+    @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
         open fun `skal hente inntekter for behandling`() {
             // given
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.opprettBehandling(true)
 
             // when
             val r1 =
@@ -57,12 +60,12 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body?.inntekter?.årsinntekter?.size shouldBe 3
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 9
             }
         }
 
         @Test
-        fun `skal returnere tom liste av inntekter for behandling som mangler inntekter`() {
+        fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
 
@@ -80,17 +83,17 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body?.inntekter?.årsinntekter?.size shouldBe 0
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 8
                 r1.body?.inntekter?.barnetillegg?.size shouldBe 0
                 r1.body?.inntekter?.barnetilsyn?.size shouldBe 0
-                r1.body?.inntekter?.kontantstøtte?.size shouldBe 0
-                r1.body?.inntekter?.månedsinntekter?.size shouldBe 0
+                r1.body?.inntekter?.kontantstøtte?.size shouldBe 1
+                r1.body?.inntekter?.månedsinntekter?.size shouldBe 2
             }
         }
     }
 
     @Nested
-    @DisplayName("Tester endepunkt for oppdatering av inntekter")
+    @DisplayName("Tester oppdatering av inntekter")
     open inner class OppdatereInntekter {
         @Test
         open fun `skal opprette inntekter`() {
@@ -99,7 +102,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
             assert(behandling.inntekter.size == 0)
 
-            val kontantstøtte = oppretteRequestForOppdateringAvManuellInntekt()
+            val endreKontantstøtte =
+                oppretteRequestForOppdateringAvManuellInntekt()
 
             // when
             val r =
@@ -110,7 +114,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                         OppdaterBehandlingRequestV2(
                             inntekter =
                                 OppdatereInntekterRequestV2(
-                                    oppdatereManuelleInntekter = setOf(kontantstøtte),
+                                    oppdatereManuelleInntekter = setOf(endreKontantstøtte),
                                 ),
                         ),
                     ),
@@ -125,69 +129,66 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 oppdatertBehandling.isPresent
                 oppdatertBehandling.get().inntekter.size shouldBe 1
                 oppdatertBehandling.get().inntekter.filter { i ->
-                    i.inntektsrapportering == Inntektsrapportering.KONTANTSTØTTE
+                    i.type == Inntektsrapportering.KONTANTSTØTTE
                 }.size shouldBe 1
             }
         }
 
-        /*
         @Test
         open fun `skal oppdatere eksisterende inntekter`() {
-
             // given
-            val behandling = testdataManager.opprettBehandling(true)
+            val behandling = testdataManager.opprettBehandling()
 
-            assert(behandling.inntekter.size > 0)
-
-            // when
-            val inntekt1 =
-                testInntektDto().copy(
-                    id = null,
-                    inntektsposter =
-                    setOf(
-                        InntektPost("ABC1", beløp = BigDecimal.TEN, visningsnavn = "ABC1"),
-                        InntektPost("ABC2", visningsnavn = "ABC2", beløp = BigDecimal.TEN),
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        behandling = behandling,
+                        type = Inntektsrapportering.KONTANTSTØTTE,
+                        belop = BigDecimal(14000),
+                        datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                        datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                        ident = fødselsnummerBm,
+                        gjelderBarn = fødselsnummerBarn1,
+                        kilde = Kilde.MANUELL,
+                        taMed = true,
                     ),
                 )
 
-            val inntekt2 =
-                testInntektDto().copy(
-                    datoFom = LocalDate.now().minusMonths(5),
-                    inntektstype = Inntektsrapportering.LIGNINGSINNTEKT,
-                )
+            behandlingRepository.save(behandling)
 
-            val r1 =
+            assert(behandling.inntekter.size > 0)
+
+            val endreInntektForespørsel =
+                oppretteRequestForOppdateringAvManuellInntekt(idInntekt = behandling.inntekter.first().id!!)
+
+            // when
+            val svar =
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUriV2()}/behandling/${behandling.id}",
                     HttpMethod.PUT,
                     HttpEntity(
                         OppdaterBehandlingRequestV2(
                             inntekter =
-                            OppdatereInntekterRequestV2(
-                                oppdatereManuelleInntekter = setOf(inntekt2)
-                            ),
+                                OppdatereInntekterRequestV2(
+                                    oppdatereManuelleInntekter = setOf(endreInntektForespørsel),
+                                ),
                         ),
                     ),
-                    Void::class.java,
+                    BehandlingDtoV2::class.java,
                 )
 
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
             // then
             assertSoftly {
-                r1.statusCode shouldBe HttpStatus.CREATED
+                svar.statusCode shouldBe HttpStatus.CREATED
                 oppdatertBehandling.isPresent
-                oppdatertBehandling.get().inntekter.size shouldBeExactly 2
-                oppdatertBehandling.get().inntekter.find {
-                    it.inntektsrapportering == Inntektsrapportering.DAGPENGER && it.inntektsposter.size == 2
-                } shouldNotBe null
-                oppdatertBehandling.get().inntekter.find {
-                    it.inntektsrapportering == Inntektsrapportering.LIGNINGSINNTEKT && it.inntektsposter.size == 1
-                } shouldNotBe null
+                oppdatertBehandling.get().inntekter.size shouldBe 1
+                oppdatertBehandling.get().inntekter.first().type shouldBe Inntektsrapportering.KONTANTSTØTTE
+                oppdatertBehandling.get().inntekter.first().belop shouldBe endreInntektForespørsel.beløp
             }
         }
 
-*/
         @Test
         @Transactional
         open fun `skal slette inntekter`() {
@@ -225,31 +226,4 @@ class InntekterControllerTest : KontrollerTestRunner() {
             }
         }
     }
-
-    /*
-        private fun testInntektDto() =
-
-
-            InntektDtoV2(
-                taMed = true,
-                rapporteringstype = Inntektsrapportering.KONTANTSTØTTE,
-                beløp = BigDecimal.valueOf(305203),
-                datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
-                datoTom = LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
-                opprinneligFom = LocalDate.now().minusYears(1).withDayOfYear(1),
-                opprinneligTom = LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
-                ident = Personident("12345678910"),
-                gjelderBarn = Personident("012345678912"),
-                inntektsposter = setOf(InntektspostDtoV2(kode = "ABC", visningsnavn = "ABC", beløp = BigDecimal.TEN)),
-            )
-     */
-    private fun oppretteRequestForOppdateringAvManuellInntekt() =
-        OppdatereManuellInntekt(
-            type = Inntektsrapportering.KONTANTSTØTTE,
-            beløp = BigDecimal(305203),
-            datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
-            datoTom = LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
-            ident = Personident("12345678910"),
-            gjelderBarn = Personident("01234567891"),
-        )
 }

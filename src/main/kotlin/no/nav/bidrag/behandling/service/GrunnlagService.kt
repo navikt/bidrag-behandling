@@ -238,7 +238,7 @@ class GrunnlagService(
 
             // Oppdatere inntektstabell med sammenstilte offentlige inntekter
             if (Grunnlagsdatatype.INNTEKT_BEARBEIDET == grunnlagstype && sistInnhentedeGrunnlagAvType == null) {
-                inntektService.oppdatereInntekterFraGrunnlag(
+                inntektService.lagreSammenstilteInntekter(
                     behandlingsid,
                     personident,
                     innhentetGrunnlag as SummerteMånedsOgÅrsinntekter,
