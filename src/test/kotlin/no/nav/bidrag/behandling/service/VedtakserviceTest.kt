@@ -5,43 +5,48 @@ import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
-import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
+import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.oppretteBehandling
-import no.nav.bidrag.behandling.utils.sjablonResponse
 import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
-import no.nav.bidrag.commons.service.sjablon.SjablonProvider
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.AldersgruppeForskudd
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningInntekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningForskudd
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
@@ -51,6 +56,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import java.math.BigDecimal
 import java.time.YearMonth
 
 @ExtendWith(SpringExtension::class)
@@ -99,22 +105,26 @@ class VedtakserviceTest {
             )
 
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
-        mockkObject(SjablonProvider)
-        every {
-            SjablonProvider.hentSjablontall()
-        } returns sjablonResponse()
+        stubSjablonProvider()
+        stubKodeverkProvider()
     }
 
     @Test
     fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
-        val behandling = opprettGyldigBehandlingForBeregning(true)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
-        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        behandling.grunnlagListe =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            )
+
+        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
 
@@ -140,126 +150,25 @@ class VedtakserviceTest {
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
 
-            assertSoftly("Søknadsdetaljer") {
-                grunnlagListe.virkningsdato shouldNotBe null
-                val virkningsdato =
-                    grunnlagListe.virkningsdato?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
-                virkningsdato!!.virkningstidspunkt shouldHaveSameDayAs behandling.virkningstidspunkt!!
-                virkningsdato.årsak shouldBe behandling.årsak
-
-                grunnlagListe.søknad shouldNotBe null
-                val søknad = grunnlagListe.søknad?.innholdTilObjekt<SøknadGrunnlag>()
-                søknad!!.mottattDato shouldHaveSameDayAs behandling.mottattdato
-                søknad.søktAv shouldBe behandling.soknadFra
-                søknad.søktFraDato shouldBe behandling.søktFomDato
-            }
-
-            assertSoftly(request.behandlingsreferanseListe) { behandlingRef ->
-                behandlingRef shouldHaveSize 2
-                with(behandlingRef[0]) {
-                    kilde shouldBe BehandlingsrefKilde.BEHANDLING_ID
-                    referanse shouldBe behandling.id.toString()
-                }
-                with(behandlingRef[1]) {
-                    kilde shouldBe BehandlingsrefKilde.BISYS_SØKNAD
-                    referanse shouldBe behandling.soknadsid.toString()
-                }
-            }
-
-            assertSoftly(request.stønadsendringListe) {
-                withClue("Stønadsendring søknadsbarn 1") {
-                    it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
-                    it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
-                    it[0].skyldner.verdi shouldBe "NAV"
-                    it[0].grunnlagReferanseListe.shouldHaveSize(8)
-                    it[0].periodeListe.shouldHaveSize(4)
-                }
-                withClue("Stønadsendring søknadsbarn 2") {
-                    it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
-                    it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
-                    it[1].skyldner.verdi shouldBe "NAV"
-                    it[1].grunnlagReferanseListe.shouldHaveSize(8)
-                    it[1].periodeListe.shouldHaveSize(4)
-                }
-            }
-
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_SØKNADSBARN)) {
-                shouldHaveSize(2)
-                it.shouldContainPerson(testdataBarn1.ident)
-                it.shouldContainPerson(testdataBarn2.ident)
-            }
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)) {
-                shouldHaveSize(2)
-                it.shouldContainPerson(testdataHusstandsmedlem1.ident)
-            }
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER)) {
-                shouldHaveSize(1)
-                it.shouldContainPerson(testdataBM.ident)
-            }
+            validerVedtaksdetaljer(behandling)
+            validerPersongrunnlag()
+            validerSluttberegning()
+            validerBosstatusPerioder()
+            validerInntektrapportering()
 
             val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
-            val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)
-            val søknadsbarn2Grunnlag = grunnlagListe.hentPerson(testdataBarn2.ident)
-            val husstandsbarnGrunnlag = grunnlagListe.hentPerson(testdataHusstandsmedlem1.ident)
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.BOSTATUS_PERIODE)) {
-                shouldHaveSize(6)
-                val bostatusSøknadsbarn1 =
-                    it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag!!.referanse)
-                bostatusSøknadsbarn1.shouldHaveSize(2)
-                assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
-                    bostatus shouldBe Bostatuskode.MED_FORELDER
-                    periode.fom shouldBe YearMonth.parse("2022-02")
-                    periode.til shouldBe YearMonth.parse("2022-05")
-                }
-                assertSoftly(bostatusSøknadsbarn1[1].innholdTilObjekt<BostatusPeriode>()) {
-                    bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
-                    periode.fom shouldBe YearMonth.parse("2022-05")
-                    periode.til shouldBe null
-                }
-
-                it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag!!.referanse)
-                    .shouldHaveSize(2)
-                it.filtrerBasertPåFremmedReferanse(referanse = husstandsbarnGrunnlag!!.referanse)
-                    .shouldHaveSize(2)
-            }
-
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.SIVILSTAND_PERIODE)) {
                 shouldHaveSize(1)
-                it[0].grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
+                it[0].gjelderReferanse.shouldBe(bmGrunnlag.referanse)
                 val sivilstandGrunnlag = it.innholdTilObjekt<SivilstandPeriode>()
                 sivilstandGrunnlag[0].sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                 sivilstandGrunnlag[0].periode.fom shouldBe YearMonth.parse("2022-02")
                 sivilstandGrunnlag[0].periode.til shouldBe null
             }
 
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)) {
-                shouldHaveSize(3)
-                it[0].grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
-                it[1].grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
-                it[2].grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
-                assertSoftly(it[0].innholdTilObjekt<InntektsrapporteringPeriode>()) {
-                    periode.fom shouldBe YearMonth.parse("2022-01")
-                    periode.til shouldBe YearMonth.parse("2022-07")
-                    inntekstpostListe shouldHaveSize 0
-                    beløp shouldBe 50000.toBigDecimal()
-                    inntektsrapportering shouldBe Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER
-                    valgt shouldBe true
-                    manueltRegistrert shouldBe true
-                }
-                assertSoftly(it[2].innholdTilObjekt<InntektsrapporteringPeriode>()) {
-                    periode.fom shouldBe YearMonth.parse("2022-01")
-                    periode.til shouldBe YearMonth.parse("2023-01")
-                    inntekstpostListe shouldHaveSize 1
-                    beløp shouldBe 60000.toBigDecimal()
-                    inntektsrapportering shouldBe Inntektsrapportering.AINNTEKT_BEREGNET_12MND
-                    valgt shouldBe false
-                    manueltRegistrert shouldBe false
-                }
-            }
-
             assertSoftly(hentGrunnlagstype(Grunnlagstype.BEREGNET_INNTEKT)) {
                 val innhold = it!!.innholdTilObjekt<BeregnetInntekt>()
-                it.grunnlagsreferanseListe.shouldContain(bmGrunnlag.referanse)
+                it.gjelderReferanse.shouldBe(bmGrunnlag.referanse)
                 innhold.summertMånedsinntektListe.shouldHaveSize(24)
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
@@ -287,13 +196,14 @@ class VedtakserviceTest {
     }
 
     @Test
-    fun `Skal opprette grunnlagsstruktur for en enkel forskudd behandling2`() {
-        val behandling = opprettGyldigBehandlingForBeregning(true)
+    fun `Skal opprette grunnlagsstruktur for avslag av forskudd behandling`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        behandling.avslag = Resultatkode.AVSLAG
         behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
         every { grunnlagService.hentAlleSistAktiv(any()) } returns
             opprettAlleAktiveGrunnlagFraFil(
@@ -313,6 +223,71 @@ class VedtakserviceTest {
 
         assertSoftly(opprettVedtakRequest) { request ->
             request.type shouldBe Vedtakstype.FASTSETTELSE
+            request.stønadsendringListe shouldHaveSize 2
+            request.engangsbeløpListe.shouldBeEmpty()
+            request.grunnlagListe shouldHaveSize 6
+            assertSoftly(behandlingsreferanseListe) { behandlingRef ->
+                behandlingRef shouldHaveSize 2
+                with(behandlingRef[0]) {
+                    kilde shouldBe no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde.BEHANDLING_ID
+                    referanse shouldBe behandling.id.toString()
+                }
+                with(behandlingRef[1]) {
+                    kilde shouldBe no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde.BISYS_SØKNAD
+                    referanse shouldBe behandling.soknadsid.toString()
+                }
+            }
+
+            assertSoftly(stønadsendringListe) {
+                withClue("Stønadsendring søknadsbarn 1") {
+                    it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
+                    it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
+                    it[0].skyldner.verdi shouldBe "NAV"
+                    it[0].grunnlagReferanseListe.shouldHaveSize(6)
+                    it[0].grunnlagReferanseListe.forEach {
+                        grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
+                    }
+                    assertSoftly(it[0].periodeListe) {
+                        shouldHaveSize(1)
+                        assertSoftly(it[0]) {
+                            periode shouldBe
+                                ÅrMånedsperiode(
+                                    behandling.søktFomDato,
+                                    null,
+                                )
+                            beløp shouldBe BigDecimal.ZERO
+                            valutakode shouldBe "NOK"
+                            resultatkode shouldBe Resultatkode.AVSLAG.name
+                            grunnlagReferanseListe.shouldBeEmpty()
+                        }
+                    }
+                }
+                withClue("Stønadsendring søknadsbarn 2") {
+                    it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
+                    it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
+                    it[1].skyldner.verdi shouldBe "NAV"
+                    it[1].grunnlagReferanseListe.shouldHaveSize(6)
+                    it[1].grunnlagReferanseListe.forEach {
+                        grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
+                    }
+                    assertSoftly(it[1].periodeListe) {
+                        shouldHaveSize(1)
+                        assertSoftly(it[0]) {
+                            periode shouldBe
+                                ÅrMånedsperiode(
+                                    behandling.søktFomDato,
+                                    null,
+                                )
+                            beløp shouldBe BigDecimal.ZERO
+                            valutakode shouldBe "NOK"
+                            resultatkode shouldBe Resultatkode.AVSLAG.name
+                            grunnlagReferanseListe.shouldBeEmpty()
+                        }
+                    }
+                }
+                hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
+                hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
+            }
         }
     }
 }
@@ -333,6 +308,223 @@ fun List<OpprettGrunnlagRequestDto>.shouldContainPerson(
         person shouldNotBe null
     }
 }
+
+private fun OpprettVedtakRequestDto.validerPersongrunnlag() {
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_SØKNADSBARN)) {
+        shouldHaveSize(2)
+        it.shouldContainPerson(testdataBarn1.ident)
+        it.shouldContainPerson(testdataBarn2.ident)
+    }
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)) {
+        shouldHaveSize(2)
+        it.shouldContainPerson(testdataHusstandsmedlem1.ident)
+    }
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER)) {
+        shouldHaveSize(1)
+        it.shouldContainPerson(testdataBM.ident)
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandling) {
+    assertSoftly("Søknadsdetaljer") {
+        grunnlagListe.virkningsdato shouldNotBe null
+        val virkningsdato =
+            grunnlagListe.virkningsdato?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
+        virkningsdato!!.virkningstidspunkt shouldHaveSameDayAs behandling.virkningstidspunkt!!
+        virkningsdato.årsak shouldBe behandling.årsak
+
+        grunnlagListe.søknad shouldNotBe null
+        val søknad = grunnlagListe.søknad?.innholdTilObjekt<SøknadGrunnlag>()
+        søknad!!.mottattDato shouldHaveSameDayAs behandling.mottattdato
+        søknad.søktAv shouldBe behandling.soknadFra
+        søknad.søktFraDato shouldBe behandling.søktFomDato
+    }
+
+    assertSoftly(behandlingsreferanseListe) { behandlingRef ->
+        behandlingRef shouldHaveSize 2
+        with(behandlingRef[0]) {
+            kilde shouldBe no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde.BEHANDLING_ID
+            referanse shouldBe behandling.id.toString()
+        }
+        with(behandlingRef[1]) {
+            kilde shouldBe no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde.BISYS_SØKNAD
+            referanse shouldBe behandling.soknadsid.toString()
+        }
+    }
+
+    assertSoftly(stønadsendringListe) {
+        withClue("Stønadsendring søknadsbarn 1") {
+            it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
+            it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
+            it[0].skyldner.verdi shouldBe "NAV"
+            it[0].grunnlagReferanseListe.shouldHaveSize(8)
+            it[0].grunnlagReferanseListe.forEach {
+                grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
+            }
+            assertSoftly(it[0].periodeListe) {
+                shouldHaveSize(4)
+                assertSoftly(it[0]) {
+                    periode shouldBe
+                        ÅrMånedsperiode(
+                            YearMonth.parse("2023-02"),
+                            YearMonth.parse("2023-07"),
+                        )
+                    beløp shouldBe BigDecimal(1760)
+                    valutakode shouldBe "NOK"
+                    resultatkode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT.name
+                    grunnlagReferanseListe shouldHaveSize 1
+                    val grunnlag =
+                        grunnlagListe.filtrerBasertPåEgenReferanse(referanse = grunnlagReferanseListe[0])
+                    grunnlag shouldHaveSize 1
+                    grunnlag[0].type shouldBe Grunnlagstype.SLUTTBEREGNING_FORSKUDD
+                }
+            }
+        }
+        withClue("Stønadsendring søknadsbarn 2") {
+            it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
+            it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
+            it[1].skyldner.verdi shouldBe "NAV"
+            it[1].grunnlagReferanseListe.shouldHaveSize(8)
+            it[1].grunnlagReferanseListe.forEach {
+                grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
+            }
+            assertSoftly(it[1].periodeListe) {
+                shouldHaveSize(4)
+                assertSoftly(it[0]) {
+                    periode shouldBe
+                        ÅrMånedsperiode(
+                            YearMonth.parse("2023-02"),
+                            YearMonth.parse("2023-07"),
+                        )
+                    beløp shouldBe BigDecimal(1760)
+                    valutakode shouldBe "NOK"
+                    resultatkode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT.name
+                    grunnlagReferanseListe shouldHaveSize 1
+                    val grunnlag =
+                        grunnlagListe.filtrerBasertPåEgenReferanse(referanse = grunnlagReferanseListe[0])
+                    grunnlag shouldHaveSize 1
+                    grunnlag[0].type shouldBe Grunnlagstype.SLUTTBEREGNING_FORSKUDD
+                }
+            }
+        }
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
+    val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+    val søknadsbarn2Grunnlag = grunnlagListe.hentPerson(testdataBarn2.ident)!!
+    val husstandsbarnGrunnlag = grunnlagListe.hentPerson(testdataHusstandsmedlem1.ident)!!
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.BOSTATUS_PERIODE)) {
+        shouldHaveSize(6)
+        val bostatusSøknadsbarn1 =
+            it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag.referanse)
+        bostatusSøknadsbarn1.shouldHaveSize(2)
+        it[0].gjelderReferanse shouldBe søknadsbarn1Grunnlag.referanse
+        it[1].gjelderReferanse shouldBe søknadsbarn1Grunnlag.referanse
+        it[2].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
+        it[3].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
+        it[4].gjelderReferanse shouldBe husstandsbarnGrunnlag.referanse
+        it[5].gjelderReferanse shouldBe husstandsbarnGrunnlag.referanse
+        assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
+            bostatus shouldBe Bostatuskode.MED_FORELDER
+            periode.fom shouldBe YearMonth.parse("2022-02")
+            periode.til shouldBe YearMonth.parse("2022-05")
+        }
+        assertSoftly(bostatusSøknadsbarn1[1].innholdTilObjekt<BostatusPeriode>()) {
+            bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
+            periode.fom shouldBe YearMonth.parse("2022-05")
+            periode.til shouldBe null
+        }
+
+        it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag.referanse)
+            .shouldHaveSize(2)
+        it.filtrerBasertPåFremmedReferanse(referanse = husstandsbarnGrunnlag.referanse)
+            .shouldHaveSize(2)
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerInntektrapportering() {
+    val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)) {
+        shouldHaveSize(3)
+        it[0].gjelderReferanse.shouldBe(bmGrunnlag.referanse)
+        it[1].gjelderReferanse.shouldBe(bmGrunnlag.referanse)
+        it[2].gjelderReferanse.shouldBe(bmGrunnlag.referanse)
+        assertSoftly(it[0].innholdTilObjekt<InntektsrapporteringPeriode>()) {
+            periode.fom shouldBe YearMonth.parse("2022-01")
+            periode.til shouldBe YearMonth.parse("2022-07")
+            inntekstpostListe shouldHaveSize 0
+            beløp shouldBe 50000.toBigDecimal()
+            inntektsrapportering shouldBe Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER
+            valgt shouldBe true
+            manueltRegistrert shouldBe true
+        }
+        assertSoftly(it[2]) {
+            it.grunnlagsreferanseListe shouldHaveSize 13
+            val grunnlag =
+                grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it.grunnlagsreferanseListe[0])
+            grunnlag[0].type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE
+            assertSoftly(innholdTilObjekt<InntektsrapporteringPeriode>()) {
+                periode.fom shouldBe YearMonth.parse("2022-01")
+                periode.til shouldBe null
+                inntekstpostListe shouldHaveSize 1
+                beløp shouldBe 60000.toBigDecimal()
+                inntektsrapportering shouldBe Inntektsrapportering.AINNTEKT_BEREGNET_12MND
+                valgt shouldBe true
+                manueltRegistrert shouldBe false
+            }
+        }
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerSluttberegning() {
+    val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
+    val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)
+    val søknadsbarn2Grunnlag = grunnlagListe.hentPerson(testdataBarn2.ident)
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_FORSKUDD)) {
+        shouldHaveSize(8)
+        it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag!!.referanse) shouldHaveSize 4
+        assertSoftly(it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag!!.referanse)) {
+            shouldHaveSize(4)
+            assertSoftly(it[3]) {
+                val innhold = innholdTilObjekt<SluttberegningForskudd>()
+                innhold.beløp.toBigInteger() shouldBe 1760.toBigInteger()
+                innhold.resultatKode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
+                innhold.aldersgruppe shouldBe AldersgruppeForskudd.ALDER_0_10_ÅR
+                val delberegning =
+                    hentGrunnlagstyperForReferanser(
+                        Grunnlagstype.DELBEREGNING_INNTEKT,
+                        it.grunnlagsreferanseListe,
+                    )
+                assertSoftly(delberegning) {
+                    shouldHaveSize(1)
+                    assertSoftly(it[0]) { delberegning ->
+                        delberegning.innholdTilObjekt<DelberegningInntekt>().summertBeløp shouldBe 60000.toBigDecimal()
+                        delberegning.grunnlagsreferanseListe shouldHaveSize 1
+
+                        val delberegningInntekt =
+                            grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegning.grunnlagsreferanseListe[0])
+                                .first()
+                        delberegningInntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
+                        delberegningInntekt.grunnlagsreferanseListe shouldHaveSize 13
+
+                        val innhentetAinntekt =
+                            grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegningInntekt.grunnlagsreferanseListe[0])
+                                .first()
+                        innhentetAinntekt.type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE
+                        innhentetAinntekt.grunnlagsreferanseListe shouldHaveSize 0
+                        innhentetAinntekt.gjelderReferanse shouldBe bmGrunnlag.referanse
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun OpprettVedtakRequestDto.hentGrunnlagstyperForReferanser(
+    grunnlagstype: Grunnlagstype,
+    referanseListe: List<Grunnlagsreferanse>,
+) = grunnlagListe.filter { it.type == grunnlagstype && referanseListe.contains(it.referanse) }
 
 fun OpprettVedtakRequestDto.hentGrunnlagstyper(grunnlagstype: Grunnlagstype) = grunnlagListe.filter { it.type == grunnlagstype }
 

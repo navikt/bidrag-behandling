@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
@@ -9,10 +8,11 @@ import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
-import no.nav.bidrag.behandling.transformers.vedtak.tilInnhentetArbeidsforhold
-import no.nav.bidrag.behandling.transformers.vedtak.tilInnhentetGrunnlagInntekt
-import no.nav.bidrag.behandling.transformers.vedtak.tilInnhentetHusstandsmedlemmer
-import no.nav.bidrag.behandling.transformers.vedtak.tilInnhentetSivilstand
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.utils.opprettAinntektGrunnlagListe
 import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.opprettArbeidsforholdGrunnlagListe
@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBP
 import no.nav.bidrag.behandling.utils.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -50,6 +51,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -65,7 +67,7 @@ class VedtakInnhentetGrunnlagTest {
             rolletype = Rolletype.BIDRAGSMOTTAKER,
             foedselsdato = testdataBM.foedselsdato,
             id = 1L,
-        ).tilPersonGrunnlag()
+        ).tilGrunnlagPerson()
     val grunnlagBp =
         Rolle(
             behandling = oppretteBehandling(),
@@ -73,7 +75,7 @@ class VedtakInnhentetGrunnlagTest {
             rolletype = Rolletype.BIDRAGSMOTTAKER,
             foedselsdato = testdataBP.foedselsdato,
             id = 1L,
-        ).tilPersonGrunnlag()
+        ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag1 =
         Rolle(
             behandling = oppretteBehandling(),
@@ -81,7 +83,7 @@ class VedtakInnhentetGrunnlagTest {
             rolletype = Rolletype.BARN,
             foedselsdato = testdataBarn1.foedselsdato,
             id = 1L,
-        ).tilPersonGrunnlag()
+        ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag2 =
         Rolle(
             behandling = oppretteBehandling(),
@@ -89,7 +91,12 @@ class VedtakInnhentetGrunnlagTest {
             rolletype = Rolletype.BARN,
             foedselsdato = testdataBarn2.foedselsdato,
             id = 1L,
-        ).tilPersonGrunnlag()
+        ).tilGrunnlagPerson()
+
+    @BeforeEach
+    fun initMocks() {
+        stubKodeverkProvider()
+    }
 
     @Nested
     inner class InnhentetSivilstandTest {
@@ -203,17 +210,17 @@ class VedtakInnhentetGrunnlagTest {
                     behandling,
                     "grunnlagresponse.json",
                 )
-            val barnGrunnlag = listOf(søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
+            val barnGrunnlag = setOf(søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
             assertSoftly(
                 grunnlagListe.tilInnhentetHusstandsmedlemmer(grunnlagBm, barnGrunnlag).toList(),
             ) {
-                it.hentAllePersoner().shouldHaveSize(5)
+                it.hentAllePersoner().shouldHaveSize(3)
                 val personGrunnlagHusstandsmedlemListe = it.hentGrunnlagPersonHusstandsmedlem()
                 val husstandGrunnlag = it.hentGrunnlagHusstand()
                 husstandGrunnlag shouldHaveSize 6
                 assertSoftly(husstandGrunnlag[0]) {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM_PERIODE
-                    this.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
                     grunnlag.periode.fom shouldBe LocalDate.parse("2017-03-30")
                     grunnlag.periode.til shouldBe null
@@ -222,7 +229,7 @@ class VedtakInnhentetGrunnlagTest {
                 }
                 assertSoftly(husstandGrunnlag[1]) {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM_PERIODE
-                    this.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
                     grunnlag.periode.fom shouldBe LocalDate.parse("2023-07-31")
                     grunnlag.periode.til shouldBe null
@@ -231,7 +238,7 @@ class VedtakInnhentetGrunnlagTest {
                 }
                 assertSoftly(husstandGrunnlag[2]) {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM_PERIODE
-                    this.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
                     grunnlag.periode.fom shouldBe LocalDate.parse("2017-03-30")
                     grunnlag.periode.til shouldBe null
@@ -240,7 +247,7 @@ class VedtakInnhentetGrunnlagTest {
                 }
                 assertSoftly(husstandGrunnlag[3]) {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM_PERIODE
-                    this.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
                     grunnlag.periode.fom shouldBe LocalDate.parse("2010-10-06")
                     grunnlag.periode.til shouldBe LocalDate.parse("2023-01-02")
@@ -249,7 +256,7 @@ class VedtakInnhentetGrunnlagTest {
                 }
                 assertSoftly(husstandGrunnlag[4]) {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM_PERIODE
-                    this.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
                     grunnlag.periode.fom shouldBe LocalDate.parse("2015-07-24")
                     grunnlag.periode.til shouldBe null
@@ -258,7 +265,7 @@ class VedtakInnhentetGrunnlagTest {
                 }
                 assertSoftly(husstandGrunnlag[5]) {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM_PERIODE
-                    this.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
                     grunnlag.periode.fom shouldBe LocalDate.parse("2017-03-30")
                     grunnlag.periode.til shouldBe null
@@ -366,11 +373,11 @@ class VedtakInnhentetGrunnlagTest {
                             ),
                     ),
                 )
-            val barnGrunnlag = listOf(søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
+            val barnGrunnlag = setOf(søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
             val grunnlagHusstandsmedlemmer =
                 grunnlagListe.tilInnhentetHusstandsmedlemmer(grunnlagBm, barnGrunnlag).toList()
             assertSoftly(grunnlagHusstandsmedlemmer) {
-                it.hentAllePersoner().shouldHaveSize(3)
+                it.hentAllePersoner().shouldHaveSize(1)
                 val personGrunnlagHusstandsmedlemListe = it.hentGrunnlagPersonHusstandsmedlem()
                 val husstandGrunnlag = it.hentGrunnlagHusstand()
                 husstandGrunnlag shouldHaveSize 6
@@ -467,7 +474,7 @@ class VedtakInnhentetGrunnlagTest {
                 assertSoftly(hentGrunnlagAinntekt()) {
                     it shouldHaveSize 1
                     assertSoftly(it[0]) {
-                        it.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val ainntekt = it.innholdTilObjekt<InnhentetAinntekt>()
                         ainntekt.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         ainntekt.periode.til shouldBe LocalDate.parse("2023-01-01")
@@ -517,7 +524,7 @@ class VedtakInnhentetGrunnlagTest {
                 assertSoftly(hentSkattegrunnlag()) {
                     it shouldHaveSize 2
                     assertSoftly(it[0]) {
-                        it.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val skattegrunnlag = it.innholdTilObjekt<InnhentetSkattegrunnlag>()
                         skattegrunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         skattegrunnlag.periode.til shouldBe LocalDate.parse("2023-01-01")
@@ -569,12 +576,11 @@ class VedtakInnhentetGrunnlagTest {
                 assertSoftly(hentBarnetillegg()) {
                     it shouldHaveSize 3
                     assertSoftly(it[0]) {
-                        it.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
-                        it.grunnlagsreferanseListe.shouldContain(søknadsbarnGrunnlag1.referanse)
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val grunnlag = it.innholdTilObjekt<InnhentetBarnetillegg>()
                         grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         grunnlag.periode.til shouldBe LocalDate.parse("2022-04-30")
-                        grunnlag.grunnlag.gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse // TODO er dette vits å ta med?
+                        grunnlag.grunnlag.gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
                         grunnlag.grunnlag.barnetilleggType shouldBe "PENSJON"
                         grunnlag.grunnlag.beløpBrutto shouldBe BigDecimal(1000)
                         grunnlag.grunnlag.barnType shouldBe "FELLES"
@@ -583,7 +589,7 @@ class VedtakInnhentetGrunnlagTest {
                 assertSoftly(hentUtvidetBarnetrygd()) {
                     it shouldHaveSize 3
                     assertSoftly(it[0]) {
-                        it.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val grunnlag = it.innholdTilObjekt<InnhentetUtvidetBarnetrygd>()
                         grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         grunnlag.periode.til shouldBe LocalDate.parse("2022-03-30")
@@ -594,7 +600,7 @@ class VedtakInnhentetGrunnlagTest {
                 assertSoftly(hentSmåbarnstillegg()) {
                     it shouldHaveSize 3
                     assertSoftly(it[0]) {
-                        it.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val grunnlag = it.innholdTilObjekt<InnhentetSmåbarnstillegg>()
                         grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         grunnlag.periode.til shouldBe LocalDate.parse("2022-03-30")
@@ -605,7 +611,7 @@ class VedtakInnhentetGrunnlagTest {
                 assertSoftly(hentKontantstøtte()) {
                     it shouldHaveSize 3
                     assertSoftly(it[0]) {
-                        it.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val grunnlag = it.innholdTilObjekt<InnhentetKontantstøtte>()
                         grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         grunnlag.periode.til shouldBe LocalDate.parse("2022-07-31")
@@ -616,7 +622,7 @@ class VedtakInnhentetGrunnlagTest {
                 assertSoftly(hentBarnetilsyn()) {
                     it shouldHaveSize 2
                     assertSoftly(it[0]) {
-                        it.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val grunnlag = it.innholdTilObjekt<InnhentetBarnetilsyn>()
                         grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         grunnlag.periode.til shouldBe LocalDate.parse("2022-07-31")
@@ -671,7 +677,7 @@ class VedtakInnhentetGrunnlagTest {
             ) {
                 this shouldHaveSize 2
                 assertSoftly(this[0]) {
-                    it.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val arbeidsforhold = it.innholdTilObjekt<InnhentetArbeidsforhold>()
                     arbeidsforhold.periode.fom shouldBe LocalDate.parse("2008-01-01")
                     arbeidsforhold.periode.til shouldBe LocalDate.parse("2021-12-31")

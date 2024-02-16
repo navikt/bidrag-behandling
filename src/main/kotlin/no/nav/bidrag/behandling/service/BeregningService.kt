@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.validere
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
-import no.nav.bidrag.behandling.transformers.tilBeregnGrunnlagBarn
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.behandling.valideringAvBehandlingFeilet
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.ident.Personident
@@ -33,8 +33,7 @@ class BeregningService(
                     behandlingService.hentBehandlingById(behandlingsid, true).validere().bind()
                 val resultat =
                     behandling.søknadsbarn.mapOrAccumulate {
-                        val beregnForskudd =
-                            behandling.tilBeregnGrunnlagBarn(it)
+                        val beregnForskudd = behandling.byggGrunnlagForBeregning(it)
 
                         try {
                             ResultatForskuddsberegningBarn(

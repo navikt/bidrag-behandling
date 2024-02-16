@@ -34,7 +34,7 @@ fun rolleManglerIdent(
         "Manger personident for rolle $rolletype i behandling $behandlingId",
     )
 
-fun manglerBosstatus(behandlingId: Long): Nothing =
+fun manglerBosstatus(behandlingId: String): Nothing =
     throw HttpClientErrorException(
         HttpStatus.BAD_REQUEST,
         "Mangler bosstatus for søknadsbarn i behandling $behandlingId",

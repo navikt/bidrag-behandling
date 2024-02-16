@@ -283,6 +283,18 @@
     </dependency>
     <dependency>
       <groupId>no.nav.bidrag</groupId>
+      <artifactId>bidrag-commons-test-felles</artifactId>
+      <version>${bidrag-felles.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>io.github.oshai</groupId>
+          <artifactId>kotlin-logging-jvm</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>no.nav.bidrag</groupId>
       <artifactId>bidrag-transport-felles</artifactId>
       <version>${bidrag-felles.version}</version>
     </dependency>
@@ -300,6 +312,21 @@
     <dependency>
       <groupId>no.nav.bidrag</groupId>
       <artifactId>bidrag-sivilstand</artifactId>
+      <version>${bidrag-beregn-felles.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>no.nav.bidrag</groupId>
+          <artifactId>bidrag-domene-felles</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>no.nav.bidrag</groupId>
+      <artifactId>bidrag-boforhold</artifactId>
       <version>${bidrag-beregn-felles.version}</version>
       <exclusions>
         <exclusion>

@@ -42,8 +42,8 @@ open class BehandlingGrunnlag(
 
 inline fun <reified T> BehandlingGrunnlag?.hentData(): T? =
     when (this?.type) {
-        Grunnlagsdatatype.INNTEKTSOPPLYSNINGER, Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
-        Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
+        Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
+        Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
         Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonGrunnlagDto>>() as T
         Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandGrunnlagDto>>() as T
         Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T

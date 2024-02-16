@@ -9,28 +9,32 @@ import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.vedtak.OmgjortBehandlingFraVedtak
 import no.nav.bidrag.behandling.rolleManglerIdent
+import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
+import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
-import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
-import no.nav.bidrag.behandling.transformers.vedtak.byggStønadsendringerForVedtak
+import no.nav.bidrag.behandling.transformers.vedtak.lagTre
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseList
 import no.nav.bidrag.behandling.transformers.vedtak.tilOpprettRequestDto
 import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
+import no.nav.bidrag.behandling.transformers.vedtak.validerInneholderListe
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 private val LOGGER = KotlinLogging.logger {}
@@ -55,73 +59,132 @@ class VedtakService(
     }
 
     fun fatteVedtak(behandlingId: Long): Int {
-        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", false)
-        if (isEnabled.not()) {
-            throw HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
-                "Fattevedtak er ikke aktivert",
-            )
-        }
+        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", true)
+//        if (isEnabled.not()) {
+//            throw HttpClientErrorException(
+//                HttpStatus.BAD_REQUEST,
+//                "Fattevedtak er ikke aktivert",
+//            )
+//        }
 
         val behandling = behandlingService.hentBehandlingById(behandlingId, true)
-        if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
+//        if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
 
-        val sak = sakConsumer.hentSak(behandling.saksnummer)
-        val beregning = beregningService.beregneForskudd(behandlingId)
-
-        val stønadsendringPeriode =
-            beregning.resultatBarn.map { it.byggStønadsendringerForVedtak(behandling) }
-
-        val stønadsendringGrunnlagListe =
-            behandling.byggGrunnlagNotater() + behandling.byggGrunnlagVirkningsttidspunkt() + behandling.byggGrunnlagSøknad()
-
-        val grunnlagsListe =
-            stønadsendringPeriode
-                .flatMap(StønadsendringPeriode::grunnlag)
-                .distinctBy { it.referanse } +
-                stønadsendringGrunnlagListe
         val request =
-            OpprettVedtakRequestDto(
-                enhetsnummer = Enhetsnummer(behandling.behandlerEnhet),
-                vedtakstidspunkt = LocalDateTime.now(),
-                type = behandling.vedtakstype,
-                stønadsendringListe =
-                    stønadsendringPeriode.map {
-                        OpprettStønadsendringRequestDto(
-                            innkreving = Innkrevingstype.MED_INNKREVING,
-                            skyldner = behandling.tilSkyldner(),
-                            kravhaver =
-                                it.barn.tilPersonident()
-                                    ?: rolleManglerIdent(Rolletype.BARN, behandlingId),
-                            mottaker =
-                                behandling.roller
-                                    .reelMottakerEllerBidragsmottaker(
-                                        sak.hentRolleMedFnr(it.barn.ident!!),
-                                    ),
-                            sak = Saksnummer(behandling.saksnummer),
-                            type = behandling.stonadstype!!,
-                            beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
-                            periodeListe = it.perioder,
-                        )
-                    },
-                engangsbeløpListe = emptyList(),
-                behandlingsreferanseListe = behandling.tilBehandlingreferanseList(),
-                grunnlagListe = grunnlagsListe.map(GrunnlagDto::tilOpprettRequestDto),
-                kilde = Vedtakskilde.MANUELT,
-                fastsattILand = null,
-                innkrevingUtsattTilDato = null,
-                // Settes automatisk av bidrag-vedtak basert på token
-                opprettetAv = null,
-            )
+            if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
 
         val response = vedtakConsumer.fatteVedtak(request)
         behandlingService.oppdaterBehandling(
             behandlingId,
             OppdaterBehandlingRequestV2(vedtaksid = response.vedtaksid.toLong()),
         )
-        LOGGER.info { "Fattet vedtak for behandling $behandlingId med vedtaksid ${response.vedtaksid}" }
+        LOGGER.info {
+            "Fattet vedtak for behandling $behandlingId med ${behandling.årsak?.let { "årsakstype $it" } ?: "avslagstype ${behandling.avslag}"} med vedtaksid ${response.vedtaksid}"
+        }
         return response.vedtaksid
+    }
+
+    private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto {
+        val sak = sakConsumer.hentSak(saksnummer)
+        val grunnlagListe = byggGrunnlagForStønad()
+
+        return OpprettVedtakRequestDto(
+            enhetsnummer = Enhetsnummer(behandlerEnhet),
+            vedtakstidspunkt = LocalDateTime.now(),
+            type = vedtakstype,
+            stønadsendringListe =
+                søknadsbarn.map {
+                    OpprettStønadsendringRequestDto(
+                        innkreving = Innkrevingstype.MED_INNKREVING,
+                        skyldner = tilSkyldner(),
+                        kravhaver =
+                            it.tilPersonident()
+                                ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                        mottaker =
+                            roller
+                                .reelMottakerEllerBidragsmottaker(
+                                    sak.hentRolleMedFnr(it.ident!!),
+                                ),
+                        sak = Saksnummer(saksnummer),
+                        type = stonadstype!!,
+                        beslutning = Beslutningstype.ENDRING,
+                        grunnlagReferanseListe = grunnlagListe.map { it.referanse },
+                        periodeListe =
+                            listOf(
+                                OpprettPeriodeRequestDto(
+                                    periode = ÅrMånedsperiode(søktFomDato, null),
+                                    beløp = BigDecimal.ZERO,
+                                    resultatkode = avslag!!.name,
+                                    valutakode = "NOK",
+                                    grunnlagReferanseListe = emptyList(),
+                                ),
+                            ),
+                    )
+                },
+            engangsbeløpListe = emptyList(),
+            behandlingsreferanseListe = tilBehandlingreferanseList(),
+            grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
+            kilde = Vedtakskilde.MANUELT,
+            fastsattILand = null,
+            innkrevingUtsattTilDato = null,
+            // Settes automatisk av bidrag-vedtak basert på token
+            opprettetAv = null,
+        )
+    }
+
+    private fun Behandling.byggOpprettVedtakRequest(): OpprettVedtakRequestDto {
+        val sak = sakConsumer.hentSak(saksnummer)
+        val beregning = beregningService.beregneForskudd(id!!)
+
+        val stønadsendringPerioder =
+            beregning.resultatBarn.map { it.byggStønadsendringerForVedtak(this) }
+
+        val grunnlagListeVedtak = byggGrunnlagForVedtak()
+        val stønadsendringGrunnlagListe = byggGrunnlagForStønad()
+
+        val grunnlagListe =
+            (grunnlagListeVedtak + stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag) + stønadsendringGrunnlagListe).toSet()
+        stønadsendringPerioder.forEach {
+            it.perioder.forEach { periode ->
+                periode.grunnlagReferanseListe.lagTre(grunnlagListe.toList())
+                periode.grunnlagReferanseListe.validerInneholderListe(
+                    grunnlagListe.toList(),
+                )
+            }
+        }
+        return OpprettVedtakRequestDto(
+            enhetsnummer = Enhetsnummer(behandlerEnhet),
+            vedtakstidspunkt = LocalDateTime.now(),
+            type = vedtakstype,
+            stønadsendringListe =
+                stønadsendringPerioder.map {
+                    OpprettStønadsendringRequestDto(
+                        innkreving = Innkrevingstype.MED_INNKREVING,
+                        skyldner = tilSkyldner(),
+                        kravhaver =
+                            it.barn.tilPersonident()
+                                ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                        mottaker =
+                            roller
+                                .reelMottakerEllerBidragsmottaker(
+                                    sak.hentRolleMedFnr(it.barn.ident!!),
+                                ),
+                        sak = Saksnummer(saksnummer),
+                        type = stonadstype!!,
+                        beslutning = Beslutningstype.ENDRING,
+                        grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
+                        periodeListe = it.perioder,
+                    )
+                },
+            engangsbeløpListe = emptyList(),
+            behandlingsreferanseListe = tilBehandlingreferanseList(),
+            grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
+            kilde = Vedtakskilde.MANUELT,
+            fastsattILand = null,
+            innkrevingUtsattTilDato = null,
+            // Settes automatisk av bidrag-vedtak basert på token
+            opprettetAv = null,
+        )
     }
 
     private fun Behandling.vedtakAlleredeFattet(): Nothing =

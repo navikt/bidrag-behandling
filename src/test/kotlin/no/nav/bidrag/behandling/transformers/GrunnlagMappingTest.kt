@@ -1,12 +1,15 @@
 package no.nav.bidrag.behandling.transformers
 
+import com.fasterxml.jackson.databind.node.POJONode
 import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -14,6 +17,14 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.opplysninger.InntektBearbeidet
+import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
+import no.nav.bidrag.behandling.transformers.grunnlag.opprettGrunnlagForHusstandsbarn
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagBostatus
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagSivilstand
+import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonGrunnlag
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
@@ -24,6 +35,7 @@ import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBP
 import no.nav.bidrag.behandling.utils.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -33,6 +45,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
@@ -40,12 +53,17 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 
 class GrunnlagMappingTest {
@@ -58,7 +76,7 @@ class GrunnlagMappingTest {
             rolletype = Rolletype.BIDRAGSMOTTAKER,
             foedselsdato = testdataBM.foedselsdato,
             id = 1L,
-        ).tilPersonGrunnlag()
+        ).tilGrunnlagPerson()
     val grunnlagBp =
         Rolle(
             behandling = oppretteBehandling(),
@@ -66,7 +84,7 @@ class GrunnlagMappingTest {
             rolletype = Rolletype.BIDRAGSMOTTAKER,
             foedselsdato = testdataBP.foedselsdato,
             id = 1L,
-        ).tilPersonGrunnlag()
+        ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag1 =
         Rolle(
             behandling = oppretteBehandling(),
@@ -74,7 +92,7 @@ class GrunnlagMappingTest {
             rolletype = Rolletype.BARN,
             foedselsdato = testdataBarn1.foedselsdato,
             id = 1L,
-        ).tilPersonGrunnlag()
+        ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag2 =
         Rolle(
             behandling = oppretteBehandling(),
@@ -82,7 +100,12 @@ class GrunnlagMappingTest {
             rolletype = Rolletype.BARN,
             foedselsdato = testdataBarn2.foedselsdato,
             id = 1L,
-        ).tilPersonGrunnlag()
+        ).tilGrunnlagPerson()
+
+    @BeforeEach
+    fun initMocks() {
+        stubKodeverkProvider()
+    }
 
     @Nested
     inner class PersonGrunnlagTest {
@@ -96,7 +119,7 @@ class GrunnlagMappingTest {
                     rolletype = Rolletype.BIDRAGSMOTTAKER,
                     foedselsdato = fødslesdato,
                     id = 1L,
-                ).tilPersonGrunnlag(),
+                ).tilGrunnlagPerson(),
             ) {
                 it.type shouldBe Grunnlagstype.PERSON_BIDRAGSMOTTAKER
                 it.referanse.shouldStartWith("person")
@@ -112,7 +135,7 @@ class GrunnlagMappingTest {
                     rolletype = Rolletype.BARN,
                     foedselsdato = fødslesdato,
                     id = 1L,
-                ).tilPersonGrunnlag(),
+                ).tilGrunnlagPerson(),
             ) {
                 it.type shouldBe Grunnlagstype.PERSON_SØKNADSBARN
                 it.referanse.shouldStartWith("person")
@@ -128,7 +151,7 @@ class GrunnlagMappingTest {
                     rolletype = Rolletype.BIDRAGSPLIKTIG,
                     foedselsdato = fødslesdato,
                     id = 1L,
-                ).tilPersonGrunnlag(),
+                ).tilGrunnlagPerson(),
             ) {
                 it.type shouldBe Grunnlagstype.PERSON_BIDRAGSPLIKTIG
                 it.referanse.shouldStartWith("person")
@@ -150,7 +173,7 @@ class GrunnlagMappingTest {
                     perioder = mutableSetOf(),
                     medISaken = false,
                     id = 1L,
-                ).tilPersonGrunnlag(),
+                ).tilGrunnlagPerson(),
             ) {
                 it.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
                 it.referanse.shouldStartWith("person")
@@ -193,7 +216,7 @@ class GrunnlagMappingTest {
                 it.forEach { inntekt ->
                     inntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
                     inntekt.referanse.shouldStartWith("inntekt")
-                    inntekt.grunnlagsreferanseListe shouldContain grunnlagBm.referanse
+                    inntekt.gjelderReferanse shouldBe grunnlagBm.referanse
                 }
                 assertSoftly(this[0]) { inntekt ->
                     val innhold: InntektsrapporteringPeriode = inntekt.innholdTilObjekt()
@@ -299,7 +322,7 @@ class GrunnlagMappingTest {
                 it.forEach { inntekt ->
                     inntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
                     inntekt.referanse.shouldStartWith("inntekt")
-                    inntekt.grunnlagsreferanseListe shouldContain grunnlagBm.referanse
+                    inntekt.gjelderReferanse shouldBe grunnlagBm.referanse
                 }
                 it shouldHaveSize 5
             }
@@ -307,7 +330,7 @@ class GrunnlagMappingTest {
                 it.forEach { inntekt ->
                     inntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
                     inntekt.referanse.shouldStartWith("inntekt")
-                    inntekt.grunnlagsreferanseListe shouldContain grunnlagBp.referanse
+                    inntekt.gjelderReferanse shouldBe grunnlagBp.referanse
                 }
                 it shouldHaveSize 3
             }
@@ -315,9 +338,70 @@ class GrunnlagMappingTest {
                 it.forEach { inntekt ->
                     inntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
                     inntekt.referanse.shouldStartWith("inntekt")
-                    inntekt.grunnlagsreferanseListe shouldContain søknadsbarnGrunnlag1.referanse
+                    inntekt.gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
                 }
                 it shouldHaveSize 3
+            }
+        }
+
+        @Test
+        fun `skal legge til grunnlagsliste for innhentet inntekter`() {
+            val behandling = oppretteBehandling()
+            val ainntektGrunnlagsreferanseListe = listOf("ainntekt_1", "ainntekt_2", "ainntekt_3")
+            val innteksopplynsingerBearbeidet =
+                InntektsopplysningerBearbeidet(
+                    inntekt =
+                        listOf(
+                            InntektBearbeidet(
+                                ident = testdataBM.ident,
+                                versjon = "1",
+                                summertMånedsinntektListe = emptyList(),
+                                summertAarsinntektListe =
+                                    listOf(
+                                        SummertÅrsinntekt(
+                                            Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                                            periode =
+                                                ÅrMånedsperiode(
+                                                    YearMonth.parse("2023-01"),
+                                                    YearMonth.parse("2024-01"),
+                                                ),
+                                            sumInntekt = BigDecimal.ONE,
+                                            inntektPostListe = emptyList(),
+                                            grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                                        ),
+                                    ),
+                            ),
+                        ),
+                )
+
+            behandling.grunnlagListe =
+                listOf(
+                    BehandlingGrunnlag(
+                        behandling = behandling,
+                        type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                        data =
+                            commonObjectmapper.writeValueAsString(
+                                POJONode(
+                                    innteksopplynsingerBearbeidet,
+                                ),
+                            ),
+                        innhentet = LocalDateTime.now(),
+                    ),
+                )
+            behandling.inntekter.addAll(
+                opprettInntekter(behandling, testdataBM, testdataBarn1),
+            )
+
+            assertSoftly(behandling.tilGrunnlagInntekt(grunnlagBm).toList()) {
+                it.forEach {
+                    val innhold = it.innholdTilObjekt<InntektsrapporteringPeriode>()
+                    if (innhold.inntektsrapportering == Inntektsrapportering.AINNTEKT_BEREGNET_12MND) {
+                        it.grunnlagsreferanseListe shouldBe ainntektGrunnlagsreferanseListe
+                    } else {
+                        it.grunnlagsreferanseListe.shouldBeEmpty()
+                    }
+                    it.gjelderReferanse shouldBe grunnlagBm.referanse
+                }
             }
         }
 
@@ -331,9 +415,11 @@ class GrunnlagMappingTest {
                 BigDecimal.valueOf(45000),
                 LocalDate.parse("2023-01-01"),
                 LocalDate.parse("2023-12-31"),
-                gjelder.ident,
-                Kilde.OFFENTLIG,
-                false,
+                opprinneligFom = LocalDate.parse("2023-01-01"),
+                opprinneligTom = LocalDate.parse("2024-01-01"),
+                ident = gjelder.ident,
+                kilde = Kilde.OFFENTLIG,
+                taMed = false,
                 behandling = behandling,
                 inntektsposter =
                     mutableSetOf(
@@ -356,9 +442,11 @@ class GrunnlagMappingTest {
                 BigDecimal.valueOf(33000),
                 LocalDate.parse("2023-01-01"),
                 LocalDate.parse("2023-12-31"),
-                gjelder.ident,
-                Kilde.OFFENTLIG,
-                true,
+                opprinneligFom = LocalDate.parse("2023-01-01"),
+                opprinneligTom = LocalDate.parse("2024-01-01"),
+                ident = gjelder.ident,
+                kilde = Kilde.OFFENTLIG,
+                taMed = true,
                 behandling = behandling,
                 inntektsposter =
                     mutableSetOf(
@@ -523,7 +611,8 @@ class GrunnlagMappingTest {
             behandling.husstandsbarn = husstandsbarn
 
             assertSoftly(
-                behandling.oppretteGrunnlagForHusstandsbarn(testdataBarn1.ident).toList(),
+                behandling.opprettGrunnlagForHusstandsbarn(testdataBarn1.tilGrunnlagDto())
+                    .toList(),
             ) {
                 it shouldHaveSize 3
                 assertSoftly(this[0]) { person ->
@@ -574,22 +663,24 @@ class GrunnlagMappingTest {
             behandling.husstandsbarn = husstandsbarn
 
             val barnGrunnlag =
-                behandling.oppretteGrunnlagForHusstandsbarn(testdataBarn1.ident)
+                behandling.opprettGrunnlagForHusstandsbarn(testdataBarn1.tilGrunnlagDto())
                     .toList() + søknadsbarnGrunnlag1
             assertSoftly(behandling.tilGrunnlagBostatus(barnGrunnlag.toSet()).toList()) {
                 it shouldHaveSize 16
-                assertSoftly(it.filter { it.grunnlagsreferanseListe.contains(søknadsbarnGrunnlag1.referanse) }) {
+                assertSoftly(it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse)) {
                     this shouldHaveSize 4
-                    with(this[0]) {
+                    assertSoftly(this[0]) {
                         type shouldBe Grunnlagstype.BOSTATUS_PERIODE
+                        gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
                         val innhold = innholdTilObjekt<BostatusPeriode>()
                         innhold.bostatus shouldBe Bostatuskode.MED_FORELDER
                         innhold.manueltRegistrert shouldBe false
                         innhold.periode.fom shouldBe YearMonth.parse("2023-01")
                         innhold.periode.til shouldBe YearMonth.parse("2023-07")
                     }
-                    with(this[3]) {
+                    assertSoftly(this[3]) {
                         type shouldBe Grunnlagstype.BOSTATUS_PERIODE
+                        gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
                         val innhold = innholdTilObjekt<BostatusPeriode>()
                         innhold.bostatus shouldBe Bostatuskode.REGNES_IKKE_SOM_BARN
                         innhold.manueltRegistrert shouldBe true
@@ -598,11 +689,9 @@ class GrunnlagMappingTest {
                     }
                 }
 
-                it.filter { it.grunnlagsreferanseListe.contains(søknadsbarnGrunnlag2.referanse) } shouldHaveSize 4
+                it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag2.referanse) shouldHaveSize 4
                 it.filter {
-                    it.grunnlagsreferanseListe.any { ref ->
-                        ref.startsWith("person_${Grunnlagstype.PERSON_HUSSTANDSMEDLEM}")
-                    }
+                    it.gjelderReferanse?.startsWith("person_${Grunnlagstype.PERSON_HUSSTANDSMEDLEM}") == true
                 } shouldHaveSize 8
             }
         }
@@ -663,7 +752,7 @@ class GrunnlagMappingTest {
                 assertSoftly(this[0]) { sivilstand ->
                     sivilstand.type shouldBe Grunnlagstype.SIVILSTAND_PERIODE
                     sivilstand.referanse.shouldStartWith("sivilstand_person_${Grunnlagstype.PERSON_BIDRAGSMOTTAKER}")
-                    sivilstand.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    sivilstand.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     assertSoftly(sivilstand.innholdTilObjekt<SivilstandPeriode>()) {
                         it.sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                         it.manueltRegistrert shouldBe false
@@ -674,7 +763,7 @@ class GrunnlagMappingTest {
                 assertSoftly(this[1]) { sivilstand ->
                     sivilstand.type shouldBe Grunnlagstype.SIVILSTAND_PERIODE
                     sivilstand.referanse.shouldStartWith("sivilstand_person_${Grunnlagstype.PERSON_BIDRAGSMOTTAKER}")
-                    sivilstand.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    sivilstand.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     assertSoftly(sivilstand.innholdTilObjekt<SivilstandPeriode>()) {
                         it.sivilstand shouldBe Sivilstandskode.GIFT_SAMBOER
                         it.manueltRegistrert shouldBe false
@@ -685,7 +774,7 @@ class GrunnlagMappingTest {
                 assertSoftly(this[2]) { sivilstand ->
                     sivilstand.type shouldBe Grunnlagstype.SIVILSTAND_PERIODE
                     sivilstand.referanse.shouldStartWith("sivilstand_person_${Grunnlagstype.PERSON_BIDRAGSMOTTAKER}")
-                    sivilstand.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    sivilstand.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     assertSoftly(sivilstand.innholdTilObjekt<SivilstandPeriode>()) {
                         it.sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                         it.manueltRegistrert shouldBe true
@@ -696,7 +785,7 @@ class GrunnlagMappingTest {
                 assertSoftly(this[3]) { sivilstand ->
                     sivilstand.type shouldBe Grunnlagstype.SIVILSTAND_PERIODE
                     sivilstand.referanse.shouldStartWith("sivilstand_person_${Grunnlagstype.PERSON_BIDRAGSMOTTAKER}")
-                    sivilstand.grunnlagsreferanseListe.shouldContain(grunnlagBm.referanse)
+                    sivilstand.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     assertSoftly(sivilstand.innholdTilObjekt<SivilstandPeriode>()) {
                         it.sivilstand shouldBe Sivilstandskode.GIFT_SAMBOER
                         it.manueltRegistrert shouldBe true

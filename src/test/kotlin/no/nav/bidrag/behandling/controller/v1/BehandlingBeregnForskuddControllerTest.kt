@@ -9,7 +9,7 @@ import io.mockk.mockkObject
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
+import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
@@ -42,7 +42,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal beregne forskudd for validert behandling`() {
         // given
-        val behandling = opprettGyldigBehandlingForBeregning()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak()
 
         try {
             behandlingRepository.save(behandling)
@@ -101,7 +101,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // given
         val errorMessage = "Feil input"
         every { forskuddBeregning.beregn(any()) } throws IllegalArgumentException(errorMessage)
-        val behandling = behandlingRepository.save(opprettGyldigBehandlingForBeregning())
+        val behandling = behandlingRepository.save(opprettGyldigBehandlingForBeregningOgVedtak())
 
         // when
         val returnert =

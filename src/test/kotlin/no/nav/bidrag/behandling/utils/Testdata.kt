@@ -1,10 +1,12 @@
 package no.nav.bidrag.behandling.utils
 
+import com.fasterxml.jackson.databind.node.POJONode
 import com.fasterxml.jackson.module.kotlin.readValue
 import no.nav.bidrag.behandling.consumer.BehandlingInfoResponseDto
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
+import no.nav.bidrag.behandling.controller.v2.tilTransformerInntekterRequest
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
@@ -15,6 +17,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.opplysninger.InntektBearbeidet
+import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -31,6 +35,10 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.inntekt.InntektApi
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.sak.BidragssakDto
@@ -45,7 +53,32 @@ data class TestDataPerson(
     val navn: String,
     val foedselsdato: LocalDate,
     val rolletype: Rolletype,
-)
+) {
+    fun tilRolle(behandling: Behandling = oppretteBehandling()) =
+        Rolle(
+            id = 1,
+            ident = ident,
+            navn = navn,
+            foedselsdato = foedselsdato,
+            rolletype = rolletype,
+            opprettet = LocalDateTime.now(),
+            behandling = behandling,
+        )
+
+    fun tilGrunnlagDto() =
+        GrunnlagDto(
+            referanse = "${ident}_${rolletype.name}_$navn",
+            type = rolletype.tilGrunnlagstype(),
+            innhold =
+                POJONode(
+                    Person(
+                        ident = Personident(ident),
+                        navn = navn,
+                        fødselsdato = foedselsdato,
+                    ),
+                ),
+        )
+}
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
@@ -320,7 +353,7 @@ fun opprettSakForBehandling(behandling: Behandling): BidragssakDto {
     )
 }
 
-fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling {
+fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Behandling {
     // given
     val behandling = oppretteBehandling(if (generateId) 1 else null)
     behandling.roller = oppretteBehandlingRoller(behandling, generateId)
@@ -388,7 +421,7 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
             ),
             Inntekt(
                 belop = BigDecimal(60000),
-                datoTom = null,
+                datoTom = LocalDate.parse("2022-09-01"),
                 datoFom = LocalDate.parse("2022-07-01"),
                 ident = behandling.bidragsmottaker!!.ident!!,
                 taMed = true,
@@ -402,10 +435,12 @@ fun opprettGyldigBehandlingForBeregning(generateId: Boolean = false): Behandling
     val aInntekt =
         Inntekt(
             belop = BigDecimal(60000),
-            datoTom = LocalDate.parse("2022-12-31"),
             datoFom = LocalDate.parse("2022-01-01"),
+            datoTom = null,
+            opprinneligFom = LocalDate.parse("2023-02-01"),
+            opprinneligTom = LocalDate.parse("2024-01-01"),
             ident = behandling.bidragsmottaker!!.ident!!,
-            taMed = false,
+            taMed = true,
             kilde = Kilde.OFFENTLIG,
             behandling = behandling,
             inntektsrapportering = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
@@ -465,7 +500,51 @@ fun opprettAlleAktiveGrunnlagFraFil(
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.ARBEIDSFORHOLD),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.INNTEKT),
-        opprettBeregnetInntektFraFil(behandling, "beregnet_inntekt.json"),
+        opprettBeregnetInntektFraGrunnlag(behandling, filnavn),
+    )
+}
+
+fun opprettInntektBearbeidet(
+    testDataPerson: TestDataPerson,
+    grunnlag: HentGrunnlagDto,
+): InntektBearbeidet {
+    val inntekt =
+        InntektApi("").transformerInntekter(
+            grunnlag.tilTransformerInntekterRequest(
+                testDataPerson.tilRolle(),
+            ),
+        )
+
+    return InntektBearbeidet(
+        ident = testDataPerson.ident,
+        versjon = "1",
+        summertAarsinntektListe = inntekt.summertÅrsinntektListe,
+        summertMånedsinntektListe = inntekt.summertMånedsinntektListe,
+    )
+}
+
+fun opprettBeregnetInntektFraGrunnlag(
+    behandling: Behandling,
+    filnavn: String,
+): BehandlingGrunnlag {
+    val fil = hentFil("/__files/$filnavn")
+    val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(fil)
+    val innteksopplynsingerBearbeidet =
+        InntektsopplysningerBearbeidet(
+            inntekt =
+                listOf(
+                    opprettInntektBearbeidet(testdataBM, grunnlag),
+                    opprettInntektBearbeidet(testdataBarn1, grunnlag),
+                    opprettInntektBearbeidet(testdataBarn2, grunnlag),
+                ),
+            arbeidsforhold = grunnlag.arbeidsforholdListe,
+            barnetillegg = grunnlag.barnetilleggListe,
+        )
+    return BehandlingGrunnlag(
+        behandling = behandling,
+        type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+        data = commonObjectmapper.writeValueAsString(POJONode(innteksopplynsingerBearbeidet)),
+        innhentet = LocalDateTime.now(),
     )
 }
 

@@ -6,6 +6,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 
 data class InntektDto(
     val id: Long? = null,
@@ -21,6 +22,12 @@ data class InntektDto(
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
+    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val opprinneligFom: YearMonth? = null,
+    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val opprinneligTom: YearMonth? = null,
     @Schema(required = true)
     val ident: String,
     @Schema(required = true)

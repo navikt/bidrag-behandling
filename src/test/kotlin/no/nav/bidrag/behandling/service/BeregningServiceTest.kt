@@ -9,7 +9,7 @@ import io.mockk.verify
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BA_2
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
+import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
@@ -43,7 +43,7 @@ class BeregningServiceTest {
 
     @Test
     fun `skal bygge grunnlag for beregning`() {
-        val behandling = opprettGyldigBehandlingForBeregning(true)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         every { behandlingService.hentBehandlingById(any()) } returns behandling
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         every { beregnForskuddApi.beregn(capture(beregnCapture)) } returns BeregnetForskuddResultat()

@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -218,6 +219,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
             BigDecimal.valueOf(305203),
             LocalDate.now().minusYears(1).withDayOfYear(1),
             LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
+            YearMonth.now().minusYears(1),
+            YearMonth.now().minusYears(1).withMonth(12),
             "blablabla",
             true,
             setOf(InntektPost(kode = "ABC", visningsnavn = "ABC", beløp = BigDecimal.TEN)),

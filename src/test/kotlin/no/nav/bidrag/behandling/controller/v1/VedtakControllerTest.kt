@@ -4,7 +4,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockkObject
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregning
+import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.opprettSakForBehandling
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
 import org.junit.jupiter.api.BeforeEach
@@ -29,7 +29,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
 
     @Test
     fun `Skal fatte vedtak`() {
-        val behandling = opprettGyldigBehandlingForBeregning(false)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
         behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
@@ -62,7 +62,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
 
     @Test
     fun `Skal ikke fatte vedtak hvis behandling har vedtakId`() {
-        val behandling = opprettGyldigBehandlingForBeregning(false)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
         behandling.vedtaksid = 1L
         try {
             behandlingRepository.save(behandling)

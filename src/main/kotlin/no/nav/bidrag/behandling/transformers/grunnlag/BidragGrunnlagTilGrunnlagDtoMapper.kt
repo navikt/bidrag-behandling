@@ -1,7 +1,11 @@
-package no.nav.bidrag.behandling.transformers.vedtak
+package no.nav.bidrag.behandling.transformers.grunnlag
 
 import com.fasterxml.jackson.databind.node.POJONode
+import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
@@ -14,7 +18,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSivilstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSkattegrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSmåbarnstillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetUtvidetBarnetrygd
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
@@ -28,6 +34,32 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrun
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import java.time.LocalDate
 import java.time.LocalDateTime
+
+fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(index: Int): GrunnlagDto {
+    val personnavn = navn ?: hentPersonVisningsnavn(relatertPersonPersonId)
+
+    return GrunnlagDto(
+        referanse =
+            Grunnlagstype.PERSON_HUSSTANDSMEDLEM.tilPersonreferanse(
+                fødselsdato?.toCompactString() ?: LocalDate.MIN.toCompactString(),
+                index,
+            ),
+        type = Grunnlagstype.PERSON_HUSSTANDSMEDLEM,
+        innhold =
+            POJONode(
+                Person(
+                    ident = relatertPersonPersonId?.let { Personident(it) },
+                    navn = if (relatertPersonPersonId.isNullOrEmpty()) personnavn else null,
+                    fødselsdato =
+                        finnFødselsdato(
+                            relatertPersonPersonId,
+                            fødselsdato,
+                        ) // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                            ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
+                ).valider(),
+            ),
+    )
+}
 
 fun BorISammeHusstandDto.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,

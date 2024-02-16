@@ -2,21 +2,8 @@ package no.nav.bidrag.behandling.transformers.vedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
-import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
-import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
-import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
-import no.nav.bidrag.behandling.manglerRolle
 import no.nav.bidrag.behandling.rolleManglerIdent
-import no.nav.bidrag.behandling.transformers.oppretteGrunnlagForHusstandsbarn
-import no.nav.bidrag.behandling.transformers.personIdent
-import no.nav.bidrag.behandling.transformers.tilGrunnlagBostatus
-import no.nav.bidrag.behandling.transformers.tilGrunnlagInntekt
-import no.nav.bidrag.behandling.transformers.tilGrunnlagSivilstand
-import no.nav.bidrag.behandling.transformers.tilPersonGrunnlag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
@@ -27,7 +14,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
-import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 
 fun GrunnlagDto.tilOpprettRequestDto() =
     OpprettGrunnlagRequestDto(
@@ -35,6 +21,7 @@ fun GrunnlagDto.tilOpprettRequestDto() =
         type = type,
         innhold = innhold,
         grunnlagsreferanseListe = grunnlagsreferanseListe,
+        gjelderReferanse = gjelderReferanse,
     )
 
 private fun opprettGrunnlagNotat(
@@ -106,163 +93,6 @@ fun Behandling.byggGrunnlagNotater() =
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.INNTEKT, true, it)
         },
     ).filterNotNull()
-
-fun Behandling.byggInnhentetGrunnlag() {
-    val bm = bidragsmottaker?.tilPersonGrunnlag() ?: manglerRolle(Rolletype.BIDRAGSMOTTAKER, id!!)
-    val beregnetInntekter =
-        grunnlagListe.find { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }
-            .konverterData<InntektsopplysningerBearbeidet>()
-    val inntektBm =
-        beregnetInntekter?.inntekt?.find { it.ident == bm.personIdent }
-    val søknadsbarn = roller.map { it.tilPersonGrunnlag() }
-
-    val øvrigeBarnIHusstand = oppretteGrunnlagForHusstandsbarn()
-    val personobjekter = søknadsbarn + øvrigeBarnIHusstand
-
-    val bostatusBarn =
-        tilGrunnlagBostatus(personobjekter.toSet())
-    val innhentetHusstandsmedlemmerBm =
-        grunnlagListe.tilInnhentetHusstandsmedlemmer(bm, personobjekter)
-
-    val sivilstandBm =
-        tilGrunnlagSivilstand(bm)
-    val innhentetSivilstandBm = grunnlagListe.tilInnhentetSivilstand(bm)
-
-    val innhentetArbeidsforholdBm = grunnlagListe.tilInnhentetArbeidsforhold(bm)
-    val innhentetArbeidsforholdBa = grunnlagListe.tilInnhentetArbeidsforhold(søknadsbarn)
-
-    val inntekterBm =
-        grunnlagListe.tilInnhentetGrunnlagInntekt(
-            bm,
-            søknadsbarn,
-        ) + grunnlagListe.tilBeregnetInntekt(bm)
-
-    val inntekterBa =
-        grunnlagListe.tilInnhentetGrunnlagInntektBarn(søknadsbarn) +
-            grunnlagListe.tilBeregnetInntekt(
-                søknadsbarn,
-            )
-
-    val grunnlagBp =
-        if (stonadstype != Stønadstype.FORSKUDD) {
-            val bp =
-                bidragspliktig?.tilPersonGrunnlag() ?: manglerRolle(Rolletype.BIDRAGSPLIKTIG, id!!)
-            val innhentetInntekterBp =
-                grunnlagListe.tilInnhentetGrunnlagInntekt(bp, søknadsbarn) +
-                    grunnlagListe.tilBeregnetInntekt(
-                        bp,
-                    )
-            val inntekterLagtTilGrunnBp = tilGrunnlagInntekt(bp, søknadsbarn)
-            val sivilstandBp = tilGrunnlagSivilstand(bp)
-            val innhentetSivilstandBp = grunnlag.tilInnhentetSivilstand(bp)
-            val innhentetHusstandsmedlemBp =
-                grunnlag.tilInnhentetHusstandsmedlemmer(bp, personobjekter)
-            val innhentetArbeidsforholdBp = grunnlag.tilInnhentetArbeidsforhold(bp)
-            inntekterLagtTilGrunnBp + innhentetInntekterBp +
-                innhentetHusstandsmedlemBp + innhentetSivilstandBp + sivilstandBp + innhentetArbeidsforholdBp
-        } else {
-            emptyList()
-        }
-
-    return bostatusBarn + sivilstandBm + inntekterBm + personobjekter +
-        grunnlagBp + innhentetArbeidsforholdBm + inntekterBa +
-        innhentetHusstandsmedlemmerBm + innhentetSivilstandBm + innhentetArbeidsforholdBa + bm
-}
-
-fun Behandling.byggGrunnlagBarn(
-    søknadsbarnRolle: Rolle,
-    grunnlag: List<BehandlingGrunnlag>,
-): Set<GrunnlagDto> {
-    val bm = bidragsmottaker?.tilPersonGrunnlag() ?: manglerRolle(Rolletype.BIDRAGSMOTTAKER, id!!)
-    val beregnetInntekter =
-        grunnlag.find { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }
-            .konverterData<InntektsopplysningerBearbeidet>()
-    val inntektBm =
-        beregnetInntekter?.inntekt?.find { it.ident == bm.personIdent }
-    val søknadsbarn = søknadsbarnRolle.tilPersonGrunnlag()
-    val øvrigeBarnIHusstand = oppretteGrunnlagForHusstandsbarn(søknadsbarn.personIdent)
-    val personobjekter = listOf(søknadsbarn) + øvrigeBarnIHusstand
-
-    val bostatusBarn =
-        tilGrunnlagBostatus(personobjekter.toSet())
-    val innhentetHusstandsmedlemmerBm = grunnlag.tilInnhentetHusstandsmedlemmer(bm, personobjekter)
-
-    val sivilstandBm =
-        tilGrunnlagSivilstand(bm)
-    val innhentetSivilstandBm = grunnlag.tilInnhentetSivilstand(bm)
-
-    val innhentetArbeidsforholdBm = grunnlag.tilInnhentetArbeidsforhold(bm)
-    val innhentetArbeidsforholdBa = grunnlag.tilInnhentetArbeidsforhold(søknadsbarn)
-
-    val inntekterBm =
-        tilGrunnlagInntekt(bm, søknadsbarn) +
-            grunnlag.tilInnhentetGrunnlagInntekt(
-                bm,
-                søknadsbarn,
-            ) + grunnlag.tilBeregnetInntekt(bm)
-
-    val inntekterBa =
-        tilGrunnlagInntekt(søknadsbarn) + grunnlag.tilInnhentetGrunnlagInntektBarn(søknadsbarn) +
-            grunnlag.tilBeregnetInntekt(
-                søknadsbarn,
-            )
-
-    val grunnlagBp =
-        if (stonadstype != Stønadstype.FORSKUDD) {
-            val bp =
-                bidragspliktig?.tilPersonGrunnlag() ?: manglerRolle(Rolletype.BIDRAGSPLIKTIG, id!!)
-            val innhentetInntekterBp =
-                grunnlag.tilInnhentetGrunnlagInntekt(bp, søknadsbarn) +
-                    grunnlag.tilBeregnetInntekt(
-                        bp,
-                    )
-            val inntekterLagtTilGrunnBp = tilGrunnlagInntekt(bp, søknadsbarn)
-            val sivilstandBp = tilGrunnlagSivilstand(bp)
-            val innhentetSivilstandBp = grunnlag.tilInnhentetSivilstand(bp)
-            val innhentetHusstandsmedlemBp =
-                grunnlag.tilInnhentetHusstandsmedlemmer(bp, personobjekter)
-            val innhentetArbeidsforholdBp = grunnlag.tilInnhentetArbeidsforhold(bp)
-            inntekterLagtTilGrunnBp + innhentetInntekterBp +
-                innhentetHusstandsmedlemBp + innhentetSivilstandBp + sivilstandBp + innhentetArbeidsforholdBp
-        } else {
-            emptyList()
-        }
-
-    return bostatusBarn + sivilstandBm + inntekterBm + personobjekter +
-        grunnlagBp + innhentetArbeidsforholdBm + inntekterBa +
-        innhentetHusstandsmedlemmerBm + innhentetSivilstandBm + innhentetArbeidsforholdBa + bm
-}
-
-data class StønadsendringPeriode(
-    val barn: Rolle,
-    val perioder: List<OpprettPeriodeRequestDto>,
-    val grunnlag: Set<GrunnlagDto>,
-)
-
-fun ResultatForskuddsberegningBarn.byggStønadsendringerForVedtak(behandling: Behandling): StønadsendringPeriode {
-    val søknadsbarn =
-        behandling.søknadsbarn.find { it.ident == this.barn.ident?.verdi }
-            ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
-
-    val grunnlagListe = resultat.grunnlagListe.toSet()
-    val periodeliste =
-        resultat.beregnetForskuddPeriodeListe.map {
-            OpprettPeriodeRequestDto(
-                periode = it.periode,
-                beløp = it.resultat.belop,
-                valutakode = "NOK",
-                resultatkode = it.resultat.kode.name,
-                grunnlagReferanseListe =
-                    grunnlagListe.map { grunnlag -> grunnlag.referanse },
-            )
-        }
-
-    return StønadsendringPeriode(
-        søknadsbarn,
-        periodeliste,
-        grunnlagListe,
-    )
-}
 
 fun Behandling.tilSkyldner() =
     when (stonadstype) {

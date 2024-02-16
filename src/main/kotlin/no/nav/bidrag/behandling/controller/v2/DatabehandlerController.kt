@@ -1,8 +1,15 @@
 package no.nav.bidrag.behandling.controller.v2
 
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.opplysninger.BoforholdBearbeidetPeriode
+import no.nav.bidrag.behandling.database.opplysninger.BoforholdHusstandBearbeidet
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.transformers.tilPersonGrunnlag
+import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
+import no.nav.bidrag.boforhold.BoforholdApi
+import no.nav.bidrag.boforhold.response.Bostatus
+import no.nav.bidrag.boforhold.response.RelatertPerson
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
@@ -41,7 +48,39 @@ class DatabehandlerController(
     }
 
     @Suppress("unused")
-    @PostMapping("/databehandler/v2/inntekt/{behandlingId}")
+    @PostMapping("/databehandler/bosstatus/{behandlingId}")
+    fun konverterBosstatus(
+        @PathVariable behandlingId: Long,
+        @RequestBody request: List<RelatertPerson>,
+    ): List<BoforholdHusstandBearbeidet> {
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        val beregnet =
+            BoforholdApi.beregn(behandling.virkningstidspunkt ?: behandling.søktFomDato, request)
+        return beregnet.groupBy { it.relatertPersonPersonId }.map {
+            val rolle = behandling.roller.find { rolle -> rolle.ident == it.key }
+            BoforholdHusstandBearbeidet(
+                ident = it.key!!,
+                foedselsdato = rolle?.foedselsdato ?: hentPersonFødselsdato(it.key),
+                navn = rolle?.navn,
+                perioder =
+                    it.value.map {
+                        BoforholdBearbeidetPeriode(
+                            fraDato = it.periodeFom.atStartOfDay(),
+                            tilDato = it.periodeTom?.atStartOfDay(),
+                            bostatus =
+                                when (it.bostatus) {
+                                    Bostatus.MED_FORELDER -> Bostatuskode.MED_FORELDER
+                                    Bostatus.REGNES_IKKE_SOM_BARN -> Bostatuskode.REGNES_IKKE_SOM_BARN
+                                    Bostatus.IKKE_MED_FORELDER -> Bostatuskode.IKKE_MED_FORELDER
+                                },
+                        )
+                    },
+            )
+        }
+    }
+
+    @Suppress("unused")
+    @PostMapping("/databehandler/inntekt/{behandlingId}")
     fun konverterInntekter(
         @PathVariable behandlingId: Long,
         @RequestBody request: KonverterInntekterDto,
@@ -71,7 +110,7 @@ fun HentGrunnlagDto.tilTransformerInntekterRequest(rolle: Rolle) =
                         opptjeningsperiodeTil = it.opptjeningsperiodeTil,
                         beskrivelse = it.beskrivelse,
                         beløp = it.beløp,
-                        referanse = ainntektGrunnlag.tilGrunnlagsreferanse(rolle.tilPersonGrunnlag().referanse),
+                        referanse = ainntektGrunnlag.tilGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
                     )
                 }
             },
@@ -80,7 +119,7 @@ fun HentGrunnlagDto.tilTransformerInntekterRequest(rolle: Rolle) =
                 SkattegrunnlagForLigningsår(
                     ligningsår = it.periodeFra.year,
                     skattegrunnlagsposter = it.skattegrunnlagspostListe,
-                    referanse = it.tilGrunnlagsreferanse(rolle.tilPersonGrunnlag().referanse),
+                    referanse = it.tilGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
                 )
             },
         barnetilleggsliste =
@@ -90,7 +129,7 @@ fun HentGrunnlagDto.tilTransformerInntekterRequest(rolle: Rolle) =
                     periodeTil = it.periodeTil,
                     beløp = it.beløpBrutto,
                     barnPersonId = it.barnPersonId,
-                    referanse = it.tilGrunnlagsreferanse(rolle.tilPersonGrunnlag().referanse, ""),
+                    referanse = it.tilGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse, ""),
                 )
             },
         kontantstøtteliste =
@@ -100,7 +139,7 @@ fun HentGrunnlagDto.tilTransformerInntekterRequest(rolle: Rolle) =
                     periodeTil = it.periodeTil,
                     beløp = it.beløp.toBigDecimal(),
                     barnPersonId = it.barnPersonId,
-                    referanse = it.tilGrunnlagsreferanse(rolle.tilPersonGrunnlag().referanse, ""),
+                    referanse = it.tilGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse, ""),
                 )
             },
         utvidetBarnetrygdliste =
@@ -109,7 +148,7 @@ fun HentGrunnlagDto.tilTransformerInntekterRequest(rolle: Rolle) =
                     periodeFra = it.periodeFra,
                     periodeTil = it.periodeTil,
                     beløp = it.beløp,
-                    referanse = it.tilGrunnlagsreferanse(rolle.tilPersonGrunnlag().referanse),
+                    referanse = it.tilGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
                 )
             },
         småbarnstilleggliste =
@@ -118,7 +157,7 @@ fun HentGrunnlagDto.tilTransformerInntekterRequest(rolle: Rolle) =
                     periodeFra = it.periodeFra,
                     periodeTil = it.periodeTil,
                     beløp = it.beløp,
-                    referanse = it.tilGrunnlagsreferanse(rolle.tilPersonGrunnlag().referanse),
+                    referanse = it.tilGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
                 )
             },
     )
