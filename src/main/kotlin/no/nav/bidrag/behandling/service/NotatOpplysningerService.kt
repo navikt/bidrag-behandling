@@ -110,10 +110,10 @@ private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandBear
                 OpplysningerFraFolkeregisteret(
                     periode =
                         ÅrMånedsperiode(
-                            periode.datoFom,
-                            periode.datoTom,
+                            periode.gyldigFom,
+                            null,
                         ),
-                    status = periode.sivilstand,
+                    status = periode.type,
                 )
             }.sortedBy { it.periode?.fom },
     )
