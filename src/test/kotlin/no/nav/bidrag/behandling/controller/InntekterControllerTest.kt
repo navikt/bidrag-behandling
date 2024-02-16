@@ -43,7 +43,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
-        @Ignore("Wiremock-problem kun på GCP")
+        @Ignore("Wiremock-problem kun på Github")
         open fun `skal hente inntekter for behandling`() {
             // given
             val behandling = testdataManager.opprettBehandling(true)
@@ -67,7 +67,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         }
 
         @Test
-        @Ignore("Wiremock-problem kun på GCP")
+        @Ignore("Wiremock-problem kun på Github")
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
