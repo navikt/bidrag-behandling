@@ -88,7 +88,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1.body shouldNotBe null
                 r1.body?.inntekter?.årsinntekter?.size shouldBe 8
                 r1.body?.inntekter?.barnetillegg?.size shouldBe 0
-                r1.body?.inntekter?.barnetilsyn?.size shouldBe 0
+                r1.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 0
                 r1.body?.inntekter?.kontantstøtte?.size shouldBe 1
                 r1.body?.inntekter?.månedsinntekter?.size shouldBe 2
             }
@@ -223,7 +223,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 respons.body shouldNotBe null
                 respons.body?.inntekter?.årsinntekter?.size shouldBe 0
                 respons.body?.inntekter?.barnetillegg?.size shouldBe 0
-                respons.body?.inntekter?.barnetilsyn?.size shouldBe 0
+                respons.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 0
                 respons.body?.inntekter?.kontantstøtte?.size shouldBe 0
                 respons.body?.inntekter?.månedsinntekter?.size shouldBe 0
             }

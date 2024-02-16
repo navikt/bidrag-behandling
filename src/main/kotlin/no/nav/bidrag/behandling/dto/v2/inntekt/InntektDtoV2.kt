@@ -44,7 +44,7 @@ data class InntektDtoV2(
 
 data class InntekterDtoV2(
     val barnetillegg: Set<InntektDtoV2> = emptySet(),
-    val barnetilsyn: Set<InntektDtoV2> = emptySet(),
+    val utvidetBarnetrygd: Set<InntektDtoV2> = emptySet(),
     val kontantstøtte: Set<InntektDtoV2> = emptySet(),
     val månedsinntekter: Set<InntektDtoV2> = emptySet(),
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),

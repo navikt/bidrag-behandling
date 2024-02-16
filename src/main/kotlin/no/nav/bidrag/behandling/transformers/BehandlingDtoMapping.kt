@@ -65,8 +65,8 @@ fun Behandling.tilBehandlingDtoV2(
             barnetillegg =
                 inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
                     .tilInntektDtoV2().toSet(),
-            barnetilsyn =
-                inntekter.filter { it.type == Inntektsrapportering.BARNETILSYN }.tilInntektDtoV2()
+            utvidetBarnetrygd =
+                inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }.tilInntektDtoV2()
                     .toSet(),
             kontantstøtte =
                 inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
