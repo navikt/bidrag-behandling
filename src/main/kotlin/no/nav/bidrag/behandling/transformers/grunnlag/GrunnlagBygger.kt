@@ -47,7 +47,7 @@ fun ResultatForskuddsberegningBarn.byggStønadsendringerForVedtak(behandling: Be
 fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnlag {
     val personobjekter = tilPersonobjekter()
     val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
-    val bostatusBarn = tilGrunnlagBostatus(personobjekter.barn)
+    val bostatusBarn = tilGrunnlagBostatus(personobjekter)
     val inntektBm = tilGrunnlagInntekt(personobjekter.bidragsmottaker, søknadsbarn)
     val sivilstandBm = tilGrunnlagSivilstand(personobjekter.bidragsmottaker)
 
@@ -66,14 +66,8 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
 
 fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
     val personobjekter = tilPersonobjekter()
-    val innhentetGrunnlagListe =
-        personobjekter.søknadsbarn.flatMap {
-            byggInnhentetGrunnlag(
-                it,
-                personobjekter,
-            )
-        }.toSet()
-    val bostatusBarn = tilGrunnlagBostatus(personobjekter.barn)
+    val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekter)
+    val bostatusBarn = tilGrunnlagBostatus(personobjekter)
     val sivilstandBm = tilGrunnlagSivilstand(personobjekter.bidragsmottaker)
     val inntekter =
         personobjekter.søknadsbarn.flatMap { søknadsbarn ->

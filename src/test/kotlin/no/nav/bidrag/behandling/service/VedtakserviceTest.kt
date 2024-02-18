@@ -149,6 +149,7 @@ class VedtakserviceTest {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
+            request.grunnlagListe.shouldHaveSize(71)
 
             validerVedtaksdetaljer(behandling)
             validerPersongrunnlag()
@@ -186,9 +187,9 @@ class VedtakserviceTest {
             hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 14
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE) shouldHaveSize 13
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD_PERIODE) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM_PERIODE) shouldHaveSize 6
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND_PERIODE) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 5
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 1
         }
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
@@ -316,7 +317,7 @@ private fun OpprettVedtakRequestDto.validerPersongrunnlag() {
         it.shouldContainPerson(testdataBarn2.ident)
     }
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)) {
-        shouldHaveSize(2)
+        shouldHaveSize(3)
         it.shouldContainPerson(testdataHusstandsmedlem1.ident)
     }
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER)) {

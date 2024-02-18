@@ -2876,6 +2876,14 @@
       "erBarnAvBmBp": true,
       "borISammeHusstandDtoListe": [
         {
+          "periodeFra": "2016-11-30",
+          "periodeTil": "2016-12-31"
+        },
+        {
+          "periodeFra": "2017-02-01",
+          "periodeTil": "2017-03-15"
+        },
+        {
           "periodeFra": "2017-03-30",
           "periodeTil": null
         }
@@ -2883,11 +2891,15 @@
     },
     {
       "partPersonId": "313213213",
-      "relatertPersonPersonId": "231323123123123123",
+      "relatertPersonPersonId": "443322112233",
       "navn": "REALISTISK PUB",
       "fødselsdato": "1978-09-11",
       "erBarnAvBmBp": false,
       "borISammeHusstandDtoListe": [
+        {
+          "periodeFra": "2009-01-01",
+          "periodeTil": "2012-02-01"
+        },
         {
           "periodeFra": "2023-07-31",
           "periodeTil": null
@@ -2901,6 +2913,10 @@
       "fødselsdato": "2005-05-21",
       "erBarnAvBmBp": true,
       "borISammeHusstandDtoListe": [
+        {
+          "periodeFra": "2005-05-21",
+          "periodeTil": "2012-02-01"
+        },
         {
           "periodeFra": "2017-03-30",
           "periodeTil": null
@@ -2917,18 +2933,9 @@
         {
           "periodeFra": "2010-10-06",
           "periodeTil": "2023-01-02"
-        }
-      ]
-    },
-    {
-      "partPersonId": "313213213",
-      "relatertPersonPersonId": "1344124",
-      "navn": "AKTUELL UVITENDE LIND",
-      "fødselsdato": "2015-07-24",
-      "erBarnAvBmBp": true,
-      "borISammeHusstandDtoListe": [
+        },
         {
-          "periodeFra": "2015-07-24",
+          "periodeFra": "2023-05-01",
           "periodeTil": null
         }
       ]
@@ -2939,19 +2946,6 @@
       "navn": "FIKTIV PEDAGOG",
       "fødselsdato": "1992-04-28",
       "erBarnAvBmBp": false,
-      "borISammeHusstandDtoListe": [
-        {
-          "periodeFra": "2017-03-30",
-          "periodeTil": null
-        }
-      ]
-    },
-    {
-      "partPersonId": "313213213",
-      "relatertPersonPersonId": "1344124",
-      "navn": "ARITMETISK MEMORERENDE INVITASJON",
-      "fødselsdato": "2017-03-30",
-      "erBarnAvBmBp": true,
       "borISammeHusstandDtoListe": [
         {
           "periodeFra": "2017-03-30",

@@ -1,15 +1,36 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 
 private val LOGGER = KotlinLogging.logger {}
 
 typealias TreeMap = Map<String, List<Map<String, String>>>
 
-fun List<Grunnlagsreferanse>.lagTre(grunnlagsListe: List<GrunnlagDto>): List<Any> {
+fun OpprettVedtakRequestDto.lagTre(): List<String> {
+    val printList = mutableListOf<String>()
+    printList.add("\nVedtak($type): \n")
+    stønadsendringListe.forEach {
+        printList.add(
+            "\nStønadsendring(${it.type}) - ${it.beslutning}: \n${
+                it.periodeListe.flatMap {
+                    it.grunnlagReferanseListe.lagTre(
+                        this.grunnlagListe,
+                    )
+                }.joinToString("")
+            }",
+        )
+    }
+    return printList
+}
+
+fun List<Grunnlagsreferanse>.lagTre(grunnlagsListe: List<BaseGrunnlag>): List<String> {
+    val printList = mutableListOf<String>()
+
     val map =
         this.map {
             it.lagTre(grunnlagsListe)
@@ -17,11 +38,11 @@ fun List<Grunnlagsreferanse>.lagTre(grunnlagsListe: List<GrunnlagDto>): List<Any
 
     map.forEach {
         it.entries.forEach {
-            LOGGER.info { "\n${it.key}: \n\n\t${it.value.logTree()}" }
+            printList.add("\n${it.key}: \n\n\t${it.value.logTree()}")
         }
     }
 
-    return map
+    return printList
 }
 
 fun Any.logTree(step: Int = 1): String {
@@ -42,7 +63,7 @@ fun Any.logTree(step: Int = 1): String {
     return this as String
 }
 
-fun Grunnlagsreferanse.lagTre(grunnlagsListe: List<GrunnlagDto>): Map<out Grunnlagsreferanse, Any> {
+fun Grunnlagsreferanse.lagTre(grunnlagsListe: List<BaseGrunnlag>): Map<out Grunnlagsreferanse, Any> {
     val grunnlag = grunnlagsListe.filtrerBasertPåEgenReferanse(referanse = this)
     if (grunnlag.isEmpty()) {
         return emptyMap()

@@ -113,6 +113,8 @@ open class Behandling(
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+
+    val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
 }
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)

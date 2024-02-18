@@ -160,6 +160,40 @@ fun opprettAinntektGrunnlagListe() =
                     ),
                 ),
         ),
+        AinntektGrunnlagDto(
+            personId = testdataBM.ident,
+            periodeFra = LocalDate.parse("2023-01-01"),
+            periodeTil = LocalDate.parse("2024-01-01"),
+            ainntektspostListe =
+                listOf(
+                    AinntektspostDto(
+                        utbetalingsperiode = "2024-01",
+                        opptjeningsperiodeFra = LocalDate.parse("2023-01-31"),
+                        opptjeningsperiodeTil = LocalDate.parse("2024-01-01"),
+                        opplysningspliktigId = "123213",
+                        virksomhetId = "123",
+                        fordelType = "kontantytelse",
+                        beskrivelse = "fastloenn",
+                        inntektType = "LOENNSINNTEKT",
+                        belop = BigDecimal(60000),
+                        etterbetalingsperiodeFra = null,
+                        etterbetalingsperiodeTil = null,
+                    ),
+                    AinntektspostDto(
+                        utbetalingsperiode = "2024-01",
+                        opptjeningsperiodeFra = LocalDate.parse("2023-05-31"),
+                        opptjeningsperiodeTil = LocalDate.parse("2024-08-01"),
+                        opplysningspliktigId = "123213",
+                        virksomhetId = "123",
+                        fordelType = "kontantytelse",
+                        beskrivelse = "fastloenn",
+                        inntektType = "LOENNSINNTEKT",
+                        belop = BigDecimal(70000),
+                        etterbetalingsperiodeFra = null,
+                        etterbetalingsperiodeTil = null,
+                    ),
+                ),
+        ),
     )
 
 fun opprettSkattegrunnlagGrunnlagListe() =
@@ -327,15 +361,6 @@ fun opprettBarnetilleggListe() =
             periodeTil = LocalDate.parse("2023-12-31"),
             beløpBrutto = BigDecimal(1000),
             barnType = "FELLES",
-        ),
-        BarnetilleggGrunnlagDto(
-            partPersonId = testdataBM.ident,
-            barnPersonId = testdataHusstandsmedlem1.ident,
-            barnetilleggType = Barnetilleggstype.PENSJON.toString(),
-            periodeFra = LocalDate.parse("2023-07-01"),
-            periodeTil = LocalDate.parse("2023-12-31"),
-            beløpBrutto = BigDecimal(1000),
-            barnType = "SÆRKULL",
         ),
     )
 

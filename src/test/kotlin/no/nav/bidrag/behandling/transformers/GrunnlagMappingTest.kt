@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import com.fasterxml.jackson.databind.node.POJONode
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -55,6 +56,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -101,6 +104,8 @@ class GrunnlagMappingTest {
             foedselsdato = testdataBarn2.foedselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
+
+    val personobjekter = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
 
     @BeforeEach
     fun initMocks() {
@@ -194,7 +199,7 @@ class GrunnlagMappingTest {
                     navn = "Ola Nordmann",
                     borISammeHusstandDtoListe = emptyList(),
                     erBarnAvBmBp = true,
-                ).tilPersonGrunnlag(1),
+                ).tilPersonGrunnlag(),
             ) {
                 it.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
                 it.referanse.shouldStartWith("person")
@@ -662,16 +667,24 @@ class GrunnlagMappingTest {
 
             behandling.husstandsbarn = husstandsbarn
 
-            val barnGrunnlag =
-                behandling.opprettGrunnlagForHusstandsbarn(testdataBarn1.tilGrunnlagDto())
-                    .toList() + søknadsbarnGrunnlag1
-            assertSoftly(behandling.tilGrunnlagBostatus(barnGrunnlag.toSet()).toList()) {
+            val grunnlagHusstandsbarn = behandling.opprettGrunnlagForHusstandsbarn()
+            val personer =
+                (personobjekter + grunnlagHusstandsbarn).toSet()
+            assertSoftly(behandling.tilGrunnlagBostatus(personer).toList()) {
                 it shouldHaveSize 16
                 assertSoftly(it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse)) {
                     this shouldHaveSize 4
                     assertSoftly(this[0]) {
                         type shouldBe Grunnlagstype.BOSTATUS_PERIODE
                         gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
+                        grunnlagsreferanseListe shouldHaveSize 1
+                        grunnlagsreferanseListe shouldContainAll
+                            listOf(
+                                opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
+                                    grunnlagBm.referanse,
+                                    søknadsbarnGrunnlag1.referanse,
+                                ),
+                            )
                         val innhold = innholdTilObjekt<BostatusPeriode>()
                         innhold.bostatus shouldBe Bostatuskode.MED_FORELDER
                         innhold.manueltRegistrert shouldBe false
@@ -681,6 +694,7 @@ class GrunnlagMappingTest {
                     assertSoftly(this[3]) {
                         type shouldBe Grunnlagstype.BOSTATUS_PERIODE
                         gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
+                        grunnlagsreferanseListe shouldHaveSize 0
                         val innhold = innholdTilObjekt<BostatusPeriode>()
                         innhold.bostatus shouldBe Bostatuskode.REGNES_IKKE_SOM_BARN
                         innhold.manueltRegistrert shouldBe true
@@ -693,6 +707,23 @@ class GrunnlagMappingTest {
                 it.filter {
                     it.gjelderReferanse?.startsWith("person_${Grunnlagstype.PERSON_HUSSTANDSMEDLEM}") == true
                 } shouldHaveSize 8
+
+                it.forEach {
+                    val innhold = it.innholdTilObjekt<BostatusPeriode>()
+                    if (innhold.manueltRegistrert) {
+                        it.grunnlagsreferanseListe shouldHaveSize 0
+                    } else {
+                        it.grunnlagsreferanseListe shouldHaveSize 1
+                        it.grunnlagsreferanseListe.shouldContainAll(
+                            listOf(
+                                opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
+                                    grunnlagBm.referanse,
+                                    it.gjelderReferanse!!,
+                                ),
+                            ),
+                        )
+                    }
+                }
             }
         }
     }
@@ -733,7 +764,7 @@ class GrunnlagMappingTest {
         }
 
         @Test
-        fun `skal opprette grunnlag for husstandsbarn`() {
+        fun `skal opprette grunnlag for sivilstand`() {
             val behandling = oppretteBehandling()
 
             behandling.roller =
@@ -749,10 +780,26 @@ class GrunnlagMappingTest {
                 behandling.tilGrunnlagSivilstand(grunnlagBm).toList(),
             ) {
                 it shouldHaveSize 4
+                it.forEach {
+                    val innhold = it.innholdTilObjekt<SivilstandPeriode>()
+                    if (innhold.manueltRegistrert) {
+                        it.grunnlagsreferanseListe shouldHaveSize 0
+                    } else {
+                        it.grunnlagsreferanseListe shouldHaveSize 1
+                        it.grunnlagsreferanseListe.shouldContainAll(
+                            listOf(
+                                opprettInnhentetSivilstandGrunnlagsreferanse(
+                                    grunnlagBm.referanse,
+                                ),
+                            ),
+                        )
+                    }
+                }
                 assertSoftly(this[0]) { sivilstand ->
                     sivilstand.type shouldBe Grunnlagstype.SIVILSTAND_PERIODE
                     sivilstand.referanse.shouldStartWith("sivilstand_person_${Grunnlagstype.PERSON_BIDRAGSMOTTAKER}")
                     sivilstand.gjelderReferanse.shouldBe(grunnlagBm.referanse)
+                    sivilstand.grunnlagsreferanseListe.shouldHaveSize(1)
                     assertSoftly(sivilstand.innholdTilObjekt<SivilstandPeriode>()) {
                         it.sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                         it.manueltRegistrert shouldBe false
@@ -764,6 +811,7 @@ class GrunnlagMappingTest {
                     sivilstand.type shouldBe Grunnlagstype.SIVILSTAND_PERIODE
                     sivilstand.referanse.shouldStartWith("sivilstand_person_${Grunnlagstype.PERSON_BIDRAGSMOTTAKER}")
                     sivilstand.gjelderReferanse.shouldBe(grunnlagBm.referanse)
+                    sivilstand.grunnlagsreferanseListe.shouldHaveSize(1)
                     assertSoftly(sivilstand.innholdTilObjekt<SivilstandPeriode>()) {
                         it.sivilstand shouldBe Sivilstandskode.GIFT_SAMBOER
                         it.manueltRegistrert shouldBe false
@@ -775,6 +823,7 @@ class GrunnlagMappingTest {
                     sivilstand.type shouldBe Grunnlagstype.SIVILSTAND_PERIODE
                     sivilstand.referanse.shouldStartWith("sivilstand_person_${Grunnlagstype.PERSON_BIDRAGSMOTTAKER}")
                     sivilstand.gjelderReferanse.shouldBe(grunnlagBm.referanse)
+                    sivilstand.grunnlagsreferanseListe.shouldBeEmpty()
                     assertSoftly(sivilstand.innholdTilObjekt<SivilstandPeriode>()) {
                         it.sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                         it.manueltRegistrert shouldBe true
@@ -786,6 +835,7 @@ class GrunnlagMappingTest {
                     sivilstand.type shouldBe Grunnlagstype.SIVILSTAND_PERIODE
                     sivilstand.referanse.shouldStartWith("sivilstand_person_${Grunnlagstype.PERSON_BIDRAGSMOTTAKER}")
                     sivilstand.gjelderReferanse.shouldBe(grunnlagBm.referanse)
+                    sivilstand.grunnlagsreferanseListe.shouldBeEmpty()
                     assertSoftly(sivilstand.innholdTilObjekt<SivilstandPeriode>()) {
                         it.sivilstand shouldBe Sivilstandskode.GIFT_SAMBOER
                         it.manueltRegistrert shouldBe true

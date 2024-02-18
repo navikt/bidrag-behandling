@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
@@ -25,6 +26,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import org.springframework.http.HttpStatus
@@ -37,6 +40,14 @@ fun Behandling.tilGrunnlagSivilstand(gjelder: GrunnlagDto): Set<GrunnlagDto> {
             referanse = "sivilstand_${gjelder.referanse}_${it.datoFom?.toCompactString()}",
             type = Grunnlagstype.SIVILSTAND_PERIODE,
             gjelderReferanse = gjelder.referanse,
+            grunnlagsreferanseListe =
+                if (it.kilde == Kilde.OFFENTLIG) {
+                    listOf(
+                        opprettInnhentetSivilstandGrunnlagsreferanse(gjelder.referanse),
+                    )
+                } else {
+                    emptyList()
+                },
             innhold =
                 POJONode(
                     SivilstandPeriode(
@@ -63,36 +74,14 @@ fun Behandling.tilPersonobjektBidragsmottaker(): GrunnlagDto {
         ?: manglerRolle(Rolletype.BIDRAGSMOTTAKER, id!!)
 }
 
-fun Behandling.byggInnhentetGrunnlag(
-    søknadsbarn: GrunnlagDto,
-    personobjekter: MutableSet<GrunnlagDto>,
-): Set<GrunnlagDto> {
-    // TODO: Legg til logikk for innhenting av grunnlag for bidragspliktig når vi kommer til Bidrag
+fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
+    val innhentetArbeidsforhold = grunnlagListe.tilInnhentetArbeidsforhold(personobjekter)
+    val innhentetSivilstand = grunnlagListe.tilInnhentetSivilstand(personobjekter)
+    val innhentetHusstandsmedlemmer = grunnlagListe.tilInnhentetHusstandsmedlemmer(personobjekter)
+    val beregnetInntekt = grunnlagListe.tilBeregnetInntekt(personobjekter)
+    val innhentetInntekter = grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
 
-    val bidragsmottaker = personobjekter.bidragsmottaker
-    val grunnlagSøknadsbarn =
-        grunnlagListe.tilInnhentetArbeidsforhold(søknadsbarn) +
-            grunnlagListe.tilInnhentetGrunnlagInntekt(
-                bidragsmottaker,
-                søknadsbarn,
-            ) +
-            grunnlagListe.tilInnhentetGrunnlagInntektBarn(søknadsbarn)
-
-    val innhentetHusstandsmedlemmerBm =
-        grunnlagListe.tilInnhentetHusstandsmedlemmer(bidragsmottaker, personobjekter)
-
-    val innhentetSivilstandBm = grunnlagListe.tilInnhentetSivilstand(bidragsmottaker)
-
-    val innhentetArbeidsforholdBm =
-        grunnlagListe.tilInnhentetArbeidsforhold(bidragsmottaker)
-
-    val beregnetInntekt =
-        grunnlagListe.tilBeregnetInntekt(bidragsmottaker) +
-            grunnlagListe.tilBeregnetInntekt(
-                søknadsbarn,
-            )
-
-    return grunnlagSøknadsbarn + innhentetArbeidsforholdBm + innhentetHusstandsmedlemmerBm + innhentetSivilstandBm + beregnetInntekt
+    return innhentetInntekter + innhentetArbeidsforhold + innhentetHusstandsmedlemmer + innhentetSivilstand + beregnetInntekt
 }
 
 fun Behandling.opprettGrunnlagForHusstandsbarn(søknadsbarn: GrunnlagDto? = null): Set<GrunnlagDto> {
@@ -106,7 +95,8 @@ fun Behandling.opprettGrunnlagForHusstandsbarn(søknadsbarn: GrunnlagDto? = null
 fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
     val grunnlagstype = rolletype.tilGrunnlagstype()
     return GrunnlagDto(
-        referanse = grunnlagstype.tilPersonreferanse(foedselsdato.toCompactString(), id!!.toInt()),
+        referanse =
+            grunnlagstype.tilPersonreferanse(foedselsdato.toCompactString(), id!!.toInt()),
         type = grunnlagstype,
         innhold =
             POJONode(
@@ -124,13 +114,19 @@ fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
     )
 }
 
-fun Behandling.tilGrunnlagBostatus(grunnlagBarn: Set<GrunnlagDto>): Set<GrunnlagDto> {
-    return grunnlagBarn.flatMap {
+fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
+    return personobjekter.barn.flatMap {
         val barn: Person = it.innholdTilObjekt()
         val bostatusperioderForBarn =
             husstandsbarn.find { hb -> hb.ident == barn.ident?.verdi }
                 ?: manglerBosstatus(it.personIdent)
-        oppretteGrunnlagForBostatusperioder(it.referanse, bostatusperioderForBarn.perioder)
+        val part =
+            (if (stonadstype == Stønadstype.FORSKUDD) personobjekter.bidragsmottaker else personobjekter.bidragspliktig)
+        opprettGrunnlagForBostatusperioder(
+            it.referanse,
+            part!!.referanse,
+            bostatusperioderForBarn.perioder,
+        )
     }.toSet()
 }
 
@@ -230,8 +226,9 @@ fun finnFødselsdato(
     }
 }
 
-private fun Behandling.oppretteGrunnlagForBostatusperioder(
+private fun opprettGrunnlagForBostatusperioder(
     personreferanse: String,
+    relatertTilPartReferanse: String,
     husstandsbarnperioder: Set<Husstandsbarnperiode>,
 ): Set<GrunnlagDto> =
     husstandsbarnperioder.map {
@@ -240,17 +237,22 @@ private fun Behandling.oppretteGrunnlagForBostatusperioder(
             type = Grunnlagstype.BOSTATUS_PERIODE,
             gjelderReferanse = personreferanse,
             grunnlagsreferanseListe =
-                grunnlagListe.hentGrunnlagsreferanserForHusstandsmedlem(
-                    personreferanse,
-                    it.husstandsbarn.ident,
-                    it,
-                    this,
-                ),
+                if (it.kilde == Kilde.OFFENTLIG) {
+                    listOf(
+                        opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
+                            relatertTilPartReferanse,
+                            referanseRelatertTil = personreferanse,
+                        ),
+                    )
+                } else {
+                    emptyList()
+                },
             innhold =
                 POJONode(
                     BostatusPeriode(
                         bostatus = it.bostatus,
                         manueltRegistrert = it.kilde == Kilde.MANUELL,
+                        relatertTilPart = relatertTilPartReferanse,
                         periode =
                             ÅrMånedsperiode(
                                 it.datoFom!!,

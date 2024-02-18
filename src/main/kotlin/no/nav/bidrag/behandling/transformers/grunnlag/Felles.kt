@@ -9,6 +9,10 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 
 val GrunnlagDto.personObjekt get() = commonObjectmapper.treeToValue(innhold, Person::class.java)!!
 val GrunnlagDto.personIdent get() = personObjekt.ident!!.verdi
+val Set<GrunnlagDto>.bidragspliktig
+    get() =
+        find { it.type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG }
+            ?: manglerRolle(Rolletype.BIDRAGSPLIKTIG, -1)
 val Set<GrunnlagDto>.bidragsmottaker
     get() =
         find { it.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER }
@@ -24,3 +28,5 @@ val Set<GrunnlagDto>.søknadsbarn
         filter {
             it.type == Grunnlagstype.PERSON_SØKNADSBARN
         }.toSet()
+
+fun Set<GrunnlagDto>.hentPerson(ident: String?) = find { it.personIdent == ident }

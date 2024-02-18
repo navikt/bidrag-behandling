@@ -4,14 +4,12 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.opplysninger.BoforholdBearbeidetPeriode
 import no.nav.bidrag.behandling.database.opplysninger.BoforholdHusstandBearbeidet
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.beregnSivilstandPerioder
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.response.Bostatus
 import no.nav.bidrag.boforhold.response.RelatertPerson
-import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.inntekt.InntektApi
-import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
@@ -43,8 +41,7 @@ class DatabehandlerController(
         @RequestBody request: List<SivilstandGrunnlagDto>,
     ): SivilstandBeregnet {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val virkningstidspunkt = behandling.virkningstidspunkt ?: behandling.søktFomDato
-        return SivilstandApi.beregn(virkningstidspunkt, request)
+        return behandling.beregnSivilstandPerioder(request)
     }
 
     @Suppress("unused")
@@ -67,12 +64,7 @@ class DatabehandlerController(
                         BoforholdBearbeidetPeriode(
                             fraDato = it.periodeFom.atStartOfDay(),
                             tilDato = it.periodeTom?.atStartOfDay(),
-                            bostatus =
-                                when (it.bostatus) {
-                                    Bostatus.MED_FORELDER -> Bostatuskode.MED_FORELDER
-                                    Bostatus.REGNES_IKKE_SOM_BARN -> Bostatuskode.REGNES_IKKE_SOM_BARN
-                                    Bostatus.IKKE_MED_FORELDER -> Bostatuskode.IKKE_MED_FORELDER
-                                },
+                            bostatus = it.bostatus,
                         )
                     },
             )

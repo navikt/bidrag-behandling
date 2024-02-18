@@ -73,6 +73,7 @@ class VedtakService(
         val request =
             if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
 
+        LOGGER.info { request.lagTre().joinToString("") }
         val response = vedtakConsumer.fatteVedtak(request)
         behandlingService.oppdaterBehandling(
             behandlingId,
@@ -144,9 +145,9 @@ class VedtakService(
 
         val grunnlagListe =
             (grunnlagListeVedtak + stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag) + stønadsendringGrunnlagListe).toSet()
+
         stønadsendringPerioder.forEach {
             it.perioder.forEach { periode ->
-                periode.grunnlagReferanseListe.lagTre(grunnlagListe.toList())
                 periode.grunnlagReferanseListe.validerInneholderListe(
                     grunnlagListe.toList(),
                 )

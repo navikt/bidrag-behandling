@@ -19,13 +19,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSkattegrunnla
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSmåbarnstillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetUtvidetBarnetrygd
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -35,14 +36,14 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(index: Int): GrunnlagDto {
+fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
     val personnavn = navn ?: hentPersonVisningsnavn(relatertPersonPersonId)
 
     return GrunnlagDto(
         referanse =
             Grunnlagstype.PERSON_HUSSTANDSMEDLEM.tilPersonreferanse(
-                fødselsdato?.toCompactString() ?: LocalDate.MIN.toCompactString(),
-                index,
+                (fødselsdato?.toCompactString() ?: LocalDate.MIN.toCompactString()) + "_innhentet",
+                (relatertPersonPersonId + 1).hashCode(),
             ),
         type = Grunnlagstype.PERSON_HUSSTANDSMEDLEM,
         innhold =
@@ -61,120 +62,125 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(index: Int): GrunnlagDto {
     )
 }
 
-fun BorISammeHusstandDto.tilGrunnlagsobjekt(
+fun RelatertPersonGrunnlagDto.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
     relatertTilPersonReferanse: String,
-    relatertPerson: RelatertPersonGrunnlagDto,
 ) = GrunnlagDto(
     referanse =
-        tilGrunnlagsreferanse(
+        opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
             gjelderReferanse,
             referanseRelatertTil = relatertTilPersonReferanse,
         ),
-    type = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM_PERIODE,
+    type = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetHusstandsmedlem(
-                periode =
-                    Datoperiode(
-                        periodeFra ?: LocalDate.MIN,
-                        periodeTil,
-                    ),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
                     InnhentetHusstandsmedlem.HusstandsmedlemPDL(
                         relatertPerson = relatertTilPersonReferanse,
-                        erBarnAvBmBp = relatertPerson.erBarnAvBmBp,
+                        erBarnAvBmBp = erBarnAvBmBp,
+                        // TODO: Navn og fødselsdato?
+                        navn = navn,
+                        fødselsdato = fødselsdato,
+                        perioder =
+                            borISammeHusstandDtoListe.map {
+                                Datoperiode(
+                                    it.periodeFra ?: LocalDate.MIN,
+                                    it.periodeTil,
+                                )
+                            },
                     ),
             ),
         ),
 )
 
-fun SivilstandGrunnlagDto.tilGrunnlagsobjekt(
+@JvmName("tilGrunnlagsobjektSivilstandInnhentetGrunnlag")
+fun List<SivilstandGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
-    index: Int,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse, index),
-    type = Grunnlagstype.INNHENTET_SIVILSTAND_PERIODE,
+    referanse = opprettInnhentetSivilstandGrunnlagsreferanse(gjelderReferanse),
+    type = Grunnlagstype.INNHENTET_SIVILSTAND,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetSivilstand(
-                periode = Datoperiode(gyldigFom ?: LocalDate.MIN, null),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetSivilstand.SivilstandPDL(
-                        sivilstand = type,
-                        bekreftelsesdato = bekreftelsesdato,
-                        master = master,
-                        historisk = historisk,
-                    ),
+                    this.map {
+                        InnhentetSivilstand.SivilstandPDL(
+                            sivilstand = it.type,
+                            bekreftelsesdato = it.bekreftelsesdato,
+                            master = it.master,
+                            historisk = it.historisk,
+                            gyldigFom = it.gyldigFom,
+                            registrert = it.registrert,
+                        )
+                    },
             ),
         ),
 )
 
-fun ArbeidsforholdGrunnlagDto.tilGrunnlagsobjekt(
+@JvmName("tilGrunnlagsobjektArbeidsforhold")
+fun List<ArbeidsforholdGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
 ) = GrunnlagDto(
     referanse = tilGrunnlagsreferanse(gjelderReferanse),
-    type = Grunnlagstype.INNHENTET_ARBEIDSFORHOLD_PERIODE,
+    type = Grunnlagstype.INNHENTET_ARBEIDSFORHOLD,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetArbeidsforhold(
-                periode =
-                    Datoperiode(
-                        startdato ?: LocalDate.MIN,
-                        sluttdato,
-                    ),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetArbeidsforhold.Arbeidsforhold(
-                        startdato = startdato,
-                        sluttdato = sluttdato,
-                        arbeidsgiverNavn = arbeidsgiverNavn,
-                        arbeidsgiverOrgnummer = arbeidsgiverOrgnummer,
-                        permisjonListe =
-                            permisjonListe?.map { permisjon ->
-                                InnhentetArbeidsforhold.Arbeidsforhold.Permisjon(
-                                    startdato = permisjon.startdato,
-                                    sluttdato = permisjon.sluttdato,
-                                    beskrivelse = permisjon.beskrivelse,
-                                    prosent = permisjon.prosent,
-                                )
-                            } ?: emptyList(),
-                        permitteringListe =
-                            permitteringListe?.map { permittering ->
-                                InnhentetArbeidsforhold.Arbeidsforhold.Permittering(
-                                    startdato = permittering.startdato,
-                                    sluttdato = permittering.sluttdato,
-                                    beskrivelse = permittering.beskrivelse,
-                                    prosent = permittering.prosent,
-                                )
-                            } ?: emptyList(),
-                        ansettelsesdetaljerListe =
-                            ansettelsesdetaljerListe?.map { ansettelsesdetalj ->
-                                InnhentetArbeidsforhold.Ansettelsesdetaljer(
-                                    periodeFra = ansettelsesdetalj.periodeFra,
-                                    periodeTil = ansettelsesdetalj.periodeTil,
-                                    arbeidsforholdType = ansettelsesdetalj.arbeidsforholdType,
-                                    arbeidstidsordningBeskrivelse =
-                                        ansettelsesdetalj.arbeidstidsordningBeskrivelse,
-                                    ansettelsesformBeskrivelse =
-                                        ansettelsesdetalj.ansettelsesformBeskrivelse,
-                                    yrkeBeskrivelse = ansettelsesdetalj.yrkeBeskrivelse,
-                                    antallTimerPrUke = ansettelsesdetalj.antallTimerPrUke,
-                                    avtaltStillingsprosent =
-                                        ansettelsesdetalj.avtaltStillingsprosent,
-                                    sisteStillingsprosentendringDato = ansettelsesdetalj.sisteStillingsprosentendringDato,
-                                    sisteLønnsendringDato = ansettelsesdetalj.sisteLønnsendringDato,
-                                )
-                            } ?: emptyList(),
-                    ),
+                    this.map {
+                        InnhentetArbeidsforhold.Arbeidsforhold(
+                            startdato = it.startdato,
+                            sluttdato = it.sluttdato,
+                            arbeidsgiverNavn = it.arbeidsgiverNavn,
+                            arbeidsgiverOrgnummer = it.arbeidsgiverOrgnummer,
+                            permisjonListe =
+                                it.permisjonListe?.map { permisjon ->
+                                    InnhentetArbeidsforhold.Arbeidsforhold.Permisjon(
+                                        startdato = permisjon.startdato,
+                                        sluttdato = permisjon.sluttdato,
+                                        beskrivelse = permisjon.beskrivelse,
+                                        prosent = permisjon.prosent,
+                                    )
+                                } ?: emptyList(),
+                            permitteringListe =
+                                it.permitteringListe?.map { permittering ->
+                                    InnhentetArbeidsforhold.Arbeidsforhold.Permittering(
+                                        startdato = permittering.startdato,
+                                        sluttdato = permittering.sluttdato,
+                                        beskrivelse = permittering.beskrivelse,
+                                        prosent = permittering.prosent,
+                                    )
+                                } ?: emptyList(),
+                            ansettelsesdetaljerListe =
+                                it.ansettelsesdetaljerListe?.map { ansettelsesdetalj ->
+                                    InnhentetArbeidsforhold.Ansettelsesdetaljer(
+                                        periodeFra = ansettelsesdetalj.periodeFra,
+                                        periodeTil = ansettelsesdetalj.periodeTil,
+                                        arbeidsforholdType = ansettelsesdetalj.arbeidsforholdType,
+                                        arbeidstidsordningBeskrivelse =
+                                            ansettelsesdetalj.arbeidstidsordningBeskrivelse,
+                                        ansettelsesformBeskrivelse =
+                                            ansettelsesdetalj.ansettelsesformBeskrivelse,
+                                        yrkeBeskrivelse = ansettelsesdetalj.yrkeBeskrivelse,
+                                        antallTimerPrUke = ansettelsesdetalj.antallTimerPrUke,
+                                        avtaltStillingsprosent =
+                                            ansettelsesdetalj.avtaltStillingsprosent,
+                                        sisteStillingsprosentendringDato = ansettelsesdetalj.sisteStillingsprosentendringDato,
+                                        sisteLønnsendringDato = ansettelsesdetalj.sisteLønnsendringDato,
+                                    )
+                                } ?: emptyList(),
+                        )
+                    },
             ),
         ),
 )
