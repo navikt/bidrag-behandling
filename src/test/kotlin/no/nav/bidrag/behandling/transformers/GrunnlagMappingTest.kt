@@ -84,7 +84,7 @@ class GrunnlagMappingTest {
         Rolle(
             behandling = oppretteBehandling(),
             ident = testdataBP.ident,
-            rolletype = Rolletype.BIDRAGSMOTTAKER,
+            rolletype = Rolletype.BIDRAGSPLIKTIG,
             foedselsdato = testdataBP.foedselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
@@ -217,7 +217,9 @@ class GrunnlagMappingTest {
         fun `skal mappe inntekt til grunnlag`() {
             val behandling = oppretteBehandling()
             behandling.inntekter = opprettInntekter(behandling, testdataBM, testdataBarn1)
-            assertSoftly(behandling.tilGrunnlagInntekt(grunnlagBm, søknadsbarnGrunnlag1).toList()) {
+            assertSoftly(
+                behandling.tilGrunnlagInntekt(personobjekter, søknadsbarnGrunnlag1).toList(),
+            ) {
                 it.forEach { inntekt ->
                     inntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
                     inntekt.referanse.shouldStartWith("inntekt")
@@ -323,29 +325,21 @@ class GrunnlagMappingTest {
                     ) +
                     opprettInntekter(behandling, testdataBarn1),
             )
-            assertSoftly(behandling.tilGrunnlagInntekt(grunnlagBm, søknadsbarnGrunnlag1).toList()) {
-                it.forEach { inntekt ->
-                    inntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
-                    inntekt.referanse.shouldStartWith("inntekt")
-                    inntekt.gjelderReferanse shouldBe grunnlagBm.referanse
-                }
-                it shouldHaveSize 5
-            }
-            assertSoftly(behandling.tilGrunnlagInntekt(grunnlagBp).toList()) {
-                it.forEach { inntekt ->
-                    inntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
-                    inntekt.referanse.shouldStartWith("inntekt")
-                    inntekt.gjelderReferanse shouldBe grunnlagBp.referanse
-                }
-                it shouldHaveSize 3
-            }
-            assertSoftly(behandling.tilGrunnlagInntekt(søknadsbarnGrunnlag1).toList()) {
-                it.forEach { inntekt ->
-                    inntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
-                    inntekt.referanse.shouldStartWith("inntekt")
-                    inntekt.gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
-                }
-                it shouldHaveSize 3
+            assertSoftly(
+                behandling.tilGrunnlagInntekt(personobjekter, søknadsbarnGrunnlag1).toList(),
+            ) {
+                it shouldHaveSize 11
+                val bpInntekter =
+                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBp.referanse)
+                bpInntekter.shouldHaveSize(3)
+
+                val bmInntekter =
+                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse)
+                bmInntekter.shouldHaveSize(5)
+
+                val barnInntekter =
+                    it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse)
+                barnInntekter.shouldHaveSize(3)
             }
         }
 
@@ -397,7 +391,7 @@ class GrunnlagMappingTest {
                 opprettInntekter(behandling, testdataBM, testdataBarn1),
             )
 
-            assertSoftly(behandling.tilGrunnlagInntekt(grunnlagBm).toList()) {
+            assertSoftly(behandling.tilGrunnlagInntekt(personobjekter).toList()) {
                 it.forEach {
                     val innhold = it.innholdTilObjekt<InntektsrapporteringPeriode>()
                     if (innhold.inntektsrapportering == Inntektsrapportering.AINNTEKT_BEREGNET_12MND) {
@@ -688,6 +682,7 @@ class GrunnlagMappingTest {
                         val innhold = innholdTilObjekt<BostatusPeriode>()
                         innhold.bostatus shouldBe Bostatuskode.MED_FORELDER
                         innhold.manueltRegistrert shouldBe false
+                        innhold.relatertTilPart shouldBe grunnlagBm.referanse
                         innhold.periode.fom shouldBe YearMonth.parse("2023-01")
                         innhold.periode.til shouldBe YearMonth.parse("2023-07")
                     }
@@ -698,6 +693,7 @@ class GrunnlagMappingTest {
                         val innhold = innholdTilObjekt<BostatusPeriode>()
                         innhold.bostatus shouldBe Bostatuskode.REGNES_IKKE_SOM_BARN
                         innhold.manueltRegistrert shouldBe true
+                        innhold.relatertTilPart shouldBe grunnlagBm.referanse
                         innhold.periode.fom shouldBe YearMonth.parse("2024-01")
                         innhold.periode.til shouldBe null
                     }
@@ -710,6 +706,7 @@ class GrunnlagMappingTest {
 
                 it.forEach {
                     val innhold = it.innholdTilObjekt<BostatusPeriode>()
+                    innhold.relatertTilPart shouldBe grunnlagBm.referanse
                     if (innhold.manueltRegistrert) {
                         it.grunnlagsreferanseListe shouldHaveSize 0
                     } else {

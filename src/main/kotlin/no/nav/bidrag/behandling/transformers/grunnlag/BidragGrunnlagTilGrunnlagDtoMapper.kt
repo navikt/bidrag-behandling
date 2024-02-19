@@ -19,6 +19,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSkattegrunnla
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSmåbarnstillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetUtvidetBarnetrygd
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettArbeidsforholdGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagsreferanse
@@ -129,7 +130,7 @@ fun List<ArbeidsforholdGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse),
+    referanse = opprettArbeidsforholdGrunnlagsreferanse(gjelderReferanse),
     type = Grunnlagstype.INNHENTET_ARBEIDSFORHOLD,
     gjelderReferanse = gjelderReferanse,
     innhold =

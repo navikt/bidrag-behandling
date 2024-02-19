@@ -14,12 +14,14 @@ import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
-import no.nav.bidrag.behandling.transformers.vedtak.lagTre
+import no.nav.bidrag.behandling.transformers.vedtak.TreeChild
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseList
 import no.nav.bidrag.behandling.transformers.vedtak.tilOpprettRequestDto
 import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
-import no.nav.bidrag.behandling.transformers.vedtak.validerInneholderListe
+import no.nav.bidrag.behandling.transformers.vedtak.toMermaid
+import no.nav.bidrag.behandling.transformers.vedtak.toTree
+import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -34,6 +36,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
+import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -69,11 +72,12 @@ class VedtakService(
 
         val behandling = behandlingService.hentBehandlingById(behandlingId, true)
 //        if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
-
         val request =
             if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
 
-        LOGGER.info { request.lagTre().joinToString("") }
+        request.validerGrunnlagsreferanser()
+//        LOGGER.info { request.toMermaidOld().joinToString("") }
+        File("mermaid.txt").writeText(request.toMermaid().joinToString(""))
         val response = vedtakConsumer.fatteVedtak(request)
         behandlingService.oppdaterBehandling(
             behandlingId,
@@ -83,6 +87,22 @@ class VedtakService(
             "Fattet vedtak for behandling $behandlingId med ${behandling.årsak?.let { "årsakstype $it" } ?: "avslagstype ${behandling.avslag}"} med vedtaksid ${response.vedtaksid}"
         }
         return response.vedtaksid
+    }
+
+    fun vedtakTilMermaid(behandlingId: Long): String {
+        val behandling = behandlingService.hentBehandlingById(behandlingId, true)
+        val request =
+            if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
+
+        return request.toMermaid().joinToString("")
+    }
+
+    fun vedtakTilTreeMap(behandlingId: Long): TreeChild {
+        val behandling = behandlingService.hentBehandlingById(behandlingId, true)
+        val request =
+            if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
+
+        return request.toTree()
     }
 
     private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto {
@@ -146,13 +166,6 @@ class VedtakService(
         val grunnlagListe =
             (grunnlagListeVedtak + stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag) + stønadsendringGrunnlagListe).toSet()
 
-        stønadsendringPerioder.forEach {
-            it.perioder.forEach { periode ->
-                periode.grunnlagReferanseListe.validerInneholderListe(
-                    grunnlagListe.toList(),
-                )
-            }
-        }
         return OpprettVedtakRequestDto(
             enhetsnummer = Enhetsnummer(behandlerEnhet),
             vedtakstidspunkt = LocalDateTime.now(),

@@ -13,14 +13,11 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
-import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.valideringAvBehandlingFeilet
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
-import no.nav.bidrag.sivilstand.response.tilBeregningGrunnlagDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import org.springframework.stereotype.Service
 
@@ -76,15 +73,14 @@ fun Behandling.beregnSivilstandPerioder(grunnlagInput: List<SivilstandGrunnlagDt
     val grunnlag =
         grunnlagInput ?: grunnlagListe.sivilstand.konverterData<List<SivilstandGrunnlagDto>>()
             ?: emptyList()
-    val beregningGrunnlag =
-        grunnlag.mapIndexed { i, it ->
-            val rolle = roller.find { rolle -> rolle.ident == it.personId }!!
-            it.tilBeregningGrunnlagDto(
-                it.tilGrunnlagsreferanse(
-                    rolle.tilGrunnlagPerson().referanse,
-                    i,
-                ),
-            )
-        }
-    return SivilstandApi.beregn(virkningstidspunkt ?: søktFomDato, beregningGrunnlag)
+//    val beregningGrunnlag =
+//        grunnlag.mapIndexed { i, it ->
+//            val rolle = roller.find { rolle -> rolle.ident == it.personId }!!
+//            it.tilBeregningGrunnlagDto(
+//                opprettInnhentetSivilstandGrunnlagsreferanse(
+//                    rolle.tilGrunnlagPerson().referanse,
+//                ),
+//            )
+//        }
+    return SivilstandApi.beregn(virkningstidspunkt ?: søktFomDato, grunnlag)
 }

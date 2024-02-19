@@ -409,7 +409,7 @@ class VedtakInnhentetGrunnlagTest {
                     grunnlag.grunnlag.fødselsdato shouldBe testdataBarn1.foedselsdato
                     grunnlag.grunnlag.erBarnAvBmBp shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 4
-                    grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2022-01-02")
+                    grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2022-01-01")
                     grunnlag.grunnlag.perioder[0].til shouldBe LocalDate.parse("2022-06-08")
 
                     grunnlag.grunnlag.perioder[1].fom shouldBe LocalDate.parse("2023-01-02")

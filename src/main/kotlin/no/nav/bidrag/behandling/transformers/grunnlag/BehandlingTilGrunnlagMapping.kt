@@ -62,16 +62,11 @@ fun Behandling.tilGrunnlagSivilstand(gjelder: GrunnlagDto): Set<GrunnlagDto> {
 
 fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<GrunnlagDto> {
     val øvrigeBarnIHusstand = opprettGrunnlagForHusstandsbarn()
-    val bm = tilPersonobjektBidragsmottaker()
+    val bm = bidragsmottaker?.tilGrunnlagPerson() ?: manglerRolle(Rolletype.BIDRAGSMOTTAKER, id!!)
     val søknadsbarnListe =
         søknadsbarnRolle?.let { listOf(it.tilGrunnlagPerson()) }
             ?: søknadsbarn.map { it.tilGrunnlagPerson() }
     return (listOf(bm) + søknadsbarnListe + øvrigeBarnIHusstand).toMutableSet()
-}
-
-fun Behandling.tilPersonobjektBidragsmottaker(): GrunnlagDto {
-    return bidragsmottaker?.tilGrunnlagPerson()
-        ?: manglerRolle(Rolletype.BIDRAGSMOTTAKER, id!!)
 }
 
 fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
@@ -131,16 +126,21 @@ fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<Grunnl
 }
 
 fun Behandling.tilGrunnlagInntekt(
-    gjelder: GrunnlagDto,
+    personobjekter: Set<GrunnlagDto>,
     søknadsbarn: GrunnlagDto? = null,
 ): Set<GrunnlagDto> {
-    val personidentGjelder = gjelder.personIdent
-    val søknadsbarnIdent = søknadsbarn?.personIdent
-
     return inntekter.asSequence()
-        .filtrerEtterGjelderOgBarn(personidentGjelder, søknadsbarnIdent)
-        .map {
-            it.tilInntektsrapporteringPeriode(gjelder, søknadsbarn, grunnlagListe)
+        .groupBy { it.ident }
+        .flatMap { inntektGjelderMap ->
+            val gjelder = personobjekter.hentPerson(inntektGjelderMap.key)!!
+            inntektGjelderMap.value.filter { søknadsbarn == null || it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn == null }
+                .groupBy { it.gjelderBarn }
+                .map { inntektGjelderBarnMap ->
+                    val søknadsbarn = personobjekter.hentPerson(inntektGjelderBarnMap.key)
+                    inntektGjelderBarnMap.value.map {
+                        it.tilInntektsrapporteringPeriode(gjelder, søknadsbarn, grunnlagListe)
+                    }
+                }.flatten()
         }.toSet()
 }
 
@@ -209,11 +209,6 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
             ),
         ),
 )
-
-private fun Sequence<Inntekt>.filtrerEtterGjelderOgBarn(
-    gjelderIdent: String,
-    barnIdent: String? = null,
-) = filter { i -> i.ident == gjelderIdent && (i.gjelderBarn == null || barnIdent == null || i.gjelderBarn == barnIdent) }
 
 fun finnFødselsdato(
     ident: String?,

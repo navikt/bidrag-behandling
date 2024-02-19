@@ -48,10 +48,8 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
     val personobjekter = tilPersonobjekter()
     val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
     val bostatusBarn = tilGrunnlagBostatus(personobjekter)
-    val inntektBm = tilGrunnlagInntekt(personobjekter.bidragsmottaker, søknadsbarn)
+    val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn)
     val sivilstandBm = tilGrunnlagSivilstand(personobjekter.bidragsmottaker)
-
-    val inntekterBarn = tilGrunnlagInntekt(søknadsbarn)
     return BeregnGrunnlag(
         periode =
             ÅrMånedsperiode(
@@ -60,23 +58,18 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
             ),
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
-            (personobjekter + bostatusBarn + inntektBm + sivilstandBm + inntekterBarn).toList(),
+            (personobjekter + bostatusBarn + inntekter + sivilstandBm).toList(),
     )
 }
 
 fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
     val personobjekter = tilPersonobjekter()
     val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekter)
-    val bostatusBarn = tilGrunnlagBostatus(personobjekter)
-    val sivilstandBm = tilGrunnlagSivilstand(personobjekter.bidragsmottaker)
-    val inntekter =
-        personobjekter.søknadsbarn.flatMap { søknadsbarn ->
-            val inntektBarn = tilGrunnlagInntekt(søknadsbarn)
-            val inntektBm =
-                tilGrunnlagInntekt(personobjekter.bidragsmottaker, søknadsbarn)
-            inntektBarn + inntektBm
-        }
-    return (personobjekter + bostatusBarn + inntekter + sivilstandBm + innhentetGrunnlagListe).toSet()
+    val bostatus = tilGrunnlagBostatus(personobjekter)
+    // TODO: Er dette for BP i bidrag?
+    val sivilstand = tilGrunnlagSivilstand(personobjekter.bidragsmottaker)
+    val inntekter = tilGrunnlagInntekt(personobjekter)
+    return (personobjekter + bostatus + inntekter + sivilstand + innhentetGrunnlagListe).toSet()
 }
 
 fun Behandling.byggGrunnlagForStønad(): Set<GrunnlagDto> {

@@ -358,45 +358,32 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Be
     val behandling = oppretteBehandling(if (generateId) 1 else null)
     behandling.roller = oppretteBehandlingRoller(behandling, generateId)
     val husstandsbarn =
-        behandling.søknadsbarn.mapIndexed { i, it ->
-            val husstandsbarn =
-                Husstandsbarn(
-                    behandling = behandling,
-                    medISaken = true,
-                    ident = it.ident,
-                    navn = it.navn ?: "Lavransdottir",
-                    foedselsdato = it.foedselsdato,
-                    id = if (generateId) (i + 1).toLong() else null,
-                )
-            husstandsbarn.perioder =
-                mutableSetOf(
-                    Husstandsbarnperiode(
-                        husstandsbarn = husstandsbarn,
-                        datoFom = behandling.søktFomDato,
-                        datoTom = behandling.søktFomDato.plusMonths(3),
-                        bostatus = Bostatuskode.MED_FORELDER,
-                        kilde = Kilde.OFFENTLIG,
-                        id = if (generateId) (i + 1).toLong() else null,
-                    ),
-                    Husstandsbarnperiode(
-                        husstandsbarn = husstandsbarn,
-                        datoFom = behandling.søktFomDato.plusMonths(3),
-                        datoTom = null,
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                        kilde = Kilde.OFFENTLIG,
-                        id = if (generateId) (i + 1).toLong() else null,
-                    ),
-                )
-            husstandsbarn
-        }.toMutableSet()
-    husstandsbarn.add(
-        behandling.opprettHusstandsbarn(
-            if (generateId) behandling.søknadsbarn.size else null,
-            testdataHusstandsmedlem1.ident,
-            testdataHusstandsmedlem1.navn,
-            null,
-        ),
-    )
+        mutableSetOf(
+            behandling.opprettHusstandsbarn(
+                if (generateId) 1 else null,
+                testdataBarn1.ident,
+                testdataBarn1.navn,
+                testdataBarn1.foedselsdato,
+                behandling.virkningstidspunkt,
+                behandling.virkningstidspunkt!!.plusMonths(20),
+            ),
+            behandling.opprettHusstandsbarn(
+                if (generateId) 2 else null,
+                testdataBarn2.ident,
+                testdataBarn2.navn,
+                testdataBarn2.foedselsdato,
+                behandling.virkningstidspunkt,
+                behandling.virkningstidspunkt!!.plusMonths(18),
+            ),
+            behandling.opprettHusstandsbarn(
+                if (generateId) 3 else null,
+                testdataHusstandsmedlem1.ident,
+                testdataHusstandsmedlem1.navn,
+                null,
+                behandling.virkningstidspunkt!!.plusMonths(8),
+                behandling.virkningstidspunkt!!.plusMonths(10),
+            ),
+        )
     val sivilstand =
         Sivilstand(
             sivilstand = Sivilstandskode.BOR_ALENE_MED_BARN,
@@ -447,7 +434,38 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Be
             id = if (generateId) (3).toLong() else null,
         )
     aInntekt.inntektsposter.addAll(opprettInntektsposter(aInntekt))
+    val barnetillegg =
+        Inntekt(
+            belop = BigDecimal(60000),
+            datoFom = LocalDate.parse("2022-01-01"),
+            datoTom = null,
+            opprinneligFom = LocalDate.parse("2023-02-01"),
+            opprinneligTom = LocalDate.parse("2024-01-01"),
+            ident = behandling.bidragsmottaker!!.ident!!,
+            taMed = true,
+            gjelderBarn = testdataBarn1.ident,
+            kilde = Kilde.OFFENTLIG,
+            behandling = behandling,
+            inntektsrapportering = Inntektsrapportering.BARNETILLEGG,
+            id = if (generateId) (4).toLong() else null,
+        )
+    val barnInntekt =
+        Inntekt(
+            belop = BigDecimal(60000),
+            datoFom = LocalDate.parse("2022-01-01"),
+            datoTom = null,
+            opprinneligFom = LocalDate.parse("2023-02-01"),
+            opprinneligTom = LocalDate.parse("2024-01-01"),
+            ident = testdataBarn1.ident,
+            taMed = true,
+            kilde = Kilde.OFFENTLIG,
+            behandling = behandling,
+            inntektsrapportering = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+            id = if (generateId) (5).toLong() else null,
+        )
     inntekter.add(aInntekt)
+    inntekter.add(barnetillegg)
+    inntekter.add(barnInntekt)
     behandling.husstandsbarn = husstandsbarn
     behandling.inntekter = inntekter
     behandling.sivilstand = mutableSetOf(sivilstand)
@@ -459,6 +477,8 @@ fun Behandling.opprettHusstandsbarn(
     ident: String,
     navn: String?,
     fødselsdato: LocalDate?,
+    førstePeriodeFra: LocalDate? = null,
+    førstePeridoeTil: LocalDate? = null,
 ): Husstandsbarn {
     val husstandsbarn =
         Husstandsbarn(
@@ -473,15 +493,15 @@ fun Behandling.opprettHusstandsbarn(
         mutableSetOf(
             Husstandsbarnperiode(
                 husstandsbarn = husstandsbarn,
-                datoFom = søktFomDato,
-                datoTom = søktFomDato.plusMonths(3),
+                datoFom = førstePeriodeFra ?: søktFomDato,
+                datoTom = førstePeridoeTil ?: søktFomDato.plusMonths(3),
                 bostatus = Bostatuskode.MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
                 id = if (index != null) (index + 1).toLong() else null,
             ),
             Husstandsbarnperiode(
                 husstandsbarn = husstandsbarn,
-                datoFom = søktFomDato.plusMonths(3),
+                datoFom = førstePeridoeTil ?: søktFomDato.plusMonths(3),
                 datoTom = null,
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,

@@ -1,106 +1,99 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
+import no.nav.bidrag.transport.felles.toCompactString
 
-private val LOGGER = KotlinLogging.logger {}
-
-typealias TreeMap = Map<String, List<Map<String, String>>>
-
-fun OpprettVedtakRequestDto.lagTre(): List<String> {
-    val printList = mutableListOf<String>()
-    printList.add("\nVedtak($type): \n")
-    stønadsendringListe.forEach {
-        printList.add(
-            "\nStønadsendring(${it.type}) - ${it.beslutning}: \n${
-                it.periodeListe.flatMap {
-                    it.grunnlagReferanseListe.lagTre(
-                        this.grunnlagListe,
-                    )
-                }.joinToString("")
-            }",
-        )
-    }
-    return printList
-}
-
-fun List<Grunnlagsreferanse>.lagTre(grunnlagsListe: List<BaseGrunnlag>): List<String> {
-    val printList = mutableListOf<String>()
-
-    val map =
-        this.map {
-            it.lagTre(grunnlagsListe)
-        }
-
-    map.forEach {
-        it.entries.forEach {
-            printList.add("\n${it.key}: \n\n\t${it.value.logTree()}")
-        }
-    }
-
-    return printList
-}
-
-fun Any.logTree(step: Int = 1): String {
-    if (this is Map.Entry<*, *>) {
-        val value =
-            if (this.value == null || this.value is ArrayList<*> && (this.value as ArrayList<*>).isEmpty()) null else this.value
-        if (value is ArrayList<*> && value.size > 1) {
-            return "${this.key}: \n${"\t".repeat(step + 1)}${value.logTree(step + 1)}"
-        }
-        return "${this.key} ${value?.logTree(step)?.let { "-> $it" } ?: ""}"
-    }
-    if (this is Map<*, *>) {
-        return this.entries.map { it.logTree(step) }.joinToString("()")
-    }
-    if (this is ArrayList<*>) {
-        return this.map { it.logTree() }.joinToString("\n".repeat(1) + "\t".repeat(step))
-    }
-    return this as String
-}
-
-fun Grunnlagsreferanse.lagTre(grunnlagsListe: List<BaseGrunnlag>): Map<out Grunnlagsreferanse, Any> {
-    val grunnlag = grunnlagsListe.filtrerBasertPåEgenReferanse(referanse = this)
-    if (grunnlag.isEmpty()) {
-        return emptyMap()
-    }
-    val treeMap =
-        grunnlag[0].grunnlagsreferanseListe.map { it.lagTre(grunnlagsListe) } +
-            grunnlag[0].gjelderReferanse?.let {
-                mapOf(grunnlag[0].gjelderReferanse to null)
-            }
-    return mapOf(this to treeMap.filterNotNull())
-}
-
-fun List<Grunnlagsreferanse>.validerInneholderListe(grunnlagsListe: List<GrunnlagDto>) {
+fun OpprettVedtakRequestDto.validerGrunnlagsreferanser() {
     val feilListe = mutableListOf<String>()
-    this.forEach {
-        it.valider(grunnlagsListe, feilListe)
+    grunnlagListe.forEach {
+        feilListe.addAll(
+            grunnlagListe.validerInneholderListe(
+                it.grunnlagsreferanseListe,
+                it.referanse,
+            ),
+        )
+        it.gjelderReferanse?.let { gjelderReferanse ->
+            feilListe.addAll(
+                grunnlagListe.validerInneholderListe(
+                    listOf(gjelderReferanse),
+                    it.referanse,
+                ),
+            )
+        }
+    }
+    stønadsendringListe.forEach {
+        feilListe.addAll(
+            grunnlagListe.validerInneholderListe(
+                it.grunnlagReferanseListe,
+                "Stønadsendring(${it.type}, ${it.kravhaver})",
+            ),
+        )
+        it.periodeListe.forEach { periode ->
+            feilListe.addAll(
+                grunnlagListe.validerInneholderListe(
+                    periode.grunnlagReferanseListe,
+                    "Stønadsendring(${it.type}, ${it.kravhaver}, ${periode.periode.fom.toCompactString()})",
+                ),
+            )
+        }
+    }
+
+    engangsbeløpListe.forEach {
+        feilListe.addAll(
+            grunnlagListe.validerInneholderListe(
+                it.grunnlagReferanseListe,
+                "Engangsbeløp(${it.type}, ${it.mottaker})",
+            ),
+        )
     }
 
     if (feilListe.isNotEmpty()) {
-        throw RuntimeException("Feil i grunnlagsreferanser: ${feilListe.joinToString()}")
+        throw RuntimeException(
+            "Feil i grunnlagsreferanser: ${
+                feilListe.toSet().joinToString("\n")
+            }",
+        )
     }
 }
 
-fun Grunnlagsreferanse.valider(
-    grunnlagsListe: List<GrunnlagDto>,
-    feilListe: MutableList<String>,
-) {
-    val grunnlag = grunnlagsListe.filtrerBasertPåEgenReferanse(referanse = this)
+fun List<BaseGrunnlag>.validerInneholderListe(
+    referanseliste: List<Grunnlagsreferanse>,
+    referertAv: Grunnlagsreferanse?,
+): List<String> {
+    val feilListe = mutableListOf<String>()
+    referanseliste.forEach {
+        feilListe.addAll(validerGrunnlagsreferanse(it, referertAv))
+    }
+
+    return feilListe
+}
+
+private fun List<BaseGrunnlag>.validerGrunnlagsreferanse(
+    referanse: Grunnlagsreferanse,
+    referertAv: Grunnlagsreferanse? = null,
+): List<String> {
+    val feilListe = mutableListOf<String>()
+    val grunnlag = filtrerBasertPåEgenReferanse(referanse = referanse)
     if (grunnlag.isEmpty()) {
-        feilListe.add("Grunnlaget med referanse $this finnes ikke i grunnlagslisten")
+        feilListe.add("Grunnlaget med referanse \"$referanse\" referert av \"$referertAv\" finnes ikke i grunnlagslisten")
     }
-    if (grunnlag.size > 1) {
-        feilListe.add("Grunnlaget med referanse $this finnes flere ganger i grunnlagslisten")
-    }
-    if (grunnlag.isNotEmpty() && grunnlag.size == 1) {
+    grunnlag.forEach {
         val grunnlagsreferanser =
-            grunnlag[0].grunnlagsreferanseListe + listOf(grunnlag[0].gjelderReferanse)
-        grunnlagsreferanser.filterNotNull().forEach { it.valider(grunnlagsListe, feilListe) }
+            it.grunnlagsreferanseListe + listOf(it.gjelderReferanse).filterNotNull()
+
+        if (grunnlagsreferanser.contains(referertAv)) {
+            feilListe.add(
+                "Grunnlaget med referanse \"$referanse\" referert av \"$referertAv\" inneholder sirkulær avhengighet. " +
+                    "Referanseliste $grunnlagsreferanser",
+            )
+        } else {
+            grunnlagsreferanser.forEach {
+                feilListe.addAll(validerGrunnlagsreferanse(it, referanse))
+            }
+        }
     }
+    return feilListe
 }
