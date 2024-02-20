@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
-import no.nav.bidrag.behandling.controller.v1.KontrollerTestRunner
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
@@ -18,12 +18,14 @@ import java.time.LocalDate
 
 class VirkningstidspunktControllerTest : KontrollerTestRunner() {
     @Autowired
+    lateinit var behandlingRepository: BehandlingRepository
+
+    @Autowired
     lateinit var behandlingService: BehandlingService
 
     @Test
     fun `skal oppdatere virknings tidspunkt data`() {
-        val behandling =
-            behandlingService.opprettBehandling(BehandlingServiceTest.prepareBehandling())
+        val behandling = behandlingRepository.save(BehandlingServiceTest.prepareBehandling())
 
         val req =
             OppdaterBehandlingRequest(
@@ -41,7 +43,7 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
 
         val respons =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}",
+                "${rootUriV1()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
                 HttpEntity(req),
                 BehandlingDto::class.java,

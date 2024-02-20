@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -11,7 +11,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilOppdaterBehandlingRequestV2
@@ -22,10 +21,10 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
+@Deprecated("Erstattes av endepunktene i BehandlingControllerV2")
 @BehandlingRestControllerV1
 class BehandlingController(
     private val behandlingService: BehandlingService,
-    private val grunnlagService: GrunnlagService,
 ) {
     @Suppress("unused")
     @PostMapping("/behandling")
@@ -51,27 +50,22 @@ class BehandlingController(
     ): OpprettBehandlingResponse = behandlingService.opprettBehandling(opprettBehandling)
 
     @Suppress("unused")
-    @PutMapping("/behandling/{behandlingId}")
+    @PutMapping("/behandling/{behandlingsid}")
     @Operation(
         description = "Oppdatere behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun oppdatereBehandling(
-        @PathVariable behandlingId: Long,
+        @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequest,
     ): BehandlingDto {
-        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingId)
+        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingsid)
         val personidentBm =
             behandlingFørOppdatering.bidragsmottaker?.ident?.let { Personident(it) }
                 ?: throw IllegalArgumentException("Behandling mangler BM!")
 
-        val behandling =
-            behandlingService.oppdaterBehandling(
-                behandlingId,
-                request.tilOppdaterBehandlingRequestV2(personidentBm),
-            )
-
-        return behandling.tilBehandlingDto()
+        behandlingService.oppdaterBehandling(behandlingsid, request.tilOppdaterBehandlingRequestV2(personidentBm))
+        return behandlingService.hentBehandlingById(behandlingsid).tilBehandlingDtoV2(emptyList(), emptySet()).tilBehandlingDto()
     }
 
     @Suppress("unused")
@@ -100,8 +94,7 @@ class BehandlingController(
     fun hentBehandling(
         @PathVariable behandlingId: Long,
     ): BehandlingDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val opplysninger = grunnlagService.hentAlleSistAktiv(behandlingId)
-        return behandling.tilBehandlingDtoV2(opplysninger).tilBehandlingDto()
+        val behandling = behandlingService.henteBehandling(behandlingId)
+        return behandling.tilBehandlingDto()
     }
 }

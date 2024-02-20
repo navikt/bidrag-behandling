@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import no.nav.security.token.support.core.api.Protected
 import org.springframework.web.bind.annotation.RequestMapping

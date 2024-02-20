@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.PreRemove
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import java.math.BigDecimal
 
@@ -24,8 +25,13 @@ open class Inntektspost(
     open val id: Long? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inntekt_id", nullable = false)
-    open val inntekt: Inntekt? = null,
+    open var inntekt: Inntekt? = null,
     // TODO: Endre til ikke nullbar
     @Enumerated(EnumType.STRING)
     open val inntektstype: Inntektstype?,
-)
+) {
+    @PreRemove
+    private fun slette() {
+        inntekt?.inntektsposter?.remove(this)
+    }
+}

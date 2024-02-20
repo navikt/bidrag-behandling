@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeIn
@@ -9,10 +9,10 @@ import io.mockk.mockkStatic
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.notat.NotatDto
 import no.nav.bidrag.behandling.service.hentPerson
-import no.nav.bidrag.behandling.utils.SAKSNUMMER
-import no.nav.bidrag.behandling.utils.testdataBM
-import no.nav.bidrag.behandling.utils.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -30,7 +30,7 @@ import java.time.YearMonth
 class NotatGrunnlagControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal hente opplysninger for notat`() {
-        val behandling = testdataManager.opprettBehandling()
+        val behandling = testdataManager.opprettBehandling(true)
         mockkStatic(::hentPerson)
         every { hentPerson(testdataBM[Rolle::ident.name] as String) } returns
             PersonDto(
@@ -52,7 +52,7 @@ class NotatGrunnlagControllerTest : KontrollerTestRunner() {
             )
         val r1 =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/notat/${behandling.id}",
+                "${rootUriV1()}/notat/${behandling.id}",
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
                 NotatDto::class.java,

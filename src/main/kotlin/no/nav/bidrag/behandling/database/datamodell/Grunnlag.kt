@@ -12,9 +12,9 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import no.nav.bidrag.behandling.database.opplysninger.BoforholdBearbeidet
-import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
-import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.BoforholdBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
+import no.nav.bidrag.behandling.database.grunnlag.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
@@ -47,7 +47,7 @@ inline fun <reified T> Grunnlag?.hentData(): T? =
         Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
         Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
         Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
-        Grunnlagsdatatype.INNTEKT -> konverterData<List<InntektGrunnlag>>() as T
+        Grunnlagsdatatype.INNTEKT -> konverterData<List<GrunnlagInntekt>>() as T
         else -> null
     }
 

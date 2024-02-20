@@ -1,10 +1,11 @@
-package no.nav.bidrag.behandling.database.opplysninger
+package no.nav.bidrag.behandling.database.grunnlag
 
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -43,4 +44,10 @@ data class InntektBearbeidet(
     val ident: String,
     val versjon: String?,
     val summertAarsinntektListe: List<SummertÅrsinntekt>,
+)
+
+data class SummerteMånedsOgÅrsinntekter(
+    val versjon: String,
+    val summerteMånedsinntekter: List<SummertMånedsinntekt>,
+    val summerteÅrsinntekter: List<SummertÅrsinntekt>,
 )

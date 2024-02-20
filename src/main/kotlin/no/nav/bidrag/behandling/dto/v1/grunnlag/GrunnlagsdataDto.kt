@@ -12,3 +12,8 @@ data class GrunnlagsdataDto(
     @Schema(type = "string", format = "timestamp", example = "01.12.2025 12:00:00.000")
     val innhentet: LocalDateTime,
 )
+
+data class GrunnlagsdataEndretDto(
+    val nyeData: GrunnlagsdataDto,
+    val endringerINyeData: Set<Grunnlagsdatatype>,
+)

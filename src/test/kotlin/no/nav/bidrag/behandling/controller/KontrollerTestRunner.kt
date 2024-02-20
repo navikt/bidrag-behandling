@@ -1,11 +1,11 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
 import io.mockk.every
 import io.mockk.mockkObject
 import no.nav.bidrag.behandling.service.CommonTestRunner
-import no.nav.bidrag.behandling.utils.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -55,8 +55,12 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
 
     val stubUtils: StubUtils = StubUtils()
 
-    protected fun rootUri(): String {
+    protected fun rootUriV1(): String {
         return "http://localhost:$port/api/v1"
+    }
+
+    protected fun rootUriV2(): String {
+        return "http://localhost:$port/api/v2"
     }
 
     @BeforeEach
@@ -70,6 +74,10 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubHentForsendelserForSak()
         stubUtils.stubTilgangskontrollTema()
         stubUtils.stubHentePersoninfo(personident = "12345")
-        stubUtils.stubBeregneForskudd()
+        stubUtils.stubKodeverkSkattegrunnlag()
+        stubUtils.stubKodeverkLønnsbeskrivelse()
+        stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+        stubUtils.stubKodeverkYtelsesbeskrivelser()
+        stubUtils.stubHenteGrunnlagOk()
     }
 }

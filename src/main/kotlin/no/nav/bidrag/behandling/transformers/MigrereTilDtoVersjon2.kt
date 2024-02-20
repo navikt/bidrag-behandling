@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
@@ -21,13 +22,9 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import java.math.BigDecimal
 
-val rapporteringstyperSomIkkeSkalInkluderesIInntekt =
-    setOf(
-        Inntektsrapportering.BARNETILLEGG,
-        Inntektsrapportering.KONTANTSTØTTE,
-        Inntektsrapportering.SMÅBARNSTILLEGG,
-        Inntektsrapportering.UTVIDET_BARNETRYGD,
-    )
+/**
+ * Inneholder omgjøringer som kreves for å støtte bakoverkompatibilitet. Fila skal kunne slettes når migrering til API V2 er fullført.
+ */
 
 fun BehandlingDtoV2.tilBehandlingDto() =
 
@@ -49,29 +46,31 @@ fun BehandlingDtoV2.tilBehandlingDto() =
         virkningstidspunkt = virkningstidspunkt,
         boforhold = boforhold,
         inntekter = inntekter.tilInntekterDto(),
-        opplysninger = opplysninger,
+        opplysninger = aktiveGrunnlagsdata.toList(),
     )
 
 fun InntekterDtoV2.tilInntekterDto(): InntekterDto {
     return InntekterDto(
-        inntekter =
-            inntekter.filter { !rapporteringstyperSomIkkeSkalInkluderesIInntekt.contains(it.rapporteringstype) }
-                .map { it.tilInntektDto() }.toSet(),
-        barnetillegg =
-            inntekter.filter { it.rapporteringstype == Inntektsrapportering.BARNETILLEGG }
-                .map { it.tilBarnetilleggDto() }.toSet(),
-        utvidetbarnetrygd =
-            inntekter.filter { it.rapporteringstype == Inntektsrapportering.UTVIDET_BARNETRYGD }
-                .map { it.tilUtvidetBarnetrygdDto() }.toSet(),
-        kontantstøtte =
-            inntekter.filter { it.rapporteringstype == Inntektsrapportering.KONTANTSTØTTE }
-                .map { it.tilKontantstøtteDto() }.toSet(),
-        småbarnstillegg =
-            inntekter.filter { it.rapporteringstype == Inntektsrapportering.SMÅBARNSTILLEGG }
-                .map { it.tilInntektDto() }.toSet(),
+        inntekter = årsinntekter.map { it.tilInntektDto() }.toSet(),
+        barnetillegg = barnetillegg.map { it.tilBarnetilleggDto() }.toSet(),
+        utvidetbarnetrygd = årsinntekter.map { it.tilUtvidetBarnetrygdDto() }.toSet(),
+        kontantstøtte = kontantstøtte.map { it.tilKontantstøtteDto() }.toSet(),
+        småbarnstillegg = småbarnstillegg.map { it.tilInntektDto() }.toSet(),
         notat = notat,
     )
 }
+
+fun InntektDtoV2.tilOppdatereManuellInntekt() =
+    OppdatereManuellInntekt(
+        id = id,
+        taMed = taMed,
+        type = rapporteringstype,
+        beløp = beløp,
+        datoFom = datoFom,
+        datoTom = datoTom,
+        ident = ident,
+        gjelderBarn = gjelderBarn,
+    )
 
 fun InntektDtoV2.tilInntektDto() =
     InntektDto(
@@ -130,15 +129,21 @@ fun OppdaterBehandlingRequest.tilOppdaterBehandlingRequestV2(personidentBm: Pers
 }
 
 fun OppdatereInntekterRequest.tilOppdatereInntekterRequestV2(personidentBm: Personident): OppdatereInntekterRequestV2 {
-    val inntekt = this.inntekter.orEmpty().map { i -> i.tilInntektDtoV2() }.toMutableSet()
-    val barnetillegg = this.barnetillegg.orEmpty().map { bt -> bt.tilInntektDtoV2() }.toSet()
-    val kontantstøtte = this.kontantstøtte.orEmpty().map { bt -> bt.tilInntektDtoV2() }.toSet()
+    val inntekt =
+        this.inntekter.orEmpty().map { i -> i.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toMutableSet()
+    val barnetillegg =
+        this.barnetillegg.orEmpty().map { bt -> bt.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toSet()
+    val kontantstøtte =
+        this.kontantstøtte.orEmpty().map { bt -> bt.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toSet()
     val utvidetBarnetrygd =
         this.utvidetbarnetrygd.orEmpty().map { ubt -> ubt.tilInntektDtoV2(personidentBm) }
-            .toSet()
+            .map { it.tilOppdatereManuellInntekt() }.toSet()
 
     return OppdatereInntekterRequestV2(
-        inntekter = inntekt + barnetillegg + kontantstøtte + utvidetBarnetrygd,
+        oppdatereManuelleInntekter =
+            inntekt.filter { inntektDto ->
+                Inntektsrapportering.entries.filter { i -> i.kanLeggesInnManuelt }.contains(inntektDto.type)
+            }.toSet() + barnetillegg + kontantstøtte + utvidetBarnetrygd,
         notat = this.notat,
     )
 }

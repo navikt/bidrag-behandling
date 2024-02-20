@@ -29,7 +29,7 @@ open class Husstandsbarn(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "husstandsbarn",
-        cascade = [CascadeType.PERSIST, CascadeType.MERGE],
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
     open var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),

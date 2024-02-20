@@ -12,6 +12,7 @@ springdoc:
     showCommonExtensions: true
 
 spring.main.banner-mode: off
+
 ---
 spring.config.activate.on-profile: nais,lokal-nais
 

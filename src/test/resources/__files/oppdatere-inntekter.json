@@ -1,0 +1,20 @@
+{
+  "inntekter": {
+    "oppdatereManuelleInntekter": [
+      {
+        "taMed": true,
+        "type": "KONTANTSTØTTE",
+        "beløp": 2000,
+        "datoFom": "2024-01-01",
+        "datoTom": "2024-12-31",
+        "opprinneligFom": "2024-01-01",
+        "opprinneligTom": "2024-12-31",
+        "ident": "15479438029",
+        "gjelderBarn": "09441689605",
+        "kilde": "MANUELL",
+        "inntektsposter": [],
+        "inntektstyper": []
+      }
+    ]
+  }
+}

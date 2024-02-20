@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.dto.v1.notat.NotatDto
 import no.nav.bidrag.behandling.service.NotatOpplysningerService

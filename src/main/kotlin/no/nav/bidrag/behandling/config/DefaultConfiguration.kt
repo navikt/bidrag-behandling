@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme
 import no.nav.bidrag.commons.web.CorrelationIdFilter
 import no.nav.bidrag.commons.web.DefaultCorsFilter
 import no.nav.bidrag.commons.web.UserMdcFilter
+import no.nav.bidrag.inntekt.InntektApi
 import no.nav.security.token.support.client.spring.oauth2.EnableOAuth2Client
 import no.nav.security.token.support.spring.api.EnableJwtTokenValidation
 import org.springframework.context.annotation.Bean
@@ -26,7 +27,7 @@ import org.springframework.http.client.observation.DefaultClientRequestObservati
 @Configuration
 @EnableJwtTokenValidation
 @EnableOAuth2Client(cacheEnabled = true)
-@Import(CorrelationIdFilter::class, DefaultCorsFilter::class, UserMdcFilter::class)
+@Import(CorrelationIdFilter::class, DefaultCorsFilter::class, UserMdcFilter::class, InntektApi::class)
 class DefaultConfiguration {
     @Bean
     fun clientRequestObservationConvention(): ClientRequestObservationConvention = DefaultClientRequestObservationConvention()
