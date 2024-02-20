@@ -17,7 +17,8 @@ class VedtakGraphController(
         @PathVariable behandlingId: Long,
     ): ResponseEntity<String> {
         val mermaid = vedtakService.vedtakTilMermaid(behandlingId)
-        return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body(mermaid)
+        return ResponseEntity.ok().contentType(MediaType.valueOf("text/plain;charset=UTF-8"))
+            .body(mermaid)
     }
 
     @Suppress("unused")

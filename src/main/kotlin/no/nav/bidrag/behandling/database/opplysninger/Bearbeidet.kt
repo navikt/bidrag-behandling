@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.database.opplysninger
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.sivilstand.response.SivilstandBeregnetPeriode
+import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
@@ -16,7 +16,7 @@ data class BoforholdBearbeidet(
     val husstand: List<BoforholdHusstandBearbeidet> = emptyList(),
     val husstandV2: List<BoforholdBeregnet> = emptyList(),
     val sivilstand: List<SivilstandBearbeidet> = emptyList(),
-    val sivilstandV2: List<SivilstandBeregnetPeriode> = emptyList(),
+    val sivilstandV2: List<SivilstandBeregnet> = emptyList(),
 )
 
 data class SivilstandBearbeidet(

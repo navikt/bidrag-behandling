@@ -90,7 +90,6 @@ class VedtakserviceTest {
             VedtakService(
                 behandlingService,
                 beregningService,
-                grunnlagService,
                 vedtakConsumer,
                 sakConsumer,
                 unleash,

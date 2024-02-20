@@ -36,7 +36,6 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
-import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -46,7 +45,6 @@ private val LOGGER = KotlinLogging.logger {}
 class VedtakService(
     private val behandlingService: BehandlingService,
     private val beregningService: BeregningService,
-    private val grunnlagService: GrunnlagService,
     private val vedtakConsumer: BidragVedtakConsumer,
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
@@ -71,20 +69,25 @@ class VedtakService(
 //        }
 
         val behandling = behandlingService.hentBehandlingById(behandlingId, true)
-//        if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
+        if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
         val request =
-            if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
+            if (behandling.avslag != null) {
+                behandling.byggOpprettVedtakRequestForAvslag()
+            } else {
+                behandling.byggOpprettVedtakRequest()
+            }
 
         request.validerGrunnlagsreferanser()
-//        LOGGER.info { request.toMermaidOld().joinToString("") }
-        File("mermaid.txt").writeText(request.toMermaid().joinToString(""))
         val response = vedtakConsumer.fatteVedtak(request)
         behandlingService.oppdaterBehandling(
             behandlingId,
             OppdaterBehandlingRequestV2(vedtaksid = response.vedtaksid.toLong()),
         )
         LOGGER.info {
-            "Fattet vedtak for behandling $behandlingId med ${behandling.årsak?.let { "årsakstype $it" } ?: "avslagstype ${behandling.avslag}"} med vedtaksid ${response.vedtaksid}"
+            "Fattet vedtak for behandling $behandlingId med ${
+                behandling.årsak?.let { "årsakstype $it" }
+                    ?: "avslagstype ${behandling.avslag}"
+            } med vedtaksid ${response.vedtaksid}"
         }
         return response.vedtaksid
     }

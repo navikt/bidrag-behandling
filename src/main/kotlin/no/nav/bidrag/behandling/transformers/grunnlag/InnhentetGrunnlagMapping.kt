@@ -1,12 +1,9 @@
 package no.nav.bidrag.behandling.transformers.grunnlag
 
 import com.fasterxml.jackson.databind.node.POJONode
-import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.arbeidsforhold
 import no.nav.bidrag.behandling.database.datamodell.hentData
 import no.nav.bidrag.behandling.database.datamodell.husstandmedlemmer
@@ -14,8 +11,6 @@ import no.nav.bidrag.behandling.database.datamodell.inntekt
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
 import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
-import no.nav.bidrag.behandling.service.beregnSivilstandPerioder
-import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.boforhold.response.RelatertPerson
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -145,37 +140,6 @@ private fun RelatertPersonGrunnlagDto.tilRelatertPerson() =
         erBarnAvBmBp = erBarnAvBmBp,
         borISammeHusstandDtoListe = borISammeHusstandDtoListe,
     )
-
-fun Behandling.hentGrunnlagsreferanserForSivilstand(periode: Sivilstand): List<Grunnlagsreferanse> {
-    val beregnet = beregnSivilstandPerioder()
-    return beregnet.sivilstandListe.find {
-        it.periodeFom == periode.datoFom && it.periodeTom == periode.datoTom && it.sivilstandskode == periode.sivilstand
-    }?.grunnlagsreferanser ?: emptyList()
-}
-
-fun List<BehandlingGrunnlag>.hentGrunnlagsreferanserForHusstandsmedlem(
-    gjelderIdent: String,
-    gjelderBarn: String?,
-    periode: Husstandsbarnperiode,
-    behandling: Behandling,
-): List<Grunnlagsreferanse> {
-    if (gjelderBarn.isNullOrEmpty()) return emptyList()
-    val husstandsmedlemmer =
-        find { it.type == Grunnlagsdatatype.HUSSTANDSMEDLEMMER }.konverterData<List<RelatertPersonGrunnlagDto>>()
-            ?: emptyList()
-    val beregnet =
-        BoforholdApi.beregn(
-            behandling.virkningstidspunkt ?: behandling.søktFomDato,
-            husstandsmedlemmer.map { it.tilRelatertPerson() },
-        )
-    val husstandsmedlemmerGjelder =
-        beregnet?.filter { it.relatertPersonPersonId == gjelderIdent && it.relatertPersonPersonId == gjelderBarn }
-    val referanse =
-        husstandsmedlemmerGjelder?.find {
-            it.periodeFom == periode.datoFom && it.periodeTom == periode.datoTom && it.bostatus == periode.bostatus
-        }?.tilGrunnlagsreferanse(gjelderIdent, gjelderBarn)
-    return listOfNotNull(referanse)
-}
 
 fun BoforholdBeregnet.tilGrunnlagsreferanse(
     referanseGjelder: Grunnlagsreferanse,

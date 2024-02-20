@@ -44,7 +44,7 @@ class BeregningServiceTest {
     @Test
     fun `skal bygge grunnlag for beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         every { beregnForskuddApi.beregn(capture(beregnCapture)) } returns BeregnetForskuddResultat()
 
@@ -58,11 +58,11 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
-            it.grunnlagListe shouldHaveSize 14
+            it.grunnlagListe shouldHaveSize 16
 
             val personer =
                 it.grunnlagListe.hentAllePersoner()
-            personer shouldHaveSize 4
+            personer shouldHaveSize 5
             personer.any {
                 objectmapper.treeToValue(
                     it.innhold,

@@ -56,7 +56,7 @@ data class TestDataPerson(
 ) {
     fun tilRolle(behandling: Behandling = oppretteBehandling()) =
         Rolle(
-            id = 1,
+            id = behandling.roller.find { it.ident == ident }?.id ?: 1,
             ident = ident,
             navn = navn,
             foedselsdato = foedselsdato,
@@ -527,11 +527,12 @@ fun opprettAlleAktiveGrunnlagFraFil(
 fun opprettInntektBearbeidet(
     testDataPerson: TestDataPerson,
     grunnlag: HentGrunnlagDto,
+    behandling: Behandling,
 ): InntektBearbeidet {
     val inntekt =
         InntektApi("").transformerInntekter(
             grunnlag.tilTransformerInntekterRequest(
-                testDataPerson.tilRolle(),
+                testDataPerson.tilRolle(behandling),
             ),
         )
 
@@ -553,9 +554,9 @@ fun opprettBeregnetInntektFraGrunnlag(
         InntektsopplysningerBearbeidet(
             inntekt =
                 listOf(
-                    opprettInntektBearbeidet(testdataBM, grunnlag),
-                    opprettInntektBearbeidet(testdataBarn1, grunnlag),
-                    opprettInntektBearbeidet(testdataBarn2, grunnlag),
+                    opprettInntektBearbeidet(testdataBM, grunnlag, behandling),
+                    opprettInntektBearbeidet(testdataBarn1, grunnlag, behandling),
+                    opprettInntektBearbeidet(testdataBarn2, grunnlag, behandling),
                 ),
             arbeidsforhold = grunnlag.arbeidsforholdListe,
             barnetillegg = grunnlag.barnetilleggListe,

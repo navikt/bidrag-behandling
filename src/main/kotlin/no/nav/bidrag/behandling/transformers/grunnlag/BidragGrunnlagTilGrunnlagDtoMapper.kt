@@ -50,6 +50,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
         innhold =
             POJONode(
                 Person(
+                    // TODO: Hent nyeste ident
                     ident = relatertPersonPersonId?.let { Personident(it) },
                     navn = if (relatertPersonPersonId.isNullOrEmpty()) personnavn else null,
                     fødselsdato =
@@ -83,7 +84,6 @@ fun RelatertPersonGrunnlagDto.tilGrunnlagsobjekt(
                     InnhentetHusstandsmedlem.HusstandsmedlemPDL(
                         relatertPerson = relatertTilPersonReferanse,
                         erBarnAvBmBp = erBarnAvBmBp,
-                        // TODO: Navn og fødselsdato?
                         navn = navn,
                         fødselsdato = fødselsdato,
                         perioder =

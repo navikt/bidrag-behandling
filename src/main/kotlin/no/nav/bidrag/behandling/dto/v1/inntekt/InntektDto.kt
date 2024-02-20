@@ -23,10 +23,10 @@ data class InntektDto(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
     @Schema(type = "string", format = "date", example = "2025-01-25")
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM")
     val opprinneligFom: YearMonth? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM")
     val opprinneligTom: YearMonth? = null,
     @Schema(required = true)
     val ident: String,

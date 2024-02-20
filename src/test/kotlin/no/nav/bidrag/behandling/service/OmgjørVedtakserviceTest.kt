@@ -49,7 +49,6 @@ class OmgjørVedtakserviceTest {
             VedtakService(
                 behandlingService,
                 beregningService,
-                grunnlagService,
                 vedtakConsumer,
                 sakConsumer,
                 unleash,
