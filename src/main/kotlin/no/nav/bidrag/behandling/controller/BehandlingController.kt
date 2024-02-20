@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
+@Deprecated("Erstattes av endepunktene i BehandlingControllerV2")
 @BehandlingRestControllerV1
 class BehandlingController(
     private val behandlingService: BehandlingService,

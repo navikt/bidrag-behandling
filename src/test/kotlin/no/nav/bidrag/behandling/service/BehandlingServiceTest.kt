@@ -88,7 +88,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling = oppretteBehandling()
 
             // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
-            testdataManager.oppretteOgLagreGrunnlag<SummerteMånedsOgÅrsinntekter>(
+            testdataManager.oppretteOgLagreGrunnlag(
                 behandling.id!!,
                 Grunnlagsdatatype.INNTEKT_BEARBEIDET,
                 innhentet = LocalDateTime.now(),
