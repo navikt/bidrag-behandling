@@ -34,13 +34,18 @@ class BehandlingControllerV2(
             ApiResponse(
                 responseCode = "201",
                 description = "Forespørsel oppdatert uten feil",
-            ), ApiResponse(responseCode = "400", description = "Feil opplysninger oppgitt"), ApiResponse(
+            ),
+            ApiResponse(responseCode = "400", description = "Feil opplysninger oppgitt"),
+            ApiResponse(
                 responseCode = "401",
                 description = "Sikkerhetstoken mangler, er utløpt, eller av andre årsaker ugyldig",
-            ), ApiResponse(responseCode = "404", description = "Fant ikke forespørsel"), ApiResponse(
+            ),
+            ApiResponse(responseCode = "404", description = "Fant ikke forespørsel"),
+            ApiResponse(
                 responseCode = "500",
                 description = "Serverfeil",
-            ), ApiResponse(responseCode = "503", description = "Tjeneste utilgjengelig"),
+            ),
+            ApiResponse(responseCode = "503", description = "Tjeneste utilgjengelig"),
         ],
     )
     fun oppdatereBehandlingV2(
@@ -58,10 +63,8 @@ class BehandlingControllerV2(
 
         return ResponseEntity(
             behandling.tilBehandlingDtoV2(
-                grunnlagService.henteGjeldendeAktiveGrunnlagsdata(
-                    behandlingsid,
-                ),
-                grunnlagService.hentAlleSistInnhentet(behandlingsid).filter { g -> g.aktiv == null },
+                grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid),
+                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid),
             ),
             HttpStatus.CREATED,
         )

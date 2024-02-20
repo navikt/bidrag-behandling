@@ -64,7 +64,7 @@ class BehandlingController(
                 ?: throw IllegalArgumentException("Behandling mangler BM!")
 
         behandlingService.oppdaterBehandling(behandlingsid, request.tilOppdaterBehandlingRequestV2(personidentBm))
-        return behandlingService.hentBehandlingById(behandlingsid).tilBehandlingDtoV2(emptyList(), emptyList()).tilBehandlingDto()
+        return behandlingService.hentBehandlingById(behandlingsid).tilBehandlingDtoV2(emptyList(), emptySet()).tilBehandlingDto()
     }
 
     @Suppress("unused")

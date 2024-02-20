@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -14,7 +15,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 fun Behandling.tilBehandlingDtoV2(
     gjeldendeAktiveGrunnlagsdata: List<Grunnlag>,
-    ikkeAktiverteEndringerIGrunnlagsdata: List<Grunnlag>,
+    ikkeAktiverteEndringerIGrunnlagsdata: Set<GrunnlagsdataEndretDto>,
 ) = BehandlingDtoV2(
     id = id!!,
     vedtakstype = vedtakstype,
@@ -87,7 +88,7 @@ fun Behandling.tilBehandlingDtoV2(
                 ),
         ),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.map(Grunnlag::toDto).toSet(),
-    ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata.map(Grunnlag::toDto).toSet(),
+    ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
 )
 
 val eksplisitteYtelser =

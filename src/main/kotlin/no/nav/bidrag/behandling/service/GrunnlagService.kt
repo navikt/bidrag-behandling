@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.database.grunnlag.tilGrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
@@ -21,6 +22,7 @@ import no.nav.bidrag.behandling.transformers.tilSkattegrunnlagForLigningsår
 import no.nav.bidrag.behandling.transformers.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.tilSummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
+import no.nav.bidrag.behandling.transformers.toDto
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
@@ -31,6 +33,14 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
+
+val inntekterOgYtelser =
+    setOf(
+        Grunnlagsdatatype.INNTEKT,
+        Grunnlagsdatatype.KONTANTSTØTTE,
+        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+    )
 
 @Service
 class GrunnlagService(
@@ -65,6 +75,24 @@ class GrunnlagService(
             behandlingsid,
             grunnlagsdatatype.getOrMigrate(),
         )
+    }
+
+    fun henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid: Long): Set<GrunnlagsdataEndretDto> {
+        val nyinnhentaGrunnlag = hentAlleSistInnhentet(behandlingsid).filter { g -> g.aktiv == null }
+        val grunnlagstyperEndretIBearbeidaInntekter =
+            nyinnhentaGrunnlag.filter { inntekterOgYtelser.contains(it.type) }.map { it.type }.toSet()
+
+        return nyinnhentaGrunnlag.filter { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }.map {
+            GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = grunnlagstyperEndretIBearbeidaInntekter)
+        }.toSet() +
+            nyinnhentaGrunnlag.filter {
+                it.type != Grunnlagsdatatype.INNTEKT_BEARBEIDET &&
+                    !inntekterOgYtelser.contains(
+                        it.type,
+                    )
+            }.map {
+                GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = setOf(it.type))
+            }.toSet()
     }
 
     fun hentAlleSistInnhentet(behandlingId: Long): List<Grunnlag> =

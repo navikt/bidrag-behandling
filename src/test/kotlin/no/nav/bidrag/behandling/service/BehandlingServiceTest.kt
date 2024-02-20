@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
+import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
@@ -25,6 +26,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -32,6 +34,11 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
+import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -81,11 +88,62 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling = oppretteBehandling()
 
             // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
-            testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
+            testdataManager.oppretteOgLagreGrunnlag<SummerteMånedsOgÅrsinntekter>(
+                behandling.id!!,
+                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                innhentet = LocalDateTime.now(),
+                grunnlagsdata =
+                    SummerteMånedsOgÅrsinntekter(
+                        versjon = "123",
+                        summerteMånedsinntekter =
+                            listOf(
+                                SummertMånedsinntekt(
+                                    gjelderÅrMåned = YearMonth.now().minusYears(1).withMonth(12),
+                                    sumInntekt = BigDecimal(45000),
+                                    inntektPostListe =
+                                        listOf(
+                                            InntektPost(
+                                                beløp = BigDecimal(45000),
+                                                inntekstype = Inntektstype.LØNNSINNTEKT,
+                                                kode = "lønnFraSmåbrukarlaget",
+                                                visningsnavn = "Lønn fra småbrukarlaget",
+                                            ),
+                                        ),
+                                ),
+                            ),
+                        summerteÅrsinntekter =
+                            listOf(
+                                SummertÅrsinntekt(
+                                    sumInntekt = BigDecimal(388000),
+                                    inntektRapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                                    periode =
+                                        ÅrMånedsperiode(
+                                            YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                            YearMonth.now().withMonth(1).atDay(1),
+                                        ),
+                                    inntektPostListe = emptyList(),
+                                    visningsnavn = "Egensnekra inntekt",
+                                ),
+                            ),
+                    ),
+            )
+
+            testdataManager.oppretteOgLagreGrunnlag(
                 behandling.id!!,
                 Grunnlagsdatatype.INNTEKT,
-                LocalDate.of(2024, 1, 1).atStartOfDay(),
-                LocalDate.of(2024, 1, 1).atStartOfDay(),
+                innhentet = LocalDateTime.now(),
+                grunnlagsdata =
+                    GrunnlagInntekt(
+                        ainntekt = emptyList(),
+                        listOf(
+                            SkattegrunnlagGrunnlagDto(
+                                behandling.bidragsmottaker!!.ident!!,
+                                periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                                skattegrunnlagspostListe = emptyList(),
+                            ),
+                        ),
+                    ),
             )
 
             val personidentBm = Personident(behandling.bidragsmottaker!!.ident!!)
@@ -105,7 +163,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingDto.aktiveGrunnlagsdata.size shouldBe 10
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter { g ->
-                    g.grunnlagsdatatype == Grunnlagsdatatype.INNTEKT
+                    g.nyeData.grunnlagsdatatype == Grunnlagsdatatype.INNTEKT_BEARBEIDET
                 }.size shouldBe 1
             }
         }
