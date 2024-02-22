@@ -35,6 +35,9 @@ open class Grunnlag(
     open val data: String,
     open val innhentet: LocalDateTime,
     open val aktiv: LocalDateTime? = null,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rolle_id", nullable = false)
+    open val rolle: Rolle,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,

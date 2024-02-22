@@ -8,8 +8,9 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -76,7 +77,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
                         grunnlagsdatatype.getOrMigrate(),
                         data =
                             if (grunnlagsdata != null) {
-                                objektTilJson(grunnlagsdata)
+                                tilJson(grunnlagsdata)
                             } else {
                                 oppretteGrunnlagInntektsdata(
                                     grunnlagsdatatype,
@@ -86,6 +87,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
                             },
                         innhentet = innhentet,
                         aktiv = aktiv,
+                        rolle = it.roller.first { r -> Rolletype.BIDRAGSMOTTAKER == r.rolletype },
                     ),
                 )
             }
@@ -97,7 +99,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
         søktFomDato: LocalDate,
     ) = when (grunnlagsdatatype) {
         Grunnlagsdatatype.INNTEKT ->
-            objektTilJson(
+            tilJson(
                 GrunnlagInntekt(
                     ainntekt =
                         listOf(

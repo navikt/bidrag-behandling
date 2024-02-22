@@ -10,7 +10,7 @@ import java.time.YearMonth
 
 class Jsonoperasjoner {
     companion object {
-        fun <T> objektTilJson(objekt: T): String =
+        fun <T> tilJson(objekt: T): String =
             GsonBuilder()
                 .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
                 .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())

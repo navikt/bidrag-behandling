@@ -1,19 +1,13 @@
 package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import org.springframework.data.jpa.repository.Modifying
-import org.springframework.data.jpa.repository.Query
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import org.springframework.data.repository.CrudRepository
+import java.util.Optional
 
 interface InntektRepository : CrudRepository<Inntekt, Long> {
-    @Modifying
-    @Query("delete from inntekt i where i.behandling.id = :behandlingsid and  i.id in :ids")
-    fun sletteInntekterFraBehandling(
-        behandlingsid: Long,
-        ids: Set<Long>,
-    )
-
-    @Modifying
-    @Query("delete from inntekt i where i.behandling.id = :behandlingsid and  i.kilde = 'OFFENTLIG'")
-    fun sletteOffentligeInntekterFraBehandling(behandlingsid: Long)
+    fun findByIdAndKilde(
+        id: Long,
+        kilde: Kilde,
+    ): Optional<Inntekt>
 }

@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.TestContainerRunner
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
@@ -11,9 +12,10 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
@@ -55,7 +57,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var grunnlagService: GrunnlagService
 
-    val totaltAntallGrunnlag = 10
+    val totaltAntallGrunnlag = 16
 
     @BeforeEach
     fun setup() {
@@ -75,7 +77,18 @@ class GrunnlagServiceTest : TestContainerRunner() {
         fun `skal lagre skattegrunnlag`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
-            stubUtils.stubHenteGrunnlagOk()
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BARN ->
+                        stubUtils.stubHenteGrunnlagOk(
+                            rolle = it,
+                            navnResponsfil = "hente-grunnlagrespons-barn.json",
+                        )
+
+                    else -> throw Exception()
+                }
+            }
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -88,15 +101,24 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
             }
 
-            val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+            val grunnlagBarn = oppdatertBehandling.get().grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
+            assertSoftly {
+                grunnlagBarn.size shouldBe 6
+                grunnlagBarn.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }.size shouldBe 2
+                grunnlagBarn.filter { Grunnlagsdatatype.INNTEKT == it.type }.size shouldBe 2
+                grunnlagBarn.filter { Grunnlagsdatatype.INNTEKT_BEARBEIDET == it.type }.size shouldBe 2
+            }
+
+            val grunnlagBm =
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.INNTEKT,
                 )
 
-            assertThat(grunnlag?.data?.isNotEmpty())
+            assertThat(grunnlagBm?.data?.isNotEmpty())
 
-            val grunnlagInntekt = jsonTilObjekt<GrunnlagInntekt>(grunnlag?.data!!)
+            val grunnlagInntekt = jsonTilObjekt<GrunnlagInntekt>(grunnlagBm?.data!!)
 
             assertSoftly {
                 grunnlagInntekt.skattegrunnlag shouldNotBe emptySet<SkattegrunnlagGrunnlagDto>()
@@ -139,8 +161,23 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         skattegrunnlag = listOf(skattegrunnlag),
                     ),
             )
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER ->
+                        stubUtils.stubHenteGrunnlagOk(
+                            rolle = it,
+                            responsobjekt =
+                                tilHentGrunnlagDto(
+                                    skattegrunnlag =
+                                        listOf(
+                                            skattegrunnlag,
+                                        ),
+                                ),
+                        )
 
-            stubUtils.stubHenteGrunnlagOk(responsobjekt = tilHentGrunnlagDto(skattegrunnlag = listOf(skattegrunnlag)))
+                    else -> stubUtils.stubHenteGrunnlagOk(rolle = it, tomRespons = true)
+                }
+            }
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -154,8 +191,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.INNTEKT,
                 )
 
@@ -193,15 +231,28 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 Grunnlag(
                     behandling,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                    data = objektTilJson(setOf(småbarnstillegg)),
+                    data = tilJson(setOf(småbarnstillegg)),
                     innhentet = LocalDateTime.now().minusDays(1),
                     aktiv = LocalDateTime.now().minusDays(1),
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
                 ),
             )
 
             behandlingRepository.save(behandling)
 
-            stubUtils.stubHenteGrunnlagOk(responsobjekt = tilHentGrunnlagDto(småbarnstillegg = listOf(småbarnstillegg)))
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER ->
+                        stubUtils.stubHenteGrunnlagOk(
+                            it,
+                            responsobjekt = tilHentGrunnlagDto(småbarnstillegg = listOf(småbarnstillegg)),
+                        )
+
+                    Rolletype.BARN -> stubUtils.stubHenteGrunnlagOk(it, tomRespons = true)
+
+                    else -> throw Exception()
+                }
+            }
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -215,8 +266,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
                 )
 
@@ -258,9 +310,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 Grunnlag(
                     behandling,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                    data = objektTilJson(setOf(småbarnstillegg)),
+                    data = tilJson(setOf(småbarnstillegg)),
                     innhentet = LocalDateTime.now().minusDays(1),
                     aktiv = LocalDateTime.now().minusDays(1),
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
                 ),
             )
 
@@ -278,8 +331,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
                 )
 
@@ -325,8 +379,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.INNTEKT,
                 )
 
@@ -338,7 +393,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
-            stubUtils.stubHenteGrunnlagOk()
+            stubbeGrunnlagsinnhenting(behandling)
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -365,7 +420,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
-            stubUtils.stubHenteGrunnlagOk()
+            stubbeGrunnlagsinnhenting(behandling)
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -379,8 +434,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
                 )
             val husstandsmedlemmer = jsonListeTilObjekt<RelatertPersonGrunnlagDto>(grunnlag?.data!!)
@@ -403,7 +459,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
-            stubUtils.stubHenteGrunnlagOk()
+            stubbeGrunnlagsinnhenting(behandling)
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -417,8 +473,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SIVILSTAND,
                 )
             val sivilstand = jsonListeTilObjekt<SivilstandGrunnlagDto>(grunnlag?.data!!)
@@ -451,7 +508,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
-            stubUtils.stubHenteGrunnlagOk()
+            stubbeGrunnlagsinnhenting(behandling)
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -465,8 +522,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SIVILSTAND,
                 )
             val sivilstand = jsonListeTilObjekt<SivilstandGrunnlagDto>(grunnlag?.data!!)
@@ -498,7 +556,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         fun `skal lagre yteslser`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
-            stubUtils.stubHenteGrunnlagOk()
+
+            stubbeGrunnlagsinnhenting(behandling)
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -512,8 +571,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagBarnetillegg =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.BARNETILLEGG,
                 )
             grunnlagBarnetillegg shouldNotBe null
@@ -523,8 +583,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagBarnetilsyn =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.BARNETILSYN,
                 )
             grunnlagBarnetilsyn shouldNotBe null
@@ -534,8 +595,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagKontantstøtte =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.KONTANTSTØTTE,
                 )
             grunnlagKontantstøtte shouldNotBe null
@@ -545,8 +607,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagUtvidetBarnetrygd =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.UTVIDET_BARNETRYGD,
                 )
             grunnlagUtvidetBarnetrygd shouldNotBe null
@@ -558,8 +621,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagSmåbarnstillegg =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
                 )
             grunnlagSmåbarnstillegg shouldNotBe null
@@ -575,7 +639,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
-            stubUtils.stubHenteGrunnlagOk()
+            stubbeGrunnlagsinnhenting(behandling)
 
             // hvis
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -589,8 +653,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-                    behandlingId = behandling.id!!,
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                    behandlingsid = behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.ARBEIDSFORHOLD,
                 )
             val arbeidsforhold = jsonListeTilObjekt<ArbeidsforholdGrunnlagDto>(grunnlag?.data!!)
@@ -658,11 +723,17 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         "{\"test\": \"opp\"}",
                         tidspunktInnhentet,
                         tidspunktInnhentet,
+                        rolle = b.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
                     ),
                 )
 
             // hvis
-            val opplysninger = grunnlagService.hentSistInnhentet(b.id!!, Grunnlagsdatatype.BOFORHOLD)
+            val opplysninger =
+                grunnlagService.hentSistInnhentet(
+                    b.id!!,
+                    b.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
+                    Grunnlagsdatatype.BOFORHOLD,
+                )
 
             // så
             assertNotNull(opplysninger)
@@ -678,20 +749,39 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // gitt
             val behandling = testdataManager.opprettBehandling(true)
 
-            stubUtils.stubHenteGrunnlagOk()
+            stubbeGrunnlagsinnhenting(behandling)
 
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // hvis
-            val nyesteGrunnlagPerType = grunnlagService.hentAlleSistInnhentet(behandling.id!!)
+            val nyesteGrunnlagPerType =
+                grunnlagService.hentAlleSistInnhentet(
+                    behandling.id!!,
+                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
+                )
 
             // så
             assertSoftly {
-                nyesteGrunnlagPerType.size shouldBe totaltAntallGrunnlag
+                nyesteGrunnlagPerType.size shouldBe 10
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.HUSSTANDSMEDLEMMER }.size shouldBe 1
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.INNTEKT }.size shouldBe 1
                 nyesteGrunnlagPerType.filter { g -> g.type == Grunnlagsdatatype.SIVILSTAND }.size shouldBe 1
+            }
+        }
+    }
+
+    private fun stubbeGrunnlagsinnhenting(behandling: Behandling) {
+        behandling.roller.forEach {
+            when (it.rolletype) {
+                Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                Rolletype.BARN ->
+                    stubUtils.stubHenteGrunnlagOk(
+                        rolle = it,
+                        navnResponsfil = "hente-grunnlagrespons-barn.json",
+                    )
+
+                else -> throw Exception()
             }
         }
     }

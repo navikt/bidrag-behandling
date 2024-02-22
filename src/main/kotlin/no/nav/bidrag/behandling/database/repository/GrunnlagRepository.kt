@@ -8,8 +8,9 @@ import org.springframework.data.repository.CrudRepository
 import java.time.LocalDateTime
 
 interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
-    fun findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
-        behandlingId: Long,
+    fun findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+        behandlingsid: Long,
+        rolleid: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
     ): Grunnlag?
 

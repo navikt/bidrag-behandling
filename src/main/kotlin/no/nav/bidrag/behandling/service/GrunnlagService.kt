@@ -6,16 +6,18 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.database.grunnlag.tilGrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.tilKontantstøtte
 import no.nav.bidrag.behandling.transformers.tilSkattegrunnlagForLigningsår
@@ -46,6 +48,7 @@ val inntekterOgYtelser =
 class GrunnlagService(
     private val grunnlagRepository: GrunnlagRepository,
     private val behandlingRepository: BehandlingRepository,
+    private val rolleRepository: RolleRepository,
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val inntektApi: InntektApi,
     private val inntektService: InntektService,
@@ -69,16 +72,23 @@ class GrunnlagService(
 
     fun hentSistInnhentet(
         behandlingsid: Long,
+        rolleid: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
     ): Grunnlag? {
-        return grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(
+        return grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
             behandlingsid,
+            rolleid,
             grunnlagsdatatype.getOrMigrate(),
         )
     }
 
-    fun henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid: Long): Set<GrunnlagsdataEndretDto> {
-        val nyinnhentaGrunnlag = hentAlleSistInnhentet(behandlingsid).filter { g -> g.aktiv == null }
+    fun henteNyeGrunnlagsdataMedEndringsdiff(
+        behandlingsid: Long,
+        roller: Set<Rolle>,
+    ): Set<GrunnlagsdataEndretDto> {
+        val nyinnhentaGrunnlag =
+            roller.flatMap { hentAlleSistInnhentet(behandlingsid, it.id!!) }.toSet().filter { g -> g.aktiv == null }
+
         val grunnlagstyperEndretIBearbeidaInntekter =
             nyinnhentaGrunnlag.filter { inntekterOgYtelser.contains(it.type) }.map { it.type }.toSet()
 
@@ -86,18 +96,18 @@ class GrunnlagService(
             GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = grunnlagstyperEndretIBearbeidaInntekter)
         }.toSet() +
             nyinnhentaGrunnlag.filter {
-                it.type != Grunnlagsdatatype.INNTEKT_BEARBEIDET &&
-                    !inntekterOgYtelser.contains(
-                        it.type,
-                    )
+                it.type != Grunnlagsdatatype.INNTEKT_BEARBEIDET && !inntekterOgYtelser.contains(it.type)
             }.map {
                 GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = setOf(it.type))
             }.toSet()
     }
 
-    fun hentAlleSistInnhentet(behandlingId: Long): List<Grunnlag> =
+    fun hentAlleSistInnhentet(
+        behandlingsid: Long,
+        rolleid: Long,
+    ): List<Grunnlag> =
         Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
-            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByInnhentetDesc(behandlingId, it)
+            grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(behandlingsid, rolleid, it)
         }
 
     fun henteGjeldendeAktiveGrunnlagsdata(behandlingId: Long): List<Grunnlag> =
@@ -111,8 +121,12 @@ class GrunnlagService(
     ) {
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
 
+        val rolleInhentetFor =
+            rolleRepository.findRollerByBehandlingId(behandlingsid).first { it.ident == grunnlagsrequest.key.verdi }
+
         lagreGrunnlagHvisEndret(
             behandlingsid,
+            rolleInhentetFor,
             Grunnlagsdatatype.ARBEIDSFORHOLD,
             innhentetGrunnlag.arbeidsforholdListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
@@ -120,6 +134,7 @@ class GrunnlagService(
 
         lagreGrunnlagHvisEndret(
             behandlingsid,
+            rolleInhentetFor,
             Grunnlagsdatatype.BARNETILLEGG,
             innhentetGrunnlag.barnetilleggListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
@@ -127,6 +142,7 @@ class GrunnlagService(
 
         lagreGrunnlagHvisEndret(
             behandlingsid,
+            rolleInhentetFor,
             Grunnlagsdatatype.BARNETILSYN,
             innhentetGrunnlag.barnetilsynListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
@@ -134,6 +150,7 @@ class GrunnlagService(
 
         lagreGrunnlagHvisEndret(
             behandlingsid,
+            rolleInhentetFor,
             Grunnlagsdatatype.KONTANTSTØTTE,
             innhentetGrunnlag.kontantstøtteListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
@@ -141,6 +158,7 @@ class GrunnlagService(
 
         lagreGrunnlagHvisEndret(
             behandlingsid,
+            rolleInhentetFor,
             Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
             innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
@@ -148,6 +166,7 @@ class GrunnlagService(
 
         lagreGrunnlagHvisEndret(
             behandlingsid,
+            rolleInhentetFor,
             Grunnlagsdatatype.SIVILSTAND,
             innhentetGrunnlag.sivilstandListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
@@ -155,6 +174,7 @@ class GrunnlagService(
 
         lagreGrunnlagHvisEndret(
             behandlingsid,
+            rolleInhentetFor,
             Grunnlagsdatatype.SMÅBARNSTILLEGG,
             innhentetGrunnlag.småbarnstilleggListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
@@ -162,6 +182,7 @@ class GrunnlagService(
 
         lagreGrunnlagHvisEndret(
             behandlingsid,
+            rolleInhentetFor,
             Grunnlagsdatatype.UTVIDET_BARNETRYGD,
             innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
@@ -169,7 +190,7 @@ class GrunnlagService(
 
         lagreInntektHvisEndret(
             behandlingsid,
-            grunnlagsrequest.key,
+            rolleInhentetFor,
             innhentetGrunnlag.hentetTidspunkt,
             Grunnlagsdatatype.INNTEKT,
             innhentetGrunnlag.tilGrunnlagInntekt(),
@@ -189,7 +210,7 @@ class GrunnlagService(
 
         lagreInntektHvisEndret(
             behandlingsid,
-            grunnlagsrequest.key,
+            rolleInhentetFor,
             innhentetGrunnlag.hentetTidspunkt,
             Grunnlagsdatatype.INNTEKT_BEARBEIDET,
             sammenstilteInntekter.tilSummerteMånedsOgÅrsinntekter(),
@@ -198,6 +219,7 @@ class GrunnlagService(
 
     private fun opprett(
         behandlingsid: Long,
+        idTilRolleInnhentetFor: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
         data: String,
         innhentet: LocalDateTime,
@@ -214,6 +236,7 @@ class GrunnlagService(
                         data = data,
                         innhentet = innhentet,
                         aktiv = aktiv,
+                        rolle = it.roller.first { r -> r.id == idTilRolleInnhentetFor },
                     ),
                 )
             }
@@ -221,22 +244,24 @@ class GrunnlagService(
 
     private inline fun <reified T> lagreGrunnlagHvisEndret(
         behandlingsid: Long,
+        rolle: Rolle,
         grunnlagstype: Grunnlagsdatatype,
         innhentetGrunnlag: Set<T>,
         hentetTidspunkt: LocalDateTime,
     ) {
-        val sistInnhentedeGrunnlagAvType: Set<T> =
-            henteNyesteGrunnlagsdatasett<T>(behandlingsid, grunnlagstype).toSet()
+        val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
+            henteNyesteGrunnlagsdatasett<T>(behandlingsid, rolle.id!!, grunnlagstype).toSet()
 
-        if ((sistInnhentedeGrunnlagAvType.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
-            (sistInnhentedeGrunnlagAvType.isNotEmpty() && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
+        if ((sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
+            (sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() && innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle)
         ) {
             opprett(
                 behandlingsid = behandlingsid,
-                data = objektTilJson(innhentetGrunnlag),
+                data = tilJson(innhentetGrunnlag),
                 grunnlagsdatatype = grunnlagstype,
                 innhentet = hentetTidspunkt,
-                aktiv = if (sistInnhentedeGrunnlagAvType.isEmpty() && innhentetGrunnlag.isNotEmpty()) LocalDateTime.now() else null,
+                aktiv = if (sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) LocalDateTime.now() else null,
+                idTilRolleInnhentetFor = rolle.id!!,
             )
         } else {
             log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandlingsid." }
@@ -245,30 +270,31 @@ class GrunnlagService(
 
     private inline fun <reified T> lagreInntektHvisEndret(
         behandlingsid: Long,
-        personident: Personident,
+        rolle: Rolle,
         hentetTidspunkt: LocalDateTime,
         grunnlagstype: Grunnlagsdatatype,
         innhentetGrunnlag: T,
     ) {
         val sistInnhentedeGrunnlagAvType: T? =
-            henteNyesteGrunnlagsdataobjekt<T>(behandlingsid, grunnlagstype)
+            henteNyesteGrunnlagsdataobjekt<T>(behandlingsid, rolle.id!!, grunnlagstype)
 
         if ((sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)) ||
             (sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
         ) {
             opprett(
                 behandlingsid = behandlingsid,
-                data = objektTilJson(innhentetGrunnlag),
+                data = tilJson(innhentetGrunnlag),
                 grunnlagsdatatype = grunnlagstype,
                 innhentet = hentetTidspunkt,
                 aktiv = if (sistInnhentedeGrunnlagAvType == null) LocalDateTime.now() else null,
+                idTilRolleInnhentetFor = rolle.id!!,
             )
 
             // Oppdatere inntektstabell med sammenstilte offentlige inntekter
             if (Grunnlagsdatatype.INNTEKT_BEARBEIDET == grunnlagstype && sistInnhentedeGrunnlagAvType == null) {
                 inntektService.lagreSammenstilteInntekter(
                     behandlingsid,
-                    personident,
+                    Personident(rolle.ident!!),
                     innhentetGrunnlag as SummerteMånedsOgÅrsinntekter,
                 )
             }
@@ -291,9 +317,10 @@ class GrunnlagService(
 
     private inline fun <reified T> henteNyesteGrunnlagsdatasett(
         behandlingsid: Long,
+        rolleid: Long,
         grunnlagstype: Grunnlagsdatatype,
     ): Set<T> {
-        val grunnlagsdata = hentSistInnhentet(behandlingsid, grunnlagstype)?.data
+        val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
 
         return if (grunnlagsdata != null) {
             jsonListeTilObjekt<T>(grunnlagsdata)
@@ -304,9 +331,10 @@ class GrunnlagService(
 
     private inline fun <reified T> henteNyesteGrunnlagsdataobjekt(
         behandlingsid: Long,
+        rolleid: Long,
         grunnlagstype: Grunnlagsdatatype,
     ): T? {
-        val grunnlagsdata = hentSistInnhentet(behandlingsid, grunnlagstype)?.data
+        val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
 
         return if (grunnlagsdata != null) {
             jsonTilObjekt<T>(grunnlagsdata)
