@@ -98,6 +98,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
                 oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
             }
 
@@ -124,6 +125,28 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagInntekt.skattegrunnlag shouldNotBe emptySet<SkattegrunnlagGrunnlagDto>()
                 grunnlagInntekt.skattegrunnlag.size shouldBe 1
                 grunnlagInntekt.skattegrunnlag[0].personId shouldBe "99057812345"
+            }
+        }
+
+        @Test
+        fun `skal ikke oppdatere grunnlag dersom venteperioden etter forrige innhenting ikke er over`() {
+            // gitt
+            val grunnlagSistInnhentet = LocalDateTime.now().minusMinutes(30)
+            val behandling = testdataManager.opprettBehandling(false)
+            behandling.grunnlagSistInnhentet = grunnlagSistInnhentet
+
+            stubbeGrunnlagsinnhenting(behandling)
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                oppdatertBehandling.get().grunnlagSistInnhentet = grunnlagSistInnhentet
+                oppdatertBehandling.get().grunnlag.size shouldBe 0
             }
         }
 

@@ -30,6 +30,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -53,15 +54,29 @@ class GrunnlagService(
     private val inntektApi: InntektApi,
     private val inntektService: InntektService,
 ) {
+    @Value("\${egenskaper.grunnlag.min-antall-timer-siden-forrige-innhenting}")
+    private lateinit var grenseInnhenting: String
+
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
-        val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+        if (foretaNyGrunnlagsinnhenting(behandling)) {
+            val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
 
-        grunnlagRequestobjekter.forEach {
-            henteOglagreGrunnlag(
-                behandling.id!!,
-                it,
-            )
+            grunnlagRequestobjekter.forEach {
+                henteOglagreGrunnlag(
+                    behandling.id!!,
+                    it,
+                )
+            }
+
+            behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
+        } else {
+            val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusHours(grenseInnhenting.toLong())
+
+            log.info {
+                "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
+                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
+            }
         }
     }
 
@@ -114,6 +129,11 @@ class GrunnlagService(
         Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
             grunnlagRepository.findTopByBehandlingIdAndTypeOrderByAktivDescIdDesc(behandlingId, it)
         }
+
+    private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean {
+        return behandling.grunnlagSistInnhentet == null ||
+            LocalDateTime.now().minusHours(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+    }
 
     private fun henteOglagreGrunnlag(
         behandlingsid: Long,

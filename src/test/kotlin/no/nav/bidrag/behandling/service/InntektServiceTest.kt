@@ -57,7 +57,7 @@ class InntektServiceTest : TestContainerRunner() {
     open inner class OppdatereSammenstilte {
         @Test
         @Transactional
-        open fun `skal lagre innnhentede inntekter`() {
+        open fun `skal lagre innnhentede inntekter for gyldige inntektsrapporteringstyper`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
 
@@ -85,6 +85,17 @@ class InntektServiceTest : TestContainerRunner() {
                                 sumInntekt = BigDecimal(500000),
                                 visningsnavn = "Sigrun ligningsinntekt (LIGS) ${Year.now().minusYears(1)}",
                             ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.KONTANTSTØTTE,
+                                inntektPostListe = emptyList(),
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                        YearMonth.now().withMonth(1).atDay(1),
+                                    ),
+                                sumInntekt = BigDecimal(60000),
+                                visningsnavn = "Kontantstøtte",
+                            ),
                         ),
                 )
 
@@ -99,12 +110,21 @@ class InntektServiceTest : TestContainerRunner() {
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
             assertSoftly {
-                oppdatertBehandling.get().inntekter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first().belop shouldBe
-                    summerteMånedsOgÅrsinntekter.summerteÅrsinntekter.first().sumInntekt
-                oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first().inntektsposter.first().kode shouldBe
-                    summerteMånedsOgÅrsinntekter.summerteÅrsinntekter.first().inntektPostListe.first().kode
+                oppdatertBehandling.get().inntekter.size shouldBe 2
+                oppdatertBehandling.get().inntekter.first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }
+                    .belop shouldBe
+                    summerteMånedsOgÅrsinntekter.summerteÅrsinntekter
+                        .first { Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering }.sumInntekt
+                oppdatertBehandling.get().inntekter.first { Inntektsrapportering.KONTANTSTØTTE == it.type }.belop shouldBe
+                    summerteMånedsOgÅrsinntekter.summerteÅrsinntekter
+                        .first { Inntektsrapportering.KONTANTSTØTTE == it.inntektRapportering }.sumInntekt
+                oppdatertBehandling.get().inntekter
+                    .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }.inntektsposter.size shouldBe 1
+                oppdatertBehandling.get().inntekter
+                    .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }.inntektsposter.first().kode shouldBe
+                    summerteMånedsOgÅrsinntekter.summerteÅrsinntekter.first {
+                        Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering
+                    }.inntektPostListe.first().kode
             }
         }
     }

@@ -179,6 +179,7 @@ class BehandlingService(
 
     fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {
         val behandling = hentBehandlingById(behandlingsid)
+
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
         val gjeldendeAktiveGrunnlagsdata =
