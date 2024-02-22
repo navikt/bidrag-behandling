@@ -7,10 +7,12 @@ import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import java.time.LocalDate
 
@@ -45,11 +47,15 @@ fun ResultatForskuddsberegningBarn.byggStønadsendringerForVedtak(behandling: Be
 }
 
 fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnlag {
-    val personobjekter = tilPersonobjekter()
+    val personobjekter = tilPersonobjekter(søknadsbarnRolle)
     val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
     val bostatusBarn = tilGrunnlagBostatus(personobjekter)
+
     val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn)
-    val sivilstandBm = tilGrunnlagSivilstand(personobjekter.bidragsmottaker)
+    val sivilstandBm =
+        tilGrunnlagSivilstand(
+            personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),
+        )
     return BeregnGrunnlag(
         periode =
             ÅrMånedsperiode(
@@ -62,12 +68,19 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
     )
 }
 
+fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
+
 fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
     val personobjekter = tilPersonobjekter()
-    val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekter)
     val bostatus = tilGrunnlagBostatus(personobjekter)
+    val personobjekterMedHusstandsmedlemmer =
+        (personobjekter + bostatus.husstandsmedlemmer()).toMutableSet()
+    val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekterMedHusstandsmedlemmer)
     // TODO: Er dette for BP i bidrag?
-    val sivilstand = tilGrunnlagSivilstand(personobjekter.bidragsmottaker)
+    val sivilstand =
+        tilGrunnlagSivilstand(
+            personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),
+        )
     val inntekter = tilGrunnlagInntekt(personobjekter)
     return (personobjekter + bostatus + inntekter + sivilstand + innhentetGrunnlagListe).toSet()
 }

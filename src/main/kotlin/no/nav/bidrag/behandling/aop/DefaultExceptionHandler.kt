@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.aop
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import no.nav.bidrag.behandling.BeregningAvResultatForBehandlingFeilet
+import no.nav.bidrag.commons.util.secureLogger
 import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -60,6 +61,7 @@ class DefaultExceptionHandler {
     fun handleHttpClientErrorException(exception: HttpStatusCodeException): ResponseEntity<*> {
         val feilmelding = getErrorMessage(exception)
         LOGGER.warn(feilmelding, exception)
+        secureLogger.warn(exception) { feilmelding }
         return ResponseEntity.status(exception.statusCode)
             .header(HttpHeaders.WARNING, feilmelding)
             .build<Any>()

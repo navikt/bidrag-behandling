@@ -14,14 +14,14 @@ import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
-import no.nav.bidrag.behandling.transformers.vedtak.TreeChild
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseList
 import no.nav.bidrag.behandling.transformers.vedtak.tilOpprettRequestDto
 import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
-import no.nav.bidrag.behandling.transformers.vedtak.toMermaid
-import no.nav.bidrag.behandling.transformers.vedtak.toTree
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
+import no.nav.bidrag.commons.util.TreeChild
+import no.nav.bidrag.commons.util.toMermaid
+import no.nav.bidrag.commons.util.toTree
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype

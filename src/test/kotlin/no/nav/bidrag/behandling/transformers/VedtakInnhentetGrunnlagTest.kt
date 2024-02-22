@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.utils.testdataBarn2
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
+import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -52,15 +53,25 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 
 class VedtakInnhentetGrunnlagTest {
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun initPersonMock() {
+            stubPersonConsumer()
+        }
+    }
+
     val grunnlagBm =
         Rolle(
             behandling = oppretteBehandling(),
@@ -490,9 +501,9 @@ class VedtakInnhentetGrunnlagTest {
                 grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
-                this shouldHaveSize 16
-                hentGrunnlagAinntekt() shouldHaveSize 13
-                hentSkattegrunnlag() shouldHaveSize 3
+                this shouldHaveSize 10
+                hentGrunnlagAinntekt() shouldHaveSize 2
+                hentSkattegrunnlag() shouldHaveSize 4
             }
         }
 
@@ -524,22 +535,27 @@ class VedtakInnhentetGrunnlagTest {
                 grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
-                this shouldHaveSize 5
+                it shouldHaveSize 5
                 assertSoftly(hentGrunnlagAinntekt()) {
                     it shouldHaveSize 2
+                    it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse) shouldHaveSize 1
+                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 1
                     assertSoftly(it[0]) {
                         it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val ainntekt = it.innholdTilObjekt<InnhentetAinntekt>()
-                        ainntekt.periode.fom shouldBe LocalDate.parse("2022-01-01")
-                        ainntekt.periode.til shouldBe LocalDate.parse("2023-01-01")
-                        ainntekt.grunnlag.ainntektspostListe shouldHaveSize 2
-                        assertSoftly(ainntekt.grunnlag.ainntektspostListe[0]) {
-                            beløp shouldBe BigDecimal(60000)
-                            kategori shouldBe "LOENNSINNTEKT"
-                            fordelType shouldBe "kontantytelse"
-                            utbetalingsperiode shouldBe "2023-01"
-                            opptjeningsperiodeFra shouldBe LocalDate.parse("2022-01-31")
-                            opptjeningsperiodeTil shouldBe LocalDate.parse("2023-01-01")
+                        ainntekt.grunnlag shouldHaveSize 2
+                        ainntekt.datakilde shouldBe GrunnlagDatakilde.INNTEKSKOMPONENTEN
+                        assertSoftly(ainntekt.grunnlag[0]) {
+                            periode.fom shouldBe LocalDate.parse("2022-01-01")
+                            periode.til shouldBe LocalDate.parse("2023-01-01")
+                            assertSoftly(ainntektspostListe[0]) {
+                                beløp shouldBe BigDecimal(60000)
+                                kategori shouldBe "LOENNSINNTEKT"
+                                fordelType shouldBe "kontantytelse"
+                                utbetalingsperiode shouldBe "2023-01"
+                                opptjeningsperiodeFra shouldBe LocalDate.parse("2022-01-31")
+                                opptjeningsperiodeTil shouldBe LocalDate.parse("2023-01-01")
+                            }
                         }
                     }
                 }
@@ -584,8 +600,9 @@ class VedtakInnhentetGrunnlagTest {
                         val skattegrunnlag = it.innholdTilObjekt<InnhentetSkattegrunnlag>()
                         skattegrunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         skattegrunnlag.periode.til shouldBe LocalDate.parse("2023-01-01")
-                        skattegrunnlag.grunnlag.skattegrunnlagListe shouldHaveSize 1
-                        assertSoftly(skattegrunnlag.grunnlag.skattegrunnlagListe[0]) {
+                        skattegrunnlag.grunnlag shouldHaveSize 1
+                        skattegrunnlag.datakilde shouldBe GrunnlagDatakilde.SIGRUN
+                        assertSoftly(skattegrunnlag.grunnlag[0]) {
                             beløp shouldBe BigDecimal.valueOf(5000.0)
                             skattegrunnlagType shouldBe "ORDINÆR"
                             kode shouldBe "annenArbeidsinntekt"
@@ -596,8 +613,8 @@ class VedtakInnhentetGrunnlagTest {
                         val skattegrunnlag = it.innholdTilObjekt<InnhentetSkattegrunnlag>()
                         skattegrunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
                         skattegrunnlag.periode.til shouldBe LocalDate.parse("2023-01-01")
-                        skattegrunnlag.grunnlag.skattegrunnlagListe shouldHaveSize 2
-                        assertSoftly(skattegrunnlag.grunnlag.skattegrunnlagListe[0]) {
+                        skattegrunnlag.grunnlag shouldHaveSize 2
+                        assertSoftly(skattegrunnlag.grunnlag[0]) {
                             beløp shouldBe BigDecimal.valueOf(5000.0)
                             skattegrunnlagType shouldBe "ORDINÆR"
                             kode shouldBe "annenArbeidsinntekt"
@@ -629,7 +646,7 @@ class VedtakInnhentetGrunnlagTest {
                                     ainntektListe = opprettAinntektGrunnlagListe(),
                                     barnetilleggListe = opprettBarnetilleggListe(),
                                     utvidetBarnetrygdListe = opprettUtvidetBarnetrygdGrunnlagListe(),
-                                    kontantstotteListe = opprettKontantstøtteListe(),
+                                    kontantstøtteListe = opprettKontantstøtteListe(),
                                     småbarnstilleggListe = opprettSmåbarnstillegListe(),
                                     barnetilsynListe = opprettBarnetilsynListe(),
                                 ),
@@ -640,93 +657,119 @@ class VedtakInnhentetGrunnlagTest {
                 grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
-                this shouldHaveSize 25
+                this shouldHaveSize 13
                 assertSoftly(hentBarnetillegg()) {
-                    it shouldHaveSize 6
+                    it shouldHaveSize 2
                     it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBp.referanse) shouldHaveSize 1
-                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 5
-                    it.filter { it.innholdTilObjekt<InnhentetBarnetillegg>().grunnlag.gjelderBarn == søknadsbarnGrunnlag1.referanse } shouldHaveSize 4
-                    it.filter { it.innholdTilObjekt<InnhentetBarnetillegg>().grunnlag.gjelderBarn == søknadsbarnGrunnlag2.referanse } shouldHaveSize 2
+                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 1
+                    assertSoftly(it[0]) {
+                        val barnetillegg = innholdTilObjekt<InnhentetBarnetillegg>()
+                        barnetillegg.grunnlag shouldHaveSize 1
+                        barnetillegg.hentBarnetilleggForBarn(søknadsbarnGrunnlag1.referanse) shouldHaveSize 1
+                    }
                     assertSoftly(it[1]) {
+                        val barnetillegg = innholdTilObjekt<InnhentetBarnetillegg>()
+                        barnetillegg.grunnlag shouldHaveSize 5
+                        barnetillegg.datakilde shouldBe GrunnlagDatakilde.PENSJON
+                        barnetillegg.hentBarnetilleggForBarn(søknadsbarnGrunnlag1.referanse) shouldHaveSize 3
+                        barnetillegg.hentBarnetilleggForBarn(søknadsbarnGrunnlag2.referanse) shouldHaveSize 2
                         it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val grunnlag = it.innholdTilObjekt<InnhentetBarnetillegg>()
-                        grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
-                        grunnlag.periode.til shouldBe LocalDate.parse("2022-04-30")
-                        grunnlag.grunnlag.gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
-                        grunnlag.grunnlag.barnetilleggType shouldBe "PENSJON"
-                        grunnlag.grunnlag.beløpBrutto shouldBe BigDecimal(1000)
-                        grunnlag.grunnlag.barnType shouldBe "FELLES"
+                        assertSoftly(grunnlag.grunnlag[0]) {
+                            periode.fom shouldBe LocalDate.parse("2022-01-01")
+                            periode.til shouldBe LocalDate.parse("2022-04-30")
+                            gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
+                            barnetilleggType shouldBe "PENSJON"
+                            beløpBrutto shouldBe BigDecimal(1000)
+                            barnType shouldBe "FELLES"
+                        }
                     }
                 }
                 assertSoftly(hentUtvidetBarnetrygd()) {
-                    it shouldHaveSize 3
-                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 3
+                    it shouldHaveSize 1
+                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 1
                     assertSoftly(it[0]) {
                         it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
-                        val grunnlag = it.innholdTilObjekt<InnhentetUtvidetBarnetrygd>()
-                        grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
-                        grunnlag.periode.til shouldBe LocalDate.parse("2022-03-30")
-                        grunnlag.grunnlag.beløp shouldBe BigDecimal(5000)
-                        grunnlag.grunnlag.manueltBeregnet shouldBe false
+                        val utvidetBarnetrygd = it.innholdTilObjekt<InnhentetUtvidetBarnetrygd>()
+                        utvidetBarnetrygd.grunnlag shouldHaveSize 3
+                        utvidetBarnetrygd.datakilde shouldBe GrunnlagDatakilde.FAMILIE_BA_SAK
+                        assertSoftly(utvidetBarnetrygd.grunnlag[0]) {
+                            periode.fom shouldBe LocalDate.parse("2022-01-01")
+                            periode.til shouldBe LocalDate.parse("2022-03-30")
+                            beløp shouldBe BigDecimal(5000)
+                            manueltBeregnet shouldBe false
+                        }
                     }
                 }
                 assertSoftly(hentSmåbarnstillegg()) {
-                    it shouldHaveSize 4
+                    it shouldHaveSize 2
                     it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBp.referanse) shouldHaveSize 1
-                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 3
+                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 1
                     assertSoftly(it[0]) {
                         it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
-                        val grunnlag = it.innholdTilObjekt<InnhentetSmåbarnstillegg>()
-                        grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
-                        grunnlag.periode.til shouldBe LocalDate.parse("2022-03-30")
-                        grunnlag.grunnlag.beløp shouldBe BigDecimal(5000)
-                        grunnlag.grunnlag.manueltBeregnet shouldBe false
+                        val småbarnstillegg = it.innholdTilObjekt<InnhentetSmåbarnstillegg>()
+                        småbarnstillegg.grunnlag shouldHaveSize 3
+                        småbarnstillegg.datakilde shouldBe GrunnlagDatakilde.FAMILIE_BA_SAK
+                        assertSoftly(småbarnstillegg.grunnlag[0]) {
+                            periode.fom shouldBe LocalDate.parse("2022-01-01")
+                            periode.til shouldBe LocalDate.parse("2022-03-30")
+                            beløp shouldBe BigDecimal(5000)
+                            manueltBeregnet shouldBe false
+                        }
                     }
                 }
                 assertSoftly(hentKontantstøtte()) {
-                    it shouldHaveSize 5
+                    it shouldHaveSize 2
                     it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBp.referanse) shouldHaveSize 1
-                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 4
-                    it.filter { it.innholdTilObjekt<InnhentetKontantstøtte>().grunnlag.gjelderBarn == søknadsbarnGrunnlag1.referanse } shouldHaveSize 4
-                    it.filter { it.innholdTilObjekt<InnhentetKontantstøtte>().grunnlag.gjelderBarn == søknadsbarnGrunnlag2.referanse } shouldHaveSize 1
+                    it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 1
                     assertSoftly(it[1]) {
                         it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
-                        val grunnlag = it.innholdTilObjekt<InnhentetKontantstøtte>()
-                        grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
-                        grunnlag.periode.til shouldBe LocalDate.parse("2022-07-31")
-                        grunnlag.grunnlag.beløp shouldBe 1000
-                        grunnlag.grunnlag.gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
+                        val innhentetKontantstøtte = it.innholdTilObjekt<InnhentetKontantstøtte>()
+                        innhentetKontantstøtte.datakilde shouldBe GrunnlagDatakilde.FAMILIE_KONTANTSTØTTE_SAK
+                        innhentetKontantstøtte.grunnlag shouldHaveSize 4
+                        innhentetKontantstøtte.hentKontantstøtteForBarn(søknadsbarnGrunnlag1.referanse) shouldHaveSize 3
+                        innhentetKontantstøtte.hentKontantstøtteForBarn(søknadsbarnGrunnlag2.referanse) shouldHaveSize 1
+                        assertSoftly(innhentetKontantstøtte.grunnlag[0]) {
+                            periode.fom shouldBe LocalDate.parse("2022-01-01")
+                            periode.til shouldBe LocalDate.parse("2022-07-31")
+                            beløp shouldBe 1000
+                            gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
+                        }
                     }
                 }
                 assertSoftly(hentBarnetilsyn()) {
-                    it shouldHaveSize 2
-                    it.filter { it.innholdTilObjekt<InnhentetBarnetilsyn>().grunnlag.gjelderBarn == søknadsbarnGrunnlag1.referanse } shouldHaveSize 2
-                    it.filter { it.innholdTilObjekt<InnhentetBarnetilsyn>().grunnlag.gjelderBarn == søknadsbarnGrunnlag2.referanse } shouldHaveSize 0
+                    it shouldHaveSize 1
                     assertSoftly(it[0]) {
                         it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
-                        val grunnlag = it.innholdTilObjekt<InnhentetBarnetilsyn>()
-                        grunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
-                        grunnlag.periode.til shouldBe LocalDate.parse("2022-07-31")
-                        grunnlag.grunnlag.tilsynstype shouldBe Tilsynstype.HELTID
-                        grunnlag.grunnlag.skolealder shouldBe Skolealder.IKKE_ANGITT
+                        val barnetilsyn = it.innholdTilObjekt<InnhentetBarnetilsyn>()
+                        barnetilsyn.grunnlag shouldHaveSize 2
+                        barnetilsyn.datakilde shouldBe GrunnlagDatakilde.FAMILIE_EF_SAK
+                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag1.referanse) shouldHaveSize 2
+                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag2.referanse) shouldHaveSize 0
+                        assertSoftly(barnetilsyn.grunnlag[0]) {
+                            periode.fom shouldBe LocalDate.parse("2022-01-01")
+                            periode.til shouldBe LocalDate.parse("2022-07-31")
+                            tilsynstype shouldBe Tilsynstype.HELTID
+                            skolealder shouldBe Skolealder.IKKE_ANGITT
+                        }
                     }
                 }
             }
         }
 
-        fun List<GrunnlagDto>.hentGrunnlagAinntekt() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE }
+        fun List<GrunnlagDto>.hentGrunnlagAinntekt() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT }
 
         fun List<GrunnlagDto>.hentSkattegrunnlag() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE }
 
-        fun List<GrunnlagDto>.hentUtvidetBarnetrygd() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD_PERIODE }
+        fun List<GrunnlagDto>.hentUtvidetBarnetrygd() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD }
 
-        fun List<GrunnlagDto>.hentSmåbarnstillegg() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG_PERIODE }
+        fun List<GrunnlagDto>.hentSmåbarnstillegg() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG }
 
-        fun List<GrunnlagDto>.hentBarnetillegg() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG_PERIODE }
+        fun List<GrunnlagDto>.hentBarnetillegg() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG }
 
-        fun List<GrunnlagDto>.hentKontantstøtte() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE_PERIODE }
+        fun List<GrunnlagDto>.hentKontantstøtte() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE }
 
-        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN_PERIODE }
+        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN }
     }
 
     @Nested
@@ -764,6 +807,7 @@ class VedtakInnhentetGrunnlagTest {
                     assertSoftly(arbeidsforhold) {
                         it.hentetTidspunkt shouldBe LocalDate.of(2020, 1, 1).atStartOfDay()
                         it.grunnlag.shouldHaveSize(2)
+                        it.datakilde shouldBe GrunnlagDatakilde.AAREG
                         assertSoftly(this.grunnlag[0]) {
                             arbeidsgiverNavn shouldBe "Snekker Hansen"
                             arbeidsgiverOrgnummer shouldBe "88123123"

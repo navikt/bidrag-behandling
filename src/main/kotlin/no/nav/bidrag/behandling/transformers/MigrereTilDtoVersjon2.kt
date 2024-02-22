@@ -170,11 +170,11 @@ fun InntektDto.tilInntektDtoV2() =
         beløp = this.beløp,
         datoFom = this.datoFom,
         datoTom = this.datoTom,
-        opprinneligFom = this.opprinneligFom?.atDay(1),
-        opprinneligTom = this.opprinneligTom?.atEndOfMonth(),
+        opprinneligFom = this.opprinneligFom,
+        opprinneligTom = this.opprinneligTom,
         ident = Personident(this.ident),
         gjelderBarn = null,
-        kilde = if (this.fraGrunnlag == true) Kilde.OFFENTLIG else Kilde.MANUELL,
+        kilde = if (this.fraGrunnlag) Kilde.OFFENTLIG else Kilde.MANUELL,
         inntektsposter =
             this.inntektsposter.tilInntektspostDtoV2(
                 this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {

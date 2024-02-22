@@ -57,6 +57,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.YearMonth
 
@@ -73,6 +74,7 @@ class VedtakserviceTest {
 
     @MockkBean
     lateinit var sakConsumer: BidragSakConsumer
+
     lateinit var vedtakService: VedtakService
     lateinit var beregningService: BeregningService
 
@@ -107,6 +109,8 @@ class VedtakserviceTest {
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()
         stubKodeverkProvider()
+
+        stubPersonConsumer()
     }
 
     @Test
@@ -149,7 +153,7 @@ class VedtakserviceTest {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe.shouldHaveSize(86)
+            request.grunnlagListe.shouldHaveSize(81)
 
             validerVedtaksdetaljer(behandling)
             validerPersongrunnlag()
@@ -183,10 +187,14 @@ class VedtakserviceTest {
 
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
-            hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 14
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE) shouldHaveSize 13
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 4
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 5
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 1
@@ -479,10 +487,10 @@ private fun OpprettVedtakRequestDto.validerInntektrapportering() {
             manueltRegistrert shouldBe true
         }
         assertSoftly(it[2]) {
-            it.grunnlagsreferanseListe shouldHaveSize 13
+            it.grunnlagsreferanseListe shouldHaveSize 1
             val grunnlag =
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it.grunnlagsreferanseListe[0])
-            grunnlag[0].type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE
+            grunnlag[0].type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT
             assertSoftly(innholdTilObjekt<InntektsrapporteringPeriode>()) {
                 periode.fom shouldBe YearMonth.parse("2022-01")
                 periode.til shouldBe null
@@ -546,12 +554,12 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
                             grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegning.grunnlagsreferanseListe[0])
                                 .first()
                         delberegningInntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
-                        delberegningInntekt.grunnlagsreferanseListe shouldHaveSize 13
+                        delberegningInntekt.grunnlagsreferanseListe shouldHaveSize 1
 
                         val innhentetAinntekt =
                             grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegningInntekt.grunnlagsreferanseListe[0])
                                 .first()
-                        innhentetAinntekt.type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE
+                        innhentetAinntekt.type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT
                         innhentetAinntekt.grunnlagsreferanseListe shouldHaveSize 0
                         innhentetAinntekt.gjelderReferanse shouldBe bmGrunnlag.referanse
                     }

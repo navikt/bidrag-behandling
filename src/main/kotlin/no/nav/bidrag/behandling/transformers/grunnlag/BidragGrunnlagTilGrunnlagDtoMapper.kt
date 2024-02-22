@@ -2,10 +2,12 @@ package no.nav.bidrag.behandling.transformers.grunnlag
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
+import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.toCompactString
+import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
-import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
@@ -19,10 +21,17 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSkattegrunnla
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSmåbarnstillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetUtvidetBarnetrygd
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettArbeidsforholdGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -50,8 +59,9 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
         innhold =
             POJONode(
                 Person(
-                    // TODO: Hent nyeste ident
-                    ident = relatertPersonPersonId?.let { Personident(it) },
+                    ident =
+                        relatertPersonPersonId.takeIf { !it.isNullOrEmpty() }
+                            ?.let { hentNyesteIdent(it) },
                     navn = if (relatertPersonPersonId.isNullOrEmpty()) personnavn else null,
                     fødselsdato =
                         finnFødselsdato(
@@ -186,155 +196,189 @@ fun List<ArbeidsforholdGrunnlagDto>.tilGrunnlagsobjekt(
         ),
 )
 
-fun BarnetilsynGrunnlagDto.tilGrunnlagsobjekt(
+@JvmName("tilInnhentetBarnetilsynGrunnlag")
+fun List<BarnetilsynGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
-    søknadsbarnReferanse: String,
+    personobjekter: Set<GrunnlagDto>,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse, søknadsbarnReferanse),
-    type = Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN_PERIODE,
+    referanse = opprettBarnetilsynGrunnlagsreferanse(gjelderReferanse),
+    type = Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetBarnetilsyn(
-                periode = Datoperiode(periodeFra, periodeTil),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetBarnetilsyn.Barnetilsyn(
-                        gjelderBarn = søknadsbarnReferanse,
-                        beløp = beløp,
-                        tilsynstype = tilsynstype,
-                        skolealder = skolealder,
-                    ),
+                    map {
+                        val søknadsbarn = personobjekter.hentPerson(it.barnPersonId)!!
+                        InnhentetBarnetilsyn.Barnetilsyn(
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
+                            beløp = it.beløp,
+                            tilsynstype = it.tilsynstype,
+                            skolealder = it.skolealder,
+                            gjelderBarn = søknadsbarn.referanse,
+                        )
+                    },
             ),
         ),
 )
 
-fun AinntektGrunnlagDto.tilGrunnlagsobjekt(
+@JvmName("tilInnhentetAinntektGrunnlag")
+fun List<AinntektGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse),
-    type = Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT_PERIODE,
+    referanse = opprettAinntektGrunnlagsreferanse(gjelderReferanse),
+    type = Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetAinntekt(
-                periode = Datoperiode(periodeFra, periodeTil),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetAinntekt.AinntektInnhentet(
-                        ainntektspostListe =
-                            ainntektspostListe.map { post ->
-                                InnhentetAinntekt.Ainntektspost(
-                                    utbetalingsperiode = post.utbetalingsperiode,
-                                    opptjeningsperiodeFra = post.opptjeningsperiodeFra,
-                                    opptjeningsperiodeTil = post.opptjeningsperiodeTil,
-                                    kategori = post.kategori,
-                                    fordelType = post.fordelType,
-                                    beløp = post.beløp,
-                                    etterbetalingsperiodeFra = post.etterbetalingsperiodeFra,
-                                    etterbetalingsperiodeTil = post.etterbetalingsperiodeTil,
-                                )
-                            },
-                    ),
+                    map {
+                        InnhentetAinntekt.AinntektInnhentet(
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
+                            ainntektspostListe =
+                                it.ainntektspostListe.map { post ->
+                                    InnhentetAinntekt.Ainntektspost(
+                                        utbetalingsperiode = post.utbetalingsperiode,
+                                        opptjeningsperiodeFra = post.opptjeningsperiodeFra,
+                                        opptjeningsperiodeTil = post.opptjeningsperiodeTil,
+                                        kategori = post.kategori,
+                                        fordelType = post.fordelType,
+                                        beløp = post.beløp,
+                                        etterbetalingsperiodeFra = post.etterbetalingsperiodeFra,
+                                        etterbetalingsperiodeTil = post.etterbetalingsperiodeTil,
+                                    )
+                                },
+                        )
+                    },
             ),
         ),
 )
 
-fun SmåbarnstilleggGrunnlagDto.tilGrunnlagsobjekt(
+@JvmName("tilInnhentetSmåbarnstilleggGrunnlag")
+fun List<SmåbarnstilleggGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse),
-    type = Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG_PERIODE,
+    referanse = opprettSmåbarnstilleggGrunnlagsreferanse(gjelderReferanse),
+    type = Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetSmåbarnstillegg(
-                periode = Datoperiode(periodeFra, periodeTil),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetSmåbarnstillegg.Småbarnstillegg(
-                        beløp = beløp,
-                        manueltBeregnet = manueltBeregnet,
-                    ),
+                    map {
+                        InnhentetSmåbarnstillegg.Småbarnstillegg(
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
+                            beløp = it.beløp,
+                            manueltBeregnet = it.manueltBeregnet,
+                        )
+                    },
             ),
         ),
 )
 
-fun UtvidetBarnetrygdGrunnlagDto.tilGrunnlagsobjekt(
+@JvmName("tilInnhentetUtvidetbarnetrygdGrunnlag")
+fun List<UtvidetBarnetrygdGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse),
-    type = Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD_PERIODE,
+    referanse = opprettUtvidetbarnetrygGrunnlagsreferanse(gjelderReferanse),
+    type = Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetUtvidetBarnetrygd(
-                periode = Datoperiode(periodeFra, periodeTil),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetUtvidetBarnetrygd.UtvidetBarnetrygd(
-                        beløp = beløp,
-                        manueltBeregnet = manueltBeregnet,
-                    ),
+                    map {
+                        InnhentetUtvidetBarnetrygd.UtvidetBarnetrygd(
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
+                            beløp = it.beløp,
+                            manueltBeregnet = it.manueltBeregnet,
+                        )
+                    },
             ),
         ),
 )
 
-fun BarnetilleggGrunnlagDto.tilGrunnlagsobjekt(
+@JvmName("tilInnhentetBarnetilleggGrunnlag")
+fun List<BarnetilleggGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
-    søknadsbarnReferanse: String,
+    personobjekter: Set<GrunnlagDto>,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse, søknadsbarnReferanse),
-    type = Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG_PERIODE,
+    referanse =
+        opprettBarnetilleggGrunnlagsreferanse(
+            gjelderReferanse,
+            kilde = GrunnlagDatakilde.PENSJON,
+        ),
+    type = Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetBarnetillegg(
-                periode = Datoperiode(periodeFra, periodeTil),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetBarnetillegg.Barnetillegg(
-                        gjelderBarn = søknadsbarnReferanse,
-                        barnetilleggType = barnetilleggType,
-                        barnType = barnType,
-                        beløpBrutto = beløpBrutto,
-                    ),
+                    map {
+                        val søknadsbarn =
+                            personobjekter.hentPerson(it.barnPersonId) ?: manglerRolleIGrunnlag(
+                                Rolletype.BARN,
+                                fødselsnummer = it.barnPersonId,
+                            )
+                        InnhentetBarnetillegg.Barnetillegg(
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
+                            gjelderBarn = søknadsbarn.referanse,
+                            barnetilleggType = it.barnetilleggType,
+                            barnType = it.barnType,
+                            beløpBrutto = it.beløpBrutto,
+                        )
+                    },
             ),
         ),
 )
 
-fun KontantstøtteGrunnlagDto.tilGrunnlagsobjekt(
+@JvmName("tilInnhentetKontantstøtteGrunnlag")
+fun List<KontantstøtteGrunnlagDto>.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
-    søknadsbarnReferanse: String,
+    personobjekter: Set<GrunnlagDto>,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse, søknadsbarnReferanse),
-    type = Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE_PERIODE,
+    referanse = opprettKontantstøtteGrunnlagsreferanse(gjelderReferanse),
+    type = Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
             InnhentetKontantstøtte(
-                periode = Datoperiode(periodeFra, periodeTil),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetKontantstøtte.Kontantstøtte(
-                        gjelderBarn = søknadsbarnReferanse,
-                        beløp = beløp,
-                    ),
+                    map {
+                        val søknadsbarn =
+                            personobjekter.hentPerson(it.barnPersonId) ?: manglerRolleIGrunnlag(
+                                Rolletype.BARN,
+                                fødselsnummer = it.barnPersonId,
+                            )
+                        InnhentetKontantstøtte.Kontantstøtte(
+                            periode = Datoperiode(it.periodeFra, it.periodeTil),
+                            gjelderBarn = søknadsbarn.referanse,
+                            beløp = it.beløp,
+                        )
+                    },
             ),
         ),
 )
 
+@JvmName("tilInnhentetSkattegrunnlagGrunnlag")
 fun SkattegrunnlagGrunnlagDto.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
 ) = GrunnlagDto(
-    referanse = tilGrunnlagsreferanse(gjelderReferanse),
+    referanse = opprettSkattegrunnlagGrunnlagsreferanse(gjelderReferanse, periodeFra.year),
     type = Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE,
     gjelderReferanse = gjelderReferanse,
     innhold =
@@ -343,16 +387,13 @@ fun SkattegrunnlagGrunnlagDto.tilGrunnlagsobjekt(
                 periode = Datoperiode(periodeFra, periodeTil),
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
-                    InnhentetSkattegrunnlag.Skattegrunnlag(
-                        skattegrunnlagListe =
-                            skattegrunnlagspostListe.map { post ->
-                                InnhentetSkattegrunnlag.Skattegrunnlagspost(
-                                    skattegrunnlagType = post.skattegrunnlagType,
-                                    kode = post.kode,
-                                    beløp = post.beløp,
-                                )
-                            },
-                    ),
+                    skattegrunnlagspostListe.map { post ->
+                        InnhentetSkattegrunnlag.Skattegrunnlagspost(
+                            skattegrunnlagType = post.skattegrunnlagType,
+                            kode = post.kode,
+                            beløp = post.beløp,
+                        )
+                    },
             ),
         ),
 )

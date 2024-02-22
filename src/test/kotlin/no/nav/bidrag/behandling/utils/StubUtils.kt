@@ -7,9 +7,19 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
+import io.mockk.every
+import io.mockk.mockkClass
+import io.mockk.mockkObject
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.behandling.utils.testdataBM
+import no.nav.bidrag.behandling.utils.testdataBP
+import no.nav.bidrag.behandling.utils.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdataHusstandsmedlem1
+import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.ident.Personident
@@ -24,6 +34,22 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.util.Arrays
+
+fun stubPersonConsumer() {
+    val personConsumerMock = mockkClass(BidragPersonConsumer::class)
+    every { personConsumerMock.hentPerson(any<String>()) }.answers {
+        val personId = firstArg<String>()
+        val personer =
+            listOf(testdataBM, testdataBarn1, testdataBarn2, testdataBP, testdataHusstandsmedlem1)
+        personer.find { it.ident == personId }?.tilPersonDto() ?: PersonDto(
+            Personident(firstArg<String>()),
+        )
+    }
+    mockkObject(AppContext)
+    every {
+        AppContext.getBean<BidragPersonConsumer>(any())
+    } returns personConsumerMock
+}
 
 class StubUtils {
     companion object {

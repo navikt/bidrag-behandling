@@ -41,6 +41,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
 import java.math.BigDecimal
@@ -63,6 +64,13 @@ data class TestDataPerson(
             rolletype = rolletype,
             opprettet = LocalDateTime.now(),
             behandling = behandling,
+        )
+
+    fun tilPersonDto() =
+        PersonDto(
+            ident = Personident(ident),
+            navn = navn,
+            foedselsdato = foedselsdato,
         )
 
     fun tilGrunnlagDto() =
@@ -439,8 +447,8 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Be
             belop = BigDecimal(60000),
             datoFom = LocalDate.parse("2022-01-01"),
             datoTom = null,
-            opprinneligFom = LocalDate.parse("2023-02-01"),
-            opprinneligTom = LocalDate.parse("2024-01-01"),
+            opprinneligFom = LocalDate.parse("2023-01-01"),
+            opprinneligTom = LocalDate.parse("2023-12-31"),
             ident = behandling.bidragsmottaker!!.ident!!,
             taMed = true,
             gjelderBarn = testdataBarn1.ident,
@@ -533,6 +541,7 @@ fun opprettInntektBearbeidet(
         InntektApi("").transformerInntekter(
             grunnlag.tilTransformerInntekterRequest(
                 testDataPerson.tilRolle(behandling),
+                behandling.roller,
             ),
         )
 

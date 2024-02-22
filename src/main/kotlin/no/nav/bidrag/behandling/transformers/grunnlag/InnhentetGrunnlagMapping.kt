@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.arbeidsforhold
 import no.nav.bidrag.behandling.database.datamodell.hentData
 import no.nav.bidrag.behandling.database.datamodell.husstandmedlemmer
@@ -11,17 +12,22 @@ import no.nav.bidrag.behandling.database.datamodell.inntekt
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
 import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
-import no.nav.bidrag.boforhold.response.BoforholdBeregnet
-import no.nav.bidrag.boforhold.response.RelatertPerson
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
-import no.nav.bidrag.transport.felles.toCompactString
 
 fun List<BehandlingGrunnlag>.tilInnhentetArbeidsforhold(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
     return arbeidsforhold?.let { grunnlag ->
@@ -133,24 +139,44 @@ fun List<BehandlingGrunnlag>.tilInnhentetGrunnlagInntekt(personobjekter: Set<Gru
         mapUtvidetbarnetrygd(personobjekter) + mapSmåbarnstillegg(personobjekter)
 }
 
-private fun RelatertPersonGrunnlagDto.tilRelatertPerson() =
-    RelatertPerson(
-        relatertPersonPersonId = relatertPersonPersonId,
-        fødselsdato = fødselsdato,
-        erBarnAvBmBp = erBarnAvBmBp,
-        borISammeHusstandDtoListe = borISammeHusstandDtoListe,
-    )
+fun opprettGrunnlagsreferanserForInntekt2(
+    inntekt: Inntekt,
+    gjelderReferanse: Grunnlagsreferanse,
+): List<Grunnlagsreferanse> {
+    val referanse =
+        when (inntekt.inntektsrapportering) {
+            Inntektsrapportering.AINNTEKT_BEREGNET_12MND, Inntektsrapportering.AINNTEKT_BEREGNET_3MND ->
+                opprettAinntektGrunnlagsreferanse(gjelderReferanse)
 
-fun BoforholdBeregnet.tilGrunnlagsreferanse(
-    referanseGjelder: Grunnlagsreferanse,
-    referanseRelatertTil: Grunnlagsreferanse,
-) = "innhentet_husstandsmedlem_${referanseGjelder}_${referanseRelatertTil}_${periodeFom.toCompactString()}"
+            Inntektsrapportering.BARNETILLEGG ->
+                opprettBarnetilleggGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.SMÅBARNSTILLEGG ->
+                opprettSmåbarnstilleggGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.UTVIDET_BARNETRYGD ->
+                opprettUtvidetbarnetrygGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.KONTANTSTØTTE ->
+                opprettKontantstøtteGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.KAPITALINNTEKT, Inntektsrapportering.LIGNINGSINNTEKT ->
+                opprettSkattegrunnlagGrunnlagsreferanse(
+                    gjelderReferanse,
+                    inntekt.opprinneligFom?.year!!,
+                )
+
+            else -> null
+        }
+
+    return listOfNotNull(referanse)
+}
 
 fun List<BehandlingGrunnlag>.hentGrunnlagsreferanserForInntekt(
     gjelderIdent: String,
     inntekt: Inntekt,
 ): List<Grunnlagsreferanse> {
-    if (inntekt.opprinneligFom == null) return emptyList()
+    if (inntekt.kilde == Kilde.MANUELL) return emptyList()
     val periode = ÅrMånedsperiode(inntekt.opprinneligFom!!, inntekt.opprinneligTom)
     val beregnetInntekter =
         find { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }.konverterData<InntektsopplysningerBearbeidet>()
@@ -162,100 +188,82 @@ fun List<BehandlingGrunnlag>.hentGrunnlagsreferanserForInntekt(
                 (inntekt.gjelderBarn.isNullOrEmpty() || inntekt.gjelderBarn == it.gjelderBarnPersonId)
         }
 
-    return beregnetInntekt?.grunnlagsreferanseListe ?: emptyList()
+    return beregnetInntekt?.grunnlagsreferanseListe
+        ?: grunnlagByggingFeilet(
+            "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.inntektsrapportering} " +
+                "for periode ${inntekt.opprinneligFom}/${inntekt.opprinneligTom} og barn ${inntekt.gjelderBarn}",
+        )
 }
 
 private fun List<BehandlingGrunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =
     inntekt?.let { grunnlag ->
         grunnlag.hentData<InntektGrunnlag>()?.barnetilleggListe?.groupBy { it.partPersonId }
-            ?.flatMap { partMap ->
+            ?.map { partMap ->
                 val gjelder = personobjekter.hentPerson(partMap.key)!!
-                partMap.value.groupBy { it.barnPersonId }
-                    .flatMap { barnetilleggMap ->
-                        val søknadsbarn = personobjekter.hentPerson(barnetilleggMap.key)!!
-                        barnetilleggMap.value.map {
-                            it.tilGrunnlagsobjekt(
-                                grunnlag.innhentet,
-                                gjelder.referanse,
-                                søknadsbarn.referanse,
-                            )
-                        }
-                    }
+                partMap.value.tilGrunnlagsobjekt(
+                    grunnlag.innhentet,
+                    gjelder.referanse,
+                    personobjekter,
+                )
             }
     }?.toSet() ?: emptySet()
 
 private fun List<BehandlingGrunnlag>.mapBarnetilsyn(personobjekter: Set<GrunnlagDto>) =
     inntekt?.let { grunnlag ->
         grunnlag.hentData<InntektGrunnlag>()?.barnetilsynListe?.groupBy { it.partPersonId }
-            ?.flatMap { partMap ->
+            ?.map { partMap ->
                 val gjelder = personobjekter.hentPerson(partMap.key)!!
-                partMap.value.groupBy { it.barnPersonId }
-                    .flatMap { barnetilsynMap ->
-                        val søknadsbarn = personobjekter.hentPerson(barnetilsynMap.key)!!
-                        barnetilsynMap.value.map {
-                            it.tilGrunnlagsobjekt(
-                                grunnlag.innhentet,
-                                gjelder.referanse,
-                                søknadsbarn.referanse,
-                            )
-                        }
-                    }
+                partMap.value.tilGrunnlagsobjekt(
+                    grunnlag.innhentet,
+                    gjelder.referanse,
+                    personobjekter,
+                )
             }
     }?.toSet() ?: emptySet()
 
 private fun List<BehandlingGrunnlag>.mapAinntekt(personobjekter: Set<GrunnlagDto>) =
     inntekt?.let { grunnlag ->
         grunnlag.hentData<InntektGrunnlag>()?.ainntektListe?.groupBy { it.personId }
-            ?.flatMap { ainntektMap ->
+            ?.map { ainntektMap ->
                 val gjelder = personobjekter.hentPerson(ainntektMap.key)!!
-                ainntektMap.value.map {
-                    it.tilGrunnlagsobjekt(
-                        grunnlag.innhentet,
-                        gjelder.referanse,
-                    )
-                }
+                ainntektMap.value.tilGrunnlagsobjekt(
+                    grunnlag.innhentet,
+                    gjelder.referanse,
+                )
             }
     }?.toSet() ?: emptySet()
 
 private fun List<BehandlingGrunnlag>.mapKontantstøtte(personobjekter: Set<GrunnlagDto>) =
     inntekt?.let { grunnlag ->
-        grunnlag.hentData<InntektGrunnlag>()?.kontantstotteListe?.groupBy { it.partPersonId }
-            ?.flatMap { partMap ->
+        grunnlag.hentData<InntektGrunnlag>()?.kontantstøtteListe?.groupBy { it.partPersonId }
+            ?.map { partMap ->
                 val gjelder = personobjekter.hentPerson(partMap.key)!!
-                partMap.value.groupBy { it.barnPersonId }
-                    .flatMap { kontantStøtteMap ->
-                        val søknadsbarn = personobjekter.hentPerson(kontantStøtteMap.key)!!
-                        kontantStøtteMap.value.map {
-                            it.tilGrunnlagsobjekt(
-                                grunnlag.innhentet,
-                                gjelder.referanse,
-                                søknadsbarn.referanse,
-                            )
-                        }
-                    }
+                partMap.value.tilGrunnlagsobjekt(
+                    grunnlag.innhentet,
+                    gjelder.referanse,
+                    personobjekter,
+                )
             }
     }?.toSet() ?: emptySet()
 
 private fun List<BehandlingGrunnlag>.mapSmåbarnstillegg(personobjekter: Set<GrunnlagDto>) =
     inntekt?.let { grunnlag ->
         grunnlag.hentData<InntektGrunnlag>()?.småbarnstilleggListe?.groupBy { it.personId }
-            ?.flatMap { småbarnstillegMap ->
+            ?.map { småbarnstillegMap ->
                 val gjelder = personobjekter.hentPerson(småbarnstillegMap.key)!!
-                småbarnstillegMap.value.map {
-                    it.tilGrunnlagsobjekt(
-                        grunnlag.innhentet,
-                        gjelder.referanse,
-                    )
-                }
+                småbarnstillegMap.value.tilGrunnlagsobjekt(
+                    grunnlag.innhentet,
+                    gjelder.referanse,
+                )
             }
     }?.toSet() ?: emptySet()
 
 private fun List<BehandlingGrunnlag>.mapUtvidetbarnetrygd(personobjekter: Set<GrunnlagDto>) =
     inntekt?.let { grunnlag ->
         grunnlag.hentData<InntektGrunnlag>()?.utvidetBarnetrygdListe?.groupBy { it.personId }
-            ?.flatMap { ubMap ->
+            ?.map { ubMap ->
                 val gjelder = personobjekter.hentPerson(ubMap.key)!!
-                ubMap.value.map { it.tilGrunnlagsobjekt(grunnlag.innhentet, gjelder.referanse) }
+                ubMap.value.tilGrunnlagsobjekt(grunnlag.innhentet, gjelder.referanse)
             }
     }?.toSet() ?: emptySet()
 

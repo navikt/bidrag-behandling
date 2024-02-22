@@ -9,6 +9,7 @@ import io.mockk.verify
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.utils.ROLLE_BA_1
 import no.nav.bidrag.behandling.utils.ROLLE_BA_2
+import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -44,6 +45,12 @@ class BeregningServiceTest {
     @Test
     fun `skal bygge grunnlag for beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        behandling.grunnlagListe =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            )
+
         every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         every { beregnForskuddApi.beregn(capture(beregnCapture)) } returns BeregnetForskuddResultat()

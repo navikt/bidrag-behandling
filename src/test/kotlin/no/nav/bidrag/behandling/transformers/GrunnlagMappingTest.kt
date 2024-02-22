@@ -5,9 +5,16 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
+import io.mockk.clearAllMocks
+import io.mockk.every
+import io.mockk.mockkClass
+import io.mockk.mockkObject
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
@@ -20,6 +27,8 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.opplysninger.InntektBearbeidet
 import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.opprettGrunnlagForHusstandsbarn
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagBostatus
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagInntekt
@@ -29,13 +38,18 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonGrunnlag
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
+import no.nav.bidrag.behandling.utils.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.TestDataPerson
+import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.opprettRolle
 import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBP
 import no.nav.bidrag.behandling.utils.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -44,6 +58,8 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -54,6 +70,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
@@ -61,15 +78,29 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivils
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.person.PersonDto
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.springframework.web.client.HttpClientErrorException
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 
 class GrunnlagMappingTest {
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun initPersonMock() {
+            stubPersonConsumer()
+        }
+    }
+
     private val fødslesdato = LocalDate.parse("2024-04-03")
 
     val grunnlagBm =
@@ -109,7 +140,240 @@ class GrunnlagMappingTest {
 
     @BeforeEach
     fun initMocks() {
+        clearAllMocks()
         stubKodeverkProvider()
+        stubPersonConsumer()
+    }
+
+    @AfterEach
+    fun reinitmock() {
+        stubPersonConsumer()
+    }
+
+    @Nested
+    inner class GrunnlagByggerTest {
+        @Test
+        fun `skal bygge grunnlag for vedtak`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+            behandling.grunnlagListe =
+                opprettAlleAktiveGrunnlagFraFil(
+                    behandling,
+                    "grunnlagresponse.json",
+                )
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        belop = BigDecimal(50000),
+                        datoTom = LocalDate.parse("2022-06-30"),
+                        datoFom = LocalDate.parse("2022-01-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        inntektsrapportering = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        id = 1,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        id = 2,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                        inntektsrapportering = Inntektsrapportering.KONTANTSTØTTE,
+                        id = 22,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn2.ident,
+                        inntektsrapportering = Inntektsrapportering.KONTANTSTØTTE,
+                        id = 33,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = testdataBarn1.ident,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        id = 2,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = testdataBarn2.ident,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        id = 2,
+                    ),
+                )
+            val grunnlagForBeregning =
+                behandling.byggGrunnlagForVedtak()
+
+            assertSoftly(grunnlagForBeregning.toList()) {
+                it shouldHaveSize 38
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 3
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE) shouldHaveSize 6
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE) shouldHaveSize 6
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 5
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 2
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 4
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 2
+            }
+        }
+
+        @Test
+        fun `skal bygge grunnlag for beregning`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        belop = BigDecimal(50000),
+                        datoTom = LocalDate.parse("2022-06-30"),
+                        datoFom = LocalDate.parse("2022-01-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        inntektsrapportering = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        id = 1,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        id = 2,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                        inntektsrapportering = Inntektsrapportering.KONTANTSTØTTE,
+                        id = 22,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn2.ident,
+                        inntektsrapportering = Inntektsrapportering.KONTANTSTØTTE,
+                        id = 33,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = testdataBarn1.ident,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        id = 2,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = testdataBarn2.ident,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        id = 2,
+                    ),
+                )
+            val søknadsbarn1 = behandling.søknadsbarn.find { it.ident == testdataBarn1.ident }
+            val grunnlagForBeregning =
+                behandling.byggGrunnlagForBeregning(søknadsbarn1!!)
+
+            assertSoftly(grunnlagForBeregning) {
+                it.grunnlagListe shouldHaveSize 15
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE) shouldHaveSize 6
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE) shouldHaveSize 4
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE) shouldHaveSize 1
+                it.søknadsbarnReferanse shouldBe søknadsbarn1.tilGrunnlagPerson().referanse
+
+                it.grunnlagListe.filtrerBasertPåFremmedReferanse(
+                    Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                    referanse = søknadsbarnGrunnlag2.referanse,
+                ).shouldBeEmpty()
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+                    .filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn == søknadsbarnGrunnlag2.referanse }
+                    .shouldBeEmpty()
+            }
+            val søknadsbarn2 = behandling.søknadsbarn.find { it.ident == testdataBarn2.ident }
+            val grunnlagForBeregning2 =
+                behandling.byggGrunnlagForBeregning(søknadsbarn2!!)
+
+            assertSoftly(grunnlagForBeregning2) {
+                it.grunnlagListe shouldHaveSize 15
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE) shouldHaveSize 6
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE) shouldHaveSize 4
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE) shouldHaveSize 1
+                it.søknadsbarnReferanse shouldBe søknadsbarn2.tilGrunnlagPerson().referanse
+
+                it.grunnlagListe.filtrerBasertPåFremmedReferanse(
+                    Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                    referanse = søknadsbarnGrunnlag1.referanse,
+                ).shouldBeEmpty()
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+                    .filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn == søknadsbarnGrunnlag1.referanse }
+                    .shouldBeEmpty()
+            }
+        }
     }
 
     @Nested
@@ -209,13 +473,127 @@ class GrunnlagMappingTest {
                 personGrunnlag.fødselsdato shouldBe fødslesdato
             }
         }
+
+        @Test
+        fun `skal mappe husstandsmedlem uten ident til grunnlag`() {
+            val behandling = oppretteBehandling()
+            assertSoftly(
+                Husstandsbarn(
+                    behandling = behandling,
+                    ident = "",
+                    navn = "Navn navnesen",
+                    foedselsdato = fødslesdato,
+                    perioder = mutableSetOf(),
+                    medISaken = false,
+                    id = 1L,
+                ).tilGrunnlagPerson(),
+            ) {
+                it.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                it.referanse.shouldStartWith("person")
+                val personGrunnlag: Person = it.innholdTilObjekt()
+                personGrunnlag.ident shouldBe null
+                personGrunnlag.navn shouldBe "Navn navnesen"
+                personGrunnlag.fødselsdato shouldBe fødslesdato
+            }
+        }
+
+        @Test
+        fun `skal mappe relatertperson med nyeste ident`() {
+            stubHentPersonNyIdent("12345678901", "1231232131")
+            assertSoftly(
+                RelatertPersonGrunnlagDto(
+                    partPersonId = "123123123",
+                    relatertPersonPersonId = "12345678901",
+                    fødselsdato = null,
+                    navn = "Ola Nordmann",
+                    borISammeHusstandDtoListe = emptyList(),
+                    erBarnAvBmBp = true,
+                ).tilPersonGrunnlag(),
+            ) {
+                it.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                it.referanse.shouldStartWith("person")
+                val personGrunnlag: Person = it.innholdTilObjekt()
+                personGrunnlag.ident shouldBe Personident("1231232131")
+                personGrunnlag.navn shouldBe null
+                personGrunnlag.fødselsdato shouldBe LocalDate.parse("2020-02-02")
+            }
+        }
+
+        @Test
+        fun `skal mappe husstandsmedlem med nyeste ident`() {
+            val behandling = oppretteBehandling()
+            stubHentPersonNyIdent("12345678901", "1231232131")
+            assertSoftly(
+                Husstandsbarn(
+                    behandling = behandling,
+                    ident = "12345678901",
+                    navn = "Navn navnesen",
+                    foedselsdato = fødslesdato,
+                    perioder = mutableSetOf(),
+                    medISaken = false,
+                    id = 1L,
+                ).tilGrunnlagPerson(),
+            ) {
+                it.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                it.referanse.shouldStartWith("person")
+                val personGrunnlag: Person = it.innholdTilObjekt()
+                personGrunnlag.ident?.verdi shouldBe "1231232131"
+                personGrunnlag.navn shouldBe null
+                personGrunnlag.fødselsdato shouldBe fødslesdato
+            }
+        }
+
+        @Test
+        fun `skal mappe rolle med nyeste ident`() {
+            val behandling = oppretteBehandling()
+            stubHentPersonNyIdent("12345678901", "1231232131")
+            assertSoftly(
+                Rolle(
+                    behandling = behandling,
+                    ident = "12345678901",
+                    rolletype = Rolletype.BIDRAGSPLIKTIG,
+                    foedselsdato = fødslesdato,
+                    id = 1L,
+                ).tilGrunnlagPerson(),
+            ) {
+                it.type shouldBe Grunnlagstype.PERSON_BIDRAGSPLIKTIG
+                it.referanse.shouldStartWith("person")
+                val personGrunnlag: Person = it.innholdTilObjekt()
+                personGrunnlag.ident shouldBe Personident("1231232131")
+                personGrunnlag.navn shouldBe null
+                personGrunnlag.fødselsdato shouldBe fødslesdato
+            }
+        }
+
+        fun stubHentPersonNyIdent(
+            gammelIdent: String,
+            nyIdent: String,
+        ) {
+            val personConsumerMock = mockkClass(BidragPersonConsumer::class)
+            every { personConsumerMock.hentPerson(eq(gammelIdent)) } returns
+                PersonDto(
+                    Personident(
+                        nyIdent,
+                    ),
+                    navn = "Ola Nordmann",
+                    fødselsdato = LocalDate.parse("2020-02-02"),
+                )
+            mockkObject(AppContext)
+            every {
+                AppContext.getBean<BidragPersonConsumer>(any())
+            } returns personConsumerMock
+        }
     }
 
     @Nested
     inner class InntektGrunnlagTest {
+        val ainntektGrunnlagsreferanseListe = listOf("ainntekt_1", "ainntekt_2", "ainntekt_3")
+        val skattegrunnlagGrunnlagsreferanseListe = listOf("skattegrunnlag_2023")
+
         @Test
         fun `skal mappe inntekt til grunnlag`() {
             val behandling = oppretteBehandling()
+            behandling.grunnlagListe = opprettGrunnlagsliste(behandling)
             behandling.inntekter = opprettInntekter(behandling, testdataBM, testdataBarn1)
             assertSoftly(
                 behandling.tilGrunnlagInntekt(personobjekter, søknadsbarnGrunnlag1).toList(),
@@ -235,6 +613,7 @@ class GrunnlagMappingTest {
                     innhold.manueltRegistrert shouldBe false
                     innhold.gjelderBarn.shouldBeNull()
                     innhold.inntekstpostListe shouldHaveSize 2
+                    inntekt.grunnlagsreferanseListe shouldHaveSize 3
                     with(innhold.inntekstpostListe[0]) {
                         beløp shouldBe BigDecimal(5000)
                         kode shouldBe "fisking"
@@ -254,6 +633,7 @@ class GrunnlagMappingTest {
                     innhold.manueltRegistrert shouldBe false
                     innhold.gjelderBarn.shouldBeNull()
                     innhold.inntekstpostListe shouldHaveSize 2
+                    inntekt.grunnlagsreferanseListe shouldHaveSize 1
                     with(innhold.inntekstpostListe[0]) {
                         beløp shouldBe BigDecimal(5000)
                         kode shouldBe ""
@@ -274,6 +654,7 @@ class GrunnlagMappingTest {
                     innhold.beløp shouldBe BigDecimal(55000)
                     innhold.valgt shouldBe true
                     innhold.manueltRegistrert shouldBe true
+                    inntekt.grunnlagsreferanseListe shouldHaveSize 0
                     innhold.gjelderBarn.shouldBeNull()
                     innhold.inntekstpostListe shouldHaveSize 0
                 }
@@ -288,6 +669,7 @@ class GrunnlagMappingTest {
                     innhold.gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
                     innhold.manueltRegistrert shouldBe false
                     innhold.inntekstpostListe shouldHaveSize 1
+                    inntekt.grunnlagsreferanseListe shouldHaveSize 3
                     with(innhold.inntekstpostListe[0]) {
                         beløp shouldBe BigDecimal(5000)
                         kode shouldBe ""
@@ -304,6 +686,7 @@ class GrunnlagMappingTest {
                     innhold.valgt shouldBe true
                     innhold.gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
                     innhold.manueltRegistrert shouldBe false
+                    inntekt.grunnlagsreferanseListe shouldHaveSize 3
                     innhold.inntekstpostListe shouldHaveSize 1
                     with(innhold.inntekstpostListe[0]) {
                         beløp shouldBe BigDecimal(5000)
@@ -317,16 +700,34 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe inntekt til grunnlag hvis inneholder inntektliste for Barn og BP`() {
             val behandling = oppretteBehandling()
+            behandling.grunnlagListe =
+                opprettGrunnlagsliste(
+                    behandling,
+                    opprettInntekterBearbeidet(testdataBM) +
+                        opprettInntekterBearbeidet(
+                            testdataBP,
+                        ) +
+                        opprettInntekterBearbeidet(
+                            testdataBarn1,
+                        ),
+                )
             behandling.inntekter.addAll(
-                opprettInntekter(behandling, testdataBM, testdataBarn1) +
-                    opprettInntekter(
-                        behandling,
-                        testdataBP,
-                    ) +
-                    opprettInntekter(behandling, testdataBarn1),
+                (
+                    opprettInntekter(behandling, testdataBM, testdataBarn1) +
+                        opprettInntekter(behandling, testdataBM, testdataBarn2) +
+                        opprettInntekter(
+                            behandling,
+                            testdataBP,
+                        ) +
+                        opprettInntekter(behandling, testdataBarn1) +
+                        opprettInntekter(behandling, testdataBarn2)
+
+                ).toSet(),
             )
+            val personobjekterSøknadsbarn = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1)
             assertSoftly(
-                behandling.tilGrunnlagInntekt(personobjekter, søknadsbarnGrunnlag1).toList(),
+                behandling.tilGrunnlagInntekt(personobjekterSøknadsbarn, søknadsbarnGrunnlag1)
+                    .toList(),
             ) {
                 it shouldHaveSize 11
                 val bpInntekter =
@@ -340,53 +741,18 @@ class GrunnlagMappingTest {
                 val barnInntekter =
                     it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse)
                 barnInntekter.shouldHaveSize(3)
+
+                val barn2Inntekter =
+                    it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag2.referanse)
+                barn2Inntekter.shouldHaveSize(0)
             }
         }
 
         @Test
         fun `skal legge til grunnlagsliste for innhentet inntekter`() {
             val behandling = oppretteBehandling()
-            val ainntektGrunnlagsreferanseListe = listOf("ainntekt_1", "ainntekt_2", "ainntekt_3")
-            val innteksopplynsingerBearbeidet =
-                InntektsopplysningerBearbeidet(
-                    inntekt =
-                        listOf(
-                            InntektBearbeidet(
-                                ident = testdataBM.ident,
-                                versjon = "1",
-                                summertMånedsinntektListe = emptyList(),
-                                summertAarsinntektListe =
-                                    listOf(
-                                        SummertÅrsinntekt(
-                                            Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-                                            periode =
-                                                ÅrMånedsperiode(
-                                                    YearMonth.parse("2023-01"),
-                                                    YearMonth.parse("2024-01"),
-                                                ),
-                                            sumInntekt = BigDecimal.ONE,
-                                            inntektPostListe = emptyList(),
-                                            grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
-                                        ),
-                                    ),
-                            ),
-                        ),
-                )
 
-            behandling.grunnlagListe =
-                listOf(
-                    BehandlingGrunnlag(
-                        behandling = behandling,
-                        type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
-                        data =
-                            commonObjectmapper.writeValueAsString(
-                                POJONode(
-                                    innteksopplynsingerBearbeidet,
-                                ),
-                            ),
-                        innhentet = LocalDateTime.now(),
-                    ),
-                )
+            behandling.grunnlagListe = opprettGrunnlagsliste(behandling)
             behandling.inntekter.addAll(
                 opprettInntekter(behandling, testdataBM, testdataBarn1),
             )
@@ -396,12 +762,110 @@ class GrunnlagMappingTest {
                     val innhold = it.innholdTilObjekt<InntektsrapporteringPeriode>()
                     if (innhold.inntektsrapportering == Inntektsrapportering.AINNTEKT_BEREGNET_12MND) {
                         it.grunnlagsreferanseListe shouldBe ainntektGrunnlagsreferanseListe
+                    } else if (!innhold.manueltRegistrert) {
+                        it.grunnlagsreferanseListe.shouldNotBeEmpty()
                     } else {
                         it.grunnlagsreferanseListe.shouldBeEmpty()
                     }
                     it.gjelderReferanse shouldBe grunnlagBm.referanse
                 }
             }
+        }
+
+        @Test
+        fun `skal feile hvis offentlig inntekt mangler grunnlagsreferanseliste`() {
+            val behandling = oppretteBehandling()
+
+            behandling.inntekter.addAll(
+                opprettInntekter(behandling, testdataBM, testdataBarn1),
+            )
+
+            val result =
+                assertThrows<HttpClientErrorException> {
+                    behandling.tilGrunnlagInntekt(personobjekter)
+                }
+            result.message shouldContain "Mangler grunnlagsreferanse for offentlig inntekt AINNTEKT_BEREGNET_12MND"
+        }
+
+        private fun opprettGrunnlagsliste(
+            behandling: Behandling,
+            inntekter: List<InntektBearbeidet> =
+                opprettInntekterBearbeidet(
+                    testdataBM,
+                ),
+        ) = listOf(
+            BehandlingGrunnlag(
+                behandling = behandling,
+                type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                data =
+                    commonObjectmapper.writeValueAsString(
+                        POJONode(
+                            InntektsopplysningerBearbeidet(
+                                inntekt = inntekter,
+                            ),
+                        ),
+                    ),
+                innhentet = LocalDateTime.now(),
+            ),
+        )
+
+        private fun opprettInntekterBearbeidet(gjelder: TestDataPerson): List<InntektBearbeidet> {
+            return listOf(
+                InntektBearbeidet(
+                    ident = gjelder.ident,
+                    versjon = "1",
+                    summertMånedsinntektListe = emptyList(),
+                    summertAarsinntektListe =
+                        listOf(
+                            SummertÅrsinntekt(
+                                Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal.ONE,
+                                inntektPostListe = emptyList(),
+                                grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                            ),
+                            SummertÅrsinntekt(
+                                Inntektsrapportering.KONTANTSTØTTE,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal.ONE,
+                                gjelderBarnPersonId = testdataBarn1.ident,
+                                inntektPostListe = emptyList(),
+                                grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                            ),
+                            SummertÅrsinntekt(
+                                Inntektsrapportering.BARNETILLEGG,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal.ONE,
+                                gjelderBarnPersonId = testdataBarn1.ident,
+                                inntektPostListe = emptyList(),
+                                grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                            ),
+                            SummertÅrsinntekt(
+                                Inntektsrapportering.LIGNINGSINNTEKT,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal.ONE,
+                                inntektPostListe = emptyList(),
+                                grunnlagsreferanseListe = skattegrunnlagGrunnlagsreferanseListe,
+                            ),
+                        ),
+                ),
+            )
         }
 
         private fun opprettInntekter(
@@ -482,6 +946,8 @@ class GrunnlagMappingTest {
                     gjelder.ident,
                     Kilde.OFFENTLIG,
                     true,
+                    opprinneligFom = LocalDate.parse("2023-01-01"),
+                    opprinneligTom = LocalDate.parse("2024-01-01"),
                     gjelderBarn = barn.ident,
                     behandling = behandling,
                     inntektsposter =
@@ -504,6 +970,8 @@ class GrunnlagMappingTest {
                     gjelder.ident,
                     Kilde.OFFENTLIG,
                     true,
+                    opprinneligFom = LocalDate.parse("2023-01-01"),
+                    opprinneligTom = LocalDate.parse("2024-01-01"),
                     gjelderBarn = testdataBarn1.ident,
                     behandling = behandling,
                     inntektsposter =
@@ -524,13 +992,15 @@ class GrunnlagMappingTest {
     inner class BosstatusGrunnlagTest {
         fun opprettHusstandsbarn(
             behandling: Behandling,
-            ident: String,
+            ident: String?,
             fødselsdato: LocalDate = LocalDate.parse("2024-04-03"),
+            navn: String? = null,
         ): Husstandsbarn {
             val husstandsbarn =
                 Husstandsbarn(
                     behandling = behandling,
                     ident = ident,
+                    navn = navn,
                     foedselsdato = fødselsdato,
                     perioder = mutableSetOf(),
                     medISaken = false,
@@ -579,7 +1049,7 @@ class GrunnlagMappingTest {
 
         @Test
         fun `skal opprette grunnlag for husstandsbarn`() {
-            val behandling = oppretteBehandling()
+            val behandling = oppretteBehandling(1)
 
             behandling.roller =
                 mutableSetOf(
@@ -630,6 +1100,52 @@ class GrunnlagMappingTest {
         }
 
         @Test
+        fun `skal opprette grunnlag for husstandsbarn uten ident`() {
+            val behandling = oppretteBehandling(1)
+
+            behandling.roller =
+                mutableSetOf(
+                    opprettRolle(behandling, testdataBM),
+                    opprettRolle(behandling, testdataBarn1),
+                    opprettRolle(behandling, testdataBarn2),
+                )
+            val husstandsbarn =
+                mutableSetOf(
+                    opprettHusstandsbarn(
+                        behandling,
+                        null,
+                        fødselsdato = LocalDate.parse("2023-03-03"),
+                        "navn navnesen",
+                    ),
+                )
+
+            behandling.husstandsbarn = husstandsbarn
+
+            val husstandsbarnGrunnlag =
+                behandling.opprettGrunnlagForHusstandsbarn(testdataBarn1.tilGrunnlagDto())
+                    .toList()
+            assertSoftly(husstandsbarnGrunnlag) {
+                it shouldHaveSize 1
+                assertSoftly(this[0]) { person ->
+                    person.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                    person.innholdTilObjekt<Person>().ident shouldBe null
+                    person.innholdTilObjekt<Person>().navn shouldBe "navn navnesen"
+                }
+            }
+
+            val personer =
+                (listOf(grunnlagBm)).toSet()
+            assertSoftly(behandling.tilGrunnlagBostatus(personer).toList()) {
+                it shouldHaveSize 5
+                it.filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM } shouldHaveSize 1
+                it.filter { it.type != Grunnlagstype.PERSON_HUSSTANDSMEDLEM }.forEach { grunnlag ->
+                    grunnlag.gjelderReferanse shouldBe husstandsbarnGrunnlag[0].referanse
+                    grunnlag.innholdTilObjekt<BostatusPeriode>().relatertTilPart shouldBe grunnlagBm.referanse
+                }
+            }
+        }
+
+        @Test
         fun `skal mappe husstandsbarn til bosstatus`() {
             val behandling = oppretteBehandling()
 
@@ -661,11 +1177,9 @@ class GrunnlagMappingTest {
 
             behandling.husstandsbarn = husstandsbarn
 
-            val grunnlagHusstandsbarn = behandling.opprettGrunnlagForHusstandsbarn()
-            val personer =
-                (personobjekter + grunnlagHusstandsbarn).toSet()
-            assertSoftly(behandling.tilGrunnlagBostatus(personer).toList()) {
-                it shouldHaveSize 16
+            assertSoftly(behandling.tilGrunnlagBostatus(personobjekter).toList()) {
+                it shouldHaveSize 18
+                it.filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM } shouldHaveSize 2
                 assertSoftly(it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse)) {
                     this shouldHaveSize 4
                     assertSoftly(this[0]) {
@@ -704,7 +1218,7 @@ class GrunnlagMappingTest {
                     it.gjelderReferanse?.startsWith("person_${Grunnlagstype.PERSON_HUSSTANDSMEDLEM}") == true
                 } shouldHaveSize 8
 
-                it.forEach {
+                it.filter { it.type != Grunnlagstype.PERSON_HUSSTANDSMEDLEM }.forEach {
                     val innhold = it.innholdTilObjekt<BostatusPeriode>()
                     innhold.relatertTilPart shouldBe grunnlagBm.referanse
                     if (innhold.manueltRegistrert) {
@@ -846,9 +1360,31 @@ class GrunnlagMappingTest {
 
     @Nested
     inner class BehandlingGrunnlagTest {
+        fun opprettBehandling(id: Long? = null): Behandling {
+            return Behandling(
+                Vedtakstype.FASTSETTELSE,
+                søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
+                datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
+                mottattdato = LocalDate.parse("2023-03-15"),
+                SAKSNUMMER,
+                SOKNAD_ID,
+                null,
+                "4806",
+                "Z9999",
+                "Navn Navnesen",
+                "bisys",
+                SøktAvType.BIDRAGSMOTTAKER,
+                Stønadstype.FORSKUDD,
+                null,
+                årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
+                virkningstidspunkt = LocalDate.parse("2023-02-01"),
+                id = id,
+            )
+        }
+
         @Test
         fun `skal opprette grunnlag for søknad`() {
-            val behandling = oppretteBehandling()
+            val behandling = opprettBehandling()
 
             assertSoftly(behandling.byggGrunnlagSøknad().toList()) {
                 shouldHaveSize(1)
@@ -864,7 +1400,7 @@ class GrunnlagMappingTest {
 
         @Test
         fun `skal opprette grunnlag for virkningstidspunkt`() {
-            val behandling = oppretteBehandling()
+            val behandling = opprettBehandling()
 
             assertSoftly(behandling.byggGrunnlagVirkningsttidspunkt().toList()) {
                 shouldHaveSize(1)
@@ -879,7 +1415,7 @@ class GrunnlagMappingTest {
 
         @Test
         fun `skal opprette grunnlag for notat og ikke ta med notat hvis tom eller null`() {
-            val behandling = oppretteBehandling()
+            val behandling = opprettBehandling()
             behandling.inntektsbegrunnelseIVedtakOgNotat = null
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
             behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "   "
@@ -914,7 +1450,7 @@ class GrunnlagMappingTest {
 
         @Test
         fun `skal opprette grunnlag for notat`() {
-            val behandling = oppretteBehandling()
+            val behandling = opprettBehandling()
             behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
             behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"

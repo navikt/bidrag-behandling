@@ -194,6 +194,40 @@ fun opprettAinntektGrunnlagListe() =
                     ),
                 ),
         ),
+        AinntektGrunnlagDto(
+            personId = testdataBarn1.ident,
+            periodeFra = LocalDate.parse("2023-01-01"),
+            periodeTil = LocalDate.parse("2024-01-01"),
+            ainntektspostListe =
+                listOf(
+                    AinntektspostDto(
+                        utbetalingsperiode = "2024-01",
+                        opptjeningsperiodeFra = LocalDate.parse("2023-01-31"),
+                        opptjeningsperiodeTil = LocalDate.parse("2024-01-01"),
+                        opplysningspliktigId = "123213",
+                        virksomhetId = "123",
+                        fordelType = "kontantytelse",
+                        beskrivelse = "fastloenn",
+                        inntektType = "LOENNSINNTEKT",
+                        belop = BigDecimal(60000),
+                        etterbetalingsperiodeFra = null,
+                        etterbetalingsperiodeTil = null,
+                    ),
+                    AinntektspostDto(
+                        utbetalingsperiode = "2024-01",
+                        opptjeningsperiodeFra = LocalDate.parse("2023-05-31"),
+                        opptjeningsperiodeTil = LocalDate.parse("2024-08-01"),
+                        opplysningspliktigId = "123213",
+                        virksomhetId = "123",
+                        fordelType = "kontantytelse",
+                        beskrivelse = "fastloenn",
+                        inntektType = "LOENNSINNTEKT",
+                        belop = BigDecimal(70000),
+                        etterbetalingsperiodeFra = null,
+                        etterbetalingsperiodeTil = null,
+                    ),
+                ),
+        ),
     )
 
 fun opprettSkattegrunnlagGrunnlagListe() =

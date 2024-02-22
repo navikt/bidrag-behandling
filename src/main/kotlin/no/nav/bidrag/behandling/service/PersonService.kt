@@ -14,3 +14,5 @@ fun hentPerson(ident: String?): PersonDto? =
 fun hentPersonFødselsdato(ident: String?) = hentPerson(ident)?.fødselsdato
 
 fun hentPersonVisningsnavn(ident: String?) = hentPerson(ident)?.visningsnavn
+
+fun hentNyesteIdent(ident: String?) = hentPerson(ident)?.ident

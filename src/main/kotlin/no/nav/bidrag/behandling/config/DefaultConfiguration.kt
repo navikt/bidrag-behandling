@@ -57,7 +57,7 @@ class DefaultConfiguration {
         .unleashAPI("$apiUrl/api/")
         .instanceId(appName)
         .environment(environment)
-        .synchronousFetchOnInitialisation(fetchInSync)
+        .synchronousFetchOnInitialisation(true)
         .apiKey(apiToken)
         .unleashContextProvider(DefaultUnleashContextProvider())
         .build()

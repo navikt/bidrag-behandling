@@ -8,7 +8,9 @@ import io.mockk.every
 import io.mockk.mockkObject
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.oppretteBehandlingRoller
@@ -25,6 +27,9 @@ import org.springframework.http.HttpStatus
 class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
+
+    @Autowired
+    lateinit var grunnlagRepository: GrunnlagRepository
 
     @MockkBean
     lateinit var forskuddBeregning: BeregnForskuddApi
@@ -46,6 +51,12 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
 
         try {
             behandlingRepository.save(behandling)
+            val grunnlag =
+                opprettAlleAktiveGrunnlagFraFil(
+                    behandling,
+                    "grunnlagresponse.json",
+                )
+            grunnlagRepository.saveAll(grunnlag)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -102,7 +113,12 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         val errorMessage = "Feil input"
         every { forskuddBeregning.beregn(any()) } throws IllegalArgumentException(errorMessage)
         val behandling = behandlingRepository.save(opprettGyldigBehandlingForBeregningOgVedtak())
-
+        val grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            )
+        grunnlagRepository.saveAll(grunnlag)
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
