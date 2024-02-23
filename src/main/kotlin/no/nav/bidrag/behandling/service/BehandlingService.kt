@@ -134,7 +134,7 @@ class BehandlingService(
                 request.aktivereGrunnlag.let { grunnlagsider ->
                     if (grunnlagsider.isNotEmpty()) {
                         log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
-                        grunnlagService.aktivereGrunnlag(grunnlagsider)
+                        grunnlagService.aktivereGrunnlag(it, grunnlagsider)
                     }
                 }
                 request.inntekter?.let { inntekter ->

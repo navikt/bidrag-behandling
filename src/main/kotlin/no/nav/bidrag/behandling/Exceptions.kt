@@ -10,10 +10,11 @@ fun behandlingNotFoundException(behandlingId: Long): Nothing =
         "Fant ikke behandling med id $behandlingId",
     )
 
-fun inntektManglerBehandlingException(idInntekt: Long): Nothing =
+
+fun aktiveringAvGrunnlagFeiletException(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
-        HttpStatus.NOT_FOUND,
-        "Fant ikke behandling knyttet til inntekt med id $idInntekt",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Aktivering av grunnlag feilet for behandling $behandlingsid"
     )
 
 fun inntektIkkeFunnetException(idInntekt: Long): Nothing =

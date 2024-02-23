@@ -34,7 +34,7 @@ open class Grunnlag(
     @ColumnTransformer(write = "?::jsonb")
     open val data: String,
     open val innhentet: LocalDateTime,
-    open val aktiv: LocalDateTime? = null,
+    open var aktiv: LocalDateTime? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
     open val rolle: Rolle,

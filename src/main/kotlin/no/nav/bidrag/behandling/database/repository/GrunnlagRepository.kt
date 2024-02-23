@@ -18,11 +18,4 @@ interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
         behandlingId: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
     ): Grunnlag?
-
-    @Modifying
-    @Query("update grunnlag g set g.aktiv = :aktiveringstidspunkt where g.id in :iderTilGrunnlagSomSkalAktiveres")
-    fun aktivereGrunnlag(
-        iderTilGrunnlagSomSkalAktiveres: Set<Long>,
-        aktiveringstidspunkt: LocalDateTime,
-    )
 }

@@ -75,14 +75,37 @@ class GrunnlagService(
 
             log.info {
                 "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
-                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
+                        "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
     }
 
     @Transactional
-    fun aktivereGrunnlag(iderTilGrunnlagSomSkalAktiveres: Set<Long>) {
-        grunnlagRepository.aktivereGrunnlag(iderTilGrunnlagSomSkalAktiveres, LocalDateTime.now())
+    fun aktivereGrunnlag(behandling: Behandling, iderTilGrunnlagSomSkalAktiveres: Set<Long>) {
+
+        val aktiveringstidspunkt = LocalDateTime.now()
+
+        behandling.roller.filter { it.ident != null }.forEach { rolle ->
+            val grunnlag = behandling.grunnlag.filter {
+                it.aktiv == null && rolle.ident == it.rolle.ident
+                        && iderTilGrunnlagSomSkalAktiveres.contains(it.id)
+            }.filter { Grunnlagsdatatype.INNTEKT == it.type }.toSet()
+
+            if (grunnlag.isNotEmpty()) {
+                aktivereGrunnlag(
+                    behandling,
+                    rolle,
+                    grunnlag,
+                    Grunnlagsdatatype.INNTEKT,
+                    aktiveringstidspunkt
+                )
+            } else {
+                log.info {
+                    "Fant ingen grunnlag å oppdatere for ${rolle.rolletype} med id ${rolle.id} i behandling " +
+                            "${behandling.id}"
+                }
+            }
+        }
     }
 
     fun hentSistInnhentet(
@@ -110,11 +133,11 @@ class GrunnlagService(
         return nyinnhentaGrunnlag.filter { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }.map {
             GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = grunnlagstyperEndretIBearbeidaInntekter)
         }.toSet() +
-            nyinnhentaGrunnlag.filter {
-                it.type != Grunnlagsdatatype.INNTEKT_BEARBEIDET && !inntekterOgYtelser.contains(it.type)
-            }.map {
-                GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = setOf(it.type))
-            }.toSet()
+                nyinnhentaGrunnlag.filter {
+                    it.type != Grunnlagsdatatype.INNTEKT_BEARBEIDET && !inntekterOgYtelser.contains(it.type)
+                }.map {
+                    GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = setOf(it.type))
+                }.toSet()
     }
 
     fun hentAlleSistInnhentet(
@@ -130,9 +153,70 @@ class GrunnlagService(
             grunnlagRepository.findTopByBehandlingIdAndTypeOrderByAktivDescIdDesc(behandlingId, it)
         }
 
+    private fun aktivereGrunnlag(
+        behandling: Behandling,
+        rolle: Rolle,
+        grunnlagSomSkalAktiveres: Set<Grunnlag>,
+        grunnlagsdatatype: Grunnlagsdatatype,
+        aktiveringstidspunkt: LocalDateTime
+    ) {
+
+        val inntektsgrunnlag = grunnlagSomSkalAktiveres.maxBy { it.innhentet }
+
+        log.info {
+            "Behandler forespørsel om å aktivere grunnlag av type $grunnlagsdatatype, innhentet " +
+                    " ${inntektsgrunnlag} for behandling med id ${inntektsgrunnlag.behandling.id}"
+        }
+
+        when (grunnlagsdatatype) {
+            Grunnlagsdatatype.INNTEKT -> aktivereGrunnlagOgOppdatereInntekter(
+                behandling,
+                inntektsgrunnlag,
+                rolle,
+                aktiveringstidspunkt
+            )
+
+            else -> {
+                // TODO: Implementere støtte for alle grunnlagstyper
+                log.warn { "Implementasjon mangler for å håndtere oppdatering av grunnlag av type $grunnlagsdatatype" }
+            }
+        }
+    }
+
+    private fun aktivereGrunnlagOgOppdatereInntekter(
+        behandling: Behandling,
+        inntektsgrunnlag: Grunnlag,
+        rolle: Rolle,
+        aktiveringstidspunkt: LocalDateTime
+    ) {
+
+        val grunnlagInntekt = jsonTilObjekt<GrunnlagInntekt>(inntektsgrunnlag.data)
+
+        val transformereInntekter =
+            TransformerInntekterRequest(
+                ainntektHentetDato = inntektsgrunnlag.innhentet.toLocalDate(),
+                ainntektsposter = grunnlagInntekt.ainntekt.flatMap { it.ainntektspostListe.tilAinntektsposter() },
+                kontantstøtteliste = emptyList(),
+                skattegrunnlagsliste = grunnlagInntekt.skattegrunnlag.tilSkattegrunnlagForLigningsår(),
+                småbarnstilleggliste = emptyList(),
+                utvidetBarnetrygdliste = emptyList(),
+            )
+
+        val summertAinntektOgSkattegrunnlag = inntektApi.transformerInntekter(transformereInntekter)
+
+        inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+            behandling,
+            rolle,
+            Grunnlagsdatatype.INNTEKT,
+            summertAinntektOgSkattegrunnlag
+        )
+
+        behandling.grunnlag.filter { it.id == inntektsgrunnlag.id }.forEach { it.aktiv = aktiveringstidspunkt }
+    }
+
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean {
         return behandling.grunnlagSistInnhentet == null ||
-            LocalDateTime.now().minusHours(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+                LocalDateTime.now().minusHours(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
     }
 
     private fun henteOglagreGrunnlag(
@@ -312,7 +396,7 @@ class GrunnlagService(
 
             // Oppdatere inntektstabell med sammenstilte offentlige inntekter
             if (Grunnlagsdatatype.INNTEKT_BEARBEIDET == grunnlagstype && sistInnhentedeGrunnlagAvType == null) {
-                inntektService.lagreSammenstilteInntekter(
+                inntektService.lagreInntekter(
                     behandlingsid,
                     Personident(rolle.ident!!),
                     innhentetGrunnlag as SummerteMånedsOgÅrsinntekter,

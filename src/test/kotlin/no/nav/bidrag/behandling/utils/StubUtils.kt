@@ -1,5 +1,6 @@
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -20,17 +21,21 @@ import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Arrays
 
 class StubUtils {
     companion object {
+        
         fun aClosedJsonResponse(): ResponseDefinitionBuilder {
             return aResponse()
                 .withHeader(HttpHeaders.CONNECTION, "close")
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
         }
+        private fun createGenericResponse() = WireMock.aResponse().withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString())
+            .withStatus(HttpStatus.OK.value())
     }
 
     fun stubOpprettForsendelse(
@@ -150,6 +155,21 @@ class StubUtils {
                     )
                 } else {
                     aClosedJsonResponse()
+                        .withBodyFile("respons_kodeverk_ytelserbeskrivelser.json")
+                },
+            ),
+        )
+    }
+
+    fun stubKodeverkPensjonsbeskrivelser(response: KodeverkKoderBetydningerResponse? = null, status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*")).willReturn(
+                if (response != null) {
+                    createGenericResponse().withStatus(status.value()).withBody(
+                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                    )
+                } else {
+                    createGenericResponse()
                         .withBodyFile("respons_kodeverk_ytelserbeskrivelser.json")
                 },
             ),

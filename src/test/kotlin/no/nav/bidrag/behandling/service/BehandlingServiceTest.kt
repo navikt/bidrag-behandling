@@ -89,7 +89,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
             testdataManager.oppretteOgLagreGrunnlag(
-                behandling.id!!,
+                behandling,
                 Grunnlagsdatatype.INNTEKT_BEARBEIDET,
                 innhentet = LocalDateTime.now(),
                 grunnlagsdata =
@@ -129,7 +129,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             )
 
             testdataManager.oppretteOgLagreGrunnlag(
-                behandling.id!!,
+                behandling,
                 Grunnlagsdatatype.INNTEKT,
                 innhentet = LocalDateTime.now(),
                 grunnlagsdata =
@@ -504,7 +504,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling = behandlingRepository.save(prepareBehandling())
 
             testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
-                behandlingsid = behandling.id!!,
+                behandling = behandling,
                 grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
                 innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                 aktiv = null,

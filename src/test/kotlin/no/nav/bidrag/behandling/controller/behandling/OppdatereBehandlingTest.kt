@@ -69,7 +69,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val behandling = behandlingRepository.save(BehandlingServiceTest.prepareBehandling())
 
         testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
-            behandlingsid = behandling.id!!,
+            behandling = behandling,
             grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
             innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
             aktiv = null,

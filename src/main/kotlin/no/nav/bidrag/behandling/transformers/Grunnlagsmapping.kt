@@ -21,45 +21,59 @@ fun List<InntektPost>.tilInntektspost(inntekt: Inntekt) =
         )
     }.toMutableSet()
 
+fun SummertÅrsinntekt.tilInntekt(
+    behandling: Behandling,
+    person: Personident,
+): Inntekt {
+    val inntekt =
+        Inntekt(
+            type = this.inntektRapportering,
+            belop = this.sumInntekt,
+            behandling = behandling,
+            ident = person.verdi,
+            gjelderBarn = this.gjelderBarnPersonId,
+            datoFom = this.periode.fom.atDay(1),
+            datoTom = this.periode.til?.atEndOfMonth(),
+            opprinneligFom = this.periode.fom.atDay(1),
+            opprinneligTom = this.periode.til?.atEndOfMonth(),
+            kilde = Kilde.OFFENTLIG,
+            taMed = false,
+        )
+    inntekt.inntektsposter = this.inntektPostListe.tilInntektspost(inntekt)
+    return inntekt
+}
+
 fun List<SummertÅrsinntekt>.tilInntekt(
     behandling: Behandling,
     person: Personident,
 ) = this.map {
+    it.tilInntekt(behandling, person)
+}.toMutableSet()
+
+fun SummertMånedsinntekt.tilInntekt(
+    behandling: Behandling,
+    person: Personident,
+): Inntekt {
     val inntekt =
         Inntekt(
-            type = it.inntektRapportering,
-            belop = it.sumInntekt,
+            type = Inntektsrapportering.AINNTEKT,
+            belop = this.sumInntekt,
             behandling = behandling,
             ident = person.verdi,
-            gjelderBarn = it.gjelderBarnPersonId,
-            datoFom = it.periode.fom.atDay(1),
-            datoTom = it.periode.til?.minusMonths(1)?.atEndOfMonth(),
-            opprinneligFom = it.periode.fom.atDay(1),
-            opprinneligTom = it.periode.til?.minusMonths(1)?.atEndOfMonth(),
+            datoFom = this.gjelderÅrMåned.atDay(1),
+            datoTom = this.gjelderÅrMåned.atEndOfMonth(),
+            opprinneligFom = this.gjelderÅrMåned.atDay(1),
+            opprinneligTom = this.gjelderÅrMåned.atEndOfMonth(),
             kilde = Kilde.OFFENTLIG,
             taMed = false,
         )
-    inntekt.inntektsposter = it.inntektPostListe.tilInntektspost(inntekt)
-    inntekt
-}.toMutableSet()
+    inntekt.inntektsposter = this.inntektPostListe.tilInntektspost(inntekt)
+    return inntekt
+}
 
 fun List<SummertMånedsinntekt>.konvertereTilInntekt(
     behandling: Behandling,
     person: Personident,
 ) = this.map {
-    val inntekt =
-        Inntekt(
-            type = Inntektsrapportering.AINNTEKT,
-            belop = it.sumInntekt,
-            behandling = behandling,
-            ident = person.verdi,
-            datoFom = it.gjelderÅrMåned.atDay(1),
-            datoTom = it.gjelderÅrMåned.minusMonths(1).atEndOfMonth(),
-            opprinneligFom = it.gjelderÅrMåned.atDay(1),
-            opprinneligTom = it.gjelderÅrMåned.minusMonths(1).atEndOfMonth(),
-            kilde = Kilde.OFFENTLIG,
-            taMed = false,
-        )
-    inntekt.inntektsposter = it.inntektPostListe.tilInntektspost(inntekt)
-    inntekt
+    it.tilInntekt(behandling, person)
 }.toMutableSet()
