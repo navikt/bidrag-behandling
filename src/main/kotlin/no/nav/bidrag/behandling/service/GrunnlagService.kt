@@ -58,6 +58,30 @@ class GrunnlagService(
     private lateinit var grenseInnhenting: String
 
     @Transactional
+    @Deprecated("Grunnlagsinnhenting og opprettelse skal gjøres automatisk med oppdatereGrunnlagForBehandling")
+    fun opprett(
+        behandlingId: Long,
+        grunnlagsdatatype: Grunnlagsdatatype,
+        data: String,
+        innhentet: LocalDateTime,
+    ): Grunnlag {
+        behandlingRepository
+            .findBehandlingById(behandlingId)
+            .orElseThrow { behandlingNotFoundException(behandlingId) }
+            .let {
+                return grunnlagRepository.save<Grunnlag>(
+                    Grunnlag(
+                        it,
+                        grunnlagsdatatype.getOrMigrate(),
+                        data = data,
+                        rolle = it.bidragsmottaker!!,
+                        innhentet = innhentet,
+                    ),
+                )
+            }
+    }
+
+    @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
