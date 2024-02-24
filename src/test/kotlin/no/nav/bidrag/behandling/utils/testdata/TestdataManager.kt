@@ -18,8 +18,6 @@ import java.time.LocalDateTime
 
 @Component
 class TestdataManager(private val behandlingRepository: BehandlingRepository) {
-
-    // @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun opprettBehandling(inkluderInntekter: Boolean = false): Behandling {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
@@ -74,15 +72,15 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
                 behandling,
                 grunnlagsdatatype.getOrMigrate(),
                 data =
-                if (grunnlagsdata != null) {
-                    tilJson(grunnlagsdata)
-                } else {
-                    oppretteGrunnlagInntektsdata(
-                        grunnlagsdatatype,
-                        behandling.bidragsmottaker!!.ident!!,
-                        behandling.søktFomDato,
-                    )
-                },
+                    if (grunnlagsdata != null) {
+                        tilJson(grunnlagsdata)
+                    } else {
+                        oppretteGrunnlagInntektsdata(
+                            grunnlagsdatatype,
+                            behandling.bidragsmottaker!!.ident!!,
+                            behandling.søktFomDato,
+                        )
+                    },
                 innhentet = innhentet,
                 aktiv = aktiv,
                 rolle = behandling.roller.first { r -> Rolletype.BIDRAGSMOTTAKER == r.rolletype },
@@ -99,21 +97,21 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
             tilJson(
                 GrunnlagInntekt(
                     ainntekt =
-                    listOf(
-                        AinntektGrunnlagDto(
-                            personId = gjelderIdent,
-                            periodeFra = søktFomDato.withDayOfMonth(1),
-                            periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
-                            ainntektspostListe =
-                            listOf(
-                                tilAinntektspostDto(
-                                    beløp = BigDecimal(70000),
-                                    fomDato = søktFomDato,
-                                    tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
-                                ),
+                        listOf(
+                            AinntektGrunnlagDto(
+                                personId = gjelderIdent,
+                                periodeFra = søktFomDato.withDayOfMonth(1),
+                                periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                                ainntektspostListe =
+                                    listOf(
+                                        tilAinntektspostDto(
+                                            beløp = BigDecimal(70000),
+                                            fomDato = søktFomDato,
+                                            tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                                        ),
+                                    ),
                             ),
                         ),
-                    ),
                 ),
             )
 

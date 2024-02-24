@@ -74,7 +74,6 @@ class InntektService(
         grunnlagsdatatype: Grunnlagsdatatype,
         sammenstilteInntekter: TransformerInntekterResponse,
     ) {
-
         val idTilInntekterSomBleOppdatert: MutableSet<Long> = mutableSetOf()
 
         sammenstilteInntekter.summertÅrsinntektListe.forEach { nyInntekt ->
@@ -85,19 +84,21 @@ class InntektService(
             behandleInntektsoppdatering(behandling, nyInntekt, rolle, idTilInntekterSomBleOppdatert)
         }
 
-        val inntektsrapporteringer = setOf(
-            Inntektsrapportering.BARNETILSYN,
-            Inntektsrapportering.BARNETILLEGG,
-            Inntektsrapportering.KONTANTSTØTTE,
-            Inntektsrapportering.UTVIDET_BARNETRYGD
-        )
+        val inntektsrapporteringer =
+            setOf(
+                Inntektsrapportering.BARNETILSYN,
+                Inntektsrapportering.BARNETILLEGG,
+                Inntektsrapportering.KONTANTSTØTTE,
+                Inntektsrapportering.UTVIDET_BARNETRYGD,
+            )
 
         // Sletter tidligere innhentede inntekter knyttet til ainntekt og skattegrunnlag som ikke finnes i nyeste uttrekk
-        val offisielleInntekterSomSkalSlettes = behandling.inntekter
-            .filter { Kilde.OFFENTLIG == it.kilde }
-            .filter { !inntektsrapporteringer.contains(it.type) }
-            .filter { rolle.ident == it.ident }
-            .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
+        val offisielleInntekterSomSkalSlettes =
+            behandling.inntekter
+                .filter { Kilde.OFFENTLIG == it.kilde }
+                .filter { !inntektsrapporteringer.contains(it.type) }
+                .filter { rolle.ident == it.ident }
+                .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
         behandling.inntekter.removeAll(offisielleInntekterSomSkalSlettes)
         entityManager.flush()
@@ -121,8 +122,9 @@ class InntektService(
 
         oppdatereInntekterRequest.oppdatereManuelleInntekter.forEach {
             if (it.id != null) {
-                val inntekt = inntektRepository.findByIdAndKilde(it.id, Kilde.MANUELL)
-                    .orElseThrow { inntektIkkeFunnetException(it.id) }
+                val inntekt =
+                    inntektRepository.findByIdAndKilde(it.id, Kilde.MANUELL)
+                        .orElseThrow { inntektIkkeFunnetException(it.id) }
                 it.tilInntekt(inntekt)
             } else {
                 inntektRepository.save(it.tilInntekt(behandling))
@@ -135,7 +137,7 @@ class InntektService(
 
         log.info {
             "Fant ${manuelleInntekterSomSkalSlettes.size} av de oppgitte ${oppdatereInntekterRequest.sletteInntekter} " +
-                    "inntektene som skal slettes"
+                "inntektene som skal slettes"
         }
 
         behandling.inntekter.removeAll(manuelleInntekterSomSkalSlettes)
@@ -152,57 +154,62 @@ class InntektService(
         behandling: Behandling,
         nyInntekt: T,
         rolle: Rolle,
-        idTilInntekterSomBleOppdatert: MutableSet<Long>
+        idTilInntekterSomBleOppdatert: MutableSet<Long>,
     ) {
-
         var type: Inntektsrapportering = Inntektsrapportering.AINNTEKT
         val periode: ÅrMånedsperiode?
 
         when (nyInntekt) {
             is SummertÅrsinntekt -> {
                 type = nyInntekt.inntektRapportering
-                periode = if (nyInntekt.periode.til?.month == Month.DECEMBER) {
-                    ÅrMånedsperiode(nyInntekt.periode.fom, nyInntekt.periode.til?.plusMonths(1))
-                } else {
-                    nyInntekt.periode
-                }
+                periode =
+                    if (nyInntekt.periode.til?.month == Month.DECEMBER) {
+                        ÅrMånedsperiode(nyInntekt.periode.fom, nyInntekt.periode.til?.plusMonths(1))
+                    } else {
+                        nyInntekt.periode
+                    }
             }
 
             is SummertMånedsinntekt -> {
                 periode =
                     ÅrMånedsperiode(
                         nyInntekt.gjelderÅrMåned.atDay(1),
-                        nyInntekt.gjelderÅrMåned.plusMonths(1).atEndOfMonth()
+                        nyInntekt.gjelderÅrMåned.plusMonths(1).atEndOfMonth(),
                     )
             }
 
             else -> {
                 log.error {
                     "Feil klassetype for nyInntekt - aktivering av inntektsgrunnlag feilet for behandling: " +
-                            "${behandling.id!!}."
+                        "${behandling.id!!}."
                 }
                 aktiveringAvGrunnlagFeiletException(behandling.id!!)
             }
         }
 
-        val inntekterSomSkalOppdateres = behandling.inntekter
-            .asSequence()
-            .filter { i -> Kilde.OFFENTLIG == i.kilde }
-            .filter { i -> type == i.type }
-            .filter { i -> i.opprinneligFom != null }
-            .filter { i -> periode.fom == YearMonth.from(i.opprinneligFom) }
-            .filter { i ->
-                periode.til == if (i.opprinneligTom != null)
-                    YearMonth.from(i.opprinneligTom?.plusDays(1)) else null
-            }
-            .filter { i -> rolle.ident == i.ident }
-            .toList()
+        val inntekterSomSkalOppdateres =
+            behandling.inntekter
+                .asSequence()
+                .filter { i -> Kilde.OFFENTLIG == i.kilde }
+                .filter { i -> type == i.type }
+                .filter { i -> i.opprinneligFom != null }
+                .filter { i -> periode.fom == YearMonth.from(i.opprinneligFom) }
+                .filter { i ->
+                    periode.til ==
+                        if (i.opprinneligTom != null) {
+                            YearMonth.from(i.opprinneligTom?.plusDays(1))
+                        } else {
+                            null
+                        }
+                }
+                .filter { i -> rolle.ident == i.ident }
+                .toList()
 
         if (inntekterSomSkalOppdateres.size > 1) {
             log.warn {
                 "Forventet kun å finne èn inntekt, fant ${inntekterSomSkalOppdateres.size} inntekter med" +
-                        "samme type og periode for rolle med id ${rolle.id} i behandling med id ${behandling.id}. " +
-                        "Fjerner duplikatene."
+                    "samme type og periode for rolle med id ${rolle.id} i behandling med id ${behandling.id}. " +
+                    "Fjerner duplikatene."
             }
 
             val inntektSomOppdateres = inntekterSomSkalOppdateres.maxBy { it.id!! }
@@ -215,7 +222,7 @@ class InntektService(
             entityManager.refresh(behandling)
             log.info {
                 "Eksisterende inntekt med id ${inntektSomOppdateres.id} for rolle " +
-                        "${rolle.rolletype} i behandling ${behandling.id} ble oppdatert med nytt beløp og poster."
+                    "${rolle.rolletype} i behandling ${behandling.id} ble oppdatert med nytt beløp og poster."
             }
             idTilInntekterSomBleOppdatert.add(inntektSomOppdateres.id!!)
         } else {
@@ -235,7 +242,10 @@ class InntektService(
         }
     }
 
-    private fun <T> oppdatereBeløpOgPoster(nyInntekt: T, eksisterendeInntekt: Inntekt) {
+    private fun <T> oppdatereBeløpOgPoster(
+        nyInntekt: T,
+        eksisterendeInntekt: Inntekt,
+    ) {
         if (nyInntekt is SummertÅrsinntekt) {
             eksisterendeInntekt.belop = nyInntekt.sumInntekt
             eksisterendeInntekt.inntektsposter.clear()

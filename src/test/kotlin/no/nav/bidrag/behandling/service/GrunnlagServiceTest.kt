@@ -171,14 +171,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     periodeTil = YearMonth.now().withMonth(1).atDay(1),
                     personId = behandling.bidragsmottaker!!.ident!!,
                     skattegrunnlagspostListe =
-                    listOf(
-                        SkattegrunnlagspostDto(
-                            beløp = BigDecimal(450000),
-                            belop = BigDecimal(450000),
-                            inntektType = "renteinntektAvObligasjon",
-                            skattegrunnlagType = "ORINÆR",
+                        listOf(
+                            SkattegrunnlagspostDto(
+                                beløp = BigDecimal(450000),
+                                belop = BigDecimal(450000),
+                                inntektType = "renteinntektAvObligasjon",
+                                skattegrunnlagType = "ORINÆR",
+                            ),
                         ),
-                    ),
                 )
 
             testdataManager.oppretteOgLagreGrunnlag(
@@ -187,10 +187,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 innhentingstidspunkt,
                 innhentingstidspunkt,
                 grunnlagsdata =
-                GrunnlagInntekt(
-                    ainntekt = emptyList(),
-                    skattegrunnlag = listOf(skattegrunnlag),
-                ),
+                    GrunnlagInntekt(
+                        ainntekt = emptyList(),
+                        skattegrunnlag = listOf(skattegrunnlag),
+                    ),
             )
             behandling.roller.forEach {
                 when (it.rolletype) {
@@ -198,12 +198,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         stubUtils.stubHenteGrunnlagOk(
                             rolle = it,
                             responsobjekt =
-                            tilHentGrunnlagDto(
-                                skattegrunnlag =
-                                listOf(
-                                    skattegrunnlag,
+                                tilHentGrunnlagDto(
+                                    skattegrunnlag =
+                                        listOf(
+                                            skattegrunnlag,
+                                        ),
                                 ),
-                            ),
                         )
 
                     else -> stubUtils.stubHenteGrunnlagOk(rolle = it, tomRespons = true)
@@ -476,11 +476,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 husstandsmedlemmer.size shouldBe 2
                 husstandsmedlemmer.filter { h ->
                     h.navn == "Småstein Nilsen" && h.fødselsdato ==
-                            LocalDate.of(
-                                2020,
-                                1,
-                                24,
-                            ) && h.erBarnAvBmBp
+                        LocalDate.of(
+                            2020,
+                            1,
+                            24,
+                        ) && h.erBarnAvBmBp
                 }.toSet().size shouldBe 1
             }
         }
@@ -515,21 +515,21 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 sivilstand.size shouldBe 2
                 sivilstand.filter { s ->
                     s.personId == "99057812345" && s.bekreftelsesdato ==
-                            LocalDate.of(
-                                2021,
-                                1,
-                                1,
-                            ) && s.gyldigFom ==
-                            LocalDate.of(
-                                2021,
-                                1,
-                                1,
-                            ) && s.master == "FREG" &&
-                            s.historisk == true && s.registrert ==
-                            LocalDateTime.parse(
-                                "2022-01-01T10:03:57.285",
-                                DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-                            ) && s.type == SivilstandskodePDL.GIFT
+                        LocalDate.of(
+                            2021,
+                            1,
+                            1,
+                        ) && s.gyldigFom ==
+                        LocalDate.of(
+                            2021,
+                            1,
+                            1,
+                        ) && s.master == "FREG" &&
+                        s.historisk == true && s.registrert ==
+                        LocalDateTime.parse(
+                            "2022-01-01T10:03:57.285",
+                            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                        ) && s.type == SivilstandskodePDL.GIFT
                 }.toSet().size shouldBe 1
             }
         }
@@ -564,21 +564,21 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 sivilstand.size shouldBe 2
                 sivilstand.filter { s ->
                     s.personId == "99057812345" && s.bekreftelsesdato ==
-                            LocalDate.of(
-                                2021,
-                                1,
-                                1,
-                            ) && s.gyldigFom ==
-                            LocalDate.of(
-                                2021,
-                                1,
-                                1,
-                            ) && s.master == "FREG" &&
-                            s.historisk == true && s.registrert ==
-                            LocalDateTime.parse(
-                                "2022-01-01T10:03:57.285",
-                                DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-                            ) && s.type == SivilstandskodePDL.GIFT
+                        LocalDate.of(
+                            2021,
+                            1,
+                            1,
+                        ) && s.gyldigFom ==
+                        LocalDate.of(
+                            2021,
+                            1,
+                            1,
+                        ) && s.master == "FREG" &&
+                        s.historisk == true && s.registrert ==
+                        LocalDateTime.parse(
+                            "2022-01-01T10:03:57.285",
+                            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                        ) && s.type == SivilstandskodePDL.GIFT
                 }.toSet().size shouldBe 1
             }
         }
@@ -695,12 +695,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 arbeidsforhold.size shouldBe 3
                 arbeidsforhold.filter { a ->
                     a.partPersonId == "99057812345" && a.sluttdato == null && a.startdato ==
-                            LocalDate.of(
-                                2002,
-                                11,
-                                3,
-                            ) && a.arbeidsgiverNavn == "SAUEFABRIKK" &&
-                            a.arbeidsgiverOrgnummer == "896929119"
+                        LocalDate.of(
+                            2002,
+                            11,
+                            3,
+                        ) && a.arbeidsgiverNavn == "SAUEFABRIKK" &&
+                        a.arbeidsgiverOrgnummer == "896929119"
                 }.toSet().size shouldBe 1
             }
         }
@@ -709,11 +709,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste aktivering av grunnlag")
     open inner class AktivereGrunnlag {
-
         @Test
         @Transactional
         open fun `skal aktivere grunnlag av type inntekt og oppdatere inntektstabell`() {
-
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
@@ -749,14 +747,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     .filter {
                         Period.between(
                             it.opprinneligFom,
-                            it.opprinneligTom?.plusDays(1)
+                            it.opprinneligTom?.plusDays(1),
                         ).months == 1
                     }.size shouldBe 1
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT == it.type }
                     .filter {
                         Period.between(
                             it.opprinneligFom,
-                            it.opprinneligTom?.plusDays(1)
+                            it.opprinneligTom?.plusDays(1),
                         ).years == 1
                     }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }
@@ -770,7 +768,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste hentSistInnhentet")
     open inner class HentSistInnhentet {
-
         @Test
         fun `skal være bare en rad med aktive opplysninger`() {
             // gitt

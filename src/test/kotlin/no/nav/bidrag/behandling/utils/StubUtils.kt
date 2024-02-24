@@ -1,6 +1,5 @@
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -28,14 +27,15 @@ import java.util.Arrays
 
 class StubUtils {
     companion object {
-        
         fun aClosedJsonResponse(): ResponseDefinitionBuilder {
             return aResponse()
                 .withHeader(HttpHeaders.CONNECTION, "close")
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
         }
-        private fun createGenericResponse() = WireMock.aResponse().withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString())
-            .withStatus(HttpStatus.OK.value())
+
+        private fun createGenericResponse() =
+            WireMock.aResponse().withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString())
+                .withStatus(HttpStatus.OK.value())
     }
 
     fun stubOpprettForsendelse(
@@ -161,7 +161,10 @@ class StubUtils {
         )
     }
 
-    fun stubKodeverkPensjonsbeskrivelser(response: KodeverkKoderBetydningerResponse? = null, status: HttpStatus = HttpStatus.OK) {
+    fun stubKodeverkPensjonsbeskrivelser(
+        response: KodeverkKoderBetydningerResponse? = null,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
         WireMock.stubFor(
             WireMock.get(WireMock.urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*")).willReturn(
                 if (response != null) {
