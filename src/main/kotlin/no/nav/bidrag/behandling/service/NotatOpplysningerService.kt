@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.hentData
 import no.nav.bidrag.behandling.database.grunnlag.BoforholdBearbeidet
 import no.nav.bidrag.behandling.database.grunnlag.BoforholdHusstandBearbeidet
-import no.nav.bidrag.behandling.database.grunnlag.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.database.grunnlag.SivilstandBearbeidet
 import no.nav.bidrag.behandling.dto.v1.notat.Arbeidsforhold
 import no.nav.bidrag.behandling.dto.v1.notat.Barnetillegg
@@ -43,13 +42,21 @@ class NotatOpplysningerService(
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val opplysningerBoforhold =
-            grunnlagService.hentSistInnhentet(behandlingId, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
+            grunnlagService.hentSistInnhentet(
+                behandlingId,
+                behandling.roller
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
+                Grunnlagsdatatype.BOFORHOLD_BEARBEIDET,
+            )
                 ?.hentData()
                 ?: BoforholdBearbeidet()
 
-        val opplysningerInntekt: InntektsopplysningerBearbeidet =
-            grunnlagService.hentSistInnhentet(behandlingId, Grunnlagsdatatype.INNTEKT_BEARBEIDET)
-                .hentData() ?: InntektsopplysningerBearbeidet()
+        val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
+            behandling.roller.filter { it.ident != null }.map { r ->
+                grunnlagService.hentSistInnhentet(behandlingId, r.id!!, Grunnlagsdatatype.ARBEIDSFORHOLD)
+                    .hentData<ArbeidsforholdGrunnlagDto>()
+            }.toList().filterNotNull()
+
         return NotatDto(
             saksnummer = behandling.saksnummer,
             saksbehandlerNavn =
@@ -69,11 +76,11 @@ class NotatOpplysningerService(
                 Inntekter(
                     notat = behandling.tilNotatInntekt(),
                     inntekterPerRolle =
-                        behandling.roller.map {
+                        behandling.roller.map { r ->
                             behandling.hentInntekterForIdent(
-                                it.ident!!,
-                                it.rolletype,
-                                opplysningerInntekt.arbeidsforhold,
+                                r.ident!!,
+                                r.rolletype,
+                                alleArbeidsforhold.filter { r.ident == it.partPersonId },
                             )
                         },
                 ),

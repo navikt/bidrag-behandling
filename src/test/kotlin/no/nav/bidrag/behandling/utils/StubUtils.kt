@@ -7,28 +7,22 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import com.google.gson.GsonBuilder
-import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
-import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer.Companion.oppretteGrunnlagsobjekterBarn
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.objektTilJson
-import no.nav.bidrag.behandling.transformers.LocalDateTypeAdapter
+import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
-import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
-import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.person.PersonDto
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Arrays
 
 class StubUtils {
@@ -38,6 +32,10 @@ class StubUtils {
                 .withHeader(HttpHeaders.CONNECTION, "close")
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
         }
+
+        private fun createGenericResponse() =
+            WireMock.aResponse().withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString())
+                .withStatus(HttpStatus.OK.value())
     }
 
     fun stubOpprettForsendelse(
@@ -163,6 +161,24 @@ class StubUtils {
         )
     }
 
+    fun stubKodeverkPensjonsbeskrivelser(
+        response: KodeverkKoderBetydningerResponse? = null,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*")).willReturn(
+                if (response != null) {
+                    createGenericResponse().withStatus(status.value()).withBody(
+                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                    )
+                } else {
+                    createGenericResponse()
+                        .withBodyFile("respons_kodeverk_ytelserbeskrivelser.json")
+                },
+            ),
+        )
+    }
+
     fun stubKodeverkNaeringsinntektsbeskrivelser(
         response: KodeverkKoderBetydningerResponse? = null,
         status: HttpStatus = HttpStatus.OK,
@@ -214,19 +230,18 @@ class StubUtils {
     }
 
     fun stubHenteGrunnlagOk(
-        personidentBm: Personident? = null,
-        personidentBarn: Set<Personident> = emptySet(),
+        rolle: Rolle? = null,
         tomRespons: Boolean = false,
         navnResponsfil: String = "hente-grunnlagrespons.json",
         responsobjekt: HentGrunnlagDto? = null,
     ): StubMapping {
         val wiremock =
-            if (personidentBm == null) {
+            if (rolle == null) {
                 WireMock.post(WireMock.urlEqualTo("/hentgrunnlag"))
             } else {
                 WireMock.post(
                     WireMock.urlEqualTo("/hentgrunnlag"),
-                ).withRequestBody(WireMock.equalToJson(oppretteGrunnlagrequest(personidentBm, personidentBarn)))
+                ).withRequestBody(WireMock.containing(rolle.ident))
             }
 
         val hentGrunnlagDto =
@@ -245,16 +260,16 @@ class StubUtils {
                 LocalDateTime.now(),
             )
 
-        objektTilJson(hentGrunnlagDto)
+        tilJson(hentGrunnlagDto)
         val respons =
             if (tomRespons && responsobjekt == null) {
                 aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
-                    .withBody(objektTilJson(hentGrunnlagDto))
+                    .withBody(tilJson(hentGrunnlagDto))
             } else if (!tomRespons && responsobjekt != null) {
                 aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
-                    .withBody(objektTilJson(responsobjekt))
+                    .withBody(tilJson(responsobjekt))
             } else {
                 aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
@@ -262,34 +277,6 @@ class StubUtils {
             }
 
         return WireMock.stubFor(wiremock.willReturn(respons))
-    }
-
-    private fun oppretteGrunnlagrequest(
-        personidentBm: Personident,
-        personidenterBarn: Set<Personident>,
-    ): String {
-        val spørring: List<GrunnlagRequestDto> =
-            when (personidenterBarn) {
-                emptySet<Personident>() -> BidragGrunnlagConsumer.oppretteGrunnlagsobjekterBm(personidentBm)
-                else ->
-                    BidragGrunnlagConsumer.oppretteGrunnlagsobjekterBm(personidentBm) +
-                        personidenterBarn.flatMap {
-                            oppretteGrunnlagsobjekterBarn(
-                                it,
-                            )
-                        }
-            }
-
-        return GsonBuilder().registerTypeAdapter(
-            LocalDate::class.java,
-            LocalDateTypeAdapter(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-        ).create()
-            .toJson(
-                HentGrunnlagRequestDto(
-                    Formål.FORSKUDD,
-                    spørring,
-                ),
-            )
     }
 
     inner class Verify {

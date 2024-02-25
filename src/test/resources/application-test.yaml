@@ -5,6 +5,7 @@ BIDRAG_TILGANGSKONTROLL_URL: http://localhost:${wiremock.server.port}/tilgangsko
 BIDRAG_ORGANISASJON_URL: http://localhost:${wiremock.server.port}/organisasjon
 ARBEID_OG_INNTEKT_URL: http://localhost:${wiremock.server.port}/ainntekt
 BIDRAG_SJABLON_URL: http://localhost:${wiremock.server.port}/sjablon
+GRUNNLAG_MIN_ANT_TIMER_SIDEN_FORRIGE_INNHENTING: 1
 KODEVERK_URL: http://localhost:${wiremock.server.port}
 AZURE_OPENID_CONFIG_ISSUER: http://localhost:${mock-oauth2-server.port}/aad
 AZURE_APP_TENANT_ID: 12321321-123213-3213123

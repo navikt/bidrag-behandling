@@ -134,7 +134,7 @@ class BehandlingService(
                 request.aktivereGrunnlag.let { grunnlagsider ->
                     if (grunnlagsider.isNotEmpty()) {
                         log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
-                        grunnlagService.aktivereGrunnlag(grunnlagsider)
+                        grunnlagService.aktivereGrunnlag(it, grunnlagsider)
                     }
                 }
                 request.inntekter?.let { inntekter ->
@@ -179,12 +179,13 @@ class BehandlingService(
 
     fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {
         val behandling = hentBehandlingById(behandlingsid)
+
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
         val gjeldendeAktiveGrunnlagsdata =
             grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid)
         val grunnlagsdataEndretEtterAktivering =
-            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid)
+            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid, behandling.roller)
         return behandling.tilBehandlingDtoV2(gjeldendeAktiveGrunnlagsdata, grunnlagsdataEndretEtterAktivering)
     }
 

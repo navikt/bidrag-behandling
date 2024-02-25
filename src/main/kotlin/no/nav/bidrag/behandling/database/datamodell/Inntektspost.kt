@@ -10,7 +10,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.PreRemove
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import java.math.BigDecimal
 
@@ -29,9 +28,4 @@ open class Inntektspost(
     // TODO: Endre til ikke nullbar
     @Enumerated(EnumType.STRING)
     open val inntektstype: Inntektstype?,
-) {
-    @PreRemove
-    private fun slette() {
-        inntekt?.inntektsposter?.remove(this)
-    }
-}
+)

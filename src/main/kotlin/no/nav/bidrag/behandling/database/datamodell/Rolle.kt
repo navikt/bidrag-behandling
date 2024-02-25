@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -9,6 +10,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.hibernate.annotations.SQLDelete
@@ -33,6 +35,13 @@ open class Rolle(
     open val id: Long? = null,
     open val navn: String? = null,
     open val deleted: Boolean = false,
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "rolle",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
+    open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
 )
 
 fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""

@@ -16,6 +16,7 @@ env:
   TOPIC_VEDTAK: bidrag.vedtak-syntetisk
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt.dev-fss-pub.nais.io/api/v2
   KODEVERK_URL: https://kodeverk.dev-fss-pub.nais.io
+  GRUNNLAG_MIN_ANT_TIMER_SIDEN_FORRIGE_INNHENTING: 10
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
   pool: nav-dev

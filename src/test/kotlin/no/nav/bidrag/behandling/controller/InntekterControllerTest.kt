@@ -22,7 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
-import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.YearMonth
 import kotlin.test.Ignore
@@ -193,12 +192,14 @@ class InntekterControllerTest : KontrollerTestRunner() {
         }
 
         @Test
-        @Transactional
-        open fun `skal slette inntekter`() {
+        open fun `skal kun være mulig å slette inntekter med kilde manuell`() {
             // given
             val behandling = testdataManager.opprettBehandling(true)
 
-            assert(behandling.inntekter.size > 0)
+            assertSoftly {
+                behandling.inntekter.size shouldBe 3
+                behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.size shouldBe 1
+            }
 
             // when
             val respons =
@@ -221,7 +222,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 respons shouldNotBe null
                 respons.statusCode shouldBe HttpStatus.CREATED
                 respons.body shouldNotBe null
-                respons.body?.inntekter?.årsinntekter?.size shouldBe 0
+                respons.body?.inntekter?.årsinntekter?.size shouldBe 2
                 respons.body?.inntekter?.barnetillegg?.size shouldBe 0
                 respons.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 0
                 respons.body?.inntekter?.kontantstøtte?.size shouldBe 0
