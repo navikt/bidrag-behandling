@@ -24,6 +24,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 fun Set<Sivilstand>.toSivilstandDto() =
     this.map {
@@ -160,7 +161,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         id = -1,
         taMed = false,
         rapporteringstype = Inntektsrapportering.AINNTEKT,
-        beløp = sumInntekt,
+        beløp = sumInntekt.setScale(0, RoundingMode.HALF_UP),
         ident = Personident(gjelder),
         kilde = Kilde.OFFENTLIG,
         inntektsposter =
@@ -169,7 +170,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
                     kode = it.kode,
                     visningsnavn = it.visningsnavn,
                     inntektstype = it.inntekstype,
-                    beløp = it.beløp,
+                    beløp = it.beløp.setScale(0, RoundingMode.HALF_UP),
                 )
             }.toSet(),
         inntektstyper = emptySet(),
