@@ -30,7 +30,6 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 @Service
 class BeregningService(
     private val behandlingService: BehandlingService,
-    private val beregnForskuddApi: BeregnForskuddApi,
 ) {
     fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
         val respons =
@@ -44,7 +43,7 @@ class BeregningService(
                         try {
                             ResultatForskuddsberegningBarn(
                                 it.mapTilResultatBarn(),
-                                beregnForskuddApi.beregn(beregnForskudd),
+                                BeregnForskuddApi().beregn(beregnForskudd),
                             )
                         } catch (e: IllegalArgumentException) {
                             LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }

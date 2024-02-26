@@ -24,7 +24,7 @@ data class StønadsendringPeriode(
 
 fun ResultatForskuddsberegningBarn.byggStønadsendringerForVedtak(behandling: Behandling): StønadsendringPeriode {
     val søknadsbarn =
-        behandling.søknadsbarn.find { it.ident == this.barn.ident?.verdi }
+        behandling.søknadsbarn.find { it.ident == barn.ident?.verdi }
             ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
 
     val grunnlagListe = resultat.grunnlagListe.toSet()
@@ -87,4 +87,8 @@ fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
 
 fun Behandling.byggGrunnlagForStønad(): Set<GrunnlagDto> {
     return (byggGrunnlagNotater() + byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSøknad()).toSet()
+}
+
+fun Behandling.byggGrunnlagForStønadAvslag(): Set<GrunnlagDto> {
+    return (byggGrunnlagNotater() + byggGrunnlagSøknad()).toSet()
 }

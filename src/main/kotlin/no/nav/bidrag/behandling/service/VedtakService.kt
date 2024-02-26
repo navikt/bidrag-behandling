@@ -5,21 +5,24 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.tilPersonident
+import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.vedtak.OmgjortBehandlingFraVedtak
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønadAvslag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
-import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseList
+import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
 import no.nav.bidrag.behandling.transformers.vedtak.tilOpprettRequestDto
 import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
+import no.nav.bidrag.commons.util.MermaidResponse
 import no.nav.bidrag.commons.util.TreeChild
+import no.nav.bidrag.commons.util.tilVedtakDto
 import no.nav.bidrag.commons.util.toMermaid
 import no.nav.bidrag.commons.util.toTree
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -33,6 +36,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -49,24 +53,24 @@ class VedtakService(
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
 ) {
-    fun omgjørVedtakTilBehandling(vedtakId: Long): OmgjortBehandlingFraVedtak? {
+    fun konverterVedtakTilBehandling(vedtakId: Long): Behandling? {
         val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
 
 //        val behandling =
 //            Behandling(
 //                saksnummer = vedtak.saksnummer,
 //            )
-        return null
+        return vedtak.tilBehandling(vedtakId)
     }
 
     fun fatteVedtak(behandlingId: Long): Int {
         val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", true)
-//        if (isEnabled.not()) {
-//            throw HttpClientErrorException(
-//                HttpStatus.BAD_REQUEST,
-//                "Fattevedtak er ikke aktivert",
-//            )
-//        }
+        if (isEnabled.not()) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Fattevedtak er ikke aktivert",
+            )
+        }
 
         val behandling = behandlingService.hentBehandlingById(behandlingId, true)
         if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
@@ -92,12 +96,20 @@ class VedtakService(
         return response.vedtaksid
     }
 
-    fun vedtakTilMermaid(behandlingId: Long): String {
+    fun behandlingTilVedtakDto(behandlingId: Long): VedtakDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId, true)
         val request =
             if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
 
-        return request.toMermaid().joinToString("")
+        return request.tilVedtakDto()
+    }
+
+    fun vedtakTilMermaid(behandlingId: Long): MermaidResponse {
+        val behandling = behandlingService.hentBehandlingById(behandlingId, true)
+        val request =
+            if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
+
+        return request.toMermaid()
     }
 
     fun vedtakTilTreeMap(behandlingId: Long): TreeChild {
@@ -110,7 +122,7 @@ class VedtakService(
 
     private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto {
         val sak = sakConsumer.hentSak(saksnummer)
-        val grunnlagListe = byggGrunnlagForStønad()
+        val grunnlagListe = byggGrunnlagForStønadAvslag()
 
         return OpprettVedtakRequestDto(
             enhetsnummer = Enhetsnummer(behandlerEnhet),
@@ -122,7 +134,7 @@ class VedtakService(
                         innkreving = Innkrevingstype.MED_INNKREVING,
                         skyldner = tilSkyldner(),
                         kravhaver =
-                            it.tilPersonident()
+                            it.tilNyestePersonident()
                                 ?: rolleManglerIdent(Rolletype.BARN, id!!),
                         mottaker =
                             roller
@@ -146,7 +158,7 @@ class VedtakService(
                     )
                 },
             engangsbeløpListe = emptyList(),
-            behandlingsreferanseListe = tilBehandlingreferanseList(),
+            behandlingsreferanseListe = tilBehandlingreferanseListe(),
             grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
             kilde = Vedtakskilde.MANUELT,
             fastsattILand = null,
@@ -179,7 +191,7 @@ class VedtakService(
                         innkreving = Innkrevingstype.MED_INNKREVING,
                         skyldner = tilSkyldner(),
                         kravhaver =
-                            it.barn.tilPersonident()
+                            it.barn.tilNyestePersonident()
                                 ?: rolleManglerIdent(Rolletype.BARN, id!!),
                         mottaker =
                             roller
@@ -194,7 +206,7 @@ class VedtakService(
                     )
                 },
             engangsbeløpListe = emptyList(),
-            behandlingsreferanseListe = tilBehandlingreferanseList(),
+            behandlingsreferanseListe = tilBehandlingreferanseListe(),
             grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
             kilde = Vedtakskilde.MANUELT,
             fastsattILand = null,

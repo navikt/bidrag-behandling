@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.toCompactString
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -21,7 +22,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSkattegrunnla
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSmåbarnstillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetUtvidetBarnetrygd
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettArbeidsforholdGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
@@ -211,7 +211,7 @@ fun List<BarnetilsynGrunnlagDto>.tilGrunnlagsobjekt(
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
                     map {
-                        val søknadsbarn = personobjekter.hentPerson(it.barnPersonId)!!
+                        val søknadsbarn = personobjekter.hentPersonNyesteIdent(it.barnPersonId)!!
                         InnhentetBarnetilsyn.Barnetilsyn(
                             periode = Datoperiode(it.periodeFra, it.periodeTil),
                             beløp = it.beløp,
@@ -327,7 +327,7 @@ fun List<BarnetilleggGrunnlagDto>.tilGrunnlagsobjekt(
                 grunnlag =
                     map {
                         val søknadsbarn =
-                            personobjekter.hentPerson(it.barnPersonId) ?: manglerRolleIGrunnlag(
+                            personobjekter.hentPersonNyesteIdent(it.barnPersonId) ?: manglerRolleIGrunnlag(
                                 Rolletype.BARN,
                                 fødselsnummer = it.barnPersonId,
                             )
@@ -359,7 +359,7 @@ fun List<KontantstøtteGrunnlagDto>.tilGrunnlagsobjekt(
                 grunnlag =
                     map {
                         val søknadsbarn =
-                            personobjekter.hentPerson(it.barnPersonId) ?: manglerRolleIGrunnlag(
+                            personobjekter.hentPersonNyesteIdent(it.barnPersonId) ?: manglerRolleIGrunnlag(
                                 Rolletype.BARN,
                                 fødselsnummer = it.barnPersonId,
                             )

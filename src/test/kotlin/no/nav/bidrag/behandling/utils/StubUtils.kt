@@ -35,7 +35,7 @@ import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.util.Arrays
 
-fun stubPersonConsumer() {
+fun stubPersonConsumer(): BidragPersonConsumer {
     val personConsumerMock = mockkClass(BidragPersonConsumer::class)
     every { personConsumerMock.hentPerson(any<String>()) }.answers {
         val personId = firstArg<String>()
@@ -49,6 +49,28 @@ fun stubPersonConsumer() {
     every {
         AppContext.getBean<BidragPersonConsumer>(any())
     } returns personConsumerMock
+    return personConsumerMock
+}
+
+fun stubHentPersonNyIdent(
+    gammelIdent: String,
+    nyIdent: String,
+    personConsumerMock: BidragPersonConsumer = stubPersonConsumer(),
+): BidragPersonConsumer {
+    every { personConsumerMock.hentPerson(eq(gammelIdent)) } returns
+        PersonDto(
+            Personident(
+                nyIdent,
+            ),
+            navn = "Ola Nordmann",
+            fødselsdato = LocalDate.parse("2020-02-02"),
+        )
+    mockkObject(AppContext)
+    every {
+        AppContext.getBean<BidragPersonConsumer>(any())
+    } returns personConsumerMock
+
+    return personConsumerMock
 }
 
 class StubUtils {

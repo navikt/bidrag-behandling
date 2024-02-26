@@ -102,7 +102,7 @@ fun Behandling.tilSkyldner() =
                 ?: rolleManglerIdent(Rolletype.BIDRAGSPLIKTIG, id!!)
     }
 
-fun Behandling.tilBehandlingreferanseList() =
+fun Behandling.tilBehandlingreferanseListe() =
     listOf(
         OpprettBehandlingsreferanseRequestDto(
             kilde = BehandlingsrefKilde.BEHANDLING_ID,

@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.toCompactString
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -26,7 +27,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -63,15 +63,15 @@ fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> {
 }
 
 fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<GrunnlagDto> {
-    val bm =
-        bidragsmottaker?.tilGrunnlagPerson() ?: manglerRolleIGrunnlag(
-            Rolletype.BIDRAGSMOTTAKER,
-            id!!,
-        )
     val søknadsbarnListe =
         søknadsbarnRolle?.let { listOf(it.tilGrunnlagPerson()) }
             ?: søknadsbarn.map { it.tilGrunnlagPerson() }
-    return (listOf(bm) + søknadsbarnListe).toMutableSet()
+    return (
+        listOf(
+            bidragsmottaker?.tilGrunnlagPerson(),
+            bidragspliktig?.tilGrunnlagPerson(),
+        ) + søknadsbarnListe
+    ).filterNotNull().toMutableSet()
 }
 
 fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
@@ -82,14 +82,6 @@ fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): S
     val innhentetInntekter = grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
 
     return innhentetInntekter + innhentetArbeidsforhold + innhentetHusstandsmedlemmer + innhentetSivilstand + beregnetInntekt
-}
-
-fun Behandling.opprettGrunnlagForHusstandsbarn(søknadsbarn: GrunnlagDto? = null): Set<GrunnlagDto> {
-    val søknadsbarnIdenter =
-        søknadsbarn?.let { listOf(it.personIdent) }
-            ?: roller.filter { it.rolletype == Rolletype.BARN }.map { it.ident }
-    return husstandsbarn.filter { barn -> !søknadsbarnIdenter.contains(barn.ident) }
-        .map(Husstandsbarn::tilGrunnlagPerson).toSet()
 }
 
 fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
@@ -125,7 +117,7 @@ fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<Grunnl
 
     val grunnlagBosstatus =
         husstandsbarn.flatMap {
-            val barn = personobjekter.hentPerson(it.ident) ?: it.opprettPersonGrunnlag()
+            val barn = personobjekter.hentPersonNyesteIdent(it.ident) ?: it.opprettPersonGrunnlag()
             val part =
                 (if (stonadstype == Stønadstype.FORSKUDD) personobjekter.bidragsmottaker else personobjekter.bidragspliktig)
             opprettGrunnlagForBostatusperioder(
@@ -143,15 +135,15 @@ fun Behandling.tilGrunnlagInntekt(
     søknadsbarn: GrunnlagDto? = null,
 ): Set<GrunnlagDto> {
     return inntekter.asSequence()
-        .filter { personobjekter.hentPerson(it.ident) != null }
+        .filter { personobjekter.hentPersonNyesteIdent(it.ident) != null }
         .groupBy { it.ident }
-        .flatMap { inntektGjelderMap ->
-            val gjelder = personobjekter.hentPerson(inntektGjelderMap.key)!!
-            inntektGjelderMap.value.filter { søknadsbarn == null || it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn == null }
+        .flatMap { (ident, innhold) ->
+            val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
+            innhold.filter { søknadsbarn == null || it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn == null }
                 .groupBy { it.gjelderBarn }
-                .map { inntektGjelderBarnMap ->
-                    val søknadsbarnGrunnlag = personobjekter.hentPerson(inntektGjelderBarnMap.key)
-                    inntektGjelderBarnMap.value.map {
+                .map { (gjelderBarn, innhold) ->
+                    val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)
+                    innhold.map {
                         it.tilInntektsrapporteringPeriode(
                             gjelder,
                             søknadsbarnGrunnlag,

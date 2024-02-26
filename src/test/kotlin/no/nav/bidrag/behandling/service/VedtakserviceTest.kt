@@ -15,16 +15,19 @@ import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.opprettSakForBehandling
+import no.nav.bidrag.behandling.utils.opprettSakForBehandlingMedReelMottaker
 import no.nav.bidrag.behandling.utils.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdataHusstandsmedlem1
-import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -38,7 +41,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningInntekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
@@ -47,9 +50,13 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningForskudd
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
@@ -57,8 +64,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import stubHentPersonNyIdent
 import stubPersonConsumer
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.YearMonth
 
 @ExtendWith(SpringExtension::class)
@@ -86,7 +95,6 @@ class VedtakserviceTest {
         beregningService =
             BeregningService(
                 behandlingService,
-                BeregnForskuddApi(),
             )
         vedtakService =
             VedtakService(
@@ -132,11 +140,6 @@ class VedtakserviceTest {
 
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
 
-        every { grunnlagService.hentAlleSistAktiv(any()) } returns
-            opprettAlleAktiveGrunnlagFraFil(
-                behandling,
-                "grunnlagresponse.json",
-            )
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
             OpprettVedtakResponseDto(
@@ -153,7 +156,9 @@ class VedtakserviceTest {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe.shouldHaveSize(81)
+            withClue("Grunnlagliste skal inneholde 81 grunnlag") {
+                request.grunnlagListe shouldHaveSize 81
+            }
 
             validerVedtaksdetaljer(behandling)
             validerPersongrunnlag()
@@ -205,9 +210,204 @@ class VedtakserviceTest {
     }
 
     @Test
+    fun `Skal opprette stønadsendringer med reel mottaker`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        behandling.grunnlagListe =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            )
+
+        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns
+            opprettSakForBehandlingMedReelMottaker(
+                behandling,
+            )
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) { request ->
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+
+            request.stønadsendringListe shouldHaveSize 2
+            assertSoftly(stønadsendringListe[0]) {
+                skyldner.verdi shouldBe "NAV"
+                kravhaver.verdi shouldBe testdataBarn1.ident
+                mottaker.verdi shouldBe "REEL_MOTTAKER"
+            }
+            assertSoftly(stønadsendringListe[1]) {
+                skyldner.verdi shouldBe "NAV"
+                kravhaver.verdi shouldBe testdataBarn2.ident
+                mottaker.verdi shouldBe testdataBM.ident
+            }
+        }
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+    }
+
+    @Test
+    fun `Skal opprette husstandsmedlem uten navn og bruke nyeste identer`() {
+        val nyIdentBm = "ny_ident_bm"
+        val nyIdentBarn1 = "ny_ident_barn_1"
+        val nyIdentBarn2 = "ny_ident_barn_2"
+        val nyIdentHusstandsmedlem = "ny_ident_husstandsmedlem"
+        val mock = stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1)
+        stubHentPersonNyIdent(testdataBarn2.ident, nyIdentBarn2, mock)
+        stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, mock)
+        stubHentPersonNyIdent(testdataHusstandsmedlem1.ident, nyIdentHusstandsmedlem, mock)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        val husstandsbarnUtenIdent =
+            Husstandsbarn(
+                behandling = behandling,
+                medISaken = false,
+                ident = null,
+                navn = "Mr Hansen",
+                foedselsdato = LocalDate.parse("2020-01-01"),
+                id = 8,
+            )
+        husstandsbarnUtenIdent.perioder =
+            mutableSetOf(
+                Husstandsbarnperiode(
+                    husstandsbarn = husstandsbarnUtenIdent,
+                    datoFom = behandling.søktFomDato,
+                    datoTom = null,
+                    bostatus = Bostatuskode.MED_FORELDER,
+                    kilde = Kilde.MANUELL,
+                    id = 2,
+                ),
+            )
+        behandling.husstandsbarn.add(husstandsbarnUtenIdent)
+        behandling.grunnlagListe =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            )
+
+        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) { request ->
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+
+            request.stønadsendringListe shouldHaveSize 2
+            assertSoftly(stønadsendringListe[0]) {
+                skyldner.verdi shouldBe "NAV"
+                kravhaver.verdi shouldBe nyIdentBarn1
+                mottaker.verdi shouldBe nyIdentBm
+            }
+            assertSoftly(stønadsendringListe[1]) {
+                skyldner.verdi shouldBe "NAV"
+                kravhaver.verdi shouldBe nyIdentBarn2
+                mottaker.verdi shouldBe nyIdentBm
+            }
+            request.engangsbeløpListe.shouldBeEmpty()
+            request.grunnlagListe.shouldHaveSize(77)
+
+            grunnlagListe.hentAllePersoner() shouldHaveSize 7
+            grunnlagListe.søknadsbarn.toList()[0].personIdent shouldBe nyIdentBarn1
+            grunnlagListe.søknadsbarn.toList()[1].personIdent shouldBe nyIdentBarn2
+            grunnlagListe.bidragsmottaker!!.personIdent shouldBe nyIdentBm
+
+            val husstandsmedlemmer =
+                grunnlagListe.hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)
+            husstandsmedlemmer shouldHaveSize 4
+            husstandsmedlemmer[0].personIdent shouldBe nyIdentHusstandsmedlem
+            assertSoftly(husstandsmedlemmer[1].innholdTilObjekt<Person>()) {
+                ident shouldBe null
+                navn shouldBe "Mr Hansen"
+                fødselsdato shouldBe LocalDate.parse("2020-01-01")
+            }
+        }
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+    }
+
+    @Test
+    fun `Skal bruke nyeste identer for avslag`() {
+        val nyIdentBm = "ny_ident_bm"
+        val nyIdentBarn1 = "ny_ident_barn_1"
+        val nyIdentBarn2 = "ny_ident_barn_2"
+        val nyIdentHusstandsmedlem = "ny_ident_husstandsmedlem"
+        val mock = stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1)
+        stubHentPersonNyIdent(testdataBarn2.ident, nyIdentBarn2, mock)
+        stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, mock)
+        stubHentPersonNyIdent(testdataHusstandsmedlem1.ident, nyIdentHusstandsmedlem, mock)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        behandling.avslag = Resultatkode.AVSLAG
+        behandling.grunnlagListe =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            )
+
+        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) { request ->
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+
+            request.stønadsendringListe shouldHaveSize 2
+            assertSoftly(stønadsendringListe[0]) {
+                skyldner.verdi shouldBe "NAV"
+                kravhaver.verdi shouldBe nyIdentBarn1
+                mottaker.verdi shouldBe nyIdentBm
+            }
+            assertSoftly(stønadsendringListe[1]) {
+                skyldner.verdi shouldBe "NAV"
+                kravhaver.verdi shouldBe nyIdentBarn2
+                mottaker.verdi shouldBe nyIdentBm
+            }
+            request.engangsbeløpListe.shouldBeEmpty()
+            request.grunnlagListe.shouldHaveSize(2)
+
+            grunnlagListe.hentAllePersoner() shouldHaveSize 0
+        }
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+    }
+
+    @Test
     fun `Skal opprette grunnlagsstruktur for avslag av forskudd behandling`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.avslag = Resultatkode.AVSLAG
+        behandling.virkningstidspunkt = null
         behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
@@ -234,7 +434,7 @@ class VedtakserviceTest {
             request.type shouldBe Vedtakstype.FASTSETTELSE
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe shouldHaveSize 6
+            request.grunnlagListe shouldHaveSize 5
             assertSoftly(behandlingsreferanseListe) { behandlingRef ->
                 behandlingRef shouldHaveSize 2
                 with(behandlingRef[0]) {
@@ -252,7 +452,7 @@ class VedtakserviceTest {
                     it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
                     it[0].skyldner.verdi shouldBe "NAV"
-                    it[0].grunnlagReferanseListe.shouldHaveSize(6)
+                    it[0].grunnlagReferanseListe.shouldHaveSize(5)
                     it[0].grunnlagReferanseListe.forEach {
                         grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
                     }
@@ -275,7 +475,7 @@ class VedtakserviceTest {
                     it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
                     it[1].skyldner.verdi shouldBe "NAV"
-                    it[1].grunnlagReferanseListe.shouldHaveSize(6)
+                    it[1].grunnlagReferanseListe.shouldHaveSize(5)
                     it[1].grunnlagReferanseListe.forEach {
                         grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
                     }
@@ -294,7 +494,7 @@ class VedtakserviceTest {
                         }
                     }
                 }
-                hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
+                hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 0
                 hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             }
         }
@@ -541,13 +741,17 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
                 innhold.aldersgruppe shouldBe AldersgruppeForskudd.ALDER_0_10_ÅR
                 val delberegningInntekt =
                     hentGrunnlagstyperForReferanser(
-                        Grunnlagstype.DELBEREGNING_INNTEKT,
+                        Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
                         it.grunnlagsreferanseListe,
                     )
                 assertSoftly(delberegningInntekt) {
                     shouldHaveSize(2)
                     assertSoftly(it[0]) { delberegning ->
-                        delberegning.innholdTilObjekt<DelberegningInntekt>().summertBeløp shouldBe 120000.toBigDecimal()
+                        val delberegningInnhold =
+                            delberegning.innholdTilObjekt<DelberegningSumInntekt>()
+                        delberegningInnhold.totalinntekt shouldBe 120000.toBigDecimal()
+                        delberegningInnhold.skattepliktigInntekt shouldBe 60000.toBigDecimal()
+                        delberegningInnhold.barnetillegg shouldBe 60000.toBigDecimal()
                         delberegning.grunnlagsreferanseListe shouldHaveSize 2
 
                         val delberegningInntekt =

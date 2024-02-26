@@ -8,13 +8,10 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
 import io.mockk.clearAllMocks
-import io.mockk.every
-import io.mockk.mockkClass
-import io.mockk.mockkObject
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
@@ -28,16 +25,18 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.opplysninger.InntektBearbeidet
 import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
-import no.nav.bidrag.behandling.transformers.grunnlag.opprettGrunnlagForHusstandsbarn
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagBostatus
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonGrunnlag
+import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
+import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
 import no.nav.bidrag.behandling.utils.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.TestDataPerson
@@ -49,7 +48,6 @@ import no.nav.bidrag.behandling.utils.testdataBM
 import no.nav.bidrag.behandling.utils.testdataBP
 import no.nav.bidrag.behandling.utils.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdataBarn2
-import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -58,6 +56,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -70,22 +69,24 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
-import no.nav.bidrag.transport.person.PersonDto
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.web.client.HttpClientErrorException
+import stubHentPersonNyIdent
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -145,13 +146,27 @@ class GrunnlagMappingTest {
         stubPersonConsumer()
     }
 
-    @AfterEach
-    fun reinitmock() {
-        stubPersonConsumer()
-    }
-
     @Nested
     inner class GrunnlagByggerTest {
+        @Test
+        fun `skal bygge grunnlag for stønad`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+            behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
+            behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
+            behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
+            behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
+            behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+            behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
+            val grunnlag = behandling.byggGrunnlagForStønad()
+
+            assertSoftly(grunnlag.toList()) {
+                it shouldHaveSize 8
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 6
+            }
+        }
+
         @Test
         fun `skal bygge grunnlag for vedtak`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
@@ -379,6 +394,64 @@ class GrunnlagMappingTest {
     @Nested
     inner class PersonGrunnlagTest {
         @Test
+        fun `skal mappe bare ene søknadsbarnet og parter til liste over persongrunnlag`() {
+            val behandling = oppretteBehandling(1)
+            behandling.roller =
+                mutableSetOf(
+                    opprettRolle(behandling, testdataBM, 1),
+                    opprettRolle(behandling, testdataBarn1, 1),
+                    opprettRolle(behandling, testdataBarn2, 1),
+                )
+            assertSoftly(behandling.tilPersonobjekter(testdataBarn1.tilRolle())) {
+                shouldHaveSize(2)
+                it.søknadsbarn shouldHaveSize 1
+                it.søknadsbarn.toList()
+                    .firstOrNull()?.referanse shouldBe søknadsbarnGrunnlag1.referanse
+                it.bidragsmottaker shouldNotBe null
+            }
+
+            assertSoftly(behandling.tilPersonobjekter(testdataBarn2.tilRolle())) {
+                shouldHaveSize(2)
+                it.søknadsbarn shouldHaveSize 1
+                it.søknadsbarn.toList()
+                    .firstOrNull()?.referanse shouldBe søknadsbarnGrunnlag2.referanse
+                it.bidragsmottaker shouldNotBe null
+            }
+        }
+
+        @Test
+        fun `skal mappe alle roller til liste over persongrunnlag`() {
+            val behandling = oppretteBehandling(1)
+            behandling.roller =
+                mutableSetOf(
+                    opprettRolle(behandling, testdataBM, 1),
+                    opprettRolle(behandling, testdataBarn1, 1),
+                    opprettRolle(behandling, testdataBarn2, 1),
+                )
+            assertSoftly(behandling.tilPersonobjekter()) {
+                shouldHaveSize(3)
+                it.søknadsbarn shouldHaveSize 2
+                it.bidragsmottaker shouldNotBe null
+                it.bidragspliktig shouldBe null
+            }
+
+            behandling.roller =
+                mutableSetOf(
+                    opprettRolle(behandling, testdataBM, 1),
+                    opprettRolle(behandling, testdataBP, 1),
+                    opprettRolle(behandling, testdataBarn1, 1),
+                    opprettRolle(behandling, testdataBarn2, 1),
+                )
+
+            assertSoftly(behandling.tilPersonobjekter()) {
+                shouldHaveSize(4)
+                it.søknadsbarn shouldHaveSize 2
+                it.bidragsmottaker shouldNotBe null
+                it.bidragspliktig shouldNotBe null
+            }
+        }
+
+        @Test
         fun `skal mappe rolle til grunnlag`() {
             val behandling = oppretteBehandling()
             assertSoftly(
@@ -563,25 +636,6 @@ class GrunnlagMappingTest {
                 personGrunnlag.navn shouldBe null
                 personGrunnlag.fødselsdato shouldBe fødslesdato
             }
-        }
-
-        fun stubHentPersonNyIdent(
-            gammelIdent: String,
-            nyIdent: String,
-        ) {
-            val personConsumerMock = mockkClass(BidragPersonConsumer::class)
-            every { personConsumerMock.hentPerson(eq(gammelIdent)) } returns
-                PersonDto(
-                    Personident(
-                        nyIdent,
-                    ),
-                    navn = "Ola Nordmann",
-                    fødselsdato = LocalDate.parse("2020-02-02"),
-                )
-            mockkObject(AppContext)
-            every {
-                AppContext.getBean<BidragPersonConsumer>(any())
-            } returns personConsumerMock
         }
     }
 
@@ -1080,19 +1134,18 @@ class GrunnlagMappingTest {
             behandling.husstandsbarn = husstandsbarn
 
             assertSoftly(
-                behandling.opprettGrunnlagForHusstandsbarn(testdataBarn1.tilGrunnlagDto())
+                behandling.tilGrunnlagBostatus(personobjekter)
                     .toList(),
             ) {
-                it shouldHaveSize 3
-                assertSoftly(this[0]) { person ->
-                    person.type shouldBe Grunnlagstype.PERSON_SØKNADSBARN
-                    person.innholdTilObjekt<Person>().ident shouldBe Personident(testdataBarn2.ident)
-                }
-                assertSoftly(this[1]) { person ->
+                it shouldHaveSize 18
+                val husstandsmedlemmer =
+                    filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)
+                husstandsmedlemmer shouldHaveSize 2
+                assertSoftly(husstandsmedlemmer[0]) { person ->
                     person.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
                     person.innholdTilObjekt<Person>().ident shouldBe Personident("123213123123")
                 }
-                assertSoftly(this[2]) { person ->
+                assertSoftly(husstandsmedlemmer[1]) { person ->
                     person.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
                     person.innholdTilObjekt<Person>().ident shouldBe Personident("4124214124")
                 }
@@ -1122,24 +1175,21 @@ class GrunnlagMappingTest {
             behandling.husstandsbarn = husstandsbarn
 
             val husstandsbarnGrunnlag =
-                behandling.opprettGrunnlagForHusstandsbarn(testdataBarn1.tilGrunnlagDto())
+                behandling.tilGrunnlagBostatus(personobjekter)
                     .toList()
             assertSoftly(husstandsbarnGrunnlag) {
-                it shouldHaveSize 1
-                assertSoftly(this[0]) { person ->
+                it shouldHaveSize 5
+                val husstandsmedlemmer =
+                    filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)
+                husstandsmedlemmer shouldHaveSize 1
+                assertSoftly(husstandsmedlemmer[0]) { person ->
                     person.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
                     person.innholdTilObjekt<Person>().ident shouldBe null
                     person.innholdTilObjekt<Person>().navn shouldBe "navn navnesen"
                 }
-            }
 
-            val personer =
-                (listOf(grunnlagBm)).toSet()
-            assertSoftly(behandling.tilGrunnlagBostatus(personer).toList()) {
-                it shouldHaveSize 5
-                it.filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM } shouldHaveSize 1
                 it.filter { it.type != Grunnlagstype.PERSON_HUSSTANDSMEDLEM }.forEach { grunnlag ->
-                    grunnlag.gjelderReferanse shouldBe husstandsbarnGrunnlag[0].referanse
+                    grunnlag.gjelderReferanse shouldBe husstandsmedlemmer[0].referanse
                     grunnlag.innholdTilObjekt<BostatusPeriode>().relatertTilPart shouldBe grunnlagBm.referanse
                 }
             }
@@ -1360,7 +1410,10 @@ class GrunnlagMappingTest {
 
     @Nested
     inner class BehandlingGrunnlagTest {
-        fun opprettBehandling(id: Long? = null): Behandling {
+        fun opprettBehandling(
+            id: Long? = null,
+            søknadRefId: Long? = null,
+        ): Behandling {
             return Behandling(
                 Vedtakstype.FASTSETTELSE,
                 søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
@@ -1368,7 +1421,7 @@ class GrunnlagMappingTest {
                 mottattdato = LocalDate.parse("2023-03-15"),
                 SAKSNUMMER,
                 SOKNAD_ID,
-                null,
+                søknadRefId,
                 "4806",
                 "Z9999",
                 "Navn Navnesen",
@@ -1410,6 +1463,34 @@ class GrunnlagMappingTest {
                     virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2023-02-01")
                     virkningstidspunkt.årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
                 }
+            }
+        }
+
+        @Test
+        fun `skal opprette grunnlag for behandlingsreferanser`() {
+            val behandling = opprettBehandling(10)
+
+            val grunnlagsliste = behandling.tilBehandlingreferanseListe()
+
+            assertSoftly(grunnlagsliste.toList()) {
+                shouldHaveSize(2)
+                it.firstOrNull { it.kilde == BehandlingsrefKilde.BEHANDLING_ID }?.referanse shouldBe "10"
+                it.firstOrNull { it.kilde == BehandlingsrefKilde.BISYS_SØKNAD }?.referanse shouldBe SOKNAD_ID.toString()
+                it.firstOrNull { it.kilde == BehandlingsrefKilde.BISYS_KLAGE_REF_SØKNAD }?.referanse shouldBe null
+            }
+        }
+
+        @Test
+        fun `skal opprette grunnlag for behandlingsreferanser med klageid`() {
+            val behandling = opprettBehandling(10, 111)
+
+            val grunnlagsliste = behandling.tilBehandlingreferanseListe()
+
+            assertSoftly(grunnlagsliste.toList()) {
+                shouldHaveSize(3)
+                it.firstOrNull { it.kilde == BehandlingsrefKilde.BEHANDLING_ID }?.referanse shouldBe "10"
+                it.firstOrNull { it.kilde == BehandlingsrefKilde.BISYS_SØKNAD }?.referanse shouldBe SOKNAD_ID.toString()
+                it.firstOrNull { it.kilde == BehandlingsrefKilde.BISYS_KLAGE_REF_SØKNAD }?.referanse shouldBe "111"
             }
         }
 

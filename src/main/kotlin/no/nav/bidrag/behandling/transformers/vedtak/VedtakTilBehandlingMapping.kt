@@ -10,15 +10,16 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
+import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetArbeidsforhold
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetGrunnlagPeriodeInnhold
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -30,10 +31,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
-import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
-import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.Permisjon
-import no.nav.bidrag.transport.behandling.grunnlag.response.Permittering
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
@@ -52,7 +49,6 @@ val grunnlagstyperRolle =
     listOf(
         Grunnlagstype.PERSON_SØKNADSBARN,
         Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
-        Grunnlagstype.PERSON_REELL_MOTTAKER,
         Grunnlagstype.PERSON_BIDRAGSPLIKTIG,
     )
 val inntektsrapporteringSomKreverBarn =
@@ -61,78 +57,13 @@ val inntektsrapporteringSomKreverBarn =
         Inntektsrapportering.KONTANTSTØTTE,
     )
 
-fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
-    filtrerBasertPåEgenReferanse(grunnlagType = grunnlagstype)
-        .firstOrNull()?.innholdTilObjekt<InnhentetGrunnlagPeriodeInnhold<Any>>()?.hentetTidspunkt
-        ?: LocalDateTime.now()
-
-fun List<GrunnlagDto>.hentGrunnlagArbeidsforhold() =
-    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_ARBEIDSFORHOLD)
-        .flatMap {
-            val innhold = it.innholdTilObjekt<InnhentetArbeidsforhold>()
-            val arbeidsforholdGrunnlag = innhold.grunnlag
-            val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
-            arbeidsforholdGrunnlag.map {
-                ArbeidsforholdGrunnlagDto(
-                    partPersonId = gjelder.personIdent!!,
-                    startdato = it.startdato,
-                    sluttdato = it.sluttdato,
-                    arbeidsgiverNavn = it.arbeidsgiverNavn,
-                    arbeidsgiverOrgnummer = it.arbeidsgiverOrgnummer,
-                    ansettelsesdetaljerListe =
-                        it.ansettelsesdetaljerListe.map {
-                            Ansettelsesdetaljer(
-                                periodeFra = it.periodeFra,
-                                periodeTil = it.periodeTil,
-                                arbeidsforholdType = it.arbeidsforholdType,
-                                arbeidstidsordningBeskrivelse = it.arbeidstidsordningBeskrivelse,
-                                ansettelsesformBeskrivelse = it.ansettelsesformBeskrivelse,
-                                yrkeBeskrivelse = it.yrkeBeskrivelse,
-                                avtaltStillingsprosent = it.avtaltStillingsprosent,
-                                antallTimerPrUke = it.antallTimerPrUke,
-                                sisteLønnsendringDato = it.sisteLønnsendringDato,
-                                sisteStillingsprosentendringDato = it.sisteStillingsprosentendringDato,
-                            )
-                        },
-                    permisjonListe =
-                        it.permisjonListe.map {
-                            Permisjon(
-                                startdato = it.startdato,
-                                beskrivelse = it.beskrivelse,
-                                prosent = it.prosent,
-                                sluttdato = it.sluttdato,
-                            )
-                        },
-                    permitteringListe =
-                        it.permitteringListe.map {
-                            Permittering(
-                                startdato = it.startdato,
-                                sluttdato = it.sluttdato,
-                                beskrivelse = it.beskrivelse,
-                                prosent = it.prosent,
-                            )
-                        },
-                )
-            }
-        }
-
-fun VedtakDto.notatMedType(
-    type: NotatGrunnlag.NotatType,
-    medIVedtak: Boolean,
-) = grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
-    .map { it.innholdTilObjekt<NotatGrunnlag>() }
-    .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }?.innhold
-
-fun VedtakDto.avslagskode() =
-    if (stønadsendringListe.all { it.periodeListe.size == 1 }) {
-        Resultatkode.fraKode(stønadsendringListe.first().periodeListe.first().resultatkode)
-    } else {
-        null
-    }
-
-fun VedtakDto.tilBehandling(vedtaksId: Long) {
+fun VedtakDto.tilBehandling(
+    vedtaksId: Long,
+    medId: Boolean = true,
+): Behandling {
     val behandling =
         Behandling(
+            id = if (medId) 1 else null,
             vedtakstype = type,
             virkningstidspunkt = hentVedtakstidspunkt()?.virkningstidspunkt,
             årsak = hentVedtakstidspunkt()?.årsak,
@@ -140,6 +71,7 @@ fun VedtakDto.tilBehandling(vedtaksId: Long) {
             søktFomDato = hentSøknad().søktFraDato,
             soknadFra = hentSøknad().søktAv,
             mottattdato = hentSøknad().mottattDato,
+            // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
             stonadstype = stønadsendringListe.firstOrNull()?.type,
             engangsbeloptype = engangsbeløpListe.firstOrNull()?.type,
             vedtaksid = vedtaksId,
@@ -148,8 +80,8 @@ fun VedtakDto.tilBehandling(vedtaksId: Long) {
             opprettetAvNavn = opprettetAvNavn,
             kildeapplikasjon = kildeapplikasjon,
             datoTom = null,
-            saksnummer = saksnummer ?: "",
-            soknadsid = søknadId ?: -1,
+            saksnummer = saksnummer!!,
+            soknadsid = søknadId!!,
             boforholdsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false),
             boforholdsbegrunnelseIVedtakOgNotat =
                 notatMedType(
@@ -171,17 +103,17 @@ fun VedtakDto.tilBehandling(vedtaksId: Long) {
         )
     behandling.roller =
         grunnlagListe.filter { grunnlagstyperRolle.contains(it.type) }
-            .map { it.tilRolle(behandling) }.toMutableSet()
+            .map { it.tilRolle(behandling, medId) }.toMutableSet()
     behandling.inntekter =
-        grunnlagListe.filter { it.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE }
-            .map { it.tilInntekt(behandling, grunnlagListe) }.toMutableSet()
+        grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+            .map { it.tilInntekt(behandling, grunnlagListe, medId) }.toMutableSet()
     behandling.husstandsbarn =
-        grunnlagListe.filter { it.type == Grunnlagstype.BOSTATUS_PERIODE }
+        grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
             .groupBy { it.gjelderReferanse }.map {
                 it.value.tilHusstandsbarn(it.key!!, behandling, grunnlagListe)
             }.toMutableSet()
     behandling.sivilstand =
-        grunnlagListe.filter { it.type == Grunnlagstype.SIVILSTAND_PERIODE }
+        grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE)
             .map {
                 it.tilSivilstand(behandling)
             }.toMutableSet()
@@ -190,12 +122,75 @@ fun VedtakDto.tilBehandling(vedtaksId: Long) {
         listOf(
             BehandlingGrunnlag(
                 behandling = behandling,
+                id = if (medId) 1 else null,
                 innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD),
                 data = commonObjectmapper.writeValueAsString(grunnlagListe.hentGrunnlagArbeidsforhold()),
                 type = Grunnlagsdatatype.ARBEIDSFORHOLD,
             ),
+            BehandlingGrunnlag(
+                behandling = behandling,
+                id = if (medId) 1 else null,
+                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
+                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentGrunnlagInntekt()),
+                type = Grunnlagsdatatype.INNTEKT,
+            ),
+            BehandlingGrunnlag(
+                behandling = behandling,
+                id = if (medId) 1 else null,
+                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_SIVILSTAND),
+                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentInnhentetSivilstand()),
+                type = Grunnlagsdatatype.SIVILSTAND,
+            ),
+            BehandlingGrunnlag(
+                behandling = behandling,
+                id = if (medId) 1 else null,
+                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentInnhenetHusstandsmedlem()),
+                type = Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+            ),
+            BehandlingGrunnlag(
+                behandling = behandling,
+                id = if (medId) 1 else null,
+                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
+                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentBeregnetInntekt()),
+                type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            ),
         )
+
+    return behandling
 }
+
+fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
+    filtrerBasertPåEgenReferanse(grunnlagstype)
+        .firstOrNull()?.innhold?.get("hentetTidspunkt")?.let {
+            commonObjectmapper.treeToValue(it, LocalDateTime::class.java)
+        } ?: LocalDateTime.now()
+
+fun List<GrunnlagDto>.hentGrunnlagInntekt(): InntektGrunnlag {
+    return InntektGrunnlag(
+        ainntektListe = hentGrunnlagAinntekt(),
+        skattegrunnlagListe = hentGrunnlagSkattegrunnlag(),
+        utvidetBarnetrygdListe = hentUtvidetbarnetrygdListe(),
+        småbarnstilleggListe = hentSmåbarnstilleggListe(),
+        kontantstøtteListe = hentKontantstøtteListe(),
+        barnetilleggListe = hentBarnetillegListe(),
+        barnetilsynListe = hentBarnetilsynListe(),
+    )
+}
+
+fun VedtakDto.notatMedType(
+    type: NotatGrunnlag.NotatType,
+    medIVedtak: Boolean,
+) = grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
+    .map { it.innholdTilObjekt<NotatGrunnlag>() }
+    .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }?.innhold
+
+fun VedtakDto.avslagskode() =
+    if (stønadsendringListe.all { it.periodeListe.size == 1 }) {
+        Resultatkode.fraKode(stønadsendringListe.first().periodeListe.first().resultatkode)
+    } else {
+        null
+    }
 
 fun VedtakDto.hentVedtakstidspunkt(): VirkningstidspunktGrunnlag? {
     return grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
@@ -207,7 +202,7 @@ fun VedtakDto.hentSøknad(): SøknadGrunnlag {
         .innholdTilObjekt<SøknadGrunnlag>()
 }
 
-fun List<GrunnlagDto>.tilHusstandsbarn(
+fun List<BaseGrunnlag>.tilHusstandsbarn(
     gjelderReferanse: Grunnlagsreferanse,
     behandling: Behandling,
     grunnlagsListe: List<GrunnlagDto>,
@@ -244,7 +239,7 @@ fun List<GrunnlagDto>.tilHusstandsbarn(
     return husstandsbarnBO
 }
 
-fun GrunnlagDto.tilSivilstand(behandling: Behandling): Sivilstand {
+fun BaseGrunnlag.tilSivilstand(behandling: Behandling): Sivilstand {
     val sivilstandPeriode = innholdTilObjekt<SivilstandPeriode>()
 
     return Sivilstand(
@@ -256,9 +251,10 @@ fun GrunnlagDto.tilSivilstand(behandling: Behandling): Sivilstand {
     )
 }
 
-fun GrunnlagDto.tilInntekt(
+fun BaseGrunnlag.tilInntekt(
     behandling: Behandling,
     grunnlagsListe: List<GrunnlagDto>,
+    medId: Boolean,
 ): Inntekt {
     val inntektPeriode = innholdTilObjekt<InntektsrapporteringPeriode>()
     val gjelderBarn = grunnlagsListe.hentPersonMedReferanse(inntektPeriode.gjelderBarn)
@@ -274,6 +270,7 @@ fun GrunnlagDto.tilInntekt(
     }
     val inntektBO =
         Inntekt(
+            id = if (medId) 1 else null,
             inntektsrapportering = inntektPeriode.inntektsrapportering,
             belop = inntektPeriode.beløp,
             gjelderBarn = gjelderBarn?.personIdent,
@@ -288,28 +285,35 @@ fun GrunnlagDto.tilInntekt(
     inntektBO.inntektsposter =
         inntektPeriode.inntekstpostListe.map {
             Inntektspost(
+                id = if (medId) 1 else null,
                 kode = it.kode,
                 inntektstype = it.inntekstype,
                 beløp = it.beløp,
                 inntekt = inntektBO,
-                visningsnavn = "",
+                visningsnavn = finnVisningsnavn(it.kode),
             )
         }.toMutableSet()
 
     return inntektBO
 }
 
-fun GrunnlagDto.tilRolle(behandling: Behandling) =
-    Rolle(
-        behandling,
-        rolletype =
-            when (type) {
-                Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
-                Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-                Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-                Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-                else -> throw RuntimeException("")
-            },
-        ident = personIdent,
-        foedselsdato = personObjekt.fødselsdato,
-    )
+fun GrunnlagDto.tilRolle(
+    behandling: Behandling,
+    medId: Boolean,
+) = Rolle(
+    behandling,
+    id = if (medId) 1 else null,
+    rolletype =
+        when (type) {
+            Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
+            Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+            Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+            Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+            else -> throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Ukjent rolletype $type",
+            )
+        },
+    ident = personIdent,
+    foedselsdato = personObjekt.fødselsdato,
+)

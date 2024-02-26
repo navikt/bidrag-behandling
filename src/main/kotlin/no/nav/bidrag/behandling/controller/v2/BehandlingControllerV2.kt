@@ -32,16 +32,19 @@ class BehandlingControllerV2(private val vedtakService: VedtakService) {
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "Vedtak i form av behandling"),
-            ApiResponse(responseCode = "404", description = "Fant ikke vedtak med oppgitt vedtakid"),
+            ApiResponse(
+                responseCode = "404",
+                description = "Fant ikke vedtak med oppgitt vedtakid",
+            ),
         ],
     )
     fun omgjørVedtakTilBehandling(
         @PathVariable vedtakId: Long,
     ): BehandlingDtoV2 {
         val resultat =
-            vedtakService.omgjørVedtakTilBehandling(vedtakId)
+            vedtakService.konverterVedtakTilBehandling(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return resultat.behandling.tilBehandlingDtoV2(resultat.opplysninger)
+        return resultat.tilBehandlingDtoV2(resultat.grunnlagListe)
     }
 
     @Suppress("unused")

@@ -33,6 +33,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.ident.ReellMottager
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.inntekt.InntektApi
@@ -116,7 +117,7 @@ val testdataBM =
         navn = "Oran Mappe",
         ident = "313213213",
         rolletype = Rolletype.BIDRAGSMOTTAKER,
-        foedselsdato = LocalDate.parse("2020-03-01"),
+        foedselsdato = LocalDate.parse("1978-08-25"),
     )
 
 val testdataBarn1 =
@@ -255,8 +256,10 @@ fun opprettSivilstand(
 fun opprettRolle(
     behandling: Behandling,
     data: TestDataPerson,
+    id: Long? = null,
 ): Rolle {
     return Rolle(
+        id = id,
         navn = data.navn,
         ident = data.ident,
         rolletype = data.rolletype,
@@ -355,6 +358,26 @@ fun opprettSakForBehandling(behandling: Behandling): BidragssakDto {
             behandling.roller.map {
                 RolleDto(
                     fødselsnummer = Personident(it.ident!!),
+                    type = it.rolletype,
+                )
+            },
+    )
+}
+
+fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDto {
+    return BidragssakDto(
+        eierfogd = Enhetsnummer(behandling.behandlerEnhet),
+        saksnummer = Saksnummer(behandling.saksnummer),
+        saksstatus = Bidragssakstatus.IN,
+        kategori = Sakskategori.N,
+        opprettetDato = LocalDate.now(),
+        levdeAdskilt = false,
+        ukjentPart = false,
+        roller =
+            behandling.roller.map {
+                RolleDto(
+                    fødselsnummer = Personident(it.ident!!),
+                    reellMottager = if (it.ident == testdataBarn1.ident) ReellMottager("REEL_MOTTAKER") else null,
                     type = it.rolletype,
                 )
             },
