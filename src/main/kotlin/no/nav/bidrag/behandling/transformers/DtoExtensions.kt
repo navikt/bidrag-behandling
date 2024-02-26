@@ -19,9 +19,12 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 fun Set<Sivilstand>.toSivilstandDto() =
     this.map {
@@ -152,6 +155,31 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
             beløp = it.beløp,
         )
     }
+
+fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
+    InntektDtoV2(
+        id = -1,
+        taMed = false,
+        rapporteringstype = Inntektsrapportering.AINNTEKT,
+        beløp = sumInntekt.setScale(0, RoundingMode.HALF_UP),
+        ident = Personident(gjelder),
+        kilde = Kilde.OFFENTLIG,
+        inntektsposter =
+            inntektPostListe.map {
+                InntektspostDtoV2(
+                    kode = it.kode,
+                    visningsnavn = it.visningsnavn,
+                    inntektstype = it.inntekstype,
+                    beløp = it.beløp.setScale(0, RoundingMode.HALF_UP),
+                )
+            }.toSet(),
+        inntektstyper = emptySet(),
+        datoFom = gjelderÅrMåned.atDay(1),
+        datoTom = gjelderÅrMåned.atEndOfMonth(),
+        opprinneligFom = gjelderÅrMåned.atDay(1),
+        opprinneligTom = gjelderÅrMåned.atEndOfMonth(),
+        gjelderBarn = null,
+    )
 
 fun List<Inntekt>.tilInntektDtoV2() =
     this.map {

@@ -14,7 +14,6 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
-import no.nav.bidrag.behandling.transformers.konvertereTilInntekt
 import no.nav.bidrag.behandling.transformers.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilInntektspost
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -57,11 +56,13 @@ class InntektService(
 
         entityManager.flush()
 
+        @Suppress("ktlint:standard:value-argument-comment")
         inntektRepository.saveAll(
             sammenstilteInntekter.summerteÅrsinntekter.tilInntekt(
                 behandling,
                 personident,
-            ) + sammenstilteInntekter.summerteMånedsinntekter.konvertereTilInntekt(behandling, personident),
+                // TODO: Til Jan Kjetil. Måndesinntekter brukes bare for visualisering i graf og skal ikke tas med som inntekt som legges til grunn.
+            ), // + sammenstilteInntekter.summerteMånedsinntekter.konvertereTilInntekt(behandling, personident),
         )
 
         entityManager.refresh(behandling)
@@ -110,7 +111,8 @@ class InntektService(
         oppdatereInntekterRequest: OppdatereInntekterRequestV2,
     ) {
         val behandling =
-            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereInntekterRequest.oppdatereInntektsperioder.forEach {
             val inntekt =
@@ -228,12 +230,24 @@ class InntektService(
         } else {
             when (nyInntekt) {
                 is SummertÅrsinntekt -> {
-                    val i = inntektRepository.save(nyInntekt.tilInntekt(behandling, Personident(rolle.ident!!)))
+                    val i =
+                        inntektRepository.save(
+                            nyInntekt.tilInntekt(
+                                behandling,
+                                Personident(rolle.ident!!),
+                            ),
+                        )
                     idTilInntekterSomBleOppdatert.add(i.id!!)
                 }
 
                 is SummertMånedsinntekt -> {
-                    val i = inntektRepository.save(nyInntekt.tilInntekt(behandling, Personident(rolle.ident!!)))
+                    val i =
+                        inntektRepository.save(
+                            nyInntekt.tilInntekt(
+                                behandling,
+                                Personident(rolle.ident!!),
+                            ),
+                        )
                     idTilInntekterSomBleOppdatert.add(i.id!!)
                 }
             }
@@ -249,11 +263,19 @@ class InntektService(
         if (nyInntekt is SummertÅrsinntekt) {
             eksisterendeInntekt.belop = nyInntekt.sumInntekt
             eksisterendeInntekt.inntektsposter.clear()
-            eksisterendeInntekt.inntektsposter.addAll(nyInntekt.inntektPostListe.tilInntektspost(eksisterendeInntekt))
+            eksisterendeInntekt.inntektsposter.addAll(
+                nyInntekt.inntektPostListe.tilInntektspost(
+                    eksisterendeInntekt,
+                ),
+            )
         } else if (nyInntekt is SummertMånedsinntekt) {
             eksisterendeInntekt.belop = nyInntekt.sumInntekt
             eksisterendeInntekt.inntektsposter.clear()
-            eksisterendeInntekt.inntektsposter.addAll(nyInntekt.inntektPostListe.tilInntektspost(eksisterendeInntekt))
+            eksisterendeInntekt.inntektsposter.addAll(
+                nyInntekt.inntektPostListe.tilInntektspost(
+                    eksisterendeInntekt,
+                ),
+            )
         }
 
         entityManager.flush()

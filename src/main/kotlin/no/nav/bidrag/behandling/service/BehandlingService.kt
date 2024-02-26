@@ -183,10 +183,13 @@ class BehandlingService(
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
         val gjeldendeAktiveGrunnlagsdata =
-            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid)
+            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling)
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid, behandling.roller)
-        return behandling.tilBehandlingDtoV2(gjeldendeAktiveGrunnlagsdata, grunnlagsdataEndretEtterAktivering)
+        return behandling.tilBehandlingDtoV2(
+            gjeldendeAktiveGrunnlagsdata,
+            grunnlagsdataEndretEtterAktivering,
+        )
     }
 
     fun hentBehandlingById(behandlingId: Long): Behandling =
