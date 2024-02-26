@@ -72,7 +72,7 @@ class VedtakService(
             )
         }
 
-        val behandling = behandlingService.hentBehandlingById(behandlingId, true)
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
         if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
         val request =
             if (behandling.avslag != null) {
@@ -97,7 +97,7 @@ class VedtakService(
     }
 
     fun behandlingTilVedtakDto(behandlingId: Long): VedtakDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingId, true)
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
         val request =
             if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
 
@@ -105,7 +105,7 @@ class VedtakService(
     }
 
     fun vedtakTilMermaid(behandlingId: Long): MermaidResponse {
-        val behandling = behandlingService.hentBehandlingById(behandlingId, true)
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
         val request =
             if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
 
@@ -113,7 +113,7 @@ class VedtakService(
     }
 
     fun vedtakTilTreeMap(behandlingId: Long): TreeChild {
-        val behandling = behandlingService.hentBehandlingById(behandlingId, true)
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
         val request =
             if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
 

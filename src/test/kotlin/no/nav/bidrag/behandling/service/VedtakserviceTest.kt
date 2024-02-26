@@ -125,13 +125,13 @@ class VedtakserviceTest {
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
-        behandling.grunnlagListe =
+        behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
                 "grunnlagresponse.json",
             )
 
-        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
 
@@ -207,13 +207,13 @@ class VedtakserviceTest {
     @Test
     fun `Skal opprette stønadsendringer med reel mottaker`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-        behandling.grunnlagListe =
+        behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
                 "grunnlagresponse.json",
             )
 
-        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns
             opprettSakForBehandlingMedReelMottaker(
@@ -283,13 +283,13 @@ class VedtakserviceTest {
                 ),
             )
         behandling.husstandsbarn.add(husstandsbarnUtenIdent)
-        behandling.grunnlagListe =
+        behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
                 "grunnlagresponse.json",
             )
 
-        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
 
@@ -353,13 +353,13 @@ class VedtakserviceTest {
         stubHentPersonNyIdent(testdataHusstandsmedlem1.ident, nyIdentHusstandsmedlem, mock)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.avslag = Resultatkode.AVSLAG
-        behandling.grunnlagListe =
+        behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
                 "grunnlagresponse.json",
             )
 
-        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
 
@@ -407,13 +407,8 @@ class VedtakserviceTest {
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
-        every { grunnlagService.henteGjeldendeAktiveGrunnlagsdata(any()) } returns
-            opprettAlleAktiveGrunnlagFraFil(
-                behandling,
-                "grunnlagresponse.json",
-            )
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
             OpprettVedtakResponseDto(

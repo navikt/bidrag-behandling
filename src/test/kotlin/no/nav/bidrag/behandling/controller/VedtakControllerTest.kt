@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import stubPersonConsumer
 
 class VedtakControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -29,6 +30,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         grunnlagRepository.deleteAll()
         stubSjablonProvider()
         stubKodeverkProvider()
+        stubPersonConsumer()
     }
 
     @Test

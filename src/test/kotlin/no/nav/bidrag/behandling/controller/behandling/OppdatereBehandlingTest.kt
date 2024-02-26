@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
@@ -16,7 +17,6 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import kotlin.test.Ignore
 import kotlin.test.assertNotNull
 
 class OppdatereBehandlingTest : BehandlingControllerTest() {
@@ -70,7 +70,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
     @Test
     @Transactional
-    @Ignore("Gir 404 - lagret behandling ikke tilgjengelig")
+    @Disabled("Gir 404 - lagret behandling ikke tilgjengelig")
     fun `skal aktivere grunnlag`() {
         // gitt
         val behandling = testdataManager.opprettBehandling()
@@ -84,7 +84,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         entityManager.persist(behandling)
 
-        val idTilIkkeAktiverteGrunnlag = behandling.grunnlag.filter { it.aktiv == null }.map { it.id!! }.toSet()
+        val idTilIkkeAktiverteGrunnlag =
+            behandling.grunnlag.filter { it.aktiv == null }.map { it.id!! }.toSet()
 
         // hvis
         val respons =

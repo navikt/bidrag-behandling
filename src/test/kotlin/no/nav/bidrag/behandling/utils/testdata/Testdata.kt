@@ -544,7 +544,7 @@ fun Behandling.opprettHusstandsbarn(
 fun opprettAlleAktiveGrunnlagFraFil(
     behandling: Behandling,
     filnavn: String,
-): List<Grunnlag> {
+): MutableSet<Grunnlag> {
     return listOf(
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.HUSSTANDSMEDLEMMER),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
@@ -556,7 +556,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.INNTEKT),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn),
-    ).flatten()
+    ).flatten().toMutableSet()
 }
 
 fun opprettInntektBearbeidet(

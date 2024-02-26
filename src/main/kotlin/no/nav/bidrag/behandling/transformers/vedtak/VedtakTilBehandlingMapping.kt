@@ -118,8 +118,8 @@ fun VedtakDto.tilBehandling(
                 it.tilSivilstand(behandling)
             }.toMutableSet()
 
-    behandling.grunnlagListe =
-        listOf(
+    behandling.grunnlag =
+        mutableSetOf(
             Grunnlag(
                 behandling = behandling,
                 id = if (medId) 1 else null,

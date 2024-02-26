@@ -235,21 +235,21 @@ fun finnFødselsdato(
 }
 
 private fun opprettGrunnlagForBostatusperioder(
-    personreferanse: String,
+    barnreferanse: String,
     relatertTilPartReferanse: String,
     husstandsbarnperioder: Set<Husstandsbarnperiode>,
 ): Set<GrunnlagDto> =
     husstandsbarnperioder.map {
         GrunnlagDto(
-            referanse = "bostatus_${personreferanse}_${it.datoFom?.toCompactString()}",
+            referanse = "bostatus_${barnreferanse}_${it.datoFom?.toCompactString()}",
             type = Grunnlagstype.BOSTATUS_PERIODE,
-            gjelderReferanse = personreferanse,
+            gjelderReferanse = barnreferanse,
             grunnlagsreferanseListe =
                 if (it.kilde == Kilde.OFFENTLIG) {
                     listOf(
                         opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
                             relatertTilPartReferanse,
-                            referanseRelatertTil = personreferanse,
+                            referanseRelatertTil = barnreferanse,
                         ),
                     )
                 } else {

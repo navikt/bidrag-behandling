@@ -168,7 +168,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal bygge grunnlag for vedtak`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-            behandling.grunnlagListe =
+            behandling.grunnlag =
                 opprettAlleAktiveGrunnlagFraFil(
                     behandling,
                     "grunnlagresponse.json",
@@ -645,8 +645,8 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe inntekt til grunnlag`() {
             val behandling = oppretteBehandling()
-            behandling.grunnlagListe =
-                listOf(
+            behandling.grunnlag =
+                mutableSetOf(
                     opprettInntekterBearbeidetGrunnlag(
                         behandling,
                         testdataBM,
@@ -759,8 +759,8 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe inntekt til grunnlag hvis inneholder inntektliste for Barn og BP`() {
             val behandling = oppretteBehandling()
-            behandling.grunnlagListe =
-                listOf(
+            behandling.grunnlag =
+                mutableSetOf(
                     opprettInntekterBearbeidetGrunnlag(behandling, testdataBM),
                     opprettInntekterBearbeidetGrunnlag(
                         behandling,
@@ -813,8 +813,8 @@ class GrunnlagMappingTest {
         fun `skal legge til grunnlagsliste for innhentet inntekter`() {
             val behandling = oppretteBehandling()
 
-            behandling.grunnlagListe =
-                listOf(
+            behandling.grunnlag =
+                mutableSetOf(
                     opprettInntekterBearbeidetGrunnlag(
                         behandling,
                         testdataBM,

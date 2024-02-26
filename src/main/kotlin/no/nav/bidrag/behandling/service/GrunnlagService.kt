@@ -189,10 +189,16 @@ class GrunnlagService(
             )
         }
 
-    fun henteGjeldendeAktiveGrunnlagsdata(behandlingId: Long): List<Grunnlag> =
-        Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
-            grunnlagRepository.findTopByBehandlingIdAndTypeOrderByAktivDescIdDesc(behandlingId, it)
-        }
+    fun henteGjeldendeAktiveGrunnlagsdata(behandling: Behandling): List<Grunnlag> =
+        Grunnlagsdatatype.entries.toTypedArray().flatMap { type ->
+            behandling.roller.map {
+                grunnlagRepository.findTopByBehandlingIdAndTypeAndRolleOrderByAktivDescIdDesc(
+                    behandling.id!!,
+                    type,
+                    it,
+                )
+            }
+        }.filterNotNull()
 
     private fun aktivereGrunnlag(
         behandling: Behandling,

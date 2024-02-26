@@ -49,13 +49,13 @@ class BeregningServiceTest {
     @Test
     fun `skal bygge grunnlag for beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-        behandling.grunnlagListe =
+        behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
                 "grunnlagresponse.json",
-            )
+            ).toMutableSet()
 
-        every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnForskuddApi::class)
         every { BeregnForskuddApi().beregn(capture(beregnCapture)) } answers { callOriginal() }

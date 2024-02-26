@@ -114,9 +114,8 @@ open class Behandling(
     )
     open var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
     open var deleted: Boolean = false,
-    @Transient
-    open var grunnlagListe: List<Grunnlag> = emptyList(),
 ) {
+    val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }

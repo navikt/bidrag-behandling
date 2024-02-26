@@ -183,7 +183,7 @@ class BehandlingService(
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
         val gjeldendeAktiveGrunnlagsdata =
-            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid)
+            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling)
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid, behandling.roller)
         return behandling.tilBehandlingDtoV2(
@@ -192,14 +192,10 @@ class BehandlingService(
         )
     }
 
-    fun hentBehandlingById(
-        behandlingId: Long,
-        populerGrunnlag: Boolean = false,
-    ): Behandling {
+    fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
-        behandling.grunnlagListe = grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingId)
         return behandling
     }
 
