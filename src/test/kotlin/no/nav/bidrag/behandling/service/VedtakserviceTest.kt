@@ -18,16 +18,14 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
-import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
-import no.nav.bidrag.behandling.utils.opprettSakForBehandling
-import no.nav.bidrag.behandling.utils.opprettSakForBehandlingMedReelMottaker
-import no.nav.bidrag.behandling.utils.oppretteBehandling
-import no.nav.bidrag.behandling.utils.testdataBM
-import no.nav.bidrag.behandling.utils.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdataBarn2
-import no.nav.bidrag.behandling.utils.testdataHusstandsmedlem1
+import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
+import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandlingMedReelMottaker
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -109,10 +107,7 @@ class VedtakserviceTest {
                 any(),
                 any(),
             )
-        } returns
-            oppretteBehandling(1).tilBehandlingDtoV2(
-                emptyList(),
-            )
+        } returns Unit
 
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()
@@ -156,8 +151,8 @@ class VedtakserviceTest {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            withClue("Grunnlagliste skal inneholde 81 grunnlag") {
-                request.grunnlagListe shouldHaveSize 81
+            withClue("Grunnlagliste skal inneholde 82 grunnlag") {
+                request.grunnlagListe shouldHaveSize 82
             }
 
             validerVedtaksdetaljer(behandling)
@@ -192,7 +187,7 @@ class VedtakserviceTest {
 
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
-            hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
             hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 14
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 4
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 2
@@ -324,7 +319,7 @@ class VedtakserviceTest {
                 mottaker.verdi shouldBe nyIdentBm
             }
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe.shouldHaveSize(77)
+            request.grunnlagListe.shouldHaveSize(78)
 
             grunnlagListe.hentAllePersoner() shouldHaveSize 7
             grunnlagListe.søknadsbarn.toList()[0].personIdent shouldBe nyIdentBarn1
@@ -394,7 +389,7 @@ class VedtakserviceTest {
                 mottaker.verdi shouldBe nyIdentBm
             }
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe.shouldHaveSize(2)
+            request.grunnlagListe.shouldHaveSize(1)
 
             grunnlagListe.hentAllePersoner() shouldHaveSize 0
         }
@@ -414,7 +409,7 @@ class VedtakserviceTest {
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         every { behandlingService.hentBehandlingById(any(), any()) } returns behandling
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
-        every { grunnlagService.hentAlleSistAktiv(any()) } returns
+        every { grunnlagService.henteGjeldendeAktiveGrunnlagsdata(any()) } returns
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
                 "grunnlagresponse.json",

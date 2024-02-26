@@ -11,13 +11,11 @@ import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
-import no.nav.bidrag.behandling.utils.SAKSNUMMER
-import no.nav.bidrag.behandling.utils.hentFil
-import no.nav.bidrag.behandling.utils.oppretteBehandling
-import no.nav.bidrag.behandling.utils.testdataBM
-import no.nav.bidrag.behandling.utils.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.hentFil
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -74,10 +72,7 @@ class VedtakTilBehandlingTest {
                 any(),
                 any(),
             )
-        } returns
-            oppretteBehandling(1).tilBehandlingDtoV2(
-                emptyList(),
-            )
+        } returns Unit
 
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()

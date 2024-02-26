@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.controller.v2.tilTransformerInntekterRequest
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
@@ -17,8 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.opplysninger.InntektBearbeidet
-import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
@@ -41,22 +40,26 @@ import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
-val fødselsnummerBm = "33" + LocalDate.now().minusMonths(450).format(DateTimeFormatter.ofPattern("MMyy")) + "40405"
-val fødselsnummerBp = "34" + LocalDate.now().minusMonths(476).format(DateTimeFormatter.ofPattern("MMyy")) + "72320"
-val fødselsnummerBarn1 = "81" + LocalDate.now().minusMonths(88).format(DateTimeFormatter.ofPattern("MMyy")) + "28921"
-val fødselsnummerBarn2 = "82" + LocalDate.now().minusMonths(45).format(DateTimeFormatter.ofPattern("MMyy")) + "36333"
+val fødselsnummerBm =
+    "33" + LocalDate.now().minusMonths(450).format(DateTimeFormatter.ofPattern("MMyy")) + "40405"
+val fødselsnummerBp =
+    "34" + LocalDate.now().minusMonths(476).format(DateTimeFormatter.ofPattern("MMyy")) + "72320"
+val fødselsnummerBarn1 =
+    "81" + LocalDate.now().minusMonths(88).format(DateTimeFormatter.ofPattern("MMyy")) + "28921"
+val fødselsnummerBarn2 =
+    "82" + LocalDate.now().minusMonths(45).format(DateTimeFormatter.ofPattern("MMyy")) + "36333"
 
 data class TestDataPerson(
     val ident: String,
@@ -473,7 +476,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Be
             gjelderBarn = testdataBarn1.ident,
             kilde = Kilde.OFFENTLIG,
             behandling = behandling,
-            inntektsrapportering = Inntektsrapportering.BARNETILLEGG,
+            type = Inntektsrapportering.BARNETILLEGG,
             id = if (generateId) (4).toLong() else null,
         )
     val barnInntekt =
@@ -487,7 +490,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Be
             taMed = true,
             kilde = Kilde.OFFENTLIG,
             behandling = behandling,
-            inntektsrapportering = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+            type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
             id = if (generateId) (5).toLong() else null,
         )
     inntekter.add(aInntekt)
@@ -541,21 +544,26 @@ fun Behandling.opprettHusstandsbarn(
 fun opprettAlleAktiveGrunnlagFraFil(
     behandling: Behandling,
     filnavn: String,
-): List<BehandlingGrunnlag> {
+): List<Grunnlag> {
     return listOf(
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.HUSSTANDSMEDLEMMER),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.ARBEIDSFORHOLD),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILSYN),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILLEGG),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.KONTANTSTØTTE),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SMÅBARNSTILLEGG),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.INNTEKT),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn),
-    )
+    ).flatten()
 }
 
 fun opprettInntektBearbeidet(
     testDataPerson: TestDataPerson,
     grunnlag: HentGrunnlagDto,
     behandling: Behandling,
-): InntektBearbeidet {
+): SummerteMånedsOgÅrsinntekter {
     val inntekt =
         InntektApi("").transformerInntekter(
             grunnlag.tilTransformerInntekterRequest(
@@ -564,74 +572,82 @@ fun opprettInntektBearbeidet(
             ),
         )
 
-    return InntektBearbeidet(
-        ident = testDataPerson.ident,
+    return SummerteMånedsOgÅrsinntekter(
         versjon = "1",
-        summertAarsinntektListe = inntekt.summertÅrsinntektListe,
-        summertMånedsinntektListe = inntekt.summertMånedsinntektListe,
+        summerteÅrsinntekter = inntekt.summertÅrsinntektListe,
+        summerteMånedsinntekter = inntekt.summertMånedsinntektListe,
     )
 }
 
 fun opprettBeregnetInntektFraGrunnlag(
     behandling: Behandling,
     filnavn: String,
-): BehandlingGrunnlag {
+): List<Grunnlag> {
     val fil = hentFil("/__files/$filnavn")
     val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(fil)
-    val innteksopplynsingerBearbeidet =
-        InntektsopplysningerBearbeidet(
-            inntekt =
-                listOf(
-                    opprettInntektBearbeidet(testdataBM, grunnlag, behandling),
-                    opprettInntektBearbeidet(testdataBarn1, grunnlag, behandling),
-                    opprettInntektBearbeidet(testdataBarn2, grunnlag, behandling),
+    return listOf(
+        Grunnlag(
+            behandling = behandling,
+            type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    POJONode(
+                        opprettInntektBearbeidet(
+                            testdataBM,
+                            grunnlag,
+                            behandling,
+                        ),
+                    ),
                 ),
-            arbeidsforhold = grunnlag.arbeidsforholdListe,
-            barnetillegg = grunnlag.barnetilleggListe,
-        )
-    return BehandlingGrunnlag(
-        behandling = behandling,
-        type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
-        data = commonObjectmapper.writeValueAsString(POJONode(innteksopplynsingerBearbeidet)),
-        innhentet = LocalDateTime.now(),
+            innhentet = LocalDateTime.now(),
+            rolle = testdataBM.tilRolle(behandling),
+        ),
+        Grunnlag(
+            behandling = behandling,
+            type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    POJONode(
+                        opprettInntektBearbeidet(
+                            testdataBarn1,
+                            grunnlag,
+                            behandling,
+                        ),
+                    ),
+                ),
+            innhentet = LocalDateTime.now(),
+            rolle = testdataBarn1.tilRolle(behandling),
+        ),
+        Grunnlag(
+            behandling = behandling,
+            type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    POJONode(
+                        opprettInntektBearbeidet(
+                            testdataBarn2,
+                            grunnlag,
+                            behandling,
+                        ),
+                    ),
+                ),
+            innhentet = LocalDateTime.now(),
+            rolle = testdataBarn2.tilRolle(behandling),
+        ),
     )
 }
 
 fun opprettBeregnetInntektFraFil(
     behandling: Behandling,
     filnavn: String,
-): BehandlingGrunnlag {
+): Grunnlag {
     val fil = hentFil("/__files/$filnavn")
-    return BehandlingGrunnlag(
+    return Grunnlag(
         behandling = behandling,
         type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
         data = fil.readText(),
         innhentet = LocalDateTime.now(),
-    )
-}
-
-fun opprettGrunnlagFraFil(
-    behandling: Behandling,
-    filnavn: String,
-    type: Grunnlagsdatatype,
-): BehandlingGrunnlag {
-    val fil = hentFil("/__files/$filnavn")
-    val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(fil)
-
-    val data =
-        when (type) {
-            Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> commonObjectmapper.writeValueAsString(grunnlag.husstandsmedlemmerOgEgneBarnListe)
-            Grunnlagsdatatype.SIVILSTAND -> commonObjectmapper.writeValueAsString(grunnlag.sivilstandListe)
-            Grunnlagsdatatype.ARBEIDSFORHOLD -> commonObjectmapper.writeValueAsString(grunnlag.arbeidsforholdListe)
-            // Inntekter er en subset av grunnlag så lagrer bare alt
-            Grunnlagsdatatype.INNTEKT -> commonObjectmapper.writeValueAsString(grunnlag)
-            else -> "{}"
-        }
-    return BehandlingGrunnlag(
-        behandling = behandling,
-        type = type,
-        data = data,
-        innhentet = LocalDateTime.now(),
+        rolle = opprettRolle(behandling, testdataBM),
     )
 }
 

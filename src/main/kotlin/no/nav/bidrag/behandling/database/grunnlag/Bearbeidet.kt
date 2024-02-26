@@ -1,10 +1,7 @@
 package no.nav.bidrag.behandling.database.grunnlag
 
-import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
-import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
@@ -40,7 +37,6 @@ data class InntektsopplysningerBearbeidet(
     val inntekt: List<InntektBearbeidet> = emptyList(),
     val utvidetbarnetrygd: List<UtvidetBarnetrygdOgSmaabarnstilleggDto> = emptyList(),
     val barnetillegg: List<BarnetilleggGrunnlagDto> = emptyList(),
-    val barnetillegg2: List<BarnetilleggDto> = emptyList(),
     val arbeidsforhold: List<ArbeidsforholdGrunnlagDto> = emptyList(),
 )
 

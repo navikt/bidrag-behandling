@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
@@ -120,40 +120,45 @@ fun VedtakDto.tilBehandling(
 
     behandling.grunnlagListe =
         listOf(
-            BehandlingGrunnlag(
+            Grunnlag(
                 behandling = behandling,
                 id = if (medId) 1 else null,
                 innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD),
                 data = commonObjectmapper.writeValueAsString(grunnlagListe.hentGrunnlagArbeidsforhold()),
                 type = Grunnlagsdatatype.ARBEIDSFORHOLD,
+                rolle = behandling.roller.first(),
             ),
-            BehandlingGrunnlag(
+            Grunnlag(
                 behandling = behandling,
                 id = if (medId) 1 else null,
                 innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
                 data = commonObjectmapper.writeValueAsString(grunnlagListe.hentGrunnlagInntekt()),
                 type = Grunnlagsdatatype.INNTEKT,
+                rolle = behandling.roller.first(),
             ),
-            BehandlingGrunnlag(
+            Grunnlag(
                 behandling = behandling,
                 id = if (medId) 1 else null,
                 innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_SIVILSTAND),
                 data = commonObjectmapper.writeValueAsString(grunnlagListe.hentInnhentetSivilstand()),
                 type = Grunnlagsdatatype.SIVILSTAND,
+                rolle = behandling.roller.first(),
             ),
-            BehandlingGrunnlag(
+            Grunnlag(
                 behandling = behandling,
                 id = if (medId) 1 else null,
                 innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
                 data = commonObjectmapper.writeValueAsString(grunnlagListe.hentInnhenetHusstandsmedlem()),
                 type = Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+                rolle = behandling.roller.first(),
             ),
-            BehandlingGrunnlag(
+            Grunnlag(
                 behandling = behandling,
                 id = if (medId) 1 else null,
                 innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
-                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentBeregnetInntekt()),
+                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentBeregnetInntekt("")),
                 type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                rolle = behandling.roller.first(),
             ),
         )
 
@@ -271,7 +276,7 @@ fun BaseGrunnlag.tilInntekt(
     val inntektBO =
         Inntekt(
             id = if (medId) 1 else null,
-            inntektsrapportering = inntektPeriode.inntektsrapportering,
+            type = inntektPeriode.inntektsrapportering,
             belop = inntektPeriode.beløp,
             gjelderBarn = gjelderBarn?.personIdent,
             taMed = inntektPeriode.valgt,

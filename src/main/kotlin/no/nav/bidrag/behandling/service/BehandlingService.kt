@@ -186,7 +186,10 @@ class BehandlingService(
             grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid)
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid, behandling.roller)
-        return behandling.tilBehandlingDtoV2(gjeldendeAktiveGrunnlagsdata, grunnlagsdataEndretEtterAktivering)
+        return behandling.tilBehandlingDtoV2(
+            gjeldendeAktiveGrunnlagsdata,
+            grunnlagsdataEndretEtterAktivering,
+        )
     }
 
     fun hentBehandlingById(
@@ -196,7 +199,7 @@ class BehandlingService(
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
-        behandling.grunnlagListe = grunnlagService.hentAlleSistAktiv(behandlingId)
+        behandling.grunnlagListe = grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingId)
         return behandling
     }
 

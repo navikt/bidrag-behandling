@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.transformers
 
-import com.fasterxml.jackson.databind.node.POJONode
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainAll
@@ -13,7 +12,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
 import io.mockk.clearAllMocks
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
@@ -22,8 +21,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.opplysninger.InntektBearbeidet
-import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
@@ -37,17 +35,17 @@ import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
-import no.nav.bidrag.behandling.utils.SAKSNUMMER
-import no.nav.bidrag.behandling.utils.SOKNAD_ID
-import no.nav.bidrag.behandling.utils.TestDataPerson
-import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
-import no.nav.bidrag.behandling.utils.opprettRolle
-import no.nav.bidrag.behandling.utils.oppretteBehandling
-import no.nav.bidrag.behandling.utils.testdataBM
-import no.nav.bidrag.behandling.utils.testdataBP
-import no.nav.bidrag.behandling.utils.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
+import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
+import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.opprettRolle
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -185,7 +183,7 @@ class GrunnlagMappingTest {
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
-                        inntektsrapportering = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
                         id = 1,
                     ),
                     Inntekt(
@@ -196,7 +194,7 @@ class GrunnlagMappingTest {
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
-                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                         id = 2,
                     ),
                     Inntekt(
@@ -208,7 +206,7 @@ class GrunnlagMappingTest {
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
                         gjelderBarn = testdataBarn1.ident,
-                        inntektsrapportering = Inntektsrapportering.KONTANTSTØTTE,
+                        type = Inntektsrapportering.KONTANTSTØTTE,
                         id = 22,
                     ),
                     Inntekt(
@@ -220,7 +218,7 @@ class GrunnlagMappingTest {
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
                         gjelderBarn = testdataBarn2.ident,
-                        inntektsrapportering = Inntektsrapportering.KONTANTSTØTTE,
+                        type = Inntektsrapportering.KONTANTSTØTTE,
                         id = 33,
                     ),
                     Inntekt(
@@ -231,7 +229,7 @@ class GrunnlagMappingTest {
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
-                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                         id = 2,
                     ),
                     Inntekt(
@@ -242,7 +240,7 @@ class GrunnlagMappingTest {
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
-                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                         id = 2,
                     ),
                 )
@@ -250,7 +248,7 @@ class GrunnlagMappingTest {
                 behandling.byggGrunnlagForVedtak()
 
             assertSoftly(grunnlagForBeregning.toList()) {
-                it shouldHaveSize 38
+                it shouldHaveSize 39
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 3
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -266,7 +264,7 @@ class GrunnlagMappingTest {
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 4
-                it.filtrerBasertPåEgenReferanse(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 2
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
             }
         }
 
@@ -283,7 +281,7 @@ class GrunnlagMappingTest {
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
-                        inntektsrapportering = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
                         id = 1,
                     ),
                     Inntekt(
@@ -294,7 +292,7 @@ class GrunnlagMappingTest {
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
-                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                         id = 2,
                     ),
                     Inntekt(
@@ -306,7 +304,7 @@ class GrunnlagMappingTest {
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
                         gjelderBarn = testdataBarn1.ident,
-                        inntektsrapportering = Inntektsrapportering.KONTANTSTØTTE,
+                        type = Inntektsrapportering.KONTANTSTØTTE,
                         id = 22,
                     ),
                     Inntekt(
@@ -318,7 +316,7 @@ class GrunnlagMappingTest {
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
                         gjelderBarn = testdataBarn2.ident,
-                        inntektsrapportering = Inntektsrapportering.KONTANTSTØTTE,
+                        type = Inntektsrapportering.KONTANTSTØTTE,
                         id = 33,
                     ),
                     Inntekt(
@@ -329,7 +327,7 @@ class GrunnlagMappingTest {
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
-                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                         id = 2,
                     ),
                     Inntekt(
@@ -340,7 +338,7 @@ class GrunnlagMappingTest {
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
-                        inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                         id = 2,
                     ),
                 )
@@ -647,7 +645,14 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe inntekt til grunnlag`() {
             val behandling = oppretteBehandling()
-            behandling.grunnlagListe = opprettGrunnlagsliste(behandling)
+            behandling.grunnlagListe =
+                listOf(
+                    opprettInntekterBearbeidetGrunnlag(
+                        behandling,
+                        testdataBM,
+                    ),
+                )
+
             behandling.inntekter = opprettInntekter(behandling, testdataBM, testdataBarn1)
             assertSoftly(
                 behandling.tilGrunnlagInntekt(personobjekter, søknadsbarnGrunnlag1).toList(),
@@ -755,16 +760,18 @@ class GrunnlagMappingTest {
         fun `skal mappe inntekt til grunnlag hvis inneholder inntektliste for Barn og BP`() {
             val behandling = oppretteBehandling()
             behandling.grunnlagListe =
-                opprettGrunnlagsliste(
-                    behandling,
-                    opprettInntekterBearbeidet(testdataBM) +
-                        opprettInntekterBearbeidet(
-                            testdataBP,
-                        ) +
-                        opprettInntekterBearbeidet(
-                            testdataBarn1,
-                        ),
+                listOf(
+                    opprettInntekterBearbeidetGrunnlag(behandling, testdataBM),
+                    opprettInntekterBearbeidetGrunnlag(
+                        behandling,
+                        testdataBP,
+                    ),
+                    opprettInntekterBearbeidetGrunnlag(
+                        behandling,
+                        testdataBarn1,
+                    ),
                 )
+
             behandling.inntekter.addAll(
                 (
                     opprettInntekter(behandling, testdataBM, testdataBarn1) +
@@ -806,7 +813,13 @@ class GrunnlagMappingTest {
         fun `skal legge til grunnlagsliste for innhentet inntekter`() {
             val behandling = oppretteBehandling()
 
-            behandling.grunnlagListe = opprettGrunnlagsliste(behandling)
+            behandling.grunnlagListe =
+                listOf(
+                    opprettInntekterBearbeidetGrunnlag(
+                        behandling,
+                        testdataBM,
+                    ),
+                )
             behandling.inntekter.addAll(
                 opprettInntekter(behandling, testdataBM, testdataBarn1),
             )
@@ -841,84 +854,71 @@ class GrunnlagMappingTest {
             result.message shouldContain "Mangler grunnlagsreferanse for offentlig inntekt AINNTEKT_BEREGNET_12MND"
         }
 
-        private fun opprettGrunnlagsliste(
+        private fun opprettInntekterBearbeidetGrunnlag(
             behandling: Behandling,
-            inntekter: List<InntektBearbeidet> =
-                opprettInntekterBearbeidet(
-                    testdataBM,
-                ),
-        ) = listOf(
-            BehandlingGrunnlag(
+            gjelder: TestDataPerson,
+        ): Grunnlag {
+            return Grunnlag(
                 behandling = behandling,
                 type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                rolle = gjelder.tilRolle(behandling),
+                innhentet = LocalDateTime.now(),
                 data =
                     commonObjectmapper.writeValueAsString(
-                        POJONode(
-                            InntektsopplysningerBearbeidet(
-                                inntekt = inntekter,
-                            ),
+                        SummerteMånedsOgÅrsinntekter(
+                            versjon = "1",
+                            summerteMånedsinntekter = emptyList(),
+                            summerteÅrsinntekter =
+                                listOf(
+                                    SummertÅrsinntekt(
+                                        Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                                        periode =
+                                            ÅrMånedsperiode(
+                                                YearMonth.parse("2023-01"),
+                                                YearMonth.parse("2024-01"),
+                                            ),
+                                        sumInntekt = BigDecimal.ONE,
+                                        inntektPostListe = emptyList(),
+                                        grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                                    ),
+                                    SummertÅrsinntekt(
+                                        Inntektsrapportering.KONTANTSTØTTE,
+                                        periode =
+                                            ÅrMånedsperiode(
+                                                YearMonth.parse("2023-01"),
+                                                YearMonth.parse("2024-01"),
+                                            ),
+                                        sumInntekt = BigDecimal.ONE,
+                                        gjelderBarnPersonId = testdataBarn1.ident,
+                                        inntektPostListe = emptyList(),
+                                        grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                                    ),
+                                    SummertÅrsinntekt(
+                                        Inntektsrapportering.BARNETILLEGG,
+                                        periode =
+                                            ÅrMånedsperiode(
+                                                YearMonth.parse("2023-01"),
+                                                YearMonth.parse("2024-01"),
+                                            ),
+                                        sumInntekt = BigDecimal.ONE,
+                                        gjelderBarnPersonId = testdataBarn1.ident,
+                                        inntektPostListe = emptyList(),
+                                        grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                                    ),
+                                    SummertÅrsinntekt(
+                                        Inntektsrapportering.LIGNINGSINNTEKT,
+                                        periode =
+                                            ÅrMånedsperiode(
+                                                YearMonth.parse("2023-01"),
+                                                YearMonth.parse("2024-01"),
+                                            ),
+                                        sumInntekt = BigDecimal.ONE,
+                                        inntektPostListe = emptyList(),
+                                        grunnlagsreferanseListe = skattegrunnlagGrunnlagsreferanseListe,
+                                    ),
+                                ),
                         ),
                     ),
-                innhentet = LocalDateTime.now(),
-            ),
-        )
-
-        private fun opprettInntekterBearbeidet(gjelder: TestDataPerson): List<InntektBearbeidet> {
-            return listOf(
-                InntektBearbeidet(
-                    ident = gjelder.ident,
-                    versjon = "1",
-                    summertMånedsinntektListe = emptyList(),
-                    summertAarsinntektListe =
-                        listOf(
-                            SummertÅrsinntekt(
-                                Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.parse("2023-01"),
-                                        YearMonth.parse("2024-01"),
-                                    ),
-                                sumInntekt = BigDecimal.ONE,
-                                inntektPostListe = emptyList(),
-                                grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
-                            ),
-                            SummertÅrsinntekt(
-                                Inntektsrapportering.KONTANTSTØTTE,
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.parse("2023-01"),
-                                        YearMonth.parse("2024-01"),
-                                    ),
-                                sumInntekt = BigDecimal.ONE,
-                                gjelderBarnPersonId = testdataBarn1.ident,
-                                inntektPostListe = emptyList(),
-                                grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
-                            ),
-                            SummertÅrsinntekt(
-                                Inntektsrapportering.BARNETILLEGG,
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.parse("2023-01"),
-                                        YearMonth.parse("2024-01"),
-                                    ),
-                                sumInntekt = BigDecimal.ONE,
-                                gjelderBarnPersonId = testdataBarn1.ident,
-                                inntektPostListe = emptyList(),
-                                grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
-                            ),
-                            SummertÅrsinntekt(
-                                Inntektsrapportering.LIGNINGSINNTEKT,
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.parse("2023-01"),
-                                        YearMonth.parse("2024-01"),
-                                    ),
-                                sumInntekt = BigDecimal.ONE,
-                                inntektPostListe = emptyList(),
-                                grunnlagsreferanseListe = skattegrunnlagGrunnlagsreferanseListe,
-                            ),
-                        ),
-                ),
             )
         }
 

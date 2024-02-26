@@ -92,4 +92,9 @@ fun Behandling.tilBehandlingDtoV2(
 )
 
 val eksplisitteYtelser =
-    setOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.SMÅBARNSTILLEGG)
+    setOf(
+        Inntektsrapportering.BARNETILLEGG,
+        Inntektsrapportering.KONTANTSTØTTE,
+        Inntektsrapportering.SMÅBARNSTILLEGG,
+        Inntektsrapportering.AINNTEKT,
+    )

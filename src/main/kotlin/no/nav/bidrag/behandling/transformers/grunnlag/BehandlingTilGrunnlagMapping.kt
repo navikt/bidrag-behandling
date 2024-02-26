@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.transformers.grunnlag
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -183,7 +183,7 @@ fun Husstandsbarn.tilGrunnlagPerson(): GrunnlagDto {
 private fun Inntekt.tilInntektsrapporteringPeriode(
     gjelder: GrunnlagDto,
     søknadsbarn: GrunnlagDto?,
-    grunnlagListe: List<BehandlingGrunnlag> = emptyList(),
+    grunnlagListe: List<Grunnlag> = emptyList(),
 ) = GrunnlagDto(
     type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
     referanse = tilGrunnlagreferanse(gjelder),
@@ -199,7 +199,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
             InntektsrapporteringPeriode(
                 beløp = belop,
                 periode = ÅrMånedsperiode(datoFom, datoTom?.plusDays(1)),
-                inntektsrapportering = inntektsrapportering,
+                inntektsrapportering = type,
                 manueltRegistrert = kilde == Kilde.MANUELL,
                 valgt = taMed,
                 inntekstpostListe =
@@ -211,7 +211,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
                         )
                     },
                 gjelderBarn =
-                    when (inntektsrapportering) {
+                    when (type) {
                         Inntektsrapportering.KONTANTSTØTTE,
                         Inntektsrapportering.BARNETILLEGG,
                         Inntektsrapportering.BARNETILSYN,
@@ -273,9 +273,9 @@ private fun opprettGrunnlagForBostatusperioder(
 
 private fun Inntekt.tilGrunnlagreferanse(gjelder: GrunnlagDto) =
     if (gjelderBarn != null) {
-        "inntekt_${inntektsrapportering}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFom.toCompactString()}"
+        "inntekt_${type}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFom.toCompactString()}"
     } else {
-        "inntekt_${inntektsrapportering}_${gjelder.referanse}_${datoFom.toCompactString()}"
+        "inntekt_${type}_${gjelder.referanse}_${datoFom.toCompactString()}"
     }
 
 fun Person.valider(rolle: Rolletype? = null): Person {

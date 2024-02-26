@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -124,9 +124,7 @@ fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) =
         belop = this.beløp,
         datoFom = this.datoFom,
         datoTom = this.datoTom,
-        opprinneligTom = it.opprinneligTom,
-                opprinneligFom = it.opprinneligFom,
-                ident = this.ident.verdi,
+        ident = this.ident.verdi,
         gjelderBarn = this.gjelderBarn?.verdi,
         kilde = Kilde.MANUELL,
         taMed = this.taMed,
@@ -174,7 +172,7 @@ fun List<Inntekt>.tilInntektDtoV2() =
         )
     }
 
-fun BehandlingGrunnlag.toDto(): GrunnlagsdataDto {
+fun Grunnlag.toDto(): GrunnlagsdataDto {
     return GrunnlagsdataDto(
         this.id!!,
         this.behandling.id!!,

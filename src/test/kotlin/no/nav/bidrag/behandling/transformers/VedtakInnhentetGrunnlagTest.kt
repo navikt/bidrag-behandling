@@ -2,32 +2,32 @@ package no.nav.bidrag.behandling.transformers
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.date.shouldHaveSameDayAs
+import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.shouldBe
-import no.nav.bidrag.behandling.database.datamodell.BehandlingGrunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.utils.opprettAinntektGrunnlagListe
-import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.opprettArbeidsforholdGrunnlagListe
 import no.nav.bidrag.behandling.utils.opprettBarnetilleggListe
 import no.nav.bidrag.behandling.utils.opprettBarnetilsynListe
 import no.nav.bidrag.behandling.utils.opprettKontantstøtteListe
-import no.nav.bidrag.behandling.utils.opprettRolle
 import no.nav.bidrag.behandling.utils.opprettSkattegrunnlagGrunnlagListe
 import no.nav.bidrag.behandling.utils.opprettSmåbarnstillegListe
 import no.nav.bidrag.behandling.utils.opprettUtvidetBarnetrygdGrunnlagListe
-import no.nav.bidrag.behandling.utils.oppretteBehandling
-import no.nav.bidrag.behandling.utils.testdataBM
-import no.nav.bidrag.behandling.utils.testdataBP
-import no.nav.bidrag.behandling.utils.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.testdata.opprettGrunnlagEntityForInntekt
+import no.nav.bidrag.behandling.utils.testdata.opprettRolle
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataGrunnlagInnhentetTidspunkt
+import no.nav.bidrag.behandling.utils.testdata.tilGrunnlagEntity
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
@@ -52,7 +52,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
-import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -129,7 +128,7 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_SIVILSTAND
                     gjelderReferanse shouldBe grunnlagBm.referanse
                     val grunnlag = it.innholdTilObjekt<InnhentetSivilstand>()
-                    grunnlag.hentetTidspunkt shouldHaveSameDayAs LocalDateTime.now()
+                    grunnlag.hentetTidspunkt shouldBeEqual testdataGrunnlagInnhentetTidspunkt
                     assertSoftly(grunnlag.grunnlag[0]) {
                         gyldigFom shouldBe LocalDate.parse("1978-08-25")
                         sivilstand shouldBe SivilstandskodePDL.UGIFT
@@ -161,35 +160,25 @@ class VedtakInnhentetGrunnlagTest {
 
             val grunnlagListe =
                 listOf(
-                    BehandlingGrunnlag(
-                        type = Grunnlagsdatatype.SIVILSTAND,
-                        behandling = behandling,
-                        innhentet = LocalDateTime.now(),
-                        data =
-                            commonObjectmapper.writeValueAsString(
-                                listOf(
-                                    SivilstandGrunnlagDto(
-                                        type = SivilstandskodePDL.SKILT,
-                                        bekreftelsesdato = null,
-                                        gyldigFom = null,
-                                        master = "PDL",
-                                        historisk = false,
-                                        registrert = LocalDate.parse("2023-01-01").atStartOfDay(),
-                                        personId = testdataBM.ident,
-                                    ),
-                                    SivilstandGrunnlagDto(
-                                        type = SivilstandskodePDL.SKILT,
-                                        bekreftelsesdato = null,
-                                        gyldigFom = null,
-                                        master = "PDL",
-                                        historisk = false,
-                                        registrert = LocalDate.parse("2023-01-01").atStartOfDay(),
-                                        personId = testdataBP.ident,
-                                    ),
-                                ),
-                            ),
+                    SivilstandGrunnlagDto(
+                        type = SivilstandskodePDL.SKILT,
+                        bekreftelsesdato = null,
+                        gyldigFom = null,
+                        master = "PDL",
+                        historisk = false,
+                        registrert = LocalDate.parse("2023-01-01").atStartOfDay(),
+                        personId = testdataBM.ident,
                     ),
-                )
+                    SivilstandGrunnlagDto(
+                        type = SivilstandskodePDL.SKILT,
+                        bekreftelsesdato = null,
+                        gyldigFom = null,
+                        master = "PDL",
+                        historisk = false,
+                        registrert = LocalDate.parse("2023-01-01").atStartOfDay(),
+                        personId = testdataBP.ident,
+                    ),
+                ).tilGrunnlagEntity(behandling)
 
             assertSoftly(grunnlagListe.tilInnhentetSivilstand(personobjekter).toList()) {
                 this shouldHaveSize 2
@@ -312,93 +301,83 @@ class VedtakInnhentetGrunnlagTest {
                 )
             val grunnlagListe =
                 listOf(
-                    BehandlingGrunnlag(
-                        type = Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
-                        behandling = behandling,
-                        innhentet = LocalDateTime.now(),
-                        data =
-                            commonObjectmapper.writeValueAsString(
-                                listOf(
-                                    RelatertPersonGrunnlagDto(
-                                        partPersonId = testdataBM.ident,
-                                        relatertPersonPersonId = testdataBarn1.ident,
-                                        navn = testdataBarn1.navn,
-                                        fødselsdato = testdataBarn1.foedselsdato,
-                                        erBarnAvBmBp = true,
-                                        borISammeHusstandDtoListe =
-                                            listOf(
-                                                BorISammeHusstandDto(
-                                                    LocalDate.parse("2022-01-01"),
-                                                    LocalDate.parse("2022-06-08"),
-                                                ),
-                                                BorISammeHusstandDto(
-                                                    LocalDate.parse("2023-01-02"),
-                                                    LocalDate.parse("2023-06-28"),
-                                                ),
-                                                BorISammeHusstandDto(
-                                                    LocalDate.parse("2023-07-01"),
-                                                    null,
-                                                ),
-                                                BorISammeHusstandDto(
-                                                    null,
-                                                    null,
-                                                ),
-                                            ),
-                                    ),
-                                    RelatertPersonGrunnlagDto(
-                                        partPersonId = testdataBM.ident,
-                                        relatertPersonPersonId = testdataBarn2.ident,
-                                        navn = testdataBarn2.navn,
-                                        fødselsdato = testdataBarn2.foedselsdato,
-                                        erBarnAvBmBp = true,
-                                        borISammeHusstandDtoListe =
-                                            listOf(
-                                                BorISammeHusstandDto(
-                                                    LocalDate.parse("2023-07-01"),
-                                                    null,
-                                                ),
-                                            ),
-                                    ),
-                                    RelatertPersonGrunnlagDto(
-                                        partPersonId = testdataBM.ident,
-                                        relatertPersonPersonId = "12312312",
-                                        navn = "Voksen i husstand",
-                                        fødselsdato = LocalDate.parse("1999-01-01"),
-                                        erBarnAvBmBp = false,
-                                        borISammeHusstandDtoListe =
-                                            listOf(
-                                                BorISammeHusstandDto(
-                                                    LocalDate.parse("2020-07-01"),
-                                                    null,
-                                                ),
-                                            ),
-                                    ),
-                                    RelatertPersonGrunnlagDto(
-                                        partPersonId = testdataBP.ident,
-                                        relatertPersonPersonId = testdataBarn1.ident,
-                                        navn = testdataBarn1.navn,
-                                        fødselsdato = testdataBarn1.foedselsdato,
-                                        erBarnAvBmBp = true,
-                                        borISammeHusstandDtoListe =
-                                            listOf(
-                                                BorISammeHusstandDto(
-                                                    LocalDate.parse("2022-01-01"),
-                                                    LocalDate.parse("2022-06-08"),
-                                                ),
-                                                BorISammeHusstandDto(
-                                                    LocalDate.parse("2023-01-01"),
-                                                    LocalDate.parse("2023-06-30"),
-                                                ),
-                                                BorISammeHusstandDto(
-                                                    LocalDate.parse("2023-07-01"),
-                                                    null,
-                                                ),
-                                            ),
-                                    ),
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = testdataBM.ident,
+                        relatertPersonPersonId = testdataBarn1.ident,
+                        navn = testdataBarn1.navn,
+                        fødselsdato = testdataBarn1.foedselsdato,
+                        erBarnAvBmBp = true,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2022-01-01"),
+                                    LocalDate.parse("2022-06-08"),
+                                ),
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2023-01-02"),
+                                    LocalDate.parse("2023-06-28"),
+                                ),
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2023-07-01"),
+                                    null,
+                                ),
+                                BorISammeHusstandDto(
+                                    null,
+                                    null,
                                 ),
                             ),
                     ),
-                )
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = testdataBM.ident,
+                        relatertPersonPersonId = testdataBarn2.ident,
+                        navn = testdataBarn2.navn,
+                        fødselsdato = testdataBarn2.foedselsdato,
+                        erBarnAvBmBp = true,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2023-07-01"),
+                                    null,
+                                ),
+                            ),
+                    ),
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = testdataBM.ident,
+                        relatertPersonPersonId = "12312312",
+                        navn = "Voksen i husstand",
+                        fødselsdato = LocalDate.parse("1999-01-01"),
+                        erBarnAvBmBp = false,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2020-07-01"),
+                                    null,
+                                ),
+                            ),
+                    ),
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = testdataBP.ident,
+                        relatertPersonPersonId = testdataBarn1.ident,
+                        navn = testdataBarn1.navn,
+                        fødselsdato = testdataBarn1.foedselsdato,
+                        erBarnAvBmBp = true,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2022-01-01"),
+                                    LocalDate.parse("2022-06-08"),
+                                ),
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2023-01-01"),
+                                    LocalDate.parse("2023-06-30"),
+                                ),
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2023-07-01"),
+                                    null,
+                                ),
+                            ),
+                    ),
+                ).tilGrunnlagEntity(behandling)
             val grunnlagHusstandsmedlemmer =
                 grunnlagListe.tilInnhentetHusstandsmedlemmer(personobjekter).toList()
             assertSoftly(grunnlagHusstandsmedlemmer) {
@@ -517,19 +496,9 @@ class VedtakInnhentetGrunnlagTest {
                     opprettRolle(behandling, testdataBarn2),
                 )
             val grunnlagListe =
-                listOf(
-                    BehandlingGrunnlag(
-                        type = Grunnlagsdatatype.INNTEKT,
-                        behandling = behandling,
-                        innhentet = LocalDateTime.now(),
-                        data =
-                            commonObjectmapper.writeValueAsString(
-                                InntektGrunnlag(
-                                    skattegrunnlagListe = opprettSkattegrunnlagGrunnlagListe(),
-                                    ainntektListe = opprettAinntektGrunnlagListe(),
-                                ),
-                            ),
-                    ),
+                behandling.opprettGrunnlagEntityForInntekt(
+                    opprettAinntektGrunnlagListe(),
+                    opprettSkattegrunnlagGrunnlagListe(),
                 )
             assertSoftly(
                 grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
@@ -572,19 +541,9 @@ class VedtakInnhentetGrunnlagTest {
                     opprettRolle(behandling, testdataBarn2),
                 )
             val grunnlagListe =
-                listOf(
-                    BehandlingGrunnlag(
-                        type = Grunnlagsdatatype.INNTEKT,
-                        behandling = behandling,
-                        innhentet = LocalDateTime.now(),
-                        data =
-                            commonObjectmapper.writeValueAsString(
-                                InntektGrunnlag(
-                                    skattegrunnlagListe = opprettSkattegrunnlagGrunnlagListe(),
-                                    ainntektListe = opprettAinntektGrunnlagListe(),
-                                ),
-                            ),
-                    ),
+                behandling.opprettGrunnlagEntityForInntekt(
+                    opprettAinntektGrunnlagListe(),
+                    opprettSkattegrunnlagGrunnlagListe(),
                 )
             assertSoftly(
                 grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
@@ -595,7 +554,7 @@ class VedtakInnhentetGrunnlagTest {
                     it shouldHaveSize 3
                     it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse) shouldHaveSize 1
                     it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBm.referanse) shouldHaveSize 2
-                    assertSoftly(it[0]) {
+                    assertSoftly(it[2]) {
                         it.gjelderReferanse.shouldBe(søknadsbarnGrunnlag1.referanse)
                         val skattegrunnlag = it.innholdTilObjekt<InnhentetSkattegrunnlag>()
                         skattegrunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
@@ -608,7 +567,7 @@ class VedtakInnhentetGrunnlagTest {
                             kode shouldBe "annenArbeidsinntekt"
                         }
                     }
-                    assertSoftly(it[1]) {
+                    assertSoftly(it[0]) {
                         it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                         val skattegrunnlag = it.innholdTilObjekt<InnhentetSkattegrunnlag>()
                         skattegrunnlag.periode.fom shouldBe LocalDate.parse("2022-01-01")
@@ -635,24 +594,16 @@ class VedtakInnhentetGrunnlagTest {
                 )
             val grunnlagListe =
                 listOf(
-                    BehandlingGrunnlag(
-                        type = Grunnlagsdatatype.INNTEKT,
-                        behandling = behandling,
-                        innhentet = LocalDateTime.now(),
-                        data =
-                            commonObjectmapper.writeValueAsString(
-                                InntektGrunnlag(
-                                    skattegrunnlagListe = opprettSkattegrunnlagGrunnlagListe(),
-                                    ainntektListe = opprettAinntektGrunnlagListe(),
-                                    barnetilleggListe = opprettBarnetilleggListe(),
-                                    utvidetBarnetrygdListe = opprettUtvidetBarnetrygdGrunnlagListe(),
-                                    kontantstøtteListe = opprettKontantstøtteListe(),
-                                    småbarnstilleggListe = opprettSmåbarnstillegListe(),
-                                    barnetilsynListe = opprettBarnetilsynListe(),
-                                ),
-                            ),
+                    opprettSmåbarnstillegListe().tilGrunnlagEntity(behandling),
+                    opprettBarnetilsynListe().tilGrunnlagEntity(behandling),
+                    opprettKontantstøtteListe().tilGrunnlagEntity(behandling),
+                    opprettUtvidetBarnetrygdGrunnlagListe().tilGrunnlagEntity(behandling),
+                    opprettBarnetilleggListe().tilGrunnlagEntity(behandling),
+                    behandling.opprettGrunnlagEntityForInntekt(
+                        opprettAinntektGrunnlagListe(),
+                        opprettSkattegrunnlagGrunnlagListe(),
                     ),
-                )
+                ).flatten()
             assertSoftly(
                 grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
@@ -783,18 +734,7 @@ class VedtakInnhentetGrunnlagTest {
                     opprettRolle(behandling, testdataBarn1),
                     opprettRolle(behandling, testdataBarn2),
                 )
-            val grunnlagListe =
-                listOf(
-                    BehandlingGrunnlag(
-                        type = Grunnlagsdatatype.ARBEIDSFORHOLD,
-                        behandling = behandling,
-                        innhentet = LocalDate.of(2020, 1, 1).atStartOfDay(),
-                        data =
-                            commonObjectmapper.writeValueAsString(
-                                opprettArbeidsforholdGrunnlagListe(),
-                            ),
-                    ),
-                )
+            val grunnlagListe = opprettArbeidsforholdGrunnlagListe().tilGrunnlagEntity(behandling)
             assertSoftly(
                 grunnlagListe.tilInnhentetArbeidsforhold(personobjekter)
                     .toList(),
@@ -805,7 +745,7 @@ class VedtakInnhentetGrunnlagTest {
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val arbeidsforhold = it.innholdTilObjekt<InnhentetArbeidsforhold>()
                     assertSoftly(arbeidsforhold) {
-                        it.hentetTidspunkt shouldBe LocalDate.of(2020, 1, 1).atStartOfDay()
+                        it.hentetTidspunkt shouldBe testdataGrunnlagInnhentetTidspunkt
                         it.grunnlag.shouldHaveSize(2)
                         it.datakilde shouldBe GrunnlagDatakilde.AAREG
                         assertSoftly(this.grunnlag[0]) {

@@ -16,20 +16,16 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
-import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
-import no.nav.bidrag.behandling.utils.opprettForsendelseResponsUnderOpprettelse
-import no.nav.bidrag.behandling.utils.testdataBM
-import no.nav.bidrag.behandling.utils.testdataBP
-import no.nav.bidrag.behandling.utils.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdataBarn2
-import no.nav.bidrag.behandling.utils.testdataHusstandsmedlem1
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.commons.service.AppContext
+import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
@@ -88,7 +84,8 @@ class StubUtils {
         }
 
         private fun createGenericResponse() =
-            WireMock.aResponse().withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString())
+            WireMock.aResponse()
+                .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString())
                 .withStatus(HttpStatus.OK.value())
     }
 
@@ -235,16 +232,17 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/YtelseFraOffentligeBeskrivelse.*")).willReturn(
-                if (response != null) {
-                    aClosedJsonResponse().withStatus(status.value()).withBody(
-                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
-                    )
-                } else {
-                    aClosedJsonResponse()
-                        .withBodyFile("respons_kodeverk_ytelserbeskrivelser.json")
-                },
-            ),
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/YtelseFraOffentligeBeskrivelse.*"))
+                .willReturn(
+                    if (response != null) {
+                        aClosedJsonResponse().withStatus(status.value()).withBody(
+                            ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                        )
+                    } else {
+                        aClosedJsonResponse()
+                            .withBodyFile("respons_kodeverk_ytelserbeskrivelser.json")
+                    },
+                ),
         )
     }
 
@@ -253,16 +251,17 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*")).willReturn(
-                if (response != null) {
-                    createGenericResponse().withStatus(status.value()).withBody(
-                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
-                    )
-                } else {
-                    createGenericResponse()
-                        .withBodyFile("respons_kodeverk_ytelserbeskrivelser.json")
-                },
-            ),
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*"))
+                .willReturn(
+                    if (response != null) {
+                        createGenericResponse().withStatus(status.value()).withBody(
+                            ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                        )
+                    } else {
+                        createGenericResponse()
+                            .withBodyFile("respons_kodeverk_ytelserbeskrivelser.json")
+                    },
+                ),
         )
     }
 
@@ -271,16 +270,17 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Naeringsinntektsbeskrivelse.*")).willReturn(
-                if (response != null) {
-                    aClosedJsonResponse().withStatus(status.value()).withBody(
-                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
-                    )
-                } else {
-                    aClosedJsonResponse()
-                        .withBodyFile("respons_kodeverk_naeringsinntektsbeskrivelse.json")
-                },
-            ),
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Naeringsinntektsbeskrivelse.*"))
+                .willReturn(
+                    if (response != null) {
+                        aClosedJsonResponse().withStatus(status.value()).withBody(
+                            ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                        )
+                    } else {
+                        aClosedJsonResponse()
+                            .withBodyFile("respons_kodeverk_naeringsinntektsbeskrivelse.json")
+                    },
+                ),
         )
     }
 

@@ -8,9 +8,8 @@ import jakarta.validation.Valid
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.service.VedtakService
-import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.service.GrunnlagService
+import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.http.HttpStatus
@@ -21,8 +20,11 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestControllerV2
-class BehandlingControllerV2(private val vedtakService: VedtakService,    private val behandlingService: BehandlingService,
-                             private val grunnlagService: GrunnlagService) {
+class BehandlingControllerV2(
+    private val vedtakService: VedtakService,
+    private val behandlingService: BehandlingService,
+    private val grunnlagService: GrunnlagService,
+) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
     @Operation(
@@ -44,7 +46,7 @@ class BehandlingControllerV2(private val vedtakService: VedtakService,    privat
         val resultat =
             vedtakService.konverterVedtakTilBehandling(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return resultat.tilBehandlingDtoV2(resultat.grunnlagListe)
+        return resultat.tilBehandlingDtoV2(resultat.grunnlagListe, emptySet())
     }
 
     @Suppress("unused")
@@ -88,7 +90,10 @@ class BehandlingControllerV2(private val vedtakService: VedtakService,    privat
         return ResponseEntity(
             behandling.tilBehandlingDtoV2(
                 grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid),
-                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid, behandling.roller),
+                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(
+                    behandlingsid,
+                    behandling.roller,
+                ),
             ),
             HttpStatus.CREATED,
         )

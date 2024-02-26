@@ -6,11 +6,11 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
-import no.nav.bidrag.behandling.utils.oppretteBehandling
-import no.nav.bidrag.behandling.utils.testdataBM
-import no.nav.bidrag.behandling.utils.testdataBP
-import no.nav.bidrag.behandling.utils.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -260,7 +260,7 @@ class ValiderGrunnlagTest {
             )
 
         val value = shouldThrow<RuntimeException> { request.validerGrunnlagsreferanser() }
-        value.message shouldBe "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" inneholder sirkulær avhengighet. Referanseliste [ref_1, person_PERSON_BIDRAGSMOTTAKER_20200301_1]\n" +
-            "Grunnlaget med referanse \"ref_1\" referert av \"ref_2\" inneholder sirkulær avhengighet. Referanseliste [ref_2, person_PERSON_BIDRAGSMOTTAKER_20200301_1]"
+        value.message shouldBe "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" inneholder sirkulær avhengighet. Referanseliste [ref_1, person_PERSON_BIDRAGSMOTTAKER_19780825_1]\n" +
+            "Grunnlaget med referanse \"ref_1\" referert av \"ref_2\" inneholder sirkulær avhengighet. Referanseliste [ref_2, person_PERSON_BIDRAGSMOTTAKER_19780825_1]"
     }
 }

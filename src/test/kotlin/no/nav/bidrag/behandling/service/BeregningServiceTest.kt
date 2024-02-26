@@ -8,10 +8,10 @@ import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
-import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
-import no.nav.bidrag.behandling.utils.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider

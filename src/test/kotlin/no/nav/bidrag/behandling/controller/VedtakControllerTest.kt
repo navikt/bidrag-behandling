@@ -1,12 +1,12 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
-import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
-import no.nav.bidrag.behandling.utils.opprettSakForBehandling
+import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import org.junit.jupiter.api.BeforeEach
@@ -46,7 +46,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubFatteVedtak()
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/vedtak",
+                "${rootUriV2()}/behandling/${behandling.id}/vedtak",
                 HttpMethod.POST,
                 HttpEntity(""),
                 Int::class.java,
@@ -70,7 +70,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubFatteVedtak()
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/vedtak",
+                "${rootUriV2()}/behandling/${behandling.id}/vedtak",
                 HttpMethod.POST,
                 HttpEntity(""),
                 Int::class.java,

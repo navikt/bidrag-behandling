@@ -12,12 +12,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import no.nav.bidrag.behandling.database.opplysninger.BoforholdBearbeidet
-import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
-import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
-import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
@@ -43,24 +37,15 @@ open class Grunnlag(
     open val id: Long? = null,
 )
 
-inline fun <reified T> Grunnlag?.hentData(): T? =
-    when (this?.type) {
-        Grunnlagsdatatype.INNTEKTSOPPLYSNINGER, Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
-        Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-        Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
-        Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
-        Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
-        Grunnlagsdatatype.INNTEKT -> konverterData<List<GrunnlagInntekt>>() as T
-        else -> null
-    }
+inline fun <reified T> Grunnlag?.hentData(): T? = konverterData<T>() as T
 
-val List<BehandlingGrunnlag>.inntekt: BehandlingGrunnlag?
+val List<Grunnlag>.inntekt: Grunnlag?
     get() = find { it.type == Grunnlagsdatatype.INNTEKT }
-val List<BehandlingGrunnlag>.sivilstand: BehandlingGrunnlag?
+val List<Grunnlag>.sivilstand: Grunnlag?
     get() = find { it.type == Grunnlagsdatatype.SIVILSTAND }
-val List<BehandlingGrunnlag>.husstandmedlemmer: BehandlingGrunnlag?
+val List<Grunnlag>.husstandmedlemmer: Grunnlag?
     get() = find { it.type == Grunnlagsdatatype.HUSSTANDSMEDLEMMER }
-val List<BehandlingGrunnlag>.arbeidsforhold: BehandlingGrunnlag?
+val List<Grunnlag>.arbeidsforhold: Grunnlag?
     get() = find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD }
 
-inline fun <reified T> BehandlingGrunnlag?.konverterData(): T? = this?.data?.let { commonObjectmapper.readValue(it) }
+inline fun <reified T> Grunnlag?.konverterData(): T? = this?.data?.let { commonObjectmapper.readValue(it) }

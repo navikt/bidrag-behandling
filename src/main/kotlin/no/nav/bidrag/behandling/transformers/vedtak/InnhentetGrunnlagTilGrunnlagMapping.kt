@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
-import no.nav.bidrag.behandling.database.opplysninger.InntektBearbeidet
-import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -38,37 +37,36 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 
-fun List<GrunnlagDto>.hentBeregnetInntekt(): InntektsopplysningerBearbeidet =
-    InntektsopplysningerBearbeidet(
-        inntekt =
-            filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT)
-                .flatMap {
-                    val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
-                    val innhold = it.innholdTilObjekt<BeregnetInntekt>()
-                    innhold.summertMånedsinntektListe.map { månedsInntekt ->
-                        InntektBearbeidet(
-                            ident = gjelder.personIdent!!,
-                            versjon = innhold.versjon,
-                            summertAarsinntektListe = emptyList(),
-                            summertMånedsinntektListe =
-                                innhold.summertMånedsinntektListe.map {
-                                    SummertMånedsinntekt(
-                                        gjelderÅrMåned = it.gjelderÅrMåned,
-                                        sumInntekt = it.sumInntekt,
-                                        inntektPostListe =
-                                            it.inntektPostListe.map {
-                                                InntektPost(
-                                                    kode = it.kode,
-                                                    beløp = it.beløp,
-                                                    inntekstype = it.inntekstype,
-                                                )
-                                            },
-                                    )
-                                },
-                        )
-                    }
+fun List<GrunnlagDto>.hentBeregnetInntekt(ident: String): SummerteMånedsOgÅrsinntekter? {
+    val beregnetInntekt =
+        filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT)
+            .find {
+                val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
+                gjelder.personIdent == ident
+            } ?: return null
+    val innhold = beregnetInntekt.innholdTilObjekt<BeregnetInntekt>()
+
+    return SummerteMånedsOgÅrsinntekter(
+        versjon = innhold.versjon,
+        summerteÅrsinntekter = emptyList(),
+        summerteMånedsinntekter =
+            innhold.summertMånedsinntektListe
+                .map {
+                    SummertMånedsinntekt(
+                        gjelderÅrMåned = it.gjelderÅrMåned,
+                        sumInntekt = it.sumInntekt,
+                        inntektPostListe =
+                            it.inntektPostListe.map {
+                                InntektPost(
+                                    kode = it.kode,
+                                    beløp = it.beløp,
+                                    inntekstype = it.inntekstype,
+                                )
+                            },
+                    )
                 },
     )
+}
 
 fun List<GrunnlagDto>.hentInnhenetHusstandsmedlem() =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM)
