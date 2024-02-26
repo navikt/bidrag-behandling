@@ -194,10 +194,10 @@ class GrunnlagService(
             behandling.roller.map {
                 // TODO: Til Jan Kjetil. Hvis feks barn hadde inntekter ville det føre til at BM inntekter ikke ble tatt med i grunnlagslisten pga at typen er samme
                 // TODO: Det bør derfor enten filtreres basert på rolle eller at alt hentes ut slik det er gjort her.
-                grunnlagRepository.findTopByBehandlingIdAndTypeAndRolleOrderByAktivDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeAndRolleIdOrderByAktivDescIdDesc(
                     behandling.id!!,
                     type,
-                    it,
+                    it.id!!.toLong(),
                 )
             }
         }.filterNotNull()

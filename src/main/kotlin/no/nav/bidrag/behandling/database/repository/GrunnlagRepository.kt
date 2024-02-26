@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
-import no.nav.bidrag.behandling.database.datamodell.Rolle
 import org.springframework.data.repository.CrudRepository
 
 interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
@@ -17,9 +16,9 @@ interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
         grunnlagsdatatype: Grunnlagsdatatype,
     ): Grunnlag?
 
-    fun findTopByBehandlingIdAndTypeAndRolleOrderByAktivDescIdDesc(
+    fun findTopByBehandlingIdAndTypeAndRolleIdOrderByAktivDescIdDesc(
         behandlingId: Long,
         grunnlagsdatatype: Grunnlagsdatatype,
-        rolle: Rolle,
+        rolleid: Long,
     ): Grunnlag?
 }
