@@ -52,10 +52,13 @@ class NotatOpplysningerService(
                 ?: BoforholdBearbeidet()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
-            behandling.roller.filter { it.ident != null }.map { r ->
-                grunnlagService.hentSistInnhentet(behandlingId, r.id!!, Grunnlagsdatatype.ARBEIDSFORHOLD)
-                    .hentData<ArbeidsforholdGrunnlagDto>()
-            }.toList().filterNotNull()
+            behandling.roller.filter { it.ident != null }.flatMap { r ->
+                grunnlagService.hentSistInnhentet(
+                    behandlingId,
+                    r.id!!,
+                    Grunnlagsdatatype.ARBEIDSFORHOLD,
+                )?.hentData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
+            }
 
         return NotatDto(
             saksnummer = behandling.saksnummer,

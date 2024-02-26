@@ -282,22 +282,6 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.AINNTEKT,
-            innhentetGrunnlag.ainntektListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandlingsid,
-            rolleInhentetFor,
-            Grunnlagsdatatype.SKATTEGRUNNLAG,
-            innhentetGrunnlag.skattegrunnlagListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandlingsid,
-            rolleInhentetFor,
             Grunnlagsdatatype.BARNETILLEGG,
             innhentetGrunnlag.barnetilleggListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,

@@ -6,12 +6,12 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BA_1
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BA_2
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BM
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
@@ -67,11 +67,11 @@ class VedtakHendelseTest : TestContainerRunner() {
         oppdatertBehandling.vedtaksid shouldBe vedtakId
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(3)
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBM.ident}\"")
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_1.fødselsnummer?.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBarn1.ident}\"")
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BA_2.fødselsnummer?.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBarn2.ident}\"")
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
         stubUtils.Verify().forsendelseSlettet("2")
@@ -91,7 +91,7 @@ class VedtakHendelseTest : TestContainerRunner() {
         oppdatertBehandling.vedtaksid shouldBe vedtakId
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(1)
         stubUtils.Verify()
-            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${ROLLE_BM.fødselsnummer?.verdi}\"")
+            .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBM.ident}\"")
     }
 
     private fun opprettHendelseRecord(vedtakHendelse: VedtakHendelse) =
