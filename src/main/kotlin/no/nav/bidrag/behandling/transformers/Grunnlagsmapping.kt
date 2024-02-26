@@ -9,6 +9,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import java.math.RoundingMode
 
 fun List<InntektPost>.tilInntektspost(inntekt: Inntekt) =
     this.map {
@@ -28,7 +29,7 @@ fun SummertÅrsinntekt.tilInntekt(
     val inntekt =
         Inntekt(
             type = this.inntektRapportering,
-            belop = this.sumInntekt,
+            belop = this.sumInntekt.setScale(0, RoundingMode.HALF_UP),
             behandling = behandling,
             ident = person.verdi,
             gjelderBarn = this.gjelderBarnPersonId,

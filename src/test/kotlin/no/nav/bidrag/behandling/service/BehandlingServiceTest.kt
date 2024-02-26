@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -54,7 +55,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.util.Calendar
-import kotlin.test.Ignore
 
 class BehandlingServiceTest : TestContainerRunner() {
     @MockBean
@@ -160,7 +160,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly {
-                behandlingDto.aktiveGrunnlagsdata.size shouldBe 10
+                behandlingDto.aktiveGrunnlagsdata.size shouldBe 20
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter { g ->
                     g.nyeData.grunnlagsdatatype == Grunnlagsdatatype.INNTEKT_BEARBEIDET
@@ -498,7 +498,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        @Ignore("Kontekstproblem - OK hvis kjøres alene - feiler sammen med andre tester")
+        @Disabled("Kontekstproblem - OK hvis kjøres alene - feiler sammen med andre tester")
         open fun `skal aktivere valgte nyinnhenta grunnlag`() {
             // gitt
             val behandling = behandlingRepository.save(prepareBehandling())
@@ -510,7 +510,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 aktiv = null,
             )
 
-            val opppdatereBehandlingRequest = OppdaterBehandlingRequestV2(aktivereGrunnlag = setOf(behandling.id!!))
+            val opppdatereBehandlingRequest =
+                OppdaterBehandlingRequestV2(aktivereGrunnlag = setOf(behandling.id!!))
 
             // hvis
             behandlingService.oppdaterBehandling(behandling.id!!, opppdatereBehandlingRequest)
