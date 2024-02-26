@@ -1,7 +1,8 @@
-package no.nav.bidrag.behandling.database.opplysninger
+package no.nav.bidrag.behandling.database.grunnlag
 
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -14,15 +15,12 @@ import java.time.LocalDateTime
 
 data class BoforholdBearbeidet(
     val husstand: List<BoforholdHusstandBearbeidet> = emptyList(),
-    val husstandV2: List<BoforholdBeregnet> = emptyList(),
     val sivilstand: List<SivilstandBearbeidet> = emptyList(),
-    val sivilstandV2: List<SivilstandBeregnet> = emptyList(),
 )
 
 data class SivilstandBearbeidet(
-    val datoFom: LocalDate,
-    val datoTom: LocalDate? = null,
-    val sivilstand: Sivilstandskode,
+    val gyldigFom: LocalDate,
+    val type: SivilstandskodePDL,
 )
 
 data class BoforholdHusstandBearbeidet(
@@ -42,6 +40,7 @@ data class InntektsopplysningerBearbeidet(
     val inntekt: List<InntektBearbeidet> = emptyList(),
     val utvidetbarnetrygd: List<UtvidetBarnetrygdOgSmaabarnstilleggDto> = emptyList(),
     val barnetillegg: List<BarnetilleggGrunnlagDto> = emptyList(),
+    val barnetillegg2: List<BarnetilleggDto> = emptyList(),
     val arbeidsforhold: List<ArbeidsforholdGrunnlagDto> = emptyList(),
 )
 
@@ -50,4 +49,10 @@ data class InntektBearbeidet(
     val versjon: String?,
     val summertAarsinntektListe: List<SummertÅrsinntekt>,
     val summertMånedsinntektListe: List<SummertMånedsinntekt>,
+)
+
+data class SummerteMånedsOgÅrsinntekter(
+    val versjon: String,
+    val summerteMånedsinntekter: List<SummertMånedsinntekt>,
+    val summerteÅrsinntekter: List<SummertÅrsinntekt>,
 )

@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.utils
+package no.nav.bidrag.behandling.utils.testdata
 
 import com.fasterxml.jackson.databind.node.POJONode
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.opplysninger.InntektBearbeidet
 import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -45,10 +46,17 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+
+val fødselsnummerBm = "33" + LocalDate.now().minusMonths(450).format(DateTimeFormatter.ofPattern("MMyy")) + "40405"
+val fødselsnummerBp = "34" + LocalDate.now().minusMonths(476).format(DateTimeFormatter.ofPattern("MMyy")) + "72320"
+val fødselsnummerBarn1 = "81" + LocalDate.now().minusMonths(88).format(DateTimeFormatter.ofPattern("MMyy")) + "28921"
+val fødselsnummerBarn2 = "82" + LocalDate.now().minusMonths(45).format(DateTimeFormatter.ofPattern("MMyy")) + "36333"
 
 data class TestDataPerson(
     val ident: String,
@@ -91,20 +99,11 @@ data class TestDataPerson(
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
-val ROLLE_BM =
-    ForsendelseRolleDto(
-        Personident("313213213"),
-        type = Rolletype.BIDRAGSMOTTAKER,
-    )
-val ROLLE_BA_1 =
-    ForsendelseRolleDto(Personident("1344124"), type = Rolletype.BARN)
-val ROLLE_BA_2 =
-    ForsendelseRolleDto(Personident("54545454545"), type = Rolletype.BARN)
-val ROLLE_BP =
-    ForsendelseRolleDto(
-        Personident("213244124"),
-        type = Rolletype.BIDRAGSPLIKTIG,
-    )
+
+val ROLLE_BM = ForsendelseRolleDto(Personident(fødselsnummerBm), type = Rolletype.BIDRAGSMOTTAKER)
+val ROLLE_BP = ForsendelseRolleDto(Personident(fødselsnummerBp), type = Rolletype.BIDRAGSPLIKTIG)
+val ROLLE_BA_1 = ForsendelseRolleDto(Personident(fødselsnummerBarn1), type = Rolletype.BARN)
+val ROLLE_BA_2 = ForsendelseRolleDto(Personident(fødselsnummerBarn2), type = Rolletype.BARN)
 val testdataBP =
     TestDataPerson(
         navn = "Kor Mappe",
@@ -176,20 +175,6 @@ fun oppretteBehandling(id: Long? = null): Behandling {
         id = id,
     )
 }
-
-fun opprettInntekt(
-    behandling: Behandling,
-    data: Map<String, Any>,
-) = Inntekt(
-    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-    BigDecimal.valueOf(45000),
-    LocalDate.now().minusYears(1).withDayOfYear(1),
-    LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
-    data[Rolle::ident.name] as String,
-    Kilde.OFFENTLIG,
-    true,
-    behandling = behandling,
-)
 
 fun opprettInntekter(
     behandling: Behandling,
@@ -268,6 +253,17 @@ fun opprettRolle(
         opprettet = LocalDateTime.now(),
     )
 }
+
+fun oppretteRequestForOppdateringAvManuellInntekt(idInntekt: Long? = null) =
+    OppdatereManuellInntekt(
+        id = idInntekt,
+        type = Inntektsrapportering.KONTANTSTØTTE,
+        beløp = BigDecimal(305203),
+        datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
+        datoTom = LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
+        ident = Personident("12345678910"),
+        gjelderBarn = Personident("01234567891"),
+    )
 
 fun opprettHusstandsbarn(
     behandling: Behandling,
@@ -434,7 +430,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Be
                 taMed = true,
                 kilde = Kilde.MANUELL,
                 behandling = behandling,
-                inntektsrapportering = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
                 id = if (generateId) (1).toLong() else null,
             ),
             Inntekt(
@@ -445,7 +441,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Be
                 taMed = true,
                 kilde = Kilde.MANUELL,
                 behandling = behandling,
-                inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 id = if (generateId) (2).toLong() else null,
             ),
         )
@@ -461,7 +457,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Be
             taMed = true,
             kilde = Kilde.OFFENTLIG,
             behandling = behandling,
-            inntektsrapportering = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+            type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
             id = if (generateId) (3).toLong() else null,
         )
     aInntekt.inntektsposter.addAll(opprettInntektsposter(aInntekt))
@@ -648,3 +644,21 @@ fun hentFil(filsti: String) =
     TestdataManager::class.java.getResource(
         filsti,
     ) ?: throw RuntimeException("Fant ingen fil på sti $filsti")
+
+fun tilAinntektspostDto(
+    beløp: BigDecimal = BigDecimal(40000),
+    fomDato: LocalDate,
+    tilDato: LocalDate,
+) = AinntektspostDto(
+    belop = beløp,
+    beskrivelse = "Ainntektspost",
+    utbetalingsperiode = tilDato.plusMonths(1).format(DateTimeFormatter.ofPattern("yyyy-MM")),
+    opptjeningsperiodeFra = fomDato.withDayOfMonth(1),
+    opptjeningsperiodeTil = tilDato.withDayOfMonth(1),
+    etterbetalingsperiodeFra = null,
+    etterbetalingsperiodeTil = null,
+    fordelType = null,
+    inntektType = "YTELSE_FRA_OFFENTLIGE",
+    opplysningspliktigId = "995277670",
+    virksomhetId = "995277670",
+)

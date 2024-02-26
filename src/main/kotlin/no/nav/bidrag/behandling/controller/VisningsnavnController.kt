@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.ResultatkodeBarnebidrag

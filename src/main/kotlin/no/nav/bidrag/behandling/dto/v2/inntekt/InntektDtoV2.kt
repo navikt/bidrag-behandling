@@ -35,21 +35,20 @@ data class InntektDtoV2(
     @Schema(required = false)
     val gjelderBarn: Personident?,
     @Schema(required = true)
-    val kilde: Kilde,
+    val kilde: Kilde = Kilde.MANUELL,
     @Schema(required = true)
     val inntektsposter: Set<InntektspostDtoV2>,
     @Schema(required = true)
-    val inntektstyper: Set<Inntektstype>,
+    val inntektstyper: Set<Inntektstype> = emptySet(),
 )
 
 data class InntekterDtoV2(
     val barnetillegg: Set<InntektDtoV2> = emptySet(),
-    val barnetilsyn: Set<InntektDtoV2> = emptySet(),
+    val utvidetBarnetrygd: Set<InntektDtoV2> = emptySet(),
     val kontantstøtte: Set<InntektDtoV2> = emptySet(),
     val månedsinntekter: Set<InntektDtoV2> = emptySet(),
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
-    val inntekter: Set<InntektDtoV2> = emptySet(),
     val notat: BehandlingNotatDto,
 )

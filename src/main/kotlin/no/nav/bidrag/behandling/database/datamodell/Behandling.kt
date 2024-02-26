@@ -84,6 +84,13 @@ open class Behandling(
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
     )
+    open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
     open var roller: MutableSet<Rolle> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
@@ -141,7 +148,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
             {
                 mapOrAccumulate(inntekter.filter { it.taMed }) {
                     ensure(it.datoFom != null) { raise("Til-dato mangler for sivilstand i behandling") }
-                    ensure(it.inntektsrapportering != null) { raise("Inntektstype mangler for behandling") }
+                    ensure(it.type != null) { raise("Inntektstype mangler for behandling") }
                     it
                 }
                 ensure(this@validere.inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {

@@ -1,12 +1,18 @@
 package no.nav.bidrag.behandling.service
 
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
+import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
@@ -16,9 +22,11 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
-import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.toLocalDate
+import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -26,6 +34,11 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
+import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -41,6 +54,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.util.Calendar
+import kotlin.test.Ignore
 
 class BehandlingServiceTest : TestContainerRunner() {
     @MockBean
@@ -52,6 +66,9 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
 
+    @Autowired
+    lateinit var testdataManager: TestdataManager
+
     @PersistenceContext
     lateinit var entityManager: EntityManager
 
@@ -60,7 +77,94 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         fun `skal kaste 404 exception hvis behandlingen ikke er der`() {
             Assertions.assertThrows(HttpClientErrorException::class.java) {
-                behandlingService.hentBehandlingById(1234)
+                behandlingService.henteBehandling(1234)
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
+            // gitt
+            val behandling = oppretteBehandling()
+
+            // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling,
+                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                innhentet = LocalDateTime.now(),
+                grunnlagsdata =
+                    SummerteMånedsOgÅrsinntekter(
+                        versjon = "123",
+                        summerteMånedsinntekter =
+                            listOf(
+                                SummertMånedsinntekt(
+                                    gjelderÅrMåned = YearMonth.now().minusYears(1).withMonth(12),
+                                    sumInntekt = BigDecimal(45000),
+                                    inntektPostListe =
+                                        listOf(
+                                            InntektPost(
+                                                beløp = BigDecimal(45000),
+                                                inntekstype = Inntektstype.LØNNSINNTEKT,
+                                                kode = "lønnFraSmåbrukarlaget",
+                                                visningsnavn = "Lønn fra småbrukarlaget",
+                                            ),
+                                        ),
+                                ),
+                            ),
+                        summerteÅrsinntekter =
+                            listOf(
+                                SummertÅrsinntekt(
+                                    sumInntekt = BigDecimal(388000),
+                                    inntektRapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                                    periode =
+                                        ÅrMånedsperiode(
+                                            YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                            YearMonth.now().withMonth(1).atDay(1),
+                                        ),
+                                    inntektPostListe = emptyList(),
+                                    visningsnavn = "Egensnekra inntekt",
+                                ),
+                            ),
+                    ),
+            )
+
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling,
+                Grunnlagsdatatype.INNTEKT,
+                innhentet = LocalDateTime.now(),
+                grunnlagsdata =
+                    GrunnlagInntekt(
+                        ainntekt = emptyList(),
+                        listOf(
+                            SkattegrunnlagGrunnlagDto(
+                                behandling.bidragsmottaker!!.ident!!,
+                                periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                                skattegrunnlagspostListe = emptyList(),
+                            ),
+                        ),
+                    ),
+            )
+
+            val personidentBm = Personident(behandling.bidragsmottaker!!.ident!!)
+
+            stubUtils.stubHentePersoninfo(personident = personidentBm.verdi)
+            stubUtils.stubHenteGrunnlagOk()
+            stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkLønnsbeskrivelse()
+            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+            stubUtils.stubKodeverkYtelsesbeskrivelser()
+
+            // hvis
+            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
+            // så
+            assertSoftly {
+                behandlingDto.aktiveGrunnlagsdata.size shouldBe 10
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter { g ->
+                    g.nyeData.grunnlagsdatatype == Grunnlagsdatatype.INNTEKT_BEARBEIDET
+                }.size shouldBe 1
             }
         }
     }
@@ -69,7 +173,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     open inner class OppretteBehandling {
         @Test
         fun `skal opprette en forskuddsbehandling`() {
-            val actualBehandling = createBehandling()
+            val actualBehandling = oppretteBehandling()
 
             assertNotNull(actualBehandling.id)
             assertEquals(Stønadstype.FORSKUDD, actualBehandling.stonadstype)
@@ -101,7 +205,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                 )
 
-            val actualBehandling = behandlingService.opprettBehandling(behandling)
+            val actualBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(actualBehandling.id)
 
@@ -115,15 +219,166 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandlingFetched.inntekter.iterator().next().belop,
             )
         }
+    }
+
+    @Nested
+    open inner class SletteBehandling {
+        @Test
+        fun `delete behandling`() {
+            val behandling = oppretteBehandling()
+            behandlingService.deleteBehandlingById(behandling.id!!)
+
+            Assertions.assertThrows(HttpClientErrorException::class.java) {
+                behandlingService.hentBehandlingById(behandling.id!!)
+            }
+        }
+    }
+
+    @Nested
+    open inner class SynkronisereRoller {
+        @Test
+        fun `legge til flere roller`() {
+            val b = oppretteBehandling()
+
+            behandlingService.syncRoller(
+                b.id!!,
+                listOf(
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        Personident("newident"),
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                    ),
+                ),
+            )
+
+            assertEquals(4, behandlingService.hentBehandlingById(b.id!!).roller.size)
+        }
 
         @Test
-        fun `skal oppdatere boforhold data`() {
+        fun `behandling må synce roller og slette behandling`() {
+            val b = oppretteBehandling()
+            behandlingService.syncRoller(
+                b.id!!,
+                listOf(
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        Personident("1111"),
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                        true,
+                    ),
+                ),
+            )
+
+            Assertions.assertThrows(HttpClientErrorException::class.java) {
+                behandlingService.hentBehandlingById(b.id!!)
+            }
+        }
+
+        @Test
+        fun `behandling må synce roller`() {
+            val b = oppretteBehandling()
+            behandlingService.syncRoller(
+                b.id!!,
+                listOf(
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        Personident("1111"),
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                        true,
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        Personident("111123"),
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        Personident("1111234"),
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(144),
+                    ),
+                ),
+            )
+
+            assertEquals(
+                2,
+                behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolletype == Rolletype.BARN }.size,
+            )
+        }
+    }
+
+    @Nested
+    open inner class OppdatereBehandling {
+        @Test
+        fun `skal oppdatere virkningstidspunkt data`() {
             val behandling = prepareBehandling()
 
             val notat = "New Notat"
             val medIVedtak = "med i vedtak"
 
-            val createdBehandling = behandlingService.opprettBehandling(behandling)
+            val createdBehandling = behandlingRepository.save(behandling)
+
+            assertNotNull(createdBehandling.id)
+            assertNull(createdBehandling.årsak)
+
+            behandlingService.oppdaterBehandling(
+                createdBehandling.id!!,
+                OppdaterBehandlingRequestV2(
+                    virkningstidspunkt =
+                        OppdaterVirkningstidspunkt(
+                            årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
+                            virkningstidspunkt = null,
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                    medIVedtak,
+                                ),
+                        ),
+                ),
+            )
+
+            val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
+
+            assertEquals(VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL, updatedBehandling.årsak)
+            assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
+            assertEquals(
+                medIVedtak,
+                updatedBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
+            )
+        }
+
+        @Test
+        fun `skal caste 404 exception hvis behandlingen ikke er der - oppdater`() {
+            Assertions.assertThrows(HttpClientErrorException::class.java) {
+                behandlingService.oppdaterBehandling(
+                    1234,
+                    OppdaterBehandlingRequestV2(
+                        virkningstidspunkt =
+                            OppdaterVirkningstidspunkt(
+                                notat =
+                                    OppdaterNotat(
+                                        "New Notat",
+                                        "Med i Vedtak",
+                                    ),
+                            ),
+                    ),
+                )
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere boforhold data`() {
+            val behandling = prepareBehandling()
+
+            val notat = "New Notat"
+            val medIVedtak = "med i vedtak"
+
+            val createdBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(createdBehandling.id)
             assertNull(createdBehandling.årsak)
@@ -177,13 +432,13 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal oppdatere virkningstidspunkt data`() {
+        fun `skal oppdatere behandling`() {
             val behandling = prepareBehandling()
 
             val notat = "New Notat"
             val medIVedtak = "med i vedtak"
 
-            val createdBehandling = behandlingService.opprettBehandling(behandling)
+            val createdBehandling = behandlingRepository.save(behandling)
 
             assertNotNull(createdBehandling.id)
             assertNull(createdBehandling.årsak)
@@ -193,8 +448,22 @@ class BehandlingServiceTest : TestContainerRunner() {
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
                         OppdaterVirkningstidspunkt(
-                            årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
-                            virkningstidspunkt = null,
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                    medIVedtak,
+                                ),
+                        ),
+                    inntekter =
+                        OppdatereInntekterRequestV2(
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                    medIVedtak,
+                                ),
+                        ),
+                    boforhold =
+                        OppdaterBoforholdRequest(
                             notat =
                                 OppdaterNotat(
                                     notat,
@@ -204,184 +473,19 @@ class BehandlingServiceTest : TestContainerRunner() {
                 ),
             )
 
-            val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
+            val oppdatertBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
-            assertEquals(VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL, updatedBehandling.årsak)
-            assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
+            assertEquals(3, oppdatertBehandling.roller.size)
+            assertEquals(notat, oppdatertBehandling.virkningstidspunktbegrunnelseKunINotat)
             assertEquals(
                 medIVedtak,
-                updatedBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
-            )
-        }
-    }
-
-    @Nested
-    open inner class SletteBehandling {
-        @Test
-        fun `delete behandling`() {
-            val behandling = createBehandling()
-            behandlingService.deleteBehandlingById(behandling.id!!)
-
-            Assertions.assertThrows(HttpClientErrorException::class.java) {
-                behandlingService.hentBehandlingById(behandling.id!!)
-            }
-        }
-    }
-
-    @Nested
-    open inner class SynkronisereRoller {
-        @Test
-        fun `legge til flere roller`() {
-            val b = createBehandling()
-
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("newident"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                    ),
-                ),
-            )
-
-            assertEquals(4, behandlingService.hentBehandlingById(b.id!!).roller.size)
-        }
-
-        @Test
-        fun `behandling må synce roller og slette behandling`() {
-            val b = createBehandling()
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("1111"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                        true,
-                    ),
-                ),
-            )
-
-            Assertions.assertThrows(HttpClientErrorException::class.java) {
-                behandlingService.hentBehandlingById(b.id!!)
-            }
-        }
-
-        @Test
-        fun `behandling må synce roller`() {
-            val b = createBehandling()
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("1111"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                        true,
-                    ),
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("111123"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                    ),
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("1111234"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                    ),
-                ),
-            )
-
-            assertEquals(
-                2,
-                behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolletype == Rolletype.BARN }.size,
-            )
-        }
-    }
-
-    @Nested
-    open inner class OppdatereBehandling {
-        @Test
-        fun `skal caste 404 exception hvis behandlingen ikke er der - oppdater`() {
-            Assertions.assertThrows(HttpClientErrorException::class.java) {
-                behandlingService.oppdaterBehandling(
-                    1234,
-                    OppdaterBehandlingRequestV2(
-                        virkningstidspunkt =
-                            OppdaterVirkningstidspunkt(
-                                notat =
-                                    OppdaterNotat(
-                                        "New Notat",
-                                        "Med i Vedtak",
-                                    ),
-                            ),
-                    ),
-                )
-            }
-        }
-
-        @Test
-        fun `skal oppdatere en behandling`() {
-            val behandling = prepareBehandling()
-
-            val notat = "New Notat"
-            val medIVedtak = "med i vedtak"
-
-            val createdBehandling = behandlingService.opprettBehandling(behandling)
-
-            assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.årsak)
-
-            val oppdatertBehandling =
-                behandlingService.oppdaterBehandling(
-                    createdBehandling.id!!,
-                    OppdaterBehandlingRequestV2(
-                        virkningstidspunkt =
-                            OppdaterVirkningstidspunkt(
-                                notat =
-                                    OppdaterNotat(
-                                        notat,
-                                        medIVedtak,
-                                    ),
-                            ),
-                        inntekter =
-                            OppdatereInntekterRequestV2(
-                                notat =
-                                    OppdaterNotat(
-                                        notat,
-                                        medIVedtak,
-                                    ),
-                            ),
-                        boforhold =
-                            OppdaterBoforholdRequest(
-                                notat =
-                                    OppdaterNotat(
-                                        notat,
-                                        medIVedtak,
-                                    ),
-                            ),
-                    ),
-                )
-
-            val hentBehandlingById = behandlingService.hentBehandlingById(createdBehandling.id!!)
-
-            assertEquals(3, hentBehandlingById.roller.size)
-            assertEquals(notat, oppdatertBehandling.virkningstidspunkt.notat.kunINotat)
-            assertEquals(
-                medIVedtak,
-                oppdatertBehandling.virkningstidspunkt.notat.medIVedtaket,
+                oppdatertBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
             )
         }
 
         @Test
-        fun `skal opprette en behandling med grunnlagspakkeId`() {
-            val b = createBehandling()
+        fun `skal oppdatere behandling med grunnlagspakkeId`() {
+            val b = oppretteBehandling()
 
             behandlingService.oppdaterBehandling(
                 b.id!!,
@@ -392,13 +496,37 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeid)
         }
+
+        @Test
+        @Ignore("Kontekstproblem - OK hvis kjøres alene - feiler sammen med andre tester")
+        open fun `skal aktivere valgte nyinnhenta grunnlag`() {
+            // gitt
+            val behandling = behandlingRepository.save(prepareBehandling())
+
+            testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
+                behandling = behandling,
+                grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                aktiv = null,
+            )
+
+            val opppdatereBehandlingRequest = OppdaterBehandlingRequestV2(aktivereGrunnlag = setOf(behandling.id!!))
+
+            // hvis
+            behandlingService.oppdaterBehandling(behandling.id!!, opppdatereBehandlingRequest)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            oppdatertBehandling.get().grunnlag.first().aktiv shouldNotBe null
+        }
     }
 
     @Nested
     open inner class OppdatereInntekter {
         @Test
-        fun `skal legge til inntekter`() {
-            val actualBehandling = createBehandling()
+        fun `skal legge til inntekter manuelt`() {
+            val actualBehandling = oppretteBehandling()
 
             assertNotNull(actualBehandling.id)
 
@@ -411,21 +539,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                 OppdaterBehandlingRequestV2(
                     inntekter =
                         OppdatereInntekterRequestV2(
-                            inntekter =
+                            oppdatereManuelleInntekter =
                                 mutableSetOf(
-                                    InntektDtoV2(
-                                        taMed = true,
-                                        rapporteringstype = Inntektsrapportering.KAPITALINNTEKT,
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.KAPITALINNTEKT,
                                         beløp = BigDecimal.valueOf(4000),
                                         datoFom = LocalDate.now().minusMonths(4),
                                         datoTom = LocalDate.now().plusMonths(4),
-                                        opprinneligFom = LocalDate.now().minusMonths(4),
-                                        opprinneligTom = LocalDate.now().plusMonths(4),
                                         ident = Personident("123"),
-                                        gjelderBarn = null,
-                                        kilde = Kilde.OFFENTLIG,
-                                        inntektsposter = emptySet(),
-                                        inntektstyper = Inntektsrapportering.KAPITALINNTEKT.inneholderInntektstypeListe.toSet(),
                                     ),
                                 ),
                             notat =
@@ -446,10 +567,10 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal slette inntekter`() {
+        open fun `skal slette manuelt oppretta inntekter`() {
             stubUtils.stubOpprettForsendelse()
 
-            val actualBehandling = createBehandling()
+            val actualBehandling = oppretteBehandling()
 
             assertNotNull(actualBehandling.id)
 
@@ -460,21 +581,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                 OppdaterBehandlingRequestV2(
                     inntekter =
                         OppdatereInntekterRequestV2(
-                            inntekter =
+                            oppdatereManuelleInntekter =
                                 mutableSetOf(
-                                    InntektDtoV2(
-                                        taMed = true,
-                                        rapporteringstype = Inntektsrapportering.KAPITALINNTEKT,
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.KAPITALINNTEKT,
                                         beløp = BigDecimal.valueOf(4000),
                                         datoFom = LocalDate.now().minusMonths(4),
                                         datoTom = LocalDate.now().plusMonths(4),
-                                        opprinneligFom = LocalDate.now().minusMonths(4),
-                                        opprinneligTom = LocalDate.now().plusMonths(4),
                                         ident = Personident("123"),
-                                        gjelderBarn = null,
-                                        kilde = Kilde.OFFENTLIG,
-                                        inntektsposter = emptySet(),
-                                        inntektstyper = Inntektsrapportering.KAPITALINNTEKT.inneholderInntektstypeListe.toSet(),
                                     ),
                                 ),
                             notat =
@@ -497,12 +611,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 OppdaterBehandlingRequestV2(
                     inntekter =
                         OppdatereInntekterRequestV2(
-                            inntekter = emptySet(),
-                            notat =
-                                OppdaterNotat(
-                                    "",
-                                    "",
-                                ),
+                            sletteInntekter = expectedBehandling.inntekter.map { it.id!! }.toSet(),
                         ),
                 ),
             )
@@ -511,14 +620,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingService.hentBehandlingById(actualBehandling.id!!)
 
             assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
-            assertEquals("", expectedBehandlingWithoutInntekter.inntektsbegrunnelseIVedtakOgNotat)
-            assertEquals("", expectedBehandlingWithoutInntekter.inntektsbegrunnelseKunINotat)
+            assertNotNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseIVedtakOgNotat)
+            assertNotNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseKunINotat)
         }
     }
 
     @Test
     fun `delete behandling rolle`() {
-        val behandling = createBehandling()
+        val behandling = oppretteBehandling()
 
         assertEquals(3, behandling.roller.size)
         behandling.roller.removeIf { it.rolletype == Rolletype.BARN }
@@ -605,9 +714,9 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
     }
 
-    fun createBehandling(): Behandling {
+    fun oppretteBehandling(): Behandling {
         val behandling = prepareBehandling()
 
-        return behandlingService.opprettBehandling(behandling)
+        return behandlingRepository.save(behandling)
     }
 }

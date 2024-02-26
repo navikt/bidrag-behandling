@@ -13,6 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @DirtiesContext
 class TestContainerRunner : SpringTestRunner() {
     companion object {
+        @JvmStatic
         @Container
         protected val postgreSqlDb =
             PostgreSQLContainer("postgres:15.4").apply {

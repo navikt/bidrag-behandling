@@ -24,7 +24,7 @@ import java.time.LocalDateTime
 
 @Entity(name = "grunnlag")
 @Schema(name = "GrunnlagEntity")
-open class BehandlingGrunnlag(
+open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     open val behandling: Behandling,
@@ -34,20 +34,23 @@ open class BehandlingGrunnlag(
     @ColumnTransformer(write = "?::jsonb")
     open val data: String,
     open val innhentet: LocalDateTime,
-    open val aktiv: LocalDateTime? = null,
+    open var aktiv: LocalDateTime? = null,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rolle_id", nullable = false)
+    open val rolle: Rolle,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
 )
 
-inline fun <reified T> BehandlingGrunnlag?.hentData(): T? =
+inline fun <reified T> Grunnlag?.hentData(): T? =
     when (this?.type) {
-        Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
-        Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-        Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonGrunnlagDto>>() as T
-        Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandGrunnlagDto>>() as T
+        Grunnlagsdatatype.INNTEKTSOPPLYSNINGER, Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
+        Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
+        Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
+        Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
         Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
-        Grunnlagsdatatype.INNTEKT -> konverterData<InntektGrunnlag>() as T
+        Grunnlagsdatatype.INNTEKT -> konverterData<List<GrunnlagInntekt>>() as T
         else -> null
     }
 

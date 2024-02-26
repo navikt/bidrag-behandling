@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation

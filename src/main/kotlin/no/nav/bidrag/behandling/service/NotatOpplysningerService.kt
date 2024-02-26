@@ -6,10 +6,9 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.hentData
-import no.nav.bidrag.behandling.database.opplysninger.BoforholdBearbeidet
-import no.nav.bidrag.behandling.database.opplysninger.BoforholdHusstandBearbeidet
-import no.nav.bidrag.behandling.database.opplysninger.InntektsopplysningerBearbeidet
-import no.nav.bidrag.behandling.database.opplysninger.SivilstandBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.BoforholdBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.BoforholdHusstandBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.SivilstandBearbeidet
 import no.nav.bidrag.behandling.dto.v1.notat.Arbeidsforhold
 import no.nav.bidrag.behandling.dto.v1.notat.Barnetillegg
 import no.nav.bidrag.behandling.dto.v1.notat.Boforhold
@@ -43,13 +42,21 @@ class NotatOpplysningerService(
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val opplysningerBoforhold =
-            grunnlagService.hentSistAktiv(behandlingId, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET)
+            grunnlagService.hentSistInnhentet(
+                behandlingId,
+                behandling.roller
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
+                Grunnlagsdatatype.BOFORHOLD_BEARBEIDET,
+            )
                 ?.hentData()
                 ?: BoforholdBearbeidet()
 
-        val opplysningerInntekt: InntektsopplysningerBearbeidet =
-            grunnlagService.hentSistAktiv(behandlingId, Grunnlagsdatatype.INNTEKT_BEARBEIDET)
-                .hentData() ?: InntektsopplysningerBearbeidet()
+        val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
+            behandling.roller.filter { it.ident != null }.map { r ->
+                grunnlagService.hentSistInnhentet(behandlingId, r.id!!, Grunnlagsdatatype.ARBEIDSFORHOLD)
+                    .hentData<ArbeidsforholdGrunnlagDto>()
+            }.toList().filterNotNull()
+
         return NotatDto(
             saksnummer = behandling.saksnummer,
             saksbehandlerNavn =
@@ -69,11 +76,11 @@ class NotatOpplysningerService(
                 Inntekter(
                     notat = behandling.tilNotatInntekt(),
                     inntekterPerRolle =
-                        behandling.roller.map {
+                        behandling.roller.map { r ->
                             behandling.hentInntekterForIdent(
-                                it.ident!!,
-                                it.rolletype,
-                                opplysningerInntekt.arbeidsforhold,
+                                r.ident!!,
+                                r.rolletype,
+                                alleArbeidsforhold.filter { r.ident == it.partPersonId },
                             )
                         },
                 ),
@@ -110,10 +117,10 @@ private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandBear
                 OpplysningerFraFolkeregisteret(
                     periode =
                         ÅrMånedsperiode(
-                            periode.datoFom,
-                            periode.datoTom,
+                            periode.gyldigFom,
+                            null,
                         ),
-                    status = periode.sivilstand,
+                    status = periode.type,
                 )
             }.sortedBy { it.periode?.fom },
     )
@@ -194,15 +201,15 @@ private fun Behandling.hentInntekterForIdent(
                 InntekterSomLeggesTilGrunn(
                     beløp = it.belop,
                     periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
-                    beskrivelse = it.inntektsrapportering.name,
-                    inntektType = it.inntektsrapportering,
+                    beskrivelse = it.type.name,
+                    inntektType = it.type,
                 )
             },
     barnetillegg =
         if (rolle == Rolletype.BIDRAGSMOTTAKER) {
             inntekter.sortedBy { it.datoFom }
                 // TODO: Endre til
-                .filter { it.inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
+                .filter { it.type == Inntektsrapportering.BARNETILLEGG }
                 .map {
                     Barnetillegg(
                         periode =
@@ -219,7 +226,7 @@ private fun Behandling.hentInntekterForIdent(
     utvidetBarnetrygd =
         if (rolle == Rolletype.BIDRAGSMOTTAKER) {
             inntekter.sortedBy { it.datoFom }
-                .filter { it.inntektsrapportering == Inntektsrapportering.UTVIDET_BARNETRYGD }
+                .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
                 .map {
                     UtvidetBarnetrygd(
                         periode =

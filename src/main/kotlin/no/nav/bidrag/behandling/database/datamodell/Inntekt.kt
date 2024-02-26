@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -18,23 +19,29 @@ import java.time.LocalDate
 @Entity(name = "inntekt")
 open class Inntekt(
     @Enumerated(EnumType.STRING)
-    open val inntektsrapportering: Inntektsrapportering,
-    open val belop: BigDecimal,
-    open val datoFom: LocalDate,
-    open val datoTom: LocalDate?,
+    @Column(name = "inntektsrapportering")
+    open var type: Inntektsrapportering,
+    open var belop: BigDecimal,
+    open var datoFom: LocalDate,
+    open var datoTom: LocalDate?,
     open val ident: String,
     @Enumerated(EnumType.STRING)
-    open val kilde: Kilde,
-    open val taMed: Boolean,
+    open var kilde: Kilde,
+    open var taMed: Boolean,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "behandling_id", nullable = false)
     open val behandling: Behandling? = null,
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "inntekt", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "inntekt",
+        cascade = [CascadeType.PERSIST, CascadeType.REMOVE],
+        orphanRemoval = true,
+    )
     open var inntektsposter: MutableSet<Inntektspost> = mutableSetOf(),
-    open val gjelderBarn: String? = null,
+    open var gjelderBarn: String? = null,
     open val opprinneligFom: LocalDate? = null,
     open val opprinneligTom: LocalDate? = null,
 )

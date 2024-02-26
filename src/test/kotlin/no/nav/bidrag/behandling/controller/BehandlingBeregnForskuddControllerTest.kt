@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
@@ -10,6 +10,9 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregning
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.behandling.utils.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.oppretteBehandling
@@ -64,7 +67,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 ResultatForskuddsberegning::class.java,
@@ -86,7 +89,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 ResultatForskuddsberegning::class.java,
@@ -122,7 +125,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUri()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 ResultatForskuddsberegning::class.java,

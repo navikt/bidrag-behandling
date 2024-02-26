@@ -1,9 +1,9 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -11,11 +11,11 @@ import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
-import no.nav.bidrag.behandling.transformers.tilInntekt
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
@@ -31,12 +31,13 @@ private val log = KotlinLogging.logger {}
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
-    private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
     private val grunnlagService: GrunnlagService,
+    private val inntektService: InntektService,
+    private val entityManager: EntityManager,
 ) {
-    fun opprettBehandling(behandling: Behandling): Behandling =
+    private fun opprettBehandling(behandling: Behandling): Behandling =
         behandlingRepository.save(behandling).let {
             opprettForsendelseForBehandling(it)
             it
@@ -52,9 +53,8 @@ class BehandlingService(
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
-            "${OpprettBehandlingRequest::stønadstype.name} " +
-                "eller ${OpprettBehandlingRequest::engangsbeløpstype.name} " +
-                "må være satt i forespørselen",
+            "${OpprettBehandlingRequest::stønadstype.name} eller " +
+                "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -86,12 +86,14 @@ class BehandlingService(
             )
 
         behandling.roller.addAll(roller)
-
         val behandlingDo = opprettBehandling(behandling)
+
+        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+
         log.info {
-            "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} " + "og engangsbeløptype " +
-                "${opprettBehandling.engangsbeløpstype} " + "vedtakstype ${opprettBehandling.vedtakstype} " +
-                "og søknadFra ${opprettBehandling.søknadFra} " + "med id ${behandlingDo.id} "
+            "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
+                "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
+                "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -103,7 +105,7 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                    no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto(
+                    BehandlingInfoDto(
                         behandlingId = behandling.id,
                         soknadId = behandling.soknadsid,
                         soknadFra = behandling.soknadFra,
@@ -121,55 +123,71 @@ class BehandlingService(
     @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
-        oppdaterBehandling: OppdaterBehandlingRequestV2,
-    ): BehandlingDtoV2 =
-        behandlingRepository.save(
-            behandlingRepository.findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
-                    log.info { "Oppdaterer behandling $behandlingsid" }
-                    SECURE_LOGGER.info("Oppdaterer behandling $behandlingsid for forespørsel $oppdaterBehandling")
-                    it.grunnlagspakkeid = oppdaterBehandling.grunnlagspakkeId ?: it.grunnlagspakkeid
-                    it.vedtaksid = oppdaterBehandling.vedtaksid ?: it.vedtaksid
-                    oppdaterBehandling.virkningstidspunkt?.let { vt ->
-                        log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
-                        it.årsak = vt.årsak
-                        it.avslag = vt.avslag
-                        it.virkningstidspunkt = vt.virkningstidspunkt
-                        it.virkningstidspunktbegrunnelseKunINotat =
-                            vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
-                        it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
-                            vt.notat?.medIVedtaket
-                                ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
+        request: OppdaterBehandlingRequestV2,
+    ) {
+        behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+                log.info { "Oppdatere behandling $behandlingsid" }
+                SECURE_LOGGER.info("Oppdatere behandling $behandlingsid for forespørsel $request")
+                it.grunnlagspakkeid = request.grunnlagspakkeId ?: it.grunnlagspakkeid
+                it.vedtaksid = request.vedtaksid ?: it.vedtaksid
+                request.aktivereGrunnlag.let { grunnlagsider ->
+                    if (grunnlagsider.isNotEmpty()) {
+                        log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
+                        grunnlagService.aktivereGrunnlag(it, grunnlagsider)
                     }
-                    oppdaterBehandling.inntekter?.let { inntekter ->
-                        log.info { "Oppdaterer inntekter for behandling $behandlingsid" }
-                        inntekter.inntekter?.run {
-                            it.inntekter.clear()
-                            it.inntekter.addAll(inntekter.inntekter.tilInntekt(it))
-                        }
-                        it.inntektsbegrunnelseKunINotat =
-                            inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
-                        it.inntektsbegrunnelseIVedtakOgNotat =
-                            inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
+                }
+                request.inntekter?.let { inntekter ->
+                    log.info { "Oppdatere inntekter for behandling $behandlingsid" }
+                    inntektService.oppdatereInntekterManuelt(behandlingsid, request.inntekter)
+                    entityManager.refresh(it)
+                    it.inntektsbegrunnelseKunINotat =
+                        inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
+                    it.inntektsbegrunnelseIVedtakOgNotat =
+                        inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
+                }
+                request.virkningstidspunkt?.let { vt ->
+                    log.info { "Oppdatere informasjon om virkningstidspunkt for behandling $behandlingsid" }
+                    it.årsak = vt.årsak
+                    it.avslag = vt.avslag
+                    it.virkningstidspunkt = vt.virkningstidspunkt
+                    it.virkningstidspunktbegrunnelseKunINotat =
+                        vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
+                    it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
+                        vt.notat?.medIVedtaket
+                            ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
+                }
+                request.boforhold?.let { bf ->
+                    log.info { "Oppdatere informasjon om boforhold for behandling $behandlingsid" }
+                    bf.sivilstand?.run {
+                        it.sivilstand.clear()
+                        it.sivilstand.addAll(bf.sivilstand.toSivilstandDomain(it))
                     }
-                    oppdaterBehandling.boforhold?.let { bf ->
-                        log.info { "Oppdaterer informasjon om boforhold for behandling $behandlingsid" }
-                        bf.sivilstand?.run {
-                            it.sivilstand.clear()
-                            it.sivilstand.addAll(bf.sivilstand.toSivilstandDomain(it))
-                        }
-                        bf.husstandsbarn?.run {
-                            it.husstandsbarn.clear()
-                            it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
-                        }
-                        it.boforholdsbegrunnelseKunINotat =
-                            bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
-                        it.boforholdsbegrunnelseIVedtakOgNotat =
-                            bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
+                    bf.husstandsbarn?.run {
+                        it.husstandsbarn.clear()
+                        it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
                     }
-                    it
-                },
-        ).tilBehandlingDtoV2(grunnlagService.hentAlleSistAktiv(behandlingsid))
+                    entityManager.merge(it)
+                    it.boforholdsbegrunnelseKunINotat =
+                        bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
+                    it.boforholdsbegrunnelseIVedtakOgNotat =
+                        bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
+                }
+                it
+            }
+    }
+
+    fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {
+        val behandling = hentBehandlingById(behandlingsid)
+
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+        val gjeldendeAktiveGrunnlagsdata =
+            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandlingsid)
+        val grunnlagsdataEndretEtterAktivering =
+            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid, behandling.roller)
+        return behandling.tilBehandlingDtoV2(gjeldendeAktiveGrunnlagsdata, grunnlagsdataEndretEtterAktivering)
+    }
 
     fun hentBehandlingById(
         behandlingId: Long,
@@ -209,10 +227,6 @@ class BehandlingService(
         }
     }
 
-    fun oppfriskeGrunnlagsdata(grunlagspakkeid: Long) {
-        val grunnlagspakke = bidragGrunnlagConsumer.henteGrunnlagspakke(grunlagspakkeid)
-    }
-
     private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
         return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
             .none { r -> r.navn.isNullOrBlank() }
@@ -220,5 +234,10 @@ class BehandlingService(
 
     private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
         return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
+    }
+
+    private fun forespørselInneholderBmOgBarn(roller: Set<OpprettRolleDto>): Boolean {
+        return roller.filter { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }
+            .isNotEmpty() && roller.filter { r -> r.rolletype == Rolletype.BARN }.isNotEmpty()
     }
 }

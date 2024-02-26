@@ -24,7 +24,7 @@ open class Inntektspost(
     open val id: Long? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inntekt_id", nullable = false)
-    open val inntekt: Inntekt? = null,
+    open var inntekt: Inntekt? = null,
     // TODO: Endre til ikke nullbar
     @Enumerated(EnumType.STRING)
     open val inntektstype: Inntektstype?,
