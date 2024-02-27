@@ -10,9 +10,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -149,8 +149,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
                         belop = BigDecimal(14000),
                         datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                         datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                        ident = fødselsnummerBm,
-                        gjelderBarn = fødselsnummerBarn1,
+                        ident = testdataBM.ident,
+                        gjelderBarn = testdataBarn1.ident,
                         kilde = Kilde.MANUELL,
                         taMed = true,
                     ),

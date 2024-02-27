@@ -52,14 +52,45 @@ import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
-val fødselsnummerBm =
-    "33" + LocalDate.now().minusMonths(450).format(DateTimeFormatter.ofPattern("MMyy")) + "40405"
-val fødselsnummerBp =
-    "34" + LocalDate.now().minusMonths(476).format(DateTimeFormatter.ofPattern("MMyy")) + "72320"
-val fødselsnummerBarn1 =
-    "81" + LocalDate.now().minusMonths(88).format(DateTimeFormatter.ofPattern("MMyy")) + "28921"
-val fødselsnummerBarn2 =
-    "82" + LocalDate.now().minusMonths(45).format(DateTimeFormatter.ofPattern("MMyy")) + "36333"
+val SAKSNUMMER = "1233333"
+val SOKNAD_ID = 12412421414L
+
+val testdataBP =
+    TestDataPerson(
+        navn = "Kor Mappe",
+        ident = "213244124",
+        rolletype = Rolletype.BIDRAGSPLIKTIG,
+        foedselsdato = LocalDate.parse("2000-03-01"),
+    )
+val testdataBM =
+    TestDataPerson(
+        navn = "Oran Mappe",
+        ident = "313213213",
+        rolletype = Rolletype.BIDRAGSMOTTAKER,
+        foedselsdato = LocalDate.parse("1978-08-25"),
+    )
+
+val testdataBarn1 =
+    TestDataPerson(
+        navn = "Kran Mappe",
+        ident = "1344124",
+        rolletype = Rolletype.BARN,
+        foedselsdato = LocalDate.parse("2020-03-01"),
+    )
+val testdataBarn2 =
+    TestDataPerson(
+        navn = "Gran Mappe",
+        ident = "54545454545",
+        rolletype = Rolletype.BARN,
+        foedselsdato = LocalDate.parse("2018-05-09"),
+    )
+val testdataHusstandsmedlem1 =
+    TestDataPerson(
+        navn = "Huststand Gapp",
+        ident = "231323123123123123",
+        rolletype = Rolletype.BARN,
+        foedselsdato = LocalDate.parse("2001-05-09"),
+    )
 
 data class TestDataPerson(
     val ident: String,
@@ -98,51 +129,9 @@ data class TestDataPerson(
                     ),
                 ),
         )
+
+    fun tilForsendelseRolleDto() = ForsendelseRolleDto(Personident(ident), type = rolletype)
 }
-
-val SAKSNUMMER = "1233333"
-val SOKNAD_ID = 12412421414L
-
-val ROLLE_BM = ForsendelseRolleDto(Personident(fødselsnummerBm), type = Rolletype.BIDRAGSMOTTAKER)
-val ROLLE_BP = ForsendelseRolleDto(Personident(fødselsnummerBp), type = Rolletype.BIDRAGSPLIKTIG)
-val ROLLE_BA_1 = ForsendelseRolleDto(Personident(fødselsnummerBarn1), type = Rolletype.BARN)
-val ROLLE_BA_2 = ForsendelseRolleDto(Personident(fødselsnummerBarn2), type = Rolletype.BARN)
-val testdataBP =
-    TestDataPerson(
-        navn = "Kor Mappe",
-        ident = "213244124",
-        rolletype = Rolletype.BIDRAGSPLIKTIG,
-        foedselsdato = LocalDate.parse("2000-03-01"),
-    )
-val testdataBM =
-    TestDataPerson(
-        navn = "Oran Mappe",
-        ident = "313213213",
-        rolletype = Rolletype.BIDRAGSMOTTAKER,
-        foedselsdato = LocalDate.parse("1978-08-25"),
-    )
-
-val testdataBarn1 =
-    TestDataPerson(
-        navn = "Kran Mappe",
-        ident = "1344124",
-        rolletype = Rolletype.BARN,
-        foedselsdato = LocalDate.parse("2020-03-01"),
-    )
-val testdataBarn2 =
-    TestDataPerson(
-        navn = "Gran Mappe",
-        ident = "54545454545",
-        rolletype = Rolletype.BARN,
-        foedselsdato = LocalDate.parse("2018-05-09"),
-    )
-val testdataHusstandsmedlem1 =
-    TestDataPerson(
-        navn = "Huststand Gapp",
-        ident = "231323123123123123",
-        rolletype = Rolletype.BARN,
-        foedselsdato = LocalDate.parse("2001-05-09"),
-    )
 
 fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
     ForsendelseResponsTo(

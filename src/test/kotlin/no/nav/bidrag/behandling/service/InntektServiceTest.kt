@@ -18,9 +18,9 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.tilSkattegrunnlagForLigningsår
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
@@ -98,7 +98,9 @@ class InntektServiceTest : TestContainerRunner() {
                                         YearMonth.now().withMonth(1).atDay(1),
                                     ),
                                 sumInntekt = BigDecimal(500000),
-                                visningsnavn = "Sigrun ligningsinntekt (LIGS) ${Year.now().minusYears(1)}",
+                                visningsnavn = "Sigrun ligningsinntekt (LIGS) ${
+                                    Year.now().minusYears(1)
+                                }",
                             ),
                             SummertÅrsinntekt(
                                 inntektRapportering = Inntektsrapportering.KONTANTSTØTTE,
@@ -167,7 +169,8 @@ class InntektServiceTest : TestContainerRunner() {
             )
 
             fun ainntektSummertOverKalenderår(): Inntekt {
-                val søktFraMnd = YearMonth.of(behandling.søktFomDato.year, behandling.søktFomDato.month)
+                val søktFraMnd =
+                    YearMonth.of(behandling.søktFomDato.year, behandling.søktFomDato.month)
                 val fom = søktFraMnd.atDay(1)
                 val tom = søktFraMnd.atEndOfMonth()
                 return Inntekt(
@@ -178,8 +181,8 @@ class InntektServiceTest : TestContainerRunner() {
                     datoTom = tom,
                     opprinneligFom = fom,
                     opprinneligTom = tom,
-                    ident = fødselsnummerBm,
-                    gjelderBarn = fødselsnummerBarn1,
+                    ident = testdataBM.ident,
+                    gjelderBarn = testdataBarn1.ident,
                     kilde = Kilde.OFFENTLIG,
                     taMed = true,
                 )
@@ -206,7 +209,8 @@ class InntektServiceTest : TestContainerRunner() {
                     utvidetBarnetrygdliste = emptyList(),
                 )
 
-            val summertAinntektOgSkattegrunnlag = inntektApi.transformerInntekter(transformereInntekter)
+            val summertAinntektOgSkattegrunnlag =
+                inntektApi.transformerInntekter(transformereInntekter)
 
             // hvis
             inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
@@ -221,8 +225,14 @@ class InntektServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 behandling.inntekter.size shouldBe 3
-                behandling.inntekter.first { Inntektsrapportering.AINNTEKT == it.type }.belop shouldBe BigDecimal(70000)
-                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe BigDecimal(70000)
+                behandling.inntekter.first { Inntektsrapportering.AINNTEKT == it.type }.belop shouldBe
+                    BigDecimal(
+                        70000,
+                    )
+                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe
+                    BigDecimal(
+                        70000,
+                    )
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe BigDecimal.ZERO
             }
         }
@@ -243,15 +253,16 @@ class InntektServiceTest : TestContainerRunner() {
                     belop = BigDecimal(14000),
                     datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                     datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                    ident = fødselsnummerBm,
-                    gjelderBarn = fødselsnummerBarn1,
+                    ident = testdataBM.ident,
+                    gjelderBarn = testdataBarn1.ident,
                     kilde = Kilde.MANUELL,
                     taMed = true,
                 )
 
             val lagretKontantstøtte = inntektRepository.save(kontantstøtte)
 
-            val behandlingEtterOppdatering = behandlingRepository.findBehandlingById(behandling.id!!)
+            val behandlingEtterOppdatering =
+                behandlingRepository.findBehandlingById(behandling.id!!)
 
             behandlingEtterOppdatering.get().inntekter.size shouldBe 1
 
@@ -262,7 +273,10 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            inntektService.oppdatereInntekterManuelt(behandling.id!!, forespørselOmOppdateringAvInntekter)
+            inntektService.oppdatereInntekterManuelt(
+                behandling.id!!,
+                forespørselOmOppdateringAvInntekter,
+            )
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -289,8 +303,8 @@ class InntektServiceTest : TestContainerRunner() {
                     belop = BigDecimal(14000),
                     datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                     datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                    ident = fødselsnummerBm,
-                    gjelderBarn = fødselsnummerBarn1,
+                    ident = testdataBM.ident,
+                    gjelderBarn = testdataBarn1.ident,
                     kilde = Kilde.MANUELL,
                     taMed = true,
                 )
@@ -301,7 +315,10 @@ class InntektServiceTest : TestContainerRunner() {
                 OppdatereInntekterRequestV2(sletteInntekter = setOf(lagretKontantstøtte.id!!))
 
             // hvis
-            inntektService.oppdatereInntekterManuelt(behandling.id!!, forespørselOmOppdateringAvInntekter)
+            inntektService.oppdatereInntekterManuelt(
+                behandling.id!!,
+                forespørselOmOppdateringAvInntekter,
+            )
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -327,7 +344,7 @@ class InntektServiceTest : TestContainerRunner() {
                     datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
                     opprinneligFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                     opprinneligTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                    ident = fødselsnummerBm,
+                    ident = testdataBM.ident,
                     kilde = Kilde.OFFENTLIG,
                     taMed = true,
                 )
@@ -361,7 +378,10 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            inntektService.oppdatereInntekterManuelt(behandling.id!!, forespørselOmOppdateringAvInntekter)
+            inntektService.oppdatereInntekterManuelt(
+                behandling.id!!,
+                forespørselOmOppdateringAvInntekter,
+            )
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)

@@ -16,12 +16,12 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BA_1
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BM
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BP
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -67,9 +67,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
@@ -78,7 +78,7 @@ class ForsendelseServiceTest {
                 withArg {
                     it.tema shouldBe "FAR"
                     it.behandlingInfo!!.barnIBehandling shouldHaveSize 1
-                    it.behandlingInfo!!.barnIBehandling shouldContain ROLLE_BA_1.fødselsnummer?.verdi
+                    it.behandlingInfo!!.barnIBehandling shouldContain testdataBarn1.ident
                 },
             )
         }
@@ -99,16 +99,16 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBM.ident
                 },
             )
         }
@@ -129,16 +129,16 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBP.ident
                 },
             )
         }
@@ -159,9 +159,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
@@ -188,9 +188,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
@@ -206,8 +206,8 @@ class ForsendelseServiceTest {
                     it.behandlingInfo!!.soknadId shouldBe SOKNAD_ID
                     it.behandlingInfo!!.stonadType shouldBe Stønadstype.FORSKUDD
 
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBM.ident
+                    it.mottaker?.ident shouldBe testdataBM.ident
                 },
             )
         }
@@ -227,9 +227,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
@@ -251,14 +251,14 @@ class ForsendelseServiceTest {
         verify(ordering = Ordering.SEQUENCE) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBM.ident
+                    it.mottaker?.ident shouldBe testdataBM.ident
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBP.ident
+                    it.mottaker?.ident shouldBe testdataBP.ident
                 },
             )
         }
@@ -278,9 +278,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
@@ -303,20 +303,20 @@ class ForsendelseServiceTest {
         verify(ordering = Ordering.SEQUENCE) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBM.ident
+                    it.mottaker?.ident shouldBe testdataBM.ident
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBP.ident
+                    it.mottaker?.ident shouldBe testdataBP.ident
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BA_1.fødselsnummer?.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BA_1.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBarn1.ident
+                    it.mottaker?.ident shouldBe testdataBarn1.ident
                 },
             )
         }
@@ -338,9 +338,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
@@ -366,9 +366,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
@@ -400,9 +400,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)
@@ -425,14 +425,14 @@ class ForsendelseServiceTest {
         verify {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BM.fødselsnummer?.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BM.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBM.ident
+                    it.mottaker?.ident shouldBe testdataBM.ident
                 },
             )
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.gjelderIdent shouldBe ROLLE_BP.fødselsnummer?.verdi
-                    it.mottaker?.ident shouldBe ROLLE_BP.fødselsnummer?.verdi
+                    it.gjelderIdent shouldBe testdataBP.ident
+                    it.mottaker?.ident shouldBe testdataBP.ident
                 },
             )
         }
@@ -470,9 +470,9 @@ class ForsendelseServiceTest {
                     ),
                 roller =
                     listOf(
-                        ROLLE_BM,
-                        ROLLE_BP,
-                        ROLLE_BA_1,
+                        testdataBM.tilForsendelseRolleDto(),
+                        testdataBP.tilForsendelseRolleDto(),
+                        testdataBarn1.tilForsendelseRolleDto(),
                     ),
             )
         forsendelseService.slettEllerOpprettForsendelse(request)

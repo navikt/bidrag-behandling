@@ -58,6 +58,12 @@ fun opprettGrunnlagFraFil(
         Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
             grunnlag.utvidetBarnetrygdListe.tilGrunnlagEntity(behandling)
 
+        Grunnlagsdatatype.AINNTEKT ->
+            grunnlag.ainntektListe.tilGrunnlagEntity(behandling)
+
+        Grunnlagsdatatype.SKATTEGRUNNLAG ->
+            grunnlag.skattegrunnlagListe.tilGrunnlagEntity(behandling)
+
         Grunnlagsdatatype.INNTEKT -> {
             behandling.opprettGrunnlagEntityForInntekt(
                 grunnlag.ainntektListe,
@@ -127,6 +133,20 @@ fun List<UtvidetBarnetrygdGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling)
     groupBy { it.personId }
         .map { (personId, grunnlag) ->
             behandling.opprettGrunnlag(Grunnlagsdatatype.UTVIDET_BARNETRYGD, grunnlag, personId)
+        }
+
+@JvmName("skattegrunnlagGrunnlagDtoTilGrunnlagEntity")
+fun List<SkattegrunnlagGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
+    groupBy { it.personId }
+        .map { (personId, grunnlag) ->
+            behandling.opprettGrunnlag(Grunnlagsdatatype.SKATTEGRUNNLAG, grunnlag, personId)
+        }
+
+@JvmName("ainntektGrunnlagDtoTilGrunnlagEntity")
+fun List<AinntektGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
+    groupBy { it.personId }
+        .map { (personId, grunnlag) ->
+            behandling.opprettGrunnlag(Grunnlagsdatatype.AINNTEKT, grunnlag, personId)
         }
 
 fun Behandling.opprettGrunnlagEntityForInntekt(

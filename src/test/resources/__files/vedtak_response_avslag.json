@@ -31,6 +31,39 @@
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69",
+      "type": "PERSON_BIDRAGSMOTTAKER",
+      "innhold": {
+        "navn": null,
+        "ident": "313213213",
+        "fødselsdato": "1978-08-25"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_SØKNADSBARN_20150724_67",
+      "type": "PERSON_SØKNADSBARN",
+      "innhold": {
+        "navn": null,
+        "ident": "1344124",
+        "fødselsdato": "2020-03-01"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_SØKNADSBARN_20050623_68",
+      "type": "PERSON_SØKNADSBARN",
+      "innhold": {
+        "navn": null,
+        "ident": "54545454545",
+        "fødselsdato": "2018-05-09"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
     }
   ],
   "stønadsendringListe": [

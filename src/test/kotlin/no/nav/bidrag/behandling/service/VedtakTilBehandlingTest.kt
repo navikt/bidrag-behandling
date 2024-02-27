@@ -29,7 +29,6 @@ import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseD
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
@@ -120,7 +119,6 @@ class VedtakTilBehandlingTest {
     }
 
     @Test
-    @Disabled("")
     fun `skal konvertere vedtak avslag til behandling`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response_avslag")
         val behandling = vedtakService.konverterVedtakTilBehandling(1)!!
