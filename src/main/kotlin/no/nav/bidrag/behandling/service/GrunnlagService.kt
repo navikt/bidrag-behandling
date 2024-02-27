@@ -6,8 +6,8 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.database.grunnlag.tilGrunnlagInntekt
@@ -61,7 +61,7 @@ class GrunnlagService(
     @Deprecated("Grunnlagsinnhenting og opprettelse skal gjøres automatisk med oppdatereGrunnlagForBehandling")
     fun opprett(
         behandlingId: Long,
-        grunnlagsdatatype: Grunnlagsdatatype,
+        grunnlagstype: Grunnlagstype,
         data: String,
         innhentet: LocalDateTime,
     ): Grunnlag {
@@ -72,7 +72,8 @@ class GrunnlagService(
                 return grunnlagRepository.save<Grunnlag>(
                     Grunnlag(
                         it,
-                        grunnlagsdatatype.getOrMigrate(),
+                        grunnlagstype.type,
+                        erBearbeidet = grunnlagstype.erBearbeidet,
                         data = data,
                         rolle = it.bidragsmottaker!!,
                         innhentet = innhentet,
@@ -101,7 +102,7 @@ class GrunnlagService(
 
             log.info {
                 "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
-                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
+                        "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
     }
@@ -117,7 +118,7 @@ class GrunnlagService(
             val grunnlag =
                 behandling.grunnlag.filter {
                     it.aktiv == null && rolle.ident == it.rolle.ident &&
-                        iderTilGrunnlagSomSkalAktiveres.contains(it.id)
+                            iderTilGrunnlagSomSkalAktiveres.contains(it.id)
                 }.filter { Grunnlagsdatatype.INNTEKT == it.type }.toSet()
 
             if (grunnlag.isNotEmpty()) {
@@ -131,7 +132,7 @@ class GrunnlagService(
             } else {
                 log.info {
                     "Fant ingen grunnlag å oppdatere for ${rolle.rolletype} med id ${rolle.id} i behandling " +
-                        "${behandling.id}"
+                            "${behandling.id}"
                 }
             }
         }
@@ -140,12 +141,13 @@ class GrunnlagService(
     fun hentSistInnhentet(
         behandlingsid: Long,
         rolleid: Long,
-        grunnlagsdatatype: Grunnlagsdatatype,
+        grunnlagstype: Grunnlagstype,
     ): Grunnlag? {
-        return grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+        return grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
             behandlingsid,
             rolleid,
-            grunnlagsdatatype.getOrMigrate(),
+            grunnlagstype.type,
+            grunnlagstype.erBearbeidet,
         )
     }
 
@@ -167,14 +169,14 @@ class GrunnlagService(
                 endringerINyeData = grunnlagstyperEndretIBearbeidaInntekter,
             )
         }.toSet() +
-            nyinnhentaGrunnlag.filter {
-                it.type != Grunnlagsdatatype.INNTEKT_BEARBEIDET &&
-                    !inntekterOgYtelser.contains(
-                        it.type,
-                    )
-            }.map {
-                GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = setOf(it.type))
-            }.toSet()
+                nyinnhentaGrunnlag.filter {
+                    it.type != Grunnlagsdatatype.INNTEKT_BEARBEIDET &&
+                            !inntekterOgYtelser.contains(
+                                it.type,
+                            )
+                }.map {
+                    GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = setOf(it.type))
+                }.toSet()
     }
 
     fun hentAlleSistInnhentet(
@@ -182,10 +184,12 @@ class GrunnlagService(
         rolleid: Long,
     ): List<Grunnlag> =
         Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
-            grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+            g ->
+            grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                 behandlingsid,
                 rolleid,
-                it,
+                g,
+                false,
             )
         }
 
@@ -194,7 +198,7 @@ class GrunnlagService(
             behandling.roller.map {
                 // TODO: Til Jan Kjetil. Hvis feks barn hadde inntekter ville det føre til at BM inntekter ikke ble tatt med i grunnlagslisten pga at typen er samme
                 // TODO: Det bør derfor enten filtreres basert på rolle eller at alt hentes ut slik det er gjort her.
-                grunnlagRepository.findTopByBehandlingIdAndTypeAndRolleOrderByAktivDescIdDesc(
+                grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
                     behandling.id!!,
                     type,
                     it,
@@ -213,7 +217,7 @@ class GrunnlagService(
 
         log.info {
             "Behandler forespørsel om å aktivere grunnlag av type $grunnlagsdatatype, innhentet " +
-                " $inntektsgrunnlag for behandling med id ${inntektsgrunnlag.behandling.id}"
+                    " $inntektsgrunnlag for behandling med id ${inntektsgrunnlag.behandling.id}"
         }
 
         when (grunnlagsdatatype) {
@@ -265,8 +269,8 @@ class GrunnlagService(
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean {
         return behandling.grunnlagSistInnhentet == null ||
-            LocalDateTime.now()
-                .minusHours(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+                LocalDateTime.now()
+                    .minusHours(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
     }
 
     private fun henteOglagreGrunnlag(

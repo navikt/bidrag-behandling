@@ -30,6 +30,7 @@ open class Grunnlag(
     open val behandling: Behandling,
     @Enumerated(EnumType.STRING)
     open val type: Grunnlagsdatatype,
+    open val erBearbeidet: Boolean = false,
     @Column(name = "data", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open val data: String,
@@ -43,11 +44,11 @@ open class Grunnlag(
     open val id: Long? = null,
 )
 
-inline fun <reified T> Grunnlag?.hentData(): T? =
+inline fun <reified T> Grunnlag?.hentData(erBearbeidet: Boolean = false): T? =
     when (this?.type) {
         Grunnlagsdatatype.INNTEKTSOPPLYSNINGER, Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
         Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-        Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
+        Grunnlagsdatatype.BOFORHOLD -> konverterData<List<RelatertPersonDto>>() as T
         Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
         Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
         Grunnlagsdatatype.INNTEKT -> konverterData<List<GrunnlagInntekt>>() as T

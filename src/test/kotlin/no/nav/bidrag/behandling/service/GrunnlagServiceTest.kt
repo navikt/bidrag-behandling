@@ -119,7 +119,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagBm =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.INNTEKT,
@@ -222,7 +222,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.INNTEKT,
@@ -297,7 +297,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
@@ -362,7 +362,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
@@ -410,7 +410,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.INNTEKT,
@@ -465,7 +465,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
@@ -504,7 +504,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SIVILSTAND,
@@ -553,7 +553,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SIVILSTAND,
@@ -602,7 +602,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagBarnetillegg =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.BARNETILLEGG,
@@ -614,7 +614,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagBarnetilsyn =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.BARNETILSYN,
@@ -626,7 +626,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagKontantstøtte =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.KONTANTSTØTTE,
@@ -638,7 +638,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagUtvidetBarnetrygd =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.UTVIDET_BARNETRYGD,
@@ -652,7 +652,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagSmåbarnstillegg =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
@@ -684,7 +684,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlag =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeOrderByInnhentetDesc(
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
                     behandlingsid = behandling.id!!,
                     behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
                     Grunnlagsdatatype.ARBEIDSFORHOLD,
