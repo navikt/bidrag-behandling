@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.Periode
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -36,7 +37,7 @@ data class OppdaterePeriodeInntekt(
     @Schema(description = "Anig om inntekten skal inkluderes i beregning")
     val taMedIBeregning: Boolean = false,
     @Schema(description = "Angi periode inntekten skal dekke ved beregnings")
-    val angittPeriode: Periode<LocalDate>,
+    val angittPeriode: Datoperiode
 )
 
 data class OppdatereManuellInntekt(
