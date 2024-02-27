@@ -33,14 +33,8 @@ class BeregningServiceTest {
     @MockkBean
     lateinit var behandlingService: BehandlingService
 
-    lateinit var beregningService: BeregningService
-
     @BeforeEach
     fun initMocks() {
-        beregningService =
-            BeregningService(
-                behandlingService,
-            )
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
@@ -59,7 +53,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnForskuddApi::class)
         every { BeregnForskuddApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = beregningService.beregneForskudd(1)
+        val resultat = BeregningService(behandlingService).beregneForskudd(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 2) {

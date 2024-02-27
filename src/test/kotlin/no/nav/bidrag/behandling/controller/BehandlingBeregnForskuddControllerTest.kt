@@ -74,7 +74,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
             this shouldNotBe null
             statusCode shouldBe HttpStatus.OK
             body?.shouldHaveSize(2)
-            assertSoftly(body!![0]) {
+            assertSoftly(body!!.find { it.barn.ident!!.verdi == testdataBarn1.ident }!!) {
                 barn.ident!!.verdi shouldBe testdataBarn1.ident
                 barn.navn shouldBe testdataBarn1.navn
                 barn.fødselsdato shouldBe testdataBarn1.foedselsdato
@@ -89,7 +89,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                     antallBarnIHusstanden shouldBe 2
                 }
             }
-            assertSoftly(body!![1]) {
+            assertSoftly(body!!.find { it.barn.ident!!.verdi == testdataBarn2.ident }!!) {
                 barn.ident!!.verdi shouldBe testdataBarn2.ident
                 barn.navn shouldBe testdataBarn2.navn
                 barn.fødselsdato shouldBe testdataBarn2.foedselsdato
