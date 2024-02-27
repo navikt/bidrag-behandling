@@ -7,7 +7,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import io.mockk.clearConstructorMockk
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockkClass
 import io.mockk.mockkObject
@@ -39,7 +39,11 @@ import java.time.LocalDateTime
 import java.util.Arrays
 
 fun stubPersonConsumer(): BidragPersonConsumer {
-    clearConstructorMockk(BidragPersonConsumer::class)
+    try {
+        clearMocks(BidragPersonConsumer::class)
+    } catch (e: Exception) {
+        // Ignore
+    }
     val personConsumerMock = mockkClass(BidragPersonConsumer::class)
     every { personConsumerMock.hentPerson(any<String>()) }.answers {
         val personId = firstArg<String>()
