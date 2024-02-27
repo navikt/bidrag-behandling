@@ -160,7 +160,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly {
-                behandlingDto.aktiveGrunnlagsdata.size shouldBe 10
+                behandlingDto.aktiveGrunnlagsdata.size shouldBe 20
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter { g ->
                     g.nyeData.grunnlagsdatatype == Grunnlagsdatatype.INNTEKT_BEARBEIDET
