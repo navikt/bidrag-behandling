@@ -2,6 +2,9 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
+import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
@@ -13,6 +16,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
+@Suppress("ktlint:standard:value-argument-comment")
 fun Behandling.tilBehandlingDtoV2(
     gjeldendeAktiveGrunnlagsdata: List<Grunnlag>,
     ikkeAktiverteEndringerIGrunnlagsdata: Set<GrunnlagsdataEndretDto>,
@@ -76,8 +80,15 @@ fun Behandling.tilBehandlingDtoV2(
                 inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
                     .tilInntektDtoV2().toSet(),
             månedsinntekter =
-                inntekter.filter { it.type == Inntektsrapportering.AINNTEKT }
-                    .tilInntektDtoV2().toSet(),
+                // TODO: Jan Kjetil. En hacky løsning
+                gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }
+                    .flatMap { grunnlag ->
+                        grunnlag.konverterData<SummerteMånedsOgÅrsinntekter>()?.summerteMånedsinntekter?.map {
+                            it.tilInntektDtoV2(
+                                grunnlag.rolle.ident!!,
+                            )
+                        } ?: emptyList()
+                    }.toSet(),
             årsinntekter =
                 inntekter.filter { !eksplisitteYtelser.contains(it.type) }.tilInntektDtoV2()
                     .toSet(),
@@ -92,4 +103,9 @@ fun Behandling.tilBehandlingDtoV2(
 )
 
 val eksplisitteYtelser =
-    setOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.SMÅBARNSTILLEGG)
+    setOf(
+        Inntektsrapportering.BARNETILLEGG,
+        Inntektsrapportering.KONTANTSTØTTE,
+        Inntektsrapportering.SMÅBARNSTILLEGG,
+        Inntektsrapportering.AINNTEKT,
+    )

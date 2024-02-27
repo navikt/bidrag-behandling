@@ -6,6 +6,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -13,7 +14,6 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
-import kotlin.test.Ignore
 import kotlin.test.assertNotNull
 
 @Suppress("NonAsciiCharacters")
@@ -22,7 +22,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
     @DisplayName("Positiv testing av  opprette behandling")
     open inner class OppretteBehandlingPositiv {
         @Test
-        @Ignore("Wiremock-problem kun på Github")
+        @Disabled("Wiremock-problem kun på Github")
         fun `skal opprette en behandling med null opprettetDato og så hente den`() {
             // gitt
             val personidentBm = Personident("12345678910")
@@ -67,7 +67,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
         }
 
         @Test
-        @Ignore("Wiremock-problem kun på Github")
+        @Disabled("Wiremock-problem kun på Github")
         fun `skal opprette en behandling`() {
             val personidentBm = Personident("12345678912")
             val personidentBarn = Personident("12345678912")
@@ -98,7 +98,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
         }
 
         @Test
-        @Ignore("Wiremock-problem kun på Github")
+        @Disabled("Wiremock-problem kun på Github")
         fun `skal opprette en behandling og forsendelse for stonadType BIDRAG`() {
             // gitt
             val personidentBarn = Personident("12345678910")
@@ -139,7 +139,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
         }
 
         @Test
-        @Ignore("Wiremock-problem kun på Github")
+        @Disabled("Wiremock-problem kun på Github")
         fun `skal opprette en behandling og ikke opprette forsendelse for forskudd`() {
             // gitt
             val personidentBarn = Personident("12345678912")
@@ -176,7 +176,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
         }
 
         @Test
-        @Ignore("Wiremock-problem kun på Github")
+        @Disabled("Wiremock-problem kun på Github")
         fun `skal opprette en behandling og ignorere feil hvis opprett forsendelse feiler`() {
             // gitt
             val personidentBarn = Personident("12345678910")
@@ -220,7 +220,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
         }
 
         @Test
-        @Ignore("Wiremock-problem kun på Github")
+        @Disabled("Wiremock-problem kun på Github")
         fun `skal opprette behandling som inkluderer barn med navn men uten ident`() {
             // gitt
             val personidentBm = Personident("12345678910")

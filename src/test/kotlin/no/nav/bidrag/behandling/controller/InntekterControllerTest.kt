@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,7 +25,6 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
 import java.time.YearMonth
-import kotlin.test.Ignore
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -42,7 +42,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
-        @Ignore("Wiremock-problem kun på Github")
+        @Disabled("Wiremock-problem kun på Github")
         open fun `skal hente inntekter for behandling`() {
             // given
             val behandling = testdataManager.opprettBehandling(true)
@@ -66,7 +66,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         }
 
         @Test
-        @Ignore("Wiremock-problem kun på Github")
+        @Disabled("Wiremock-problem kun på Github")
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
