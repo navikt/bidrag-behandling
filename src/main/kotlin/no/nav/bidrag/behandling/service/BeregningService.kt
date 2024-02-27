@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.datamodell.sivilstand
 import no.nav.bidrag.behandling.database.datamodell.validere
-import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
@@ -31,7 +30,9 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 class BeregningService(
     private val behandlingService: BehandlingService,
 ) {
-    fun beregneForskudd(behandlingsid: Long): ResultatForskuddsberegning {
+    private val beregnApi = BeregnForskuddApi()
+
+    fun beregneForskudd(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
         val respons =
             either {
                 val behandling =
@@ -43,7 +44,7 @@ class BeregningService(
                         try {
                             ResultatForskuddsberegningBarn(
                                 it.mapTilResultatBarn(),
-                                BeregnForskuddApi().beregn(beregnForskudd),
+                                beregnApi.beregn(beregnForskudd),
                             )
                         } catch (e: IllegalArgumentException) {
                             LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
@@ -64,7 +65,7 @@ class BeregningService(
             }
         }
 
-        return ResultatForskuddsberegning(respons.getOrNull() ?: emptyList())
+        return respons.getOrNull() ?: emptyList()
     }
 }
 

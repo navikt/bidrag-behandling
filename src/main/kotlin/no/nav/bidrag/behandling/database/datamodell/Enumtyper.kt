@@ -25,6 +25,8 @@ enum class Grunnlagsdatatype {
     SIVILSTAND,
     UTVIDET_BARNETRYGD,
     SMÅBARNSTILLEGG,
+    AINNTEKT,
+    SKATTEGRUNNLAG,
 
     @Deprecated("", replaceWith = ReplaceWith("BOFORHOLD_BEARBEIDET"))
     BOFORHOLD,

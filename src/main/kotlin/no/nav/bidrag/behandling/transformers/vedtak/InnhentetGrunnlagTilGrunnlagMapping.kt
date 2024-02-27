@@ -68,7 +68,7 @@ fun List<GrunnlagDto>.hentBeregnetInntekt(ident: String): SummerteMånedsOgÅrsi
     )
 }
 
-fun List<GrunnlagDto>.hentInnhenetHusstandsmedlem() =
+fun List<GrunnlagDto>.hentInnhenetHusstandsmedlem(): List<RelatertPersonGrunnlagDto> =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM)
         .map {
             val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!

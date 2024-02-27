@@ -133,13 +133,14 @@ fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<Grunnl
 fun Behandling.tilGrunnlagInntekt(
     personobjekter: Set<GrunnlagDto>,
     søknadsbarn: GrunnlagDto? = null,
+    inkluderAlle: Boolean = true,
 ): Set<GrunnlagDto> {
     return inntekter.asSequence()
-        .filter { personobjekter.hentPersonNyesteIdent(it.ident) != null }
+        .filter { personobjekter.hentPersonNyesteIdent(it.ident) != null && (inkluderAlle || it.taMed) }
         .groupBy { it.ident }
         .flatMap { (ident, innhold) ->
             val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
-            innhold.filter { søknadsbarn == null || it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn == null }
+            innhold.filter { søknadsbarn == null || it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty() }
                 .groupBy { it.gjelderBarn }
                 .map { (gjelderBarn, innhold) ->
                     val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)

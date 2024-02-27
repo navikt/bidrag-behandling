@@ -37,6 +37,15 @@ fun fantIkkeSak(saksnummer: String): Nothing =
         "Sak med saksnummer $saksnummer finnes ikke",
     )
 
+fun fantIkkeRolleISak(
+    saksnummer: String,
+    ident: String,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Fant ikke rolle med ident $ident i sak med saksnummer $saksnummer",
+    )
+
 fun rolleManglerIdent(
     rolletype: Rolletype,
     behandlingId: Long,

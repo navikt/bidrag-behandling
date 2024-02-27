@@ -3,9 +3,10 @@ package no.nav.bidrag.behandling.controller
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
+import no.nav.bidrag.behandling.transformers.tilDto
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 
@@ -24,11 +25,11 @@ class BehandlingBeregnForskuddController(
     )
     fun beregnForskudd(
         @PathVariable behandlingsid: Long,
-    ): ResultatForskuddsberegning {
+    ): List<ResultatBeregningBarnDto> {
         LOGGER.info { "Beregner forskudd for behandling med id $behandlingsid" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
-        return beregningService.beregneForskudd(behandling.id!!)
+        return beregningService.beregneForskudd(behandling.id!!).tilDto()
     }
 }

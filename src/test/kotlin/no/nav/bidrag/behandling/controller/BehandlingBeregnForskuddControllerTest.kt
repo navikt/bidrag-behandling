@@ -2,28 +2,37 @@ package no.nav.bidrag.behandling.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
-import io.mockk.mockkObject
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegning
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
-import no.nav.bidrag.commons.service.sjablon.SjablonProvider
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import stubPersonConsumer
+import java.math.BigDecimal
 
 class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -35,32 +44,21 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
     @MockkBean
     lateinit var forskuddBeregning: BeregnForskuddApi
 
+    val responseType = object : ParameterizedTypeReference<List<ResultatBeregningBarnDto>>() {}
+
     @BeforeEach
     fun oppsett() {
         behandlingRepository.deleteAll()
         every { forskuddBeregning.beregn(any()) } returns BeregnetForskuddResultat()
-        mockkObject(SjablonProvider)
-        every {
-            SjablonProvider.hentSjablontall()
-        } returns emptyList()
+        stubSjablonProvider()
+        stubKodeverkProvider()
+        stubPersonConsumer()
     }
 
     @Test
     fun `skal beregne forskudd for validert behandling`() {
         // given
-        val behandling = opprettGyldigBehandlingForBeregningOgVedtak()
-
-        try {
-            behandlingRepository.save(behandling)
-            val grunnlag =
-                opprettAlleAktiveGrunnlagFraFil(
-                    behandling,
-                    "grunnlagresponse.json",
-                )
-            grunnlagRepository.saveAll(grunnlag)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        val behandling = lagreBehandling(opprettGyldigBehandlingForBeregningOgVedtak())
 
         // when
         val returnert =
@@ -68,14 +66,44 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                ResultatForskuddsberegning::class.java,
+                responseType,
             )
 
         // then
-        assertSoftly {
-            returnert shouldNotBe null
-            returnert.statusCode shouldBe HttpStatus.OK
-            returnert.body shouldNotBe null
+        assertSoftly(returnert) {
+            this shouldNotBe null
+            statusCode shouldBe HttpStatus.OK
+            body?.shouldHaveSize(2)
+            assertSoftly(body!![0]) {
+                barn.ident!!.verdi shouldBe testdataBarn1.ident
+                barn.navn shouldBe testdataBarn1.navn
+                barn.fødselsdato shouldBe testdataBarn1.foedselsdato
+                perioder shouldHaveSize 8
+                assertSoftly(perioder[0]) {
+                    periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
+                    beløp shouldBe BigDecimal(1760)
+                    inntekt shouldBe BigDecimal(120000)
+                    sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
+                    resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
+                    regel shouldBe "REGEL 6"
+                    antallBarnIHusstanden shouldBe 2
+                }
+            }
+            assertSoftly(body!![1]) {
+                barn.ident!!.verdi shouldBe testdataBarn2.ident
+                barn.navn shouldBe testdataBarn2.navn
+                barn.fødselsdato shouldBe testdataBarn2.foedselsdato
+                perioder shouldHaveSize 8
+                assertSoftly(perioder[0]) {
+                    periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
+                    beløp shouldBe BigDecimal(1760)
+                    inntekt shouldBe BigDecimal(60000)
+                    sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
+                    resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
+                    regel shouldBe "REGEL 6"
+                    antallBarnIHusstanden shouldBe 2
+                }
+            }
         }
     }
 
@@ -90,7 +118,7 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                ResultatForskuddsberegning::class.java,
+                responseType,
             )
 
         // then
@@ -114,20 +142,15 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
         // given
         val errorMessage = "Feil input"
         every { forskuddBeregning.beregn(any()) } throws IllegalArgumentException(errorMessage)
-        val behandling = behandlingRepository.save(opprettGyldigBehandlingForBeregningOgVedtak())
-        val grunnlag =
-            opprettAlleAktiveGrunnlagFraFil(
-                behandling,
-                "grunnlagresponse.json",
-            )
-        grunnlagRepository.saveAll(grunnlag)
+        val behandling = lagreBehandling(opprettGyldigBehandlingForBeregningOgVedtak())
+
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                ResultatForskuddsberegning::class.java,
+                responseType,
             )
 
         // then
@@ -142,6 +165,17 @@ class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
                 ),
             )
         }
+    }
+
+    fun lagreBehandling(behandling: Behandling): Behandling {
+        val lagretBehandling = behandlingRepository.save(behandling)
+        val grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            )
+        grunnlagRepository.saveAll(grunnlag)
+        return lagretBehandling
     }
 
     private fun lagreBehandlingMedRoller(): Behandling {

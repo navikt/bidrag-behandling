@@ -114,7 +114,7 @@ class VedtakTilBehandlingTest {
                 size shouldBe 11
             }
             assertSoftly(behandling.grunnlagListe) {
-                size shouldBe 5
+                size shouldBe 6
             }
         }
     }

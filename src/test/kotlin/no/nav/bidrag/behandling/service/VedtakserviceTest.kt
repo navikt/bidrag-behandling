@@ -389,9 +389,9 @@ class VedtakserviceTest {
                 mottaker.verdi shouldBe nyIdentBm
             }
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe.shouldHaveSize(1)
+            request.grunnlagListe.shouldHaveSize(4)
 
-            grunnlagListe.hentAllePersoner() shouldHaveSize 0
+            grunnlagListe.hentAllePersoner() shouldHaveSize 3
         }
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
@@ -424,7 +424,7 @@ class VedtakserviceTest {
             request.type shouldBe Vedtakstype.FASTSETTELSE
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe shouldHaveSize 5
+            request.grunnlagListe shouldHaveSize 8
             assertSoftly(behandlingsreferanseListe) { behandlingRef ->
                 behandlingRef shouldHaveSize 2
                 with(behandlingRef[0]) {

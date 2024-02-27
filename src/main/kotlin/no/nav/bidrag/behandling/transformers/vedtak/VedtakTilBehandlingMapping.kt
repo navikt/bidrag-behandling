@@ -10,7 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.opplysninger.InntektGrunnlag
+import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -31,6 +31,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
@@ -119,48 +121,47 @@ fun VedtakDto.tilBehandling(
             }.toMutableSet()
 
     behandling.grunnlag =
-        mutableSetOf(
-            Grunnlag(
-                behandling = behandling,
-                id = if (medId) 1 else null,
-                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD),
-                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentGrunnlagArbeidsforhold()),
-                type = Grunnlagsdatatype.ARBEIDSFORHOLD,
-                rolle = behandling.roller.first(),
-            ),
-            Grunnlag(
-                behandling = behandling,
-                id = if (medId) 1 else null,
-                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
-                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentGrunnlagInntekt()),
-                type = Grunnlagsdatatype.INNTEKT,
-                rolle = behandling.roller.first(),
-            ),
-            Grunnlag(
-                behandling = behandling,
-                id = if (medId) 1 else null,
-                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_SIVILSTAND),
-                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentInnhentetSivilstand()),
-                type = Grunnlagsdatatype.SIVILSTAND,
-                rolle = behandling.roller.first(),
-            ),
-            Grunnlag(
-                behandling = behandling,
-                id = if (medId) 1 else null,
-                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
-                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentInnhenetHusstandsmedlem()),
-                type = Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
-                rolle = behandling.roller.first(),
-            ),
-            Grunnlag(
-                behandling = behandling,
-                id = if (medId) 1 else null,
-                innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
-                data = commonObjectmapper.writeValueAsString(grunnlagListe.hentBeregnetInntekt("")),
-                type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
-                rolle = behandling.roller.first(),
-            ),
-        )
+        (
+            listOf(
+                Grunnlag(
+                    behandling = behandling,
+                    id = if (medId) 1 else null,
+                    innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD),
+                    data = commonObjectmapper.writeValueAsString(grunnlagListe.hentGrunnlagArbeidsforhold()),
+                    type = Grunnlagsdatatype.ARBEIDSFORHOLD,
+                    rolle = behandling.roller.first(),
+                ),
+                Grunnlag(
+                    behandling = behandling,
+                    id = if (medId) 1 else null,
+                    innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_SIVILSTAND),
+                    data = commonObjectmapper.writeValueAsString(grunnlagListe.hentInnhentetSivilstand()),
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    rolle = behandling.roller.first(),
+                ),
+                Grunnlag(
+                    behandling = behandling,
+                    id = if (medId) 1 else null,
+                    innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                    data = commonObjectmapper.writeValueAsString(grunnlagListe.hentInnhenetHusstandsmedlem()),
+                    type = Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+                    rolle = behandling.roller.first(),
+                ),
+                Grunnlag(
+                    behandling = behandling,
+                    id = if (medId) 1 else null,
+                    innhentet = grunnlagListe.innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            grunnlagListe.hentBeregnetInntekt(
+                                "",
+                            ),
+                        ),
+                    type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                    rolle = behandling.roller.first(),
+                ),
+            ) + grunnlagListe.hentGrunnlagInntekt(behandling, medId)
+        ).toMutableSet()
 
     return behandling
 }
@@ -171,17 +172,122 @@ fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
             commonObjectmapper.treeToValue(it, LocalDateTime::class.java)
         } ?: LocalDateTime.now()
 
-fun List<GrunnlagDto>.hentGrunnlagInntekt(): InntektGrunnlag {
-    return InntektGrunnlag(
-        ainntektListe = hentGrunnlagAinntekt(),
-        skattegrunnlagListe = hentGrunnlagSkattegrunnlag(),
-        utvidetBarnetrygdListe = hentUtvidetbarnetrygdListe(),
-        småbarnstilleggListe = hentSmåbarnstilleggListe(),
-        kontantstøtteListe = hentKontantstøtteListe(),
-        barnetilleggListe = hentBarnetillegListe(),
-        barnetilsynListe = hentBarnetilsynListe(),
-    )
+fun List<GrunnlagDto>.hentGrunnlagInntekt(
+    behandling: Behandling,
+    medId: Boolean,
+): List<Grunnlag> {
+    return listOf(
+        hentBarnetillegListe().groupBy { it.partPersonId }
+            .map { (gjelderIdent, grunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.BARNETILLEGG,
+                    grunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG),
+                    medId,
+                )
+            },
+        hentUtvidetbarnetrygdListe().groupBy { it.personId }
+            .map { (gjelderIdent, grunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                    grunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD),
+                    medId,
+                )
+            },
+        hentSmåbarnstilleggListe().groupBy { it.personId }
+            .map { (gjelderIdent, grunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    grunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG),
+                    medId,
+                )
+            },
+        hentBarnetilsynListe().groupBy { it.partPersonId }
+            .map { (gjelderIdent, grunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.BARNETILSYN,
+                    grunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                    medId,
+                )
+            },
+        hentKontantstøtteListe().groupBy { it.partPersonId }
+            .map { (gjelderIdent, grunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.KONTANTSTØTTE,
+                    grunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE),
+                    medId,
+                )
+            },
+        hentGrunnlagAinntekt().groupBy { it.personId }
+            .map { (gjelderIdent, grunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.AINNTEKT,
+                    grunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
+                    medId,
+                )
+            },
+        hentGrunnlagAinntekt().groupBy { it.personId }
+            .map { (gjelderIdent, grunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.SKATTEGRUNNLAG,
+                    grunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE),
+                    medId,
+                )
+            },
+    ).flatten()
 }
+
+fun Behandling.opprettGrunnlagEntityForInntekt(
+    ainntektListe: List<AinntektGrunnlagDto>,
+    skattegrunnlagListe: List<SkattegrunnlagGrunnlagDto>,
+): List<Grunnlag> {
+    val ainntektPerPersonMap = ainntektListe.groupBy { it.personId }
+    val skattegrunnlagPerPersonMap = skattegrunnlagListe.groupBy { it.personId }
+
+    val personer = ainntektPerPersonMap.keys + skattegrunnlagPerPersonMap.keys
+    return personer.map {
+        val ainntektListe = ainntektPerPersonMap[it] ?: emptyList()
+        val skattegrunnlagListe = skattegrunnlagPerPersonMap[it] ?: emptyList()
+        opprettGrunnlag(
+            Grunnlagsdatatype.INNTEKT,
+            GrunnlagInntekt(
+                ainntekt = ainntektListe,
+                skattegrunnlag = skattegrunnlagListe,
+            ),
+            it,
+            LocalDateTime.now(),
+            true,
+        )
+    }
+}
+
+private fun Behandling.opprettGrunnlag(
+    type: Grunnlagsdatatype,
+    grunnlag: Any,
+    gjelderIdent: String,
+    innhentetTidspunkt: LocalDateTime,
+    medId: Boolean,
+) = Grunnlag(
+    behandling = this,
+    id = if (medId) 1 else null,
+    innhentet = innhentetTidspunkt,
+    data = commonObjectmapper.writeValueAsString(grunnlag),
+    type = type,
+    rolle = roller.find { it.ident == gjelderIdent }!!,
+)
 
 fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,

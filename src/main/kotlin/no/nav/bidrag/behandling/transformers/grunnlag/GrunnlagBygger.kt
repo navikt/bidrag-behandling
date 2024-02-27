@@ -51,7 +51,7 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
     val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
     val bostatusBarn = tilGrunnlagBostatus(personobjekter)
 
-    val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn)
+    val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
     val sivilstandBm =
         tilGrunnlagSivilstand(
             personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),

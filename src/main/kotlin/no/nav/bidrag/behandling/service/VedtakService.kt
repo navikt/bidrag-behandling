@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønadAvslag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
+import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
@@ -22,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.MermaidResponse
 import no.nav.bidrag.commons.util.TreeChild
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.util.tilVedtakDto
 import no.nav.bidrag.commons.util.toMermaid
 import no.nav.bidrag.commons.util.toTree
@@ -64,7 +66,7 @@ class VedtakService(
     }
 
     fun fatteVedtak(behandlingId: Long): Int {
-        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", true)
+        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", false)
         if (isEnabled.not()) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -82,6 +84,7 @@ class VedtakService(
             }
 
         request.validerGrunnlagsreferanser()
+        secureLogger.info { "Fatter vedtak for behandling $behandlingId med forespørsel $request" }
         val response = vedtakConsumer.fatteVedtak(request)
         behandlingService.oppdaterBehandling(
             behandlingId,
@@ -159,7 +162,7 @@ class VedtakService(
                 },
             engangsbeløpListe = emptyList(),
             behandlingsreferanseListe = tilBehandlingreferanseListe(),
-            grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
+            grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
             kilde = Vedtakskilde.MANUELT,
             fastsattILand = null,
             innkrevingUtsattTilDato = null,
@@ -173,7 +176,7 @@ class VedtakService(
         val beregning = beregningService.beregneForskudd(id!!)
 
         val stønadsendringPerioder =
-            beregning.resultatBarn.map { it.byggStønadsendringerForVedtak(this) }
+            beregning.map { it.byggStønadsendringerForVedtak(this) }
 
         val grunnlagListeVedtak = byggGrunnlagForVedtak()
         val stønadsendringGrunnlagListe = byggGrunnlagForStønad()

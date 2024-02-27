@@ -65,8 +65,8 @@ class BeregningServiceTest {
         verify(exactly = 2) {
             BeregnForskuddApi().beregn(any())
         }
-        resultat.resultatBarn shouldHaveSize 2
-        resultat.resultatBarn[0].resultat.grunnlagListe shouldHaveSize 35
+        resultat shouldHaveSize 2
+        resultat[0].resultat.grunnlagListe shouldHaveSize 35
         beregnGrunnlagList shouldHaveSize 2
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
