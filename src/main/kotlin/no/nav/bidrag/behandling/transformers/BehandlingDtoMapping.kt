@@ -91,6 +91,8 @@ fun Behandling.tilBehandlingDtoV2(
                     }.toSet(),
             årsinntekter =
                 inntekter.filter { !eksplisitteYtelser.contains(it.type) }.tilInntektDtoV2()
+                    .sortedBy { it.rapporteringstype }
+                    .sortedBy { it.datoFom }
                     .toSet(),
             notat =
                 BehandlingNotatDto(
