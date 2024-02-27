@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
@@ -81,37 +82,37 @@ class InntektServiceTest : TestContainerRunner() {
                     versjon = "xyz",
                     summerteMånedsinntekter = emptyList(),
                     summerteÅrsinntekter =
-                        listOf(
-                            SummertÅrsinntekt(
-                                inntektRapportering = Inntektsrapportering.LIGNINGSINNTEKT,
-                                inntektPostListe =
-                                    listOf(
-                                        InntektPost(
-                                            kode = "samletLoennsinntektUtenTrygdeavgiftspliktOgMedTrekkplikt",
-                                            beløp = BigDecimal(500000),
-                                            visningsnavn = "Lønnsinntekt med trygdeavgiftsplikt og med trekkplikt",
-                                        ),
-                                    ),
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                                        YearMonth.now().withMonth(1).atDay(1),
-                                    ),
-                                sumInntekt = BigDecimal(500000),
-                                visningsnavn = "Sigrun ligningsinntekt (LIGS) ${Year.now().minusYears(1)}",
+                    listOf(
+                        SummertÅrsinntekt(
+                            inntektRapportering = Inntektsrapportering.LIGNINGSINNTEKT,
+                            inntektPostListe =
+                            listOf(
+                                InntektPost(
+                                    kode = "samletLoennsinntektUtenTrygdeavgiftspliktOgMedTrekkplikt",
+                                    beløp = BigDecimal(500000),
+                                    visningsnavn = "Lønnsinntekt med trygdeavgiftsplikt og med trekkplikt",
+                                ),
                             ),
-                            SummertÅrsinntekt(
-                                inntektRapportering = Inntektsrapportering.KONTANTSTØTTE,
-                                inntektPostListe = emptyList(),
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                                        YearMonth.now().withMonth(1).atDay(1),
-                                    ),
-                                sumInntekt = BigDecimal(60000),
-                                visningsnavn = "Kontantstøtte",
+                            periode =
+                            ÅrMånedsperiode(
+                                YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                YearMonth.now().withMonth(1).atDay(1),
                             ),
+                            sumInntekt = BigDecimal(500000),
+                            visningsnavn = "Sigrun ligningsinntekt (LIGS) ${Year.now().minusYears(1)}",
                         ),
+                        SummertÅrsinntekt(
+                            inntektRapportering = Inntektsrapportering.KONTANTSTØTTE,
+                            inntektPostListe = emptyList(),
+                            periode =
+                            ÅrMånedsperiode(
+                                YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                YearMonth.now().withMonth(1).atDay(1),
+                            ),
+                            sumInntekt = BigDecimal(60000),
+                            visningsnavn = "Kontantstøtte",
+                        ),
+                    ),
                 )
 
             // hvis
@@ -128,18 +129,18 @@ class InntektServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().inntekter.size shouldBe 2
                 oppdatertBehandling.get().inntekter.first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }
                     .belop shouldBe
-                    summerteMånedsOgÅrsinntekter.summerteÅrsinntekter
-                        .first { Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering }.sumInntekt
+                        summerteMånedsOgÅrsinntekter.summerteÅrsinntekter
+                            .first { Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering }.sumInntekt
                 oppdatertBehandling.get().inntekter.first { Inntektsrapportering.KONTANTSTØTTE == it.type }.belop shouldBe
-                    summerteMånedsOgÅrsinntekter.summerteÅrsinntekter
-                        .first { Inntektsrapportering.KONTANTSTØTTE == it.inntektRapportering }.sumInntekt
+                        summerteMånedsOgÅrsinntekter.summerteÅrsinntekter
+                            .first { Inntektsrapportering.KONTANTSTØTTE == it.inntektRapportering }.sumInntekt
                 oppdatertBehandling.get().inntekter
                     .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }.inntektsposter.size shouldBe 1
                 oppdatertBehandling.get().inntekter
                     .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }.inntektsposter.first().kode shouldBe
-                    summerteMånedsOgÅrsinntekter.summerteÅrsinntekter.first {
-                        Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering
-                    }.inntektPostListe.first().kode
+                        summerteMånedsOgÅrsinntekter.summerteÅrsinntekter.first {
+                            Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering
+                        }.inntektPostListe.first().kode
             }
         }
     }
@@ -161,7 +162,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
                 behandling = behandling,
-                grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.INNTEKT, false),
                 innhentet = LocalDate.of(YearMonth.now().minusYears(1).year, 1, 1).atStartOfDay(),
                 aktiv = null,
             )
@@ -222,7 +223,9 @@ class InntektServiceTest : TestContainerRunner() {
             assertSoftly {
                 behandling.inntekter.size shouldBe 3
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT == it.type }.belop shouldBe BigDecimal(70000)
-                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe BigDecimal(70000)
+                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe BigDecimal(
+                    70000
+                )
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe BigDecimal.ZERO
             }
         }
@@ -258,7 +261,7 @@ class InntektServiceTest : TestContainerRunner() {
             val forespørselOmOppdateringAvInntekter =
                 OppdatereInntekterRequestV2(
                     oppdatereManuelleInntekter =
-                        setOf(oppretteRequestForOppdateringAvManuellInntekt(idInntekt = lagretKontantstøtte.id!!)),
+                    setOf(oppretteRequestForOppdateringAvManuellInntekt(idInntekt = lagretKontantstøtte.id!!)),
                 )
 
             // hvis
@@ -271,9 +274,9 @@ class InntektServiceTest : TestContainerRunner() {
                 shouldBePresent(oppdatertBehandling)
                 oppdatertBehandling.get().inntekter.size shouldBe 1
                 oppdatertBehandling.get().inntekter.first().type shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereManuelleInntekter.first().type
+                        forespørselOmOppdateringAvInntekter.oppdatereManuelleInntekter.first().type
                 oppdatertBehandling.get().inntekter.first().belop shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereManuelleInntekter.first().beløp
+                        forespørselOmOppdateringAvInntekter.oppdatereManuelleInntekter.first().beløp
             }
         }
 
@@ -347,17 +350,17 @@ class InntektServiceTest : TestContainerRunner() {
             val forespørselOmOppdateringAvInntekter =
                 OppdatereInntekterRequestV2(
                     oppdatereInntektsperioder =
-                        setOf(
-                            OppdaterePeriodeInntekt(
-                                id = lagretInntekt.id!!,
-                                taMedIBeregning = false,
-                                angittPeriode =
-                                    Datoperiode(
-                                        lagretInntekt.datoFom.minusYears(2),
-                                        lagretInntekt.datoTom?.plusMonths(1),
-                                    ),
+                    setOf(
+                        OppdaterePeriodeInntekt(
+                            id = lagretInntekt.id!!,
+                            taMedIBeregning = false,
+                            angittPeriode =
+                            Datoperiode(
+                                lagretInntekt.datoFom.minusYears(2),
+                                lagretInntekt.datoTom?.plusMonths(1),
                             ),
                         ),
+                    ),
                 )
 
             // hvis
@@ -372,11 +375,11 @@ class InntektServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().inntekter.size shouldBe 1
                 oppdatertBehandling.get().inntekter.first().belop shouldBe ainntekt.belop
                 oppdatertBehandling.get().inntekter.first().datoFom shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.fom
+                        forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.fom
                 oppdatertBehandling.get().inntekter.first().datoTom shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.til?.minusDays(
-                        1,
-                    )
+                        forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.til?.minusDays(
+                            1,
+                        )
                 oppdatertBehandling.get().inntekter.first().opprinneligFom shouldBe ainntekt.opprinneligFom
                 oppdatertBehandling.get().inntekter.first().opprinneligTom shouldBe ainntekt.opprinneligTom
                 oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1

@@ -4,7 +4,7 @@ import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
-import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
@@ -62,7 +62,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
     @Transactional
     fun <T> oppretteOgLagreGrunnlag(
         behandling: Behandling,
-        grunnlagsdatatype: Grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+        grunnlagstype: Grunnlagstype = Grunnlagstype(Grunnlagsdatatype.INNTEKT, false),
         innhentet: LocalDateTime,
         aktiv: LocalDateTime? = null,
         grunnlagsdata: T? = null,
@@ -70,13 +70,14 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
         behandling.grunnlag.add(
             Grunnlag(
                 behandling,
-                grunnlagsdatatype.getOrMigrate(),
+                grunnlagstype.type,
+                grunnlagstype.erBearbeidet,
                 data =
                     if (grunnlagsdata != null) {
                         tilJson(grunnlagsdata)
                     } else {
                         oppretteGrunnlagInntektsdata(
-                            grunnlagsdatatype,
+                            grunnlagstype.type,
                             behandling.bidragsmottaker!!.ident!!,
                             behandling.søktFomDato,
                         )

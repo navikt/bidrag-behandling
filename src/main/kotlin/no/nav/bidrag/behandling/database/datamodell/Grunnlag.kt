@@ -44,7 +44,7 @@ open class Grunnlag(
     open val id: Long? = null,
 )
 
-inline fun <reified T> Grunnlag?.hentData(erBearbeidet: Boolean = false): T? =
+inline fun <reified T> Grunnlag?.hentData(): T? =
     when (this?.type) {
         Grunnlagsdatatype.INNTEKTSOPPLYSNINGER, Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
         Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T

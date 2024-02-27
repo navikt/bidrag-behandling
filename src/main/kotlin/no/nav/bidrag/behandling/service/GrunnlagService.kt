@@ -31,8 +31,10 @@ import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
@@ -61,7 +63,7 @@ class GrunnlagService(
     @Deprecated("Grunnlagsinnhenting og opprettelse skal gjøres automatisk med oppdatereGrunnlagForBehandling")
     fun opprett(
         behandlingId: Long,
-        grunnlagstype: Grunnlagstype,
+        grunnlagstype: Grunnlagsdatatype,
         data: String,
         innhentet: LocalDateTime,
     ): Grunnlag {
@@ -69,11 +71,23 @@ class GrunnlagService(
             .findBehandlingById(behandlingId)
             .orElseThrow { behandlingNotFoundException(behandlingId) }
             .let {
+
+                val nyGrunnlagstype = when (grunnlagstype) {
+                    Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true)
+                    Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false)
+                    else -> {
+                        throw HttpClientErrorException(
+                            HttpStatus.BAD_REQUEST,
+                            "Grunnlagstype $grunnlagstype støttes ikke ved oppdatering av opplysninger.",
+                        )
+                    }
+                }
+
                 return grunnlagRepository.save<Grunnlag>(
                     Grunnlag(
                         it,
-                        grunnlagstype.type,
-                        erBearbeidet = grunnlagstype.erBearbeidet,
+                        nyGrunnlagstype.type,
+                        erBearbeidet = nyGrunnlagstype.erBearbeidet,
                         data = data,
                         rolle = it.bidragsmottaker!!,
                         innhentet = innhentet,
@@ -183,28 +197,30 @@ class GrunnlagService(
         behandlingsid: Long,
         rolleid: Long,
     ): List<Grunnlag> =
-        Grunnlagsdatatype.entries.toTypedArray().mapNotNull {
-            g ->
-            grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                behandlingsid,
-                rolleid,
-                g,
-                false,
-            )
+        Grunnlagsdatatype.entries.toTypedArray().flatMap { grunnlagstype ->
+            listOf(true, false).mapNotNull { erBearbeidet ->
+                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
+                    behandlingsid,
+                    rolleid,
+                    grunnlagstype,
+                    erBearbeidet,
+                )
+            }
         }
 
     fun henteGjeldendeAktiveGrunnlagsdata(behandling: Behandling): List<Grunnlag> =
         Grunnlagsdatatype.entries.toTypedArray().flatMap { type ->
-            behandling.roller.map {
-                // TODO: Til Jan Kjetil. Hvis feks barn hadde inntekter ville det føre til at BM inntekter ikke ble tatt med i grunnlagslisten pga at typen er samme
-                // TODO: Det bør derfor enten filtreres basert på rolle eller at alt hentes ut slik det er gjort her.
-                grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
-                    behandling.id!!,
-                    type,
-                    it,
-                )
+            listOf(true, false).flatMap { erBearbeidet ->
+                behandling.roller.mapNotNull { rolle ->
+                    grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
+                        behandling.id!!,
+                        type,
+                        erBearbeidet,
+                        rolle,
+                    )
+                }
             }
-        }.filterNotNull()
+        }
 
     private fun aktivereGrunnlag(
         behandling: Behandling,
@@ -286,7 +302,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.ARBEIDSFORHOLD,
+            Grunnlagstype(Grunnlagsdatatype.ARBEIDSFORHOLD, false),
             innhentetGrunnlag.arbeidsforholdListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
@@ -294,7 +310,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.BARNETILLEGG,
+            Grunnlagstype(Grunnlagsdatatype.BARNETILLEGG, false),
             innhentetGrunnlag.barnetilleggListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
@@ -302,7 +318,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.BARNETILSYN,
+            Grunnlagstype(Grunnlagsdatatype.BARNETILSYN, false),
             innhentetGrunnlag.barnetilsynListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
@@ -310,7 +326,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.KONTANTSTØTTE,
+            Grunnlagstype(Grunnlagsdatatype.KONTANTSTØTTE, false),
             innhentetGrunnlag.kontantstøtteListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
@@ -318,7 +334,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+            Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
             innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
@@ -326,7 +342,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.SIVILSTAND,
+            Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
             innhentetGrunnlag.sivilstandListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
@@ -334,7 +350,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.SMÅBARNSTILLEGG,
+            Grunnlagstype(Grunnlagsdatatype.SMÅBARNSTILLEGG, false),
             innhentetGrunnlag.småbarnstilleggListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
@@ -342,7 +358,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(
             behandlingsid,
             rolleInhentetFor,
-            Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+            Grunnlagstype(Grunnlagsdatatype.UTVIDET_BARNETRYGD, false),
             innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
@@ -351,7 +367,7 @@ class GrunnlagService(
             behandlingsid,
             rolleInhentetFor,
             innhentetGrunnlag.hentetTidspunkt,
-            Grunnlagsdatatype.INNTEKT,
+            Grunnlagstype(Grunnlagsdatatype.INNTEKT, false),
             innhentetGrunnlag.tilGrunnlagInntekt(),
         )
 
@@ -371,7 +387,7 @@ class GrunnlagService(
             behandlingsid,
             rolleInhentetFor,
             innhentetGrunnlag.hentetTidspunkt,
-            Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            Grunnlagstype(Grunnlagsdatatype.INNTEKT, true),
             sammenstilteInntekter.tilSummerteMånedsOgÅrsinntekter(),
         )
     }
@@ -379,19 +395,20 @@ class GrunnlagService(
     private fun opprett(
         behandlingsid: Long,
         idTilRolleInnhentetFor: Long,
-        grunnlagsdatatype: Grunnlagsdatatype,
+        grunnlagstype: Grunnlagstype,
         data: String,
         innhentet: LocalDateTime,
         aktiv: LocalDateTime? = null,
     ) {
-        log.info { "Lagrer inntentet grunnlag $grunnlagsdatatype for behandling med id $behandlingsid" }
+        log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id $behandlingsid" }
 
         behandlingRepository.findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 it.grunnlag.add(
                     Grunnlag(
                         it,
-                        grunnlagsdatatype.getOrMigrate(),
+                        grunnlagstype.type,
+                        grunnlagstype.erBearbeidet,
                         data = data,
                         innhentet = innhentet,
                         aktiv = aktiv,
@@ -404,7 +421,7 @@ class GrunnlagService(
     private inline fun <reified T> lagreGrunnlagHvisEndret(
         behandlingsid: Long,
         rolle: Rolle,
-        grunnlagstype: Grunnlagsdatatype,
+        grunnlagstype: Grunnlagstype,
         innhentetGrunnlag: Set<T>,
         hentetTidspunkt: LocalDateTime,
     ) {
@@ -417,7 +434,7 @@ class GrunnlagService(
             opprett(
                 behandlingsid = behandlingsid,
                 data = tilJson(innhentetGrunnlag),
-                grunnlagsdatatype = grunnlagstype,
+                grunnlagstype = grunnlagstype,
                 innhentet = hentetTidspunkt,
                 aktiv = if (sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) LocalDateTime.now() else null,
                 idTilRolleInnhentetFor = rolle.id!!,
@@ -431,7 +448,7 @@ class GrunnlagService(
         behandlingsid: Long,
         rolle: Rolle,
         hentetTidspunkt: LocalDateTime,
-        grunnlagstype: Grunnlagsdatatype,
+        grunnlagstype: Grunnlagstype,
         innhentetGrunnlag: T,
     ) {
         val sistInnhentedeGrunnlagAvType: T? =
@@ -443,14 +460,17 @@ class GrunnlagService(
             opprett(
                 behandlingsid = behandlingsid,
                 data = tilJson(innhentetGrunnlag),
-                grunnlagsdatatype = grunnlagstype,
+                grunnlagstype = grunnlagstype,
                 innhentet = hentetTidspunkt,
                 aktiv = if (sistInnhentedeGrunnlagAvType == null) LocalDateTime.now() else null,
                 idTilRolleInnhentetFor = rolle.id!!,
             )
 
             // Oppdatere inntektstabell med sammenstilte offentlige inntekter
-            if (Grunnlagsdatatype.INNTEKT_BEARBEIDET == grunnlagstype && sistInnhentedeGrunnlagAvType == null) {
+            if (Grunnlagsdatatype.INNTEKT == grunnlagstype.type
+                && grunnlagstype.erBearbeidet
+                && sistInnhentedeGrunnlagAvType == null
+            ) {
                 inntektService.lagreInntekter(
                     behandlingsid,
                     Personident(rolle.ident!!),
@@ -477,7 +497,7 @@ class GrunnlagService(
     private inline fun <reified T> henteNyesteGrunnlagsdatasett(
         behandlingsid: Long,
         rolleid: Long,
-        grunnlagstype: Grunnlagsdatatype,
+        grunnlagstype: Grunnlagstype,
     ): Set<T> {
         val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
 
@@ -491,7 +511,7 @@ class GrunnlagService(
     private inline fun <reified T> henteNyesteGrunnlagsdataobjekt(
         behandlingsid: Long,
         rolleid: Long,
-        grunnlagstype: Grunnlagsdatatype,
+        grunnlagstype: Grunnlagstype,
     ): T? {
         val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
 

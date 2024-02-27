@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
@@ -48,6 +49,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
     @Test
     fun `skal oppdatere behandling for API v2`() {
+        
         // gitt
         val b = testdataManager.opprettBehandling()
 
@@ -72,12 +74,13 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Transactional
     @Disabled("Gir 404 - lagret behandling ikke tilgjengelig")
     fun `skal aktivere grunnlag`() {
+
         // gitt
         val behandling = testdataManager.opprettBehandling()
 
         testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
             behandling = behandling,
-            grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.INNTEKT, false),
             innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
             aktiv = null,
         )

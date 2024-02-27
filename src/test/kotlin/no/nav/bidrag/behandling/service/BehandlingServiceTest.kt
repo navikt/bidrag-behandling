@@ -8,6 +8,7 @@ import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -90,7 +91,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling,
-                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                Grunnlagstype(Grunnlagsdatatype.INNTEKT, true),
                 innhentet = LocalDateTime.now(),
                 grunnlagsdata =
                     SummerteMånedsOgÅrsinntekter(
@@ -130,7 +131,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling,
-                Grunnlagsdatatype.INNTEKT,
+                Grunnlagstype(Grunnlagsdatatype.INNTEKT, false),
                 innhentet = LocalDateTime.now(),
                 grunnlagsdata =
                     GrunnlagInntekt(
@@ -505,7 +506,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
                 behandling = behandling,
-                grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.INNTEKT, false),
                 innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                 aktiv = null,
             )
