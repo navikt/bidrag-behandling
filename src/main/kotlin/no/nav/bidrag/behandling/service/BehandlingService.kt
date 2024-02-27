@@ -234,9 +234,4 @@ class BehandlingService(
     private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
         return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
     }
-
-    private fun forespørselInneholderBmOgBarn(roller: Set<OpprettRolleDto>): Boolean {
-        return roller.filter { r -> r.rolletype == Rolletype.BIDRAGSMOTTAKER }
-            .isNotEmpty() && roller.filter { r -> r.rolletype == Rolletype.BARN }.isNotEmpty()
-    }
 }
