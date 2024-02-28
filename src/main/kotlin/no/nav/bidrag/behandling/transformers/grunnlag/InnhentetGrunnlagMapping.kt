@@ -187,7 +187,7 @@ fun List<Grunnlag>.hentGrunnlagsreferanserForInntekt(
                 (inntekt.gjelderBarn.isNullOrEmpty() || inntekt.gjelderBarn == it.gjelderBarnPersonId)
         }
 
-    return beregnetInntekt?.grunnlagsreferanseListe
+    return beregnetInntekt?.grunnlagsreferanseListe?.filter { it.isNotEmpty() }
         ?: grunnlagByggingFeilet(
             "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.type} " +
                 "for periode (${inntekt.opprinneligFom}-${inntekt.opprinneligTom}) og barn ${inntekt.gjelderBarn}",

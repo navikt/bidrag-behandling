@@ -202,9 +202,17 @@ class InntektServiceTest : TestContainerRunner() {
             val transformereInntekter =
                 TransformerInntekterRequest(
                     ainntektHentetDato = nyttGrunnlag.innhentet.toLocalDate(),
-                    ainntektsposter = grunnlagInntekt.ainntekt.flatMap { it.ainntektspostListe.tilAinntektsposter() },
+                    ainntektsposter =
+                        grunnlagInntekt.ainntekt.flatMap {
+                            it.ainntektspostListe.tilAinntektsposter(
+                                testdataBM.tilRolle(behandling),
+                            )
+                        },
                     kontantstøtteliste = emptyList(),
-                    skattegrunnlagsliste = grunnlagInntekt.skattegrunnlag.tilSkattegrunnlagForLigningsår(),
+                    skattegrunnlagsliste =
+                        grunnlagInntekt.skattegrunnlag.tilSkattegrunnlagForLigningsår(
+                            testdataBM.tilRolle(behandling),
+                        ),
                     småbarnstilleggliste = emptyList(),
                     utvidetBarnetrygdliste = emptyList(),
                 )

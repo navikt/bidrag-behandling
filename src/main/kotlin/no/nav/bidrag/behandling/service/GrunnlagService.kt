@@ -243,9 +243,17 @@ class GrunnlagService(
         val transformereInntekter =
             TransformerInntekterRequest(
                 ainntektHentetDato = inntektsgrunnlag.innhentet.toLocalDate(),
-                ainntektsposter = grunnlagInntekt.ainntekt.flatMap { it.ainntektspostListe.tilAinntektsposter() },
+                ainntektsposter =
+                    grunnlagInntekt.ainntekt.flatMap {
+                        it.ainntektspostListe.tilAinntektsposter(
+                            rolle,
+                        )
+                    },
                 kontantstøtteliste = emptyList(),
-                skattegrunnlagsliste = grunnlagInntekt.skattegrunnlag.tilSkattegrunnlagForLigningsår(),
+                skattegrunnlagsliste =
+                    grunnlagInntekt.skattegrunnlag.tilSkattegrunnlagForLigningsår(
+                        rolle,
+                    ),
                 småbarnstilleggliste = emptyList(),
                 utvidetBarnetrygdliste = emptyList(),
             )
@@ -354,11 +362,28 @@ class GrunnlagService(
         val transformereInntekter =
             TransformerInntekterRequest(
                 ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
-                ainntektsposter = innhentetGrunnlag.ainntektListe.flatMap { it.ainntektspostListe.tilAinntektsposter() },
-                kontantstøtteliste = innhentetGrunnlag.kontantstøtteListe.tilKontantstøtte(),
-                skattegrunnlagsliste = innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(),
-                småbarnstilleggliste = innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(),
-                utvidetBarnetrygdliste = innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(),
+                ainntektsposter =
+                    innhentetGrunnlag.ainntektListe.flatMap {
+                        it.ainntektspostListe.tilAinntektsposter(
+                            rolleInhentetFor,
+                        )
+                    },
+                kontantstøtteliste =
+                    innhentetGrunnlag.kontantstøtteListe.tilKontantstøtte(
+                        rolleInhentetFor,
+                    ),
+                skattegrunnlagsliste =
+                    innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
+                        rolleInhentetFor,
+                    ),
+                småbarnstilleggliste =
+                    innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
+                        rolleInhentetFor,
+                    ),
+                utvidetBarnetrygdliste =
+                    innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
+                        rolleInhentetFor,
+                    ),
             )
 
         val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)

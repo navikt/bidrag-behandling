@@ -28,7 +28,7 @@ class BehandlingControllerV2(
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
     @Operation(
-        description = "Omgjør vedtak til en behandling",
+        description = "Hent vedtak som behandling for lesemodus. Vedtak vil bli konvertert til behandling uten lagring",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -36,11 +36,11 @@ class BehandlingControllerV2(
             ApiResponse(responseCode = "200", description = "Vedtak i form av behandling"),
             ApiResponse(
                 responseCode = "404",
-                description = "Fant ikke vedtak med oppgitt vedtakid",
+                description = "Fant ikke vedtak med oppgitt vedtaksid",
             ),
         ],
     )
-    fun omgjørVedtakTilBehandling(
+    fun vedtakLesemodus(
         @PathVariable vedtakId: Long,
     ): BehandlingDtoV2 {
         val resultat =

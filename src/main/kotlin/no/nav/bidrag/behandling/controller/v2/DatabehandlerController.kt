@@ -2,10 +2,10 @@ package no.nav.bidrag.behandling.controller.v2
 
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.service.beregnSivilstandPerioder
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.inntekt.InntektApi
+import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
@@ -22,8 +22,6 @@ import no.nav.bidrag.transport.behandling.inntekt.request.SkattegrunnlagForLigni
 import no.nav.bidrag.transport.behandling.inntekt.request.Småbarnstillegg
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.request.UtvidetBarnetrygd
-import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -42,55 +40,9 @@ class DatabehandlerController(
         @RequestBody request: List<SivilstandGrunnlagDto>,
     ): SivilstandBeregnet {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        return behandling.beregnSivilstandPerioder(request)
-    }
-
-//    @Suppress("unused")
-//    @PostMapping("/databehandler/bosstatus/{behandlingId}")
-//    fun konverterBosstatus(
-//        @PathVariable behandlingId: Long,
-//        @RequestBody request: List<RelatertPerson>,
-//    ): List<BoforholdHusstandBearbeidet> {
-//        val behandling = behandlingService.hentBehandlingById(behandlingId)
-//        val beregnet =
-//            BoforholdApi.beregn(behandling.virkningstidspunkt ?: behandling.søktFomDato, request)
-//        return beregnet.groupBy { it.relatertPersonPersonId }.map {
-//            val rolle = behandling.roller.find { rolle -> rolle.ident == it.key }
-//            BoforholdHusstandBearbeidet(
-//                ident = it.key!!,
-//                foedselsdato = rolle?.foedselsdato ?: hentPersonFødselsdato(it.key),
-//                navn = rolle?.navn,
-//                perioder =
-//                    it.value.map {
-//                        BoforholdBearbeidetPeriode(
-//                            fraDato = it.periodeFom.atStartOfDay(),
-//                            tilDato = it.periodeTom?.atStartOfDay(),
-//                            bostatus = it.bostatus,
-//                        )
-//                    },
-//            )
-//        }
-//    }
-
-    @Suppress("unused")
-    @PostMapping("/databehandler/inntekt/{behandlingId}")
-    fun konverterInntekter(
-        @PathVariable behandlingId: Long,
-        @RequestBody request: KonverterInntekterDto,
-    ): ResponseEntity<TransformerInntekterResponse> {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val rolle = behandling.roller.find { it.ident == request.personId }
-        return inntektApi.transformerInntekter(
-            request.grunnlagDto.tilTransformerInntekterRequest(
-                rolle!!,
-                behandling.roller,
-            ),
-        )
-            .let { ResponseEntity.ok(it) }
+        return SivilstandApi.beregn(behandling.virkningstidspunktEllerSøktFomDato, request)
     }
 }
-
-data class KonverterInntekterDto(val personId: String, val grunnlagDto: HentGrunnlagDto)
 
 fun HentGrunnlagDto.tilTransformerInntekterRequest(
     rolle: Rolle,

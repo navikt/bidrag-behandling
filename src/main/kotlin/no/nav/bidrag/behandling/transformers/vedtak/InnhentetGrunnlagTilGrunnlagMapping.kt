@@ -37,35 +37,34 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 
-fun List<GrunnlagDto>.hentBeregnetInntekt(ident: String): SummerteMånedsOgÅrsinntekter? {
-    val beregnetInntekt =
-        filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT)
-            .find {
-                val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
-                gjelder.personIdent == ident
-            } ?: return null
-    val innhold = beregnetInntekt.innholdTilObjekt<BeregnetInntekt>()
-
-    return SummerteMånedsOgÅrsinntekter(
-        versjon = innhold.versjon,
-        summerteÅrsinntekter = emptyList(),
-        summerteMånedsinntekter =
-            innhold.summertMånedsinntektListe
-                .map {
-                    SummertMånedsinntekt(
-                        gjelderÅrMåned = it.gjelderÅrMåned,
-                        sumInntekt = it.sumInntekt,
-                        inntektPostListe =
-                            it.inntektPostListe.map {
-                                InntektPost(
-                                    kode = it.kode,
-                                    beløp = it.beløp,
-                                    inntekstype = it.inntekstype,
-                                )
-                            },
-                    )
-                },
-    )
+fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteMånedsOgÅrsinntekter> {
+    return filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT).groupBy {
+        val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
+        gjelder.personIdent
+    }.map { (ident, beregnetInntekt) ->
+        val innhold = beregnetInntekt.innholdTilObjekt<BeregnetInntekt>().first()
+        ident to
+            SummerteMånedsOgÅrsinntekter(
+                versjon = innhold.versjon,
+                summerteÅrsinntekter = emptyList(),
+                summerteMånedsinntekter =
+                    innhold.summertMånedsinntektListe
+                        .map {
+                            SummertMånedsinntekt(
+                                gjelderÅrMåned = it.gjelderÅrMåned,
+                                sumInntekt = it.sumInntekt,
+                                inntektPostListe =
+                                    it.inntektPostListe.map {
+                                        InntektPost(
+                                            kode = it.kode,
+                                            beløp = it.beløp,
+                                            inntekstype = it.inntekstype,
+                                        )
+                                    },
+                            )
+                        },
+            )
+    }.associate { it.first!! to it.second }
 }
 
 fun List<GrunnlagDto>.hentInnhenetHusstandsmedlem(): List<RelatertPersonGrunnlagDto> =

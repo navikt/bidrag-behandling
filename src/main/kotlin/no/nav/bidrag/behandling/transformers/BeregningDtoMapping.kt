@@ -4,7 +4,6 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -25,18 +24,18 @@ fun List<ResultatForskuddsberegningBarn>.tilDto() =
                         beløp = periode.resultat.belop,
                         resultatKode = periode.resultat.kode,
                         regel = periode.resultat.regel,
-                        sivilstand = periode.finnSivilstandForPeriode(grunnlagsListe),
-                        inntekt = periode.finnTotalInntekt(grunnlagsListe),
-                        antallBarnIHusstanden = periode.finnAntallBarnIHusstanden(grunnlagsListe),
+                        sivilstand = grunnlagsListe.finnSivilstandForPeriode(periode.grunnlagsreferanseListe),
+                        inntekt = grunnlagsListe.finnTotalInntekt(periode.grunnlagsreferanseListe),
+                        antallBarnIHusstanden = grunnlagsListe.finnAntallBarnIHusstanden(periode.grunnlagsreferanseListe),
                     )
                 },
         )
     }
 
-fun ResultatPeriode.finnSivilstandForPeriode(grunnlagsListe: List<GrunnlagDto>): Sivilstandskode {
-    val sluttberegning = grunnlagsListe.finnSluttberegningIReferanser(grunnlagsreferanseListe)!!
+fun List<GrunnlagDto>.finnSivilstandForPeriode(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Sivilstandskode {
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe)!!
     val sivilstandPeriode =
-        grunnlagsListe.find {
+        find {
             it.type == Grunnlagstype.SIVILSTAND_PERIODE &&
                 sluttberegning.grunnlagsreferanseListe.contains(
                     it.referanse,
@@ -45,12 +44,12 @@ fun ResultatPeriode.finnSivilstandForPeriode(grunnlagsListe: List<GrunnlagDto>):
     return sivilstandPeriode?.innholdTilObjekt<SivilstandPeriode>()?.sivilstand!!
 }
 
-fun ResultatPeriode.finnAntallBarnIHusstanden(grunnlagsListe: List<GrunnlagDto>): Int {
+fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int {
     val sluttberegning =
-        grunnlagsListe.finnSluttberegningIReferanser(grunnlagsreferanseListe)
+        finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return 0
     val delberegningBarnIHusstanden =
-        grunnlagsListe.find {
+        find {
             it.type == Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND &&
                 sluttberegning.grunnlagsreferanseListe.contains(
                     it.referanse,
@@ -60,12 +59,12 @@ fun ResultatPeriode.finnAntallBarnIHusstanden(grunnlagsListe: List<GrunnlagDto>)
         ?: 0
 }
 
-fun ResultatPeriode.finnTotalInntekt(grunnlagsListe: List<GrunnlagDto>): BigDecimal {
+fun List<GrunnlagDto>.finnTotalInntekt(grunnlagsreferanseListe: List<Grunnlagsreferanse>): BigDecimal {
     val sluttberegning =
-        grunnlagsListe.finnSluttberegningIReferanser(grunnlagsreferanseListe)
+        finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
     val delberegningSumInntekt =
-        grunnlagsListe.find {
+        find {
             it.type == Grunnlagstype.DELBEREGNING_SUM_INNTEKT &&
                 sluttberegning.grunnlagsreferanseListe.contains(
                     it.referanse,

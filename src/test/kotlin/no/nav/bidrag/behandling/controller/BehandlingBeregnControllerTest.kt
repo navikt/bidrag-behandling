@@ -34,7 +34,7 @@ import org.springframework.http.HttpStatus
 import stubPersonConsumer
 import java.math.BigDecimal
 
-class BehandlingBeregnForskuddControllerTest : KontrollerTestRunner() {
+class BehandlingBeregnControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
 
