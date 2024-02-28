@@ -98,7 +98,7 @@ fun InntektDtoV2.tilBarnetilleggDto() =
 fun InntektDtoV2.tilKontantstøtteDto() =
     KontantstøtteDto(
         ident = ident.verdi,
-        gjelderBarn = gjelderBarn!!.verdi,
+        gjelderBarn = gjelderBarn?.verdi ?: "",
         kontantstøtte = beløp,
         datoFom = this.datoFom,
         datoTom = datoTom,
@@ -134,11 +134,14 @@ fun OppdaterBehandlingRequest.tilOppdaterBehandlingRequestV2(personidentBm: Pers
 
 fun OppdatereInntekterRequest.tilOppdatereInntekterRequestV2(personidentBm: Personident): OppdatereInntekterRequestV2 {
     val inntekt =
-        this.inntekter.orEmpty().map { i -> i.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toMutableSet()
+        this.inntekter.orEmpty().map { i -> i.tilInntektDtoV2() }
+            .map { it.tilOppdatereManuellInntekt() }.toMutableSet()
     val barnetillegg =
-        this.barnetillegg.orEmpty().map { bt -> bt.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toSet()
+        this.barnetillegg.orEmpty().map { bt -> bt.tilInntektDtoV2() }
+            .map { it.tilOppdatereManuellInntekt() }.toSet()
     val kontantstøtte =
-        this.kontantstøtte.orEmpty().map { bt -> bt.tilInntektDtoV2() }.map { it.tilOppdatereManuellInntekt() }.toSet()
+        this.kontantstøtte.orEmpty().map { bt -> bt.tilInntektDtoV2() }
+            .map { it.tilOppdatereManuellInntekt() }.toSet()
     val utvidetBarnetrygd =
         this.utvidetbarnetrygd.orEmpty().map { ubt -> ubt.tilInntektDtoV2(personidentBm) }
             .map { it.tilOppdatereManuellInntekt() }.toSet()
@@ -146,7 +149,8 @@ fun OppdatereInntekterRequest.tilOppdatereInntekterRequestV2(personidentBm: Pers
     return OppdatereInntekterRequestV2(
         oppdatereManuelleInntekter =
             inntekt.filter { inntektDto ->
-                Inntektsrapportering.entries.filter { i -> i.kanLeggesInnManuelt }.contains(inntektDto.type)
+                Inntektsrapportering.entries.filter { i -> i.kanLeggesInnManuelt }
+                    .contains(inntektDto.type)
             }.toSet() + barnetillegg + kontantstøtte + utvidetBarnetrygd,
         notat = this.notat,
     )
