@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.consumer.BehandlingInfoResponseDto
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
-import no.nav.bidrag.behandling.controller.v2.tilTransformerInntekterRequest
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype

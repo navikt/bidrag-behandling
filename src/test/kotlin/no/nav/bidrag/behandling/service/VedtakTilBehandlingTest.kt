@@ -10,7 +10,9 @@ import io.mockk.every
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.transformers.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.hentFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -19,7 +21,10 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -33,6 +38,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubPersonConsumer
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @ExtendWith(SpringExtension::class)
@@ -95,7 +101,8 @@ class VedtakTilBehandlingTest {
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2023-01-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe 1
+            vedtaksid shouldBe null
+            omgjørVedtaksid shouldBe 1
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
             virkningstidspunktsbegrunnelseIVedtakOgNotat shouldBe "Notat virkningstidspunkt med i vedtak"
@@ -106,15 +113,9 @@ class VedtakTilBehandlingTest {
             inntektsbegrunnelseKunINotat shouldBe "Notat inntekt"
             validerRoller()
             validerHusstandsbarn()
-            assertSoftly(sivilstand) {
-                size shouldBe 1
-            }
-            assertSoftly(inntekter) {
-                size shouldBe 11
-            }
-            assertSoftly(behandling.grunnlagListe) {
-                size shouldBe 6
-            }
+            validerSivilstand()
+            validerInntekter()
+            validerGrunnlag()
         }
     }
 
@@ -135,6 +136,8 @@ class VedtakTilBehandlingTest {
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
+
+            validerRoller()
         }
     }
 
@@ -143,6 +146,47 @@ class VedtakTilBehandlingTest {
             hentFil("/__files/$filnavn.json"),
             VedtakDto::class.java,
         )
+    }
+
+    private fun Behandling.validerInntekter() {
+        assertSoftly(inntekter) {
+            size shouldBe 12
+            val barnetillegg = filter { it.type == Inntektsrapportering.BARNETILLEGG }
+            assertSoftly(barnetillegg) {
+                shouldHaveSize(1)
+                it[0].ident shouldBe testdataBM.ident
+                it[0].belop shouldBe BigDecimal(5000)
+                it[0].gjelderBarn shouldBe testdataBarn2.ident
+                it[0].taMed shouldBe false
+                it[0].datoFom shouldBe LocalDate.parse("2024-01-01")
+                it[0].datoTom shouldBe LocalDate.parse("2024-01-31")
+                it[0].inntektsposter shouldHaveSize 0
+                it[0].kilde shouldBe Kilde.MANUELL
+            }
+            val ainntekt = filter { it.type == Inntektsrapportering.AINNTEKT }
+            assertSoftly(ainntekt) {
+                shouldHaveSize(2)
+                it[0].ident shouldBe testdataBM.ident
+                it[0].belop shouldBe BigDecimal(2859987)
+                it[0].gjelderBarn shouldBe null
+                it[0].taMed shouldBe true
+                it[0].kilde shouldBe Kilde.OFFENTLIG
+                it[0].datoFom shouldBe LocalDate.parse("2022-01-01")
+                it[0].datoTom shouldBe LocalDate.parse("2022-12-31")
+                it[0].inntektsposter shouldHaveSize 1
+                assertSoftly(it[0].inntektsposter.first()) {
+                    beløp shouldBe BigDecimal(2859987)
+                    kode shouldBe "fastloenn"
+                    visningsnavn shouldBe "Visningsnavn"
+                    inntektstype shouldBe Inntektstype.AAP
+                }
+            }
+            filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 3
+            filter { it.type == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 3
+            filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND } shouldHaveSize 1
+        }
     }
 
     fun Behandling.validerHusstandsbarn() {
@@ -227,6 +271,83 @@ class VedtakTilBehandlingTest {
                 it.navn shouldBe null
                 it.deleted shouldBe false
             }
+        }
+    }
+
+    private fun Behandling.validerSivilstand() {
+        assertSoftly(sivilstand.toList()) {
+            size shouldBe 2
+            assertSoftly(this[0]) {
+                it.datoFom shouldBe LocalDate.parse("2022-11-01")
+                it.datoTom shouldBe LocalDate.parse("2023-06-30")
+                it.kilde shouldBe Kilde.OFFENTLIG
+                it.sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
+            }
+            assertSoftly(this[1]) {
+                it.datoFom shouldBe LocalDate.parse("2023-07-01")
+                it.datoTom shouldBe null
+                it.kilde shouldBe Kilde.MANUELL
+                it.sivilstand shouldBe Sivilstandskode.GIFT_SAMBOER
+            }
+        }
+    }
+
+    private fun Behandling.validerGrunnlag() {
+        assertSoftly(grunnlagListe) {
+            size shouldBe 13
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.SKATTEGRUNNLAG,
+                testdataBarn2.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                testdataBarn2.ident,
+            ) shouldHaveSize 1
+
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.SKATTEGRUNNLAG,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.AINNTEKT,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.KONTANTSTØTTE,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.BARNETILLEGG,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.BARNETILSYN,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.ARBEIDSFORHOLD,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.SIVILSTAND,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+                testdataBM.ident,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                testdataBM.ident,
+            ) shouldHaveSize 1
         }
     }
 }

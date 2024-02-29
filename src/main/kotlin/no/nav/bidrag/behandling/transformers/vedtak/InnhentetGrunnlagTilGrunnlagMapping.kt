@@ -207,7 +207,7 @@ fun List<GrunnlagDto>.hentGrunnlagSkattegrunnlag() =
                             kode = it.kode,
                             beløp = it.beløp,
                             belop = it.beløp,
-                            inntektType = "",
+                            inntektType = it.kode,
                         )
                     },
             )
@@ -236,7 +236,7 @@ fun List<GrunnlagDto>.hentGrunnlagAinntekt() =
                                 kategori = it.kategori,
                                 belop = it.beløp,
                                 beskrivelse = "",
-                                inntektType = "",
+                                inntektType = it.kategori,
                                 opplysningspliktigId = "",
                                 virksomhetId = "",
                             )

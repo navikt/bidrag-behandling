@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
@@ -78,3 +80,8 @@ fun List<SummertMånedsinntekt>.konvertereTilInntekt(
 ) = this.map {
     it.tilInntekt(behandling, person)
 }.toMutableSet()
+
+fun List<Grunnlag>.filtrerEtterTypeOgIdent(
+    type: Grunnlagsdatatype,
+    ident: String,
+) = this.filter { it.type == type && it.rolle.ident == ident }

@@ -11,6 +11,110 @@
   "opprettetTidspunkt": "2024-02-23T15:34:31.702734",
   "grunnlagListe": [
     {
+      "referanse": "innhentet_kontantstøtte_person_PERSON_BIDRAGSMOTTAKER_19780825_69",
+      "type": "INNHENTET_INNTEKT_KONTANTSTØTTE",
+      "innhold": {
+        "datakilde": "FAMILIE_KONTANTSTØTTE_SAK",
+        "hentetTidspunkt": "2024-01-01T00:00:00",
+        "grunnlag": [
+          {
+            "periode": {
+              "fom": "2023-01-01",
+              "til": "2023-03-31"
+            },
+            "gjelderBarn": "person_PERSON_SØKNADSBARN_20150724_67",
+            "beløp": 1000
+          }
+        ]
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
+      "referanse": "innhentet_barnetillegg_person_PERSON_BIDRAGSMOTTAKER_19780825_69_PENSJON",
+      "type": "INNHENTET_INNTEKT_BARNETILLEGG",
+      "innhold": {
+        "datakilde": "PENSJON",
+        "hentetTidspunkt": "2024-01-01T00:00:00",
+        "grunnlag": [
+          {
+            "periode": {
+              "fom": "2023-01-01",
+              "til": "2024-01-01"
+            },
+            "gjelderBarn": "person_PERSON_SØKNADSBARN_20150724_67",
+            "barnetilleggType": "PENSJON",
+            "beløpBrutto": 1000.0,
+            "barnType": "FELLES"
+          }
+        ]
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
+      "referanse": "innhentet_barnetilsyn_person_PERSON_BIDRAGSMOTTAKER_19780825_69",
+      "type": "INNHENTET_INNTEKT_BARNETILSYN",
+      "innhold": {
+        "datakilde": "FAMILIE_EF_SAK",
+        "hentetTidspunkt": "2024-01-01T00:00:00",
+        "grunnlag": [
+          {
+            "periode": {
+              "fom": "2023-01-01",
+              "til": "2024-01-01"
+            },
+            "gjelderBarn": "person_PERSON_SØKNADSBARN_20150724_67",
+            "skolealder": "IKKE_ANGITT",
+            "beløp": 2000.0,
+            "tilsynstype": "HELTID"
+          }
+        ]
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
+      "referanse": "innhentet_utvidetbarnetrygd_person_PERSON_BIDRAGSMOTTAKER_19780825_69",
+      "type": "INNHENTET_INNTEKT_UTVIDETBARNETRYGD",
+      "innhold": {
+        "datakilde": "FAMILIE_BA_SAK",
+        "hentetTidspunkt": "2024-01-01T00:00:00",
+        "grunnlag": [
+          {
+            "periode": {
+              "fom": "2022-01-01",
+              "til": "2022-03-31"
+            },
+            "beløp": 1000.0,
+            "manueltBeregnet": false
+          }
+        ]
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
+      "referanse": "innhentet_småbarnstillegg_person_PERSON_BIDRAGSMOTTAKER_19780825_69",
+      "type": "INNHENTET_INNTEKT_SMÅBARNSTILLEGG",
+      "innhold": {
+        "datakilde": "FAMILIE_BA_SAK",
+        "hentetTidspunkt": "2024-01-01T00:00:00",
+        "grunnlag": [
+          {
+            "periode": {
+              "fom": "2024-01-01",
+              "til": "2024-03-31"
+            },
+            "beløp": 1000.0,
+            "manueltBeregnet": false
+          }
+        ]
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
       "referanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69",
       "type": "PERSON_BIDRAGSMOTTAKER",
       "innhold": {
@@ -268,6 +372,24 @@
       "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
     },
     {
+      "referanse": "inntekt_BARNETILLEGG_person_PERSON_BIDRAGSMOTTAKER_19780825_69_20231101",
+      "type": "INNTEKT_RAPPORTERING_PERIODE",
+      "innhold": {
+        "valgt": false,
+        "beløp": 5000,
+        "periode": {
+          "fom": "2024-01",
+          "til": "2024-02"
+        },
+        "gjelderBarn": "person_PERSON_SØKNADSBARN_20050623_68",
+        "inntekstpostListe": [],
+        "manueltRegistrert": true,
+        "inntektsrapportering": "BARNETILLEGG"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
       "referanse": "inntekt_AINNTEKT_person_PERSON_BIDRAGSMOTTAKER_19780825_69_20220101",
       "type": "INNTEKT_RAPPORTERING_PERIODE",
       "innhold": {
@@ -513,7 +635,7 @@
       "innhold": {
         "periode": {
           "fom": "2022-11",
-          "til": null
+          "til": "2023-07"
         },
         "sivilstand": "BOR_ALENE_MED_BARN",
         "manueltRegistrert": false
@@ -522,6 +644,36 @@
         "innhentet_sivilstand_person_PERSON_BIDRAGSMOTTAKER_19780825_69"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
+      "referanse": "sivilstand_person_PERSON_BIDRAGSMOTTAKER_19780825_69_20230701",
+      "type": "SIVILSTAND_PERIODE",
+      "innhold": {
+        "periode": {
+          "fom": "2023-07",
+          "til": null
+        },
+        "sivilstand": "GIFT_SAMBOER",
+        "manueltRegistrert": true
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
+      "referanse": "innhentet_skattegrunnlag_person_PERSON_SØKNADSBARN_20050623_68_2023",
+      "type": "INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE",
+      "innhold": {
+        "år": 2023,
+        "periode": {
+          "fom": "2023-01-01",
+          "til": "2024-01-01"
+        },
+        "grunnlag": [],
+        "datakilde": "SIGRUN",
+        "hentetTidspunkt": "2024-02-22T00:00:00"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_SØKNADSBARN_20050623_68"
     },
     {
       "referanse": "innhentet_skattegrunnlag_person_PERSON_BIDRAGSMOTTAKER_19780825_69_2021",
@@ -3112,6 +3264,28 @@
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
+    },
+    {
+      "referanse": "beregnet_inntekt_person_PERSON_SØKNADSBARN_20050623_68",
+      "type": "BEREGNET_INNTEKT",
+      "innhold": {
+        "versjon": "2024.02.21.125035_dfd5a81",
+        "summertMånedsinntektListe": [
+          {
+            "sumInntekt": 104000,
+            "gjelderÅrMåned": "2023-01",
+            "inntektPostListe": [
+              {
+                "kode": "fastloenn",
+                "beløp": 104000,
+                "inntekstype": null
+              }
+            ]
+          }
+        ]
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_SØKNADSBARN_20050623_68"
     },
     {
       "referanse": "beregnet_inntekt_person_PERSON_BIDRAGSMOTTAKER_19780825_69",

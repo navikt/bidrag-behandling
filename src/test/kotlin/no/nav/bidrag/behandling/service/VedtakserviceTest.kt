@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.slot
 import io.mockk.verify
@@ -89,6 +90,7 @@ class VedtakserviceTest {
 
     @BeforeEach
     fun initMocks() {
+        clearAllMocks()
         unleash.enableAll()
         beregningService =
             BeregningService(
@@ -112,12 +114,11 @@ class VedtakserviceTest {
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()
         stubKodeverkProvider()
-
-        stubPersonConsumer()
     }
 
     @Test
     fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
+        stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
@@ -206,6 +207,7 @@ class VedtakserviceTest {
 
     @Test
     fun `Skal opprette stønadsendringer med reel mottaker`() {
+        stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -400,6 +402,7 @@ class VedtakserviceTest {
 
     @Test
     fun `Skal opprette grunnlagsstruktur for avslag av forskudd behandling`() {
+        stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.avslag = Resultatkode.AVSLAG
         behandling.virkningstidspunkt = null

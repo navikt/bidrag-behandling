@@ -23,12 +23,8 @@ import no.nav.bidrag.behandling.transformers.vedtak.tilBeregningResultat
 import no.nav.bidrag.behandling.transformers.vedtak.tilOpprettRequestDto
 import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
-import no.nav.bidrag.commons.util.MermaidResponse
-import no.nav.bidrag.commons.util.TreeChild
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.util.tilVedtakDto
-import no.nav.bidrag.commons.util.toMermaid
-import no.nav.bidrag.commons.util.toTree
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -107,22 +103,6 @@ class VedtakService(
             if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
 
         return request.tilVedtakDto()
-    }
-
-    fun vedtakTilMermaid(behandlingId: Long): MermaidResponse {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val request =
-            if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
-
-        return request.toMermaid()
-    }
-
-    fun vedtakTilTreeMap(behandlingId: Long): TreeChild {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val request =
-            if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequest()
-
-        return request.toTree()
     }
 
     private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto {
