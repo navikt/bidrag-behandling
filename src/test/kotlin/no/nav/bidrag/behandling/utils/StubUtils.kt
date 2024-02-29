@@ -353,7 +353,6 @@ class StubUtils {
                 LocalDateTime.now(),
             )
 
-        tilJson(hentGrunnlagDto)
         val respons =
             if (tomRespons && responsobjekt == null) {
                 aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -431,12 +430,12 @@ class StubUtils {
             WireMock.verify(antall, verify)
         }
 
-        fun fatteVedtakKalt() {
+        fun fatteVedtakKalt(antallGanger: Int = 1) {
             val verify =
                 WireMock.postRequestedFor(
                     WireMock.urlMatching("/vedtak/vedtak"),
                 )
-            WireMock.verify(1, verify)
+            WireMock.verify(antallGanger, verify)
         }
 
         fun hentSakKalt(saksnummer: String) {

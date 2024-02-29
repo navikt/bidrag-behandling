@@ -4,6 +4,7 @@ import StubUtils
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.Unleash
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockkObject
 import no.nav.bidrag.behandling.service.CommonTestRunner
@@ -70,6 +71,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
 
     @BeforeEach
     fun initMocks() {
+        clearMocks(unleashInstance)
         every { unleashInstance.isEnabled(any(), any<Boolean>()) } returns true
         mockkObject(SaksbehandlernavnProvider)
         every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"

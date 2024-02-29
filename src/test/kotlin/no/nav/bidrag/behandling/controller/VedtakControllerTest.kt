@@ -1,9 +1,12 @@
 package no.nav.bidrag.behandling.controller
 
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import io.mockk.every
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
@@ -31,6 +34,31 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
+    }
+
+    @Test
+    fun `Skal ikke fatte vedtak hvis feature toggle er av`() {
+        every { unleashInstance.isEnabled(eq(toggleFatteVedtakName), any<Boolean>()) } returns false
+
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
+        save(behandling)
+
+        stubUtils.stubHentSak(opprettSakForBehandling(behandling))
+        stubUtils.stubFatteVedtak()
+        val response =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/vedtak",
+                HttpMethod.POST,
+                HttpEntity(""),
+                Int::class.java,
+            )
+
+        response.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
+        response.headers["warning"]!! shouldContain "Fattevedtak er ikke aktivert"
+
+        val behandlingEtter = behandlingRepository.findBehandlingById(behandling.id!!).get()
+        behandlingEtter.vedtaksid shouldBe null
+        stubUtils.Verify().fatteVedtakKalt(0)
     }
 
     @Test

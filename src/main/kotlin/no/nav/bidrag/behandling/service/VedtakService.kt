@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.rolleManglerIdent
+import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønadAvslag
@@ -64,10 +65,10 @@ class VedtakService(
     }
 
     fun fatteVedtak(behandlingId: Long): Int {
-        val isEnabled = unleashInstance.isEnabled("behandling.fattevedtak", false)
+        val isEnabled = unleashInstance.isEnabled(toggleFatteVedtakName, false)
         if (isEnabled.not()) {
             throw HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.PRECONDITION_FAILED,
                 "Fattevedtak er ikke aktivert",
             )
         }
@@ -188,6 +189,8 @@ class VedtakService(
                         beslutning = Beslutningstype.ENDRING,
                         grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
                         periodeListe = it.perioder,
+                        // Settes null for forskudd men skal settes til riktig verdi for bidrag
+                        førsteIndeksreguleringsår = null,
                     )
                 },
             engangsbeløpListe = emptyList(),

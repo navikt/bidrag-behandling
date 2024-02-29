@@ -235,10 +235,10 @@ fun List<GrunnlagDto>.hentGrunnlagAinntekt() =
                                 etterbetalingsperiodeTil = it.etterbetalingsperiodeTil,
                                 kategori = it.kategori,
                                 belop = it.beløp,
-                                beskrivelse = "",
+                                beskrivelse = it.beskrivelse,
                                 inntektType = it.kategori,
-                                opplysningspliktigId = "",
-                                virksomhetId = "",
+                                opplysningspliktigId = it.opplysningspliktigId,
+                                virksomhetId = it.virksomhetId,
                             )
                         },
                 )

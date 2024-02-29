@@ -4,6 +4,9 @@ management:
       exposure:
         include: "prometheus,health"
 
+logging.level:
+  secureLogger: DEBUG
+
 springdoc:
   packages-to-scan: no.nav.bidrag.behandling.controller
   paths-to-match: "/api/**"

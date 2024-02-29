@@ -1,15 +1,18 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.person.PersonDto
 
 fun hentPerson(ident: String?): PersonDto? =
     try {
-        ident?.let { AppContext.getBean(BidragPersonConsumer::class.java).hentPerson(ident) }
+        ident.takeIfNotNullOrEmpty {
+            AppContext.getBean(BidragPersonConsumer::class.java).hentPerson(it)
+        }
     } catch (e: Exception) {
-        secureLogger.warn(e) { "Feil ved henting av person for ident $ident" }
+        secureLogger.debug(e) { "Feil ved henting av person for ident $ident" }
         null
     }
 

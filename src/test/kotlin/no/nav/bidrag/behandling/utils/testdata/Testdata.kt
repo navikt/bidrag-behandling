@@ -278,7 +278,7 @@ fun opprettHusstandsbarn(
                 husstandsbarn = husstandsbarn,
             ),
             Husstandsbarnperiode(
-                datoFom = LocalDate.parse("2023-05-31"),
+                datoFom = LocalDate.parse("2023-06-01"),
                 datoTom = null,
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,

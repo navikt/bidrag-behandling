@@ -251,6 +251,9 @@ fun List<AinntektGrunnlagDto>.tilGrunnlagsobjekt(
                                         beløp = post.beløp,
                                         etterbetalingsperiodeFra = post.etterbetalingsperiodeFra,
                                         etterbetalingsperiodeTil = post.etterbetalingsperiodeTil,
+                                        beskrivelse = post.beskrivelse,
+                                        opplysningspliktigId = post.opplysningspliktigId,
+                                        virksomhetId = post.virksomhetId,
                                     )
                                 },
                         )
