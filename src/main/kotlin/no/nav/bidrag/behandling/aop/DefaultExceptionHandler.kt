@@ -78,13 +78,13 @@ class DefaultExceptionHandler {
 
     private fun getErrorMessage(exception: HttpStatusCodeException): String {
         val errorMessage = StringBuilder()
-        if (exception.statusCode == HttpStatus.BAD_REQUEST) {
-            errorMessage.append("Validering feilet")
-        }
+
         exception.responseHeaders?.get(HttpHeaders.WARNING)?.firstOrNull()
             ?.let { errorMessage.append(it) }
         if (exception.statusText.isNotEmpty()) {
-            errorMessage.append(" - ")
+            if (exception.statusCode == HttpStatus.BAD_REQUEST) {
+                errorMessage.append("Validering feilet - ")
+            }
             errorMessage.append(exception.statusText)
         }
         return errorMessage.toString()

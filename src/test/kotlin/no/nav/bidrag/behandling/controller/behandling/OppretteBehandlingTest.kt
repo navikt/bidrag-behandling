@@ -460,7 +460,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                         fødselsdato = LocalDate.now().minusMonths(500),
                     ),
                 )
-            val b = oppretteBehandlingRequestTest(null, "1010", roller)
+            val b = oppretteBehandlingRequestTest(null, "10101", roller)
             val r =
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUriV1()}/behandling",
