@@ -26,6 +26,6 @@ class VerdikjedeTest : KontrollerTestRunner() {
     }
 
     @Test
-    fun `skal opprette behandling og fatte vedtak`() {
+    fun `skal opprette behandling og fatte vedtak2`() {
     }
 }
