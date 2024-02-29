@@ -45,6 +45,7 @@ outbound-access-apps:
   - bidrag-grunnlag
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll
+  - bidrag-vedtak-syntetisk
 outbound-access-hosts:
   - bidrag-person.dev-fss-pub.nais.io
   - bidrag-organisasjon.dev-fss-pub.nais.io
