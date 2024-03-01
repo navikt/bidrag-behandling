@@ -108,6 +108,7 @@ fun VedtakDto.tilBehandling(
     søktFomDato: LocalDate? = null,
     soknadFra: SøktAvType? = null,
     søknadRefId: Long? = null,
+    søknadId: Long? = null,
     enhet: String? = null,
 ): Behandling {
     val opprettetAv =
@@ -146,7 +147,7 @@ fun VedtakDto.tilBehandling(
             kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
             datoTom = null,
             saksnummer = saksnummer!!,
-            soknadsid = søknadId!!,
+            soknadsid = søknadId ?: this.søknadId!!,
             boforholdsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false),
             boforholdsbegrunnelseIVedtakOgNotat =
                 notatMedType(

@@ -31,6 +31,7 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
 import org.junit.Assert
@@ -152,6 +153,28 @@ class StubUtils {
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(OpprettVedtakResponseDto(1, emptyList()))),
+            ),
+        )
+    }
+
+    fun stubHenteVedtak(
+        responseObjekt: VedtakDto? = null,
+        navnResponsfil: String = "vedtak_response.json",
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        val response =
+            if (responseObjekt != null) {
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(tilJson(responseObjekt))
+            } else {
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBodyFile(navnResponsfil)
+            }
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlMatching("/vedtak/vedtak(.*)")).willReturn(
+                response,
             ),
         )
     }

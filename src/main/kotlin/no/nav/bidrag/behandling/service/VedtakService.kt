@@ -74,6 +74,7 @@ class VedtakService(
             vedtakType = request.vedtakstype,
             søknadRefId = request.søknadsreferanseid,
             enhet = request.behandlerenhet,
+            søknadId = request.søknadsid,
             lesemodus = false,
         )
     }

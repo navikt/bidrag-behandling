@@ -108,6 +108,7 @@ class VedtakTilBehandlingTest {
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
             omgjørVedtaksid shouldBe 1
+            soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
             virkningstidspunktsbegrunnelseIVedtakOgNotat shouldBe "Notat virkningstidspunkt med i vedtak"
@@ -156,6 +157,7 @@ class VedtakTilBehandlingTest {
             vedtaksid shouldBe null
             soknadRefId shouldBe 222
             omgjørVedtaksid shouldBe 1
+            soknadsid shouldBe 100
             opprettetAv shouldBe "Z99999"
             opprettetAvNavn shouldBe "Fornavn Etternavn"
         }

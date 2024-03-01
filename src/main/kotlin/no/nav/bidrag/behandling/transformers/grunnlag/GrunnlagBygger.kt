@@ -14,7 +14,7 @@ import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
-import java.time.LocalDate
+import java.time.YearMonth
 
 data class StønadsendringPeriode(
     val barn: Rolle,
@@ -60,7 +60,7 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
         periode =
             ÅrMånedsperiode(
                 virkningstidspunkt!!,
-                datoTom?.plusDays(1) ?: LocalDate.MAX,
+                YearMonth.now().plusMonths(1).atDay(1),
             ),
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
