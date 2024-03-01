@@ -173,6 +173,8 @@ class VedtakTilBehandlingTest {
                 it[0].kilde shouldBe Kilde.OFFENTLIG
                 it[0].datoFom shouldBe LocalDate.parse("2022-01-01")
                 it[0].datoTom shouldBe LocalDate.parse("2022-12-31")
+                it[0].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
+                it[0].opprinneligTom shouldBe LocalDate.parse("2023-06-31")
                 it[0].inntektsposter shouldHaveSize 1
                 assertSoftly(it[0].inntektsposter.first()) {
                     beløp shouldBe BigDecimal(2859987)

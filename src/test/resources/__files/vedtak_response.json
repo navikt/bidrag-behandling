@@ -399,6 +399,10 @@
           "fom": "2022-01",
           "til": "2023-01"
         },
+        "opprinneligPeriode": {
+          "fom": "2023-01",
+          "til": "2023-07"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [
           {

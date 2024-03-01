@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.rolleManglerIdent
@@ -54,9 +55,27 @@ class VedtakService(
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
 ) {
-    fun konverterVedtakTilBehandling(vedtakId: Long): Behandling? {
+    fun konverterVedtakTilBehandling(
+        vedtakId: Long,
+        lesemodus: Boolean = true,
+    ): Behandling? {
         val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-        return vedtak.tilBehandling(vedtakId)
+        return vedtak.tilBehandling(vedtakId, lesemodus)
+    }
+
+    fun konverterVedtakTilBehandling(request: OpprettBehandlingFraVedtakRequest): Behandling? {
+        val vedtak =
+            vedtakConsumer.hentVedtak(request.vedtakId) ?: return null
+        return vedtak.tilBehandling(
+            vedtakId = request.vedtakId,
+            søktFomDato = request.søktFomDato,
+            mottattdato = request.mottattdato,
+            soknadFra = request.søknadFra,
+            vedtakType = request.vedtakstype,
+            søknadRefId = request.søknadsreferanseid,
+            enhet = request.behandlerenhet,
+            lesemodus = false,
+        )
     }
 
     fun konverterVedtakTilBeregningResultat(vedtakId: Long): List<ResultatBeregningBarnDto> {

@@ -200,6 +200,15 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
             InntektsrapporteringPeriode(
                 beløp = belop,
                 periode = ÅrMånedsperiode(datoFom, datoTom?.plusDays(1)),
+                opprinneligPeriode =
+                    if (kilde == Kilde.OFFENTLIG) {
+                        ÅrMånedsperiode(
+                            opprinneligFom!!,
+                            opprinneligTom?.plusDays(1),
+                        )
+                    } else {
+                        null
+                    },
                 inntektsrapportering = type,
                 manueltRegistrert = kilde == Kilde.MANUELL,
                 valgt = taMed,

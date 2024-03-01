@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.controller.v1
+package no.nav.bidrag.behandling.controller
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
@@ -15,17 +15,15 @@ class VedtakController(
     private val vedtakService: VedtakService,
 ) {
     @Suppress("unused")
-    @PostMapping("/behandling/{behandlingsid}/vedtak")
+    @PostMapping("/behandling/fattevedtak/{behandlingsid}")
     @Operation(
-        description = "Beregn forskudd",
+        description = "Fatte vedtak for behandling",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun fatteVedtak(
         @PathVariable behandlingsid: Long,
     ): Int {
-        LOGGER.info { "Beregner forskudd for behandling med id $behandlingsid" }
-
-        val respons = vedtakService.fatteVedtak(behandlingsid)
-        return respons
+        LOGGER.info { "Fatter vedtak for $behandlingsid" }
+        return vedtakService.fatteVedtak(behandlingsid)
     }
 }

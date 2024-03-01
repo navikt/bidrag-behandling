@@ -667,6 +667,8 @@ class GrunnlagMappingTest {
                     innhold.inntektsrapportering shouldBe Inntektsrapportering.AINNTEKT_BEREGNET_12MND
                     innhold.periode.fom shouldBe YearMonth.parse("2023-01")
                     innhold.periode.til shouldBe YearMonth.parse("2024-01")
+                    innhold.opprinneligPeriode?.fom shouldBe YearMonth.parse("2023-01")
+                    innhold.opprinneligPeriode?.til shouldBe YearMonth.parse("2023-07")
                     innhold.beløp shouldBe BigDecimal(45000)
                     innhold.valgt shouldBe false
                     innhold.manueltRegistrert shouldBe false
@@ -875,7 +877,7 @@ class GrunnlagMappingTest {
                                         periode =
                                             ÅrMånedsperiode(
                                                 YearMonth.parse("2023-01"),
-                                                YearMonth.parse("2024-01"),
+                                                YearMonth.parse("2023-07"),
                                             ),
                                         sumInntekt = BigDecimal.ONE,
                                         inntektPostListe = emptyList(),
@@ -933,7 +935,7 @@ class GrunnlagMappingTest {
                 LocalDate.parse("2023-01-01"),
                 LocalDate.parse("2023-12-31"),
                 opprinneligFom = LocalDate.parse("2023-01-01"),
-                opprinneligTom = LocalDate.parse("2024-01-01"),
+                opprinneligTom = LocalDate.parse("2023-07-01"),
                 ident = gjelder.ident,
                 kilde = Kilde.OFFENTLIG,
                 taMed = false,

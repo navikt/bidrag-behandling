@@ -24,6 +24,8 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -48,6 +50,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 fun manglerPersonGrunnlag(referanse: Grunnlagsreferanse?): Nothing =
@@ -98,8 +101,14 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> {
 }
 
 fun VedtakDto.tilBehandling(
-    vedtaksId: Long,
+    vedtakId: Long,
     lesemodus: Boolean = true,
+    vedtakType: Vedtakstype? = null,
+    mottattdato: LocalDate? = null,
+    søktFomDato: LocalDate? = null,
+    soknadFra: SøktAvType? = null,
+    søknadRefId: Long? = null,
+    enhet: String? = null,
 ): Behandling {
     val opprettetAv =
         if (lesemodus) {
@@ -118,19 +127,20 @@ fun VedtakDto.tilBehandling(
     val behandling =
         Behandling(
             id = if (lesemodus) 1 else null,
-            vedtakstype = type,
+            vedtakstype = vedtakType ?: type,
             virkningstidspunkt = hentVedtakstidspunkt()?.virkningstidspunkt,
             årsak = hentVedtakstidspunkt()?.årsak,
             avslag = avslagskode(),
-            søktFomDato = hentSøknad().søktFraDato,
-            soknadFra = hentSøknad().søktAv,
-            mottattdato = hentSøknad().mottattDato,
+            søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
+            soknadFra = soknadFra ?: hentSøknad().søktAv,
+            mottattdato = mottattdato ?: hentSøknad().mottattDato,
             // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
             stonadstype = stønadsendringListe.firstOrNull()?.type,
             engangsbeloptype = engangsbeløpListe.firstOrNull()?.type,
             vedtaksid = null,
-            omgjørVedtaksid = vedtaksId,
-            behandlerEnhet = enhetsnummer?.verdi!!,
+            soknadRefId = søknadRefId,
+            omgjørVedtaksid = vedtakId,
+            behandlerEnhet = enhet ?: enhetsnummer?.verdi!!,
             opprettetAv = opprettetAv,
             opprettetAvNavn = opprettetAvNavn,
             kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
@@ -217,14 +227,24 @@ private fun List<GrunnlagDto>.mapInntekter(
                 )
             }.toMutableSet()
     if (!lesemodus) {
-        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }?.copy(
+        val ainntekt12Måneder =
+            inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
+        ainntekt12Måneder?.copy(
             type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
             kilde = Kilde.MANUELL,
-        )?.let { inntekter.add(it) }
-        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }?.copy(
+        )?.let {
+            inntekter.add(it)
+            ainntekt12Måneder.taMed = false
+        }
+        val ainntekt3Måneder =
+            inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }
+        ainntekt3Måneder?.copy(
             type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
             kilde = Kilde.MANUELL,
-        )?.let { inntekter.add(it) }
+        )?.let {
+            inntekter.add(it)
+            ainntekt3Måneder.taMed = false
+        }
     }
     return inntekter
 }
@@ -491,6 +511,10 @@ private fun BaseGrunnlag.tilInntekt(
             "Mangler barn for inntekt ${inntektPeriode.inntektsrapportering} med referanse $referanse i grunnlagslisten",
         )
     }
+    val datoFom = inntektPeriode.periode.fom.atDay(1)
+    val datoTom = inntektPeriode.periode.til?.atDay(1)?.minusDays(1)
+    val opprinneligFom = inntektPeriode.opprinneligPeriode?.fom?.atDay(1)
+    val opprinneligTom = inntektPeriode.opprinneligPeriode?.til?.atDay(1)?.minusDays(1)
     val inntektBO =
         Inntekt(
             id = id,
@@ -498,8 +522,22 @@ private fun BaseGrunnlag.tilInntekt(
             belop = inntektPeriode.beløp,
             gjelderBarn = gjelderBarn?.personIdent,
             taMed = inntektPeriode.valgt,
-            datoFom = inntektPeriode.periode.fom.atDay(1),
-            datoTom = inntektPeriode.periode.til?.atDay(1)?.minusDays(1),
+            datoFom = datoFom,
+            datoTom = datoTom,
+            opprinneligFom =
+                if (!inntektPeriode.manueltRegistrert) {
+                    opprinneligFom
+                        ?: datoFom
+                } else {
+                    null
+                },
+            opprinneligTom =
+                if (!inntektPeriode.manueltRegistrert) {
+                    opprinneligTom
+                        ?: datoTom
+                } else {
+                    null
+                },
             ident = gjelder.personIdent!!,
             kilde = if (inntektPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
             behandling = behandling,

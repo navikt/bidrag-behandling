@@ -19,12 +19,16 @@ import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
+import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import org.apache.commons.lang3.Validate
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 
 private val log = KotlinLogging.logger {}
 
@@ -37,7 +41,29 @@ class BehandlingService(
     private val inntektService: InntektService,
     private val entityManager: EntityManager,
 ) {
-    private fun opprettBehandling(behandling: Behandling): Behandling =
+    @Transactional
+    fun opprettBehandlingFraVedtak(
+        vedtaksId: Long,
+        vedtakDto: VedtakDto,
+    ): Long {
+        val opprettBehandling = vedtakDto.tilBehandling(vedtaksId, false)
+        val behandling = behandlingRepository.save(opprettBehandling)
+        return behandling.id!!
+    }
+
+    fun slettBehandling(behandlingId: Long) {
+        val behandling = hentBehandlingById(behandlingId)
+        if (behandling.vedtaksid != null) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke slette behandling hvor vedtak er fattet",
+            )
+        }
+
+        behandlingRepository.delete(behandling)
+    }
+
+    fun opprettBehandling(behandling: Behandling): Behandling =
         behandlingRepository.save(behandling).let {
             opprettForsendelseForBehandling(it)
             it

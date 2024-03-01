@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.BehandlingService
@@ -14,8 +16,10 @@ import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
@@ -115,5 +119,46 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
     ): BehandlingDtoV2 {
         return behandlingService.henteBehandling(behandlingsid)
+    }
+
+    @Suppress("unused")
+    @DeleteMapping("/behandling/{behandlingsid}")
+    @Operation(
+        description = "Logisk slett en behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Slettet behandling"),
+            ApiResponse(responseCode = "400", description = "Kan ikke slette behandling"),
+        ],
+    )
+    fun slettBehandling(
+        @PathVariable behandlingsid: Long,
+    ) = behandlingService.slettBehandling(behandlingsid)
+
+    @Suppress("unused")
+    @PostMapping("/behandling/vedtak")
+    @Operation(
+        description = "Opprett behandling fra vedtak. Brukes når det skal opprettes klagebehanling fra vedtak.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Opprettet behandling fra vedtak",
+            ),
+        ],
+    )
+    fun opprettBehandlingForVedtak(
+        @Valid
+        @RequestBody(required = true)
+        opprettBehandling: OpprettBehandlingFraVedtakRequest,
+    ): OpprettBehandlingResponse {
+        val vedtak =
+            vedtakService.konverterVedtakTilBehandling(opprettBehandling)
+                ?: throw RuntimeException("Fant ikke vedtak for vedtakid ${opprettBehandling.vedtakId}")
+        return OpprettBehandlingResponse(behandlingService.opprettBehandling(vedtak).id!!)
     }
 }
