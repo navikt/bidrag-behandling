@@ -152,8 +152,8 @@ class VedtakserviceTest {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            withClue("Grunnlagliste skal inneholde 82 grunnlag") {
-                request.grunnlagListe shouldHaveSize 82
+            withClue("Grunnlagliste skal inneholde 74 grunnlag") {
+                request.grunnlagListe shouldHaveSize 74
             }
 
             validerVedtaksdetaljer(behandling)
@@ -321,7 +321,7 @@ class VedtakserviceTest {
                 mottaker.verdi shouldBe nyIdentBm
             }
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe.shouldHaveSize(78)
+            request.grunnlagListe.shouldHaveSize(70)
 
             grunnlagListe.hentAllePersoner() shouldHaveSize 7
             grunnlagListe.søknadsbarn.toList()[0].personIdent shouldBe nyIdentBarn1
@@ -564,7 +564,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
             assertSoftly(it[0].periodeListe) {
-                shouldHaveSize(8)
+                shouldHaveSize(4)
                 assertSoftly(it[0]) {
                     periode shouldBe
                         ÅrMånedsperiode(
@@ -591,7 +591,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
             assertSoftly(it[1].periodeListe) {
-                shouldHaveSize(8)
+                shouldHaveSize(4)
                 assertSoftly(it[0]) {
                     periode shouldBe
                         ÅrMånedsperiode(
@@ -723,13 +723,13 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)
     val søknadsbarn2Grunnlag = grunnlagListe.hentPerson(testdataBarn2.ident)
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_FORSKUDD)) {
-        shouldHaveSize(16)
-        it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag!!.referanse) shouldHaveSize 8
+        shouldHaveSize(8)
+        it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag!!.referanse) shouldHaveSize 4
         assertSoftly(it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag!!.referanse)) {
-            shouldHaveSize(8)
+            shouldHaveSize(4)
             assertSoftly(it[3]) {
                 val innhold = innholdTilObjekt<SluttberegningForskudd>()
-                innhold.beløp.toBigInteger() shouldBe 1880.toBigInteger()
+                innhold.beløp.toBigInteger() shouldBe 1760.toBigInteger()
                 innhold.resultatKode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
                 innhold.aldersgruppe shouldBe AldersgruppeForskudd.ALDER_0_10_ÅR
                 val delberegningInntekt =
@@ -770,16 +770,16 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
                 assertSoftly(delberegningBarnIHusstand) {
                     shouldHaveSize(1)
                     assertSoftly(it[0]) { delberegning ->
-                        delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().antallBarn shouldBe 1
+                        delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().antallBarn shouldBe 2
                         delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.fom shouldBe
                             YearMonth.parse(
-                                "2024-08",
+                                "2023-02",
                             )
                         delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.til shouldBe
                             YearMonth.parse(
-                                "2024-10",
+                                "2023-10",
                             )
-                        delberegning.grunnlagsreferanseListe shouldHaveSize 1
+                        delberegning.grunnlagsreferanseListe shouldHaveSize 2
 
                         val bosstatusHusstandsmedlem =
                             grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegning.grunnlagsreferanseListe[0])

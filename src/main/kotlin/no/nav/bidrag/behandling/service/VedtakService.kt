@@ -39,6 +39,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -64,8 +65,15 @@ class VedtakService(
     }
 
     fun konverterVedtakTilBehandling(request: OpprettBehandlingFraVedtakRequest): Behandling? {
+        // TODO: Sjekk tilganger
         val vedtak =
             vedtakConsumer.hentVedtak(request.vedtakId) ?: return null
+        if (vedtak.behandlingId == null) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Vedtak ${request.vedtakId} er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
+            )
+        }
         return vedtak.tilBehandling(
             vedtakId = request.vedtakId,
             søktFomDato = request.søktFomDato,

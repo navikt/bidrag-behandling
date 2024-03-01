@@ -228,23 +228,24 @@ private fun List<GrunnlagDto>.mapInntekter(
                 )
             }.toMutableSet()
     if (!lesemodus) {
-        val ainntekt12Måneder =
-            inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
-        ainntekt12Måneder?.copy(
-            type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
-            kilde = Kilde.MANUELL,
-        )?.let {
-            inntekter.add(it)
-            ainntekt12Måneder.taMed = false
+        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }.ifTaMed {
+            it.copy(
+                type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
+                kilde = Kilde.MANUELL,
+            ).run {
+                inntekter.add(this)
+                it.taMed = false
+            }
         }
-        val ainntekt3Måneder =
-            inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }
-        ainntekt3Måneder?.copy(
-            type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
-            kilde = Kilde.MANUELL,
-        )?.let {
-            inntekter.add(it)
-            ainntekt3Måneder.taMed = false
+
+        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }.ifTaMed {
+            it.copy(
+                type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
+                kilde = Kilde.MANUELL,
+            ).run {
+                inntekter.add(this)
+                it.taMed = false
+            }
         }
     }
     return inntekter

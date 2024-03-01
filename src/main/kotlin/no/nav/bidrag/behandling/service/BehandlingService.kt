@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -19,11 +20,9 @@ import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
-import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import org.apache.commons.lang3.Validate
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -39,16 +38,23 @@ class BehandlingService(
     private val forsendelseService: ForsendelseService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
+    private val vedtakService: VedtakService,
     private val entityManager: EntityManager,
 ) {
     @Transactional
-    fun opprettBehandlingFraVedtak(
-        vedtaksId: Long,
-        vedtakDto: VedtakDto,
-    ): Long {
-        val opprettBehandling = vedtakDto.tilBehandling(vedtaksId, false)
-        val behandling = behandlingRepository.save(opprettBehandling)
-        return behandling.id!!
+    fun opprettBehandlingFraVedtak(request: OpprettBehandlingFraVedtakRequest): OpprettBehandlingResponse {
+        val konvertertBehandling =
+            vedtakService.konverterVedtakTilBehandling(request)
+                ?: throw RuntimeException("Fant ikke vedtak for vedtakid ${request.vedtakId}")
+        val behandlingDo = opprettBehandling(konvertertBehandling)
+
+        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+
+        log.info {
+            "Opprettet behandling ${behandlingDo.id} fra vedtak ${request.vedtakId} med søktAv ${request.søknadFra}, " +
+                "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+        }
+        return OpprettBehandlingResponse(opprettBehandling(konvertertBehandling).id!!)
     }
 
     fun slettBehandling(behandlingId: Long) {

@@ -155,10 +155,5 @@ class BehandlingControllerV2(
         @Valid
         @RequestBody(required = true)
         opprettBehandling: OpprettBehandlingFraVedtakRequest,
-    ): OpprettBehandlingResponse {
-        val vedtak =
-            vedtakService.konverterVedtakTilBehandling(opprettBehandling)
-                ?: throw RuntimeException("Fant ikke vedtak for vedtakid ${opprettBehandling.vedtakId}")
-        return OpprettBehandlingResponse(behandlingService.opprettBehandling(vedtak).id!!)
-    }
+    ): OpprettBehandlingResponse = behandlingService.opprettBehandlingFraVedtak(opprettBehandling)
 }

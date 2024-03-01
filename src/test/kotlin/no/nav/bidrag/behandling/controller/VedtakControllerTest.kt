@@ -47,7 +47,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubFatteVedtak()
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/${behandling.id}/vedtak",
+                "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
                 HttpEntity(""),
                 Int::class.java,
@@ -76,7 +76,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubFatteVedtak()
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/${behandling.id}/vedtak",
+                "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
                 HttpEntity(""),
                 Int::class.java,
@@ -100,7 +100,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubFatteVedtak()
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/${behandling.id}/vedtak",
+                "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
                 HttpEntity(""),
                 Int::class.java,

@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -21,4 +22,8 @@ fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto) =
 
 fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? {
     return if (this == null || this is String && this.trim().isEmpty()) null else block(this)
+}
+
+fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
+    if (this?.taMed == true) block(this)
 }
