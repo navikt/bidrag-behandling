@@ -128,9 +128,9 @@ fun VedtakDto.tilBehandling(
         Behandling(
             id = if (lesemodus) 1 else null,
             vedtakstype = vedtakType ?: type,
-            virkningstidspunkt = hentVedtakstidspunkt()?.virkningstidspunkt,
-            årsak = hentVedtakstidspunkt()?.årsak,
-            avslag = avslagskode(),
+            virkningstidspunkt = if (lesemodus) hentVedtakstidspunkt()?.virkningstidspunkt else null,
+            årsak = if (lesemodus) hentVedtakstidspunkt()?.årsak else null,
+            avslag = if (lesemodus) avslagskode() else null,
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
             soknadFra = soknadFra ?: hentSøknad().søktAv,
             mottattdato = mottattdato ?: hentSøknad().mottattDato,

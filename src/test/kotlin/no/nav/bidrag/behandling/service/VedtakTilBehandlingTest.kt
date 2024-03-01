@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.transformers.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.hentFil
@@ -38,6 +39,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubPersonConsumer
+import stubSaksbehandlernavnProvider
+import stubTokenUtils
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -83,11 +86,13 @@ class VedtakTilBehandlingTest {
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()
         stubPersonConsumer()
+        stubTokenUtils()
+        stubSaksbehandlernavnProvider()
         stubKodeverkProvider()
     }
 
     @Test
-    fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
+    fun `Skal opprette grunnlagsstruktur for en forskudd behandling i lesemodus`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val behandling = vedtakService.konverterVedtakTilBehandling(1)!!
 
@@ -116,6 +121,43 @@ class VedtakTilBehandlingTest {
             validerSivilstand()
             validerInntekter()
             validerGrunnlag()
+        }
+    }
+
+    @Test
+    fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
+        val behandling =
+            vedtakService.konverterVedtakTilBehandling(
+                OpprettBehandlingFraVedtakRequest(
+                    vedtakId = 1,
+                    vedtakstype = Vedtakstype.KLAGE,
+                    søknadsid = 100,
+                    søknadsreferanseid = 222,
+                    søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                    saksnummer = "123213213",
+                    mottattdato = LocalDate.parse("2024-01-01"),
+                    søktFomDato = LocalDate.parse("2021-01-01"),
+                    behandlerenhet = "9999",
+                ),
+            )!!
+
+        assertSoftly(behandling) {
+            saksnummer shouldBe "1233333"
+            årsak shouldBe null
+            avslag shouldBe null
+            virkningstidspunkt shouldBe null
+            søktFomDato shouldBe LocalDate.parse("2021-01-01")
+            soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
+            stonadstype shouldBe Stønadstype.FORSKUDD
+            behandlerEnhet shouldBe "9999"
+            mottattdato shouldBe LocalDate.parse("2024-01-01")
+            vedtakstype shouldBe Vedtakstype.KLAGE
+            vedtaksid shouldBe null
+            soknadRefId shouldBe 222
+            omgjørVedtaksid shouldBe 1
+            opprettetAv shouldBe "Z99999"
+            opprettetAvNavn shouldBe "Fornavn Etternavn"
         }
     }
 
@@ -174,7 +216,7 @@ class VedtakTilBehandlingTest {
                 it[0].datoFom shouldBe LocalDate.parse("2022-01-01")
                 it[0].datoTom shouldBe LocalDate.parse("2022-12-31")
                 it[0].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
-                it[0].opprinneligTom shouldBe LocalDate.parse("2023-06-31")
+                it[0].opprinneligTom shouldBe LocalDate.parse("2023-06-30")
                 it[0].inntektsposter shouldHaveSize 1
                 assertSoftly(it[0].inntektsposter.first()) {
                     beløp shouldBe BigDecimal(2859987)

@@ -11,6 +11,7 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockkClass
 import io.mockk.mockkObject
+import io.mockk.mockkStatic
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
@@ -22,9 +23,11 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
+import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
@@ -37,6 +40,18 @@ import org.springframework.http.MediaType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Arrays
+
+fun stubSaksbehandlernavnProvider() {
+    mockkObject(SaksbehandlernavnProvider)
+    every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"
+}
+
+fun stubTokenUtils() {
+    mockkStatic(TokenUtils::hentApplikasjonsnavn)
+    mockkStatic(TokenUtils::hentSaksbehandlerIdent)
+    every { TokenUtils.hentApplikasjonsnavn() } returns "bidrag-behandling"
+    every { TokenUtils.hentSaksbehandlerIdent() } returns "Z99999"
+}
 
 fun stubPersonConsumer(): BidragPersonConsumer {
     try {
