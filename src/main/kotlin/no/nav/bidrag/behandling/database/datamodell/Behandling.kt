@@ -54,6 +54,7 @@ open class Behandling(
     @Enumerated(EnumType.STRING)
     open var engangsbeloptype: Engangsbeløptype?,
     open var vedtaksid: Long? = null,
+    open var refVedtaksid: Long? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
     @Column(name = "aarsak")
