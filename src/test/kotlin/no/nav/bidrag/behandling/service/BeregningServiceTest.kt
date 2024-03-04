@@ -60,11 +60,11 @@ class BeregningServiceTest {
             BeregnForskuddApi().beregn(any())
         }
         resultat shouldHaveSize 2
-        resultat[0].resultat.grunnlagListe shouldHaveSize 35
+        resultat[0].resultat.grunnlagListe shouldHaveSize 30
         beregnGrunnlagList shouldHaveSize 2
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
-            it.periode.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
+            it.periode.til shouldBe YearMonth.now().plusMonths(1)
             it.grunnlagListe shouldHaveSize 16
 
             val personer =
@@ -86,7 +86,7 @@ class BeregningServiceTest {
         }
         assertSoftly(beregnGrunnlagList[1]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
-            it.periode.til shouldBe YearMonth.from(behandling.datoTom?.plusDays(1))
+            it.periode.til shouldBe YearMonth.now().plusMonths(1)
             it.grunnlagListe shouldHaveSize 14
 
             val personer =

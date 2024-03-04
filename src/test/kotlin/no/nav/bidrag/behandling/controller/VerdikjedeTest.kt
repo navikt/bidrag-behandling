@@ -85,7 +85,7 @@ class VerdikjedeTest : KontrollerTestRunner() {
         stubUtils.stubFatteVedtak()
         val responseVedtak =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/${opprettetBehandling.id}/vedtak",
+                "${rootUriV2()}/behandling/fattevedtak/${opprettetBehandling.id}",
                 HttpMethod.POST,
                 null,
                 Int::class.java,
