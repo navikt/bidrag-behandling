@@ -13,9 +13,9 @@ import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -42,8 +42,19 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
-        @Disabled("Wiremock-problem kun på Github")
+//        @Disabled("Wiremock-problem kun på Github")
         open fun `skal hente inntekter for behandling`() {
+            stubUtils.stubHenteGrunnlagOk(
+                rolle = testdataBM.tilRolle(),
+            )
+            stubUtils.stubHenteGrunnlagOk(
+                tomRespons = true,
+                rolle = testdataBarn1.tilRolle(),
+            )
+            stubUtils.stubHenteGrunnlagOk(
+                tomRespons = true,
+                rolle = testdataBarn2.tilRolle(),
+            )
             // given
             val behandling = testdataManager.opprettBehandling(true)
 
@@ -65,9 +76,20 @@ class InntekterControllerTest : KontrollerTestRunner() {
             }
         }
 
+        //        @Disabled("Wiremock-problem kun på Github")
         @Test
-        @Disabled("Wiremock-problem kun på Github")
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
+            stubUtils.stubHenteGrunnlagOk(
+                rolle = testdataBM.tilRolle(),
+            )
+            stubUtils.stubHenteGrunnlagOk(
+                tomRespons = true,
+                rolle = testdataBarn1.tilRolle(),
+            )
+            stubUtils.stubHenteGrunnlagOk(
+                tomRespons = true,
+                rolle = testdataBarn2.tilRolle(),
+            )
             // given
             val behandling = testdataManager.opprettBehandling(false)
 
@@ -85,11 +107,11 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body?.inntekter?.årsinntekter?.size shouldBe 8
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 6
                 r1.body?.inntekter?.barnetillegg?.size shouldBe 0
-                r1.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 0
+                r1.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 1
                 r1.body?.inntekter?.kontantstøtte?.size shouldBe 1
-                r1.body?.inntekter?.månedsinntekter?.size shouldBe 2
+                r1.body?.inntekter?.månedsinntekter?.size shouldBe 1
             }
         }
     }
