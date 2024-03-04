@@ -54,8 +54,6 @@ open class Behandling(
     @Enumerated(EnumType.STRING)
     open var engangsbeloptype: Engangsbeløptype?,
     open var vedtaksid: Long? = null,
-    @Transient
-    // Id for vedtaket det er klaget på.
     open var refVedtaksid: Long? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
