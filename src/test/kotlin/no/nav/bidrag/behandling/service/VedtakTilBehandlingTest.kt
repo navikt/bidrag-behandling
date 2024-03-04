@@ -96,7 +96,7 @@ class VedtakTilBehandlingTest {
     @Test
     fun `Skal opprette grunnlagsstruktur for en forskudd behandling i lesemodus`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
-        val behandling = vedtakService.konverterVedtakTilBehandling(1)!!
+        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
             behandling.saksnummer shouldBe SAKSNUMMER
@@ -109,7 +109,7 @@ class VedtakTilBehandlingTest {
             mottattdato shouldBe LocalDate.parse("2023-01-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            omgjørVedtaksid shouldBe 1
+            refVedtaksid shouldBe 1
             soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
@@ -131,9 +131,9 @@ class VedtakTilBehandlingTest {
     fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val behandling =
-            vedtakService.konverterVedtakTilBehandling(
+            vedtakService.konverterVedtakTilBehandlingForLesemodus(
                 OpprettBehandlingFraVedtakRequest(
-                    vedtakId = 1,
+                    refVedtaksid = 1,
                     vedtakstype = Vedtakstype.KLAGE,
                     søknadsid = 100,
                     søknadsreferanseid = 222,
@@ -158,7 +158,7 @@ class VedtakTilBehandlingTest {
             vedtakstype shouldBe Vedtakstype.KLAGE
             vedtaksid shouldBe null
             soknadRefId shouldBe 222
-            omgjørVedtaksid shouldBe 1
+            refVedtaksid shouldBe 1
             soknadsid shouldBe 100
             opprettetAv shouldBe "Z99999"
             opprettetAvNavn shouldBe "Fornavn Etternavn"
@@ -168,7 +168,7 @@ class VedtakTilBehandlingTest {
     @Test
     fun `skal konvertere vedtak avslag til behandling`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response_avslag")
-        val behandling = vedtakService.konverterVedtakTilBehandling(1)!!
+        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
             avslag shouldBe Resultatkode.FULLT_UNDERHOLDT_AV_OFFENTLIG

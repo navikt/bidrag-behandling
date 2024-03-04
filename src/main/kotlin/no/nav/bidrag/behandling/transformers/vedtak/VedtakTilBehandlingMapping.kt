@@ -140,7 +140,7 @@ fun VedtakDto.tilBehandling(
             engangsbeloptype = engangsbeløpListe.firstOrNull()?.type,
             vedtaksid = null,
             soknadRefId = søknadRefId,
-            omgjørVedtaksid = vedtakId,
+            refVedtaksid = vedtakId,
             behandlerEnhet = enhet ?: enhetsnummer?.verdi!!,
             opprettetAv = opprettetAv,
             opprettetAvNavn = opprettetAvNavn,
@@ -416,6 +416,7 @@ private fun Behandling.opprettGrunnlag(
     innhentet = innhentetTidspunkt,
     data = commonObjectmapper.writeValueAsString(grunnlag),
     type = type,
+    aktiv = innhentetTidspunkt,
     rolle = roller.find { it.ident == gjelderIdent }!!,
 )
 

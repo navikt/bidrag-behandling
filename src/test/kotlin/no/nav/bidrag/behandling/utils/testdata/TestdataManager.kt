@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.utils.testdata
 
+import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -17,7 +18,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Component
-class TestdataManager(private val behandlingRepository: BehandlingRepository) {
+class TestdataManager(
+    private val behandlingRepository: BehandlingRepository,
+    private val entityManager: EntityManager,
+) {
     fun opprettBehandling(inkluderInntekter: Boolean = false): Behandling {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
@@ -116,5 +120,14 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
             )
 
         else -> ""
+    }
+
+    fun hentBehandling(id: Long): Behandling? {
+        return entityManager.createNativeQuery(
+            "SELECT * FROM behandling WHERE id = $id",
+            Behandling::class.java,
+        )
+            .resultList
+            .firstOrNull() as Behandling?
     }
 }

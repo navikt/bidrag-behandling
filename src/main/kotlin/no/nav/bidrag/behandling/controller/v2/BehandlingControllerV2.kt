@@ -48,7 +48,7 @@ class BehandlingControllerV2(
         @PathVariable vedtakId: Long,
     ): BehandlingDtoV2 {
         val resultat =
-            vedtakService.konverterVedtakTilBehandling(vedtakId)
+            vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
         return resultat.tilBehandlingDtoV2(resultat.grunnlagListe, emptySet())
     }

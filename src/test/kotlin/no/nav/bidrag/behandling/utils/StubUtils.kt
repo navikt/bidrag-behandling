@@ -484,6 +484,21 @@ class StubUtils {
             WireMock.verify(1, verify)
         }
 
+        fun hentGrunnlagKalt(
+            antallGanger: Int = 1,
+            rolle: Rolle? = null,
+        ) {
+            val verify =
+                if (rolle == null) {
+                    WireMock.postRequestedFor(WireMock.urlEqualTo("/hentgrunnlag"))
+                } else {
+                    WireMock.postRequestedFor(
+                        WireMock.urlEqualTo("/hentgrunnlag"),
+                    ).withRequestBody(WireMock.containing(rolle.ident))
+                }
+            WireMock.verify(antallGanger, verify)
+        }
+
         fun opprettForsendelseIkkeKalt() {
             opprettForsendelseKaltAntallGanger(0)
         }

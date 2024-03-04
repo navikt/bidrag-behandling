@@ -272,9 +272,11 @@ class GrunnlagService(
     }
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean {
-        return behandling.grunnlagSistInnhentet == null ||
-            LocalDateTime.now()
-                .minusHours(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+        return !behandling.erVedtakFattet && (
+            behandling.grunnlagSistInnhentet == null ||
+                LocalDateTime.now()
+                    .minusHours(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+        )
     }
 
     private fun henteOglagreGrunnlag(
@@ -470,6 +472,7 @@ class GrunnlagService(
                 idTilRolleInnhentetFor = rolle.id!!,
             )
 
+            val rolle1 = rolle.ident
             // Oppdatere inntektstabell med sammenstilte offentlige inntekter
             if (Grunnlagsdatatype.INNTEKT_BEARBEIDET == grunnlagstype && sistInnhentedeGrunnlagAvType == null) {
                 inntektService.lagreInntekter(

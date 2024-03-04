@@ -59,42 +59,41 @@ class VedtakService(
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
 ) {
-    fun konverterVedtakTilBehandling(
-        vedtakId: Long,
-        lesemodus: Boolean = true,
-    ): Behandling? {
+    fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
+        LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
         val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-        return vedtak.tilBehandling(vedtakId, lesemodus)
+        secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
+        return vedtak.tilBehandling(vedtakId, lesemodus = true)
     }
 
     @Transactional
     fun opprettBehandlingFraVedtak(request: OpprettBehandlingFraVedtakRequest): OpprettBehandlingResponse {
         val konvertertBehandling =
-            konverterVedtakTilBehandling(request)
-                ?: throw RuntimeException("Fant ikke vedtak for vedtakid ${request.vedtakId}")
+            konverterVedtakTilBehandlingForLesemodus(request)
+                ?: throw RuntimeException("Fant ikke vedtak for vedtakid ${request.refVedtaksid}")
         val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
         LOGGER.info {
-            "Opprettet behandling ${behandlingDo.id} fra vedtak ${request.vedtakId} med søktAv ${request.søknadFra}, " +
+            "Opprettet behandling ${behandlingDo.id} fra vedtak ${request.refVedtaksid} med søktAv ${request.søknadFra}, " +
                 "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
-    fun konverterVedtakTilBehandling(request: OpprettBehandlingFraVedtakRequest): Behandling? {
+    fun konverterVedtakTilBehandlingForLesemodus(request: OpprettBehandlingFraVedtakRequest): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(request.vedtakId) ?: return null
+            vedtakConsumer.hentVedtak(request.refVedtaksid) ?: return null
         if (vedtak.behandlingId == null) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
-                "Vedtak ${request.vedtakId} er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
+                "Vedtak ${request.refVedtaksid} er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
             )
         }
         return vedtak.tilBehandling(
-            vedtakId = request.vedtakId,
+            vedtakId = request.refVedtaksid,
             søktFomDato = request.søktFomDato,
             mottattdato = request.mottattdato,
             soknadFra = request.søknadFra,

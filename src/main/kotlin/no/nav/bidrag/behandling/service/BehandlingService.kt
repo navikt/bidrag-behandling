@@ -41,13 +41,14 @@ class BehandlingService(
 ) {
     fun slettBehandling(behandlingId: Long) {
         val behandling = hentBehandlingById(behandlingId)
-        if (behandling.vedtaksid != null) {
+        if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke slette behandling hvor vedtak er fattet",
             )
         }
 
+        log.info { "Logisk sletter behandling $behandlingId" }
         behandlingRepository.delete(behandling)
     }
 
@@ -210,6 +211,7 @@ class BehandlingService(
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
+        if (behandling.deleted) behandlingNotFoundException(behandlingId)
         return behandling
     }
 

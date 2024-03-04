@@ -22,7 +22,7 @@ data class OpprettBehandlingFraVedtakRequest(
     @field:NotBlank(message = "Enhet kan ikke være blank")
     @field:Size(min = 4, max = 4, message = "Enhet må være 4 tegn")
     val behandlerenhet: String,
-    val vedtakId: Long,
+    val refVedtaksid: Long,
     @Schema(required = true)
     val søknadsid: Long,
     val søknadsreferanseid: Long? = null,

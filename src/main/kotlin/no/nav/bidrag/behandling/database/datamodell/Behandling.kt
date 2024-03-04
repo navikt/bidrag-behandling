@@ -26,13 +26,13 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
+import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity(name = "behandling")
 @SQLDelete(sql = "UPDATE behandling SET deleted = true WHERE id=?")
-@Where(clause = "deleted=false")
+@SQLRestriction(value = "deleted=false")
 open class Behandling(
     @Enumerated(EnumType.STRING)
     open val vedtakstype: Vedtakstype,
@@ -56,7 +56,7 @@ open class Behandling(
     open var vedtaksid: Long? = null,
     @Transient
     // Id for vedtaket det er klaget på.
-    open var omgjørVedtaksid: Long? = null,
+    open var refVedtaksid: Long? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
     @Column(name = "aarsak")
@@ -123,6 +123,7 @@ open class Behandling(
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
+    val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
 }
 
