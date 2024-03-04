@@ -42,7 +42,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
                 HttpMethod.POST,
                 HttpEntity(
                     OpprettBehandlingFraVedtakRequest(
-                        refVedtaksid = 1,
+                        refVedtaksid = 12333,
                         vedtakstype = Vedtakstype.KLAGE,
                         søknadFra = SøktAvType.BIDRAGSMOTTAKER,
                         søktFomDato = LocalDate.parse("2020-01-01"),
@@ -65,6 +65,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 12
             grunnlag shouldHaveSize 19
+            refVedtaksid shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(5)
             sivilstand shouldHaveSize 2
             husstandsbarn shouldHaveSize 6
@@ -72,7 +73,6 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             vedtakstype shouldBe Vedtakstype.KLAGE
             årsak shouldBe null
             avslag shouldBe null
-            refVedtaksid shouldBe null
             soknadRefId shouldBe 111
             soknadsid shouldBe 12323
         }
