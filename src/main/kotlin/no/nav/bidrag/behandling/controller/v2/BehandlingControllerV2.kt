@@ -155,5 +155,5 @@ class BehandlingControllerV2(
         @Valid
         @RequestBody(required = true)
         opprettBehandling: OpprettBehandlingFraVedtakRequest,
-    ): OpprettBehandlingResponse = behandlingService.opprettBehandlingFraVedtak(opprettBehandling)
+    ): OpprettBehandlingResponse = vedtakService.opprettBehandlingFraVedtak(opprettBehandling)
 }

@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.rolleManglerIdent
@@ -42,6 +43,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -51,6 +53,7 @@ private val LOGGER = KotlinLogging.logger {}
 @Service
 class VedtakService(
     private val behandlingService: BehandlingService,
+    private val grunnlagService: GrunnlagService,
     private val beregningService: BeregningService,
     private val vedtakConsumer: BidragVedtakConsumer,
     private val sakConsumer: BidragSakConsumer,
@@ -62,6 +65,22 @@ class VedtakService(
     ): Behandling? {
         val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
         return vedtak.tilBehandling(vedtakId, lesemodus)
+    }
+
+    @Transactional
+    fun opprettBehandlingFraVedtak(request: OpprettBehandlingFraVedtakRequest): OpprettBehandlingResponse {
+        val konvertertBehandling =
+            konverterVedtakTilBehandling(request)
+                ?: throw RuntimeException("Fant ikke vedtak for vedtakid ${request.vedtakId}")
+        val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
+
+        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+
+        LOGGER.info {
+            "Opprettet behandling ${behandlingDo.id} fra vedtak ${request.vedtakId} med søktAv ${request.søknadFra}, " +
+                "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+        }
+        return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
     fun konverterVedtakTilBehandling(request: OpprettBehandlingFraVedtakRequest): Behandling? {

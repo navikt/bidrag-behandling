@@ -71,6 +71,7 @@ class VedtakTilBehandlingTest {
         vedtakService =
             VedtakService(
                 behandlingService,
+                grunnlagService,
                 beregningService,
                 vedtakConsumer,
                 sakConsumer,
@@ -82,6 +83,7 @@ class VedtakTilBehandlingTest {
                 any(),
             )
         } returns Unit
+        every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
 
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()

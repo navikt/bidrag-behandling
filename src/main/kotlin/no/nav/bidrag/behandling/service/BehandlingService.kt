@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -38,25 +37,8 @@ class BehandlingService(
     private val forsendelseService: ForsendelseService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
-    private val vedtakService: VedtakService,
     private val entityManager: EntityManager,
 ) {
-    @Transactional
-    fun opprettBehandlingFraVedtak(request: OpprettBehandlingFraVedtakRequest): OpprettBehandlingResponse {
-        val konvertertBehandling =
-            vedtakService.konverterVedtakTilBehandling(request)
-                ?: throw RuntimeException("Fant ikke vedtak for vedtakid ${request.vedtakId}")
-        val behandlingDo = opprettBehandling(konvertertBehandling)
-
-        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
-
-        log.info {
-            "Opprettet behandling ${behandlingDo.id} fra vedtak ${request.vedtakId} med søktAv ${request.søknadFra}, " +
-                "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
-        }
-        return OpprettBehandlingResponse(opprettBehandling(konvertertBehandling).id!!)
-    }
-
     fun slettBehandling(behandlingId: Long) {
         val behandling = hentBehandlingById(behandlingId)
         if (behandling.vedtaksid != null) {

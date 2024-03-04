@@ -99,11 +99,13 @@ class VedtakserviceTest {
         vedtakService =
             VedtakService(
                 behandlingService,
+                grunnlagService,
                 beregningService,
                 vedtakConsumer,
                 sakConsumer,
                 unleash,
             )
+        every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every {
             behandlingService.oppdaterBehandling(
                 any(),
