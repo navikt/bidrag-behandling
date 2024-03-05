@@ -19,6 +19,15 @@ class Jsonoperasjoner {
                     objekt,
                 )
 
+        fun <T> tilJson(sett: Set<T>): String =
+            GsonBuilder()
+                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .toJson(
+                    sett,
+                )
+
         inline fun <reified T> jsonListeTilObjekt(json: String) =
             GsonBuilder()
                 .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())

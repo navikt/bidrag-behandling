@@ -39,3 +39,36 @@ data class BehandlingDtoV2(
     val aktiveGrunnlagsdata: Set<GrunnlagsdataDto>,
     val ikkeAktiverteEndringerIGrunnlagsdata: Set<GrunnlagsdataEndretDto>,
 )
+
+data class Grunnlagstype(
+    val type: Grunnlagsdatatype,
+    val erBearbeidet: Boolean,
+)
+
+@Schema(enumAsRef = true, name = "OpplysningerType")
+enum class Grunnlagsdatatype {
+    AINNTEKT,
+    ARBEIDSFORHOLD,
+    BARNETILLEGG,
+    BARNETILSYN,
+    BOFORHOLD,
+    KONTANTSTØTTE,
+    SIVILSTAND,
+    UTVIDET_BARNETRYGD,
+    SMÅBARNSTILLEGG,
+    SKATTEGRUNNLAG,
+    SUMMERTE_ÅRSINNTEKTER,
+    SUMMERTE_MÅNEDSINNTEKTER,
+
+    @Deprecated("Erstattes av BOFORHOLD i kombiansjon med erBearbeidet = true")
+    BOFORHOLD_BEARBEIDET,
+
+    @Deprecated("Erstattes av BOFORHOLD i kombinasjon med erBearbeidet = false")
+    HUSSTANDSMEDLEMMER,
+
+    @Deprecated("Erstattes av SUMMERTE_ÅRSINNTEKTER i kombinasjon med erBearbeidet = true")
+    INNTEKT_BEARBEIDET,
+
+    @Deprecated("Erstattes av INNTEKT i kombinasjon med erBearbeidet = false")
+    INNTEKTSOPPLYSNINGER,
+}

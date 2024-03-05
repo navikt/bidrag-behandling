@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.github.tomakehurst.wiremock.WireMockServer
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -7,13 +8,10 @@ import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagstype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
-import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
@@ -21,11 +19,18 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
+import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
+import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBp
+import no.nav.bidrag.commons.service.AppContext.Companion.applicationContext
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -36,7 +41,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -44,7 +49,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -73,6 +78,16 @@ class BehandlingServiceTest : TestContainerRunner() {
     @PersistenceContext
     lateinit var entityManager: EntityManager
 
+    @BeforeEach
+    fun resette() {
+        resetWiremockServers()
+        behandlingRepository.deleteAll()
+    }
+
+    private fun resetWiremockServers() {
+        applicationContext?.getBeansOfType(WireMockServer::class.java)?.values?.forEach(WireMockServer::resetRequests)
+    }
+
     @Nested
     open inner class HenteBehandling {
         @Test
@@ -89,82 +104,25 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling = oppretteBehandling()
 
             // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
-            testdataManager.oppretteOgLagreGrunnlag(
-                behandling,
-                Grunnlagstype(Grunnlagsdatatype.INNTEKT, true),
-                innhentet = LocalDateTime.now(),
-                grunnlagsdata =
-                    SummerteMånedsOgÅrsinntekter(
-                        versjon = "123",
-                        summerteMånedsinntekter =
-                            listOf(
-                                SummertMånedsinntekt(
-                                    gjelderÅrMåned = YearMonth.now().minusYears(1).withMonth(12),
-                                    sumInntekt = BigDecimal(45000),
-                                    inntektPostListe =
-                                        listOf(
-                                            InntektPost(
-                                                beløp = BigDecimal(45000),
-                                                inntekstype = Inntektstype.LØNNSINNTEKT,
-                                                kode = "lønnFraSmåbrukarlaget",
-                                                visningsnavn = "Lønn fra småbrukarlaget",
-                                            ),
-                                        ),
-                                ),
-                            ),
-                        summerteÅrsinntekter =
-                            listOf(
-                                SummertÅrsinntekt(
-                                    sumInntekt = BigDecimal(388000),
-                                    inntektRapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
-                                    periode =
-                                        ÅrMånedsperiode(
-                                            YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                                            YearMonth.now().withMonth(1).atDay(1),
-                                        ),
-                                    inntektPostListe = emptyList(),
-                                    visningsnavn = "Egensnekra inntekt",
-                                ),
-                            ),
-                    ),
-            )
-
-            testdataManager.oppretteOgLagreGrunnlag(
-                behandling,
-                Grunnlagstype(Grunnlagsdatatype.INNTEKT, false),
-                innhentet = LocalDateTime.now(),
-                grunnlagsdata =
-                    GrunnlagInntekt(
-                        ainntekt = emptyList(),
-                        listOf(
-                            SkattegrunnlagGrunnlagDto(
-                                behandling.bidragsmottaker!!.ident!!,
-                                periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                                periodeTil = YearMonth.now().withMonth(1).atDay(1),
-                                skattegrunnlagspostListe = emptyList(),
-                            ),
-                        ),
-                    ),
-            )
-
-            val personidentBm = Personident(behandling.bidragsmottaker!!.ident!!)
-
-            stubUtils.stubHentePersoninfo(personident = personidentBm.verdi)
-            stubUtils.stubHenteGrunnlagOk()
-            stubUtils.stubKodeverkSkattegrunnlag()
-            stubUtils.stubKodeverkLønnsbeskrivelse()
-            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
-            stubUtils.stubKodeverkYtelsesbeskrivelser()
+            oppretteOgLagreGrunnlag(behandling)
+            kjøreStubber(behandling)
 
             // hvis
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
 
             // så
+            val grunnlagBm =
+                behandlingDto.aktiveGrunnlagsdata.filter { it.gjelder.verdi == behandling.bidragsmottaker!!.ident!! }
+            val grunnlagBarn =
+                behandlingDto.aktiveGrunnlagsdata.filter { it.gjelder.verdi == behandling.søknadsbarn.first().ident!! }
+
             assertSoftly {
-                behandlingDto.aktiveGrunnlagsdata.size shouldBe 20
+                behandlingDto.aktiveGrunnlagsdata.size shouldBe 17
+                grunnlagBm.size shouldBe 12
+                grunnlagBarn.size shouldBe 5
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
-                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter { g ->
-                    g.nyeData.grunnlagsdatatype == Grunnlagsdatatype.INNTEKT_BEARBEIDET
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
+                    Grunnlagstype(Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER, true) == it.nyeData.grunnlagsdatatype
                 }.size shouldBe 1
             }
         }
@@ -259,12 +217,13 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         fun `behandling må synce roller og slette behandling`() {
             val b = oppretteBehandling()
+
             behandlingService.syncRoller(
                 b.id!!,
                 listOf(
                     OpprettRolleDto(
                         Rolletype.BARN,
-                        Personident("1111"),
+                        Personident(b.søknadsbarn.first().ident!!),
                         null,
                         fødselsdato = LocalDate.now().minusMonths(144),
                         true,
@@ -278,8 +237,12 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `behandling må synce roller`() {
+        @Transactional
+        open fun `behandling må synce roller`() {
+            // gitt
             val b = oppretteBehandling()
+
+            // hvis
             behandlingService.syncRoller(
                 b.id!!,
                 listOf(
@@ -304,10 +267,12 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                 ),
             )
+            entityManager.refresh(b)
 
+            // så
             assertEquals(
-                2,
-                behandlingService.hentBehandlingById(b.id!!).roller.filter { r -> r.rolletype == Rolletype.BARN }.size,
+                3,
+                b.roller.filter { r -> r.rolletype == Rolletype.BARN }.size,
             )
         }
     }
@@ -499,20 +464,27 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        @Disabled("Kontekstproblem - OK hvis kjøres alene - feiler sammen med andre tester")
+        @Transactional
         open fun `skal aktivere valgte nyinnhenta grunnlag`() {
             // gitt
             val behandling = behandlingRepository.save(prepareBehandling())
+            kjøreStubber(behandling)
 
-            testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
+            testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
                 behandling = behandling,
-                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.INNTEKT, false),
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.AINNTEKT, false),
                 innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                 aktiv = null,
             )
 
             val opppdatereBehandlingRequest =
-                OppdaterBehandlingRequestV2(aktivereGrunnlag = setOf(behandling.id!!))
+                OppdaterBehandlingRequestV2(
+                    aktivereGrunnlagForPerson =
+                        AktivereGrunnlagRequest(
+                            Personident(behandling.bidragsmottaker?.ident!!),
+                            setOf(Grunnlagsdatatype.AINNTEKT),
+                        ),
+                )
 
             // hvis
             behandlingService.oppdaterBehandling(behandling.id!!, opppdatereBehandlingRequest)
@@ -694,21 +666,21 @@ class BehandlingServiceTest : TestContainerRunner() {
                 Rolle(
                     behandling,
                     Rolletype.BIDRAGSMOTTAKER,
-                    "123344",
+                    fødselsnummerBm,
                     LocalDate.now().minusMonths(1025),
                     LocalDateTime.now().minusMonths(2),
                 ),
                 Rolle(
                     behandling,
                     Rolletype.BIDRAGSPLIKTIG,
-                    "44332211",
+                    fødselsnummerBp,
                     LocalDate.now().minusMonths(1068),
                     LocalDateTime.now().minusMonths(2),
                 ),
                 Rolle(
                     behandling,
                     Rolletype.BARN,
-                    "1111",
+                    fødselsnummerBarn1,
                     LocalDate.now().minusMonths(154),
                     LocalDateTime.now().minusMonths(2),
                 ),
@@ -720,5 +692,85 @@ class BehandlingServiceTest : TestContainerRunner() {
         val behandling = prepareBehandling()
 
         return behandlingRepository.save(behandling)
+    }
+
+    fun oppretteOgLagreGrunnlag(behandling: Behandling) {
+        testdataManager.oppretteOgLagreGrunnlag(
+            behandling = behandling,
+            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, true),
+            innhentet = LocalDateTime.now(),
+            grunnlagsdata =
+                SummerteInntekter(
+                    versjon = "123",
+                    gjelderIdent = behandling.bidragsmottaker!!.ident!!,
+                    inntekter =
+                        listOf(
+                            SummertMånedsinntekt(
+                                gjelderÅrMåned = YearMonth.now().minusYears(1).withMonth(12),
+                                sumInntekt = BigDecimal(45000),
+                                inntektPostListe =
+                                    listOf(
+                                        InntektPost(
+                                            beløp = BigDecimal(45000),
+                                            inntekstype = Inntektstype.LØNNSINNTEKT,
+                                            kode = "lønnFraSmåbrukarlaget",
+                                            visningsnavn = "Lønn fra småbrukarlaget",
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
+        )
+
+        testdataManager.oppretteOgLagreGrunnlag(
+            behandling = behandling,
+            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER, true),
+            innhentet = LocalDateTime.now(),
+            aktiv = LocalDateTime.now(),
+            grunnlagsdata =
+                SummerteInntekter(
+                    versjon = "123",
+                    gjelderIdent = behandling.bidragsmottaker!!.ident!!,
+                    inntekter =
+                        listOf(
+                            SummertÅrsinntekt(
+                                sumInntekt = BigDecimal(388000),
+                                inntektRapportering = Inntektsrapportering.LIGNINGSINNTEKT,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                        YearMonth.now().withMonth(1).atDay(1),
+                                    ),
+                                inntektPostListe = emptyList(),
+                                visningsnavn = "Egensnekra inntekt",
+                            ),
+                        ),
+                ),
+        )
+
+        testdataManager.oppretteOgLagreGrunnlag(
+            behandling,
+            Grunnlagstype(Grunnlagsdatatype.AINNTEKT, false),
+            innhentet = LocalDateTime.now(),
+            grunnlagsdata =
+                listOf(
+                    AinntektGrunnlagDto(
+                        ainntektspostListe = emptyList(),
+                        personId = behandling.bidragsmottaker?.ident!!,
+                        periodeFra = behandling.søktFomDato.withDayOfMonth(1),
+                        periodeTil = behandling.søktFomDato.plusMonths(1).withDayOfMonth((1)),
+                    ),
+                ),
+        )
+    }
+
+    private fun kjøreStubber(behandling: Behandling) {
+        stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+        stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+        stubUtils.stubKodeverkSkattegrunnlag()
+        stubUtils.stubKodeverkLønnsbeskrivelse()
+        stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+        stubUtils.stubKodeverkYtelsesbeskrivelser()
+        stubUtils.stubKodeverkPensjonsbeskrivelser()
     }
 }
