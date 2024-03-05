@@ -14,17 +14,19 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.Ainntektspost
+import no.nav.bidrag.transport.behandling.inntekt.request.Barnetillegg
 import no.nav.bidrag.transport.behandling.inntekt.request.Kontantstøtte
 import no.nav.bidrag.transport.behandling.inntekt.request.SkattegrunnlagForLigningsår
 import no.nav.bidrag.transport.behandling.inntekt.request.Småbarnstillegg
+import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.request.UtvidetBarnetrygd
-import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
 import java.math.BigDecimal
+import java.time.LocalDate
 
 fun List<AinntektspostDto>.tilAinntektsposter(rolle: Rolle) =
     this.map {
         Ainntektspost(
-            beløp = it.belop,
+            beløp = it.beløp,
             beskrivelse = it.beskrivelse,
             opptjeningsperiodeFra = it.opptjeningsperiodeFra,
             opptjeningsperiodeTil = it.opptjeningsperiodeTil,
@@ -77,9 +79,24 @@ fun List<SmåbarnstilleggGrunnlagDto>.tilSmåbarnstillegg(rolle: Rolle): List<Sm
         )
     }
 
-fun TransformerInntekterResponse.tilSummerteMånedsOgÅrsinntekter() =
-    SummerteMånedsOgÅrsinntekter(
-        versjon = versjon,
-        summerteMånedsinntekter = summertMånedsinntektListe,
-        summerteÅrsinntekter = summertÅrsinntektListe,
-    )
+data class TransformerInntekterRequestBuilder(
+    val ainntektHentetDato: LocalDate? = LocalDate.now(),
+    val ainntektsposter: List<Ainntektspost>? = emptyList(),
+    val barnetillegg: List<Barnetillegg>? = emptyList(),
+    val kontantstøtte: List<Kontantstøtte>? = emptyList(),
+    val skattegrunnlag: List<SkattegrunnlagForLigningsår>? = emptyList(),
+    val småbarnstillegg: List<Småbarnstillegg>? = emptyList(),
+    val utvidetBarnetrygd: List<UtvidetBarnetrygd>? = emptyList(),
+) {
+    fun bygge(): TransformerInntekterRequest {
+        return TransformerInntekterRequest(
+            ainntektHentetDato!!,
+            ainntektsposter!!,
+            skattegrunnlag!!,
+            kontantstøtte!!,
+            utvidetBarnetrygd!!,
+            småbarnstillegg!!,
+            barnetillegg!!,
+        )
+    }
+}

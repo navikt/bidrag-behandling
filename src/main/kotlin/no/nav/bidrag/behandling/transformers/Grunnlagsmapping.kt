@@ -1,15 +1,11 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.math.RoundingMode
 
@@ -52,36 +48,3 @@ fun List<SummertÅrsinntekt>.tilInntekt(
 ) = this.map {
     it.tilInntekt(behandling, person)
 }.toMutableSet()
-
-fun SummertMånedsinntekt.tilInntekt(
-    behandling: Behandling,
-    person: Personident,
-): Inntekt {
-    val inntekt =
-        Inntekt(
-            type = Inntektsrapportering.AINNTEKT,
-            belop = this.sumInntekt,
-            behandling = behandling,
-            ident = person.verdi,
-            datoFom = this.gjelderÅrMåned.atDay(1),
-            datoTom = this.gjelderÅrMåned.atEndOfMonth(),
-            opprinneligFom = this.gjelderÅrMåned.atDay(1),
-            opprinneligTom = this.gjelderÅrMåned.atEndOfMonth(),
-            kilde = Kilde.OFFENTLIG,
-            taMed = false,
-        )
-    inntekt.inntektsposter = this.inntektPostListe.tilInntektspost(inntekt)
-    return inntekt
-}
-
-fun List<SummertMånedsinntekt>.konvertereTilInntekt(
-    behandling: Behandling,
-    person: Personident,
-) = this.map {
-    it.tilInntekt(behandling, person)
-}.toMutableSet()
-
-fun List<Grunnlag>.filtrerEtterTypeOgIdent(
-    type: Grunnlagsdatatype,
-    ident: String,
-) = this.filter { it.type == type && it.rolle.ident == ident }

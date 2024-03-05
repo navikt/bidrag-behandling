@@ -15,6 +15,7 @@ import io.mockk.mockkStatic
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
@@ -27,6 +28,7 @@ import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
@@ -407,6 +409,24 @@ class StubUtils {
             }
 
         return WireMock.stubFor(wiremock.willReturn(respons))
+    }
+
+    fun stubbeGrunnlagsinnhentingForBehandling(behandling: Behandling) {
+        var barnNummer = 1
+        behandling.roller.forEach {
+            when (it.rolletype) {
+                Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlagOk(it)
+                Rolletype.BARN -> {
+                    stubHenteGrunnlagOk(
+                        rolle = it,
+                        navnResponsfil = "hente-grunnlagrespons-barn${barnNummer++}.json",
+                    )
+                }
+                else -> {
+                    stubHenteGrunnlagOk(tomRespons = true)
+                }
+            }
+        }
     }
 
     inner class Verify {

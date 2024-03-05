@@ -146,10 +146,10 @@ class BehandlingService(
                 SECURE_LOGGER.info("Oppdatere behandling $behandlingsid for forespørsel $request")
                 it.grunnlagspakkeid = request.grunnlagspakkeId ?: it.grunnlagspakkeid
                 it.vedtaksid = request.vedtaksid ?: it.vedtaksid
-                request.aktivereGrunnlag.let { grunnlagsider ->
-                    if (grunnlagsider.isNotEmpty()) {
+                request.aktivereGrunnlagForPerson.let { aktivereGrunnlagRequest ->
+                    if (aktivereGrunnlagRequest != null) {
                         log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
-                        grunnlagService.aktivereGrunnlag(it, grunnlagsider)
+                        grunnlagService.aktivereGrunnlag(it, aktivereGrunnlagRequest)
                     }
                 }
                 request.inntekter?.let { inntekter ->

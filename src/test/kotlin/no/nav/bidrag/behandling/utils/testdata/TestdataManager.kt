@@ -4,10 +4,9 @@ import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
-import no.nav.bidrag.behandling.database.datamodell.getOrMigrate
-import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -66,7 +65,7 @@ class TestdataManager(
     @Transactional
     fun <T> oppretteOgLagreGrunnlag(
         behandling: Behandling,
-        grunnlagsdatatype: Grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+        grunnlagstype: Grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEGRUNNLAG, false),
         innhentet: LocalDateTime,
         aktiv: LocalDateTime? = null,
         grunnlagsdata: T? = null,
@@ -74,13 +73,14 @@ class TestdataManager(
         behandling.grunnlag.add(
             Grunnlag(
                 behandling,
-                grunnlagsdatatype.getOrMigrate(),
+                grunnlagstype.type,
+                grunnlagstype.erBearbeidet,
                 data =
                     if (grunnlagsdata != null) {
                         tilJson(grunnlagsdata)
                     } else {
                         oppretteGrunnlagInntektsdata(
-                            grunnlagsdatatype,
+                            grunnlagstype.type,
                             behandling.bidragsmottaker!!.ident!!,
                             behandling.søktFomDato,
                         )
@@ -97,25 +97,22 @@ class TestdataManager(
         gjelderIdent: String,
         søktFomDato: LocalDate,
     ) = when (grunnlagsdatatype) {
-        Grunnlagsdatatype.INNTEKT ->
+        Grunnlagsdatatype.AINNTEKT ->
             tilJson(
-                GrunnlagInntekt(
-                    ainntekt =
-                        listOf(
-                            AinntektGrunnlagDto(
-                                personId = gjelderIdent,
-                                periodeFra = søktFomDato.withDayOfMonth(1),
-                                periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
-                                ainntektspostListe =
-                                    listOf(
-                                        tilAinntektspostDto(
-                                            beløp = BigDecimal(70000),
-                                            fomDato = søktFomDato,
-                                            tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
-                                        ),
-                                    ),
+                listOf(
+                    AinntektGrunnlagDto(
+                        personId = gjelderIdent,
+                        periodeFra = søktFomDato.withDayOfMonth(1),
+                        periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                        ainntektspostListe =
+                            listOf(
+                                tilAinntektspostDto(
+                                    beløp = BigDecimal(70000),
+                                    fomDato = søktFomDato,
+                                    tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                                ),
                             ),
-                        ),
+                    ),
                 ),
             )
 

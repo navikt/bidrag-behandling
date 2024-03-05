@@ -100,7 +100,6 @@ class BidragGrunnlagConsumer(
                 ) to oppretteGrunnlagsobjekterBm(Personident(behandling.bidragsmottaker!!.ident!!)),
             )
 
-        var i = 1
         behandling.søknadsbarn.filter { sb -> sb.ident != null }.map { Personident(it.ident!!) }.forEach {
             requestobjekterGrunnlag[it] =
                 oppretteGrunnlagsobjekterBarn(Personident(it.verdi))
