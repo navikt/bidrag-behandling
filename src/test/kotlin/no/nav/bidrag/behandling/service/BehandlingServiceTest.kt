@@ -79,15 +79,15 @@ class BehandlingServiceTest : TestContainerRunner() {
     @PersistenceContext
     lateinit var entityManager: EntityManager
 
-    @AfterEach
     @BeforeEach
     fun resette() {
-        resetWiremockServers()
+       // resetWiremockServers()
         behandlingRepository.deleteAll()
     }
 
     private fun resetWiremockServers() {
-        applicationContext?.getBeansOfType(WireMockServer::class.java)?.values?.forEach(WireMockServer::resetRequests)
+        //applicationContext?.getBeansOfType(WireMockServer::class.java)?.values?.forEach(WireMockServer::resetRequests)
+        applicationContext?.getBeansOfType(WireMockServer::class.java)?.values?.forEach(WireMockServer::resetAll)
     }
 
     @Nested
