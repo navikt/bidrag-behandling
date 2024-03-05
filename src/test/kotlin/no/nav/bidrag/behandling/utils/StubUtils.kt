@@ -30,6 +30,7 @@ import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto

@@ -25,6 +25,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
 import java.time.YearMonth
+import kotlin.test.Ignore
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -42,7 +43,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
-//        @Disabled("Wiremock-problem kun på Github")
+//        @Ignore("Gir Wiremock-problemer på Github")
         open fun `skal hente inntekter for behandling`() {
             stubUtils.stubHenteGrunnlagOk(
                 rolle = testdataBM.tilRolle(),
@@ -56,7 +57,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 rolle = testdataBarn2.tilRolle(),
             )
             // given
-            val behandling = testdataManager.opprettBehandling(true)
+            val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
 
             // when
             val r1 =
@@ -72,7 +74,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body?.inntekter?.årsinntekter?.size shouldBe 9
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 16
+                r1.body?.inntekter?.årsinntekter
+                    ?.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }?.size shouldBe 6
+                r1.body?.inntekter?.årsinntekter?.filter { it.ident.verdi == testdataBarn1.ident }
+                    ?.size shouldBe 5
+                r1.body?.inntekter?.årsinntekter?.filter { it.ident.verdi == testdataBarn2.ident }
+                    ?.size shouldBe 5
             }
         }
 
@@ -92,6 +100,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
             )
             // given
             val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
 
             // when
             val r1 =
@@ -107,11 +116,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body?.inntekter?.årsinntekter?.size shouldBe 6
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 16
                 r1.body?.inntekter?.barnetillegg?.size shouldBe 0
                 r1.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 1
                 r1.body?.inntekter?.kontantstøtte?.size shouldBe 1
-                r1.body?.inntekter?.månedsinntekter?.size shouldBe 1
+                r1.body?.inntekter?.månedsinntekter?.size shouldBe 3
+                r1.body?.aktiveGrunnlagsdata?.size shouldBe 22
+                r1.body?.ikkeAktiverteEndringerIGrunnlagsdata?.size shouldBe 0
             }
         }
     }
