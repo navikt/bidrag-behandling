@@ -45,7 +45,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -81,12 +80,12 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     @BeforeEach
     fun resette() {
-       // resetWiremockServers()
+        // resetWiremockServers()
         behandlingRepository.deleteAll()
     }
 
     private fun resetWiremockServers() {
-        //applicationContext?.getBeansOfType(WireMockServer::class.java)?.values?.forEach(WireMockServer::resetRequests)
+        // applicationContext?.getBeansOfType(WireMockServer::class.java)?.values?.forEach(WireMockServer::resetRequests)
         applicationContext?.getBeansOfType(WireMockServer::class.java)?.values?.forEach(WireMockServer::resetAll)
     }
 
