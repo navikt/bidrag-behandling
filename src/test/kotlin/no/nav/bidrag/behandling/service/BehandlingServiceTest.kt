@@ -45,6 +45,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -78,6 +79,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     @PersistenceContext
     lateinit var entityManager: EntityManager
 
+    @AfterEach
     @BeforeEach
     fun resette() {
         resetWiremockServers()
