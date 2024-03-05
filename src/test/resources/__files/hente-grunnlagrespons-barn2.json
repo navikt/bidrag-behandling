@@ -1,0 +1,126 @@
+{
+  "ainntektListe": [
+    {
+      "personId": "  12345678911",
+      "periodeFra": "2021-01-01",
+      "periodeTil": "2021-02-01",
+      "aktiv": true,
+      "brukFra": "2021-11-27T00:00:00",
+      "brukTil": null,
+      "hentetTidspunkt": "2021-12-20T15:03:29.888769",
+      "ainntektspostListe": [
+        {
+          "utbetalingsperiode": "2021-01",
+          "opptjeningsperiodeFra": null,
+          "opptjeningsperiodeTil": null,
+          "opplysningspliktigId": "995277670",
+          "virksomhetId": "995277670",
+          "inntektType": "YTELSE_FRA_OFFENTLIGE",
+          "fordelType": "kontantytelse",
+          "beskrivelse": "ufoeretrygd",
+          "belop": 19939,
+          "beløp": 19939,
+          "etterbetalingsperiodeFra": null,
+          "etterbetalingsperiodeTil": null
+        }
+      ]
+    }
+  ],
+  "arbeidsforholdListe": [
+    {
+      "partPersonId": "  12345678911",
+      "startdato": "2002-11-03",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljer": [
+        {
+          "periodeFra": "2002-11",
+          "periodeTil": null,
+          "arbeidsforholdType": "Forenklet",
+          "arbeidstidsordningBeskrivelse": null,
+          "ansettelsesformBeskrivelse": null,
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": null,
+          "avtaltStillingsprosent": null,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjoner": [],
+      "permitteringer": [],
+      "hentetTidspunkt": "2024-01-08T13:39:06.087233848"
+    },
+    {
+      "partPersonId": "  12345678911",
+      "startdato": "2022-12-07",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljer": [
+        {
+          "periodeFra": "2022-12",
+          "periodeTil": null,
+          "arbeidsforholdType": "Forenklet",
+          "arbeidstidsordningBeskrivelse": null,
+          "ansettelsesformBeskrivelse": null,
+          "yrkeBeskrivelse": "BYGNINGSSNEKKER",
+          "antallTimerPrUke": null,
+          "avtaltStillingsprosent": null,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjoner": [],
+      "permitteringer": [],
+      "hentetTidspunkt": "2024-01-08T13:39:06.119823886"
+    },
+    {
+      "partPersonId": "  12345678911",
+      "startdato": "2003-12-08",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
+      "arbeidsgiverOrgnummer": "947064649",
+      "ansettelsesdetaljer": [
+        {
+          "periodeFra": "2023-12",
+          "periodeTil": null,
+          "arbeidsforholdType": "Ordinaer",
+          "arbeidstidsordningBeskrivelse": "Ikke skift",
+          "ansettelsesformBeskrivelse": "Fast ansettelse",
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": 37.5,
+          "avtaltStillingsprosent": 88,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjoner": [],
+      "permitteringer": [],
+      "hentetTidspunkt": "2024-01-08T13:39:06.151722999"
+    }
+  ],
+  "barnetilleggListe": [],
+  "barnetilsynListe": [],
+  "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
+  "husstandsmedlemmerOgEgneBarnListe": [],
+  "kontantstøtteListe": [],
+  "sivilstandListe": [],
+  "skattegrunnlagListe": [
+    {
+      "personId": "  12345678911",
+      "periodeFra": "2024-01-01",
+      "periodeTil": "2025-01-01",
+      "skattegrunnlagspostListe": [
+        {
+          "skattegrunnlagType": "ORDINÆR",
+          "inntektType": "LØNNSINNTEKT",
+          "belop": 678000
+        }
+      ]
+    }
+  ],
+  "småbarnstilleggListe": [],
+  "utvidetBarnetrygdListe": [],
+  "feilrapporteringListe": []
+}

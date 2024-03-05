@@ -2,18 +2,19 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.konverterData
-import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 @Suppress("ktlint:standard:value-argument-comment")
@@ -80,10 +81,9 @@ fun Behandling.tilBehandlingDtoV2(
                 inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
                     .tilInntektDtoV2().toSet(),
             månedsinntekter =
-                // TODO: Jan Kjetil. En hacky løsning
-                gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }
+                gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
                     .flatMap { grunnlag ->
-                        grunnlag.konverterData<SummerteMånedsOgÅrsinntekter>()?.summerteMånedsinntekter?.map {
+                        grunnlag.konverterData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
                             it.tilInntektDtoV2(
                                 grunnlag.rolle.ident!!,
                             )

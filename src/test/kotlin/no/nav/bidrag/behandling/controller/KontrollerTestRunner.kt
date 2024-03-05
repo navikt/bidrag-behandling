@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
 import StubUtils
-import com.github.tomakehurst.wiremock.client.WireMock
 import io.mockk.every
 import io.mockk.mockkObject
 import no.nav.bidrag.behandling.service.CommonTestRunner
@@ -67,7 +66,6 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     fun initMocks() {
         mockkObject(SaksbehandlernavnProvider)
         every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"
-        WireMock.resetAllRequests()
         stubUtils.stubHentSaksbehandler()
         stubUtils.stubOpprettForsendelse()
         stubUtils.stubSlettForsendelse()
@@ -78,6 +76,5 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubKodeverkLønnsbeskrivelse()
         stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
         stubUtils.stubKodeverkYtelsesbeskrivelser()
-        stubUtils.stubHenteGrunnlagOk()
     }
 }

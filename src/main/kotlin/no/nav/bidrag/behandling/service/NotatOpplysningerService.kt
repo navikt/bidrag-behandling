@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
@@ -24,6 +23,8 @@ import no.nav.bidrag.behandling.dto.v1.notat.ParterISøknad
 import no.nav.bidrag.behandling.dto.v1.notat.SivilstandNotat
 import no.nav.bidrag.behandling.dto.v1.notat.UtvidetBarnetrygd
 import no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -41,19 +42,24 @@ class NotatOpplysningerService(
 ) {
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
+
         val opplysningerBoforhold =
             grunnlagService.hentSistInnhentet(
                 behandlingId,
                 behandling.roller
                     .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
-                Grunnlagsdatatype.BOFORHOLD_BEARBEIDET,
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
             )
                 ?.hentData()
                 ?: BoforholdBearbeidet()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
             behandling.roller.filter { it.ident != null }.map { r ->
-                grunnlagService.hentSistInnhentet(behandlingId, r.id!!, Grunnlagsdatatype.ARBEIDSFORHOLD)
+                grunnlagService.hentSistInnhentet(
+                    behandlingId,
+                    r.id!!,
+                    Grunnlagstype(Grunnlagsdatatype.ARBEIDSFORHOLD, false),
+                )
                     .hentData<ArbeidsforholdGrunnlagDto>()
             }.toList().filterNotNull()
 
@@ -122,7 +128,7 @@ private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandBear
                         ),
                     status = periode.type,
                 )
-            }.sortedBy { it.periode?.fom },
+            }.sortedBy { it.periode.fom },
     )
 
 private fun Sivilstand.tilSivilstandsperiode() =

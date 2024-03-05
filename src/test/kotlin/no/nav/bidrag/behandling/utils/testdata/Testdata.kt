@@ -62,7 +62,7 @@ val testdataBarn1 =
 val testdataBarn2 =
     mapOf<String, Any>(
         Rolle::navn.name to "Gran Mappe",
-        Rolle::ident.name to "123312312",
+        Rolle::ident.name to fødselsnummerBarn2,
         Rolle::rolletype.name to Rolletype.BARN,
         Rolle::foedselsdato.name to LocalDate.parse("2018-05-09"),
     )

@@ -4,10 +4,13 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
-import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -75,17 +78,20 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         // gitt
         val behandling = testdataManager.opprettBehandling()
 
-        testdataManager.oppretteOgLagreGrunnlag<GrunnlagInntekt>(
+        testdataManager.oppretteOgLagreGrunnlag<SkattegrunnlagGrunnlagDto>(
             behandling = behandling,
-            grunnlagsdatatype = Grunnlagsdatatype.INNTEKT,
+            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEGRUNNLAG, false),
             innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
             aktiv = null,
         )
 
         entityManager.persist(behandling)
 
-        val idTilIkkeAktiverteGrunnlag =
-            behandling.grunnlag.filter { it.aktiv == null }.map { it.id!! }.toSet()
+        val aktivereGrunnlagRequest =
+            AktivereGrunnlagRequest(
+                Personident(behandling.bidragsmottaker?.ident!!),
+                setOf(Grunnlagsdatatype.SKATTEGRUNNLAG),
+            )
 
         // hvis
         val respons =
@@ -94,7 +100,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 HttpMethod.PUT,
                 HttpEntity(
                     OppdaterBehandlingRequestV2(
-                        aktivereGrunnlag = idTilIkkeAktiverteGrunnlag,
+                        aktivereGrunnlagForPerson = aktivereGrunnlagRequest,
                         grunnlagspakkeId = 123L,
                     ),
                 ),

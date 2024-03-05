@@ -22,6 +22,12 @@ fun inntektIkkeFunnetException(idInntekt: Long): Nothing =
         "Fant ikke inntekt med id $idInntekt",
     )
 
+fun lagringAvGrunnlagFeiletException(behandlingsid: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Lagring av grunnlag feilet for behandling $behandlingsid",
+    )
+
 class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) :
     RuntimeException(melding, throwable)
 

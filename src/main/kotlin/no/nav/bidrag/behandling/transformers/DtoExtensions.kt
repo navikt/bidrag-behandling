@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
@@ -23,7 +24,6 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
-import java.math.BigDecimal
 import java.math.RoundingMode
 
 fun Set<Sivilstand>.toSivilstandDto() =
@@ -59,7 +59,7 @@ fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
             husstandsBarn,
             it.datoFom,
             it.datoTom,
-            it.bostatus!!,
+            it.bostatus,
             it.kilde,
         )
     }.toSet()
@@ -135,17 +135,6 @@ fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) =
         behandling = behandling,
     )
 
-fun Set<InntektspostDtoV2>.tilInntektspost(inntekt: Inntekt) =
-    this.map {
-        Inntektspost(
-            it.beløp ?: BigDecimal.ZERO,
-            it.kode,
-            it.visningsnavn,
-            inntekt = inntekt,
-            inntektstype = it.inntektstype,
-        )
-    }
-
 fun Set<Inntektspost>.tilInntektspostDtoV2() =
     this.map {
         InntektspostDtoV2(
@@ -204,7 +193,8 @@ fun Grunnlag.toDto(): GrunnlagsdataDto {
     return GrunnlagsdataDto(
         this.id!!,
         this.behandling.id!!,
-        this.type,
+        Personident(this.rolle.ident!!),
+        Grunnlagstype(this.type, this.erBearbeidet),
         this.data,
         this.innhentet,
     )

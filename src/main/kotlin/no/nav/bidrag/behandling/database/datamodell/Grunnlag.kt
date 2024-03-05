@@ -13,12 +13,15 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.grunnlag.BoforholdBearbeidet
-import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.database.grunnlag.InntektsopplysningerBearbeidet
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandDto
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
 
@@ -30,6 +33,7 @@ open class Grunnlag(
     open val behandling: Behandling,
     @Enumerated(EnumType.STRING)
     open val type: Grunnlagsdatatype,
+    open val erBearbeidet: Boolean = false,
     @Column(name = "data", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open val data: String,
@@ -46,12 +50,17 @@ open class Grunnlag(
 inline fun <reified T> Grunnlag?.hentData(): T? =
     when (this?.type) {
         Grunnlagsdatatype.INNTEKTSOPPLYSNINGER, Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
-        Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-        Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> konverterData<List<RelatertPersonDto>>() as T
+        Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
+        Grunnlagsdatatype.BOFORHOLD -> konverterData<List<RelatertPersonDto>>() as T
         Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
         Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
-        Grunnlagsdatatype.INNTEKT -> konverterData<List<GrunnlagInntekt>>() as T
+        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> konverterData<SummerteInntekter<SummertMånedsinntekt>>() as T
+        Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER -> konverterData<SummerteInntekter<SummertÅrsinntekt>>() as T
         else -> null
     }
 
-inline fun <reified T> Grunnlag?.konverterData(): T? = this?.data?.let { objectmapper.readValue(it) }
+inline fun <reified T> Grunnlag?.konverterData(): T? {
+    return this?.data?.let {
+        objectmapper.readValue(it)
+    }
+}

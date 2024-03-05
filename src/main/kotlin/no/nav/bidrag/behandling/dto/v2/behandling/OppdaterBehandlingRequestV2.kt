@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
@@ -17,7 +18,14 @@ data class OppdaterBehandlingRequestV2(
     val virkningstidspunkt: OppdaterVirkningstidspunkt? = null,
     val boforhold: OppdaterBoforholdRequest? = null,
     val inntekter: OppdatereInntekterRequestV2? = null,
-    val aktivereGrunnlag: Set<Long> = emptySet(),
+    val aktivereGrunnlagForPerson: AktivereGrunnlagRequest? = null,
+)
+
+data class AktivereGrunnlagRequest(
+    @Schema(description = "Personident tilhørende rolle i behandling grunnlag skal aktiveres for")
+    val personident: Personident,
+    @Schema(description = "Grunnlagstyper som skal aktiveres")
+    val grunnlagsdatatyper: Set<Grunnlagsdatatype> = emptySet(),
 )
 
 data class OppdatereInntekterRequestV2(
@@ -70,4 +78,6 @@ data class OppdatereManuellInntekt(
         required = false,
     )
     val gjelderBarn: Personident? = null,
+    @Schema(description = "Spesifisere inntektstype for detaljpost")
+    val inntektstype: Inntektstype? = null,
 )

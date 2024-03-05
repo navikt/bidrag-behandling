@@ -11,11 +11,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
+import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn2
 import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -25,6 +25,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
 import java.time.YearMonth
+import kotlin.test.Ignore
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -42,10 +43,11 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
-        @Disabled("Wiremock-problem kun på Github")
+        @Ignore("Gir Wiremock-problemer på Github")
         open fun `skal hente inntekter for behandling`() {
             // given
-            val behandling = testdataManager.opprettBehandling(true)
+            val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
 
             // when
             val r1 =
@@ -61,15 +63,22 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body?.inntekter?.årsinntekter?.size shouldBe 9
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 16
+                r1.body?.inntekter?.årsinntekter
+                    ?.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }?.size shouldBe 6
+                r1.body?.inntekter?.årsinntekter?.filter { it.ident.verdi == fødselsnummerBarn1 }
+                    ?.size shouldBe 5
+                r1.body?.inntekter?.årsinntekter?.filter { it.ident.verdi == fødselsnummerBarn2 }
+                    ?.size shouldBe 5
             }
         }
 
         @Test
-        @Disabled("Wiremock-problem kun på Github")
+        @Ignore("Gir Wiremock-problemer på Github")
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
 
             // when
             val r1 =
@@ -85,11 +94,13 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body?.inntekter?.årsinntekter?.size shouldBe 8
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 16
                 r1.body?.inntekter?.barnetillegg?.size shouldBe 0
-                r1.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 0
+                r1.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 1
                 r1.body?.inntekter?.kontantstøtte?.size shouldBe 1
-                r1.body?.inntekter?.månedsinntekter?.size shouldBe 2
+                r1.body?.inntekter?.månedsinntekter?.size shouldBe 3
+                r1.body?.aktiveGrunnlagsdata?.size shouldBe 22
+                r1.body?.ikkeAktiverteEndringerIGrunnlagsdata?.size shouldBe 0
             }
         }
     }
