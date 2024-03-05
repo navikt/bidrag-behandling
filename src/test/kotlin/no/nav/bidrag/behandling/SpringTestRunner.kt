@@ -42,14 +42,10 @@ class SpringTestRunner {
     private fun resetWiremockServers() {
         applicationContext.getBeansOfType(WireMockServer::class.java)
             .values
-            .forEach(WireMockServer::resetRequests)
+            .forEach(WireMockServer::resetAll)
     }
 
     protected fun getPort(): String {
         return port.toString()
-    }
-
-    companion object {
-        private const val LOCALHOST = "http://localhost:"
     }
 }

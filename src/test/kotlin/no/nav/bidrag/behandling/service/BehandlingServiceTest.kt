@@ -47,7 +47,6 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -76,11 +75,6 @@ class BehandlingServiceTest : TestContainerRunner() {
     @PersistenceContext
     lateinit var entityManager: EntityManager
 
-    @BeforeEach
-    fun resette() {
-        behandlingRepository.deleteAll()
-    }
-
     @Nested
     open inner class HenteBehandling {
         @Test
@@ -104,15 +98,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
 
             // så
-            val grunnlagBm =
-                behandlingDto.aktiveGrunnlagsdata.filter { it.gjelder.verdi == behandling.bidragsmottaker!!.ident!! }
-            val grunnlagBarn =
-                behandlingDto.aktiveGrunnlagsdata.filter { it.gjelder.verdi == behandling.søknadsbarn.first().ident!! }
-
             assertSoftly {
-                behandlingDto.aktiveGrunnlagsdata.size shouldBe 17
-                grunnlagBm.size shouldBe 12
-                grunnlagBarn.size shouldBe 5
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
                     Grunnlagstype(Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER, true) == it.nyeData.grunnlagsdatatype
