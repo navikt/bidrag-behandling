@@ -43,7 +43,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
-        @Ignore("Gir Wiremock-problemer på Github" )
+        @Ignore("Gir Wiremock-problemer på Github")
         open fun `skal hente inntekter for behandling`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
@@ -74,7 +74,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         }
 
         @Test
-        @Ignore("Gir Wiremock-problemer på Github" )
+        @Ignore("Gir Wiremock-problemer på Github")
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
