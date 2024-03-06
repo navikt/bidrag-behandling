@@ -28,7 +28,6 @@ import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
-import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
@@ -423,6 +422,7 @@ class StubUtils {
                         navnResponsfil = "hente-grunnlagrespons-barn${barnNummer++}.json",
                     )
                 }
+
                 else -> {
                     stubHenteGrunnlagOk(tomRespons = true)
                 }

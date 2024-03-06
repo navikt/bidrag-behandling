@@ -68,18 +68,16 @@ class InntektServiceTest : TestContainerRunner() {
     }
 
     @Nested
-    @DisplayName("Teste oppdatering av sammenstilte inntekter")
-    open inner class OppdatereSammenstilte {
+    @Transactional
+    inner class OppdatereSammenstilte {
         @Test
-        @Transactional
-        open fun `skal lagre innnhentede inntekter for gyldige inntektsrapporteringstyper`() {
+        fun `skal lagre innnhentede inntekter for gyldige inntektsrapporteringstyper`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
 
             val summerteInntekter =
                 SummerteInntekter(
                     versjon = "xyz",
-                    gjelderIdent = behandling.bidragsmottaker!!.ident!!,
                     inntekter =
                         listOf(
                             SummertÅrsinntekt(
@@ -148,10 +146,10 @@ class InntektServiceTest : TestContainerRunner() {
 
     @Nested
     @DisplayName("Teste automatisk oppdatering av offisielle inntekter")
-    open inner class OppdatereAutomatiskInnhentaOffentligeInntekter {
+    @Transactional
+    inner class OppdatereAutomatiskInnhentaOffentligeInntekter {
         @Test
-        @Transactional
-        open fun `skal slette duplikate inntekter med samme type og periode,ved oppdatering av grunnlag`() {
+        fun `skal slette duplikate inntekter med samme type og periode,ved oppdatering av grunnlag`() {
             // gitt
             stubUtils.stubKodeverkSkattegrunnlag()
             stubUtils.stubKodeverkLønnsbeskrivelse()
@@ -198,19 +196,23 @@ class InntektServiceTest : TestContainerRunner() {
 
             val grunnlagMedAinntekt = behandling.grunnlag.first()
 
-            val nyttAinntektsgrunnlag = Jsonoperasjoner.jsonListeTilObjekt<AinntektGrunnlagDto>(grunnlagMedAinntekt.data)
+            val nyttAinntektsgrunnlag =
+                Jsonoperasjoner.jsonListeTilObjekt<AinntektGrunnlagDto>(grunnlagMedAinntekt.data)
 
             val transformereInntekter =
                 TransformerInntekterRequest(
                     ainntektHentetDato = grunnlagMedAinntekt.innhentet.toLocalDate(),
-                    ainntektsposter = nyttAinntektsgrunnlag.flatMap { it.ainntektspostListe }.tilAinntektsposter(),
+                    ainntektsposter =
+                        nyttAinntektsgrunnlag.flatMap { it.ainntektspostListe }
+                            .tilAinntektsposter(testdataBM.tilRolle(behandling)),
                     kontantstøtteliste = emptyList(),
                     skattegrunnlagsliste = emptyList(),
                     småbarnstilleggliste = emptyList(),
                     utvidetBarnetrygdliste = emptyList(),
                 )
 
-            val transformerteInntekterrespons = inntektApi.transformerInntekter(transformereInntekter)
+            val transformerteInntekterrespons =
+                inntektApi.transformerInntekter(transformereInntekter)
 
             // hvis
             inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
@@ -237,9 +239,9 @@ class InntektServiceTest : TestContainerRunner() {
 
     @Nested
     @DisplayName("Teste manuell oppdatering av inntekter")
-    open inner class OppdatereInntekterManuelt {
+    inner class OppdatereInntekterManuelt {
         @Test
-        open fun `skal oppdatere eksisterende inntekt`() {
+        fun `skal oppdatere eksisterende inntekt`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
 

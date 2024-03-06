@@ -48,6 +48,7 @@ data class Grunnlagstype(
 @Schema(enumAsRef = true, name = "OpplysningerType")
 enum class Grunnlagsdatatype {
     AINNTEKT,
+    SKATTEPLIKTIG,
     ARBEIDSFORHOLD,
     BARNETILLEGG,
     BARNETILSYN,

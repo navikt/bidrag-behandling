@@ -5,6 +5,7 @@ import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -48,6 +49,21 @@ data class InntektBearbeidet(
 
 data class SummerteInntekter<T>(
     val versjon: String,
-    val gjelderIdent: String,
     val inntekter: List<T>,
+)
+
+data class SkattepliktigInntekter<T>(
+    val versjon: String,
+    val inntekter: List<T>,
+)
+
+data class BearbeidetInntekter<T>(
+    val versjon: String,
+    val inntekter: List<T>,
+)
+
+data class SkattepliktigeInntekter<T, R>(
+    val versjon: String? = null,
+    val ainntekter: List<T>,
+    val skattegrunnlag: List<R>,
 )

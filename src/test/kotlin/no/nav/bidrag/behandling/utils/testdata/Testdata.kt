@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -16,9 +15,11 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.filtrerAinntekt
+import no.nav.bidrag.behandling.transformers.filtrerSkattegrunnlag
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -542,100 +543,66 @@ fun opprettAlleAktiveGrunnlagFraFil(
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.KONTANTSTØTTE),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SMÅBARNSTILLEGG),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.INNTEKT),
-        opprettBeregnetInntektFraGrunnlag(behandling, filnavn),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.AINNTEKT),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEGRUNNLAG),
+        opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBM),
+        opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBP),
+        opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn1),
+        opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn2),
     ).flatten().toMutableSet()
-}
-
-fun opprettInntektBearbeidet(
-    testDataPerson: TestDataPerson,
-    grunnlag: HentGrunnlagDto,
-    behandling: Behandling,
-): SummerteMånedsOgÅrsinntekter {
-    val inntekt =
-        InntektApi("").transformerInntekter(
-            grunnlag.tilTransformerInntekterRequest(
-                testDataPerson.tilRolle(behandling),
-                behandling.roller,
-            ),
-        )
-
-    return SummerteMånedsOgÅrsinntekter(
-        versjon = "1",
-        summerteÅrsinntekter = inntekt.summertÅrsinntektListe,
-        summerteMånedsinntekter = inntekt.summertMånedsinntektListe,
-    )
 }
 
 fun opprettBeregnetInntektFraGrunnlag(
     behandling: Behandling,
     filnavn: String,
+    testDataPerson: TestDataPerson,
 ): List<Grunnlag> {
     val fil = hentFil("/__files/$filnavn")
     val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(fil)
+    val inntekterBearbeidet =
+        InntektApi("").transformerInntekter(
+            grunnlag.tilTransformerInntekterRequest(testDataPerson.tilRolle(behandling)),
+        )
     return listOf(
         Grunnlag(
             behandling = behandling,
-            type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            type = Grunnlagsdatatype.AINNTEKT,
+            erBearbeidet = true,
             data =
                 commonObjectmapper.writeValueAsString(
                     POJONode(
-                        opprettInntektBearbeidet(
-                            testdataBM,
-                            grunnlag,
-                            behandling,
-                        ),
+                        inntekterBearbeidet.summertÅrsinntektListe.filtrerAinntekt(),
                     ),
                 ),
             innhentet = LocalDateTime.now(),
-            rolle = testdataBM.tilRolle(behandling),
+            rolle = testDataPerson.tilRolle(behandling),
         ),
         Grunnlag(
             behandling = behandling,
-            type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            type = Grunnlagsdatatype.SKATTEGRUNNLAG,
+            erBearbeidet = true,
             data =
                 commonObjectmapper.writeValueAsString(
                     POJONode(
-                        opprettInntektBearbeidet(
-                            testdataBarn1,
-                            grunnlag,
-                            behandling,
-                        ),
+                        inntekterBearbeidet.summertÅrsinntektListe.filtrerSkattegrunnlag(),
                     ),
                 ),
             innhentet = LocalDateTime.now(),
-            rolle = testdataBarn1.tilRolle(behandling),
+            rolle = testDataPerson.tilRolle(behandling),
         ),
         Grunnlag(
             behandling = behandling,
-            type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+            type = Grunnlagsdatatype.KONTANTSTØTTE,
+            erBearbeidet = true,
             data =
                 commonObjectmapper.writeValueAsString(
                     POJONode(
-                        opprettInntektBearbeidet(
-                            testdataBarn2,
-                            grunnlag,
-                            behandling,
-                        ),
+                        inntekterBearbeidet.summertÅrsinntektListe.filter { it.inntektRapportering == Inntektsrapportering.KONTANTSTØTTE },
                     ),
                 ),
             innhentet = LocalDateTime.now(),
-            rolle = testdataBarn2.tilRolle(behandling),
+            rolle = testDataPerson.tilRolle(behandling),
         ),
-    )
-}
-
-fun opprettBeregnetInntektFraFil(
-    behandling: Behandling,
-    filnavn: String,
-): Grunnlag {
-    val fil = hentFil("/__files/$filnavn")
-    return Grunnlag(
-        behandling = behandling,
-        type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
-        data = fil.readText(),
-        innhentet = LocalDateTime.now(),
-        rolle = opprettRolle(behandling, testdataBM),
     )
 }
 

@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.transformers.vedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -10,9 +9,9 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.grunnlag.GrunnlagInntekt
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
@@ -42,8 +41,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
-import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
@@ -300,13 +297,23 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
     return listOf(
         hentBeregnetInntekt().entries.map { (gjelderIdent, grunnlag) ->
             behandling.opprettGrunnlag(
-                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
                 grunnlag,
                 gjelderIdent,
                 innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
                 lesemodus,
             )
         },
+        hentGrunnlagSkattegrunnlag().groupBy { it.personId }
+            .map { (gjelderIdent, grunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER,
+                    grunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE),
+                    lesemodus,
+                )
+            },
         hentBarnetillegListe().groupBy { it.partPersonId }
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
@@ -378,30 +385,6 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                 )
             },
     ).flatten()
-}
-
-private fun Behandling.opprettGrunnlagEntityForInntekt(
-    ainntektListe: List<AinntektGrunnlagDto>,
-    skattegrunnlagListe: List<SkattegrunnlagGrunnlagDto>,
-): List<Grunnlag> {
-    val ainntektPerPersonMap = ainntektListe.groupBy { it.personId }
-    val skattegrunnlagPerPersonMap = skattegrunnlagListe.groupBy { it.personId }
-
-    val personer = ainntektPerPersonMap.keys + skattegrunnlagPerPersonMap.keys
-    return personer.map {
-        val ainntektListe = ainntektPerPersonMap[it] ?: emptyList()
-        val skattegrunnlagListe = skattegrunnlagPerPersonMap[it] ?: emptyList()
-        opprettGrunnlag(
-            Grunnlagsdatatype.INNTEKT,
-            GrunnlagInntekt(
-                ainntekt = ainntektListe,
-                skattegrunnlag = skattegrunnlagListe,
-            ),
-            it,
-            LocalDateTime.now(),
-            true,
-        )
-    }
 }
 
 private fun Behandling.opprettGrunnlag(

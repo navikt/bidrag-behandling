@@ -13,7 +13,6 @@ import io.kotest.matchers.string.shouldStartWith
 import io.mockk.clearAllMocks
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -21,7 +20,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigInntekter
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
@@ -862,15 +862,14 @@ class GrunnlagMappingTest {
         ): Grunnlag {
             return Grunnlag(
                 behandling = behandling,
-                type = Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+                type = Grunnlagsdatatype.SKATTEPLIKTIG,
                 rolle = gjelder.tilRolle(behandling),
                 innhentet = LocalDateTime.now(),
                 data =
                     commonObjectmapper.writeValueAsString(
-                        SummerteMånedsOgÅrsinntekter(
+                        SkattepliktigInntekter(
                             versjon = "1",
-                            summerteMånedsinntekter = emptyList(),
-                            summerteÅrsinntekter =
+                            inntekter =
                                 listOf(
                                     SummertÅrsinntekt(
                                         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,

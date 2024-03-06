@@ -15,9 +15,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn2
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -113,7 +113,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
             }
 
-            val grunnlagBarn = oppdatertBehandling.get().grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
+            val grunnlagBarn =
+                oppdatertBehandling.get().grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
             assertSoftly {
                 grunnlagBarn.size shouldBe 10
                 grunnlagBarn.filter { Grunnlagsdatatype.AINNTEKT == it.type }.size shouldBe 2
@@ -237,7 +238,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlag?.aktiv?.toLocalDate() shouldBe innhentingstidspunkt.toLocalDate()
             }
 
-            val oppdaterteSkattegrunnlag = jsonListeTilObjekt<SkattegrunnlagGrunnlagDto>(grunnlag?.data!!)
+            val oppdaterteSkattegrunnlag =
+                jsonListeTilObjekt<SkattegrunnlagGrunnlagDto>(grunnlag?.data!!)
 
             assertSoftly {
                 oppdaterteSkattegrunnlag.filter { it.personId == behandling.bidragsmottaker!!.ident }.size shouldBe 1
@@ -278,7 +280,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     Rolletype.BIDRAGSMOTTAKER ->
                         stubUtils.stubHenteGrunnlagOk(
                             it,
-                            responsobjekt = tilHentGrunnlagDto(småbarnstillegg = listOf(småbarnstillegg)),
+                            responsobjekt =
+                                tilHentGrunnlagDto(
+                                    småbarnstillegg =
+                                        listOf(
+                                            småbarnstillegg,
+                                        ),
+                                ),
                         )
 
                     Rolletype.BARN -> stubUtils.stubHenteGrunnlagOk(it, tomRespons = true)
@@ -315,7 +323,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             assertThat(grunnlag?.data?.isNotEmpty())
 
-            val lagredeSmåbarnstillegg = jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(grunnlag?.data!!)
+            val lagredeSmåbarnstillegg =
+                jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(grunnlag?.data!!)
 
             assertSoftly {
                 lagredeSmåbarnstillegg shouldNotBe emptySet<SmåbarnstilleggGrunnlagDto>()
@@ -377,7 +386,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlag.aktiv shouldBe null
             }
 
-            val gjeldendeAktiveGrunnlag = grunnlagRepository.findAll().filter { g -> g.aktiv != null }
+            val gjeldendeAktiveGrunnlag =
+                grunnlagRepository.findAll().filter { g -> g.aktiv != null }
 
             gjeldendeAktiveGrunnlag.size shouldBe 1
 
@@ -398,7 +408,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val behandling = testdataManager.opprettBehandling(false)
             stubUtils.stubHenteGrunnlagOk(tomRespons = true)
 
-            val lagretGrunnlag = behandlingRepository.findBehandlingById(behandling.id!!).get().grunnlag
+            val lagretGrunnlag =
+                behandlingRepository.findBehandlingById(behandling.id!!).get().grunnlag
 
             lagretGrunnlag.size shouldBe 0
 
@@ -450,7 +461,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagBidragsmottaker =
-                oppdatertBehandling.get().grunnlag.filter { grunnlag -> grunnlag.rolle.ident!! == fødselsnummerBm }
+                oppdatertBehandling.get().grunnlag.filter { grunnlag -> grunnlag.rolle.ident!! == testdataBM.ident }
 
             assertSoftly {
                 grunnlagBidragsmottaker.size shouldBe 12
@@ -469,10 +480,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             val grunnlagBarn1 =
-                oppdatertBehandling.get().grunnlag.filter { grunnlag -> grunnlag.rolle.ident!! == fødselsnummerBarn1 }
+                oppdatertBehandling.get().grunnlag.filter { grunnlag -> grunnlag.rolle.ident!! == testdataBarn1.ident }
 
             val grunnlagBarn2 =
-                oppdatertBehandling.get().grunnlag.filter { grunnlag -> grunnlag.rolle.ident!! == fødselsnummerBarn2 }
+                oppdatertBehandling.get().grunnlag.filter { grunnlag -> grunnlag.rolle.ident!! == testdataBarn2.ident }
 
             setOf(grunnlagBarn1, grunnlagBarn2).forEach {
                 assertSoftly {
@@ -651,7 +662,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     false,
                 )
             grunnlagBarnetillegg shouldNotBe null
-            val barnetillegg = jsonListeTilObjekt<BarnetilleggGrunnlagDto>(grunnlagBarnetillegg?.data!!)
+            val barnetillegg =
+                jsonListeTilObjekt<BarnetilleggGrunnlagDto>(grunnlagBarnetillegg?.data!!)
             assertSoftly {
                 barnetillegg.size shouldBe 1
             }
@@ -664,7 +676,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     false,
                 )
             grunnlagBarnetilsyn shouldNotBe null
-            val barnetilsyn = jsonListeTilObjekt<BarnetilsynGrunnlagDto>(grunnlagBarnetilsyn?.data!!)
+            val barnetilsyn =
+                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(grunnlagBarnetilsyn?.data!!)
             assertSoftly {
                 barnetilsyn.size shouldBe 1
             }
@@ -677,7 +690,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     false,
                 )
             grunnlagKontantstøtte shouldNotBe null
-            val kontantstøtte = jsonListeTilObjekt<KontantstøtteGrunnlagDto>(grunnlagKontantstøtte?.data!!)
+            val kontantstøtte =
+                jsonListeTilObjekt<KontantstøtteGrunnlagDto>(grunnlagKontantstøtte?.data!!)
             assertSoftly {
                 kontantstøtte.size shouldBe 1
             }
@@ -763,7 +777,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
-            val skattegrunlagFraDato = behandling.søktFomDato.minusYears(1).withMonth(1).withDayOfMonth(1)
+            val skattegrunlagFraDato =
+                behandling.søktFomDato.minusYears(1).withMonth(1).withDayOfMonth(1)
 
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling = behandling,

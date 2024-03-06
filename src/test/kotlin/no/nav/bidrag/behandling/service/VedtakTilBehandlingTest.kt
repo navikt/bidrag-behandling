@@ -10,11 +10,11 @@ import io.mockk.every
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlagsdatatype
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
-import no.nav.bidrag.behandling.transformers.filtrerEtterTypeOgIdent
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.hentFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1

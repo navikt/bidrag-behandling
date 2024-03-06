@@ -26,9 +26,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBp
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -101,7 +101,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly {
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
-                    Grunnlagstype(Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER, true) == it.nyeData.grunnlagsdatatype
+                    Grunnlagstype(
+                        Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER,
+                        true,
+                    ) == it.nyeData.grunnlagsdatatype
                 }.size shouldBe 1
             }
         }
@@ -642,27 +645,9 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         fun prepareRoles(behandling: Behandling): Set<Rolle> {
             return setOf(
-                Rolle(
-                    behandling,
-                    Rolletype.BIDRAGSMOTTAKER,
-                    fødselsnummerBm,
-                    LocalDate.now().minusMonths(1025),
-                    LocalDateTime.now().minusMonths(2),
-                ),
-                Rolle(
-                    behandling,
-                    Rolletype.BIDRAGSPLIKTIG,
-                    fødselsnummerBp,
-                    LocalDate.now().minusMonths(1068),
-                    LocalDateTime.now().minusMonths(2),
-                ),
-                Rolle(
-                    behandling,
-                    Rolletype.BARN,
-                    fødselsnummerBarn1,
-                    LocalDate.now().minusMonths(154),
-                    LocalDateTime.now().minusMonths(2),
-                ),
+                testdataBM.tilRolle(behandling),
+                testdataBP.tilRolle(behandling),
+                testdataBarn1.tilRolle(behandling),
             )
         }
     }
@@ -681,7 +666,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             grunnlagsdata =
                 SummerteInntekter(
                     versjon = "123",
-                    gjelderIdent = behandling.bidragsmottaker!!.ident!!,
                     inntekter =
                         listOf(
                             SummertMånedsinntekt(
@@ -709,7 +693,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             grunnlagsdata =
                 SummerteInntekter(
                     versjon = "123",
-                    gjelderIdent = behandling.bidragsmottaker!!.ident!!,
                     inntekter =
                         listOf(
                             SummertÅrsinntekt(

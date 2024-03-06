@@ -14,7 +14,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.grunnlag.BoforholdBearbeidet
 import no.nav.bidrag.behandling.database.grunnlag.InntektsopplysningerBearbeidet
-import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -54,8 +54,8 @@ inline fun <reified T> Grunnlag?.hentData(): T? =
         Grunnlagsdatatype.BOFORHOLD -> konverterData<List<RelatertPersonDto>>() as T
         Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
         Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
-        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> konverterData<SummerteInntekter<SummertMånedsinntekt>>() as T
-        Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER -> konverterData<SummerteInntekter<SummertÅrsinntekt>>() as T
+        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> konverterData<SummertMånedsinntekt>() as T
+        Grunnlagsdatatype.SKATTEPLIKTIG -> konverterData<SkattepliktigInntekter<SummertÅrsinntekt>>() as T
         else -> null
     }
 

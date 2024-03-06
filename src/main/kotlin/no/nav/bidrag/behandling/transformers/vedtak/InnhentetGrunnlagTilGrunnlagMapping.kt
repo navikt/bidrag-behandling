@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
-import no.nav.bidrag.behandling.database.grunnlag.SummerteMånedsOgÅrsinntekter
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -37,17 +37,16 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 
-fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteMånedsOgÅrsinntekter> {
+fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<SummertMånedsinntekt>> {
     return filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT).groupBy {
         val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
         gjelder.personIdent
     }.map { (ident, beregnetInntekt) ->
         val innhold = beregnetInntekt.innholdTilObjekt<BeregnetInntekt>().first()
         ident to
-            SummerteMånedsOgÅrsinntekter(
+            SummerteInntekter(
                 versjon = innhold.versjon,
-                summerteÅrsinntekter = emptyList(),
-                summerteMånedsinntekter =
+                inntekter =
                     innhold.summertMånedsinntektListe
                         .map {
                             SummertMånedsinntekt(
