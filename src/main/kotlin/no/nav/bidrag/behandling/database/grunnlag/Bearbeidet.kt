@@ -2,7 +2,10 @@ package no.nav.bidrag.behandling.database.grunnlag
 
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
@@ -36,7 +39,7 @@ data class BoforholdBearbeidetPeriode(
 data class InntektsopplysningerBearbeidet(
     val inntekt: List<InntektBearbeidet> = emptyList(),
     val utvidetbarnetrygd: List<UtvidetBarnetrygdOgSmaabarnstilleggDto> = emptyList(),
-    val barnetillegg: List<BarnetilleggGrunnlagDto> = emptyList(),
+    val barnetillegg: List<BarnetilleggDto> = emptyList(),
     val arbeidsforhold: List<ArbeidsforholdGrunnlagDto> = emptyList(),
 )
 
@@ -44,7 +47,11 @@ data class InntektBearbeidet(
     val ident: String,
     val versjon: String?,
     val summertAarsinntektListe: List<SummertÅrsinntekt>,
-    val summertMånedsinntektListe: List<SummertMånedsinntekt>,
+)
+
+data class SkattepliktigeInntekter(
+    val ainntekter: List<AinntektGrunnlagDto> = emptyList(),
+    val skattegrunnlag: List<SkattegrunnlagGrunnlagDto> = emptyList(),
 )
 
 data class SummerteInntekter<T>(
@@ -53,8 +60,8 @@ data class SummerteInntekter<T>(
 )
 
 data class BearbeidetInntekter<T>(
-    val versjon: String,
-    val inntekter: List<T>,
+    val versjon: String?,
+    val inntekter: List<T> = emptyList(),
 )
 
 data class SkattepliktigeInntekter<T, R>(

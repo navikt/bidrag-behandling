@@ -15,13 +15,19 @@ import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.grunnlag.BoforholdBearbeidet
 import no.nav.bidrag.behandling.database.grunnlag.InntektsopplysningerBearbeidet
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.behandling.service.GrunnlagService.Companion.inntekterOgYtelser
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandDto
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.inntekt.request.UtvidetBarnetrygd
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
@@ -53,15 +59,23 @@ open class Grunnlag(
 }
 
 inline fun <reified T> Grunnlag?.hentData(): T? =
-    when (this?.type) {
-        Grunnlagsdatatype.INNTEKTSOPPLYSNINGER, Grunnlagsdatatype.INNTEKT_BEARBEIDET -> konverterData<InntektsopplysningerBearbeidet>() as T
-        Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-        Grunnlagsdatatype.BOFORHOLD -> konverterData<List<RelatertPersonGrunnlagDto>>() as T
-        Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
-        Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
-        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> konverterData<SummertMånedsinntekt>() as T
-        Grunnlagsdatatype.SKATTEPLIKTIG -> konverterData<SkattepliktigeInntekter<SummertÅrsinntekt, SummertÅrsinntekt>>() as T
-        else -> null
+    when (this?.erBearbeidet == true && inntekterOgYtelser.contains(this.type)) {
+        true -> konverterData<SummerteInntekter<SummertÅrsinntekt>>() as T
+        else -> {
+            when (this?.type) {
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> konverterData<SkattepliktigeInntekter>() as T
+                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> konverterData<SummerteInntekter<SummertÅrsinntekt>>() as T
+                Grunnlagsdatatype.BARNETILLEGG -> konverterData<List<BarnetilleggGrunnlagDto>>() as T
+                Grunnlagsdatatype.KONTANTSTØTTE -> konverterData<List<KontantstøtteGrunnlagDto>>() as T
+                Grunnlagsdatatype.SMÅBARNSTILLEGG -> konverterData<List<SmåbarnstilleggGrunnlagDto>>() as T
+                Grunnlagsdatatype.UTVIDET_BARNETRYGD -> konverterData<List<UtvidetBarnetrygd>>() as T
+                Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
+                Grunnlagsdatatype.BOFORHOLD -> konverterData<List<RelatertPersonDto>>() as T
+                Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
+                Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
+                else -> null
+            }
+        }
     }
 
 inline fun <reified T> Grunnlag?.konverterData(): T? {

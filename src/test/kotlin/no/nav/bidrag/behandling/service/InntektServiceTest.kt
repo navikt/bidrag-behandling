@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
@@ -17,9 +18,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterePeriodeInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
+import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
-import no.nav.bidrag.behandling.utils.testdata.testdataBM
-import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
@@ -68,15 +69,16 @@ class InntektServiceTest : TestContainerRunner() {
     }
 
     @Nested
-    @Transactional
-    inner class OppdatereSammenstilte {
+    @DisplayName("Teste oppdatering av sammenstilte inntekter")
+    open inner class OppdatereSammenstilte {
         @Test
-        fun `skal lagre innnhentede inntekter for gyldige inntektsrapporteringstyper`() {
+        @Transactional
+        open fun `skal lagre innnhentede inntekter for gyldige inntektsrapporteringstyper`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
 
             val summerteInntekter =
-                SummerteInntekter(
+                SummerteInntekter<SummertÅrsinntekt>(
                     versjon = "xyz",
                     inntekter =
                         listOf(
@@ -96,43 +98,27 @@ class InntektServiceTest : TestContainerRunner() {
                                         YearMonth.now().withMonth(1).atDay(1),
                                     ),
                                 sumInntekt = BigDecimal(500000),
-                                visningsnavn = "Sigrun ligningsinntekt (LIGS) ${
-                                    Year.now().minusYears(1)
-                                }",
-                            ),
-                            SummertÅrsinntekt(
-                                inntektRapportering = Inntektsrapportering.KONTANTSTØTTE,
-                                inntektPostListe = emptyList(),
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                                        YearMonth.now().withMonth(1).atDay(1),
-                                    ),
-                                sumInntekt = BigDecimal(60000),
-                                visningsnavn = "Kontantstøtte",
+                                visningsnavn = "Sigrun ligningsinntekt (LIGS) ${Year.now().minusYears(1)}",
                             ),
                         ),
                 )
 
             // hvis
-            inntektService.lagreInntekter(
+            inntektService.lagreSummerteÅrsinntekter(
                 behandling.id!!,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
-                sammenstilteInntekter = summerteInntekter,
+                summerteÅrsinntekter = summerteInntekter.inntekter,
             )
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
             assertSoftly {
-                oppdatertBehandling.get().inntekter.size shouldBe 2
+                oppdatertBehandling.get().inntekter.size shouldBe 1
                 oppdatertBehandling.get().inntekter.first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }
                     .belop shouldBe
                     summerteInntekter.inntekter
                         .first { Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering }.sumInntekt
-                oppdatertBehandling.get().inntekter.first { Inntektsrapportering.KONTANTSTØTTE == it.type }.belop shouldBe
-                    summerteInntekter.inntekter
-                        .first { Inntektsrapportering.KONTANTSTØTTE == it.inntektRapportering }.sumInntekt
                 oppdatertBehandling.get().inntekter
                     .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }.inntektsposter.size shouldBe 1
                 oppdatertBehandling.get().inntekter
@@ -146,10 +132,10 @@ class InntektServiceTest : TestContainerRunner() {
 
     @Nested
     @DisplayName("Teste automatisk oppdatering av offisielle inntekter")
-    @Transactional
-    inner class OppdatereAutomatiskInnhentaOffentligeInntekter {
+    open inner class OppdatereAutomatiskInnhentaOffentligeInntekter {
         @Test
-        fun `skal slette duplikate inntekter med samme type og periode,ved oppdatering av grunnlag`() {
+        @Transactional
+        open fun `skal slette duplikate inntekter med samme type og periode,ved oppdatering av grunnlag`() {
             // gitt
             stubUtils.stubKodeverkSkattegrunnlag()
             stubUtils.stubKodeverkLønnsbeskrivelse()
@@ -161,7 +147,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
                 behandling = behandling,
-                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.AINNTEKT, false),
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
                 innhentet = LocalDate.of(YearMonth.now().minusYears(1).year, 1, 1).atStartOfDay(),
                 aktiv = null,
             )
@@ -177,8 +163,8 @@ class InntektServiceTest : TestContainerRunner() {
                     datoTom = tom,
                     opprinneligFom = fom,
                     opprinneligTom = tom,
-                    ident = testdataBM.ident,
-                    gjelderBarn = testdataBarn1.ident,
+                    ident = fødselsnummerBm,
+                    gjelderBarn = fødselsnummerBarn1,
                     kilde = Kilde.OFFENTLIG,
                     taMed = true,
                 )
@@ -196,23 +182,22 @@ class InntektServiceTest : TestContainerRunner() {
 
             val grunnlagMedAinntekt = behandling.grunnlag.first()
 
-            val nyttAinntektsgrunnlag =
-                Jsonoperasjoner.jsonListeTilObjekt<AinntektGrunnlagDto>(grunnlagMedAinntekt.data)
+            val skattepliktigeInntekter =
+                Jsonoperasjoner.jsonTilObjekt<SkattepliktigeInntekter>(grunnlagMedAinntekt.data)
 
             val transformereInntekter =
                 TransformerInntekterRequest(
                     ainntektHentetDato = grunnlagMedAinntekt.innhentet.toLocalDate(),
                     ainntektsposter =
-                        nyttAinntektsgrunnlag.flatMap { it.ainntektspostListe }
-                            .tilAinntektsposter(testdataBM.tilRolle(behandling)),
+                        skattepliktigeInntekter.ainntekter.flatMap { it.ainntektspostListe }
+                            .tilAinntektsposter(),
                     kontantstøtteliste = emptyList(),
                     skattegrunnlagsliste = emptyList(),
                     småbarnstilleggliste = emptyList(),
                     utvidetBarnetrygdliste = emptyList(),
                 )
 
-            val transformerteInntekterrespons =
-                inntektApi.transformerInntekter(transformereInntekter)
+            val transformerteInntekterrespons = inntektApi.transformerInntekter(transformereInntekter)
 
             // hvis
             inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
@@ -239,9 +224,9 @@ class InntektServiceTest : TestContainerRunner() {
 
     @Nested
     @DisplayName("Teste manuell oppdatering av inntekter")
-    inner class OppdatereInntekterManuelt {
+    open inner class OppdatereInntekterManuelt {
         @Test
-        fun `skal oppdatere eksisterende inntekt`() {
+        open fun `skal oppdatere eksisterende inntekt`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
 
@@ -252,16 +237,15 @@ class InntektServiceTest : TestContainerRunner() {
                     belop = BigDecimal(14000),
                     datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                     datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                    ident = testdataBM.ident,
-                    gjelderBarn = testdataBarn1.ident,
+                    ident = fødselsnummerBm,
+                    gjelderBarn = fødselsnummerBarn1,
                     kilde = Kilde.MANUELL,
                     taMed = true,
                 )
 
             val lagretKontantstøtte = inntektRepository.save(kontantstøtte)
 
-            val behandlingEtterOppdatering =
-                behandlingRepository.findBehandlingById(behandling.id!!)
+            val behandlingEtterOppdatering = behandlingRepository.findBehandlingById(behandling.id!!)
 
             behandlingEtterOppdatering.get().inntekter.size shouldBe 1
 
@@ -272,10 +256,7 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            inntektService.oppdatereInntekterManuelt(
-                behandling.id!!,
-                forespørselOmOppdateringAvInntekter,
-            )
+            inntektService.oppdatereInntekterManuelt(behandling.id!!, forespørselOmOppdateringAvInntekter)
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -302,8 +283,8 @@ class InntektServiceTest : TestContainerRunner() {
                     belop = BigDecimal(14000),
                     datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                     datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                    ident = testdataBM.ident,
-                    gjelderBarn = testdataBarn1.ident,
+                    ident = fødselsnummerBm,
+                    gjelderBarn = fødselsnummerBarn1,
                     kilde = Kilde.MANUELL,
                     taMed = true,
                 )
@@ -314,10 +295,7 @@ class InntektServiceTest : TestContainerRunner() {
                 OppdatereInntekterRequestV2(sletteInntekter = setOf(lagretKontantstøtte.id!!))
 
             // hvis
-            inntektService.oppdatereInntekterManuelt(
-                behandling.id!!,
-                forespørselOmOppdateringAvInntekter,
-            )
+            inntektService.oppdatereInntekterManuelt(behandling.id!!, forespørselOmOppdateringAvInntekter)
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -343,7 +321,7 @@ class InntektServiceTest : TestContainerRunner() {
                     datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
                     opprinneligFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                     opprinneligTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                    ident = testdataBM.ident,
+                    ident = fødselsnummerBm,
                     kilde = Kilde.OFFENTLIG,
                     taMed = true,
                 )
@@ -377,10 +355,7 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            inntektService.oppdatereInntekterManuelt(
-                behandling.id!!,
-                forespørselOmOppdateringAvInntekter,
-            )
+            inntektService.oppdatereInntekterManuelt(behandling.id!!, forespørselOmOppdateringAvInntekter)
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
