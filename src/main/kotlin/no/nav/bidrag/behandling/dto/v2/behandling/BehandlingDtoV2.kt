@@ -83,7 +83,8 @@ enum class Grunnlagsdatatype {
 fun Grunnlagsdatatype.getOrMigrate() =
     when (this) {
         Grunnlagsdatatype.AINNTEKT, Grunnlagsdatatype.SKATTEGRUNNLAG, Grunnlagsdatatype.INNTEKTSOPPLYSNINGER,
-        Grunnlagsdatatype.INNTEKT_BEARBEIDET -> Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER
+        Grunnlagsdatatype.INNTEKT_BEARBEIDET,
+        -> Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER
         Grunnlagsdatatype.HUSSTANDSMEDLEMMER, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> Grunnlagsdatatype.BOFORHOLD
         else -> this
     }
