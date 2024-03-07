@@ -1,7 +1,16 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.filtrerAinntekt
+import no.nav.bidrag.behandling.transformers.filtrerSkattegrunnlag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
@@ -14,6 +23,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSivilstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSkattegrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSmåbarnstillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetUtvidetBarnetrygd
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -36,17 +46,27 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrun
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDateTime
 
-fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<SummertMånedsinntekt>> {
+data class SummerteInntekt(
+    val versjon: String,
+    val inntekt: SummertÅrsinntekt,
+)
+
+fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SkattepliktigeInntekter<SummertMånedsinntekt, SummertÅrsinntekt>> {
     return filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT).groupBy {
         val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
         gjelder.personIdent
     }.map { (ident, beregnetInntekt) ->
         val innhold = beregnetInntekt.innholdTilObjekt<BeregnetInntekt>().first()
         ident to
-            SummerteInntekter(
+            SkattepliktigeInntekter(
                 versjon = innhold.versjon,
-                inntekter =
+                skattegrunnlag = emptyList<SummertÅrsinntekt>(),
+                ainntekter =
                     innhold.summertMånedsinntektListe
                         .map {
                             SummertMånedsinntekt(
@@ -66,7 +86,13 @@ fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<Summe
     }.associate { it.first!! to it.second }
 }
 
-fun List<GrunnlagDto>.hentInnhenetHusstandsmedlem(): List<RelatertPersonGrunnlagDto> =
+fun List<GrunnlagDto>.hentVersjonBeregnetInntekt(ident: String) =
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT).find {
+        val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
+        gjelder.personIdent == ident
+    }?.innholdTilObjekt<BeregnetInntekt>()?.versjon ?: ""
+
+fun List<GrunnlagDto>.hentInnhentetHusstandsmedlem(): List<RelatertPersonGrunnlagDto> =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM)
         .map {
             val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
@@ -190,6 +216,19 @@ fun List<GrunnlagDto>.hentUtvidetbarnetrygdListe() =
             }
         }
 
+fun List<GrunnlagDto>.hentGrunnlagSkattepliktig(): Map<String, SkattepliktigeInntekter<AinntektGrunnlagDto, SkattegrunnlagGrunnlagDto>> {
+    val skattepliktigGruppert = hentGrunnlagSkattegrunnlag().groupBy { it.personId }
+    val ainntektGruppert = hentGrunnlagAinntekt().groupBy { it.personId }
+    val identer = ainntektGruppert.keys + skattepliktigGruppert.keys
+    return identer.associate { personident ->
+        personident to
+            SkattepliktigeInntekter(
+                skattegrunnlag = skattepliktigGruppert[personident] ?: emptyList(),
+                ainntekter = ainntektGruppert[personident] ?: emptyList(),
+            )
+    }
+}
+
 fun List<GrunnlagDto>.hentGrunnlagSkattegrunnlag() =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE)
         .map {
@@ -293,3 +332,115 @@ fun List<GrunnlagDto>.hentGrunnlagArbeidsforhold() =
                 )
             }
         }
+
+fun List<GrunnlagDto>.hentInnntekterBearbeidet(
+    behandling: Behandling,
+    lesemodus: Boolean = false,
+): MutableSet<Grunnlag> {
+    return filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+        .filter { !it.innholdTilObjekt<InntektsrapporteringPeriode>().manueltRegistrert }
+        .groupBy {
+            hentPersonMedReferanse(it.gjelderReferanse) ?: manglerPersonGrunnlag(
+                it.gjelderReferanse,
+            )
+        }
+        .flatMap { (gjelder, grunnlagListe) ->
+            val årsinntekter =
+                grunnlagListe.map {
+                    it.tilInntektBearbeidet(this)
+                }
+
+            fun opprettGrunnlagBearbeidet(
+                type: Grunnlagsdatatype,
+                inntektsrapportering: Inntektsrapportering,
+                innhentetTidspunkt: LocalDateTime,
+            ) = behandling.opprettGrunnlag(
+                type,
+                SummerteInntekter(
+                    versjon = årsinntekter.versjon(inntektsrapportering),
+                    inntekter = årsinntekter.filter { it.inntekt.inntektRapportering == inntektsrapportering },
+                ),
+                gjelderIdent = gjelder.personIdent!!,
+                erBearbeidet = true,
+                innhentetTidspunkt = innhentetTidspunkt,
+                lesemodus = lesemodus,
+            )
+            listOf(
+                opprettGrunnlagBearbeidet(
+                    Grunnlagsdatatype.BARNETILLEGG,
+                    Inntektsrapportering.BARNETILLEGG,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG),
+                ),
+                opprettGrunnlagBearbeidet(
+                    Grunnlagsdatatype.BARNETILSYN,
+                    Inntektsrapportering.BARNETILSYN,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                ),
+                opprettGrunnlagBearbeidet(
+                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD),
+                ),
+                opprettGrunnlagBearbeidet(
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG),
+                ),
+                opprettGrunnlagBearbeidet(
+                    Grunnlagsdatatype.KONTANTSTØTTE,
+                    Inntektsrapportering.KONTANTSTØTTE,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE),
+                ),
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.SKATTEPLIKTIG,
+                    SkattepliktigeInntekter(
+                        versjon = årsinntekter.versjon(Inntektsrapportering.AINNTEKT_BEREGNET_3MND),
+                        skattegrunnlag = årsinntekter.map { it.inntekt }.filtrerSkattegrunnlag(),
+                        ainntekter = årsinntekter.map { it.inntekt }.filtrerAinntekt(),
+                    ),
+                    gjelderIdent = gjelder.personIdent!!,
+                    erBearbeidet = true,
+                    innhentetTidspunkt = innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
+                    lesemodus = lesemodus,
+                ),
+            )
+        }
+        .toMutableSet()
+}
+
+fun List<SummerteInntekt>.versjon(type: Inntektsrapportering) = find { it.inntekt.inntektRapportering == type }?.versjon ?: ""
+
+private fun BaseGrunnlag.tilInntektBearbeidet(grunnlagsListe: List<GrunnlagDto>): SummerteInntekt {
+    val inntektPeriode = innholdTilObjekt<InntektsrapporteringPeriode>()
+    val gjelderBarn = grunnlagsListe.hentPersonMedReferanse(inntektPeriode.gjelderBarn)
+    if (inntektsrapporteringSomKreverBarn.contains(inntektPeriode.inntektsrapportering) && gjelderBarn == null) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Mangler barn for inntekt ${inntektPeriode.inntektsrapportering} med referanse $referanse i grunnlagslisten",
+        )
+    }
+    val opprinneligFom =
+        inntektPeriode.opprinneligPeriode?.fom?.atDay(1) ?: throw RuntimeException(
+            "Inntekt ${inntektPeriode.inntektsrapportering} mangler opprinnelig periode",
+        )
+    val opprinneligTom = inntektPeriode.opprinneligPeriode?.til?.atDay(1)?.minusDays(1)
+
+    return SummerteInntekt(
+        inntektPeriode.versjon!!,
+        SummertÅrsinntekt(
+            gjelderBarnPersonId = gjelderBarn?.personIdent ?: "",
+            inntektRapportering = inntektPeriode.inntektsrapportering,
+            grunnlagsreferanseListe = grunnlagsreferanseListe,
+            periode = ÅrMånedsperiode(opprinneligFom, opprinneligTom),
+            sumInntekt = inntektPeriode.beløp,
+            inntektPostListe =
+                inntektPeriode.inntekstpostListe.map {
+                    InntektPost(
+                        inntekstype = it.inntekstype,
+                        beløp = it.beløp,
+                        kode = it.kode,
+                    )
+                },
+        ),
+    )
+}

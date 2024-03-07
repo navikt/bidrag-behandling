@@ -4,6 +4,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
@@ -72,11 +74,22 @@ fun opprettGrunnlagFraFil(
         Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
             grunnlag.utvidetBarnetrygdListe.tilGrunnlagEntity(behandling)
 
-        Grunnlagsdatatype.AINNTEKT ->
-            grunnlag.ainntektListe.tilGrunnlagEntity(behandling)
-
-        Grunnlagsdatatype.SKATTEGRUNNLAG ->
-            grunnlag.skattegrunnlagListe.tilGrunnlagEntity(behandling)
+        Grunnlagsdatatype.SKATTEPLIKTIG -> {
+            val skattegrunnlagGruppert = grunnlag.skattegrunnlagListe.groupBy { it.personId }
+            val ainntektGruppert = grunnlag.ainntektListe.groupBy { it.personId }
+            val personIdenter = ainntektGruppert.keys + skattegrunnlagGruppert.keys
+            personIdenter
+                .map { personId ->
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.SKATTEGRUNNLAG,
+                        SkattepliktigeInntekter(
+                            ainntekter = ainntektGruppert[personId] ?: emptyList(),
+                            skattegrunnlag = skattegrunnlagGruppert[personId] ?: emptyList(),
+                        ),
+                        personId,
+                    )
+                }
+        }
 
         else -> emptyList()
     }
@@ -87,7 +100,7 @@ fun List<RelatertPersonGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
     groupBy { it.partPersonId }
         .map { (partPersonId, grunnlag) ->
             behandling.opprettGrunnlag(
-                Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+                Grunnlagsdatatype.BOFORHOLD,
                 grunnlag,
                 partPersonId!!,
             )
@@ -111,49 +124,55 @@ fun List<ArbeidsforholdGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
 fun List<BarnetilleggGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
     groupBy { it.partPersonId }
         .map { (partPersonId, grunnlag) ->
-            behandling.opprettGrunnlag(Grunnlagsdatatype.BARNETILLEGG, grunnlag, partPersonId)
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.BARNETILLEGG,
+                SummerteInntekter(inntekter = grunnlag),
+                partPersonId,
+            )
         }
 
 @JvmName("barnetilsynGrunnlagDtoTilGrunnlagEntity")
 fun List<BarnetilsynGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
     groupBy { it.partPersonId }
         .map { (partPersonId, grunnlag) ->
-            behandling.opprettGrunnlag(Grunnlagsdatatype.BARNETILSYN, grunnlag, partPersonId)
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.BARNETILSYN,
+                SummerteInntekter(inntekter = grunnlag),
+                partPersonId,
+            )
         }
 
 @JvmName("kontantstøtteGrunnlagDtoTilGrunnlagEntity")
 fun List<KontantstøtteGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
     groupBy { it.partPersonId }
         .map { (partPersonId, grunnlag) ->
-            behandling.opprettGrunnlag(Grunnlagsdatatype.KONTANTSTØTTE, grunnlag, partPersonId)
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.KONTANTSTØTTE,
+                SummerteInntekter(inntekter = grunnlag),
+                partPersonId,
+            )
         }
 
 @JvmName("småbarnstilleggGrunnlagDtoTilGrunnlagEntity")
 fun List<SmåbarnstilleggGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
     groupBy { it.personId }
         .map { (personId, grunnlag) ->
-            behandling.opprettGrunnlag(Grunnlagsdatatype.SMÅBARNSTILLEGG, grunnlag, personId)
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                SummerteInntekter(inntekter = grunnlag),
+                personId,
+            )
         }
 
 @JvmName("utvidetBarnetrygdGrunnlagDtoTilGrunnlagEntity")
 fun List<UtvidetBarnetrygdGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
     groupBy { it.personId }
         .map { (personId, grunnlag) ->
-            behandling.opprettGrunnlag(Grunnlagsdatatype.UTVIDET_BARNETRYGD, grunnlag, personId)
-        }
-
-@JvmName("skattegrunnlagGrunnlagDtoTilGrunnlagEntity")
-fun List<SkattegrunnlagGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
-    groupBy { it.personId }
-        .map { (personId, grunnlag) ->
-            behandling.opprettGrunnlag(Grunnlagsdatatype.SKATTEGRUNNLAG, grunnlag, personId)
-        }
-
-@JvmName("ainntektGrunnlagDtoTilGrunnlagEntity")
-fun List<AinntektGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
-    groupBy { it.personId }
-        .map { (personId, grunnlag) ->
-            behandling.opprettGrunnlag(Grunnlagsdatatype.AINNTEKT, grunnlag, personId)
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                SummerteInntekter(inntekter = grunnlag),
+                personId,
+            )
         }
 
 fun Behandling.opprettGrunnlagEntityForInntekt(
@@ -164,20 +183,16 @@ fun Behandling.opprettGrunnlagEntityForInntekt(
     val skattegrunnlagPerPersonMap = skattegrunnlagListe.groupBy { it.personId }
 
     val personer = ainntektPerPersonMap.keys + skattegrunnlagPerPersonMap.keys
-    return personer.flatMap {
+    return personer.map {
         val ainntektListe = ainntektPerPersonMap[it] ?: emptyList()
         val skattegrunnlagListe = skattegrunnlagPerPersonMap[it] ?: emptyList()
-        listOf(
-            opprettGrunnlag(
-                Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER,
-                skattegrunnlagListe,
-                it,
+        opprettGrunnlag(
+            Grunnlagsdatatype.SKATTEGRUNNLAG,
+            SkattepliktigeInntekter(
+                skattegrunnlag = skattegrunnlagListe,
+                ainntekter = ainntektListe,
             ),
-            opprettGrunnlag(
-                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
-                ainntektListe,
-                it,
-            ),
+            it,
         )
     }
 }
@@ -190,6 +205,7 @@ fun Behandling.opprettGrunnlag(
     return Grunnlag(
         behandling = this,
         type = type,
+        erBearbeidet = false,
         data = commonObjectmapper.writeValueAsString(grunnlag),
         innhentet = testdataGrunnlagInnhentetTidspunkt,
         rolle =
@@ -202,82 +218,85 @@ fun Behandling.opprettGrunnlag(
     )
 }
 
-fun HentGrunnlagDto.tilTransformerInntekterRequest(rolle: Rolle) =
-    TransformerInntekterRequest(
-        ainntektHentetDato = LocalDate.now(),
-        ainntektsposter =
-            this.ainntektListe.filter { it.personId == rolle.ident }.flatMap { ainntektGrunnlag ->
-                ainntektGrunnlag.ainntektspostListe.map {
-                    Ainntektspost(
-                        utbetalingsperiode = it.utbetalingsperiode,
-                        opptjeningsperiodeFra = it.opptjeningsperiodeFra,
-                        opptjeningsperiodeTil = it.opptjeningsperiodeTil,
-                        beskrivelse = it.beskrivelse,
-                        beløp = it.beløp,
-                        referanse = opprettAinntektGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
-                    )
-                }
-            },
-        skattegrunnlagsliste =
-            this.skattegrunnlagListe.filter { it.personId == rolle.ident }.map {
-                SkattegrunnlagForLigningsår(
-                    ligningsår = it.periodeFra.year,
-                    skattegrunnlagsposter = it.skattegrunnlagspostListe,
-                    referanse =
-                        opprettSkattegrunnlagGrunnlagsreferanse(
-                            rolle.tilGrunnlagPerson().referanse,
-                            it.periodeFra.year,
-                        ),
-                )
-            },
-        barnetilleggsliste =
-            this.barnetilleggListe.filter { it.partPersonId == rolle.ident }.map {
-                Barnetillegg(
-                    periodeFra = it.periodeFra,
-                    periodeTil = it.periodeTil,
-                    beløp = it.beløpBrutto,
-                    barnPersonId = it.barnPersonId,
-                    referanse =
-                        opprettBarnetilleggGrunnlagsreferanse(
-                            rolle.tilGrunnlagPerson().referanse,
-                            GrunnlagDatakilde.PENSJON,
-                        ),
-                )
-            },
-        kontantstøtteliste =
-            this.kontantstøtteListe.filter { it.partPersonId == rolle.ident }.map {
-                Kontantstøtte(
-                    periodeFra = it.periodeFra,
-                    periodeTil = it.periodeTil,
-                    beløp = it.beløp.toBigDecimal(),
-                    barnPersonId = it.barnPersonId,
-                    referanse =
-                        opprettKontantstøtteGrunnlagsreferanse(
-                            rolle.tilGrunnlagPerson().referanse,
-                        ),
-                )
-            },
-        utvidetBarnetrygdliste =
-            this.utvidetBarnetrygdListe.filter { it.personId == rolle.ident }.map {
-                UtvidetBarnetrygd(
-                    periodeFra = it.periodeFra,
-                    periodeTil = it.periodeTil,
+fun HentGrunnlagDto.tilTransformerInntekterRequest(
+    rolle: Rolle,
+    fraDato: LocalDate,
+) = TransformerInntekterRequest(
+    ainntektHentetDato = fraDato,
+    ainntektsposter =
+        this.ainntektListe.filter { it.personId == rolle.ident }.flatMap { ainntektGrunnlag ->
+            ainntektGrunnlag.ainntektspostListe.map {
+                Ainntektspost(
+                    utbetalingsperiode = it.utbetalingsperiode,
+                    opptjeningsperiodeFra = it.opptjeningsperiodeFra,
+                    opptjeningsperiodeTil = it.opptjeningsperiodeTil,
+                    beskrivelse = it.beskrivelse,
                     beløp = it.beløp,
-                    referanse = opprettUtvidetbarnetrygGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
+                    referanse = opprettAinntektGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
                 )
-            },
-        småbarnstilleggliste =
-            this.småbarnstilleggListe.filter { it.personId == rolle.ident }.map {
-                Småbarnstillegg(
-                    periodeFra = it.periodeFra,
-                    periodeTil = it.periodeTil,
-                    beløp = it.beløp,
-                    referanse = opprettSmåbarnstilleggGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
-                )
-            },
-    )
+            }
+        },
+    skattegrunnlagsliste =
+        this.skattegrunnlagListe.filter { it.personId == rolle.ident }.map {
+            SkattegrunnlagForLigningsår(
+                ligningsår = it.periodeFra.year,
+                skattegrunnlagsposter = it.skattegrunnlagspostListe,
+                referanse =
+                    opprettSkattegrunnlagGrunnlagsreferanse(
+                        rolle.tilGrunnlagPerson().referanse,
+                        it.periodeFra.year,
+                    ),
+            )
+        },
+    barnetilleggsliste =
+        this.barnetilleggListe.filter { it.partPersonId == rolle.ident }.map {
+            Barnetillegg(
+                periodeFra = it.periodeFra,
+                periodeTil = it.periodeTil,
+                beløp = it.beløpBrutto,
+                barnPersonId = it.barnPersonId,
+                referanse =
+                    opprettBarnetilleggGrunnlagsreferanse(
+                        rolle.tilGrunnlagPerson().referanse,
+                        GrunnlagDatakilde.PENSJON,
+                    ),
+            )
+        },
+    kontantstøtteliste =
+        this.kontantstøtteListe.filter { it.partPersonId == rolle.ident }.map {
+            Kontantstøtte(
+                periodeFra = it.periodeFra,
+                periodeTil = it.periodeTil,
+                beløp = it.beløp.toBigDecimal(),
+                barnPersonId = it.barnPersonId,
+                referanse =
+                    opprettKontantstøtteGrunnlagsreferanse(
+                        rolle.tilGrunnlagPerson().referanse,
+                    ),
+            )
+        },
+    utvidetBarnetrygdliste =
+        this.utvidetBarnetrygdListe.filter { it.personId == rolle.ident }.map {
+            UtvidetBarnetrygd(
+                periodeFra = it.periodeFra,
+                periodeTil = it.periodeTil,
+                beløp = it.beløp,
+                referanse = opprettUtvidetbarnetrygGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
+            )
+        },
+    småbarnstilleggliste =
+        this.småbarnstilleggListe.filter { it.personId == rolle.ident }.map {
+            Småbarnstillegg(
+                periodeFra = it.periodeFra,
+                periodeTil = it.periodeTil,
+                beløp = it.beløp,
+                referanse = opprettSmåbarnstilleggGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
+            )
+        },
+)
 
 fun List<Grunnlag>.filtrerEtterTypeOgIdent(
     type: Grunnlagsdatatype,
     ident: String,
-) = filter { it.type == type && it.rolle.ident == ident }
+    erBearbeidet: Boolean = false,
+) = filter { it.type == type && it.rolle.ident == ident && it.erBearbeidet == erBearbeidet }

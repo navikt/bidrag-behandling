@@ -11,6 +11,8 @@ import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
@@ -31,6 +33,7 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -342,22 +345,13 @@ class VedtakTilBehandlingTest {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 13
+            size shouldBe 18
             filtrerEtterTypeOgIdent(
-                Grunnlagsdatatype.SKATTEGRUNNLAG,
+                Grunnlagsdatatype.SKATTEPLIKTIG,
                 testdataBarn2.ident,
             ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
-                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
-                testdataBarn2.ident,
-            ) shouldHaveSize 1
-
-            filtrerEtterTypeOgIdent(
-                Grunnlagsdatatype.SKATTEGRUNNLAG,
-                testdataBM.ident,
-            ) shouldHaveSize 1
-            filtrerEtterTypeOgIdent(
-                Grunnlagsdatatype.AINNTEKT,
+                Grunnlagsdatatype.SKATTEPLIKTIG,
                 testdataBM.ident,
             ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
@@ -389,13 +383,59 @@ class VedtakTilBehandlingTest {
                 testdataBM.ident,
             ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
-                Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+                Grunnlagsdatatype.BOFORHOLD,
                 testdataBM.ident,
+            ) shouldHaveSize 1
+
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
+                testdataBM.ident,
+                true,
             ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
-                Grunnlagsdatatype.INNTEKT_BEARBEIDET,
-                testdataBM.ident,
+                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
+                testdataBarn2.ident,
+                true,
             ) shouldHaveSize 1
+
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.BARNETILLEGG,
+                testdataBM.ident,
+                true,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.BARNETILSYN,
+                testdataBM.ident,
+                true,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                testdataBM.ident,
+                true,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.KONTANTSTØTTE,
+                testdataBM.ident,
+                true,
+            ) shouldHaveSize 1
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                testdataBM.ident,
+                true,
+            ) shouldHaveSize 1
+
+            val skattepliktig =
+                filtrerEtterTypeOgIdent(
+                    Grunnlagsdatatype.SKATTEPLIKTIG,
+                    testdataBM.ident,
+                    true,
+                )
+            skattepliktig shouldHaveSize 1
+            val skattepliktigInnhold =
+                skattepliktig[0].konverterData<SkattepliktigeInntekter<SummertÅrsinntekt, SummertÅrsinntekt>>()
+            skattepliktigInnhold!!.versjon shouldBe "V1"
+            skattepliktigInnhold!!.ainntekter shouldHaveSize 2
+            skattepliktigInnhold!!.skattegrunnlag shouldHaveSize 8
         }
     }
 }

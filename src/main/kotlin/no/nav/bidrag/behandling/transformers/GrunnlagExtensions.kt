@@ -19,6 +19,9 @@ val inntektstyperYtelser =
 
 fun List<SummertÅrsinntekt>.filtrerAinntekt() = filter { summertAinntektstyper.contains(it.inntektRapportering) }
 
-fun List<SummertÅrsinntekt>.filtrerSkattegrunnlag() = filter { !summertAinntektstyper.contains(it.inntektRapportering) }
+fun List<SummertÅrsinntekt>.filtrerSkattegrunnlag() =
+    filter {
+        !summertAinntektstyper.contains(it.inntektRapportering) && !inntektstyperYtelser.contains(it.inntektRapportering)
+    }
 
 fun List<SummertÅrsinntekt>.filtrerSkattbareInntekter() = filter { !inntektstyperYtelser.contains(it.inntektRapportering) }

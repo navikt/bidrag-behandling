@@ -27,3 +27,7 @@ fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? {
 fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
     if (this?.taMed == true) block(this)
 }
+
+fun <T> Boolean?.ifTrue(block: (Boolean) -> T?): T? {
+    return if (this == true) block(this) else null
+}

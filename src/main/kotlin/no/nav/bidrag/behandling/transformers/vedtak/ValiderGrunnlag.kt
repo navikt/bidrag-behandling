@@ -8,6 +8,20 @@ import no.nav.bidrag.transport.felles.toCompactString
 
 fun OpprettVedtakRequestDto.validerGrunnlagsreferanser() {
     val feilListe = mutableListOf<String>()
+
+    val grunnlagreferanserGruppert = grunnlagListe.groupingBy { it.referanse }
+    val harDuplikater = grunnlagreferanserGruppert.eachCount().any { it.value > 1 }
+    if (harDuplikater) {
+        val referanserSomErDuplikat =
+            grunnlagreferanserGruppert.eachCount().filter { it.value > 1 }.keys
+        /*feilListe.add(
+            "Grunnlagslisten har duplikat grunnlagsreferanser for følgende referanse: ${
+                referanserSomErDuplikat.joinToString(
+                    ",",
+                )
+            }",
+        )*/
+    }
     grunnlagListe.forEach {
         feilListe.addAll(
             grunnlagListe.validerInneholderListe(

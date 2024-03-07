@@ -20,7 +20,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigInntekter
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
@@ -646,12 +647,10 @@ class GrunnlagMappingTest {
         fun `skal mappe inntekt til grunnlag`() {
             val behandling = oppretteBehandling()
             behandling.grunnlag =
-                mutableSetOf(
-                    opprettInntekterBearbeidetGrunnlag(
-                        behandling,
-                        testdataBM,
-                    ),
-                )
+                opprettInntekterBearbeidetGrunnlag(
+                    behandling,
+                    testdataBM,
+                ).toMutableSet()
 
             behandling.inntekter = opprettInntekter(behandling, testdataBM, testdataBarn1)
             assertSoftly(
@@ -762,17 +761,17 @@ class GrunnlagMappingTest {
         fun `skal mappe inntekt til grunnlag hvis inneholder inntektliste for Barn og BP`() {
             val behandling = oppretteBehandling()
             behandling.grunnlag =
-                mutableSetOf(
-                    opprettInntekterBearbeidetGrunnlag(behandling, testdataBM),
-                    opprettInntekterBearbeidetGrunnlag(
-                        behandling,
-                        testdataBP,
-                    ),
-                    opprettInntekterBearbeidetGrunnlag(
-                        behandling,
-                        testdataBarn1,
-                    ),
-                )
+                (
+                    opprettInntekterBearbeidetGrunnlag(behandling, testdataBM) +
+                        opprettInntekterBearbeidetGrunnlag(
+                            behandling,
+                            testdataBP,
+                        ) +
+                        opprettInntekterBearbeidetGrunnlag(
+                            behandling,
+                            testdataBarn1,
+                        )
+                ).toMutableSet()
 
             behandling.inntekter.addAll(
                 (
@@ -816,12 +815,10 @@ class GrunnlagMappingTest {
             val behandling = oppretteBehandling()
 
             behandling.grunnlag =
-                mutableSetOf(
-                    opprettInntekterBearbeidetGrunnlag(
-                        behandling,
-                        testdataBM,
-                    ),
-                )
+                opprettInntekterBearbeidetGrunnlag(
+                    behandling,
+                    testdataBM,
+                ).toMutableSet()
             behandling.inntekter.addAll(
                 opprettInntekter(behandling, testdataBM, testdataBarn1),
             )
@@ -859,69 +856,103 @@ class GrunnlagMappingTest {
         private fun opprettInntekterBearbeidetGrunnlag(
             behandling: Behandling,
             gjelder: TestDataPerson,
-        ): Grunnlag {
-            return Grunnlag(
-                behandling = behandling,
-                type = Grunnlagsdatatype.SKATTEPLIKTIG,
-                rolle = gjelder.tilRolle(behandling),
-                innhentet = LocalDateTime.now(),
-                data =
-                    commonObjectmapper.writeValueAsString(
-                        SkattepliktigInntekter(
-                            versjon = "1",
-                            inntekter =
-                                listOf(
-                                    SummertÅrsinntekt(
-                                        Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-                                        periode =
-                                            ÅrMånedsperiode(
-                                                YearMonth.parse("2023-01"),
-                                                YearMonth.parse("2023-07"),
-                                            ),
-                                        sumInntekt = BigDecimal.ONE,
-                                        inntektPostListe = emptyList(),
-                                        grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+        ): List<Grunnlag> =
+            listOf(
+                Grunnlag(
+                    behandling = behandling,
+                    type = Grunnlagsdatatype.KONTANTSTØTTE,
+                    rolle = gjelder.tilRolle(behandling),
+                    innhentet = LocalDateTime.now(),
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            SummerteInntekter(
+                                versjon = "1",
+                                inntekter =
+                                    listOf(
+                                        SummertÅrsinntekt(
+                                            Inntektsrapportering.KONTANTSTØTTE,
+                                            periode =
+                                                ÅrMånedsperiode(
+                                                    YearMonth.parse("2023-01"),
+                                                    YearMonth.parse("2024-01"),
+                                                ),
+                                            sumInntekt = BigDecimal.ONE,
+                                            gjelderBarnPersonId = testdataBarn1.ident,
+                                            inntektPostListe = emptyList(),
+                                            grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                                        ),
                                     ),
-                                    SummertÅrsinntekt(
-                                        Inntektsrapportering.KONTANTSTØTTE,
-                                        periode =
-                                            ÅrMånedsperiode(
-                                                YearMonth.parse("2023-01"),
-                                                YearMonth.parse("2024-01"),
-                                            ),
-                                        sumInntekt = BigDecimal.ONE,
-                                        gjelderBarnPersonId = testdataBarn1.ident,
-                                        inntektPostListe = emptyList(),
-                                        grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
-                                    ),
-                                    SummertÅrsinntekt(
-                                        Inntektsrapportering.BARNETILLEGG,
-                                        periode =
-                                            ÅrMånedsperiode(
-                                                YearMonth.parse("2023-01"),
-                                                YearMonth.parse("2024-01"),
-                                            ),
-                                        sumInntekt = BigDecimal.ONE,
-                                        gjelderBarnPersonId = testdataBarn1.ident,
-                                        inntektPostListe = emptyList(),
-                                        grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
-                                    ),
-                                    SummertÅrsinntekt(
-                                        Inntektsrapportering.LIGNINGSINNTEKT,
-                                        periode =
-                                            ÅrMånedsperiode(
-                                                YearMonth.parse("2023-01"),
-                                                YearMonth.parse("2024-01"),
-                                            ),
-                                        sumInntekt = BigDecimal.ONE,
-                                        inntektPostListe = emptyList(),
-                                        grunnlagsreferanseListe = skattegrunnlagGrunnlagsreferanseListe,
-                                    ),
-                                ),
+                            ),
                         ),
-                    ),
+                ),
+                Grunnlag(
+                    behandling = behandling,
+                    type = Grunnlagsdatatype.BARNETILLEGG,
+                    rolle = gjelder.tilRolle(behandling),
+                    innhentet = LocalDateTime.now(),
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            SummerteInntekter(
+                                versjon = "1",
+                                inntekter =
+                                    listOf(
+                                        SummertÅrsinntekt(
+                                            Inntektsrapportering.BARNETILLEGG,
+                                            periode =
+                                                ÅrMånedsperiode(
+                                                    YearMonth.parse("2023-01"),
+                                                    YearMonth.parse("2024-01"),
+                                                ),
+                                            sumInntekt = BigDecimal.ONE,
+                                            gjelderBarnPersonId = testdataBarn1.ident,
+                                            inntektPostListe = emptyList(),
+                                            grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
+                Grunnlag(
+                    behandling = behandling,
+                    type = Grunnlagsdatatype.SKATTEPLIKTIG,
+                    rolle = gjelder.tilRolle(behandling),
+                    innhentet = LocalDateTime.now(),
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            SkattepliktigeInntekter(
+                                versjon = "1",
+                                skattegrunnlag =
+                                    listOf(
+                                        SummertÅrsinntekt(
+                                            Inntektsrapportering.LIGNINGSINNTEKT,
+                                            periode =
+                                                ÅrMånedsperiode(
+                                                    YearMonth.parse("2023-01"),
+                                                    YearMonth.parse("2024-01"),
+                                                ),
+                                            sumInntekt = BigDecimal.ONE,
+                                            inntektPostListe = emptyList(),
+                                            grunnlagsreferanseListe = skattegrunnlagGrunnlagsreferanseListe,
+                                        ),
+                                    ),
+                                ainntekter =
+                                    listOf(
+                                        SummertÅrsinntekt(
+                                            Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                                            periode =
+                                                ÅrMånedsperiode(
+                                                    YearMonth.parse("2023-01"),
+                                                    YearMonth.parse("2023-07"),
+                                                ),
+                                            sumInntekt = BigDecimal.ONE,
+                                            inntektPostListe = emptyList(),
+                                            grunnlagsreferanseListe = ainntektGrunnlagsreferanseListe,
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
             )
-        }
 
         private fun opprettInntekter(
             behandling: Behandling,

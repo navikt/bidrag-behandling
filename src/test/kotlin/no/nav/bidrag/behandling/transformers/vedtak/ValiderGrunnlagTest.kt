@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
@@ -27,12 +28,22 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestD
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ValiderGrunnlagTest {
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun initPersonMock() {
+            stubPersonConsumer()
+        }
+    }
+
     val grunnlagBm =
         Rolle(
             behandling = oppretteBehandling(),
@@ -66,6 +77,65 @@ class ValiderGrunnlagTest {
             id = 1L,
         ).tilGrunnlagPerson()
     val personobjekter = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
+
+    @Test
+    fun `skal validere at det ikke finne duplikat referanser`() {
+        val request =
+            OpprettVedtakRequestDto(
+                kilde = Vedtakskilde.MANUELT,
+                enhetsnummer = Enhetsnummer("4806"),
+                vedtakstidspunkt = LocalDateTime.now(),
+                type = Vedtakstype.ENDRING,
+                stønadsendringListe = emptyList(),
+                engangsbeløpListe = emptyList(),
+                behandlingsreferanseListe = emptyList(),
+                grunnlagListe =
+                    listOf(
+                        OpprettGrunnlagRequestDto(
+                            type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                            referanse = "ref_1",
+                            gjelderReferanse = grunnlagBm.referanse,
+                            grunnlagsreferanseListe = listOf("ref_2", "ref_4"),
+                            innhold = POJONode(""),
+                        ),
+                        OpprettGrunnlagRequestDto(
+                            type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                            referanse = "ref_1",
+                            gjelderReferanse = søknadsbarnGrunnlag1.referanse,
+                            grunnlagsreferanseListe = listOf("ref_3"),
+                            innhold = POJONode(""),
+                        ),
+                        OpprettGrunnlagRequestDto(
+                            type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                            referanse = "ref_3",
+                            gjelderReferanse = søknadsbarnGrunnlag1.referanse,
+                            grunnlagsreferanseListe = listOf("ref_4"),
+                            innhold = POJONode(""),
+                        ),
+                        OpprettGrunnlagRequestDto(
+                            type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                            referanse = "ref_4",
+                            gjelderReferanse = grunnlagBm.referanse,
+                            grunnlagsreferanseListe = listOf("ref_5"),
+                            innhold = POJONode(""),
+                        ),
+                        OpprettGrunnlagRequestDto(
+                            type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                            referanse = "ref_5",
+                            gjelderReferanse = grunnlagBm.referanse,
+                            grunnlagsreferanseListe = emptyList(),
+                            innhold = POJONode(""),
+                        ),
+                    ),
+                fastsattILand = null,
+                innkrevingUtsattTilDato = null,
+                // Settes automatisk av bidrag-vedtak basert på token
+                opprettetAv = null,
+            )
+
+        val value = shouldThrow<RuntimeException> { request.validerGrunnlagsreferanser() }
+        value.message shouldContain "Feil i grunnlagsreferanser: Grunnlagslisten har duplikat grunnlagsreferanser for følgende referanse: ref_1"
+    }
 
     @Test
     fun `skal validere grunnlagsreferanser i opprett vedtak request`() {

@@ -335,9 +335,14 @@
           "fom": "2021-01",
           "til": "2022-01"
         },
+        "opprinneligPeriode": {
+          "fom": "2021-01",
+          "til": "2022-01"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "LIGNINGSINNTEKT"
       },
       "grunnlagsreferanseListe": [
@@ -355,6 +360,10 @@
           "fom": "2023-11",
           "til": "2024-02"
         },
+        "opprinneligPeriode": {
+          "fom": "2023-11",
+          "til": "2024-02"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [
           {
@@ -364,6 +373,7 @@
           }
         ],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "AINNTEKT_BEREGNET_3MND"
       },
       "grunnlagsreferanseListe": [
@@ -412,6 +422,7 @@
           }
         ],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "AINNTEKT"
       },
       "grunnlagsreferanseListe": [
@@ -429,6 +440,10 @@
           "fom": "2022-01",
           "til": "2023-01"
         },
+        "opprinneligPeriode": {
+          "fom": "2022-01",
+          "til": "2023-07"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [
           {
@@ -443,6 +458,7 @@
           }
         ],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "KAPITALINNTEKT"
       },
       "grunnlagsreferanseListe": [
@@ -460,6 +476,10 @@
           "fom": "2022-01",
           "til": "2023-01"
         },
+        "opprinneligPeriode": {
+          "fom": "2022-02",
+          "til": "2023-01"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [
           {
@@ -469,6 +489,7 @@
           }
         ],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "LIGNINGSINNTEKT"
       },
       "grunnlagsreferanseListe": [
@@ -504,6 +525,10 @@
           "fom": "2023-02",
           "til": "2024-02"
         },
+        "opprinneligPeriode": {
+          "fom": "2023-02",
+          "til": "2024-01"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [
           {
@@ -513,6 +538,7 @@
           }
         ],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "AINNTEKT_BEREGNET_12MND"
       },
       "grunnlagsreferanseListe": [
@@ -530,6 +556,10 @@
           "fom": "2023-01",
           "til": "2024-01"
         },
+        "opprinneligPeriode": {
+          "fom": "2023-01",
+          "til": "2024-01"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [
           {
@@ -539,6 +569,7 @@
           }
         ],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "AINNTEKT"
       },
       "grunnlagsreferanseListe": [
@@ -556,6 +587,10 @@
           "fom": "2023-01",
           "til": null
         },
+        "opprinneligPeriode": {
+          "fom": "2023-01",
+          "til": "2024-01"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [
           {
@@ -570,6 +605,7 @@
           }
         ],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "LIGNINGSINNTEKT"
       },
       "grunnlagsreferanseListe": [
@@ -586,6 +622,10 @@
         "periode": {
           "fom": "2023-01",
           "til": null
+        },
+        "opprinneligPeriode": {
+          "fom": "2023-01",
+          "til": "2023-07"
         },
         "gjelderBarn": null,
         "inntekstpostListe": [
@@ -606,6 +646,7 @@
           }
         ],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "KAPITALINNTEKT"
       },
       "grunnlagsreferanseListe": [
@@ -623,9 +664,14 @@
           "fom": "2021-01",
           "til": "2022-01"
         },
+        "opprinneligPeriode": {
+          "fom": "2021-01",
+          "til": "2022-01"
+        },
         "gjelderBarn": null,
         "inntekstpostListe": [],
         "manueltRegistrert": false,
+        "versjon": "V1",
         "inntektsrapportering": "KAPITALINNTEKT"
       },
       "grunnlagsreferanseListe": [

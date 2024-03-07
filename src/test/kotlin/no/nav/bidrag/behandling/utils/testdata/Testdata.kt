@@ -15,6 +15,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
@@ -42,6 +44,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
@@ -535,7 +538,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
     filnavn: String,
 ): MutableSet<Grunnlag> {
     return listOf(
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.HUSSTANDSMEDLEMMER),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.ARBEIDSFORHOLD),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILSYN),
@@ -543,10 +546,8 @@ fun opprettAlleAktiveGrunnlagFraFil(
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.KONTANTSTØTTE),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SMÅBARNSTILLEGG),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.AINNTEKT),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEGRUNNLAG),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEPLIKTIG),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBM),
-        opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBP),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn1),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn2),
     ).flatten().toMutableSet()
@@ -561,17 +562,23 @@ fun opprettBeregnetInntektFraGrunnlag(
     val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(fil)
     val inntekterBearbeidet =
         InntektApi("").transformerInntekter(
-            grunnlag.tilTransformerInntekterRequest(testDataPerson.tilRolle(behandling)),
+            grunnlag.tilTransformerInntekterRequest(
+                testDataPerson.tilRolle(behandling),
+                LocalDate.parse("2024-02-10"),
+            ),
         )
     return listOf(
         Grunnlag(
             behandling = behandling,
-            type = Grunnlagsdatatype.AINNTEKT,
+            type = Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
             erBearbeidet = true,
             data =
                 commonObjectmapper.writeValueAsString(
                     POJONode(
-                        inntekterBearbeidet.summertÅrsinntektListe.filtrerAinntekt(),
+                        SummerteInntekter(
+                            versjon = inntekterBearbeidet.versjon,
+                            inntekter = inntekterBearbeidet.summertMånedsinntektListe,
+                        ),
                     ),
                 ),
             innhentet = LocalDateTime.now(),
@@ -579,32 +586,69 @@ fun opprettBeregnetInntektFraGrunnlag(
         ),
         Grunnlag(
             behandling = behandling,
-            type = Grunnlagsdatatype.SKATTEGRUNNLAG,
+            type = Grunnlagsdatatype.SKATTEPLIKTIG,
             erBearbeidet = true,
             data =
                 commonObjectmapper.writeValueAsString(
                     POJONode(
-                        inntekterBearbeidet.summertÅrsinntektListe.filtrerSkattegrunnlag(),
+                        SkattepliktigeInntekter(
+                            versjon = inntekterBearbeidet.versjon,
+                            ainntekter = inntekterBearbeidet.summertÅrsinntektListe.filtrerAinntekt(),
+                            skattegrunnlag = inntekterBearbeidet.summertÅrsinntektListe.filtrerSkattegrunnlag(),
+                        ),
                     ),
                 ),
             innhentet = LocalDateTime.now(),
             rolle = testDataPerson.tilRolle(behandling),
         ),
-        Grunnlag(
-            behandling = behandling,
-            type = Grunnlagsdatatype.KONTANTSTØTTE,
-            erBearbeidet = true,
-            data =
-                commonObjectmapper.writeValueAsString(
-                    POJONode(
-                        inntekterBearbeidet.summertÅrsinntektListe.filter { it.inntektRapportering == Inntektsrapportering.KONTANTSTØTTE },
-                    ),
-                ),
-            innhentet = LocalDateTime.now(),
-            rolle = testDataPerson.tilRolle(behandling),
+        inntekterBearbeidet.tilGrunnlag(
+            Inntektsrapportering.KONTANTSTØTTE,
+            testDataPerson,
+            behandling,
+        ),
+        inntekterBearbeidet.tilGrunnlag(
+            Inntektsrapportering.BARNETILLEGG,
+            testDataPerson,
+            behandling,
+        ),
+        inntekterBearbeidet.tilGrunnlag(
+            Inntektsrapportering.BARNETILSYN,
+            testDataPerson,
+            behandling,
+        ),
+        inntekterBearbeidet.tilGrunnlag(
+            Inntektsrapportering.SMÅBARNSTILLEGG,
+            testDataPerson,
+            behandling,
+        ),
+        inntekterBearbeidet.tilGrunnlag(
+            Inntektsrapportering.UTVIDET_BARNETRYGD,
+            testDataPerson,
+            behandling,
         ),
     )
 }
+
+fun TransformerInntekterResponse.tilGrunnlag(
+    type: Inntektsrapportering,
+    person: TestDataPerson,
+    behandling: Behandling,
+) = Grunnlag(
+    behandling = behandling,
+    type = Grunnlagsdatatype.valueOf(type.name),
+    erBearbeidet = true,
+    data =
+        commonObjectmapper.writeValueAsString(
+            POJONode(
+                SummerteInntekter(
+                    versjon = versjon,
+                    summertÅrsinntektListe.filter { it.inntektRapportering == type },
+                ),
+            ),
+        ),
+    innhentet = LocalDateTime.now(),
+    rolle = person.tilRolle(behandling),
+)
 
 fun sjablonResponse(): List<Sjablontall> {
     val fil = hentFil("/__files/sjablon.json")

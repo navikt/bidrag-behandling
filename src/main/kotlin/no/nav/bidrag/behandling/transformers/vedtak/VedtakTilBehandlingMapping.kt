@@ -182,7 +182,7 @@ private fun List<GrunnlagDto>.mapGrunnlag(
             hentGrunnlagInntekt(
                 behandling,
                 lesemodus,
-            )
+            ) + hentInnntekterBearbeidet(behandling, lesemodus)
     ).toMutableSet()
 
 private fun List<GrunnlagDto>.mapRoller(
@@ -248,7 +248,7 @@ private fun List<GrunnlagDto>.mapInntekter(
     return inntekter
 }
 
-private fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
+fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
     filtrerBasertPåEgenReferanse(grunnlagstype)
         .firstOrNull()?.innhold?.get("hentetTidspunkt")?.let {
             commonObjectmapper.treeToValue(it, LocalDateTime::class.java)
@@ -278,10 +278,10 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus,
             )
         },
-    hentInnhenetHusstandsmedlem().groupBy { it.partPersonId }
+    hentInnhentetHusstandsmedlem().groupBy { it.partPersonId }
         .map { (gjelderIdent, grunnlag) ->
             behandling.opprettGrunnlag(
-                Grunnlagsdatatype.HUSSTANDSMEDLEMMER,
+                Grunnlagsdatatype.BOFORHOLD,
                 grunnlag,
                 gjelderIdent!!,
                 innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
@@ -302,18 +302,9 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                 gjelderIdent,
                 innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
                 lesemodus,
+                erBearbeidet = true,
             )
         },
-        hentGrunnlagSkattegrunnlag().groupBy { it.personId }
-            .map { (gjelderIdent, grunnlag) ->
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER,
-                    grunnlag,
-                    gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE),
-                    lesemodus,
-                )
-            },
         hentBarnetillegListe().groupBy { it.partPersonId }
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
@@ -364,20 +355,10 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                     lesemodus,
                 )
             },
-        hentGrunnlagAinntekt().groupBy { it.personId }
+        hentGrunnlagSkattepliktig()
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.AINNTEKT,
-                    grunnlag,
-                    gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
-                    lesemodus,
-                )
-            },
-        hentGrunnlagSkattegrunnlag().groupBy { it.personId }
-            .map { (gjelderIdent, grunnlag) ->
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.SKATTEGRUNNLAG,
+                    Grunnlagsdatatype.SKATTEPLIKTIG,
                     grunnlag,
                     gjelderIdent,
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE),
@@ -387,18 +368,20 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
     ).flatten()
 }
 
-private fun Behandling.opprettGrunnlag(
+fun Behandling.opprettGrunnlag(
     type: Grunnlagsdatatype,
     grunnlag: Any,
     gjelderIdent: String,
     innhentetTidspunkt: LocalDateTime,
     lesemodus: Boolean,
+    erBearbeidet: Boolean = false,
 ) = Grunnlag(
     behandling = this,
     id = if (lesemodus) 1 else null,
     innhentet = innhentetTidspunkt,
     data = commonObjectmapper.writeValueAsString(grunnlag),
     type = type,
+    erBearbeidet = erBearbeidet,
     aktiv = innhentetTidspunkt,
     rolle = roller.find { it.ident == gjelderIdent }!!,
 )

@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -199,6 +200,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
         POJONode(
             InntektsrapporteringPeriode(
                 beløp = belop,
+                versjon = (kilde == Kilde.OFFENTLIG).ifTrue { grunnlagListe.hentVersjonForInntekt(this) },
                 periode = ÅrMånedsperiode(datoFom, datoTom?.plusDays(1)),
                 opprinneligPeriode =
                     if (kilde == Kilde.OFFENTLIG) {

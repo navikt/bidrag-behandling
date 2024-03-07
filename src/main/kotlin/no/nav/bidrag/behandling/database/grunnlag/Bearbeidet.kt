@@ -48,12 +48,7 @@ data class InntektBearbeidet(
 )
 
 data class SummerteInntekter<T>(
-    val versjon: String,
-    val inntekter: List<T>,
-)
-
-data class SkattepliktigInntekter<T>(
-    val versjon: String,
+    val versjon: String? = null,
     val inntekter: List<T>,
 )
 
