@@ -80,7 +80,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         testdataManager.oppretteOgLagreGrunnlag<SkattegrunnlagGrunnlagDto>(
             behandling = behandling,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEGRUNNLAG, false),
+            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
             innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
             aktiv = null,
         )
@@ -90,7 +90,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val aktivereGrunnlagRequest =
             AktivereGrunnlagRequest(
                 Personident(behandling.bidragsmottaker?.ident!!),
-                setOf(Grunnlagsdatatype.SKATTEGRUNNLAG),
+                setOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
             )
 
         // hvis

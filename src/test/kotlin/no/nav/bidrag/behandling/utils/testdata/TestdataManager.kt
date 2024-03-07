@@ -3,9 +3,11 @@ package no.nav.bidrag.behandling.utils.testdata
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -61,7 +63,7 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
     @Transactional
     fun <T> oppretteOgLagreGrunnlag(
         behandling: Behandling,
-        grunnlagstype: Grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEGRUNNLAG, false),
+        grunnlagstype: Grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
         innhentet: LocalDateTime,
         aktiv: LocalDateTime? = null,
         grunnlagsdata: T? = null,
@@ -69,14 +71,14 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
         behandling.grunnlag.add(
             Grunnlag(
                 behandling,
-                grunnlagstype.type,
+                grunnlagstype.type.getOrMigrate(),
                 grunnlagstype.erBearbeidet,
                 data =
                     if (grunnlagsdata != null) {
                         tilJson(grunnlagsdata)
                     } else {
                         oppretteGrunnlagInntektsdata(
-                            grunnlagstype.type,
+                            grunnlagstype.type.getOrMigrate(),
                             behandling.bidragsmottaker!!.ident!!,
                             behandling.søktFomDato,
                         )
@@ -93,21 +95,23 @@ class TestdataManager(private val behandlingRepository: BehandlingRepository) {
         gjelderIdent: String,
         søktFomDato: LocalDate,
     ) = when (grunnlagsdatatype) {
-        Grunnlagsdatatype.AINNTEKT ->
+        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
             tilJson(
-                listOf(
-                    AinntektGrunnlagDto(
-                        personId = gjelderIdent,
-                        periodeFra = søktFomDato.withDayOfMonth(1),
-                        periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
-                        ainntektspostListe =
-                            listOf(
-                                tilAinntektspostDto(
-                                    beløp = BigDecimal(70000),
-                                    fomDato = søktFomDato,
-                                    tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                SkattepliktigeInntekter(
+                    listOf(
+                        AinntektGrunnlagDto(
+                            personId = gjelderIdent,
+                            periodeFra = søktFomDato.withDayOfMonth(1),
+                            periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                            ainntektspostListe =
+                                listOf(
+                                    tilAinntektspostDto(
+                                        beløp = BigDecimal(70000),
+                                        fomDato = søktFomDato,
+                                        tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                                    ),
                                 ),
-                            ),
+                        ),
                     ),
                 ),
             )
