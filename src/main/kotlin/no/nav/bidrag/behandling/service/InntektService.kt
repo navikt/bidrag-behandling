@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
@@ -34,10 +33,10 @@ class InntektService(
     private val entityManager: EntityManager,
 ) {
     @Transactional
-    fun <T> lagreInntekter(
+    fun lagreSummerteÅrsinntekter(
         behandlingsid: Long,
         personident: Personident,
-        sammenstilteInntekter: SummerteInntekter<T>,
+        summerteÅrsinntekter: List<SummertÅrsinntekt>,
     ) {
         val behandling =
             behandlingRepository.findBehandlingById(behandlingsid)
@@ -54,9 +53,8 @@ class InntektService(
 
         entityManager.flush()
 
-        @Suppress("UNCHECKED_CAST")
         inntektRepository.saveAll(
-            (sammenstilteInntekter.inntekter as List<SummertÅrsinntekt>).tilInntekt(
+            summerteÅrsinntekter.tilInntekt(
                 behandling,
                 personident,
             ),

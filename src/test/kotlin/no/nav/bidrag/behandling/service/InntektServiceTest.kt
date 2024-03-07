@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
@@ -77,9 +78,8 @@ class InntektServiceTest : TestContainerRunner() {
             val behandling = testdataManager.opprettBehandling()
 
             val summerteInntekter =
-                SummerteInntekter(
+                SummerteInntekter<SummertÅrsinntekt>(
                     versjon = "xyz",
-                    gjelderIdent = behandling.bidragsmottaker!!.ident!!,
                     inntekter =
                         listOf(
                             SummertÅrsinntekt(
@@ -100,39 +100,25 @@ class InntektServiceTest : TestContainerRunner() {
                                 sumInntekt = BigDecimal(500000),
                                 visningsnavn = "Sigrun ligningsinntekt (LIGS) ${Year.now().minusYears(1)}",
                             ),
-                            SummertÅrsinntekt(
-                                inntektRapportering = Inntektsrapportering.KONTANTSTØTTE,
-                                inntektPostListe = emptyList(),
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                                        YearMonth.now().withMonth(1).atDay(1),
-                                    ),
-                                sumInntekt = BigDecimal(60000),
-                                visningsnavn = "Kontantstøtte",
-                            ),
                         ),
                 )
 
             // hvis
-            inntektService.lagreInntekter(
+            inntektService.lagreSummerteÅrsinntekter(
                 behandling.id!!,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
-                sammenstilteInntekter = summerteInntekter,
+                summerteÅrsinntekter = summerteInntekter.inntekter,
             )
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
             assertSoftly {
-                oppdatertBehandling.get().inntekter.size shouldBe 2
+                oppdatertBehandling.get().inntekter.size shouldBe 1
                 oppdatertBehandling.get().inntekter.first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }
                     .belop shouldBe
                     summerteInntekter.inntekter
                         .first { Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering }.sumInntekt
-                oppdatertBehandling.get().inntekter.first { Inntektsrapportering.KONTANTSTØTTE == it.type }.belop shouldBe
-                    summerteInntekter.inntekter
-                        .first { Inntektsrapportering.KONTANTSTØTTE == it.inntektRapportering }.sumInntekt
                 oppdatertBehandling.get().inntekter
                     .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }.inntektsposter.size shouldBe 1
                 oppdatertBehandling.get().inntekter
@@ -161,7 +147,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
                 behandling = behandling,
-                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.AINNTEKT, false),
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
                 innhentet = LocalDate.of(YearMonth.now().minusYears(1).year, 1, 1).atStartOfDay(),
                 aktiv = null,
             )
@@ -196,12 +182,15 @@ class InntektServiceTest : TestContainerRunner() {
 
             val grunnlagMedAinntekt = behandling.grunnlag.first()
 
-            val nyttAinntektsgrunnlag = Jsonoperasjoner.jsonListeTilObjekt<AinntektGrunnlagDto>(grunnlagMedAinntekt.data)
+            val skattepliktigeInntekter =
+                Jsonoperasjoner.jsonTilObjekt<SkattepliktigeInntekter>(grunnlagMedAinntekt.data)
 
             val transformereInntekter =
                 TransformerInntekterRequest(
                     ainntektHentetDato = grunnlagMedAinntekt.innhentet.toLocalDate(),
-                    ainntektsposter = nyttAinntektsgrunnlag.flatMap { it.ainntektspostListe }.tilAinntektsposter(),
+                    ainntektsposter =
+                        skattepliktigeInntekter.ainntekter.flatMap { it.ainntektspostListe }
+                            .tilAinntektsposter(),
                     kontantstøtteliste = emptyList(),
                     skattegrunnlagsliste = emptyList(),
                     småbarnstilleggliste = emptyList(),

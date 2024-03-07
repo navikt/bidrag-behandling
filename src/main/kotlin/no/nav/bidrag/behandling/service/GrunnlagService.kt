@@ -7,18 +7,21 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
+import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.TransformerInntekterRequestBuilder
+import no.nav.bidrag.behandling.transformers.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.tilKontantstøtte
 import no.nav.bidrag.behandling.transformers.tilSkattegrunnlagForLigningsår
@@ -27,13 +30,17 @@ import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
 import no.nav.bidrag.behandling.transformers.toDto
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
@@ -45,20 +52,10 @@ import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
 
-val inntekterOgYtelser =
-    setOf(
-        Grunnlagsdatatype.AINNTEKT,
-        Grunnlagsdatatype.KONTANTSTØTTE,
-        Grunnlagsdatatype.SMÅBARNSTILLEGG,
-        Grunnlagsdatatype.SKATTEGRUNNLAG,
-        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-    )
-
 @Service
 class GrunnlagService(
     private val grunnlagRepository: GrunnlagRepository,
     private val behandlingRepository: BehandlingRepository,
-    private val rolleRepository: RolleRepository,
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val inntektApi: InntektApi,
     private val inntektService: InntektService,
@@ -94,7 +91,7 @@ class GrunnlagService(
                 return grunnlagRepository.save<Grunnlag>(
                     Grunnlag(
                         it,
-                        nyGrunnlagstype.type,
+                        nyGrunnlagstype.type.getOrMigrate(),
                         erBearbeidet = nyGrunnlagstype.erBearbeidet,
                         data = data,
                         rolle = it.bidragsmottaker!!,
@@ -145,17 +142,14 @@ class GrunnlagService(
         )
 
         aktivereGrunnlagRequest.grunnlagsdatatyper.forEach { grunnlagstype ->
-            aktivereGrunnlagOgOppdatereInntektstabell(
-                behandling = behandling,
-                rolle = rolleGrunnlagSkalAktiveresFor!!,
-                inntektsOgYtelsesgrunnlag =
-                    aktivereGrunnlagRequest.grunnlagsdatatyper.filter {
-                        inntekterOgYtelser.contains(
-                            grunnlagstype,
-                        )
-                    }.toSet(),
-                aktiveringstidspunkt = aktiveringstidspunkt,
-            )
+            if (inntekterOgYtelser.contains(grunnlagstype)) {
+                aktivereGrunnlagOgOppdatereInntektstabell(
+                    behandling = behandling,
+                    rolle = rolleGrunnlagSkalAktiveresFor!!,
+                    grunnlagsdatatype = grunnlagstype,
+                    aktiveringstidspunkt = aktiveringstidspunkt,
+                )
+            }
         }
     }
 
@@ -167,7 +161,7 @@ class GrunnlagService(
         return grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
             behandlingsid,
             rolleid,
-            grunnlagstype.type,
+            grunnlagstype.type.getOrMigrate(),
             grunnlagstype.erBearbeidet,
         )
     }
@@ -184,14 +178,14 @@ class GrunnlagService(
             nyinnhentaGrunnlag.filter { inntekterOgYtelser.contains(it.type) }.map { it.type }
                 .toSet()
 
-        return nyinnhentaGrunnlag.filter { it.type == Grunnlagsdatatype.INNTEKT_BEARBEIDET }.map {
+        return nyinnhentaGrunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.map {
             GrunnlagsdataEndretDto(
                 nyeData = it.toDto(),
                 endringerINyeData = grunnlagstyperEndretIBearbeidaInntekter,
             )
         }.toSet() +
             nyinnhentaGrunnlag.filter {
-                it.type != Grunnlagsdatatype.INNTEKT_BEARBEIDET &&
+                it.type != Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER &&
                     !inntekterOgYtelser.contains(
                         it.type,
                     )
@@ -231,19 +225,12 @@ class GrunnlagService(
 
     private fun aktivereGrunnlagOgOppdatereInntektstabell(
         behandling: Behandling,
-        inntektsOgYtelsesgrunnlag: Set<Grunnlagsdatatype>,
+        grunnlagsdatatype: Grunnlagsdatatype,
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
     ) {
-        val skalAktivereOgOppdatereAinntektOgSkattegrunnlag =
-            inntektsOgYtelsesgrunnlag.any { Grunnlagsdatatype.AINNTEKT == it || Grunnlagsdatatype.SKATTEGRUNNLAG == it }
-
-        if (skalAktivereOgOppdatereAinntektOgSkattegrunnlag) {
-            aktivereOgOppdatereSkattbareInntekter(
-                behandling,
-                rolle,
-                aktiveringstidspunkt,
-            )
+        if (Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == grunnlagsdatatype) {
+            aktivereOgOppdatereSkattbareInntekter(behandling, rolle, aktiveringstidspunkt)
         }
     }
 
@@ -252,84 +239,66 @@ class GrunnlagService(
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
     ) {
-        val sistInnhentaAinntekt =
+        val sistInnhentedeSkattepliktigeInntekter =
             behandling.grunnlag
                 .filter { rolle.ident == it.rolle.ident }
-                .filter { Grunnlagsdatatype.AINNTEKT == it.type }
-                .maxByOrNull { it.innhentet }
-
-        val sistInnhentaSkattegrunnlag =
-            behandling.grunnlag
-                .filter { rolle.ident == it.rolle.ident }
-                .filter { Grunnlagsdatatype.SKATTEGRUNNLAG == it.type }
+                .filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }
                 .maxByOrNull { it.innhentet }
 
         val transformereInntekter =
             TransformerInntekterRequestBuilder(
                 ainntektsposter =
-                    sistInnhentaAinntekt
+                    sistInnhentedeSkattepliktigeInntekter
                         ?.let { grunnlag ->
                             var respons: List<AinntektspostDto> = emptyList()
                             if (grunnlag.data.trim().isNotEmpty()) {
                                 respons =
-                                    jsonListeTilObjekt<AinntektGrunnlagDto>(grunnlag.data).flatMap { it.ainntektspostListe }
+                                    jsonTilObjekt<SkattepliktigeInntekter>(
+                                        grunnlag.data,
+                                    ).ainntekter.flatMap { it.ainntektspostListe }
                             }
                             respons.tilAinntektsposter()
                         } ?: emptyList(),
                 skattegrunnlag =
-                    sistInnhentaSkattegrunnlag?.let {
+                    sistInnhentedeSkattepliktigeInntekter?.let { grunnlag ->
                         var respons: List<SkattegrunnlagGrunnlagDto> = emptyList()
-                        if (it.data.trim().isNotEmpty()) {
-                            respons = jsonListeTilObjekt<SkattegrunnlagGrunnlagDto>(it.data).toList()
+                        if (grunnlag.data.trim().isNotEmpty()) {
+                            respons =
+                                jsonTilObjekt<SkattepliktigeInntekter>(
+                                    grunnlag.data,
+                                ).skattegrunnlag
                         }
                         respons.tilSkattegrunnlagForLigningsår()
                     } ?: emptyList(),
             ).bygge()
 
-        val summertAinntektstyper =
-            setOf(Inntektsrapportering.AINNTEKT_BEREGNET_3MND, Inntektsrapportering.AINNTEKT_BEREGNET_12MND)
         val summertAinntektOgSkattegrunnlag = inntektApi.transformerInntekter(transformereInntekter)
 
-        lagreInntektsgrunnlagHvisEndret(
+        lagreSkattepliktigeinntekterHvisEndret(
             behandling.id!!,
             rolle,
-            LocalDateTime.now(),
-            Grunnlagstype(Grunnlagsdatatype.AINNTEKT, true),
+            Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
             SummerteInntekter(
                 versjon = summertAinntektOgSkattegrunnlag.versjon,
-                gjelderIdent = rolle.ident!!,
                 inntekter =
                     summertAinntektOgSkattegrunnlag.summertÅrsinntektListe
-                        .filter { summertAinntektstyper.contains(it.inntektRapportering) },
+                        .filter { summertAinntektstyper.contains(it.inntektRapportering) } +
+                        summertAinntektOgSkattegrunnlag.summertÅrsinntektListe
+                            .filter { !summertAinntektstyper.contains(it.inntektRapportering) },
             ),
+            LocalDateTime.now(),
             aktiveringstidspunkt,
         )
 
-        lagreInntektsgrunnlagHvisEndret(
+        lagreSkattepliktigeinntekterHvisEndret(
             behandling.id!!,
             rolle,
-            LocalDateTime.now(),
-            Grunnlagstype(Grunnlagsdatatype.SKATTEGRUNNLAG, true),
-            SummerteInntekter(
-                versjon = summertAinntektOgSkattegrunnlag.versjon,
-                gjelderIdent = rolle.ident!!,
-                inntekter =
-                    summertAinntektOgSkattegrunnlag.summertÅrsinntektListe
-                        .filter { !summertAinntektstyper.contains(it.inntektRapportering) },
-            ),
-            aktiveringstidspunkt,
-        )
-
-        lagreInntektsgrunnlagHvisEndret(
-            behandling.id!!,
-            rolle,
-            LocalDateTime.now(),
             Grunnlagstype(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, true),
             SummerteInntekter(
                 versjon = summertAinntektOgSkattegrunnlag.versjon,
-                gjelderIdent = rolle.ident!!,
                 inntekter = summertAinntektOgSkattegrunnlag.summertMånedsinntektListe,
             ),
+            LocalDateTime.now(),
             aktiveringstidspunkt,
         )
         entityManager.persist(behandling)
@@ -340,8 +309,7 @@ class GrunnlagService(
             summertAinntektOgSkattegrunnlag.summertÅrsinntektListe,
         )
 
-        sistInnhentaAinntekt?.aktiv = aktiveringstidspunkt
-        sistInnhentaSkattegrunnlag?.aktiv = aktiveringstidspunkt
+        sistInnhentedeSkattepliktigeInntekter?.aktiv = aktiveringstidspunkt
         entityManager.flush()
     }
 
@@ -422,19 +390,11 @@ class GrunnlagService(
             innhentetGrunnlag.hentetTidspunkt,
         )
 
-        lagreGrunnlagHvisEndret(
+        lagreSkattepliktigeinntekterHvisEndret(
             behandling.id!!,
             rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.AINNTEKT, false),
-            innhentetGrunnlag.ainntektListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.SKATTEGRUNNLAG, false),
-            innhentetGrunnlag.skattegrunnlagListe.toSet(),
+            Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+            SkattepliktigeInntekter(innhentetGrunnlag.ainntektListe, innhentetGrunnlag.skattegrunnlagListe),
             innhentetGrunnlag.hentetTidspunkt,
         )
 
@@ -451,7 +411,7 @@ class GrunnlagService(
         val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
 
         val grunnlagstyper: Set<Grunnlagsdatatype> =
-            setOf(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER)
+            setOf(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
 
         val innhentetTidspunkt = LocalDateTime.now()
 
@@ -461,28 +421,54 @@ class GrunnlagService(
                     Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER ->
                         SummerteInntekter(
                             versjon = sammenstilteInntekter.versjon,
-                            gjelderIdent = rolleInhentetFor.ident!!,
                             inntekter = sammenstilteInntekter.summertMånedsinntektListe,
                         )
 
-                    Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER ->
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> {
                         SummerteInntekter(
                             versjon = sammenstilteInntekter.versjon,
-                            gjelderIdent = rolleInhentetFor.ident!!,
-                            inntekter = sammenstilteInntekter.summertÅrsinntektListe,
+                            inntekter =
+                                sammenstilteInntekter.summertÅrsinntektListe
+                                    .filter { summertAinntektstyper.contains(it.inntektRapportering) } +
+                                    sammenstilteInntekter.summertÅrsinntektListe
+                                        .filter { summertSkattegrunnlagstyper.contains(it.inntektRapportering) },
                         )
+                    }
 
                     // Ikke-tilgjengelig kode
                     else -> null
                 }
 
-            lagreInntektsgrunnlagHvisEndret(
-                behandling.id!!,
-                rolleInhentetFor,
-                innhentetTidspunkt,
-                Grunnlagstype(type, true),
-                årsbaserteInntekterEllerYtelser,
-            )
+            @Suppress("UNCHECKED_CAST")
+            when (type) {
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> {
+                    lagreSkattepliktigeinntekterHvisEndret<SummerteInntekter<SummertÅrsinntekt>>(
+                        behandling.id!!,
+                        rolleInhentetFor,
+                        Grunnlagstype(type, true),
+                        årsbaserteInntekterEllerYtelser as SummerteInntekter<SummertÅrsinntekt>,
+                        innhentetTidspunkt,
+                    )
+                }
+
+                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> {
+                    lagreSkattepliktigeinntekterHvisEndret<SummerteInntekter<SummertMånedsinntekt>>(
+                        behandling.id!!,
+                        rolleInhentetFor,
+                        Grunnlagstype(type, true),
+                        årsbaserteInntekterEllerYtelser as SummerteInntekter<SummertMånedsinntekt>,
+                        innhentetTidspunkt,
+                    )
+                }
+
+                else -> {
+                    log.error {
+                        "Grunnlagsdatatype $type skal ikke lagres som inntektsgrunnlag i behandling " +
+                            "${behandling.id}"
+                    }
+                    lagringAvGrunnlagFeiletException(behandling.id!!)
+                }
+            }
         }
     }
 
@@ -501,7 +487,7 @@ class GrunnlagService(
                 it.grunnlag.add(
                     Grunnlag(
                         it,
-                        grunnlagstype.type,
+                        grunnlagstype.type.getOrMigrate(),
                         grunnlagstype.erBearbeidet,
                         data = data,
                         innhentet = innhentet,
@@ -538,18 +524,18 @@ class GrunnlagService(
         }
     }
 
-    private inline fun <reified T> lagreInntektsgrunnlagHvisEndret(
+    private inline fun <reified T> lagreSkattepliktigeinntekterHvisEndret(
         behandlingsid: Long,
         rolle: Rolle,
-        hentetTidspunkt: LocalDateTime,
         grunnlagstype: Grunnlagstype,
         innhentetGrunnlag: T,
+        hentetTidspunkt: LocalDateTime,
         aktiveringstidspunkt: LocalDateTime? = null,
     ) {
         val sistInnhentedeGrunnlagAvType: T? =
             henteNyesteGrunnlagsdataobjekt<T>(behandlingsid, rolle.id!!, grunnlagstype)
 
-        if ((sistInnhentedeGrunnlagAvType == null && innhentetGrunnlag != null && inneholderInntekter(innhentetGrunnlag)) ||
+        if ((sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)) ||
             (sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
         ) {
             opprett(
@@ -560,7 +546,7 @@ class GrunnlagService(
                 // Summerte månedsinntekter settes alltid til aktiv
                 aktiv =
                     if (sistInnhentedeGrunnlagAvType == null ||
-                        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == grunnlagstype.type
+                        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == grunnlagstype.type.getOrMigrate()
                     ) {
                         LocalDateTime.now()
                     } else {
@@ -570,15 +556,15 @@ class GrunnlagService(
             )
 
             // Oppdatere inntektstabell med sammenstilte offentlige inntekter
-            if (Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER == grunnlagstype.type &&
+            if (Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == grunnlagstype.type.getOrMigrate() &&
                 grunnlagstype.erBearbeidet &&
                 sistInnhentedeGrunnlagAvType == null
             ) {
                 @Suppress("UNCHECKED_CAST")
-                inntektService.lagreInntekter(
+                inntektService.lagreSummerteÅrsinntekter(
                     behandlingsid,
                     Personident(rolle.ident!!),
-                    innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>,
+                    (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
                 )
             }
         } else {
@@ -588,8 +574,7 @@ class GrunnlagService(
 
     fun <T> inneholderInntekter(grunnlag: T): Boolean {
         return when (grunnlag) {
-            is AinntektGrunnlagDto -> grunnlag.ainntektspostListe.isNotEmpty()
-            is SkattegrunnlagGrunnlagDto -> grunnlag.skattegrunnlagspostListe.isNotEmpty()
+            is SkattepliktigeInntekter -> grunnlag.ainntekter.isNotEmpty() || grunnlag.skattegrunnlag.isNotEmpty()
             is SummerteInntekter<*> -> grunnlag.inntekter.isNotEmpty()
             else -> {
                 log.error { "Grunnlag er ikke en inntektstype" }
@@ -625,5 +610,23 @@ class GrunnlagService(
         } else {
             null
         }
+    }
+
+    companion object {
+        val summertYtelsetyper = setOf(BARNETILLEGG, KONTANTSTØTTE, SMÅBARNSTILLEGG, UTVIDET_BARNETRYGD)
+        val summertSkattegrunnlagstyper =
+            Inntektsrapportering.entries
+                .filter { it.kanLeggesInnManuelt == false && it.hentesAutomatisk == true }
+                .filter { !summertAinntektstyper.contains(it) }
+                .filter { !summertYtelsetyper.contains(it) }
+
+        val inntekterOgYtelser =
+            setOf(
+                Grunnlagsdatatype.BARNETILLEGG,
+                Grunnlagsdatatype.KONTANTSTØTTE,
+                Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+            )
     }
 }

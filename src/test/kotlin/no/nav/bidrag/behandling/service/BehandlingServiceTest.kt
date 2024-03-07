@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
@@ -43,6 +44,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -75,6 +77,11 @@ class BehandlingServiceTest : TestContainerRunner() {
     @PersistenceContext
     lateinit var entityManager: EntityManager
 
+    @AfterEach
+    fun resette() {
+        behandlingRepository.deleteAll()
+    }
+
     @Nested
     open inner class HenteBehandling {
         @Test
@@ -99,9 +106,9 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly {
-                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 1
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 2
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
-                    Grunnlagstype(Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER, true) == it.nyeData.grunnlagsdatatype
+                    Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true) == it.nyeData.grunnlagsdatatype
                 }.size shouldBe 1
             }
         }
@@ -451,7 +458,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
                 behandling = behandling,
-                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.AINNTEKT, false),
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
                 innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                 aktiv = null,
             )
@@ -461,7 +468,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     aktivereGrunnlagForPerson =
                         AktivereGrunnlagRequest(
                             Personident(behandling.bidragsmottaker?.ident!!),
-                            setOf(Grunnlagsdatatype.AINNTEKT),
+                            setOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
                         ),
                 )
 
@@ -681,7 +688,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             grunnlagsdata =
                 SummerteInntekter(
                     versjon = "123",
-                    gjelderIdent = behandling.bidragsmottaker!!.ident!!,
                     inntekter =
                         listOf(
                             SummertMånedsinntekt(
@@ -703,13 +709,12 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         testdataManager.oppretteOgLagreGrunnlag(
             behandling = behandling,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SUMMERTE_ÅRSINNTEKTER, true),
+            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
             innhentet = LocalDateTime.now(),
             aktiv = LocalDateTime.now(),
             grunnlagsdata =
                 SummerteInntekter(
                     versjon = "123",
-                    gjelderIdent = behandling.bidragsmottaker!!.ident!!,
                     inntekter =
                         listOf(
                             SummertÅrsinntekt(
@@ -729,16 +734,19 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         testdataManager.oppretteOgLagreGrunnlag(
             behandling,
-            Grunnlagstype(Grunnlagsdatatype.AINNTEKT, false),
+            Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
             innhentet = LocalDateTime.now(),
             grunnlagsdata =
-                listOf(
-                    AinntektGrunnlagDto(
-                        ainntektspostListe = emptyList(),
-                        personId = behandling.bidragsmottaker?.ident!!,
-                        periodeFra = behandling.søktFomDato.withDayOfMonth(1),
-                        periodeTil = behandling.søktFomDato.plusMonths(1).withDayOfMonth((1)),
-                    ),
+                SkattepliktigeInntekter(
+                    ainntekter =
+                        listOf(
+                            AinntektGrunnlagDto(
+                                ainntektspostListe = emptyList(),
+                                personId = behandling.bidragsmottaker?.ident!!,
+                                periodeFra = behandling.søktFomDato.withDayOfMonth(1),
+                                periodeTil = behandling.søktFomDato.plusMonths(1).withDayOfMonth((1)),
+                            ),
+                        ),
                 ),
         )
     }

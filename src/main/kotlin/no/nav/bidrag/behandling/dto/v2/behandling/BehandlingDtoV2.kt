@@ -47,7 +47,6 @@ data class Grunnlagstype(
 
 @Schema(enumAsRef = true, name = "OpplysningerType")
 enum class Grunnlagsdatatype {
-    AINNTEKT,
     ARBEIDSFORHOLD,
     BARNETILLEGG,
     BARNETILSYN,
@@ -56,9 +55,14 @@ enum class Grunnlagsdatatype {
     SIVILSTAND,
     UTVIDET_BARNETRYGD,
     SMÅBARNSTILLEGG,
-    SKATTEGRUNNLAG,
-    SUMMERTE_ÅRSINNTEKTER,
+    SKATTEPLIKTIGE_INNTEKTER,
     SUMMERTE_MÅNEDSINNTEKTER,
+
+    @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
+    AINNTEKT,
+
+    @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
+    SKATTEGRUNNLAG,
 
     @Deprecated("Erstattes av BOFORHOLD i kombiansjon med erBearbeidet = true")
     BOFORHOLD_BEARBEIDET,
@@ -66,9 +70,20 @@ enum class Grunnlagsdatatype {
     @Deprecated("Erstattes av BOFORHOLD i kombinasjon med erBearbeidet = false")
     HUSSTANDSMEDLEMMER,
 
-    @Deprecated("Erstattes av SUMMERTE_ÅRSINNTEKTER i kombinasjon med erBearbeidet = true")
+    @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
     INNTEKT_BEARBEIDET,
 
-    @Deprecated("Erstattes av INNTEKT i kombinasjon med erBearbeidet = false")
+    @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = false")
     INNTEKTSOPPLYSNINGER,
+
+    @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
+    SUMMERTE_ÅRSINNTEKTER,
 }
+
+fun Grunnlagsdatatype.getOrMigrate() =
+    when (this) {
+        Grunnlagsdatatype.AINNTEKT, Grunnlagsdatatype.SKATTEGRUNNLAG, Grunnlagsdatatype.INNTEKTSOPPLYSNINGER,
+        Grunnlagsdatatype.INNTEKT_BEARBEIDET -> Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER
+        Grunnlagsdatatype.HUSSTANDSMEDLEMMER, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> Grunnlagsdatatype.BOFORHOLD
+        else -> this
+    }

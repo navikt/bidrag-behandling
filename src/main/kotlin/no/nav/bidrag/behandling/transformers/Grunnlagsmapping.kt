@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -48,3 +49,10 @@ fun List<SummertÅrsinntekt>.tilInntekt(
 ) = this.map {
     it.tilInntekt(behandling, person)
 }.toMutableSet()
+
+val summertAinntektstyper =
+    setOf(
+        Inntektsrapportering.AINNTEKT,
+        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+        Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+    )
