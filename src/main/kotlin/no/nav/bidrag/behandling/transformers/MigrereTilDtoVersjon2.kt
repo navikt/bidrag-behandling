@@ -53,7 +53,7 @@ fun InntekterDtoV2.tilInntekterDto(): InntekterDto {
     return InntekterDto(
         inntekter = årsinntekter.map { it.tilInntektDto() }.toSet(),
         barnetillegg = barnetillegg.map { it.tilBarnetilleggDto() }.toSet(),
-        utvidetbarnetrygd = årsinntekter.map { it.tilUtvidetBarnetrygdDto() }.toSet(),
+        utvidetbarnetrygd = utvidetBarnetrygd.map { it.tilUtvidetBarnetrygdDto() }.toSet(),
         kontantstøtte = kontantstøtte.map { it.tilKontantstøtteDto() }.toSet(),
         småbarnstillegg = småbarnstillegg.map { it.tilInntektDto() }.toSet(),
         notat = notat,
