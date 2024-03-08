@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling
 
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -9,6 +10,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 
 @Testcontainers
 @ActiveProfiles(value = ["test", "testcontainer"])
+@DirtiesContext
 class TestContainerRunner : SpringTestRunner() {
     companion object {
         @JvmStatic
