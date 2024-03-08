@@ -25,7 +25,6 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
 import java.time.YearMonth
-import kotlin.test.Ignore
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired

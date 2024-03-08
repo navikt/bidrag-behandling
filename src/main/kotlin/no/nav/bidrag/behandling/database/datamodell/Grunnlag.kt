@@ -52,7 +52,8 @@ open class Grunnlag(
     open val id: Long? = null,
 ) {
     override fun toString(): String {
-        return "Grunnlag(behandling=$behandling, type=$type, erBearbeidet=$erBearbeidet, data='$data', innhentet=$innhentet, aktiv=$aktiv, rolle=$rolle, id=$id)"
+        return "Grunnlag(behandling=$behandling, type=$type, " +
+            "erBearbeidet=$erBearbeidet, innhentet=$innhentet, aktiv=$aktiv, rolle=$rolle, id=$id)"
     }
 }
 
