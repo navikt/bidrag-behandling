@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
@@ -863,6 +862,7 @@ class GrunnlagMappingTest {
                     type = Grunnlagsdatatype.KONTANTSTØTTE,
                     rolle = gjelder.tilRolle(behandling),
                     innhentet = LocalDateTime.now(),
+                    erBearbeidet = true,
                     data =
                         commonObjectmapper.writeValueAsString(
                             SummerteInntekter(
@@ -890,6 +890,7 @@ class GrunnlagMappingTest {
                     type = Grunnlagsdatatype.BARNETILLEGG,
                     rolle = gjelder.tilRolle(behandling),
                     innhentet = LocalDateTime.now(),
+                    erBearbeidet = true,
                     data =
                         commonObjectmapper.writeValueAsString(
                             SummerteInntekter(
@@ -914,14 +915,14 @@ class GrunnlagMappingTest {
                 ),
                 Grunnlag(
                     behandling = behandling,
-                    type = Grunnlagsdatatype.SKATTEPLIKTIG,
+                    type = Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                     rolle = gjelder.tilRolle(behandling),
                     innhentet = LocalDateTime.now(),
+                    erBearbeidet = true,
                     data =
                         commonObjectmapper.writeValueAsString(
-                            SkattepliktigeInntekter(
-                                versjon = "1",
-                                skattegrunnlag =
+                            SummerteInntekter(
+                                inntekter =
                                     listOf(
                                         SummertÅrsinntekt(
                                             Inntektsrapportering.LIGNINGSINNTEKT,
@@ -934,9 +935,6 @@ class GrunnlagMappingTest {
                                             inntektPostListe = emptyList(),
                                             grunnlagsreferanseListe = skattegrunnlagGrunnlagsreferanseListe,
                                         ),
-                                    ),
-                                ainntekter =
-                                    listOf(
                                         SummertÅrsinntekt(
                                             Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                                             periode =

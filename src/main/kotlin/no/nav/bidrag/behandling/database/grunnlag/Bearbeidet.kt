@@ -6,9 +6,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdOgSmaabarnstilleggDto
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -64,7 +62,7 @@ data class BearbeidetInntekter<T>(
     val inntekter: List<T> = emptyList(),
 )
 
-data class SkattepliktigeInntekter<T, R>(
+data class SkattepliktigeInntekter2<T, R>(
     val versjon: String? = null,
     val ainntekter: List<T>,
     val skattegrunnlag: List<R>,

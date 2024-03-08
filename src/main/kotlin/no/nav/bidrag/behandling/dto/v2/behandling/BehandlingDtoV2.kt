@@ -47,8 +47,6 @@ data class Grunnlagstype(
 
 @Schema(enumAsRef = true, name = "OpplysningerType")
 enum class Grunnlagsdatatype {
-    AINNTEKT,
-    SKATTEPLIKTIG,
     ARBEIDSFORHOLD,
     BARNETILLEGG,
     BARNETILSYN,
@@ -87,6 +85,7 @@ fun Grunnlagsdatatype.getOrMigrate() =
         Grunnlagsdatatype.AINNTEKT, Grunnlagsdatatype.SKATTEGRUNNLAG, Grunnlagsdatatype.INNTEKTSOPPLYSNINGER,
         Grunnlagsdatatype.INNTEKT_BEARBEIDET,
         -> Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER
+
         Grunnlagsdatatype.HUSSTANDSMEDLEMMER, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> Grunnlagsdatatype.BOFORHOLD
         else -> this
     }

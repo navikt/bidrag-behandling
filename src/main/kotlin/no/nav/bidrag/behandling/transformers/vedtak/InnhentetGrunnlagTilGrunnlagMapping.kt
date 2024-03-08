@@ -5,8 +5,8 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.transformers.filtrerAinntekt
-import no.nav.bidrag.behandling.transformers.filtrerSkattegrunnlag
+import no.nav.bidrag.behandling.transformers.ainntekt
+import no.nav.bidrag.behandling.transformers.skattegrunnlag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -56,17 +56,16 @@ data class SummerteInntekt(
     val inntekt: SummertÅrsinntekt,
 )
 
-fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SkattepliktigeInntekter<SummertMånedsinntekt, SummertÅrsinntekt>> {
+fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<SummertMånedsinntekt>> {
     return filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT).groupBy {
         val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
         gjelder.personIdent
     }.map { (ident, beregnetInntekt) ->
         val innhold = beregnetInntekt.innholdTilObjekt<BeregnetInntekt>().first()
         ident to
-            SkattepliktigeInntekter(
+            SummerteInntekter(
                 versjon = innhold.versjon,
-                skattegrunnlag = emptyList<SummertÅrsinntekt>(),
-                ainntekter =
+                inntekter =
                     innhold.summertMånedsinntektListe
                         .map {
                             SummertMånedsinntekt(
@@ -216,7 +215,7 @@ fun List<GrunnlagDto>.hentUtvidetbarnetrygdListe() =
             }
         }
 
-fun List<GrunnlagDto>.hentGrunnlagSkattepliktig(): Map<String, SkattepliktigeInntekter<AinntektGrunnlagDto, SkattegrunnlagGrunnlagDto>> {
+fun List<GrunnlagDto>.hentGrunnlagSkattepliktig(): Map<String, SkattepliktigeInntekter> {
     val skattepliktigGruppert = hentGrunnlagSkattegrunnlag().groupBy { it.personId }
     val ainntektGruppert = hentGrunnlagAinntekt().groupBy { it.personId }
     val identer = ainntektGruppert.keys + skattepliktigGruppert.keys
@@ -365,6 +364,8 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                 innhentetTidspunkt = innhentetTidspunkt,
                 lesemodus = lesemodus,
             )
+
+            val inntekter = årsinntekter.map { it.inntekt }
             listOf(
                 opprettGrunnlagBearbeidet(
                     Grunnlagsdatatype.BARNETILLEGG,
@@ -392,11 +393,10 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE),
                 ),
                 behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.SKATTEPLIKTIG,
-                    SkattepliktigeInntekter(
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                    SummerteInntekter(
                         versjon = årsinntekter.versjon(Inntektsrapportering.AINNTEKT_BEREGNET_3MND),
-                        skattegrunnlag = årsinntekter.map { it.inntekt }.filtrerSkattegrunnlag(),
-                        ainntekter = årsinntekter.map { it.inntekt }.filtrerAinntekt(),
+                        inntekter = inntekter.skattegrunnlag + inntekter.ainntekt,
                     ),
                     gjelderIdent = gjelder.personIdent!!,
                     erBearbeidet = true,

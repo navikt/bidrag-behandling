@@ -5,7 +5,6 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
-import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
@@ -74,14 +73,14 @@ fun opprettGrunnlagFraFil(
         Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
             grunnlag.utvidetBarnetrygdListe.tilGrunnlagEntity(behandling)
 
-        Grunnlagsdatatype.SKATTEPLIKTIG -> {
+        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> {
             val skattegrunnlagGruppert = grunnlag.skattegrunnlagListe.groupBy { it.personId }
             val ainntektGruppert = grunnlag.ainntektListe.groupBy { it.personId }
             val personIdenter = ainntektGruppert.keys + skattegrunnlagGruppert.keys
             personIdenter
                 .map { personId ->
                     behandling.opprettGrunnlag(
-                        Grunnlagsdatatype.SKATTEGRUNNLAG,
+                        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                         SkattepliktigeInntekter(
                             ainntekter = ainntektGruppert[personId] ?: emptyList(),
                             skattegrunnlag = skattegrunnlagGruppert[personId] ?: emptyList(),
@@ -126,7 +125,7 @@ fun List<BarnetilleggGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
         .map { (partPersonId, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.BARNETILLEGG,
-                SummerteInntekter(inntekter = grunnlag),
+                grunnlag,
                 partPersonId,
             )
         }
@@ -137,7 +136,7 @@ fun List<BarnetilsynGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
         .map { (partPersonId, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.BARNETILSYN,
-                SummerteInntekter(inntekter = grunnlag),
+                grunnlag,
                 partPersonId,
             )
         }
@@ -148,7 +147,7 @@ fun List<KontantstøtteGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
         .map { (partPersonId, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.KONTANTSTØTTE,
-                SummerteInntekter(inntekter = grunnlag),
+                grunnlag,
                 partPersonId,
             )
         }
@@ -159,7 +158,7 @@ fun List<SmåbarnstilleggGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) 
         .map { (personId, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                SummerteInntekter(inntekter = grunnlag),
+                grunnlag,
                 personId,
             )
         }
@@ -170,7 +169,7 @@ fun List<UtvidetBarnetrygdGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling)
         .map { (personId, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                SummerteInntekter(inntekter = grunnlag),
+                grunnlag,
                 personId,
             )
         }
@@ -187,7 +186,7 @@ fun Behandling.opprettGrunnlagEntityForInntekt(
         val ainntektListe = ainntektPerPersonMap[it] ?: emptyList()
         val skattegrunnlagListe = skattegrunnlagPerPersonMap[it] ?: emptyList()
         opprettGrunnlag(
-            Grunnlagsdatatype.SKATTEGRUNNLAG,
+            Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
             SkattepliktigeInntekter(
                 skattegrunnlag = skattegrunnlagListe,
                 ainntekter = ainntektListe,

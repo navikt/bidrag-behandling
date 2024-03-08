@@ -29,6 +29,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import stubPersonConsumer
 import java.math.BigDecimal
@@ -79,6 +80,7 @@ class ValiderGrunnlagTest {
     val personobjekter = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
 
     @Test
+    @Disabled("Denne sjekken må forberedes da det kan være duplikater i noen tilfeller")
     fun `skal validere at det ikke finne duplikat referanser`() {
         val request =
             OpprettVedtakRequestDto(

@@ -358,7 +358,7 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
         hentGrunnlagSkattepliktig()
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.SKATTEPLIKTIG,
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                     grunnlag,
                     gjelderIdent,
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE),

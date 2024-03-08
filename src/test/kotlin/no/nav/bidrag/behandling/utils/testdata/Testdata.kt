@@ -15,13 +15,12 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
-import no.nav.bidrag.behandling.transformers.filtrerAinntekt
-import no.nav.bidrag.behandling.transformers.filtrerSkattegrunnlag
+import no.nav.bidrag.behandling.transformers.ainntekt
+import no.nav.bidrag.behandling.transformers.skattegrunnlag
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -546,7 +545,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.KONTANTSTØTTE),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SMÅBARNSTILLEGG),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEPLIKTIG),
+        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBM),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn1),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn2),
@@ -586,15 +585,13 @@ fun opprettBeregnetInntektFraGrunnlag(
         ),
         Grunnlag(
             behandling = behandling,
-            type = Grunnlagsdatatype.SKATTEPLIKTIG,
+            type = Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
             erBearbeidet = true,
             data =
                 commonObjectmapper.writeValueAsString(
                     POJONode(
-                        SkattepliktigeInntekter(
-                            versjon = inntekterBearbeidet.versjon,
-                            ainntekter = inntekterBearbeidet.summertÅrsinntektListe.filtrerAinntekt(),
-                            skattegrunnlag = inntekterBearbeidet.summertÅrsinntektListe.filtrerSkattegrunnlag(),
+                        SummerteInntekter(
+                            inntekter = inntekterBearbeidet.summertÅrsinntektListe.ainntekt + inntekterBearbeidet.summertÅrsinntektListe.skattegrunnlag,
                         ),
                     ),
                 ),

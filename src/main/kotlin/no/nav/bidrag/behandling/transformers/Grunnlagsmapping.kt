@@ -56,3 +56,22 @@ val summertAinntektstyper =
         Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
     )
+
+val inntektstyperYtelser =
+    setOf(
+        Inntektsrapportering.KONTANTSTØTTE,
+        Inntektsrapportering.BARNETILLEGG,
+        Inntektsrapportering.BARNETILSYN,
+        Inntektsrapportering.UTVIDET_BARNETRYGD,
+        Inntektsrapportering.SMÅBARNSTILLEGG,
+    )
+
+val List<SummertÅrsinntekt>.skattegrunnlag
+    get() =
+        filter {
+            !summertAinntektstyper.contains(it.inntektRapportering) &&
+                !inntektstyperYtelser.contains(
+                    it.inntektRapportering,
+                )
+        }
+val List<SummertÅrsinntekt>.ainntekt get() = filter { summertAinntektstyper.contains(it.inntektRapportering) }

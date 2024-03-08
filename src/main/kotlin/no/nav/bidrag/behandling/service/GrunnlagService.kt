@@ -78,8 +78,18 @@ class GrunnlagService(
             .let {
                 val nyGrunnlagstype =
                     when (grunnlagstype) {
-                        Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true)
-                        Grunnlagsdatatype.HUSSTANDSMEDLEMMER -> Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false)
+                        Grunnlagsdatatype.BOFORHOLD_BEARBEIDET ->
+                            Grunnlagstype(
+                                Grunnlagsdatatype.BOFORHOLD,
+                                true,
+                            )
+
+                        Grunnlagsdatatype.HUSSTANDSMEDLEMMER ->
+                            Grunnlagstype(
+                                Grunnlagsdatatype.BOFORHOLD,
+                                false,
+                            )
+
                         else -> {
                             throw HttpClientErrorException(
                                 HttpStatus.BAD_REQUEST,
@@ -178,12 +188,13 @@ class GrunnlagService(
             nyinnhentaGrunnlag.filter { inntekterOgYtelser.contains(it.type) }.map { it.type }
                 .toSet()
 
-        return nyinnhentaGrunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.map {
-            GrunnlagsdataEndretDto(
-                nyeData = it.toDto(),
-                endringerINyeData = grunnlagstyperEndretIBearbeidaInntekter,
-            )
-        }.toSet() +
+        return nyinnhentaGrunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }
+            .map {
+                GrunnlagsdataEndretDto(
+                    nyeData = it.toDto(),
+                    endringerINyeData = grunnlagstyperEndretIBearbeidaInntekter,
+                )
+            }.toSet() +
             nyinnhentaGrunnlag.filter {
                 it.type != Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER &&
                     !inntekterOgYtelser.contains(
@@ -257,7 +268,7 @@ class GrunnlagService(
                                         grunnlag.data,
                                     ).ainntekter.flatMap { it.ainntektspostListe }
                             }
-                            respons.tilAinntektsposter()
+                            respons.tilAinntektsposter(rolle)
                         } ?: emptyList(),
                 skattegrunnlag =
                     sistInnhentedeSkattepliktigeInntekter?.let { grunnlag ->
@@ -268,7 +279,7 @@ class GrunnlagService(
                                     grunnlag.data,
                                 ).skattegrunnlag
                         }
-                        respons.tilSkattegrunnlagForLigningsår()
+                        respons.tilSkattegrunnlagForLigningsår(rolle)
                     } ?: emptyList(),
             ).bygge()
 
@@ -394,24 +405,47 @@ class GrunnlagService(
             behandling.id!!,
             rolleInhentetFor,
             Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
-            SkattepliktigeInntekter(innhentetGrunnlag.ainntektListe, innhentetGrunnlag.skattegrunnlagListe),
+            SkattepliktigeInntekter(
+                innhentetGrunnlag.ainntektListe,
+                innhentetGrunnlag.skattegrunnlagListe,
+            ),
             innhentetGrunnlag.hentetTidspunkt,
         )
 
         val transformereInntekter =
             TransformerInntekterRequest(
                 ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
-                ainntektsposter = innhentetGrunnlag.ainntektListe.flatMap { it.ainntektspostListe.tilAinntektsposter() },
-                kontantstøtteliste = innhentetGrunnlag.kontantstøtteListe.tilKontantstøtte(),
-                skattegrunnlagsliste = innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(),
-                småbarnstilleggliste = innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(),
-                utvidetBarnetrygdliste = innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(),
+                ainntektsposter =
+                    innhentetGrunnlag.ainntektListe.flatMap {
+                        it.ainntektspostListe.tilAinntektsposter(
+                            rolleInhentetFor,
+                        )
+                    },
+                kontantstøtteliste =
+                    innhentetGrunnlag.kontantstøtteListe.tilKontantstøtte(
+                        rolleInhentetFor,
+                    ),
+                skattegrunnlagsliste =
+                    innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
+                        rolleInhentetFor,
+                    ),
+                småbarnstilleggliste =
+                    innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
+                        rolleInhentetFor,
+                    ),
+                utvidetBarnetrygdliste =
+                    innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
+                        rolleInhentetFor,
+                    ),
             )
 
         val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
 
         val grunnlagstyper: Set<Grunnlagsdatatype> =
-            setOf(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
+            setOf(
+                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+            )
 
         val innhentetTidspunkt = LocalDateTime.now()
 
@@ -613,7 +647,8 @@ class GrunnlagService(
     }
 
     companion object {
-        val summertYtelsetyper = setOf(BARNETILLEGG, KONTANTSTØTTE, SMÅBARNSTILLEGG, UTVIDET_BARNETRYGD)
+        val summertYtelsetyper =
+            setOf(BARNETILLEGG, KONTANTSTØTTE, SMÅBARNSTILLEGG, UTVIDET_BARNETRYGD)
         val summertSkattegrunnlagstyper =
             Inntektsrapportering.entries
                 .filter { it.kanLeggesInnManuelt == false && it.hentesAutomatisk == true }

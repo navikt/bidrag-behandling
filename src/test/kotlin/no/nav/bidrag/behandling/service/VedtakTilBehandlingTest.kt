@@ -12,9 +12,11 @@ import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.konverterData
-import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.ainntekt
+import no.nav.bidrag.behandling.transformers.skattegrunnlag
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.hentFil
@@ -347,11 +349,11 @@ class VedtakTilBehandlingTest {
         assertSoftly(grunnlagListe) {
             size shouldBe 18
             filtrerEtterTypeOgIdent(
-                Grunnlagsdatatype.SKATTEPLIKTIG,
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 testdataBarn2.ident,
             ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
-                Grunnlagsdatatype.SKATTEPLIKTIG,
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 testdataBM.ident,
             ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
@@ -426,16 +428,17 @@ class VedtakTilBehandlingTest {
 
             val skattepliktig =
                 filtrerEtterTypeOgIdent(
-                    Grunnlagsdatatype.SKATTEPLIKTIG,
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                     testdataBM.ident,
                     true,
                 )
             skattepliktig shouldHaveSize 1
             val skattepliktigInnhold =
-                skattepliktig[0].konverterData<SkattepliktigeInntekter<SummertÅrsinntekt, SummertÅrsinntekt>>()
+                skattepliktig[0].konverterData<SummerteInntekter<SummertÅrsinntekt>>()
             skattepliktigInnhold!!.versjon shouldBe "V1"
-            skattepliktigInnhold!!.ainntekter shouldHaveSize 2
-            skattepliktigInnhold!!.skattegrunnlag shouldHaveSize 8
+            skattepliktigInnhold!!.inntekter shouldHaveSize 10
+            skattepliktigInnhold!!.inntekter.ainntekt!! shouldHaveSize 4
+            skattepliktigInnhold!!.inntekter.skattegrunnlag!! shouldHaveSize 6
         }
     }
 }
