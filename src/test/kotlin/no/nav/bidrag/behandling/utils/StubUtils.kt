@@ -1,12 +1,17 @@
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.findAll
+import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import com.github.tomakehurst.wiremock.verification.LoggedRequest
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockkClass
@@ -32,8 +37,10 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
 import org.junit.Assert
@@ -168,7 +175,11 @@ class StubUtils {
             if (responseObjekt != null) {
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBody(tilJson(responseObjekt))
+                    .withBody(
+                        commonObjectmapper.writeValueAsString(
+                            responseObjekt,
+                        ),
+                    )
             } else {
                 aClosedJsonResponse()
                     .withStatus(status.value())
@@ -495,6 +506,12 @@ class StubUtils {
                     WireMock.urlMatching("/vedtak/vedtak"),
                 )
             WireMock.verify(antallGanger, verify)
+        }
+
+        fun hentFatteVedtakRequest(): OpprettVedtakRequestDto {
+            val requests: List<LoggedRequest> =
+                findAll(postRequestedFor(urlMatching("/vedtak/vedtak")))
+            return commonObjectmapper.readValue(requests.first().bodyAsString)
         }
 
         fun hentSakKalt(saksnummer: String) {

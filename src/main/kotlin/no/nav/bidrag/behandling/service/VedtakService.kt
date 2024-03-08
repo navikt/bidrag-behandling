@@ -165,6 +165,7 @@ class VedtakService(
                     OpprettStønadsendringRequestDto(
                         innkreving = Innkrevingstype.MED_INNKREVING,
                         skyldner = tilSkyldner(),
+                        omgjørVedtakId = refVedtaksid?.toInt(),
                         kravhaver =
                             it.tilNyestePersonident()
                                 ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -222,6 +223,7 @@ class VedtakService(
                     OpprettStønadsendringRequestDto(
                         innkreving = Innkrevingstype.MED_INNKREVING,
                         skyldner = tilSkyldner(),
+                        omgjørVedtakId = refVedtaksid?.toInt(),
                         kravhaver =
                             it.barn.tilNyestePersonident()
                                 ?: rolleManglerIdent(Rolletype.BARN, id!!),

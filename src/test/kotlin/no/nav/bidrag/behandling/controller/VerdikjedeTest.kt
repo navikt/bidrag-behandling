@@ -3,10 +3,12 @@ package no.nav.bidrag.behandling.controller
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.controller.behandling.BehandlingControllerTest
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
@@ -17,10 +19,13 @@ import no.nav.bidrag.behandling.utils.testdata.opprettSivilstand
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.commons.util.tilVedtakDto
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.BeforeEach
@@ -32,6 +37,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import stubPersonConsumer
 import java.time.LocalDate
+import kotlin.jvm.optionals.getOrNull
 
 class VerdikjedeTest : KontrollerTestRunner() {
     @Autowired
@@ -98,6 +104,36 @@ class VerdikjedeTest : KontrollerTestRunner() {
         behandlingEtter.vedtaksid shouldBe 1
         stubUtils.Verify().fatteVedtakKalt()
         stubUtils.Verify().hentSakKalt(behandlingEtter.saksnummer)
+
+        // Les vedtak
+        val request = stubUtils.Verify().hentFatteVedtakRequest()
+        stubUtils.stubHenteVedtak(request.tilVedtakDto())
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/vedtak",
+                HttpMethod.POST,
+                HttpEntity(
+                    OpprettBehandlingFraVedtakRequest(
+                        refVedtaksid = 12333,
+                        vedtakstype = Vedtakstype.KLAGE,
+                        søknadFra = SøktAvType.BIDRAGSMOTTAKER,
+                        søktFomDato = LocalDate.parse("2020-01-01"),
+                        mottattdato = LocalDate.parse("2024-01-01"),
+                        behandlerenhet = "4444",
+                        saksnummer = "1234567",
+                        søknadsreferanseid = 111,
+                        søknadsid = 12323,
+                    ),
+                ),
+                OpprettBehandlingResponse::class.java,
+            )
+
+        behandlingRes.statusCode shouldBe HttpStatus.OK
+
+        val behandlingFraVedtak =
+            behandlingRepository.findBehandlingById(behandlingRes.body!!.id).getOrNull()
+        behandlingFraVedtak shouldNotBe null
+        behandlingFraVedtak!!.refVedtaksid shouldBe 12333
     }
 
     private fun Behandling.taMedInntekt(

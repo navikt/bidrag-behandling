@@ -21,7 +21,7 @@ import kotlin.test.assertNotNull
 @Suppress("NonAsciiCharacters")
 class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
     @Test
-    fun `skal opprette en behandling med null opprettetDato og så hente den`() {
+    fun `skal opprette en behandling fra vedtak`() {
         stubUtils.stubHenteGrunnlagOk(
             navnResponsfil = "grunnlagresponse.json",
             rolle = testdataBM.tilRolle(),

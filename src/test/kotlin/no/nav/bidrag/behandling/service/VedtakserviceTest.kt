@@ -128,6 +128,7 @@ class VedtakserviceTest {
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
+        behandling.refVedtaksid = 553
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -357,6 +358,7 @@ class VedtakserviceTest {
         stubHentPersonNyIdent(testdataHusstandsmedlem1.ident, nyIdentHusstandsmedlem, mock)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.avslag = Resultatkode.AVSLAG
+        behandling.refVedtaksid = 553
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -385,10 +387,12 @@ class VedtakserviceTest {
             assertSoftly(stønadsendringListe[0]) {
                 skyldner.verdi shouldBe "NAV"
                 kravhaver.verdi shouldBe nyIdentBarn1
+                omgjørVedtakId shouldBe 553
                 mottaker.verdi shouldBe nyIdentBm
             }
             assertSoftly(stønadsendringListe[1]) {
                 skyldner.verdi shouldBe "NAV"
+                omgjørVedtakId shouldBe 553
                 kravhaver.verdi shouldBe nyIdentBarn2
                 mottaker.verdi shouldBe nyIdentBm
             }
@@ -561,6 +565,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
             it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
             it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
             it[0].skyldner.verdi shouldBe "NAV"
+            it[0].omgjørVedtakId shouldBe 553
             it[0].grunnlagReferanseListe.shouldHaveSize(8)
             it[0].grunnlagReferanseListe.forEach {
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
@@ -588,6 +593,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
             it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
             it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
             it[1].skyldner.verdi shouldBe "NAV"
+            it[1].omgjørVedtakId shouldBe 553
             it[1].grunnlagReferanseListe.shouldHaveSize(8)
             it[1].grunnlagReferanseListe.forEach {
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
