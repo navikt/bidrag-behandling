@@ -37,12 +37,7 @@ open class Grunnlag(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
-) {
-    override fun toString(): String {
-        return "Grunnlag(behandling=$behandling, type=$type, " +
-            "erBearbeidet=$erBearbeidet, innhentet=$innhentet, aktiv=$aktiv, rolle=$rolle, id=$id)"
-    }
-}
+)
 
 inline fun <reified T> Grunnlag?.konverterData(): T? {
     return this?.data?.let {
