@@ -61,6 +61,7 @@ open class Behandling(
     @Convert(converter = ÅrsakConverter::class)
     open var årsak: VirkningstidspunktÅrsakstype? = null,
     @Column(name = "avslag")
+    @Enumerated(EnumType.STRING)
     open var avslag: Resultatkode? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_VEDTAK_OG_NOTAT")
     open var virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
