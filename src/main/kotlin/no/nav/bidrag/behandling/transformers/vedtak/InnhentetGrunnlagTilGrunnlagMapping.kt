@@ -426,7 +426,7 @@ private fun BaseGrunnlag.tilInntektBearbeidet(grunnlagsListe: List<GrunnlagDto>)
     val opprinneligTom = inntektPeriode.opprinneligPeriode?.til?.atDay(1)?.minusDays(1)
 
     return SummerteInntekt(
-        inntektPeriode.versjon!!,
+        inntektPeriode.versjon ?: "", // TODO: Midlertidlig for å støtte eldre vedtak i Q2
         SummertÅrsinntekt(
             gjelderBarnPersonId = gjelderBarn?.personIdent ?: "",
             inntektRapportering = inntektPeriode.inntektsrapportering,
