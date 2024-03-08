@@ -4,10 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.hentData
-import no.nav.bidrag.behandling.database.grunnlag.BoforholdBearbeidet
-import no.nav.bidrag.behandling.database.grunnlag.BoforholdHusstandBearbeidet
-import no.nav.bidrag.behandling.database.grunnlag.SivilstandBearbeidet
+import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.dto.v1.notat.Arbeidsforhold
 import no.nav.bidrag.behandling.dto.v1.notat.Barnetillegg
 import no.nav.bidrag.behandling.dto.v1.notat.Boforhold
@@ -28,10 +25,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import org.springframework.stereotype.Service
 import java.time.YearMonth
 
@@ -48,20 +48,27 @@ class NotatOpplysningerService(
                 behandlingId,
                 behandling.roller
                     .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
-                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
             )
-                ?.hentData()
-                ?: BoforholdBearbeidet()
+                ?.konverterData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
+        val opplysningerSivilstand =
+            grunnlagService.hentSistInnhentet(
+                behandlingId,
+                behandling.roller
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
+            )
+                ?.konverterData<List<SivilstandGrunnlagDto>>() ?: emptyList()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
-            behandling.roller.filter { it.ident != null }.map { r ->
+            behandling.roller.filter { it.ident != null }.flatMap { r ->
                 grunnlagService.hentSistInnhentet(
                     behandlingId,
                     r.id!!,
                     Grunnlagstype(Grunnlagsdatatype.ARBEIDSFORHOLD, false),
                 )
-                    .hentData<ArbeidsforholdGrunnlagDto>()
-            }.toList().filterNotNull()
+                    .konverterData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
+            }
 
         return NotatDto(
             saksnummer = behandling.saksnummer,
@@ -72,10 +79,10 @@ class NotatOpplysningerService(
             boforhold =
                 Boforhold(
                     notat = behandling.tilNotatBoforhold(),
-                    sivilstand = behandling.tilSivilstand(opplysningerBoforhold.sivilstand),
+                    sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
                     barn =
                         behandling.husstandsbarn.sortedBy { it.ident }
-                            .map { it.tilBoforholdBarn(opplysningerBoforhold.husstand) },
+                            .map { it.tilBoforholdBarn(opplysningerBoforhold) },
                 ),
             parterISøknad = behandling.roller.map(Rolle::tilPartISøknad),
             inntekter =
@@ -113,7 +120,7 @@ private fun Behandling.tilNotatInntekt() =
         intern = inntektsbegrunnelseKunINotat,
     )
 
-private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandBearbeidet>) =
+private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandGrunnlagDto>) =
     SivilstandNotat(
         opplysningerBruktTilBeregning =
             sivilstand.sortedBy { it.datoFom }
@@ -123,7 +130,7 @@ private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandBear
                 OpplysningerFraFolkeregisteret(
                     periode =
                         ÅrMånedsperiode(
-                            periode.gyldigFom,
+                            periode.gyldigFom!!,
                             null,
                         ),
                     status = periode.type,
@@ -152,23 +159,23 @@ private fun Behandling.tilVirkningstidspunkt() =
         notat = tilNotatVirkningstidspunkt(),
     )
 
-private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdHusstandBearbeidet>) =
+private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<RelatertPersonGrunnlagDto>) =
     BoforholdBarn(
         navn = navn!!,
         fødselsdato =
         foedselsdato,
         opplysningerFraFolkeregisteret =
             opplysningerBoforhold.filter {
-                it.ident == this.ident
+                it.partPersonId == this.ident
             }.flatMap {
-                it.perioder.map { periode ->
+                it.borISammeHusstandDtoListe.map { periode ->
                     OpplysningerFraFolkeregisteret(
                         periode =
                             ÅrMånedsperiode(
-                                periode.fraDato.toLocalDate(),
-                                periode.tilDato?.toLocalDate(),
+                                periode.periodeFra!!,
+                                periode.periodeTil,
                             ),
-                        status = periode.bostatus,
+                        status = Bostatuskode.MED_FORELDER,
                     )
                 }
             },

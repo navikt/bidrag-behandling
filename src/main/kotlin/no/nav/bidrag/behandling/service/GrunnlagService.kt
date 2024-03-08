@@ -21,6 +21,9 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListe
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.TransformerInntekterRequestBuilder
+import no.nav.bidrag.behandling.transformers.ainntekt
+import no.nav.bidrag.behandling.transformers.inntekterOgYtelser
+import no.nav.bidrag.behandling.transformers.skattegrunnlag
 import no.nav.bidrag.behandling.transformers.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.tilKontantstøtte
@@ -29,7 +32,6 @@ import no.nav.bidrag.behandling.transformers.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
 import no.nav.bidrag.behandling.transformers.toDto
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
@@ -462,10 +464,8 @@ class GrunnlagService(
                         SummerteInntekter(
                             versjon = sammenstilteInntekter.versjon,
                             inntekter =
-                                sammenstilteInntekter.summertÅrsinntektListe
-                                    .filter { summertAinntektstyper.contains(it.inntektRapportering) } +
-                                    sammenstilteInntekter.summertÅrsinntektListe
-                                        .filter { summertSkattegrunnlagstyper.contains(it.inntektRapportering) },
+                                sammenstilteInntekter.summertÅrsinntektListe.ainntekt +
+                                    sammenstilteInntekter.summertÅrsinntektListe.skattegrunnlag,
                         )
                     }
 
@@ -644,24 +644,5 @@ class GrunnlagService(
         } else {
             null
         }
-    }
-
-    companion object {
-        val summertYtelsetyper =
-            setOf(BARNETILLEGG, KONTANTSTØTTE, SMÅBARNSTILLEGG, UTVIDET_BARNETRYGD)
-        val summertSkattegrunnlagstyper =
-            Inntektsrapportering.entries
-                .filter { it.kanLeggesInnManuelt == false && it.hentesAutomatisk == true }
-                .filter { !summertAinntektstyper.contains(it) }
-                .filter { !summertYtelsetyper.contains(it) }
-
-        val inntekterOgYtelser =
-            setOf(
-                Grunnlagsdatatype.BARNETILLEGG,
-                Grunnlagsdatatype.KONTANTSTØTTE,
-                Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-                Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-            )
     }
 }
