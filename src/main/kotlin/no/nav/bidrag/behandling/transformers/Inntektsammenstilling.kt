@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
@@ -23,6 +24,16 @@ fun List<AinntektspostDto>.tilAinntektsposter() =
             opptjeningsperiodeFra = it.opptjeningsperiodeFra,
             opptjeningsperiodeTil = it.opptjeningsperiodeTil,
             utbetalingsperiode = it.utbetalingsperiode,
+        )
+    }
+
+fun List<BarnetilleggGrunnlagDto>.tilBarnetillegg() =
+    this.map {
+        Barnetillegg(
+            periodeFra = it.periodeFra,
+            periodeTil = it.periodeTil,
+            beløp = it.beløpBrutto,
+            barnPersonId = it.barnPersonId,
         )
     }
 
