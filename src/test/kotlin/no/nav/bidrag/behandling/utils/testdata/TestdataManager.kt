@@ -23,6 +23,12 @@ class TestdataManager(
     private val behandlingRepository: BehandlingRepository,
     private val entityManager: EntityManager,
 ) {
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    fun lagreBehandling(behandling: Behandling): Behandling {
+        return behandlingRepository.save(behandling)
+    }
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun opprettBehandling(inkluderInntekter: Boolean = false): Behandling {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
@@ -67,7 +73,11 @@ class TestdataManager(
     @Transactional
     fun <T> oppretteOgLagreGrunnlag(
         behandling: Behandling,
-        grunnlagstype: Grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+        grunnlagstype: Grunnlagstype =
+            Grunnlagstype(
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                false,
+            ),
         innhentet: LocalDateTime,
         aktiv: LocalDateTime? = null,
         grunnlagsdata: T? = null,

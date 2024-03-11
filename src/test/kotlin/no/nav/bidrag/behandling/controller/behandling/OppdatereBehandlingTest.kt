@@ -29,29 +29,6 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     lateinit var entityManager: EntityManager
 
     @Test
-    fun `skal oppdatere behandling`() {
-        // gitt
-        val b = testdataManager.opprettBehandling()
-
-        // hvis
-        val behandlingRes =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/" + b.id,
-                HttpMethod.PUT,
-                HttpEntity(OppdaterBehandlingRequestV2(123L)),
-                BehandlingDtoV2::class.java,
-            )
-
-        Assertions.assertEquals(HttpStatus.CREATED, behandlingRes.statusCode)
-
-        // så
-        val oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!)
-
-        assertNotNull(oppdatertBehandling)
-        Assertions.assertEquals(123L, oppdatertBehandling.get().grunnlagspakkeid)
-    }
-
-    @Test
     fun `skal oppdatere behandling for API v2`() {
         // gitt
         val b = testdataManager.opprettBehandling()
