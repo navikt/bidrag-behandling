@@ -207,6 +207,7 @@ fun Behandling.opprettGrunnlag(
         erBearbeidet = false,
         data = commonObjectmapper.writeValueAsString(grunnlag),
         innhentet = testdataGrunnlagInnhentetTidspunkt,
+        aktiv = LocalDateTime.now(),
         rolle =
             roller.find { it.ident == personId } ?: Rolle(
                 ident = personId,

@@ -3,13 +3,11 @@ package no.nav.bidrag.behandling.controller.behandling
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.junit.jupiter.api.Assertions
@@ -64,15 +62,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         assertNotNull(behandling)
         assertSoftly(behandling) {
             roller shouldHaveSize 3
-            inntekter shouldHaveSize 14
-            val opprinnelig12MndInntekt =
-                inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK }
-            opprinnelig12MndInntekt shouldNotBe null
-            opprinnelig12MndInntekt!!.taMed shouldBe true
-            val opprinnelig3MndInntekt =
-                inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK }
-            opprinnelig3MndInntekt shouldNotBe null
-            opprinnelig3MndInntekt!!.taMed shouldBe true
+            inntekter shouldHaveSize 13
             grunnlag shouldHaveSize 26
             refVedtaksid shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(6)

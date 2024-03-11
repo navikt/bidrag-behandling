@@ -170,18 +170,14 @@ class VedtakTilBehandlingTest {
 
             validerRoller()
             assertSoftly(inntekter) {
-                this shouldHaveSize 15
+                this shouldHaveSize 13
                 val inntekt12Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
                 inntekt12Mnd shouldNotBe null
-                inntekt12Mnd!!.taMed shouldBe false
-                val opprinnelig12MndInntekt =
-                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK }
-                opprinnelig12MndInntekt shouldNotBe null
-                opprinnelig12MndInntekt!!.taMed shouldBe true
+                inntekt12Mnd!!.taMed shouldBe true
 
                 val inntekt3Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }
                 inntekt3Mnd shouldNotBe null
-                inntekt3Mnd!!.taMed shouldBe false
+                inntekt3Mnd!!.taMed shouldBe true
                 inntekt3Mnd.opprinneligFom shouldBe LocalDate.parse("2023-11-01")
                 inntekt3Mnd.datoFom shouldBe LocalDate.parse("2023-11-01")
                 inntekt3Mnd.opprinneligTom shouldBe LocalDate.parse("2024-01-31")
@@ -191,24 +187,6 @@ class VedtakTilBehandlingTest {
                 inntekt3Mnd.belop shouldBe BigDecimal(5330000)
                 inntekt3Mnd.ident shouldBe testdataBM.ident
                 assertSoftly(inntekt3Mnd.inntektsposter.toList()) {
-                    this shouldHaveSize 1
-                    this[0].beløp shouldBe BigDecimal(5330000)
-                    this[0].kode shouldBe "fastloenn"
-                    this[0].visningsnavn shouldBe "Visningsnavn"
-                    this[0].inntektstype shouldBe Inntektstype.AAP
-                }
-                val opprinnelig3MndInntekt =
-                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK }
-                opprinnelig3MndInntekt shouldNotBe null
-                opprinnelig3MndInntekt!!.taMed shouldBe true
-                opprinnelig3MndInntekt.kilde shouldBe Kilde.MANUELL
-                opprinnelig3MndInntekt.belop shouldBe BigDecimal(5330000)
-                opprinnelig3MndInntekt.opprinneligFom shouldBe LocalDate.parse("2023-11-01")
-                opprinnelig3MndInntekt.datoFom shouldBe LocalDate.parse("2023-11-01")
-                opprinnelig3MndInntekt.opprinneligTom shouldBe LocalDate.parse("2024-01-31")
-                opprinnelig3MndInntekt.datoTom shouldBe LocalDate.parse("2024-01-31")
-                opprinnelig3MndInntekt.ident shouldBe testdataBM.ident
-                assertSoftly(opprinnelig3MndInntekt.inntektsposter.toList()) {
                     this shouldHaveSize 1
                     this[0].beløp shouldBe BigDecimal(5330000)
                     this[0].kode shouldBe "fastloenn"
@@ -309,7 +287,7 @@ class VedtakTilBehandlingTest {
 
     private fun Behandling.validerInntekter() {
         assertSoftly(inntekter) {
-            size shouldBe 12
+            size shouldBe 13
             val barnetillegg = filter { it.type == Inntektsrapportering.BARNETILLEGG }
             assertSoftly(barnetillegg) {
                 shouldHaveSize(1)

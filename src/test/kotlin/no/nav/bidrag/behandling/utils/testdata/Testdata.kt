@@ -148,9 +148,12 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
         status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
     )
 
-fun oppretteBehandling(id: Long? = null): Behandling {
+fun oppretteBehandling(
+    id: Long? = null,
+    vedtakstype: Vedtakstype = Vedtakstype.FASTSETTELSE,
+): Behandling {
     return Behandling(
-        Vedtakstype.FASTSETTELSE,
+        vedtakstype,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
@@ -374,9 +377,12 @@ fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDt
     )
 }
 
-fun opprettGyldigBehandlingForBeregningOgVedtak(generateId: Boolean = false): Behandling {
+fun opprettGyldigBehandlingForBeregningOgVedtak(
+    generateId: Boolean = false,
+    vedtakstype: Vedtakstype = Vedtakstype.FASTSETTELSE,
+): Behandling {
     // given
-    val behandling = oppretteBehandling(if (generateId) 1 else null)
+    val behandling = oppretteBehandling(if (generateId) 1 else null, vedtakstype = vedtakstype)
     behandling.roller = oppretteBehandlingRoller(behandling, generateId)
     val husstandsbarn =
         mutableSetOf(
@@ -571,6 +577,7 @@ fun opprettBeregnetInntektFraGrunnlag(
             behandling = behandling,
             type = Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
             erBearbeidet = true,
+            aktiv = LocalDateTime.now(),
             data =
                 commonObjectmapper.writeValueAsString(
                     POJONode(
@@ -587,10 +594,12 @@ fun opprettBeregnetInntektFraGrunnlag(
             behandling = behandling,
             type = Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
             erBearbeidet = true,
+            aktiv = LocalDateTime.now(),
             data =
                 commonObjectmapper.writeValueAsString(
                     POJONode(
                         SummerteInntekter(
+                            versjon = inntekterBearbeidet.versjon,
                             inntekter = inntekterBearbeidet.summertÅrsinntektListe.ainntektListe + inntekterBearbeidet.summertÅrsinntektListe.skattegrunnlagListe,
                         ),
                     ),
@@ -634,6 +643,7 @@ fun TransformerInntekterResponse.tilGrunnlag(
     behandling = behandling,
     type = Grunnlagsdatatype.valueOf(type.name),
     erBearbeidet = true,
+    aktiv = LocalDateTime.now(),
     data =
         commonObjectmapper.writeValueAsString(
             POJONode(

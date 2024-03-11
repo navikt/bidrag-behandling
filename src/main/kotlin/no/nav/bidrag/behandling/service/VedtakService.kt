@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
+import no.nav.bidrag.behandling.transformers.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
@@ -32,6 +33,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -126,7 +128,7 @@ class VedtakService(
         }
 
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        if (behandling.erVedtakFattet) behandling.vedtakAlleredeFattet()
+        behandling.validerKanFatteVedtak()
 
         val request =
             if (behandling.avslag != null) {
@@ -257,6 +259,21 @@ class VedtakService(
             // Settes automatisk av bidrag-vedtak basert på token
             opprettetAv = null,
         )
+    }
+
+    private fun Behandling.validerKanFatteVedtak() {
+        if (erVedtakFattet) vedtakAlleredeFattet()
+        val ikkeAktivertGrunnlag = grunnlag.filter { it.aktiv == null }
+        val ikkeAktivertGrunnlagIkkeInntekt =
+            ikkeAktivertGrunnlag.filter { !inntekterOgYtelser.contains(it.type) }
+        val feilmelding = "Kan ikke fatte vedtak fordi nyeste opplysninger ikke er hentet inn"
+        if (vedtakstype != Vedtakstype.KLAGE && ikkeAktivertGrunnlag.isNotEmpty()) {
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
+        }
+
+        if (vedtakstype == Vedtakstype.KLAGE && ikkeAktivertGrunnlagIkkeInntekt.isNotEmpty()) {
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
+        }
     }
 
     private fun Behandling.vedtakAlleredeFattet(): Nothing =
