@@ -391,7 +391,7 @@ class VedtakTilBehandlingTest {
             assertSoftly(it.last()) {
                 it.ident shouldBe null
                 it.foedselsdato shouldBe LocalDate.parse("2024-02-06")
-                it.navn shouldBe "asdsadsad"
+                it.navn shouldBe "Per Hansen"
                 it.medISaken shouldBe false
                 it.perioder shouldHaveSize 1
                 val periode = it.perioder.first()

@@ -85,6 +85,6 @@ class LesBehandlingTest : BehandlingControllerTest() {
                 BehandlingDtoV2::class.java,
             )
 
-        behandlingRes.statusCode shouldBe HttpStatus.BAD_REQUEST
+        behandlingRes.statusCode shouldBe HttpStatus.NOT_FOUND
     }
 }

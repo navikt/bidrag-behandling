@@ -36,7 +36,7 @@ class TestContainerRunner : SpringTestRunner() {
             registry.add("spring.datasource.url", postgreSqlDb::getJdbcUrl)
             registry.add("spring.datasource.password", postgreSqlDb::getPassword)
             registry.add("spring.datasource.username", postgreSqlDb::getUsername)
-            registry.add("spring.datasource.hikari.connection-timeout") { 100 }
+            registry.add("spring.datasource.hikari.connection-timeout") { 250 }
         }
     }
 }
