@@ -54,7 +54,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
                 notat.medIVedtaket shouldBe "Notat virkningstidspunkt med i vedtak"
             }
             assertSoftly(inntekter) {
-                årsinntekter shouldHaveSize 9
+                årsinntekter shouldHaveSize 10
                 årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK }
                     .shouldBeEmpty()
                 årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK }

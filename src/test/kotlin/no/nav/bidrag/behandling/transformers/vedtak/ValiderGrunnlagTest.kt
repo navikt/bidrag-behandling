@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.transformers.vedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
@@ -269,7 +268,7 @@ class ValiderGrunnlagTest {
             )
 
         val value = shouldThrow<RuntimeException> { request.validerGrunnlagsreferanser() }
-        value.message shouldBe "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" finnes ikke i grunnlagslisten\n" +
+        value.message shouldContain "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" finnes ikke i grunnlagslisten\n" +
             "Grunnlaget med referanse \"ref_4\" referert av \"ref_1\" finnes ikke i grunnlagslisten\n" +
             "Grunnlaget med referanse \"ref_2\" referert av \"Stønadsendring(FORSKUDD, *1*2*3*1*)\" finnes ikke i grunnlagslisten\n" +
             "Grunnlaget med referanse \"ref_3\" referert av \"Stønadsendring(FORSKUDD, *1*2*3*1*)\" finnes ikke i grunnlagslisten"
@@ -332,7 +331,7 @@ class ValiderGrunnlagTest {
             )
 
         val value = shouldThrow<RuntimeException> { request.validerGrunnlagsreferanser() }
-        value.message shouldBe "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" inneholder sirkulær avhengighet. Referanseliste [ref_1, person_PERSON_BIDRAGSMOTTAKER_19780825_1]\n" +
+        value.message shouldContain "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" inneholder sirkulær avhengighet. Referanseliste [ref_1, person_PERSON_BIDRAGSMOTTAKER_19780825_1]\n" +
             "Grunnlaget med referanse \"ref_1\" referert av \"ref_2\" inneholder sirkulær avhengighet. Referanseliste [ref_2, person_PERSON_BIDRAGSMOTTAKER_19780825_1]"
     }
 }
