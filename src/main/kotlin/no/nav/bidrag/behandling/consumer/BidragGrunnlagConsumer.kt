@@ -10,6 +10,8 @@ import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDt
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
@@ -35,7 +37,8 @@ class BidragGrunnlagConsumer(
                 GrunnlagRequestType.ARBEIDSFORHOLD,
             )
 
-        val grunnlagstyperBarn = setOf(GrunnlagRequestType.ARBEIDSFORHOLD, GrunnlagRequestType.SKATTEGRUNNLAG)
+        val grunnlagstyperBarn =
+            setOf(GrunnlagRequestType.ARBEIDSFORHOLD, GrunnlagRequestType.SKATTEGRUNNLAG)
 
         fun oppretteGrunnlagsobjekterBarn(personidentBarn: Personident): List<GrunnlagRequestDto> =
             henteGrunnlag(
@@ -100,14 +103,16 @@ class BidragGrunnlagConsumer(
                 ) to oppretteGrunnlagsobjekterBm(Personident(behandling.bidragsmottaker!!.ident!!)),
             )
 
-        behandling.søknadsbarn.filter { sb -> sb.ident != null }.map { Personident(it.ident!!) }.forEach {
-            requestobjekterGrunnlag[it] =
-                oppretteGrunnlagsobjekterBarn(Personident(it.verdi))
-        }
+        behandling.søknadsbarn.filter { sb -> sb.ident != null }.map { Personident(it.ident!!) }
+            .forEach {
+                requestobjekterGrunnlag[it] =
+                    oppretteGrunnlagsobjekterBarn(Personident(it.verdi))
+            }
 
         return requestobjekterGrunnlag
     }
 
+    @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
     fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentGrunnlagDto {
         return postForNonNullEntity(
             bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),

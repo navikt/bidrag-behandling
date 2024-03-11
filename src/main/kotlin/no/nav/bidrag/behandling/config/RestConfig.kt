@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.http.client.observation.DefaultClientRequestObservationConvention
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import org.springframework.retry.annotation.EnableRetry
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -23,6 +24,7 @@ import java.time.format.DateTimeFormatter
 @Configuration
 @EnableSecurityConfiguration
 @EnableSaksbehandlernavnProvider
+@EnableRetry
 @Import(RestOperationsAzure::class, AppContext::class, BeregnForskuddApi::class)
 class RestConfig {
     @Bean
