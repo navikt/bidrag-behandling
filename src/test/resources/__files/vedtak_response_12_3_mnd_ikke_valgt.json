@@ -318,7 +318,7 @@
       "referanse": "person_PERSON_HUSSTANDSMEDLEM_20240206_323",
       "type": "PERSON_HUSSTANDSMEDLEM",
       "innhold": {
-        "navn": "Per Hansen",
+        "navn": "asdsadsad",
         "ident": null,
         "fødselsdato": "2024-02-06"
       },
@@ -351,28 +351,10 @@
       "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
     },
     {
-      "referanse": "inntekt_SAKSBEHANDLER_BEREGNET_INNTEKT_person_PERSON_BIDRAGSMOTTAKER_19780825_69_20210101",
-      "type": "INNTEKT_RAPPORTERING_PERIODE",
-      "innhold": {
-        "valgt": true,
-        "beløp": 300000,
-        "periode": {
-          "fom": "2023-01",
-          "til": "2024-06"
-        },
-        "gjelderBarn": null,
-        "inntekstpostListe": [],
-        "manueltRegistrert": true,
-        "inntektsrapportering": "SAKSBEHANDLER_BEREGNET_INNTEKT"
-      },
-      "grunnlagsreferanseListe": [],
-      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69"
-    },
-    {
       "referanse": "inntekt_AINNTEKT_BEREGNET_3MND_person_PERSON_BIDRAGSMOTTAKER_19780825_69_20231101",
       "type": "INNTEKT_RAPPORTERING_PERIODE",
       "innhold": {
-        "valgt": true,
+        "valgt": false,
         "beløp": 5330000,
         "periode": {
           "fom": "2023-11",
@@ -537,7 +519,7 @@
       "referanse": "inntekt_AINNTEKT_BEREGNET_12MND_person_PERSON_BIDRAGSMOTTAKER_19780825_69_20230201",
       "type": "INNTEKT_RAPPORTERING_PERIODE",
       "innhold": {
-        "valgt": true,
+        "valgt": false,
         "beløp": 25245987,
         "periode": {
           "fom": "2023-02",

@@ -19,8 +19,8 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
-import no.nav.bidrag.behandling.transformers.ainntekt
-import no.nav.bidrag.behandling.transformers.skattegrunnlag
+import no.nav.bidrag.behandling.transformers.ainntektListe
+import no.nav.bidrag.behandling.transformers.skattegrunnlagListe
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -591,7 +591,7 @@ fun opprettBeregnetInntektFraGrunnlag(
                 commonObjectmapper.writeValueAsString(
                     POJONode(
                         SummerteInntekter(
-                            inntekter = inntekterBearbeidet.summertÅrsinntektListe.ainntekt + inntekterBearbeidet.summertÅrsinntektListe.skattegrunnlag,
+                            inntekter = inntekterBearbeidet.summertÅrsinntektListe.ainntektListe + inntekterBearbeidet.summertÅrsinntektListe.skattegrunnlagListe,
                         ),
                     ),
                 ),

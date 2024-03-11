@@ -40,12 +40,12 @@ val inntekterOgYtelser =
         Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
         Grunnlagsdatatype.UTVIDET_BARNETRYGD,
     )
-val List<SummertÅrsinntekt>.skattegrunnlag
+val List<SummertÅrsinntekt>.skattegrunnlagListe
     get() =
         filter {
             summertSkattegrunnlagstyper.contains(it.inntektRapportering)
         }
-val List<SummertÅrsinntekt>.ainntekt get() = filter { summertAinntektstyper.contains(it.inntektRapportering) }
+val List<SummertÅrsinntekt>.ainntektListe get() = filter { summertAinntektstyper.contains(it.inntektRapportering) }
 
 fun List<InntektPost>.tilInntektspost(inntekt: Inntekt) =
     this.map {

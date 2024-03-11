@@ -44,4 +44,15 @@ open class Inntekt(
     open var gjelderBarn: String? = null,
     open val opprinneligFom: LocalDate? = null,
     open val opprinneligTom: LocalDate? = null,
-)
+) {
+    override fun toString(): String {
+        return try {
+            "Inntekt($type, beløp=$belop, datoFom=$datoFom, " +
+                "datoTom=$datoTom, ident='$ident', gjelderBarn='$gjelderBarn'," +
+                "opprinneligFom=$opprinneligFom, opprinneligTom=$opprinneligTom, " +
+                " kilde=$kilde, taMed=$taMed, id=$id, behandling=${behandling?.id})"
+        } catch (e: Exception) {
+            "Inntekt${this.hashCode()}"
+        }
+    }
+}

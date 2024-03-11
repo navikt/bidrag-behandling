@@ -10,20 +10,13 @@ import java.lang.reflect.Type
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Date
 
 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-val formatterCompact = DateTimeFormatter.ofPattern("yyyyMMdd")
 
-fun Date.toLocalDate(): LocalDate {
-    return LocalDate.ofInstant(this.toInstant(), ZoneId.systemDefault())
-}
-
-fun LocalDate.toCompactString(): String = this.format(formatterCompact)
-
-class LocalDateTypeAdapter(datoformat: DateTimeFormatter? = null) : JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
+class LocalDateTypeAdapter(datoformat: DateTimeFormatter? = null) :
+    JsonSerializer<LocalDate>,
+    JsonDeserializer<LocalDate> {
     private val datoformat: DateTimeFormatter = datoformat ?: formatter
 
     override fun serialize(

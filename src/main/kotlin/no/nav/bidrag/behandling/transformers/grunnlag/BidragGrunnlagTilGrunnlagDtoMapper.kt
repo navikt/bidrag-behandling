@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.transformers.toCompactString
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -43,6 +42,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
+import no.nav.bidrag.transport.felles.toCompactString
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -67,7 +67,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
                         finnFødselsdato(
                             relatertPersonPersonId,
                             fødselsdato,
-                        ) // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
+                        ) // Avbryter prosesering dersom fødselsdato til husstandsbarn er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
                 ).valider(),
             ),

@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
+import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
@@ -65,7 +66,7 @@ fun OpprettVedtakRequestDto.validerGrunnlagsreferanser() {
     }
 
     if (feilListe.isNotEmpty()) {
-        throw RuntimeException(
+        vedtakmappingFeilet(
             "Feil i grunnlagsreferanser: ${
                 feilListe.toSet().joinToString("\n")
             }",

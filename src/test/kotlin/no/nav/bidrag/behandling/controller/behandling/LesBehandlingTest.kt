@@ -1,9 +1,11 @@
 package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -53,6 +55,10 @@ class LesBehandlingTest : BehandlingControllerTest() {
             }
             assertSoftly(inntekter) {
                 årsinntekter shouldHaveSize 9
+                årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK }
+                    .shouldBeEmpty()
+                årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK }
+                    .shouldBeEmpty()
                 månedsinntekter shouldHaveSize 25
                 notat.kunINotat shouldBe "Notat inntekt"
                 notat.medIVedtaket shouldBe "Notat inntekt med i vedtak"
@@ -66,5 +72,19 @@ class LesBehandlingTest : BehandlingControllerTest() {
 
             aktiveGrunnlagsdata shouldHaveSize 18
         }
+    }
+
+    @Test
+    fun `Skal feile hvis vedtak ikke finnes`() {
+        stubUtils.stubHenteVedtak(status = HttpStatus.NOT_FOUND)
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/vedtak/1",
+                HttpMethod.GET,
+                null,
+                BehandlingDtoV2::class.java,
+            )
+
+        behandlingRes.statusCode shouldBe HttpStatus.BAD_REQUEST
     }
 }

@@ -67,33 +67,39 @@ class VedtakService(
     }
 
     @Transactional
-    fun opprettBehandlingFraVedtak(request: OpprettBehandlingFraVedtakRequest): OpprettBehandlingResponse {
+    fun opprettBehandlingFraVedtak(
+        request: OpprettBehandlingFraVedtakRequest,
+        refVedtaksid: Long,
+    ): OpprettBehandlingResponse {
         val konvertertBehandling =
-            konverterVedtakTilBehandlingForLesemodus(request)
-                ?: throw RuntimeException("Fant ikke vedtak for vedtakid ${request.refVedtaksid}")
+            konverterVedtakTilBehandling(request, refVedtaksid)
+                ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
         val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
         LOGGER.info {
-            "Opprettet behandling ${behandlingDo.id} fra vedtak ${request.refVedtaksid} med søktAv ${request.søknadFra}, " +
+            "Opprettet behandling ${behandlingDo.id} fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
                 "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
-    fun konverterVedtakTilBehandlingForLesemodus(request: OpprettBehandlingFraVedtakRequest): Behandling? {
+    fun konverterVedtakTilBehandling(
+        request: OpprettBehandlingFraVedtakRequest,
+        refVedtaksid: Long,
+    ): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(request.refVedtaksid) ?: return null
+            vedtakConsumer.hentVedtak(refVedtaksid) ?: return null
         if (vedtak.behandlingId == null) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
-                "Vedtak ${request.refVedtaksid} er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
+                "Vedtak $refVedtaksid er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
             )
         }
         return vedtak.tilBehandling(
-            vedtakId = request.refVedtaksid,
+            vedtakId = refVedtaksid,
             søktFomDato = request.søktFomDato,
             mottattdato = request.mottattdato,
             soknadFra = request.søknadFra,
@@ -120,7 +126,8 @@ class VedtakService(
         }
 
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        if (behandling.vedtaksid != null) behandling.vedtakAlleredeFattet()
+        if (behandling.erVedtakFattet) behandling.vedtakAlleredeFattet()
+
         val request =
             if (behandling.avslag != null) {
                 behandling.byggOpprettVedtakRequestForAvslag()

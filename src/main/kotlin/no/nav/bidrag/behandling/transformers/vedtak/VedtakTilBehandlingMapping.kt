@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntekt
+import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -45,14 +46,11 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
-import org.springframework.http.HttpStatus
-import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 fun manglerPersonGrunnlag(referanse: Grunnlagsreferanse?): Nothing =
-    throw HttpClientErrorException(
-        HttpStatus.BAD_REQUEST,
+    vedtakmappingFeilet(
         "Mangler person med referanse $referanse i grunnlagslisten",
     )
 
@@ -475,8 +473,7 @@ private fun BaseGrunnlag.tilInntekt(
             gjelderReferanse,
         )
     if (inntektsrapporteringSomKreverBarn.contains(inntektPeriode.inntektsrapportering) && gjelderBarn == null) {
-        throw HttpClientErrorException(
-            HttpStatus.BAD_REQUEST,
+        vedtakmappingFeilet(
             "Mangler barn for inntekt ${inntektPeriode.inntektsrapportering} med referanse $referanse i grunnlagslisten",
         )
     }
@@ -539,10 +536,10 @@ private fun GrunnlagDto.tilRolle(
             Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
             Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
             Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-            else -> throw HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
-                "Ukjent rolletype $type",
-            )
+            else ->
+                vedtakmappingFeilet(
+                    "Ukjent rolletype $type",
+                )
         },
     ident = personIdent,
     foedselsdato = personObjekt.fødselsdato,
@@ -562,6 +559,8 @@ private fun Inntekt.copy(
         ident = ident,
         kilde = kilde ?: this.kilde,
         behandling = behandling,
+        opprinneligFom = opprinneligFom,
+        opprinneligTom = opprinneligTom,
         inntektsposter =
             inntektsposter.map {
                 Inntektspost(

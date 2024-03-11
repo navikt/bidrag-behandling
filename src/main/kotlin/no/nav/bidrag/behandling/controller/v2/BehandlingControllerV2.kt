@@ -138,7 +138,7 @@ class BehandlingControllerV2(
     ) = behandlingService.slettBehandling(behandlingsid)
 
     @Suppress("unused")
-    @PostMapping("/behandling/vedtak")
+    @PostMapping("/behandling/vedtak/{refVedtaksId}")
     @Operation(
         description = "Opprett behandling fra vedtak. Brukes når det skal opprettes klagebehanling fra vedtak.",
         security = [SecurityRequirement(name = "bearer-key")],
@@ -155,5 +155,6 @@ class BehandlingControllerV2(
         @Valid
         @RequestBody(required = true)
         opprettBehandling: OpprettBehandlingFraVedtakRequest,
-    ): OpprettBehandlingResponse = vedtakService.opprettBehandlingFraVedtak(opprettBehandling)
+        @PathVariable refVedtaksId: Long,
+    ): OpprettBehandlingResponse = vedtakService.opprettBehandlingFraVedtak(opprettBehandling, refVedtaksId)
 }

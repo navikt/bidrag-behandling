@@ -5,8 +5,9 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.transformers.ainntekt
-import no.nav.bidrag.behandling.transformers.skattegrunnlag
+import no.nav.bidrag.behandling.transformers.ainntektListe
+import no.nav.bidrag.behandling.transformers.skattegrunnlagListe
+import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -47,8 +48,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
-import org.springframework.http.HttpStatus
-import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDateTime
 
 data class SummerteInntekt(
@@ -396,7 +395,7 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                     SummerteInntekter(
                         versjon = årsinntekter.versjon(Inntektsrapportering.AINNTEKT_BEREGNET_3MND),
-                        inntekter = inntekter.skattegrunnlag + inntekter.ainntekt,
+                        inntekter = inntekter.skattegrunnlagListe + inntekter.ainntektListe,
                     ),
                     gjelderIdent = gjelder.personIdent!!,
                     erBearbeidet = true,
@@ -414,13 +413,12 @@ private fun BaseGrunnlag.tilInntektBearbeidet(grunnlagsListe: List<GrunnlagDto>)
     val inntektPeriode = innholdTilObjekt<InntektsrapporteringPeriode>()
     val gjelderBarn = grunnlagsListe.hentPersonMedReferanse(inntektPeriode.gjelderBarn)
     if (inntektsrapporteringSomKreverBarn.contains(inntektPeriode.inntektsrapportering) && gjelderBarn == null) {
-        throw HttpClientErrorException(
-            HttpStatus.BAD_REQUEST,
+        vedtakmappingFeilet(
             "Mangler barn for inntekt ${inntektPeriode.inntektsrapportering} med referanse $referanse i grunnlagslisten",
         )
     }
     val opprinneligFom =
-        inntektPeriode.opprinneligPeriode?.fom?.atDay(1) ?: throw RuntimeException(
+        inntektPeriode.opprinneligPeriode?.fom?.atDay(1) ?: vedtakmappingFeilet(
             "Inntekt ${inntektPeriode.inntektsrapportering} mangler opprinnelig periode",
         )
     val opprinneligTom = inntektPeriode.opprinneligPeriode?.til?.atDay(1)?.minusDays(1)

@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
+import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -59,7 +60,9 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
     return BeregnGrunnlag(
         periode =
             ÅrMånedsperiode(
-                virkningstidspunkt!!,
+                virkningstidspunkt ?: vedtakmappingFeilet(
+                    "Virkningstidspunkt må settes for beregning",
+                ),
                 YearMonth.now().plusMonths(1).atDay(1),
             ),
         søknadsbarnReferanse = søknadsbarn.referanse,

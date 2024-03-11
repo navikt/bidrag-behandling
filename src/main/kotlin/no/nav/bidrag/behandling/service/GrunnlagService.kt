@@ -21,9 +21,9 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListe
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.TransformerInntekterRequestBuilder
-import no.nav.bidrag.behandling.transformers.ainntekt
+import no.nav.bidrag.behandling.transformers.ainntektListe
 import no.nav.bidrag.behandling.transformers.inntekterOgYtelser
-import no.nav.bidrag.behandling.transformers.skattegrunnlag
+import no.nav.bidrag.behandling.transformers.skattegrunnlagListe
 import no.nav.bidrag.behandling.transformers.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.tilKontantstøtte
@@ -32,10 +32,6 @@ import no.nav.bidrag.behandling.transformers.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
 import no.nav.bidrag.behandling.transformers.toDto
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
@@ -464,8 +460,8 @@ class GrunnlagService(
                         SummerteInntekter(
                             versjon = sammenstilteInntekter.versjon,
                             inntekter =
-                                sammenstilteInntekter.summertÅrsinntektListe.ainntekt +
-                                    sammenstilteInntekter.summertÅrsinntektListe.skattegrunnlag,
+                                sammenstilteInntekter.summertÅrsinntektListe.ainntektListe +
+                                    sammenstilteInntekter.summertÅrsinntektListe.skattegrunnlagListe,
                         )
                     }
 

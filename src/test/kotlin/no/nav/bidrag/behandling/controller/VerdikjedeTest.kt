@@ -110,11 +110,10 @@ class VerdikjedeTest : KontrollerTestRunner() {
         stubUtils.stubHenteVedtak(request.tilVedtakDto())
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/vedtak",
+                "${rootUriV2()}/behandling/vedtak/12333",
                 HttpMethod.POST,
                 HttpEntity(
                     OpprettBehandlingFraVedtakRequest(
-                        refVedtaksid = 12333,
                         vedtakstype = Vedtakstype.KLAGE,
                         søknadFra = SøktAvType.BIDRAGSMOTTAKER,
                         søktFomDato = LocalDate.parse("2020-01-01"),

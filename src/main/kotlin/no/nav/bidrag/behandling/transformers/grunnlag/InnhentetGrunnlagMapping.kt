@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.transformers.tilGrunnlagsdataType
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -142,7 +143,44 @@ fun List<Grunnlag>.tilInnhentetGrunnlagInntekt(personobjekter: Set<GrunnlagDto>)
         mapUtvidetbarnetrygd(personobjekter) + mapSmåbarnstillegg(personobjekter)
 }
 
-fun opprettGrunnlagsreferanserForInntekt2(
+fun List<Grunnlag>.hentVersjonForInntekt(inntekt: Inntekt): String {
+    val inntekterGrunnlag =
+        find { inntekt.type.tilGrunnlagsdataType() == it.type && it.erBearbeidet }
+    return inntekterGrunnlag.konverterData<SummerteInntekter<SummertÅrsinntekt>>()?.versjon
+        ?: vedtakmappingFeilet("Mangler versjon for beregnet inntekt ${inntekt.type}")
+}
+
+fun List<Grunnlag>.hentGrunnlagsreferanserForInntekt(
+    gjelderIdent: String,
+    inntekt: Inntekt,
+): List<Grunnlagsreferanse> {
+    if (inntekt.kilde == Kilde.MANUELL) return emptyList()
+    val periode = ÅrMånedsperiode(inntekt.opprinneligFom!!, inntekt.opprinneligTom)
+    val inntekterGjelderGrunnlag =
+        find {
+            it.type == inntekt.type.tilGrunnlagsdataType() && it.erBearbeidet && hentNyesteIdent(
+                it.rolle.ident,
+            )?.verdi == gjelderIdent
+        }
+
+    val inntekter =
+        inntekterGjelderGrunnlag.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
+            ?.inntekter
+    val beregnetInntekt =
+        inntekter?.find {
+            it.periode == periode &&
+                inntekt.type == it.inntektRapportering &&
+                (inntekt.gjelderBarn.isNullOrEmpty() || inntekt.gjelderBarn == it.gjelderBarnPersonId.trimToNull())
+        }
+
+    return beregnetInntekt?.grunnlagsreferanseListe?.filter { it.isNotEmpty() }
+        ?: grunnlagByggingFeilet(
+            "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.type} " +
+                "for periode (${inntekt.opprinneligFom}-${inntekt.opprinneligTom}) og barn ${inntekt.gjelderBarn}",
+        ) // ?: opprettGrunnlagsreferanserForInntekt2
+}
+
+private fun opprettGrunnlagsreferanserForInntekt2(
     inntekt: Inntekt,
     gjelderReferanse: Grunnlagsreferanse,
 ): List<Grunnlagsreferanse> {
@@ -173,42 +211,6 @@ fun opprettGrunnlagsreferanserForInntekt2(
         }
 
     return listOfNotNull(referanse)
-}
-
-fun List<Grunnlag>.hentVersjonForInntekt(inntekt: Inntekt): String? {
-    val inntekterGrunnlag =
-        find { inntekt.type.tilGrunnlagsdataType() == it.type && it.erBearbeidet }
-    return inntekterGrunnlag.konverterData<SummerteInntekter<SummertÅrsinntekt>>()?.versjon
-}
-
-fun List<Grunnlag>.hentGrunnlagsreferanserForInntekt(
-    gjelderIdent: String,
-    inntekt: Inntekt,
-): List<Grunnlagsreferanse> {
-    if (inntekt.kilde == Kilde.MANUELL) return emptyList()
-    val periode = ÅrMånedsperiode(inntekt.opprinneligFom!!, inntekt.opprinneligTom)
-    val inntekterGjelderGrunnlag =
-        find {
-            it.type == inntekt.type.tilGrunnlagsdataType() && it.erBearbeidet && hentNyesteIdent(
-                it.rolle.ident,
-            )?.verdi == gjelderIdent
-        }
-
-    val inntekter =
-        inntekterGjelderGrunnlag.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
-            ?.inntekter
-    val beregnetInntekt =
-        inntekter?.find {
-            it.periode == periode &&
-                inntekt.type == it.inntektRapportering &&
-                (inntekt.gjelderBarn.isNullOrEmpty() || inntekt.gjelderBarn == it.gjelderBarnPersonId.trimToNull())
-        }
-
-    return beregnetInntekt?.grunnlagsreferanseListe?.filter { it.isNotEmpty() }
-        ?: grunnlagByggingFeilet(
-            "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.type} " +
-                "for periode (${inntekt.opprinneligFom}-${inntekt.opprinneligTom}) og barn ${inntekt.gjelderBarn}",
-        )
 }
 
 private fun List<Grunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =

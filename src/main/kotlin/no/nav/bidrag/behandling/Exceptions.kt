@@ -83,3 +83,9 @@ fun rolleManglerFødselsdato(rolletype: Rolletype): Nothing =
         HttpStatus.BAD_REQUEST,
         "Rolle med type $rolletype mangler fødselsdato",
     )
+
+fun vedtakmappingFeilet(melding: String): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        melding,
+    )

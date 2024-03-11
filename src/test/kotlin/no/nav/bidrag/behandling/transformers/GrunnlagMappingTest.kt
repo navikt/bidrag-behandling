@@ -827,9 +827,12 @@ class GrunnlagMappingTest {
                     val innhold = it.innholdTilObjekt<InntektsrapporteringPeriode>()
                     if (innhold.inntektsrapportering == Inntektsrapportering.AINNTEKT_BEREGNET_12MND) {
                         it.grunnlagsreferanseListe shouldBe ainntektGrunnlagsreferanseListe
+                        innhold.versjon shouldBe "VERSJON_INNTEKT"
                     } else if (!innhold.manueltRegistrert) {
                         it.grunnlagsreferanseListe.shouldNotBeEmpty()
+                        innhold.versjon shouldBe "VERSJON_INNTEKT"
                     } else {
+                        innhold.versjon shouldBe null
                         it.grunnlagsreferanseListe.shouldBeEmpty()
                     }
                     it.gjelderReferanse shouldBe grunnlagBm.referanse
@@ -866,7 +869,7 @@ class GrunnlagMappingTest {
                     data =
                         commonObjectmapper.writeValueAsString(
                             SummerteInntekter(
-                                versjon = "1",
+                                versjon = "VERSJON_INNTEKT",
                                 inntekter =
                                     listOf(
                                         SummertÅrsinntekt(
@@ -894,7 +897,7 @@ class GrunnlagMappingTest {
                     data =
                         commonObjectmapper.writeValueAsString(
                             SummerteInntekter(
-                                versjon = "1",
+                                versjon = "VERSJON_INNTEKT",
                                 inntekter =
                                     listOf(
                                         SummertÅrsinntekt(
@@ -922,6 +925,7 @@ class GrunnlagMappingTest {
                     data =
                         commonObjectmapper.writeValueAsString(
                             SummerteInntekter(
+                                versjon = "VERSJON_INNTEKT",
                                 inntekter =
                                     listOf(
                                         SummertÅrsinntekt(

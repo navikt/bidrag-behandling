@@ -25,7 +25,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
-import no.nav.bidrag.behandling.transformers.toLocalDate
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -59,7 +58,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
-import java.util.Calendar
 
 class BehandlingServiceTest : TestContainerRunner() {
     @MockBean
@@ -355,8 +353,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 setOf(
                     SivilstandDto(
                         null,
-                        Calendar.getInstance().time.toLocalDate(),
-                        Calendar.getInstance().time.toLocalDate(),
+                        LocalDate.now(),
+                        LocalDate.now(),
                         Sivilstandskode.BOR_ALENE_MED_BARN,
                         Kilde.OFFENTLIG,
                     ),
