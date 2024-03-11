@@ -1,0 +1,214 @@
+{
+  "version": 2,
+  "features": [
+    {
+      "name": "behandling.fattevedtak",
+      "type": "release",
+      "enabled": true,
+      "project": "default",
+      "stale": false,
+      "strategies": [
+        {
+          "name": "default",
+          "constraints": [
+            {
+              "values": [
+                "Z993148",
+                "Z994977"
+              ],
+              "inverted": false,
+              "operator": "IN",
+              "contextName": "userId",
+              "caseInsensitive": false
+            }
+          ],
+          "parameters": {},
+          "variants": []
+        }
+      ],
+      "variants": [],
+      "description": "Tilgang til å fatte vedtak via nye løsningen",
+      "impressionData": true
+    },
+    {
+      "name": "behandling.skjermbilde.vedtak",
+      "type": "release",
+      "enabled": true,
+      "project": "default",
+      "stale": false,
+      "strategies": [
+        {
+          "name": "default",
+          "constraints": [],
+          "parameters": {},
+          "variants": []
+        },
+        {
+          "name": "flexibleRollout",
+          "constraints": [
+            {
+              "values": [
+                "Z993148",
+                "Z994977"
+              ],
+              "inverted": false,
+              "operator": "IN",
+              "contextName": "userId",
+              "caseInsensitive": false
+            }
+          ],
+          "parameters": {
+            "groupId": "behandling.skjermbilde.vedtak",
+            "rollout": "100",
+            "stickiness": "default"
+          },
+          "variants": []
+        }
+      ],
+      "variants": [],
+      "description": "Tilgang til vedtak og beregning skjermbildet i nye forskudd løsningen",
+      "impressionData": true
+    },
+    {
+      "name": "behandling.skjermbilde.inntekter",
+      "type": "release",
+      "enabled": true,
+      "project": "default",
+      "stale": false,
+      "strategies": [
+        {
+          "name": "default",
+          "constraints": [],
+          "parameters": {},
+          "variants": []
+        },
+        {
+          "name": "flexibleRollout",
+          "constraints": [
+            {
+              "values": [
+                "Z993148",
+                "Z994977"
+              ],
+              "inverted": false,
+              "operator": "IN",
+              "contextName": "userId",
+              "caseInsensitive": false
+            }
+          ],
+          "parameters": {
+            "groupId": "behandling.skjermbilde.inntekter",
+            "rollout": "100",
+            "stickiness": "default"
+          },
+          "variants": []
+        }
+      ],
+      "variants": [],
+      "description": "Tilgang til inntekter i nye forskudd løsningen",
+      "impressionData": true
+    },
+    {
+      "name": "Brevmaler",
+      "type": "operational",
+      "enabled": false,
+      "project": "default",
+      "stale": false,
+      "strategies": [
+        {
+          "name": "flexibleRollout",
+          "constraints": [
+            {
+              "values": [
+                "Z994977,Z994978,Z994979,Z994971,Z994972"
+              ],
+              "inverted": false,
+              "operator": "IN",
+              "contextName": "Referansegruppe",
+              "caseInsensitive": false
+            }
+          ],
+          "parameters": {
+            "groupId": "Brevmaler",
+            "rollout": "100",
+            "stickiness": "default"
+          },
+          "variants": []
+        },
+        {
+          "name": "userWithId",
+          "constraints": [],
+          "parameters": {
+            "userIds": "Z994977,Z99999,Z9123213"
+          },
+          "variants": []
+        }
+      ],
+      "variants": [],
+      "description": "Brevmaler som skal produseres via ny løsning",
+      "impressionData": false
+    },
+    {
+      "name": "oppdragsmeldinger",
+      "type": "kill-switch",
+      "enabled": true,
+      "project": "default",
+      "stale": false,
+      "strategies": [
+        {
+          "name": "flexibleRollout",
+          "constraints": [],
+          "parameters": {
+            "groupId": "oppdragsmeldinger",
+            "rollout": "100",
+            "stickiness": "default"
+          },
+          "variants": []
+        }
+      ],
+      "variants": [],
+      "description": "",
+      "impressionData": false
+    },
+    {
+      "name": "Vedtakssperre",
+      "type": "kill-switch",
+      "enabled": true,
+      "project": "default",
+      "stale": false,
+      "strategies": [
+        {
+          "name": "default",
+          "constraints": [
+            {
+              "values": [
+                "4883"
+              ],
+              "inverted": false,
+              "operator": "NOT_IN",
+              "contextName": "enhetsnr",
+              "caseInsensitive": false
+            }
+          ],
+          "parameters": {},
+          "variants": []
+        }
+      ],
+      "variants": [],
+      "description": "Skrur av mulighet for å fatte vedtak.",
+      "impressionData": true
+    }
+  ],
+  "query": {
+    "project": [
+      "default"
+    ],
+    "environment": "development",
+    "inlineSegmentConstraints": true
+  },
+  "meta": {
+    "revisionId": 264,
+    "etag": "\"6ef7ec5a:264\"",
+    "queryHash": "6ef7ec5a"
+  }
+}

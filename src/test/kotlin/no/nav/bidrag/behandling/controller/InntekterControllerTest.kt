@@ -10,12 +10,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn1
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBarn2
-import no.nav.bidrag.behandling.utils.testdata.fødselsnummerBm
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -25,7 +26,6 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
 import java.time.YearMonth
-import kotlin.test.Ignore
 
 class InntekterControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -43,7 +43,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
     @DisplayName("Tester henting av inntekter")
     open inner class HenteInntekter {
         @Test
-        @Ignore("Gir Wiremock-problemer på Github")
+        @Disabled("Gir Wiremock-problemer på Github")
         open fun `skal hente inntekter for behandling`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
@@ -66,15 +66,15 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1.body?.inntekter?.årsinntekter?.size shouldBe 16
                 r1.body?.inntekter?.årsinntekter
                     ?.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }?.size shouldBe 6
-                r1.body?.inntekter?.årsinntekter?.filter { it.ident.verdi == fødselsnummerBarn1 }
+                r1.body?.inntekter?.årsinntekter?.filter { it.ident.verdi == testdataBarn1.ident }
                     ?.size shouldBe 5
-                r1.body?.inntekter?.årsinntekter?.filter { it.ident.verdi == fødselsnummerBarn2 }
+                r1.body?.inntekter?.årsinntekter?.filter { it.ident.verdi == testdataBarn2.ident }
                     ?.size shouldBe 5
             }
         }
 
         @Test
-        @Ignore("Gir Wiremock-problemer på Github")
+        @Disabled("Gir Wiremock-problemer på Github")
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
@@ -160,8 +160,8 @@ class InntekterControllerTest : KontrollerTestRunner() {
                         belop = BigDecimal(14000),
                         datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                         datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                        ident = fødselsnummerBm,
-                        gjelderBarn = fødselsnummerBarn1,
+                        ident = testdataBM.ident,
+                        gjelderBarn = testdataBarn1.ident,
                         kilde = Kilde.MANUELL,
                         taMed = true,
                     ),

@@ -9,9 +9,9 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
-import no.nav.bidrag.behandling.transformers.engangsbeløptype
-import no.nav.bidrag.behandling.transformers.stønadstype
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
+import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
+import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling

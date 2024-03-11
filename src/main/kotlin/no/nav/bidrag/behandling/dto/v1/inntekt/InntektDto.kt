@@ -21,6 +21,10 @@ data class InntektDto(
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
+    @Schema(type = "string", format = "date", example = "2025-01-25")
+    val opprinneligFom: LocalDate? = null,
+    @Schema(type = "string", format = "date", example = "2025-01-25")
+    val opprinneligTom: LocalDate? = null,
     @Schema(required = true)
     val ident: String,
     @Schema(required = true)

@@ -1,0 +1,140 @@
+{
+  "kilde": "MANUELT",
+  "type": "FASTSETTELSE",
+  "opprettetAv": "Z994977",
+  "opprettetAvNavn": "F_Z994977 E_Z994977",
+  "kildeapplikasjon": "bidrag-behandling",
+  "vedtakstidspunkt": "2024-02-25T14:53:45.371176",
+  "enhetsnummer": "4806",
+  "innkrevingUtsattTilDato": null,
+  "fastsattILand": null,
+  "opprettetTidspunkt": "2024-02-25T14:53:47.079906",
+  "grunnlagListe": [
+    {
+      "referanse": "notat_VIRKNINGSTIDSPUNKT_kun_i_notat",
+      "type": "NOTAT",
+      "innhold": {
+        "type": "VIRKNINGSTIDSPUNKT",
+        "innhold": "Dette er grunnen til avslaget",
+        "erMedIVedtaksdokumentet": false
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "søknad",
+      "type": "SØKNAD",
+      "innhold": {
+        "søktAv": "BIDRAGSMOTTAKER",
+        "mottattDato": "2023-01-01",
+        "søktFraDato": "2022-01-01"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_BIDRAGSMOTTAKER_19780825_69",
+      "type": "PERSON_BIDRAGSMOTTAKER",
+      "innhold": {
+        "navn": null,
+        "ident": "313213213",
+        "fødselsdato": "1978-08-25"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_SØKNADSBARN_20150724_67",
+      "type": "PERSON_SØKNADSBARN",
+      "innhold": {
+        "navn": null,
+        "ident": "1344124",
+        "fødselsdato": "2020-03-01"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_SØKNADSBARN_20050623_68",
+      "type": "PERSON_SØKNADSBARN",
+      "innhold": {
+        "navn": null,
+        "ident": "54545454545",
+        "fødselsdato": "2018-05-09"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    }
+  ],
+  "stønadsendringListe": [
+    {
+      "type": "FORSKUDD",
+      "sak": "1233333",
+      "skyldner": "NAV",
+      "kravhaver": "23460587158",
+      "mottaker": "25487832912",
+      "førsteIndeksreguleringsår": null,
+      "innkreving": "MED_INNKREVING",
+      "beslutning": "ENDRING",
+      "omgjørVedtakId": null,
+      "eksternReferanse": null,
+      "grunnlagReferanseListe": [
+        "notat_VIRKNINGSTIDSPUNKT_kun_i_notat",
+        "søknad"
+      ],
+      "periodeListe": [
+        {
+          "periode": {
+            "fom": "2022-01",
+            "til": null
+          },
+          "beløp": 0,
+          "valutakode": "NOK",
+          "resultatkode": "FULLT_UNDERHOLDT_AV_OFFENTLIG",
+          "delytelseId": null,
+          "grunnlagReferanseListe": []
+        }
+      ]
+    },
+    {
+      "type": "FORSKUDD",
+      "sak": "1233333",
+      "skyldner": "NAV",
+      "kravhaver": "24471556838",
+      "mottaker": "25487832912",
+      "førsteIndeksreguleringsår": null,
+      "innkreving": "MED_INNKREVING",
+      "beslutning": "ENDRING",
+      "omgjørVedtakId": null,
+      "eksternReferanse": null,
+      "grunnlagReferanseListe": [
+        "notat_VIRKNINGSTIDSPUNKT_kun_i_notat",
+        "søknad"
+      ],
+      "periodeListe": [
+        {
+          "periode": {
+            "fom": "2022-01",
+            "til": null
+          },
+          "beløp": 0,
+          "valutakode": "NOK",
+          "resultatkode": "FULLT_UNDERHOLDT_AV_OFFENTLIG",
+          "delytelseId": null,
+          "grunnlagReferanseListe": []
+        }
+      ]
+    }
+  ],
+  "engangsbeløpListe": [],
+  "behandlingsreferanseListe": [
+    {
+      "kilde": "BEHANDLING_ID",
+      "referanse": "25"
+    },
+    {
+      "kilde": "BISYS_SØKNAD",
+      "referanse": "500004"
+    }
+  ]
+}

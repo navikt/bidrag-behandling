@@ -1,0 +1,1027 @@
+{
+  "inntekt": [
+    {
+      "ident": "313213213",
+      "versjon": "1",
+      "summertAarsinntektListe": [
+        {
+          "inntektRapportering": "AINNTEKT",
+          "visningsnavn": "Lønn og trekk 2022",
+          "sumInntekt": 2859987,
+          "periode": {
+            "fom": "2022-01",
+            "til": "2022-12"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 2859987
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "inntektRapportering": "AINNTEKT",
+          "visningsnavn": "Lønn og trekk 2023",
+          "sumInntekt": 31979987,
+          "periode": {
+            "fom": "2023-01",
+            "til": "2023-12"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 31979987
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "inntektRapportering": "AINNTEKT_BEREGNET_12MND",
+          "visningsnavn": "Lønn og trekk siste 12 mnd",
+          "sumInntekt": 25245987,
+          "periode": {
+            "fom": "2023-02",
+            "til": "2024-01"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 25245987
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "inntektRapportering": "AINNTEKT_BEREGNET_3MND",
+          "visningsnavn": "Lønn og trekk siste 3 mnd",
+          "sumInntekt": 5330000,
+          "periode": {
+            "fom": "2023-11",
+            "til": "2024-01"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 5330000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "inntektRapportering": "LIGNINGSINNTEKT",
+          "visningsnavn": "Sigrun ligningsinntekt (LIGS) 2021",
+          "sumInntekt": 0,
+          "periode": {
+            "fom": "2021-01",
+            "til": "2021-12"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [],
+          "grunnlagsreferanseListe": [
+            "innhentet_skattegrunnlag_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20210101"
+          ]
+        },
+        {
+          "inntektRapportering": "LIGNINGSINNTEKT",
+          "visningsnavn": "Sigrun ligningsinntekt (LIGS) 2022",
+          "sumInntekt": 5000.0,
+          "periode": {
+            "fom": "2022-01",
+            "til": "2022-12"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [
+            {
+              "kode": "annenArbeidsinntekt",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 5000.0
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_skattegrunnlag_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20220101"
+          ]
+        },
+        {
+          "inntektRapportering": "LIGNINGSINNTEKT",
+          "visningsnavn": "Sigrun ligningsinntekt (LIGS) 2023",
+          "sumInntekt": 16000.0,
+          "periode": {
+            "fom": "2023-01",
+            "til": "2023-12"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [
+            {
+              "kode": "annenArbeidsinntekt",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 6000.0
+            },
+            {
+              "kode": "arbeidsavklaringspenger",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 10000.0
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_skattegrunnlag_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101"
+          ]
+        },
+        {
+          "inntektRapportering": "KAPITALINNTEKT",
+          "visningsnavn": "Sigrun kapitalinntekt (KAPS) 2021",
+          "sumInntekt": 0,
+          "periode": {
+            "fom": "2021-01",
+            "til": "2021-12"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [],
+          "grunnlagsreferanseListe": [
+            "innhentet_skattegrunnlag_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20210101"
+          ]
+        },
+        {
+          "inntektRapportering": "KAPITALINNTEKT",
+          "visningsnavn": "Sigrun kapitalinntekt (KAPS) 2022",
+          "sumInntekt": 44000.0,
+          "periode": {
+            "fom": "2022-01",
+            "til": "2022-12"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [
+            {
+              "kode": "annenSkattepliktigKapitalinntektFraAnnetFinansprodukt",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 4000.0
+            },
+            {
+              "kode": "annenSkattepliktigKapitalinntektFraVirtuellValuta",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 40000.0
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_skattegrunnlag_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20220101"
+          ]
+        },
+        {
+          "inntektRapportering": "KAPITALINNTEKT",
+          "visningsnavn": "Sigrun kapitalinntekt (KAPS) 2023",
+          "sumInntekt": 85000.0,
+          "periode": {
+            "fom": "2023-01",
+            "til": "2023-12"
+          },
+          "gjelderBarnPersonId": "",
+          "inntektPostListe": [
+            {
+              "kode": "annenSkattepliktigKapitalinntektFraAnnetFinansprodukt",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 5000.0
+            },
+            {
+              "kode": "annenSkattepliktigKapitalinntektFraVirtuellValuta",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 50000.0
+            },
+            {
+              "kode": "inntektFraGevinstOgTapskonto",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 30000.0
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_skattegrunnlag_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101"
+          ]
+        }
+      ],
+      "summertMånedsinntektListe": [
+        {
+          "gjelderÅrMåned": "2022-01",
+          "sumInntekt": 104000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 104000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-02",
+          "sumInntekt": 104000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 104000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-03",
+          "sumInntekt": 104000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 104000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-04",
+          "sumInntekt": 104000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 104000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-05",
+          "sumInntekt": 407329,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 407329
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-06",
+          "sumInntekt": 303329,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 303329
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-07",
+          "sumInntekt": 465829,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 465829
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-08",
+          "sumInntekt": 162500,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 162500
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-09",
+          "sumInntekt": 162500,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 162500
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-10",
+          "sumInntekt": 422500,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 422500
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-11",
+          "sumInntekt": 260000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 260000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2022-12",
+          "sumInntekt": 260000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 260000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-01",
+          "sumInntekt": 6734000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 6734000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-02",
+          "sumInntekt": 234000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 234000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-03",
+          "sumInntekt": 234000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 234000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-04",
+          "sumInntekt": 234000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 234000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-05",
+          "sumInntekt": 10937329,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 10937329
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-06",
+          "sumInntekt": 1499329,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 1499329
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-07",
+          "sumInntekt": 8649329,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 8649329
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-08",
+          "sumInntekt": 546000,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 546000
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-09",
+          "sumInntekt": 789750,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 789750
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-10",
+          "sumInntekt": 789750,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 789750
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-11",
+          "sumInntekt": 666250,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 666250
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        },
+        {
+          "gjelderÅrMåned": "2023-12",
+          "sumInntekt": 666250,
+          "inntektPostListe": [
+            {
+              "kode": "fastloenn",
+              "inntekstype": null,
+              "visningsnavn": "Visningsnavn",
+              "beløp": 666250
+            }
+          ],
+          "grunnlagsreferanseListe": [
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230301",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230401",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230501",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230601",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230701",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230801",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20230901",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231001",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231101",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20231201",
+            "innhentet_ainntekt_person_PERSON_BIDRAGSMOTTAKER_20200301_1_20240101"
+          ]
+        }
+      ]
+    },
+    {
+      "ident": "1344124",
+      "versjon": "1",
+      "summertAarsinntektListe": [],
+      "summertMånedsinntektListe": []
+    },
+    {
+      "ident": "54545454545",
+      "versjon": "1",
+      "summertAarsinntektListe": [],
+      "summertMånedsinntektListe": []
+    }
+  ],
+  "utvidetbarnetrygd": [],
+  "barnetillegg": [],
+  "arbeidsforhold": [
+    {
+      "partPersonId": "313213213",
+      "startdato": "2002-11-03",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2002-11",
+          "periodeTil": null,
+          "arbeidsforholdType": "Forenklet",
+          "arbeidstidsordningBeskrivelse": null,
+          "ansettelsesformBeskrivelse": null,
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": null,
+          "avtaltStillingsprosent": null,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjonListe": [],
+      "permitteringListe": []
+    },
+    {
+      "partPersonId": "313213213",
+      "startdato": "2003-12-08",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
+      "arbeidsgiverOrgnummer": "947064649",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2024-01",
+          "periodeTil": null,
+          "arbeidsforholdType": "Ordinaer",
+          "arbeidstidsordningBeskrivelse": "Ikke skift",
+          "ansettelsesformBeskrivelse": "Fast ansettelse",
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": 37.5,
+          "avtaltStillingsprosent": 75.0,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjonListe": [
+        {
+          "startdato": "2023-11-01",
+          "sluttdato": "2024-01-01",
+          "beskrivelse": "Permisjon",
+          "prosent": 100.0
+        }
+      ],
+      "permitteringListe": [
+        {
+          "startdato": "2023-01-01",
+          "sluttdato": "2023-01-31",
+          "beskrivelse": "Permittering",
+          "prosent": 100.0
+        }
+      ]
+    },
+    {
+      "partPersonId": "313213213",
+      "startdato": "2022-12-07",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2022-12",
+          "periodeTil": null,
+          "arbeidsforholdType": "Forenklet",
+          "arbeidstidsordningBeskrivelse": null,
+          "ansettelsesformBeskrivelse": null,
+          "yrkeBeskrivelse": "BYGNINGSSNEKKER",
+          "antallTimerPrUke": null,
+          "avtaltStillingsprosent": null,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjonListe": [],
+      "permitteringListe": []
+    }
+  ]
+}

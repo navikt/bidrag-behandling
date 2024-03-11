@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDto
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilOppdaterBehandlingRequestV2
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody
 @BehandlingRestControllerV1
 class BehandlingController(
     private val behandlingService: BehandlingService,
+    private val vedtakService: VedtakService,
 ) {
     @Suppress("unused")
     @PostMapping("/behandling")
@@ -64,8 +66,12 @@ class BehandlingController(
             behandlingFørOppdatering.bidragsmottaker?.ident?.let { Personident(it) }
                 ?: throw IllegalArgumentException("Behandling mangler BM!")
 
-        behandlingService.oppdaterBehandling(behandlingsid, request.tilOppdaterBehandlingRequestV2(personidentBm))
-        return behandlingService.hentBehandlingById(behandlingsid).tilBehandlingDtoV2(emptyList(), emptySet()).tilBehandlingDto()
+        behandlingService.oppdaterBehandling(
+            behandlingsid,
+            request.tilOppdaterBehandlingRequestV2(personidentBm),
+        )
+        return behandlingService.hentBehandlingById(behandlingsid)
+            .tilBehandlingDtoV2(emptyList(), emptySet()).tilBehandlingDto()
     }
 
     @Suppress("unused")
@@ -96,5 +102,29 @@ class BehandlingController(
     ): BehandlingDto {
         val behandling = behandlingService.henteBehandling(behandlingId)
         return behandling.tilBehandlingDto()
+    }
+
+    @Suppress("unused")
+    @GetMapping("/behandling/vedtak/{vedtakId}")
+    @Operation(
+        description = "Hent vedtak som behandling for lesemodus. Vedtak vil bli konvertert til behandling uten lagring",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Vedtak i form av behandling"),
+            ApiResponse(
+                responseCode = "404",
+                description = "Fant ikke vedtak med oppgitt vedtaksid",
+            ),
+        ],
+    )
+    fun vedtakLesemodusV1(
+        @PathVariable vedtakId: Long,
+    ): BehandlingDto {
+        val resultat =
+            vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
+                ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
+        return resultat.tilBehandlingDtoV2(resultat.grunnlagListe, emptySet()).tilBehandlingDto()
     }
 }

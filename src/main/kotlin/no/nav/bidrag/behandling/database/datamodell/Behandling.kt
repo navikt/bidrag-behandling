@@ -26,13 +26,13 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
+import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity(name = "behandling")
 @SQLDelete(sql = "UPDATE behandling SET deleted = true WHERE id=?")
-@Where(clause = "deleted=false")
+@SQLRestriction(value = "deleted=false")
 open class Behandling(
     @Enumerated(EnumType.STRING)
     open val vedtakstype: Vedtakstype,
@@ -61,6 +61,7 @@ open class Behandling(
     @Convert(converter = ÅrsakConverter::class)
     open var årsak: VirkningstidspunktÅrsakstype? = null,
     @Column(name = "avslag")
+    @Enumerated(EnumType.STRING)
     open var avslag: Resultatkode? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_VEDTAK_OG_NOTAT")
     open var virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
@@ -116,9 +117,13 @@ open class Behandling(
     open var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
     open var deleted: Boolean = false,
 ) {
+    val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+
+    val erVedtakFattet get() = vedtaksid != null
+    val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
 }
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)

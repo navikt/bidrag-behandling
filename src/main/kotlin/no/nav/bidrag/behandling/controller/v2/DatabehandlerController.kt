@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestControllerV2
 @Deprecated("Midlertidlig kontroller for proessering av grunnlagdata")
-class DatabehandlerController(private val behandlingService: BehandlingService) {
+class DatabehandlerController(
+    private val behandlingService: BehandlingService,
+) {
     @Suppress("unused")
     @PostMapping("/databehandler/sivilstand/{behandlingId}")
     fun konverterSivilstand(
@@ -18,7 +20,6 @@ class DatabehandlerController(private val behandlingService: BehandlingService) 
         @RequestBody request: List<SivilstandGrunnlagDto>,
     ): SivilstandBeregnet {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val virkningstidspunkt = behandling.virkningstidspunkt ?: behandling.søktFomDato
-        return SivilstandApi.beregn(virkningstidspunkt, request)
+        return SivilstandApi.beregn(behandling.virkningstidspunktEllerSøktFomDato, request)
     }
 }

@@ -16,8 +16,8 @@
   <properties>
     <java.version>21</java.version>
     <kotlin.version>1.9.22</kotlin.version>
-    <bidrag-felles.version>2024.02.08.131951</bidrag-felles.version>
-    <bidrag-beregn-felles.version>2024.02.05.150213</bidrag-beregn-felles.version>
+    <bidrag-felles.version>2024.03.07.131711</bidrag-felles.version>
+    <bidrag-beregn-felles.version>2024.02.26.141623</bidrag-beregn-felles.version>
     <h2.version>2.2.224</h2.version>
     <logback-encoder.version>7.4</logback-encoder.version>
     <token-support.version>3.2.0</token-support.version>
@@ -281,11 +281,33 @@
         </exclusion>
       </exclusions>
     </dependency>
-
+    <dependency>
+      <groupId>no.nav.bidrag</groupId>
+      <artifactId>bidrag-commons-test-felles</artifactId>
+      <version>${bidrag-felles.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>io.github.oshai</groupId>
+          <artifactId>kotlin-logging-jvm</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>no.nav.bidrag</groupId>
       <artifactId>bidrag-transport-felles</artifactId>
       <version>${bidrag-felles.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>no.nav.bidrag</groupId>
+      <artifactId>bidrag-inntekt</artifactId>
+      <version>${bidrag-beregn-felles.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>no.nav.bidrag</groupId>
@@ -295,6 +317,25 @@
         <exclusion>
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>no.nav.bidrag</groupId>
+          <artifactId>bidrag-domene-felles</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>no.nav.bidrag</groupId>
+      <artifactId>bidrag-boforhold</artifactId>
+      <version>${bidrag-beregn-felles.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>no.nav.bidrag</groupId>
+          <artifactId>bidrag-domene-felles</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -307,21 +348,6 @@
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
         </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>no.nav.bidrag</groupId>
-      <artifactId>bidrag-inntekt</artifactId>
-      <version>${bidrag-beregn-felles.version}</version>
-      <exclusions>
-      <exclusion>
-        <groupId>no.nav.bidrag</groupId>
-        <artifactId>bidrag-commons-felles</artifactId>
-      </exclusion>
-      <exclusion>
-        <groupId>no.nav.bidrag</groupId>
-        <artifactId>bidrag-transport-felles</artifactId>
-      </exclusion>
       </exclusions>
     </dependency>
     <!--Diverse-->
@@ -342,7 +368,11 @@
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>io.getunleash</groupId>
+      <artifactId>unleash-client-java</artifactId>
+      <version>9.2.0</version>
+    </dependency>
     <!--Logging-->
     <dependency>
       <groupId>io.github.oshai</groupId>
@@ -501,11 +531,6 @@
           <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-maven-allopen</artifactId>
-            <version>${kotlin.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-maven-noarg</artifactId>
             <version>${kotlin.version}</version>
           </dependency>
           <dependency>

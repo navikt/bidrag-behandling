@@ -43,6 +43,33 @@ fun fantIkkeSak(saksnummer: String): Nothing =
         "Sak med saksnummer $saksnummer finnes ikke",
     )
 
+fun fantIkkeRolleISak(
+    saksnummer: String,
+    ident: String,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Fant ikke rolle med ident $ident i sak med saksnummer $saksnummer",
+    )
+
+fun rolleManglerIdent(
+    rolletype: Rolletype,
+    behandlingId: Long,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Manger personident for rolle $rolletype i behandling $behandlingId",
+    )
+
+fun manglerBosstatus(
+    behandlingId: Long,
+    navnEllerIdent: String? = null,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Mangler bosstatus for søknadsbarn $navnEllerIdent i behandling $behandlingId",
+    )
+
 fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -55,4 +82,10 @@ fun rolleManglerFødselsdato(rolletype: Rolletype): Nothing =
     throw HttpClientErrorException(
         HttpStatus.BAD_REQUEST,
         "Rolle med type $rolletype mangler fødselsdato",
+    )
+
+fun vedtakmappingFeilet(melding: String): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        melding,
     )

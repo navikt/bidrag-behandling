@@ -6,12 +6,12 @@ import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BA_1
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BM
-import no.nav.bidrag.behandling.utils.testdata.ROLLE_BP
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.dokument.BidragEnhet
 import org.intellij.lang.annotations.Language
@@ -43,9 +43,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                             ),
                         roller =
                             listOf(
-                                ROLLE_BM,
-                                ROLLE_BP,
-                                ROLLE_BA_1,
+                                testdataBM.tilForsendelseRolleDto(),
+                                testdataBP.tilForsendelseRolleDto(),
+                                testdataBarn1.tilForsendelseRolleDto(),
                             ),
                     ),
                 ),
@@ -59,9 +59,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
             """
             {
                 "mottaker": {
-                    "ident": "${ROLLE_BM.fødselsnummer?.verdi}"
+                    "ident": "${testdataBM.ident}"
                 },
-                "gjelderIdent": "${ROLLE_BM.fødselsnummer?.verdi}",
+                "gjelderIdent": "${testdataBM.ident}",
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "språk": "NB",
@@ -78,7 +78,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     "soknadType": null,
                     "soknadFra": null,
                     "vedtakType": null,
-                    "barnIBehandling":["${ROLLE_BA_1.fødselsnummer?.verdi}"]
+                    "barnIBehandling":["${testdataBarn1.ident}"]
                 },
                 "opprettTittel": true
             }
@@ -121,15 +121,15 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                         "tema": null,
                         "roller": [
                             {
-                                "fødselsnummer": "${ROLLE_BM.fødselsnummer?.verdi}",
+                                "fødselsnummer": "${testdataBM.ident}",
                                 "type": "BM"
                             },
                             {
-                                "fødselsnummer": "${ROLLE_BP.fødselsnummer?.verdi}",
+                                "fødselsnummer": "${testdataBP.ident}",
                                 "type": "BP"
                             },
                             {
-                                "fødselsnummer": "${ROLLE_BA_1.fødselsnummer?.verdi}",
+                                "fødselsnummer": "${testdataBarn1.ident}",
                                 "type": "BA"
                             }
                         ]
@@ -147,9 +147,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
             """
             {
                 "mottaker": {
-                    "ident": "${ROLLE_BM.fødselsnummer?.verdi}"
+                    "ident": "${testdataBM.ident}"
                 },
-                "gjelderIdent": "${ROLLE_BM.fødselsnummer?.verdi}",
+                "gjelderIdent": "${testdataBM.ident}",
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "språk": "NB",
@@ -166,7 +166,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                     "soknadType": null,
                     "soknadFra": null,
                     "vedtakType": null,
-                    "barnIBehandling":["${ROLLE_BA_1.fødselsnummer?.verdi}"]
+                    "barnIBehandling":["${testdataBarn1.ident}"]
                 },
                 "opprettTittel": true
             }
@@ -207,9 +207,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                             ),
                         roller =
                             listOf(
-                                ROLLE_BM,
-                                ROLLE_BP,
-                                ROLLE_BA_1,
+                                testdataBM.tilForsendelseRolleDto(),
+                                testdataBP.tilForsendelseRolleDto(),
+                                testdataBarn1.tilForsendelseRolleDto(),
                             ),
                     ),
                 ),
@@ -256,9 +256,9 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                             ),
                         roller =
                             listOf(
-                                ROLLE_BM,
-                                ROLLE_BP,
-                                ROLLE_BA_1,
+                                testdataBM.tilForsendelseRolleDto(),
+                                testdataBP.tilForsendelseRolleDto(),
+                                testdataBarn1.tilForsendelseRolleDto(),
                             ),
                     ),
                 ),

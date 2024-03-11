@@ -3,7 +3,9 @@ package no.nav.bidrag.behandling.controller.behandling
 import no.nav.bidrag.behandling.controller.KontrollerTestRunner
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -34,16 +36,18 @@ class BehandlingControllerTest : KontrollerTestRunner() {
             saksnummer: String?,
             enhet: String,
             roller: Set<OpprettRolleDto>,
-        ): OpprettBehandlingRequestTest {
-            return OpprettBehandlingRequestTest(
+        ): OpprettBehandlingRequest {
+            return OpprettBehandlingRequest(
                 Vedtakstype.FASTSETTELSE,
-                Stønadstype.FORSKUDD,
-                LocalDate.now().minusMonths(4),
-                LocalDate.now(),
-                SøktAvType.BIDRAGSMOTTAKER,
-                saksnummer,
-                enhet,
-                roller,
+                stønadstype = Stønadstype.FORSKUDD,
+                søktFomDato = LocalDate.now().minusMonths(4),
+                mottattdato = LocalDate.now(),
+                søknadFra = SøktAvType.BIDRAGSMOTTAKER,
+                saksnummer = saksnummer ?: SAKSNUMMER,
+                behandlerenhet = enhet,
+                roller = roller,
+                engangsbeløpstype = null,
+                søknadsid = 100,
             )
         }
     }

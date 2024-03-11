@@ -31,7 +31,7 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
             OppdaterBehandlingRequest(
                 virkningstidspunkt =
                     OppdaterVirkningstidspunkt(
-                        årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
+                        årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
                         virkningstidspunkt = LocalDate.parse("2025-12-27"),
                         notat =
                             OppdaterNotat(

@@ -10,6 +10,10 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
+  BIDRAG_VEDTAK_URL: http://bidrag-vedtak-feature
+  BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-feature
+  BIDRAG_SAK_URL: https://bidrag-sak-feature.dev-fss-pub.nais.io/bidrag-sak
+  BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-feature
   TOPIC_VEDTAK: bidrag.vedtak-feature
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
@@ -41,9 +45,14 @@ outbound-access-apps:
   - bidrag-grunnlag-feature
   - bidrag-dokument-forsendelse-feature
   - bidrag-tilgangskontroll-feature
+  - bidrag-vedtak-feature
 outbound-access-hosts:
   - bidrag-person-feature.dev-fss-pub.nais.io
   - bidrag-organisasjon-feature.dev-fss-pub.nais.io
   - bidrag-sjablon-feature.dev-fss-pub.nais.io
   - arbeid-og-inntekt-q1.dev-fss-pub.nais.io
   - kodeverk.dev-fss-pub.nais.io
+  - bidrag-unleash-api.nav.cloud.nais.io
+unleash:
+  env: development
+  secret_name: bidrag-behandling-unleash-api-token

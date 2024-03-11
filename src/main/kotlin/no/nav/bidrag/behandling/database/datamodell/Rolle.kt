@@ -11,8 +11,10 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import java.time.LocalDate
@@ -43,5 +45,9 @@ open class Rolle(
     )
     open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
 )
+
+fun Rolle.tilPersonident() = ident?.let { Personident(it) }
+
+fun Rolle.tilNyestePersonident() = ident?.let { hentNyesteIdent(it) }
 
 fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""

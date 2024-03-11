@@ -5,24 +5,54 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
+import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestControllerV2
 class BehandlingControllerV2(
+    private val vedtakService: VedtakService,
     private val behandlingService: BehandlingService,
     private val grunnlagService: GrunnlagService,
 ) {
+    @Suppress("unused")
+    @GetMapping("/behandling/vedtak/{vedtakId}")
+    @Operation(
+        description = "Hent vedtak som behandling for lesemodus. Vedtak vil bli konvertert til behandling uten lagring",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Vedtak i form av behandling"),
+            ApiResponse(
+                responseCode = "404",
+                description = "Fant ikke vedtak med oppgitt vedtaksid",
+            ),
+        ],
+    )
+    fun vedtakLesemodus(
+        @PathVariable vedtakId: Long,
+    ): BehandlingDtoV2 {
+        val resultat =
+            vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
+                ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
+        return resultat.tilBehandlingDtoV2(resultat.grunnlagListe, emptySet())
+    }
+
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingsid}")
     @Operation(
@@ -90,4 +120,41 @@ class BehandlingControllerV2(
     ): BehandlingDtoV2 {
         return behandlingService.henteBehandling(behandlingsid)
     }
+
+    @Suppress("unused")
+    @DeleteMapping("/behandling/{behandlingsid}")
+    @Operation(
+        description = "Logisk slett en behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Slettet behandling"),
+            ApiResponse(responseCode = "400", description = "Kan ikke slette behandling"),
+        ],
+    )
+    fun slettBehandling(
+        @PathVariable behandlingsid: Long,
+    ) = behandlingService.slettBehandling(behandlingsid)
+
+    @Suppress("unused")
+    @PostMapping("/behandling/vedtak/{refVedtaksId}")
+    @Operation(
+        description = "Opprett behandling fra vedtak. Brukes når det skal opprettes klagebehanling fra vedtak.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Opprettet behandling fra vedtak",
+            ),
+        ],
+    )
+    fun opprettBehandlingForVedtak(
+        @Valid
+        @RequestBody(required = true)
+        opprettBehandling: OpprettBehandlingFraVedtakRequest,
+        @PathVariable refVedtaksId: Long,
+    ): OpprettBehandlingResponse = vedtakService.opprettBehandlingFraVedtak(opprettBehandling, refVedtaksId)
 }

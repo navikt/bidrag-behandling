@@ -12,20 +12,8 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import no.nav.bidrag.behandling.database.grunnlag.BoforholdBearbeidet
-import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
-import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
-import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
-import no.nav.bidrag.behandling.service.GrunnlagService.Companion.inntekterOgYtelser
-import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
-import no.nav.bidrag.transport.behandling.inntekt.request.UtvidetBarnetrygd
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
 
@@ -49,27 +37,16 @@ open class Grunnlag(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
-)
-
-inline fun <reified T> Grunnlag?.hentData(): T? =
-    when (this?.erBearbeidet == true && inntekterOgYtelser.contains(this.type)) {
-        true -> konverterData<SummerteInntekter<SummertÅrsinntekt>>() as T
-        else -> {
-            when (this?.type) {
-                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> konverterData<SkattepliktigeInntekter>() as T
-                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> konverterData<SummerteInntekter<SummertÅrsinntekt>>() as T
-                Grunnlagsdatatype.BARNETILLEGG -> konverterData<List<BarnetilleggGrunnlagDto>>() as T
-                Grunnlagsdatatype.KONTANTSTØTTE -> konverterData<List<KontantstøtteGrunnlagDto>>() as T
-                Grunnlagsdatatype.SMÅBARNSTILLEGG -> konverterData<List<SmåbarnstilleggGrunnlagDto>>() as T
-                Grunnlagsdatatype.UTVIDET_BARNETRYGD -> konverterData<List<UtvidetBarnetrygd>>() as T
-                Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> konverterData<BoforholdBearbeidet>() as T
-                Grunnlagsdatatype.BOFORHOLD -> konverterData<List<RelatertPersonDto>>() as T
-                Grunnlagsdatatype.SIVILSTAND -> konverterData<List<SivilstandDto>>() as T
-                Grunnlagsdatatype.ARBEIDSFORHOLD -> konverterData<List<ArbeidsforholdGrunnlagDto>>() as T
-                else -> null
-            }
+) {
+    override fun toString(): String {
+        return try {
+            "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
+                "id=$id, behandling=${behandling.id}, innhentet=$innhentet)"
+        } catch (e: Exception) {
+            "Grunnlag${this.hashCode()}"
         }
     }
+}
 
 inline fun <reified T> Grunnlag?.konverterData(): T? {
     return this?.data?.let {

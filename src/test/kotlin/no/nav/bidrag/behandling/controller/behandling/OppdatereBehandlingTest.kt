@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -21,6 +22,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Autowired
@@ -118,5 +120,63 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             oppdatertBehandling.get().grunnlag.first().aktiv shouldNotBe null
             oppdatertBehandling.get().grunnlag.first().aktiv?.toLocalDate() shouldBe LocalDate.now()
         }
+    }
+
+    @Test
+    fun `skal slette behandling`() {
+        // gitt
+        val behandling = testdataManager.opprettBehandling()
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/" + behandling.id,
+                HttpMethod.DELETE,
+                null,
+                Unit::class.java,
+            )
+
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+
+        // så
+        val slettetBehandlingFraRepository =
+            behandlingRepository.findBehandlingById(behandling.id!!)
+
+        assertTrue(
+            slettetBehandlingFraRepository.isEmpty,
+            "Skal ikke finne behandling i repository etter sletting",
+        )
+
+        val sletteBehandling = testdataManager.hentBehandling(behandling.id!!)!!
+        withClue("Skal logisk slettet hvor deleted parameter er true") {
+            sletteBehandling.deleted shouldBe true
+        }
+    }
+
+    @Test
+    fun `skal ikke slette behandling hvis vedtak er fattet`() {
+        // gitt
+        val behandling = testdataManager.opprettBehandling()
+        behandling.vedtaksid = 1
+        behandlingRepository.save(behandling)
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/" + behandling.id,
+                HttpMethod.DELETE,
+                null,
+                Unit::class.java,
+            )
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, behandlingRes.statusCode)
+
+        behandlingRes.headers.get("Warning")
+            ?.first() shouldBe "Validering feilet - Kan ikke slette behandling hvor vedtak er fattet"
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
+
+        assertNotNull(oppdatertBehandling)
+        oppdatertBehandling.deleted shouldBe false
     }
 }

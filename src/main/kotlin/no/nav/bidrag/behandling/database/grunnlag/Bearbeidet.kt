@@ -53,6 +53,17 @@ data class SkattepliktigeInntekter(
 )
 
 data class SummerteInntekter<T>(
+    val versjon: String? = null,
+    val inntekter: List<T>,
+)
+
+data class BearbeidetInntekter<T>(
     val versjon: String?,
     val inntekter: List<T> = emptyList(),
+)
+
+data class SkattepliktigeInntekter2<T, R>(
+    val versjon: String? = null,
+    val ainntekter: List<T>,
+    val skattegrunnlag: List<R>,
 )
