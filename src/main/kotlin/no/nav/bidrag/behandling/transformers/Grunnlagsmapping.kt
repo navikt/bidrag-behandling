@@ -28,7 +28,7 @@ val summertYtelsetyper =
     )
 val summertSkattegrunnlagstyper =
     Inntektsrapportering.entries
-        .filter { it.kanLeggesInnManuelt == false && it.hentesAutomatisk == true }
+        .filter { !it.kanLeggesInnManuelt && it.hentesAutomatisk }
         .filter { !summertAinntektstyper.contains(it) }
         .filter { !summertYtelsetyper.contains(it) }
 

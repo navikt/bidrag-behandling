@@ -222,6 +222,7 @@ private fun List<GrunnlagDto>.mapInntekter(
                     if (lesemodus) i.toLong() else null,
                 )
             }.toMutableSet()
+    // TODO: I MVP1 så er det lagt opp til at saksbehandler kan fatte vedtak uten å måtte oppdatere til nyeste opplysninger først
 //    if (!lesemodus) {
 //        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }.ifTaMed {
 //            it.copy(

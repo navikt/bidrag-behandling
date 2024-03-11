@@ -63,9 +63,9 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         assertSoftly(behandling) {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 13
-            grunnlag shouldHaveSize 26
+            grunnlag shouldHaveSize 30
             refVedtaksid shouldBe 12333
-            grunnlag.filter { it.aktiv == null }.shouldHaveSize(6)
+            grunnlag.filter { it.aktiv == null }.shouldHaveSize(10)
             sivilstand shouldHaveSize 2
             husstandsbarn shouldHaveSize 6
             søktFomDato shouldBe LocalDate.parse("2020-01-01")
@@ -79,5 +79,30 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         stubUtils.Verify().hentGrunnlagKalt(1, testdataBM.tilRolle(behandling))
         stubUtils.Verify().hentGrunnlagKalt(1, testdataBarn2.tilRolle(behandling))
         stubUtils.Verify().hentGrunnlagKalt(1, testdataBarn1.tilRolle(behandling))
+    }
+
+    @Test
+    fun `Skal ikke opprette behandling hvis vedtak ikke finnes`() {
+        stubUtils.stubHenteVedtak(status = HttpStatus.NOT_FOUND)
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/vedtak/12333",
+                HttpMethod.POST,
+                HttpEntity(
+                    OpprettBehandlingFraVedtakRequest(
+                        vedtakstype = Vedtakstype.KLAGE,
+                        søknadFra = SøktAvType.BIDRAGSMOTTAKER,
+                        søktFomDato = LocalDate.parse("2020-01-01"),
+                        mottattdato = LocalDate.parse("2024-01-01"),
+                        behandlerenhet = "4444",
+                        saksnummer = "1234567",
+                        søknadsreferanseid = 111,
+                        søknadsid = 12323,
+                    ),
+                ),
+                OpprettBehandlingResponse::class.java,
+            )
+
+        behandlingRes.statusCode shouldBe HttpStatus.NOT_FOUND
     }
 }
