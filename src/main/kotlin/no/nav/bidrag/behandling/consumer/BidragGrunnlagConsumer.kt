@@ -32,6 +32,7 @@ class BidragGrunnlagConsumer(
                 GrunnlagRequestType.SKATTEGRUNNLAG,
                 GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
                 GrunnlagRequestType.BARNETILLEGG,
+                GrunnlagRequestType.KONTANTSTØTTE,
                 GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
                 GrunnlagRequestType.SIVILSTAND,
                 GrunnlagRequestType.ARBEIDSFORHOLD,
