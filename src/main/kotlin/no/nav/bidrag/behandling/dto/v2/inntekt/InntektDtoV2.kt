@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.beregning.felles.InntektPerBarn
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -50,5 +51,6 @@ data class InntekterDtoV2(
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
+    val beregnetInntekter: List<InntektPerBarn> = emptyList(),
     val notat: BehandlingNotatDto,
 )

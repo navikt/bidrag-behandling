@@ -1,9 +1,16 @@
 package no.nav.bidrag.behandling.transformers
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
+import no.nav.bidrag.behandling.transformers.grunnlag.beregningTilDato
+import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
+import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -11,6 +18,24 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
+
+fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag {
+    return BeregnValgteInntekterGrunnlag(
+        periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, beregningTilDato),
+        barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
+        bidragsmottakerIdent = Personident(bidragsmottaker?.ident!!),
+        grunnlagListe =
+            inntekter.filter { it.taMed }.map {
+                InntektsgrunnlagPeriode(
+                    periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                    beløp = it.belop,
+                    inntektsrapportering = it.type,
+                    inntektGjelderBarnIdent = it.gjelderBarn.takeIfNotNullOrEmpty { Personident(it) },
+                    inntektEiesAvIdent = Personident(it.ident),
+                )
+            },
+    )
+}
 
 fun List<ResultatForskuddsberegningBarn>.tilDto() =
     map { resultat ->

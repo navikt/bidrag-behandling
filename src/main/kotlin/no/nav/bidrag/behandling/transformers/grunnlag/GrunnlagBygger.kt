@@ -17,6 +17,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import java.time.YearMonth
 
+val beregningTilDato = YearMonth.now().plusMonths(1).atDay(1)
+
 data class StønadsendringPeriode(
     val barn: Rolle,
     val perioder: List<OpprettPeriodeRequestDto>,
@@ -63,7 +65,7 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
                 virkningstidspunkt ?: vedtakmappingFeilet(
                     "Virkningstidspunkt må settes for beregning",
                 ),
-                YearMonth.now().plusMonths(1).atDay(1),
+                beregningTilDato,
             ),
         søknadsbarnReferanse = søknadsbarn.referanse,
         grunnlagListe =
