@@ -35,7 +35,12 @@ class BidragGrunnlagConsumer(
                 GrunnlagRequestType.ARBEIDSFORHOLD,
             )
 
-        val grunnlagstyperBarn = setOf(GrunnlagRequestType.ARBEIDSFORHOLD, GrunnlagRequestType.SKATTEGRUNNLAG)
+        val grunnlagstyperBarn =
+            setOf(
+                GrunnlagRequestType.ARBEIDSFORHOLD,
+                GrunnlagRequestType.SKATTEGRUNNLAG,
+                GrunnlagRequestType.AINNTEKT,
+            )
 
         fun oppretteGrunnlagsobjekterBarn(personidentBarn: Personident): List<GrunnlagRequestDto> =
             henteGrunnlag(
