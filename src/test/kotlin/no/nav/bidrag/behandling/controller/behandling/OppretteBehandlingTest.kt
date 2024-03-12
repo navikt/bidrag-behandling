@@ -258,9 +258,10 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
         }
 
         @Test
-        fun `skal ikke opprette behandling hvis det finnes en behandling med samme søknadsid`() {
+        open fun `skal ikke opprette behandling hvis det finnes en behandling med samme søknadsid`() {
             val behandling = testdataManager.opprettBehandling()
             behandling.soknadsid = 1239999
+            testdataManager.lagreBehandling(behandling)
             val roller =
                 setOf(
                     OpprettRolleDto(
@@ -279,7 +280,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                 oppretteBehandlingRequestTest("1900000", "en12", roller, behandling.soknadsid)
             val response =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV1()}/behandling",
+                    "${rootUriV2()}/behandling",
                     HttpMethod.POST,
                     HttpEntity(request),
                     OpprettBehandlingResponse::class.java,

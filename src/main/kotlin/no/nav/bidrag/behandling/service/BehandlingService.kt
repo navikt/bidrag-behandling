@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
@@ -254,21 +255,49 @@ class BehandlingService(
         val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
         secureLogger.info { "Legger til søknadsbarn ${identerSomSkalLeggesTil.joinToString(",")} i behandling $behandlingId" }
         behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
+
+        val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }
+        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
+        secureLogger.info { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
+        behandling.roller.removeIf { r ->
+            val skalSlettes = identerSomSkalSlettes.contains(r.ident)
+            skalSlettes.ifTrue {
+                log.info { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+            }
+            skalSlettes
+        }
+
+        oppdaterHusstandsbarnForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
+
+        behandlingRepository.save(behandling)
+
+        if (behandling.søknadsbarn.isEmpty()) {
+            log.info { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
+            behandlingRepository.delete(behandling)
+            return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
+        }
+
+        return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
+    }
+
+    private fun oppdaterHusstandsbarnForRoller(
+        behandling: Behandling,
+        rollerSomLeggesTil: List<OpprettRolleDto>,
+        rollerSomSkalSlettes: List<OpprettRolleDto>,
+    ) {
         val nyeRollerSomIkkeHarHusstandsbarn =
             rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsbarn.none { it.ident == nyRolle.ident?.verdi } }
         behandling.husstandsbarn.addAll(
             nyeRollerSomIkkeHarHusstandsbarn.map {
+                secureLogger.info { "Legger til husstandsbarn med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
                 it.toHusstandsbarn(
                     behandling,
                 )
             },
         )
-
-        val identerSomSkalSlettes =
-            oppdaterRollerListe.filter { r -> r.erSlettet }.mapNotNull { it.ident?.verdi }
-        behandling.roller.removeIf { r -> identerSomSkalSlettes.contains(r.ident) }
-        secureLogger.info { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
-
+        // TODO: Hent grunnlag for nye husstandsmedlemmer
+        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
+        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         behandling.husstandsbarn.forEach {
             if (identerSomSkalLeggesTil.contains(it.ident)) {
                 it.medISaken = true
@@ -276,16 +305,6 @@ class BehandlingService(
                 it.medISaken = false
             }
         }
-
-        behandlingRepository.save(behandling)
-
-        if (behandling.søknadsbarn.isEmpty()) {
-            log.info { "Alle barn i behandling $behandlingId er slettet. Avslutter behandling" }
-            behandlingRepository.delete(behandling)
-            return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
-        }
-
-        return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
     }
 
     private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {

@@ -5,6 +5,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
@@ -59,6 +60,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.transaction.annotation.Transactional
@@ -313,7 +315,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal oppdatere roller og slette behandling`() {
+        fun `skal oppdatere roller og slette behandling hvis alle barn er slettet`() {
             val b = oppretteBehandling()
 
             val response =
@@ -340,21 +342,36 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere roller`() {
             // gitt
-            val identMedISaken = "1111"
-            val identIkkeMedISaken = "111123"
+            val identOriginaltMedISaken = "1111"
+            val identOriginaltIkkeMedISaken = "111123"
             val behandling = oppretteBehandling()
+            behandling.roller =
+                mutableSetOf(
+                    Rolle(
+                        behandling,
+                        ident = identOriginaltMedISaken,
+                        rolletype = Rolletype.BARN,
+                        foedselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                    Rolle(
+                        behandling,
+                        ident = "123123123",
+                        rolletype = Rolletype.BARN,
+                        foedselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                )
             behandling.husstandsbarn =
                 mutableSetOf(
                     Husstandsbarn(
                         behandling,
                         medISaken = false,
-                        ident = identIkkeMedISaken,
+                        ident = identOriginaltIkkeMedISaken,
                         foedselsdato = LocalDate.parse("2021-01-01"),
                     ),
                     Husstandsbarn(
                         behandling,
                         medISaken = true,
-                        ident = identMedISaken,
+                        ident = identOriginaltMedISaken,
                         foedselsdato = LocalDate.parse("2021-01-01"),
                     ),
                 )
@@ -367,14 +384,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                     listOf(
                         OpprettRolleDto(
                             Rolletype.BARN,
-                            Personident(identMedISaken),
+                            Personident(identOriginaltMedISaken),
                             null,
                             fødselsdato = LocalDate.now().minusMonths(144),
                             true,
                         ),
                         OpprettRolleDto(
                             Rolletype.BARN,
-                            Personident(identIkkeMedISaken),
+                            Personident(identOriginaltIkkeMedISaken),
                             null,
                             fødselsdato = LocalDate.now().minusMonths(144),
                         ),
@@ -384,15 +401,50 @@ class BehandlingServiceTest : TestContainerRunner() {
                             null,
                             fødselsdato = LocalDate.now().minusMonths(144),
                         ),
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident("5555566666"),
+                            "Person som ikke finnes",
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            true,
+                        ),
                     ),
                 )
             val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
             behandlingEtter.søknadsbarn shouldHaveSize 3
             behandlingEtter.husstandsbarn shouldHaveSize 3
-            behandlingEtter.husstandsbarn.find { it.ident == identMedISaken }!!.medISaken shouldBe false
-            behandlingEtter.husstandsbarn.find { it.ident == identIkkeMedISaken }!!.medISaken shouldBe true
+            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltMedISaken }!!.medISaken shouldBe false
+            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltIkkeMedISaken }!!.medISaken shouldBe true
             behandlingEtter.husstandsbarn.find { it.ident == "1111234" }!!.medISaken shouldBe true
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke oppdatere roller hvis vedtak er fattet for behandling`() {
+            // gitt
+            val identOriginaltMedISaken = "1111"
+            val behandling = oppretteBehandling()
+            behandling.vedtaksid = 12
+
+            behandlingRepository.save(behandling)
+
+            val exception =
+                assertThrows<HttpClientErrorException> {
+                    behandlingService.oppdaterRoller(
+                        behandling.id!!,
+                        listOf(
+                            OpprettRolleDto(
+                                Rolletype.BARN,
+                                Personident(identOriginaltMedISaken),
+                                null,
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                                true,
+                            ),
+                        ),
+                    )
+                }
+            exception.message shouldContain "Kan ikke oppdatere behandling hvor vedtak er fattet"
         }
     }
 
