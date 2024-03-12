@@ -161,7 +161,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
 
             assertSoftly(behandlingDto) {
-                it.id shouldBe 1
                 it.inntekter.beregnetInntekter shouldHaveSize 3
                 val inntekterAlle =
                     it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }

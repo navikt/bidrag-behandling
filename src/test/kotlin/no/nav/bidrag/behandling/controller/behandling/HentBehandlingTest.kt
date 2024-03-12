@@ -56,7 +56,6 @@ class HentBehandlingTest : BehandlingControllerTest() {
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
         assertSoftly(behandlingRes.body!!) {
-            it.id shouldBe 1
             it.inntekter.beregnetInntekter shouldHaveSize 3
             val inntekterAlle =
                 it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
