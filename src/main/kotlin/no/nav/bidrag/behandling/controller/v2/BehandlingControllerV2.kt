@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
@@ -181,4 +182,15 @@ class BehandlingControllerV2(
         @RequestBody(required = true)
         opprettBehandling: OpprettBehandlingRequest,
     ): OpprettBehandlingResponse = behandlingService.opprettBehandling(opprettBehandling)
+
+    @Suppress("unused")
+    @PutMapping("/behandling/{behandlingId}/roller")
+    @Operation(
+        description = "Oppdater roller i behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun oppdaterRoller(
+        @PathVariable behandlingId: Long,
+        @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
+    ) = behandlingService.oppdaterRoller(behandlingId, request.roller)
 }

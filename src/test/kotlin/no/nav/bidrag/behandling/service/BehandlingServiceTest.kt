@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
@@ -290,38 +291,41 @@ class BehandlingServiceTest : TestContainerRunner() {
         fun `legge til flere roller`() {
             val b = oppretteBehandling()
 
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("newident"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
+            val response =
+                behandlingService.oppdaterRoller(
+                    b.id!!,
+                    listOf(
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident("newident"),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                        ),
                     ),
-                ),
-            )
-
-            assertEquals(4, behandlingService.hentBehandlingById(b.id!!).roller.size)
+                )
+            response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+            behandlingService.hentBehandlingById(b.id!!).roller shouldHaveSize 4
         }
 
         @Test
-        fun `behandling må synce roller og slette behandling`() {
+        fun `skal oppdatere roller og slette behandling`() {
             val b = oppretteBehandling()
 
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident(b.søknadsbarn.first().ident!!),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                        true,
+            val response =
+                behandlingService.oppdaterRoller(
+                    b.id!!,
+                    listOf(
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident(b.søknadsbarn.first().ident!!),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            true,
+                        ),
                     ),
-                ),
-            )
+                )
 
+            response.status shouldBe OppdaterRollerStatus.BEHANDLING_SLETTET
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.hentBehandlingById(b.id!!)
             }
@@ -329,42 +333,39 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `behandling må synce roller`() {
+        open fun `skal oppdatere roller`() {
             // gitt
             val b = oppretteBehandling()
 
             // hvis
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("1111"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                        true,
+            val response =
+                behandlingService.oppdaterRoller(
+                    b.id!!,
+                    listOf(
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident("1111"),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            true,
+                        ),
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident("111123"),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                        ),
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident("1111234"),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                        ),
                     ),
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("111123"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                    ),
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("1111234"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                    ),
-                ),
-            )
+                )
             entityManager.refresh(b)
-
-            // så
-            assertEquals(
-                3,
-                b.roller.filter { r -> r.rolletype == Rolletype.BARN }.size,
-            )
+            response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+            b.søknadsbarn shouldHaveSize 3
         }
     }
 

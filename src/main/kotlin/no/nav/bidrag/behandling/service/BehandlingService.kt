@@ -7,7 +7,8 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.database.repository.RolleRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -21,6 +22,7 @@ import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.apache.commons.lang3.Validate
 import org.springframework.http.HttpStatus
@@ -33,7 +35,6 @@ private val log = KotlinLogging.logger {}
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
-    private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
@@ -230,30 +231,43 @@ class BehandlingService(
     }
 
     @Transactional
-    fun syncRoller(
+    fun oppdaterRoller(
         behandlingId: Long,
-        roller: List<OpprettRolleDto>,
-    ) {
-        val existingRoller = rolleRepository.findRollerByBehandlingId(behandlingId)
-
+        oppdaterRollerListe: List<OpprettRolleDto>,
+    ): OppdaterRollerResponse {
         val behandling = behandlingRepository.findById(behandlingId).get()
+        if (behandling.erVedtakFattet) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke oppdatere behandling hvor vedtak er fattet",
+            )
+        }
 
+        log.info { "Oppdater roller i behandling $behandlingId" }
+        val eksisterendeRoller = behandling.roller
         val rollerSomLeggesTil =
-            roller.filter { r ->
-                // not deleted and behandling.roller doesn't contain it yet
-                !r.erSlettet && !existingRoller.any { br -> br.ident == r.ident?.verdi }
-            }
+            oppdaterRollerListe
+                .filter { !it.erSlettet }
+                .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
 
+        val identerSomSkalLeggesTil = rollerSomLeggesTil.map { it.ident }
+        secureLogger.info { "Legger til søknadsbarn ${identerSomSkalLeggesTil.joinToString(",")} i behandling $behandlingId" }
         behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
 
-        val identsSomSkalSlettes = roller.filter { r -> r.erSlettet }.map { it.ident?.verdi }
-        behandling.roller.removeIf { r -> identsSomSkalSlettes.contains(r.ident) }
+        val identerSomSkalSlettes =
+            oppdaterRollerListe.filter { r -> r.erSlettet }.map { it.ident?.verdi }
+        behandling.roller.removeIf { r -> identerSomSkalSlettes.contains(r.ident) }
+        secureLogger.info { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
 
         behandlingRepository.save(behandling)
 
-        if (behandling.roller.none { r -> r.rolletype == Rolletype.BARN }) {
+        if (behandling.søknadsbarn.isEmpty()) {
+            log.info { "Alle barn i behandling $behandlingId er slettet. Avslutter behandling" }
             behandlingRepository.delete(behandling)
+            return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
         }
+
+        return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
     }
 
     private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {

@@ -5,3 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class OppdaterRollerRequest(
     @Schema(required = true) val roller: List<OpprettRolleDto>,
 )
+
+data class OppdaterRollerResponse(
+    @Schema(required = true) val status: OppdaterRollerStatus,
+)
+
+enum class OppdaterRollerStatus {
+    BEHANDLING_SLETTET,
+    ROLLER_OPPDATERT,
+}
