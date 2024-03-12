@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
+import no.nav.bidrag.behandling.transformers.toHusstandsbarn
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -250,14 +251,31 @@ class BehandlingService(
                 .filter { !it.erSlettet }
                 .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
 
-        val identerSomSkalLeggesTil = rollerSomLeggesTil.map { it.ident }
+        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
         secureLogger.info { "Legger til søknadsbarn ${identerSomSkalLeggesTil.joinToString(",")} i behandling $behandlingId" }
         behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
+        val nyeRollerSomIkkeHarHusstandsbarn =
+            rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsbarn.none { it.ident == nyRolle.ident?.verdi } }
+        behandling.husstandsbarn.addAll(
+            nyeRollerSomIkkeHarHusstandsbarn.map {
+                it.toHusstandsbarn(
+                    behandling,
+                )
+            },
+        )
 
         val identerSomSkalSlettes =
-            oppdaterRollerListe.filter { r -> r.erSlettet }.map { it.ident?.verdi }
+            oppdaterRollerListe.filter { r -> r.erSlettet }.mapNotNull { it.ident?.verdi }
         behandling.roller.removeIf { r -> identerSomSkalSlettes.contains(r.ident) }
         secureLogger.info { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
+
+        behandling.husstandsbarn.forEach {
+            if (identerSomSkalLeggesTil.contains(it.ident)) {
+                it.medISaken = true
+            } else if (identerSomSkalSlettes.contains(it.ident)) {
+                it.medISaken = false
+            }
+        }
 
         behandlingRepository.save(behandling)
 

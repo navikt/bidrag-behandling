@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -304,7 +305,11 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                 )
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
-            behandlingService.hentBehandlingById(b.id!!).roller shouldHaveSize 4
+            val behandlingEtter = behandlingService.hentBehandlingById(b.id!!)
+            behandlingEtter.roller shouldHaveSize 4
+            behandlingEtter.husstandsbarn shouldHaveSize 1
+            behandlingEtter.husstandsbarn.first().ident shouldBe "newident"
+            behandlingEtter.husstandsbarn.first().medISaken shouldBe true
         }
 
         @Test
@@ -335,23 +340,41 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere roller`() {
             // gitt
-            val b = oppretteBehandling()
+            val identMedISaken = "1111"
+            val identIkkeMedISaken = "111123"
+            val behandling = oppretteBehandling()
+            behandling.husstandsbarn =
+                mutableSetOf(
+                    Husstandsbarn(
+                        behandling,
+                        medISaken = false,
+                        ident = identIkkeMedISaken,
+                        foedselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                    Husstandsbarn(
+                        behandling,
+                        medISaken = true,
+                        ident = identMedISaken,
+                        foedselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                )
 
+            behandlingRepository.save(behandling)
             // hvis
             val response =
                 behandlingService.oppdaterRoller(
-                    b.id!!,
+                    behandling.id!!,
                     listOf(
                         OpprettRolleDto(
                             Rolletype.BARN,
-                            Personident("1111"),
+                            Personident(identMedISaken),
                             null,
                             fødselsdato = LocalDate.now().minusMonths(144),
                             true,
                         ),
                         OpprettRolleDto(
                             Rolletype.BARN,
-                            Personident("111123"),
+                            Personident(identIkkeMedISaken),
                             null,
                             fødselsdato = LocalDate.now().minusMonths(144),
                         ),
@@ -363,9 +386,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                         ),
                     ),
                 )
-            entityManager.refresh(b)
+            val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
-            b.søknadsbarn shouldHaveSize 3
+            behandlingEtter.søknadsbarn shouldHaveSize 3
+            behandlingEtter.husstandsbarn shouldHaveSize 3
+            behandlingEtter.husstandsbarn.find { it.ident == identMedISaken }!!.medISaken shouldBe false
+            behandlingEtter.husstandsbarn.find { it.ident == identIkkeMedISaken }!!.medISaken shouldBe true
+            behandlingEtter.husstandsbarn.find { it.ident == "1111234" }!!.medISaken shouldBe true
         }
     }
 

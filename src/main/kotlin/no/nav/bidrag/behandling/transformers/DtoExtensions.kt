@@ -217,3 +217,13 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
             ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
     )
+
+fun OpprettRolleDto.toHusstandsbarn(behandling: Behandling): Husstandsbarn =
+    Husstandsbarn(
+        behandling,
+        true,
+        ident = this.ident?.verdi,
+        foedselsdato =
+            this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
+                ?: rolleManglerFødselsdato(rolletype),
+    )
