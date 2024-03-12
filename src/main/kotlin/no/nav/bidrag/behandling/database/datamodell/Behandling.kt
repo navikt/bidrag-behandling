@@ -41,7 +41,7 @@ open class Behandling(
     open val datoTom: LocalDate? = null,
     open val mottattdato: LocalDate,
     open val saksnummer: String,
-    open val soknadsid: Long,
+    open var soknadsid: Long,
     open val soknadRefId: Long? = null,
     open val behandlerEnhet: String,
     open val opprettetAv: String,

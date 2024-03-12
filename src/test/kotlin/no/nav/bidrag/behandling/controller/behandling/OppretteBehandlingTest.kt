@@ -260,6 +260,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
         @Test
         fun `skal ikke opprette behandling hvis det finnes en behandling med samme søknadsid`() {
             val behandling = testdataManager.opprettBehandling()
+            behandling.soknadsid = 1239999
             val roller =
                 setOf(
                     OpprettRolleDto(
