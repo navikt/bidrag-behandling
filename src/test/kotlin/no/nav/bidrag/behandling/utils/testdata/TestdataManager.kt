@@ -23,12 +23,12 @@ class TestdataManager(
     private val behandlingRepository: BehandlingRepository,
     private val entityManager: EntityManager,
 ) {
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    @Transactional
     fun lagreBehandling(behandling: Behandling): Behandling {
         return behandlingRepository.save(behandling)
     }
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    @Transactional
     fun opprettBehandling(inkluderInntekter: Boolean = false): Behandling {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
