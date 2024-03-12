@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
@@ -49,11 +48,9 @@ class VedtakHendelseListener(
                 "oppretter forsendelse og notat for vedtaket"
         }
 
-        behandlingService.oppdaterBehandling(
+        behandlingService.oppdaterVedtaksId(
             vedtak.behandlingId!!,
-            OppdaterBehandlingRequestV2(
-                vedtaksid = vedtak.id.toLong(),
-            ),
+            vedtaksid = vedtak.id.toLong(),
         ) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
         opprettForsendelse(vedtak, behandling)
         // TODO: Lagre notat for vedtaket

@@ -13,8 +13,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 data class OppdaterBehandlingRequestV2(
-    val grunnlagspakkeId: Long? = null,
-    val vedtaksid: Long? = null,
     val virkningstidspunkt: OppdaterVirkningstidspunkt? = null,
     val boforhold: OppdaterBoforholdRequest? = null,
     val inntekter: OppdatereInntekterRequestV2? = null,
@@ -48,11 +46,18 @@ data class OppdaterePeriodeInntekt(
 )
 
 data class OppdatereManuellInntekt(
-    @Schema(description = "Inntektens databaseid. Oppgis ikke ved opprettelse av inntekt.", required = false)
+    @Schema(
+        description = "Inntektens databaseid. Oppgis ikke ved opprettelse av inntekt.",
+        required = false,
+    )
     val id: Long? = null,
     @Schema(description = "Angir om inntekten skal inkluderes i beregning. Hvis ikke spesifisert inkluderes inntekten.")
     val taMed: Boolean = true,
-    @Schema(description = "Angir inntektens rapporteringstype.", required = true, example = "KONTANTSTØTTE")
+    @Schema(
+        description = "Angir inntektens rapporteringstype.",
+        required = true,
+        example = "KONTANTSTØTTE",
+    )
     val type: Inntektsrapportering,
     @Schema(description = "Inntektens beløp i norske kroner", required = true)
     val beløp: BigDecimal,
