@@ -190,6 +190,7 @@ class BehandlingService(
             }
     }
 
+    @Transactional
     fun oppdaterVedtaksId(
         behandlingsid: Long,
         vedtaksid: Long,
