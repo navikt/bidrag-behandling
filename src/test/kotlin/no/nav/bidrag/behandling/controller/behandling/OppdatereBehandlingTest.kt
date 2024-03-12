@@ -2,9 +2,11 @@ package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -38,16 +40,26 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/" + b.id,
                 HttpMethod.PUT,
-                HttpEntity(OppdaterBehandlingRequestV2(123L)),
+                HttpEntity(
+                    OppdaterBehandlingRequestV2(
+                        virkningstidspunkt =
+                            OppdaterVirkningstidspunkt(
+                                virkningstidspunkt = LocalDate.parse("2024-03-02"),
+                            ),
+                    ),
+                ),
                 BehandlingDtoV2::class.java,
             )
         Assertions.assertEquals(HttpStatus.CREATED, behandlingRes.statusCode)
+        val responseBody = behandlingRes.body!!
+        responseBody.inntekter.beregnetInntekter shouldHaveSize 3
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2024-03-02")
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!)
 
         assertNotNull(oppdatertBehandling)
-        Assertions.assertEquals(123L, oppdatertBehandling.get().grunnlagspakkeid)
+        oppdatertBehandling.get().virkningstidspunkt shouldBe LocalDate.parse("2024-03-02")
     }
 
     @Test
@@ -80,7 +92,6 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 HttpEntity(
                     OppdaterBehandlingRequestV2(
                         aktivereGrunnlagForPerson = aktivereGrunnlagRequest,
-                        grunnlagspakkeId = 123L,
                     ),
                 ),
                 BehandlingDtoV2::class.java,

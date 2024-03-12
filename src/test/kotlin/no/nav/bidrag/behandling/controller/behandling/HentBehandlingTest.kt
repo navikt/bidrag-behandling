@@ -2,14 +2,14 @@ package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import jakarta.persistence.EntityManager
-import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
@@ -21,7 +21,6 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpMethod
@@ -30,9 +29,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 class HentBehandlingTest : BehandlingControllerTest() {
-    @PersistenceContext
-    lateinit var entityManager: EntityManager
-
     @Test
     fun `skal hente behandling`() {
         stubUtils.stubHenteGrunnlagOk(
@@ -62,25 +58,34 @@ class HentBehandlingTest : BehandlingControllerTest() {
         assertSoftly(behandlingRes.body!!) {
             it.id shouldBe 1
             it.inntekter.beregnetInntekter shouldHaveSize 3
-            it.inntekter.beregnetInntekter[0].inntektGjelderBarnIdent shouldBe null
-            it.inntekter.beregnetInntekter[0].summertInntektListe shouldHaveSize 3
+            val inntekterAlle =
+                it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
+            val inntekterBarn1 =
+                it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn1.ident)
+            val inntekterBarn2 =
+                it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn2.ident)
+            inntekterAlle.shouldNotBeNull()
+            inntekterBarn1.shouldNotBeNull()
+            inntekterBarn2.shouldNotBeNull()
 
-            it.inntekter.beregnetInntekter[1].inntektGjelderBarnIdent shouldBe
-                Personident(
-                    testdataBarn2.ident,
-                )
-            it.inntekter.beregnetInntekter[1].summertInntektListe shouldHaveSize 3
-            it.inntekter.beregnetInntekter[1].summertInntektListe[0].barnetillegg shouldBe null
-
-            it.inntekter.beregnetInntekter[2].inntektGjelderBarnIdent shouldBe
-                Personident(
-                    testdataBarn1.ident,
-                )
-            it.inntekter.beregnetInntekter[2].summertInntektListe shouldHaveSize 3
-            it.inntekter.beregnetInntekter[2].summertInntektListe[0].barnetillegg shouldBe
-                BigDecimal(
-                    5000,
-                )
+            assertSoftly(inntekterAlle) {
+                summertInntektListe shouldHaveSize 3
+                summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
+                summertInntektListe[0].barnetillegg shouldBe null
+                summertInntektListe[0].kontantstøtte shouldBe null
+            }
+            assertSoftly(inntekterBarn2) {
+                summertInntektListe shouldHaveSize 3
+                summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
+                summertInntektListe[0].barnetillegg shouldBe null
+                summertInntektListe[0].kontantstøtte shouldBe null
+            }
+            assertSoftly(inntekterBarn1) {
+                summertInntektListe shouldHaveSize 3
+                summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
+                summertInntektListe[0].barnetillegg shouldBe BigDecimal(5000)
+                summertInntektListe[0].kontantstøtte shouldBe null
+            }
         }
     }
 
