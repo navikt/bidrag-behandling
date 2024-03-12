@@ -144,8 +144,6 @@ class BehandlingService(
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 log.info { "Oppdatere behandling $behandlingsid" }
                 SECURE_LOGGER.info("Oppdatere behandling $behandlingsid for forespørsel $request")
-                it.grunnlagspakkeid = request.grunnlagspakkeId ?: it.grunnlagspakkeid
-                it.vedtaksid = request.vedtaksid ?: it.vedtaksid
                 request.aktivereGrunnlagForPerson.let { aktivereGrunnlagRequest ->
                     if (aktivereGrunnlagRequest != null) {
                         log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
@@ -189,6 +187,18 @@ class BehandlingService(
                         bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
                 }
                 it
+            }
+    }
+
+    @Transactional
+    fun oppdaterVedtaksId(
+        behandlingsid: Long,
+        vedtaksid: Long,
+    ) {
+        behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+                log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
+                it.vedtaksid = vedtaksid
             }
     }
 

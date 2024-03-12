@@ -32,7 +32,7 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
                 virkningstidspunkt =
                     OppdaterVirkningstidspunkt(
                         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
-                        virkningstidspunkt = LocalDate.parse("2025-12-27"),
+                        virkningstidspunkt = LocalDate.parse("2022-12-27"),
                         notat =
                             OppdaterNotat(
                                 "KUN I NOTAT",
@@ -53,6 +53,6 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
         val body = respons.body!!
         Assertions.assertEquals("KUN I NOTAT", body.virkningstidspunkt.notat.kunINotat)
         Assertions.assertEquals("MED I VEDTAK", body.virkningstidspunkt.notat.medIVedtaket)
-        Assertions.assertEquals("2025-12-27", body.virkningstidspunkt.virkningstidspunkt.toString())
+        Assertions.assertEquals("2022-12-27", body.virkningstidspunkt.virkningstidspunkt.toString())
     }
 }

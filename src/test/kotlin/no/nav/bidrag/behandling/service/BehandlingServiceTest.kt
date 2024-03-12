@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -25,10 +27,15 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -86,6 +93,103 @@ class BehandlingServiceTest : TestContainerRunner() {
         fun `skal kaste 404 exception hvis behandlingen ikke er der`() {
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.henteBehandling(1234)
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal hente behandling med beregnet inntekter`() {
+            val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+            behandling.roller = oppretteBehandlingRoller(behandling)
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                        BigDecimal.valueOf(1234),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = LocalDate.parse("2023-09-01"),
+                        behandling = behandling,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.LIGNINGSINNTEKT,
+                        BigDecimal.valueOf(500000),
+                        LocalDate.parse("2023-01-01"),
+                        LocalDate.parse("2023-09-01"),
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        false,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = LocalDate.parse("2023-09-01"),
+                        behandling = behandling,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.BARNETILLEGG,
+                        BigDecimal(555),
+                        LocalDate.parse("2024-01-01"),
+                        LocalDate.parse("2024-05-01"),
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2024-01-01"),
+                        opprinneligTom = LocalDate.parse("2024-05-01"),
+                        gjelderBarn = testdataBarn1.ident,
+                        behandling = behandling,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.KONTANTSTØTTE,
+                        BigDecimal(999),
+                        LocalDate.parse("2024-01-01"),
+                        LocalDate.parse("2024-05-01"),
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2024-01-01"),
+                        opprinneligTom = LocalDate.parse("2024-05-01"),
+                        gjelderBarn = testdataBarn2.ident,
+                        behandling = behandling,
+                    ),
+                )
+            testdataManager.lagreBehandling(behandling)
+            kjøreStubber(behandling)
+
+            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
+            assertSoftly(behandlingDto) {
+                it.inntekter.beregnetInntekter shouldHaveSize 3
+                val inntekterAlle =
+                    it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
+                val inntekterBarn1 =
+                    it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn1.ident)
+                val inntekterBarn2 =
+                    it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn2.ident)
+                inntekterAlle.shouldNotBeNull()
+                inntekterBarn1.shouldNotBeNull()
+                inntekterBarn2.shouldNotBeNull()
+
+                assertSoftly(inntekterAlle) {
+                    summertInntektListe shouldHaveSize 1
+                    summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(1234)
+                    summertInntektListe[0].barnetillegg shouldBe null
+                    summertInntektListe[0].kontantstøtte shouldBe null
+                }
+                assertSoftly(inntekterBarn2) {
+                    summertInntektListe shouldHaveSize 3
+                    summertInntektListe[1].skattepliktigInntekt shouldBe BigDecimal(1234)
+                    summertInntektListe[1].barnetillegg shouldBe null
+                    summertInntektListe[1].kontantstøtte shouldBe BigDecimal(999)
+                }
+                assertSoftly(inntekterBarn1) {
+                    summertInntektListe shouldHaveSize 3
+                    summertInntektListe[1].skattepliktigInntekt shouldBe BigDecimal(1234)
+                    summertInntektListe[1].barnetillegg shouldBe BigDecimal(555)
+                    summertInntektListe[1].kontantstøtte shouldBe null
+                }
             }
         }
 
@@ -437,20 +541,6 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal oppdatere behandling med grunnlagspakkeId`() {
-            val b = oppretteBehandling()
-
-            behandlingService.oppdaterBehandling(
-                b.id!!,
-                OppdaterBehandlingRequestV2(
-                    grunnlagspakkeId = 123L,
-                ),
-            )
-
-            assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeid)
-        }
-
-        @Test
         @Transactional
         open fun `skal aktivere valgte nyinnhenta grunnlag`() {
             // gitt
@@ -735,6 +825,8 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     private fun kjøreStubber(behandling: Behandling) {
+        stubSjablonProvider()
+        stubKodeverkProvider()
         stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
         stubUtils.stubKodeverkSkattegrunnlag()

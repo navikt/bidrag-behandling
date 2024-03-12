@@ -14,8 +14,6 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
 
 data class OppdaterBehandlingRequest(
-    val grunnlagspakkeId: Long? = null,
-    val vedtaksid: Long? = null,
     val virkningstidspunkt: OppdaterVirkningstidspunkt? = null,
     val boforhold: OppdaterBoforholdRequest? = null,
     val inntekter: OppdatereInntekterRequest? = null,

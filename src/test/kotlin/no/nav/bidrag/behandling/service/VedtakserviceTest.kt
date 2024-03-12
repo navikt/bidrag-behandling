@@ -112,7 +112,12 @@ class VedtakserviceTest {
                 any(),
             )
         } returns Unit
-
+        every {
+            behandlingService.oppdaterVedtaksId(
+                any(),
+                any(),
+            )
+        } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()
         stubKodeverkProvider()
