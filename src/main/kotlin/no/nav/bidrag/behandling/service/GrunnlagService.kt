@@ -246,25 +246,26 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime,
     ) {
         if (Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == grunnlagsdatatype) {
-            aktivereOgOppdatereSkattbareInntekter(behandling, rolle, aktiveringstidspunkt)
+            aktivereOgOppdatereSkattepliktigeInntekter(behandling, rolle, aktiveringstidspunkt)
         }
     }
 
-    private fun aktivereOgOppdatereSkattbareInntekter(
+    private fun aktivereOgOppdatereSkattepliktigeInntekter(
         behandling: Behandling,
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
     ) {
-        val sistInnhentedeSkattepliktigeInntekter =
+        val sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter =
             behandling.grunnlag
                 .filter { rolle.ident == it.rolle.ident }
                 .filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }
+                .filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }
 
         val transformereInntekter =
             TransformerInntekterRequestBuilder(
                 ainntektsposter =
-                    sistInnhentedeSkattepliktigeInntekter
+                    sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter
                         ?.let { grunnlag ->
                             var respons: List<AinntektspostDto> = emptyList()
                             if (grunnlag.data.trim().isNotEmpty()) {
@@ -276,7 +277,7 @@ class GrunnlagService(
                             respons.tilAinntektsposter(rolle)
                         } ?: emptyList(),
                 skattegrunnlag =
-                    sistInnhentedeSkattepliktigeInntekter?.let { grunnlag ->
+                    sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter?.let { grunnlag ->
                         var respons: List<SkattegrunnlagGrunnlagDto> = emptyList()
                         if (grunnlag.data.trim().isNotEmpty()) {
                             respons =
@@ -325,7 +326,7 @@ class GrunnlagService(
             summertAinntektOgSkattegrunnlag.summertÅrsinntektListe,
         )
 
-        sistInnhentedeSkattepliktigeInntekter?.aktiv = aktiveringstidspunkt
+        sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter?.aktiv = aktiveringstidspunkt
         entityManager.flush()
     }
 
