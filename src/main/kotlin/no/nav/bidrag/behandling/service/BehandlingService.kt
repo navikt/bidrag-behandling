@@ -59,6 +59,10 @@ class BehandlingService(
         }
 
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
+        behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
+            log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
+            return OpprettBehandlingResponse(it.id!!)
+        }
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
                 ingenVoksneUtenIdent(

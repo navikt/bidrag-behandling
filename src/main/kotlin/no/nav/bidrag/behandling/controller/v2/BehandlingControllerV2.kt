@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
@@ -157,4 +158,27 @@ class BehandlingControllerV2(
         opprettBehandling: OpprettBehandlingFraVedtakRequest,
         @PathVariable refVedtaksId: Long,
     ): OpprettBehandlingResponse = vedtakService.opprettBehandlingFraVedtak(opprettBehandling, refVedtaksId)
+
+    @Suppress("unused")
+    @PostMapping("/behandling")
+    @Operation(
+        description = "Legge til en ny behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Lagret behandling"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
+            ApiResponse(
+                responseCode = "403",
+                description = "Sikkerhetstoken er ikke gyldig, eller det er ikke gitt adgang til kode 6 og 7 (nav-ansatt)",
+            ),
+        ],
+    )
+    fun oppretteBehandling(
+        @Valid
+        @RequestBody(required = true)
+        opprettBehandling: OpprettBehandlingRequest,
+    ): OpprettBehandlingResponse = behandlingService.opprettBehandling(opprettBehandling)
 }
