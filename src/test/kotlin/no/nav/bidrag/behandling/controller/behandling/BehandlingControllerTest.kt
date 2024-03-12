@@ -36,6 +36,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
             saksnummer: String?,
             enhet: String,
             roller: Set<OpprettRolleDto>,
+            søknadsid: Long = 100,
         ): OpprettBehandlingRequest {
             return OpprettBehandlingRequest(
                 Vedtakstype.FASTSETTELSE,
@@ -47,7 +48,7 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 behandlerenhet = enhet,
                 roller = roller,
                 engangsbeløpstype = null,
-                søknadsid = 100,
+                søknadsid = søknadsid,
             )
         }
     }

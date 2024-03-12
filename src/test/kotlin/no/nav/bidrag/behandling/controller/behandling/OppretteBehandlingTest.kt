@@ -1,7 +1,9 @@
 package no.nav.bidrag.behandling.controller.behandling
 
+import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -46,7 +48,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                         fødselsdato = LocalDate.now().minusMonths(555),
                     ),
                 )
-            val behandlingReq = oppretteBehandlingRequestTest("1900000", "en12", roller)
+            val behandlingReq = oppretteBehandlingRequestTest("1900000", "en12", roller, 1234444)
 
             // hvis
             val behandlingRes =
@@ -121,6 +123,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                     "1900000",
                     "en12",
                     roller,
+                    12312312321,
                 ).copy(stønadstype = Stønadstype.BIDRAG)
 
             val responseMedNull =
@@ -252,6 +255,36 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
 
             // then
             Assertions.assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+        }
+
+        @Test
+        fun `skal ikke opprette behandling hvis det finnes en behandling med samme søknadsid`() {
+            val behandling = testdataManager.opprettBehandling()
+            val roller =
+                setOf(
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        null,
+                        fødselsdato = LocalDate.now().minusMonths(136),
+                        navn = "Ola Dunk",
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BIDRAGSMOTTAKER,
+                        Personident(testdataBM.ident),
+                        fødselsdato = LocalDate.now().minusMonths(682),
+                    ),
+                )
+            val request =
+                oppretteBehandlingRequestTest("1900000", "en12", roller, behandling.soknadsid)
+            val response =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUriV1()}/behandling",
+                    HttpMethod.POST,
+                    HttpEntity(request),
+                    OpprettBehandlingResponse::class.java,
+                )
+
+            response.body!!.id shouldBe behandling.id
         }
     }
 
