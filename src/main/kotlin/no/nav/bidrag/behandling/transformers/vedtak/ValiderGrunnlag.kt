@@ -92,7 +92,8 @@ fun List<BaseGrunnlag>.validerInntekterHarRiktigReferanse(): List<String> {
                 filtrerBasertPåEgenReferanse(referanse = gjelderBarn).isEmpty()
             ) {
                 feilListe.add(
-                    "Grunnlaget ${it.type} med inntektsrapportering ${innhold.inntektsrapportering} og referanse ${it.referanse} mangler referanse til søknadsbarn",
+                    "Grunnlaget ${it.type} med inntektsrapportering ${innhold.inntektsrapportering} " +
+                        "og referanse ${it.referanse} mangler referanse til søknadsbarn",
                 )
             }
         }
