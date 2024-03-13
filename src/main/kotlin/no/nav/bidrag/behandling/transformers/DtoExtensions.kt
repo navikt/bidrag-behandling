@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
@@ -139,7 +140,7 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
     this.map {
         InntektspostDtoV2(
             kode = it.kode,
-            visningsnavn = it.visningsnavn,
+            visningsnavn = finnVisningsnavn(it.kode),
             inntektstype = it.inntektstype,
             beløp = it.beløp,
         )
