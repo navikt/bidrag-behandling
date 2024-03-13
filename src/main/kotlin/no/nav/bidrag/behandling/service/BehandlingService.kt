@@ -246,6 +246,7 @@ class BehandlingService(
         }
 
         log.info { "Oppdater roller i behandling $behandlingId" }
+        secureLogger.info { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
         val eksisterendeRoller = behandling.roller
         val rollerSomLeggesTil =
             oppdaterRollerListe
@@ -253,12 +254,20 @@ class BehandlingService(
                 .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
 
         val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
-        secureLogger.info { "Legger til søknadsbarn ${identerSomSkalLeggesTil.joinToString(",")} i behandling $behandlingId" }
+        identerSomSkalLeggesTil.isNotEmpty().ifTrue {
+            secureLogger.info {
+                "Legger til søknadsbarn ${
+                    identerSomSkalLeggesTil.joinToString(",")
+                } til behandling $behandlingId"
+            }
+        }
         behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
 
         val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
-        secureLogger.info { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
+        identerSomSkalSlettes.isNotEmpty().ifTrue {
+            secureLogger.info { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
+        }
         behandling.roller.removeIf { r ->
             val skalSlettes = identerSomSkalSlettes.contains(r.ident)
             skalSlettes.ifTrue {
