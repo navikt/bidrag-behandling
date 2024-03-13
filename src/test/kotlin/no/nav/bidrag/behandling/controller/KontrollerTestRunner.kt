@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
 import StubUtils
-import com.github.tomakehurst.wiremock.client.WireMock
 import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.Unleash
 import io.mockk.clearMocks
@@ -76,7 +75,6 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         every { unleashInstance.isEnabled(any(), any<Boolean>()) } returns true
         mockkObject(SaksbehandlernavnProvider)
         every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"
-        WireMock.resetAllRequests()
         stubSjablonProvider()
         stubUtils.stubUnleash()
         stubUtils.stubHentSaksbehandler()

@@ -167,11 +167,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     ),
                 )
 
-<<<<<<< HEAD
             val lagretBehandling = behandlingRepository.save(behandling)
-=======
-            behandling = behandlingRepository.save(behandling)
->>>>>>> main
 
             assert(behandling.inntekter.size > 0)
 

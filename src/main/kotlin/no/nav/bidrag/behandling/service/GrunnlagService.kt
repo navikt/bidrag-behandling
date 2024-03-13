@@ -251,7 +251,6 @@ class GrunnlagService(
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
     ) {
-<<<<<<< HEAD
         val sistInnhentedeRådata =
             behandling.grunnlag
                 .filter { rolle.ident == it.rolle.ident }
@@ -266,51 +265,6 @@ class GrunnlagService(
             }
             return
         }
-=======
-        if (Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == grunnlagsdatatype) {
-            aktivereOgOppdatereSkattepliktigeInntekter(behandling, rolle, aktiveringstidspunkt)
-        }
-    }
-
-    private fun aktivereOgOppdatereSkattepliktigeInntekter(
-        behandling: Behandling,
-        rolle: Rolle,
-        aktiveringstidspunkt: LocalDateTime,
-    ) {
-        val sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter =
-            behandling.grunnlag
-                .filter { rolle.ident == it.rolle.ident }
-                .filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }
-                .filter { !it.erBearbeidet }
-                .maxByOrNull { it.innhentet }
-
-        val transformereInntekter =
-            TransformerInntekterRequestBuilder(
-                ainntektsposter =
-                    sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter
-                        ?.let { grunnlag ->
-                            var respons: List<AinntektspostDto> = emptyList()
-                            if (grunnlag.data.trim().isNotEmpty()) {
-                                respons =
-                                    jsonTilObjekt<SkattepliktigeInntekter>(
-                                        grunnlag.data,
-                                    ).ainntekter.flatMap { it.ainntektspostListe }
-                            }
-                            respons.tilAinntektsposter(rolle)
-                        } ?: emptyList(),
-                skattegrunnlag =
-                    sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter?.let { grunnlag ->
-                        var respons: List<SkattegrunnlagGrunnlagDto> = emptyList()
-                        if (grunnlag.data.trim().isNotEmpty()) {
-                            respons =
-                                jsonTilObjekt<SkattepliktigeInntekter>(
-                                    grunnlag.data,
-                                ).skattegrunnlag
-                        }
-                        respons.tilSkattegrunnlagForLigningsår(rolle)
-                    } ?: emptyList(),
-            ).bygge()
->>>>>>> main
 
         val transformereInntekter =
             oppretteTransformereInntekterRequestPerType(grunnlagstype, sistInnhentedeRådata, rolle)
@@ -349,11 +303,7 @@ class GrunnlagService(
             summerteInntekter.summertÅrsinntektListe,
         )
 
-<<<<<<< HEAD
         sistInnhentedeRådata.aktiv = aktiveringstidspunkt
-=======
-        sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter?.aktiv = aktiveringstidspunkt
->>>>>>> main
         entityManager.flush()
     }
 
