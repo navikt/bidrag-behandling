@@ -163,12 +163,17 @@ class BehandlingControllerV2(
     @Suppress("unused")
     @PostMapping("/behandling")
     @Operation(
-        description = "Legge til en ny behandling",
+        description = "Opprett ny behandling",
+        summary = """
+            Oppretter ny behandlding. 
+            Hvis det finnes en behandling fra før med samme søknadsid i forespørsel 
+            vil id for den behandlingen returneres istedenfor at det opprettes ny
+        """,
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Lagret behandling"),
+            ApiResponse(responseCode = "200", description = "Opprettet ny behandling"),
             ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
             ApiResponse(responseCode = "401", description = "Sikkerhetstoken er ikke gyldig"),
             ApiResponse(
