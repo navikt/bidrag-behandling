@@ -393,7 +393,7 @@ private fun VedtakDto.notatMedType(
     .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }?.innhold
 
 private fun VedtakDto.avslagskode() =
-    if (stønadsendringListe.all { it.periodeListe.size == 1 }) {
+    if (stønadsendringListe.all { it.periodeListe.size == 1 } && hentVedtakstidspunkt() == null) {
         Resultatkode.fraKode(stønadsendringListe.first().periodeListe.first().resultatkode)
     } else {
         null

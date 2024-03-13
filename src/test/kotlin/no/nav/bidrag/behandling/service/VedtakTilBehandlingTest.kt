@@ -99,7 +99,7 @@ class VedtakTilBehandlingTest {
     }
 
     @Test
-    fun `Skal opprette grunnlagsstruktur for en forskudd behandling i lesemodus`() {
+    fun `Skal konvertere vedtak til behandling for lesemodus`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
@@ -129,6 +129,19 @@ class VedtakTilBehandlingTest {
             validerSivilstand()
             validerInntekter()
             validerGrunnlag()
+        }
+    }
+
+    @Test
+    fun `Skal konvertere vedtak til behandling for lesemodus hvis resultat er avslag`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_respons_resultat_avslag")
+        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
+
+        assertSoftly(behandling) {
+            behandling.saksnummer shouldBe SAKSNUMMER
+            årsak shouldBe VirkningstidspunktÅrsakstype.FRA_KRAVFREMSETTELSE
+            avslag shouldBe null
+            virkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
         }
     }
 
