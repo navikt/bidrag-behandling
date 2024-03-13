@@ -47,6 +47,7 @@ import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -84,6 +85,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
         stubUtils.stubKodeverkYtelsesbeskrivelser()
         stubUtils.stubKodeverkPensjonsbeskrivelser()
+        stubPersonConsumer()
     }
 
     @Nested

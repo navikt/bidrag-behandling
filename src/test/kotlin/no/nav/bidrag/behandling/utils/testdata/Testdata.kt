@@ -56,6 +56,7 @@ import java.time.format.DateTimeFormatter
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
+val SAKSBEHANDLER_IDENT = "Z999999"
 
 val testdataBP =
     TestDataPerson(

@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 
@@ -94,6 +95,7 @@ fun Behandling.tilBehandlingDtoV2(
                     .sortedBy { it.rapporteringstype }
                     .sortedBy { it.datoFom }
                     .toSet(),
+            beregnetInntekter = hentBeregnetInntekter(),
             notat =
                 BehandlingNotatDto(
                     medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
@@ -103,6 +105,8 @@ fun Behandling.tilBehandlingDtoV2(
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.map(Grunnlag::toDto).toSet(),
     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
 )
+
+private fun Behandling.hentBeregnetInntekter() = BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe
 
 val eksplisitteYtelser =
     setOf(

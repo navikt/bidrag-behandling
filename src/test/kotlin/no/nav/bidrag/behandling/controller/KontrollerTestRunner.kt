@@ -10,6 +10,7 @@ import io.mockk.mockkObject
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
@@ -76,6 +77,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         mockkObject(SaksbehandlernavnProvider)
         every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"
         WireMock.resetAllRequests()
+        stubSjablonProvider()
         stubUtils.stubUnleash()
         stubUtils.stubHentSaksbehandler()
         stubUtils.stubOpprettForsendelse()

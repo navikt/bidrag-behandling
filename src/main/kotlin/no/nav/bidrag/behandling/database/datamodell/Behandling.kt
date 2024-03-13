@@ -41,7 +41,7 @@ open class Behandling(
     open val datoTom: LocalDate? = null,
     open val mottattdato: LocalDate,
     open val saksnummer: String,
-    open val soknadsid: Long,
+    open var soknadsid: Long,
     open val soknadRefId: Long? = null,
     open val behandlerEnhet: String,
     open val opprettetAv: String,
@@ -57,6 +57,8 @@ open class Behandling(
     open var refVedtaksid: Long? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
+    open var vedtakstidspunkt: LocalDateTime? = null,
+    open var vedtakFattetAv: String? = null,
     @Column(name = "aarsak")
     @Convert(converter = ÅrsakConverter::class)
     open var årsak: VirkningstidspunktÅrsakstype? = null,

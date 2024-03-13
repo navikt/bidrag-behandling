@@ -19,7 +19,7 @@ open class Husstandsbarn(
     @JoinColumn(name = "behandling_id", nullable = false)
     open val behandling: Behandling,
     @Column(name = "med_i_saken")
-    open val medISaken: Boolean,
+    open var medISaken: Boolean,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,

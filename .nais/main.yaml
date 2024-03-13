@@ -19,7 +19,7 @@ env:
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
   TOPIC_VEDTAK: bidrag.vedtak-syntetisk
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt.dev-fss-pub.nais.io/api/v2
-  KODEVERK_URL: https://kodeverk.dev-fss-pub.nais.io
+  KODEVERK_URL: https://kodeverk-api.nav.no
   GRUNNLAG_MIN_ANT_TIMER_SIDEN_FORRIGE_INNHENTING: 10
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
@@ -51,7 +51,7 @@ outbound-access-hosts:
   - bidrag-organisasjon.dev-fss-pub.nais.io
   - bidrag-sjablon.dev-fss-pub.nais.io
   - arbeid-og-inntekt.dev-fss-pub.nais.io
-  - kodeverk.dev-fss-pub.nais.io
+  - kodeverk-api.nav.no
   - bidrag-unleash-api.nav.cloud.nais.io
 unleash:
   env: development

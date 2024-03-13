@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
@@ -140,9 +139,9 @@ class VedtakService(
         request.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for behandling $behandlingId med forespørsel $request" }
         val response = vedtakConsumer.fatteVedtak(request)
-        behandlingService.oppdaterBehandling(
+        behandlingService.oppdaterVedtakFattetStatus(
             behandlingId,
-            OppdaterBehandlingRequestV2(vedtaksid = response.vedtaksid.toLong()),
+            vedtaksid = response.vedtaksid.toLong(),
         )
         LOGGER.info {
             "Fattet vedtak for behandling $behandlingId med ${

@@ -1,12 +1,16 @@
 package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -15,7 +19,9 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
@@ -25,10 +31,15 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -50,10 +61,12 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -91,6 +104,103 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        open fun `skal hente behandling med beregnet inntekter`() {
+            val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+            behandling.roller = oppretteBehandlingRoller(behandling)
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                        BigDecimal.valueOf(1234),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = LocalDate.parse("2023-09-01"),
+                        behandling = behandling,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.LIGNINGSINNTEKT,
+                        BigDecimal.valueOf(500000),
+                        LocalDate.parse("2023-01-01"),
+                        LocalDate.parse("2023-09-01"),
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        false,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = LocalDate.parse("2023-09-01"),
+                        behandling = behandling,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.BARNETILLEGG,
+                        BigDecimal(555),
+                        LocalDate.parse("2024-01-01"),
+                        LocalDate.parse("2024-05-01"),
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2024-01-01"),
+                        opprinneligTom = LocalDate.parse("2024-05-01"),
+                        gjelderBarn = testdataBarn1.ident,
+                        behandling = behandling,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.KONTANTSTØTTE,
+                        BigDecimal(999),
+                        LocalDate.parse("2024-01-01"),
+                        LocalDate.parse("2024-05-01"),
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2024-01-01"),
+                        opprinneligTom = LocalDate.parse("2024-05-01"),
+                        gjelderBarn = testdataBarn2.ident,
+                        behandling = behandling,
+                    ),
+                )
+            testdataManager.lagreBehandling(behandling)
+            kjøreStubber(behandling)
+
+            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
+            assertSoftly(behandlingDto) {
+                it.inntekter.beregnetInntekter shouldHaveSize 3
+                val inntekterAlle =
+                    it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
+                val inntekterBarn1 =
+                    it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn1.ident)
+                val inntekterBarn2 =
+                    it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn2.ident)
+                inntekterAlle.shouldNotBeNull()
+                inntekterBarn1.shouldNotBeNull()
+                inntekterBarn2.shouldNotBeNull()
+
+                assertSoftly(inntekterAlle) {
+                    summertInntektListe shouldHaveSize 1
+                    summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(1234)
+                    summertInntektListe[0].barnetillegg shouldBe null
+                    summertInntektListe[0].kontantstøtte shouldBe null
+                }
+                assertSoftly(inntekterBarn2) {
+                    summertInntektListe shouldHaveSize 3
+                    summertInntektListe[1].skattepliktigInntekt shouldBe BigDecimal(1234)
+                    summertInntektListe[1].barnetillegg shouldBe null
+                    summertInntektListe[1].kontantstøtte shouldBe BigDecimal(999)
+                }
+                assertSoftly(inntekterBarn1) {
+                    summertInntektListe shouldHaveSize 3
+                    summertInntektListe[1].skattepliktigInntekt shouldBe BigDecimal(1234)
+                    summertInntektListe[1].barnetillegg shouldBe BigDecimal(555)
+                    summertInntektListe[1].kontantstøtte shouldBe null
+                }
+            }
+        }
+
+        @Test
+        @Transactional
         open fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
             // gitt
             val behandling = oppretteBehandling()
@@ -118,19 +228,84 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Nested
     open inner class OppretteBehandling {
         @Test
-        fun `skal opprette en forskuddsbehandling`() {
-            val actualBehandling = oppretteBehandling()
+        fun `skal opprette en forskuddsbehandling hvis det finnes behandling med samme søknadsid men som er slettet`() {
+            val søknadsid = 123213L
+            val actualBehandling = behandlingRepository.save(prepareBehandling(søknadsid))
+            behandlingRepository.delete(actualBehandling)
+            stubUtils.stubHenteGrunnlagOk()
+            stubPersonConsumer()
+            stubKodeverkProvider()
 
-            assertNotNull(actualBehandling.id)
-            assertEquals(Stønadstype.FORSKUDD, actualBehandling.stonadstype)
-            assertEquals(3, actualBehandling.roller.size)
+            val opprettetBehandling =
+                behandlingService.opprettBehandling(
+                    OpprettBehandlingRequest(
+                        vedtakstype = Vedtakstype.FASTSETTELSE,
+                        søktFomDato = LocalDate.parse("2023-01-01"),
+                        mottattdato = LocalDate.parse("2023-01-01"),
+                        søknadFra = SøktAvType.BIDRAGSMOTTAKER,
+                        saksnummer = "12312",
+                        søknadsid = søknadsid,
+                        behandlerenhet = "1233",
+                        stønadstype = Stønadstype.FORSKUDD,
+                        engangsbeløpstype = null,
+                        roller =
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident("213"),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSMOTTAKER,
+                                    ident = Personident("12321"),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                            ),
+                    ),
+                )
 
-            val actualBehandlingFetched =
-                behandlingService.hentBehandlingById(actualBehandling.id!!)
+            opprettetBehandling.id shouldNotBe actualBehandling.id
 
-            assertEquals(Stønadstype.FORSKUDD, actualBehandlingFetched.stonadstype)
-            assertEquals(3, actualBehandlingFetched.roller.size)
-            assertNotNull(actualBehandlingFetched.roller.iterator().next().foedselsdato)
+            val opprettetBehandlingAfter =
+                behandlingService.hentBehandlingById(opprettetBehandling.id)
+
+            opprettetBehandlingAfter.stonadstype shouldBe Stønadstype.FORSKUDD
+            opprettetBehandlingAfter.roller shouldHaveSize 2
+            opprettetBehandlingAfter.soknadsid shouldBe søknadsid
+            opprettetBehandlingAfter.saksnummer shouldBe "12312"
+            opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke opprette en behandling hvis det allerede finnes med samme søknadsid`() {
+            val søknadsid = 123213L
+            val actualBehandling = behandlingRepository.save(prepareBehandling(søknadsid))
+
+            val opprettetBehandling =
+                behandlingService.opprettBehandling(
+                    OpprettBehandlingRequest(
+                        vedtakstype = Vedtakstype.FASTSETTELSE,
+                        søktFomDato = LocalDate.parse("2023-01-01"),
+                        mottattdato = LocalDate.parse("2023-01-01"),
+                        søknadFra = SøktAvType.BIDRAGSMOTTAKER,
+                        saksnummer = "12312",
+                        søknadsid = søknadsid,
+                        behandlerenhet = "1233",
+                        stønadstype = Stønadstype.FORSKUDD,
+                        engangsbeløpstype = null,
+                        roller =
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident("213"),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                            ),
+                    ),
+                )
+
+            opprettetBehandling.id shouldBe actualBehandling.id
         }
 
         @Test
@@ -181,43 +356,50 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     @Nested
-    open inner class SynkronisereRoller {
+    open inner class OppdaterRoller {
         @Test
         fun `legge til flere roller`() {
             val b = oppretteBehandling()
 
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("newident"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
+            val response =
+                behandlingService.oppdaterRoller(
+                    b.id!!,
+                    listOf(
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident("newident"),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                        ),
                     ),
-                ),
-            )
-
-            assertEquals(4, behandlingService.hentBehandlingById(b.id!!).roller.size)
+                )
+            response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+            val behandlingEtter = behandlingService.hentBehandlingById(b.id!!)
+            behandlingEtter.roller shouldHaveSize 4
+            behandlingEtter.husstandsbarn shouldHaveSize 1
+            behandlingEtter.husstandsbarn.first().ident shouldBe "newident"
+            behandlingEtter.husstandsbarn.first().medISaken shouldBe true
         }
 
         @Test
-        fun `behandling må synce roller og slette behandling`() {
+        fun `skal oppdatere roller og slette behandling hvis alle barn er slettet`() {
             val b = oppretteBehandling()
 
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident(b.søknadsbarn.first().ident!!),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                        true,
+            val response =
+                behandlingService.oppdaterRoller(
+                    b.id!!,
+                    listOf(
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident(b.søknadsbarn.first().ident!!),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            true,
+                        ),
                     ),
-                ),
-            )
+                )
 
+            response.status shouldBe OppdaterRollerStatus.BEHANDLING_SLETTET
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.hentBehandlingById(b.id!!)
             }
@@ -225,42 +407,111 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `behandling må synce roller`() {
+        open fun `skal oppdatere roller`() {
             // gitt
-            val b = oppretteBehandling()
+            val identOriginaltMedISaken = "1111"
+            val identOriginaltIkkeMedISaken = "111123"
+            val behandling = oppretteBehandling()
+            behandling.roller =
+                mutableSetOf(
+                    Rolle(
+                        behandling,
+                        ident = identOriginaltMedISaken,
+                        rolletype = Rolletype.BARN,
+                        foedselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                    Rolle(
+                        behandling,
+                        ident = "123123123",
+                        rolletype = Rolletype.BARN,
+                        foedselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                )
+            behandling.husstandsbarn =
+                mutableSetOf(
+                    Husstandsbarn(
+                        behandling,
+                        medISaken = false,
+                        ident = identOriginaltIkkeMedISaken,
+                        foedselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                    Husstandsbarn(
+                        behandling,
+                        medISaken = true,
+                        ident = identOriginaltMedISaken,
+                        foedselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                )
 
+            behandlingRepository.save(behandling)
             // hvis
-            behandlingService.syncRoller(
-                b.id!!,
-                listOf(
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("1111"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                        true,
+            val response =
+                behandlingService.oppdaterRoller(
+                    behandling.id!!,
+                    listOf(
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident(identOriginaltMedISaken),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            true,
+                        ),
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident(identOriginaltIkkeMedISaken),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                        ),
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident("1111234"),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                        ),
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident("5555566666"),
+                            "Person som ikke finnes",
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            true,
+                        ),
                     ),
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("111123"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                    ),
-                    OpprettRolleDto(
-                        Rolletype.BARN,
-                        Personident("1111234"),
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(144),
-                    ),
-                ),
-            )
-            entityManager.refresh(b)
+                )
+            val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
+            response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+            behandlingEtter.søknadsbarn shouldHaveSize 3
+            behandlingEtter.husstandsbarn shouldHaveSize 3
+            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltMedISaken }!!.medISaken shouldBe false
+            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltIkkeMedISaken }!!.medISaken shouldBe true
+            behandlingEtter.husstandsbarn.find { it.ident == "1111234" }!!.medISaken shouldBe true
+        }
 
-            // så
-            assertEquals(
-                3,
-                b.roller.filter { r -> r.rolletype == Rolletype.BARN }.size,
-            )
+        @Test
+        @Transactional
+        open fun `skal ikke oppdatere roller hvis vedtak er fattet for behandling`() {
+            // gitt
+            val identOriginaltMedISaken = "1111"
+            val behandling = oppretteBehandling()
+            behandling.vedtaksid = 12
+
+            behandlingRepository.save(behandling)
+
+            val exception =
+                assertThrows<HttpClientErrorException> {
+                    behandlingService.oppdaterRoller(
+                        behandling.id!!,
+                        listOf(
+                            OpprettRolleDto(
+                                Rolletype.BARN,
+                                Personident(identOriginaltMedISaken),
+                                null,
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                                true,
+                            ),
+                        ),
+                    )
+                }
+            exception.message shouldContain "Kan ikke oppdatere behandling hvor vedtak er fattet"
         }
     }
 
@@ -437,20 +688,6 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal oppdatere behandling med grunnlagspakkeId`() {
-            val b = oppretteBehandling()
-
-            behandlingService.oppdaterBehandling(
-                b.id!!,
-                OppdaterBehandlingRequestV2(
-                    grunnlagspakkeId = 123L,
-                ),
-            )
-
-            assertEquals(123L, behandlingService.hentBehandlingById(b.id!!).grunnlagspakkeid)
-        }
-
-        @Test
         @Transactional
         open fun `skal aktivere valgte nyinnhenta grunnlag`() {
             // gitt
@@ -612,7 +849,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     companion object {
-        fun prepareBehandling(): Behandling {
+        fun prepareBehandling(søknadsid: Long = 123123): Behandling {
             val behandling =
                 Behandling(
                     Vedtakstype.FASTSETTELSE,
@@ -620,7 +857,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     YearMonth.now().atEndOfMonth(),
                     LocalDate.now(),
                     "1900000",
-                    123213L,
+                    søknadsid,
                     null,
                     "1234",
                     "Z9999",
@@ -735,6 +972,8 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     private fun kjøreStubber(behandling: Behandling) {
+        stubSjablonProvider()
+        stubKodeverkProvider()
         stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
         stubUtils.stubKodeverkSkattegrunnlag()

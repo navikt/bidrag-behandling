@@ -150,7 +150,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Test
         open fun `skal oppdatere eksisterende inntekter`() {
             // given
-            val behandling = testdataManager.opprettBehandling()
+            var behandling = testdataManager.opprettBehandling()
 
             behandling.inntekter =
                 mutableSetOf(
@@ -167,7 +167,11 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     ),
                 )
 
+<<<<<<< HEAD
             val lagretBehandling = behandlingRepository.save(behandling)
+=======
+            behandling = behandlingRepository.save(behandling)
+>>>>>>> main
 
             assert(behandling.inntekter.size > 0)
 

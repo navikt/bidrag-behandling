@@ -10,6 +10,8 @@ import java.util.Optional
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
     fun findBehandlingById(id: Long): Optional<Behandling>
 
+    fun findFirstBySoknadsid(soknadsId: Long): Behandling?
+
     @Modifying
     @Query("update behandling b set b.grunnlagSistInnhentet = :tidspunktInnhentet where b.id = :behandlingsid")
     fun oppdatereTidspunktGrunnlagsinnhenting(

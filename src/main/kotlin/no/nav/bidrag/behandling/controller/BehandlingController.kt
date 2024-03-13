@@ -83,7 +83,7 @@ class BehandlingController(
     fun oppdaterRoller(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
-    ) = behandlingService.syncRoller(behandlingId, request.roller)
+    ) = behandlingService.oppdaterRoller(behandlingId, request.roller)
 
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingId}")
