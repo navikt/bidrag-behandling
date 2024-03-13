@@ -146,40 +146,6 @@ class VedtakTilBehandlingTest {
     }
 
     @Test
-    fun `Skal opprette grunnlagsstruktur for en forskudd behandling i lesemodus`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
-        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
-
-        assertSoftly(behandling) {
-            behandling.saksnummer shouldBe SAKSNUMMER
-            årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-            avslag shouldBe null
-            virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
-            soknadFra shouldBe SøktAvType.BIDRAGSMOTTAKER
-            stonadstype shouldBe Stønadstype.FORSKUDD
-            behandlerEnhet shouldBe "4806"
-            mottattdato shouldBe LocalDate.parse("2023-01-01")
-            vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe null
-            refVedtaksid shouldBe 1
-            soknadsid shouldBe 101
-            opprettetAv shouldBe "Z994977"
-            opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
-            virkningstidspunktsbegrunnelseIVedtakOgNotat shouldBe "Notat virkningstidspunkt med i vedtak"
-            virkningstidspunktbegrunnelseKunINotat shouldBe "Notat virkningstidspunkt"
-            boforholdsbegrunnelseIVedtakOgNotat shouldBe "Notat boforhold med i vedtak"
-            boforholdsbegrunnelseKunINotat shouldBe "Notat boforhold"
-            inntektsbegrunnelseIVedtakOgNotat shouldBe "Notat inntekt med i vedtak"
-            inntektsbegrunnelseKunINotat shouldBe "Notat inntekt"
-            validerRoller()
-            validerHusstandsbarn()
-            validerSivilstand()
-            validerInntekter()
-            validerGrunnlag()
-        }
-    }
-
-    @Test
     fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val behandling =
