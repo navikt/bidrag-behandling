@@ -113,7 +113,7 @@ class VedtakserviceTest {
             )
         } returns Unit
         every {
-            behandlingService.oppdaterVedtaksId(
+            behandlingService.oppdaterVedtakFattetStatus(
                 any(),
                 any(),
             )
@@ -124,7 +124,7 @@ class VedtakserviceTest {
     }
 
     @Test
-    fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en forskudd behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"

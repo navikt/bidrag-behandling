@@ -57,6 +57,8 @@ open class Behandling(
     open var refVedtaksid: Long? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
+    open var vedtakstidspunkt: LocalDateTime? = null,
+    open var vedtakFattetAv: String? = null,
     @Column(name = "aarsak")
     @Convert(converter = ÅrsakConverter::class)
     open var årsak: VirkningstidspunktÅrsakstype? = null,

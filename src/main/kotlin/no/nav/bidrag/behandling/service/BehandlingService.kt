@@ -31,6 +31,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
 
@@ -198,7 +199,7 @@ class BehandlingService(
     }
 
     @Transactional
-    fun oppdaterVedtaksId(
+    fun oppdaterVedtakFattetStatus(
         behandlingsid: Long,
         vedtaksid: Long,
     ) {
@@ -206,6 +207,9 @@ class BehandlingService(
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
                 it.vedtaksid = vedtaksid
+                it.vedtakstidspunkt = LocalDateTime.now()
+                it.vedtakFattetAv =
+                    TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn()
             }
     }
 

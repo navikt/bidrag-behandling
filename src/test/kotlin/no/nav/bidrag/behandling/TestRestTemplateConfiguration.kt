@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling
 import com.nimbusds.jose.JOSEObjectType
 import io.getunleash.FakeUnleash
 import io.getunleash.Unleash
+import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
 import org.springframework.beans.factory.annotation.Autowired
@@ -47,7 +48,7 @@ class TestRestTemplateConfiguration {
                 "aud-localhost",
                 DefaultOAuth2TokenCallback(
                     issuerId = "aad",
-                    subject = "aud-localhost",
+                    subject = SAKSBEHANDLER_IDENT,
                     typeHeader = JOSEObjectType.JWT.type,
                     audience = listOf("aud-localhost"),
                     claims = mapOf("iss" to newIssuer.toString()),

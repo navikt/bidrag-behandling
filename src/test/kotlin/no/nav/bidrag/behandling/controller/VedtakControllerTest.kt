@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
@@ -10,6 +11,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.toggleFatteVedtakName
+import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
@@ -94,6 +96,8 @@ class VedtakControllerTest : KontrollerTestRunner() {
 
         val behandlingEtter = behandlingRepository.findBehandlingById(behandling.id!!).get()
         behandlingEtter.vedtaksid shouldBe 1
+        behandlingEtter.vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
+        behandlingEtter.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
         stubUtils.Verify().fatteVedtakKalt()
         stubUtils.Verify().hentSakKalt(behandling.saksnummer)
     }
