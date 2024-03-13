@@ -7,7 +7,8 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.database.repository.RolleRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -17,10 +18,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
+import no.nav.bidrag.behandling.transformers.toHusstandsbarn
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.apache.commons.lang3.Validate
 import org.springframework.http.HttpStatus
@@ -33,7 +37,6 @@ private val log = KotlinLogging.logger {}
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
-    private val rolleRepository: RolleRepository,
     private val forsendelseService: ForsendelseService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
@@ -59,6 +62,10 @@ class BehandlingService(
         }
 
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
+        behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
+            log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
+            return OpprettBehandlingResponse(it.id!!)
+        }
         Validate.isTrue(
             ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
                 ingenVoksneUtenIdent(
@@ -226,29 +233,86 @@ class BehandlingService(
     }
 
     @Transactional
-    fun syncRoller(
+    fun oppdaterRoller(
         behandlingId: Long,
-        roller: List<OpprettRolleDto>,
-    ) {
-        val existingRoller = rolleRepository.findRollerByBehandlingId(behandlingId)
-
+        oppdaterRollerListe: List<OpprettRolleDto>,
+    ): OppdaterRollerResponse {
         val behandling = behandlingRepository.findById(behandlingId).get()
+        if (behandling.erVedtakFattet) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke oppdatere behandling hvor vedtak er fattet",
+            )
+        }
 
+        log.info { "Oppdater roller i behandling $behandlingId" }
+        secureLogger.info { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
+        val eksisterendeRoller = behandling.roller
         val rollerSomLeggesTil =
-            roller.filter { r ->
-                // not deleted and behandling.roller doesn't contain it yet
-                !r.erSlettet && !existingRoller.any { br -> br.ident == r.ident?.verdi }
-            }
+            oppdaterRollerListe
+                .filter { !it.erSlettet }
+                .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
 
+        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
+        identerSomSkalLeggesTil.isNotEmpty().ifTrue {
+            secureLogger.info {
+                "Legger til søknadsbarn ${
+                    identerSomSkalLeggesTil.joinToString(",")
+                } til behandling $behandlingId"
+            }
+        }
         behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
 
-        val identsSomSkalSlettes = roller.filter { r -> r.erSlettet }.map { it.ident?.verdi }
-        behandling.roller.removeIf { r -> identsSomSkalSlettes.contains(r.ident) }
+        val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }
+        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
+        identerSomSkalSlettes.isNotEmpty().ifTrue {
+            secureLogger.info { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
+        }
+        behandling.roller.removeIf { r ->
+            val skalSlettes = identerSomSkalSlettes.contains(r.ident)
+            skalSlettes.ifTrue {
+                log.info { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+            }
+            skalSlettes
+        }
+
+        oppdaterHusstandsbarnForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
 
         behandlingRepository.save(behandling)
 
-        if (behandling.roller.none { r -> r.rolletype == Rolletype.BARN }) {
+        if (behandling.søknadsbarn.isEmpty()) {
+            log.info { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
             behandlingRepository.delete(behandling)
+            return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
+        }
+
+        return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
+    }
+
+    private fun oppdaterHusstandsbarnForRoller(
+        behandling: Behandling,
+        rollerSomLeggesTil: List<OpprettRolleDto>,
+        rollerSomSkalSlettes: List<OpprettRolleDto>,
+    ) {
+        val nyeRollerSomIkkeHarHusstandsbarn =
+            rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsbarn.none { it.ident == nyRolle.ident?.verdi } }
+        behandling.husstandsbarn.addAll(
+            nyeRollerSomIkkeHarHusstandsbarn.map {
+                secureLogger.info { "Legger til husstandsbarn med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
+                it.toHusstandsbarn(
+                    behandling,
+                )
+            },
+        )
+        // TODO: Hent grunnlag for nye husstandsmedlemmer
+        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
+        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
+        behandling.husstandsbarn.forEach {
+            if (identerSomSkalLeggesTil.contains(it.ident)) {
+                it.medISaken = true
+            } else if (identerSomSkalSlettes.contains(it.ident)) {
+                it.medISaken = false
+            }
         }
     }
 

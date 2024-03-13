@@ -42,4 +42,4 @@ BIDRAG_VEDTAK_URL2: https://bidrag-vedtak.intern.dev.nav.no
 BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak
 BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak
 UNLEASH_SERVER_API_URL: https://bidrag-unleash-api.nav.cloud.nais.io
-KODEVERK_URL: https://kodeverk.dev-fss-pub.nais.io
+KODEVERK_URL: https://kodeverk-api.nav.no
