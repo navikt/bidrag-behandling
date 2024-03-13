@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.behandlingNotFoundException
@@ -21,9 +22,7 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListe
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.TransformerInntekterRequestBuilder
-import no.nav.bidrag.behandling.transformers.ainntektListe
 import no.nav.bidrag.behandling.transformers.inntekterOgYtelser
-import no.nav.bidrag.behandling.transformers.skattegrunnlagListe
 import no.nav.bidrag.behandling.transformers.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
@@ -38,15 +37,22 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -158,11 +164,11 @@ class GrunnlagService(
 
         aktivereGrunnlagRequest.grunnlagsdatatyper.forEach { grunnlagstype ->
             if (inntekterOgYtelser.contains(grunnlagstype)) {
-                aktivereGrunnlagOgOppdatereInntektstabell(
-                    behandling = behandling,
-                    rolle = rolleGrunnlagSkalAktiveresFor!!,
-                    grunnlagsdatatype = grunnlagstype,
-                    aktiveringstidspunkt = aktiveringstidspunkt,
+                aktivereInntekterOgYtelser(
+                    behandling,
+                    grunnlagstype,
+                    rolleGrunnlagSkalAktiveresFor!!,
+                    aktiveringstidspunkt,
                 )
             }
         }
@@ -239,69 +245,39 @@ class GrunnlagService(
             }
         }
 
-    private fun aktivereGrunnlagOgOppdatereInntektstabell(
+    private fun aktivereInntekterOgYtelser(
         behandling: Behandling,
-        grunnlagsdatatype: Grunnlagsdatatype,
+        grunnlagstype: Grunnlagsdatatype,
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
     ) {
-        if (Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == grunnlagsdatatype) {
-            aktivereOgOppdatereSkattepliktigeInntekter(behandling, rolle, aktiveringstidspunkt)
-        }
-    }
-
-    private fun aktivereOgOppdatereSkattepliktigeInntekter(
-        behandling: Behandling,
-        rolle: Rolle,
-        aktiveringstidspunkt: LocalDateTime,
-    ) {
-        val sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter =
+        val sistInnhentedeRådata =
             behandling.grunnlag
                 .filter { rolle.ident == it.rolle.ident }
-                .filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }
+                .filter { grunnlagstype == it.type }
                 .filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }
 
-        val transformereInntekter =
-            TransformerInntekterRequestBuilder(
-                ainntektsposter =
-                    sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter
-                        ?.let { grunnlag ->
-                            var respons: List<AinntektspostDto> = emptyList()
-                            if (grunnlag.data.trim().isNotEmpty()) {
-                                respons =
-                                    jsonTilObjekt<SkattepliktigeInntekter>(
-                                        grunnlag.data,
-                                    ).ainntekter.flatMap { it.ainntektspostListe }
-                            }
-                            respons.tilAinntektsposter(rolle)
-                        } ?: emptyList(),
-                skattegrunnlag =
-                    sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter?.let { grunnlag ->
-                        var respons: List<SkattegrunnlagGrunnlagDto> = emptyList()
-                        if (grunnlag.data.trim().isNotEmpty()) {
-                            respons =
-                                jsonTilObjekt<SkattepliktigeInntekter>(
-                                    grunnlag.data,
-                                ).skattegrunnlag
-                        }
-                        respons.tilSkattegrunnlagForLigningsår(rolle)
-                    } ?: emptyList(),
-            ).bygge()
+        if (sistInnhentedeRådata == null || sistInnhentedeRådata.aktiv != null) {
+            log.warn {
+                "Fant ingen grunnlag med type $grunnlagstype å aktivere for rolleid ${rolle.id} i behandling " +
+                    "${behandling.id} "
+            }
+            return
+        }
 
-        val summertAinntektOgSkattegrunnlag = inntektApi.transformerInntekter(transformereInntekter)
+        val transformereInntekter =
+            oppretteTransformereInntekterRequestPerType(grunnlagstype, sistInnhentedeRådata, rolle)
+
+        val summerteInntekter = inntektApi.transformerInntekter(transformereInntekter)
 
         lagreInntekterHvisEndret(
             behandling.id!!,
             rolle,
-            Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
+            Grunnlagstype(grunnlagstype, true),
             SummerteInntekter(
-                versjon = summertAinntektOgSkattegrunnlag.versjon,
-                inntekter =
-                    summertAinntektOgSkattegrunnlag.summertÅrsinntektListe
-                        .filter { summertAinntektstyper.contains(it.inntektRapportering) } +
-                        summertAinntektOgSkattegrunnlag.summertÅrsinntektListe
-                            .filter { !summertAinntektstyper.contains(it.inntektRapportering) },
+                versjon = summerteInntekter.versjon,
+                inntekter = summerteInntekter.summertÅrsinntektListe,
             ),
             LocalDateTime.now(),
             aktiveringstidspunkt,
@@ -312,21 +288,22 @@ class GrunnlagService(
             rolle,
             Grunnlagstype(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, true),
             SummerteInntekter(
-                versjon = summertAinntektOgSkattegrunnlag.versjon,
-                inntekter = summertAinntektOgSkattegrunnlag.summertMånedsinntektListe,
+                versjon = summerteInntekter.versjon,
+                inntekter = summerteInntekter.summertMånedsinntektListe,
             ),
             LocalDateTime.now(),
             aktiveringstidspunkt,
         )
-        entityManager.persist(behandling)
+
+        entityManager.merge(behandling)
 
         inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
             behandling,
             rolle,
-            summertAinntektOgSkattegrunnlag.summertÅrsinntektListe,
+            summerteInntekter.summertÅrsinntektListe,
         )
 
-        sistInnhentedeIkkeBearbeidaSkattepliktigeInntekter?.aktiv = aktiveringstidspunkt
+        sistInnhentedeRådata.aktiv = aktiveringstidspunkt
         entityManager.flush()
     }
 
@@ -343,69 +320,7 @@ class GrunnlagService(
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
         val rolleInhentetFor = behandling.roller.first { grunnlagsrequest.key.verdi == it.ident }
 
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.ARBEIDSFORHOLD, false),
-            innhentetGrunnlag.arbeidsforholdListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.BARNETILLEGG, false),
-            innhentetGrunnlag.barnetilleggListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.BARNETILSYN, false),
-            innhentetGrunnlag.barnetilsynListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.KONTANTSTØTTE, false),
-            innhentetGrunnlag.kontantstøtteListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
-            innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
-            innhentetGrunnlag.sivilstandListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.SMÅBARNSTILLEGG, false),
-            innhentetGrunnlag.småbarnstilleggListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
-
-        lagreGrunnlagHvisEndret(
-            behandling.id!!,
-            rolleInhentetFor,
-            Grunnlagstype(Grunnlagsdatatype.UTVIDET_BARNETRYGD, false),
-            innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
-        )
+        lagreGrunnlagHvisEndret(behandling, rolleInhentetFor, innhentetGrunnlag)
 
         lagreInntekterHvisEndret(
             behandling.id!!,
@@ -662,9 +577,8 @@ class GrunnlagService(
         grunnlagstype: Grunnlagstype,
     ): Set<T> {
         val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
-
         return if (grunnlagsdata != null) {
-            jsonListeTilObjekt<T>(grunnlagsdata)
+            commonObjectmapper.readValue<Set<T>>(grunnlagsdata)
         } else {
             emptySet()
         }
@@ -681,6 +595,231 @@ class GrunnlagService(
             jsonTilObjekt<T>(grunnlagsdata)
         } else {
             null
+        }
+    }
+
+    private fun oppretteTransformereInntekterRequestPerType(
+        grunnlagstype: Grunnlagsdatatype,
+        grunnlag: Grunnlag,
+        rolle: Rolle,
+    ) = when (grunnlagstype) {
+        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
+            TransformerInntekterRequestBuilder(
+                ainntektsposter =
+                    grunnlag
+                        .let { g ->
+                            var dataInn: List<AinntektspostDto> = emptyList()
+                            if (g.data.trim().isNotEmpty()) {
+                                dataInn =
+                                    jsonTilObjekt<SkattepliktigeInntekter>(
+                                        g.data,
+                                    ).ainntekter.flatMap { it.ainntektspostListe }
+                            }
+                            dataInn.tilAinntektsposter(rolle)
+                        },
+                skattegrunnlag =
+                    grunnlag.let { g ->
+                        var dataInn: List<SkattegrunnlagGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            dataInn =
+                                jsonTilObjekt<SkattepliktigeInntekter>(
+                                    g.data,
+                                ).skattegrunnlag
+                        }
+                        dataInn.tilSkattegrunnlagForLigningsår(rolle)
+                    },
+            ).bygge()
+
+        Grunnlagsdatatype.BARNETILLEGG ->
+            TransformerInntekterRequestBuilder(
+                barnetillegg =
+                    grunnlag.let { g ->
+                        var rådata: List<BarnetilleggGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            rådata =
+                                jsonListeTilObjekt<BarnetilleggGrunnlagDto>(
+                                    g.data,
+                                ).toList()
+                        }
+                        rådata.tilBarnetillegg(rolle)
+                    },
+            ).bygge()
+
+        Grunnlagsdatatype.KONTANTSTØTTE ->
+            TransformerInntekterRequestBuilder(
+                kontantstøtte =
+                    grunnlag.let { g ->
+                        var rådata: List<KontantstøtteGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            rådata =
+                                jsonListeTilObjekt<KontantstøtteGrunnlagDto>(
+                                    g.data,
+                                ).toList()
+                        }
+                        rådata.tilKontantstøtte(rolle)
+                    },
+            ).bygge()
+
+        Grunnlagsdatatype.SMÅBARNSTILLEGG ->
+            TransformerInntekterRequestBuilder(
+                småbarnstillegg =
+                    grunnlag.let { g ->
+                        var rådata: List<SmåbarnstilleggGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            rådata =
+                                jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(
+                                    g.data,
+                                ).toList()
+                        }
+                        rådata.tilSmåbarnstillegg(rolle)
+                    },
+            ).bygge()
+
+        Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
+            TransformerInntekterRequestBuilder(
+                utvidetBarnetrygd =
+                    grunnlag.let { g ->
+                        var rådata: List<UtvidetBarnetrygdGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            rådata =
+                                jsonListeTilObjekt<UtvidetBarnetrygdGrunnlagDto>(
+                                    g.data,
+                                ).toList()
+                        }
+                        rådata.tilUtvidetBarnetrygd(rolle)
+                    },
+            ).bygge()
+
+        else -> lagringAvGrunnlagFeiletException(grunnlag.behandling.id!!)
+    }
+
+    private fun lagreGrunnlagHvisEndret(
+        behandling: Behandling,
+        rolleInhentetFor: Rolle,
+        innhentetGrunnlag: HentGrunnlagDto,
+    ) {
+        val grunnlagsdatatyper =
+            when (rolleInhentetFor.rolletype) {
+                Rolletype.BIDRAGSMOTTAKER ->
+                    setOf(
+                        Grunnlagsdatatype.ARBEIDSFORHOLD,
+                        Grunnlagsdatatype.BARNETILLEGG,
+                        Grunnlagsdatatype.BARNETILSYN,
+                        Grunnlagsdatatype.KONTANTSTØTTE,
+                        Grunnlagsdatatype.BOFORHOLD,
+                        Grunnlagsdatatype.SIVILSTAND,
+                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                    )
+
+                Rolletype.BARN -> setOf(Grunnlagsdatatype.ARBEIDSFORHOLD)
+                else -> {
+                    log.warn {
+                        "Forsøkte å lagre grunnlag for rolle ${rolleInhentetFor.rolletype} i behandling " +
+                            "${behandling.id}"
+                    }
+                    lagringAvGrunnlagFeiletException(behandling.id!!)
+                }
+            }
+        grunnlagsdatatyper.forEach {
+            lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
+        }
+    }
+
+    private fun lagreGrunnlagHvisEndret(
+        grunnlagsdatatype: Grunnlagsdatatype,
+        behandling: Behandling,
+        rolleInhentetFor: Rolle,
+        innhentetGrunnlag: HentGrunnlagDto,
+    ) {
+        when (grunnlagsdatatype) {
+            Grunnlagsdatatype.ARBEIDSFORHOLD -> {
+                lagreGrunnlagHvisEndret(
+                    behandling.id!!,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.arbeidsforholdListe.toSet(),
+                    innhentetGrunnlag.hentetTidspunkt,
+                )
+            }
+
+            Grunnlagsdatatype.BARNETILLEGG -> {
+                lagreGrunnlagHvisEndret(
+                    behandling.id!!,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.barnetilleggListe.toSet(),
+                    innhentetGrunnlag.hentetTidspunkt,
+                )
+            }
+
+            Grunnlagsdatatype.BARNETILSYN -> {
+                lagreGrunnlagHvisEndret(
+                    behandling.id!!,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.barnetilsynListe.toSet(),
+                    innhentetGrunnlag.hentetTidspunkt,
+                )
+            }
+
+            Grunnlagsdatatype.KONTANTSTØTTE -> {
+                lagreGrunnlagHvisEndret(
+                    behandling.id!!,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.kontantstøtteListe.toSet(),
+                    innhentetGrunnlag.hentetTidspunkt,
+                )
+            }
+
+            Grunnlagsdatatype.BOFORHOLD -> {
+                lagreGrunnlagHvisEndret(
+                    behandling.id!!,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                    innhentetGrunnlag.hentetTidspunkt,
+                )
+            }
+
+            Grunnlagsdatatype.SIVILSTAND -> {
+                lagreGrunnlagHvisEndret(
+                    behandling.id!!,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.sivilstandListe.toSet(),
+                    innhentetGrunnlag.hentetTidspunkt,
+                )
+            }
+
+            Grunnlagsdatatype.SMÅBARNSTILLEGG -> {
+                lagreGrunnlagHvisEndret(
+                    behandling.id!!,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.småbarnstilleggListe.toSet(),
+                    innhentetGrunnlag.hentetTidspunkt,
+                )
+            }
+
+            Grunnlagsdatatype.UTVIDET_BARNETRYGD -> {
+                lagreGrunnlagHvisEndret(
+                    behandling.id!!,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
+                    innhentetGrunnlag.hentetTidspunkt,
+                )
+            }
+
+            else -> {
+                log.warn {
+                    "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
+                        "i behandling ${behandling.id}"
+                }
+                lagringAvGrunnlagFeiletException(behandling.id!!)
+            }
         }
     }
 }

@@ -167,12 +167,12 @@ class InntekterControllerTest : KontrollerTestRunner() {
                     ),
                 )
 
-            behandling = behandlingRepository.save(behandling)
+            val lagretBehandling = behandlingRepository.save(behandling)
 
             assert(behandling.inntekter.size > 0)
 
             val endreInntektForespørsel =
-                oppretteRequestForOppdateringAvManuellInntekt(idInntekt = behandling.inntekter.first().id!!)
+                oppretteRequestForOppdateringAvManuellInntekt(idInntekt = lagretBehandling.inntekter.first().id!!)
 
             // when
             val svar =

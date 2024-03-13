@@ -115,14 +115,14 @@ class StubUtils {
         }
 
         private fun createGenericResponse() =
-            WireMock.aResponse()
+            aResponse()
                 .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString())
                 .withStatus(HttpStatus.OK.value())
     }
 
     fun stubUnleash() {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlMatching("/unleash/api/client/features"))
+            WireMock.get(urlMatching("/unleash/api/client/features"))
                 .willReturn(
                     aClosedJsonResponse().withStatus(HttpStatus.OK.value())
                         .withBodyFile("unleash-response.json"),
@@ -135,7 +135,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/forsendelse/api/forsendelse")).willReturn(
+            WireMock.post(urlMatching("/forsendelse/api/forsendelse")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(OpprettForsendelseRespons(forsendelseId))),
@@ -148,7 +148,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlMatching("/sak/(.*)")).willReturn(
+            WireMock.get(urlMatching("/sak/(.*)")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(sakResponse)),
@@ -158,7 +158,7 @@ class StubUtils {
 
     fun stubFatteVedtak(status: HttpStatus = HttpStatus.OK) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/vedtak/vedtak")).willReturn(
+            WireMock.post(urlMatching("/vedtak/vedtak")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(OpprettVedtakResponseDto(1, emptyList()))),
@@ -186,7 +186,7 @@ class StubUtils {
                     .withBodyFile(navnResponsfil)
             }
         WireMock.stubFor(
-            WireMock.get(WireMock.urlMatching("/vedtak/vedtak(.*)")).willReturn(
+            WireMock.get(urlMatching("/vedtak/vedtak(.*)")).willReturn(
                 response,
             ),
         )
@@ -211,7 +211,7 @@ class StubUtils {
 
     fun stubSlettForsendelse(status: HttpStatus = HttpStatus.OK) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/forsendelse/api/forsendelse/journal/(.*)/avvik"))
+            WireMock.post(urlMatching("/forsendelse/api/forsendelse/journal/(.*)/avvik"))
                 .willReturn(
                     aClosedJsonResponse()
                         .withStatus(status.value())
@@ -226,7 +226,7 @@ class StubUtils {
         navn: String = "Navn Navnesen",
         shouldContaintPersonIdent: Boolean = false,
     ) {
-        var postRequest = WireMock.post(WireMock.urlMatching("/bidrag-person/informasjon"))
+        var postRequest = WireMock.post(urlMatching("/bidrag-person/informasjon"))
 
         if (shouldContaintPersonIdent) {
             postRequest = postRequest.withRequestBody(ContainsPattern(personident))
@@ -346,7 +346,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/tema")).willReturn(
+            WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/tema")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(result.toString()),
@@ -356,7 +356,7 @@ class StubUtils {
 
     fun stubHentSaksbehandler() {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlMatching("/organisasjon/saksbehandler/info/(.*)")).willReturn(
+            WireMock.get(urlMatching("/organisasjon/saksbehandler/info/(.*)")).willReturn(
                 aResponse()
                     .withHeader(HttpHeaders.CONNECTION, "close")
                     .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -444,8 +444,8 @@ class StubUtils {
     inner class Verify {
         fun opprettForsendelseKaltMed(vararg contains: String) {
             val verify =
-                WireMock.postRequestedFor(
-                    WireMock.urlMatching("/forsendelse/api/forsendelse"),
+                postRequestedFor(
+                    urlMatching("/forsendelse/api/forsendelse"),
                 )
             verifyContains(verify, *contains)
         }
@@ -456,7 +456,7 @@ class StubUtils {
         ) {
             val verify =
                 WireMock.getRequestedFor(
-                    WireMock.urlMatching("/forsendelse/api/forsendelse/sak/$saksnummer/forsendelser"),
+                    urlMatching("/forsendelse/api/forsendelse/sak/$saksnummer/forsendelser"),
                 )
             WireMock.verify(
                 if (antall == -1) {
@@ -476,8 +476,8 @@ class StubUtils {
             antall: Int = -1,
         ) {
             val verify =
-                WireMock.postRequestedFor(
-                    WireMock.urlMatching("/forsendelse/api/forsendelse/journal/$forsendelseId/avvik"),
+                postRequestedFor(
+                    urlMatching("/forsendelse/api/forsendelse/journal/$forsendelseId/avvik"),
                 )
             WireMock.verify(
                 if (antall == -1) {
@@ -494,16 +494,16 @@ class StubUtils {
 
         fun opprettForsendelseKaltAntallGanger(antall: Int) {
             val verify =
-                WireMock.postRequestedFor(
-                    WireMock.urlMatching("/forsendelse/api/forsendelse"),
+                postRequestedFor(
+                    urlMatching("/forsendelse/api/forsendelse"),
                 )
             WireMock.verify(antall, verify)
         }
 
         fun fatteVedtakKalt(antallGanger: Int = 1) {
             val verify =
-                WireMock.postRequestedFor(
-                    WireMock.urlMatching("/vedtak/vedtak"),
+                postRequestedFor(
+                    urlMatching("/vedtak/vedtak"),
                 )
             WireMock.verify(antallGanger, verify)
         }
@@ -517,7 +517,7 @@ class StubUtils {
         fun hentSakKalt(saksnummer: String) {
             val verify =
                 WireMock.getRequestedFor(
-                    WireMock.urlMatching("/sak/sak/$saksnummer"),
+                    urlMatching("/sak/sak/$saksnummer"),
                 )
             WireMock.verify(1, verify)
         }
@@ -528,9 +528,9 @@ class StubUtils {
         ) {
             val verify =
                 if (rolle == null) {
-                    WireMock.postRequestedFor(WireMock.urlEqualTo("/hentgrunnlag"))
+                    postRequestedFor(WireMock.urlEqualTo("/hentgrunnlag"))
                 } else {
-                    WireMock.postRequestedFor(
+                    postRequestedFor(
                         WireMock.urlEqualTo("/hentgrunnlag"),
                     ).withRequestBody(WireMock.containing(rolle.ident))
                 }

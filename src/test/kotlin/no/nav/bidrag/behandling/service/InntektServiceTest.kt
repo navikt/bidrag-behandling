@@ -16,7 +16,12 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterePeriodeInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner
+import no.nav.bidrag.behandling.transformers.TransformerInntekterRequestBuilder
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
+import no.nav.bidrag.behandling.transformers.tilBarnetillegg
+import no.nav.bidrag.behandling.transformers.tilKontantstøtte
+import no.nav.bidrag.behandling.transformers.tilSmåbarnstillegg
+import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -28,21 +33,28 @@ import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.assertj.core.error.OptionalShouldBePresent.shouldBePresent
+import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
-import kotlin.test.Test
 
+@RunWith(Enclosed::class)
 class InntektServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
@@ -146,6 +158,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
             val behandling = testdataManager.opprettBehandling()
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
                 behandling = behandling,
@@ -221,6 +234,385 @@ class InntektServiceTest : TestContainerRunner() {
                     )
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe BigDecimal.ZERO
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal slette duplikate inntekter med samme type men forskjellig periode,ved oppdatering av grunnlag for Ainntekt 3 og 12 mnd`() {
+            // gitt
+            stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkLønnsbeskrivelse()
+            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+            stubUtils.stubKodeverkYtelsesbeskrivelser()
+            stubUtils.stubKodeverkPensjonsbeskrivelser()
+
+            val behandling = testdataManager.opprettBehandling()
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
+                behandling = behandling,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+                innhentet = LocalDate.of(YearMonth.now().minusYears(1).year, 1, 1).atStartOfDay(),
+                aktiv = null,
+            )
+
+            behandling.grunnlag.size shouldBe 1
+            behandling.inntekter.size shouldBe 0
+
+            val grunnlagMedAinntekt = behandling.grunnlag.first()
+
+            val skattepliktigeInntekter =
+                Jsonoperasjoner.jsonTilObjekt<SkattepliktigeInntekter>(grunnlagMedAinntekt.data)
+
+            val transformereOriginalAinntekt =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = grunnlagMedAinntekt.innhentet.toLocalDate(),
+                    ainntektsposter =
+                        skattepliktigeInntekter.ainntekter.flatMap { it.ainntektspostListe }
+                            .tilAinntektsposter(testdataBM.tilRolle(behandling)),
+                ).bygge()
+
+            behandling.inntekter.size shouldBe 0
+
+            entityManager.merge(behandling)
+
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                inntektApi.transformerInntekter(transformereOriginalAinntekt).summertÅrsinntektListe,
+            )
+
+            entityManager.refresh(behandling)
+
+            behandling.inntekter.size shouldBe 2
+            behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }
+                .filter { it.belop == BigDecimal(70000) }.size shouldBe 1
+
+            val oppdatertAinntekt =
+                skattepliktigeInntekter.ainntekter.flatMap { it.ainntektspostListe }
+                    .map { it.copy(beløp = it.beløp + BigDecimal(1000)) }
+                    .tilAinntektsposter(testdataBM.tilRolle(behandling))
+
+            val transformereOppdatertAinntekt =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = grunnlagMedAinntekt.innhentet.toLocalDate(),
+                    ainntektsposter = oppdatertAinntekt,
+                ).bygge()
+
+            val transformerteÅrsinnekterOppdatert = inntektApi.transformerInntekter(transformereOppdatertAinntekt)
+
+            val nyeManupilerteInntekter =
+                transformerteÅrsinnekterOppdatert.summertÅrsinntektListe.map {
+                    it.copy(
+                        periode =
+                            it.periode.lagPeriode(
+                                YearMonth.now().minusYears(3),
+                                YearMonth.now().minusYears(2),
+                            ),
+                    )
+                }
+
+            // hvis
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                nyeManupilerteInntekter,
+            )
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly {
+                behandling.inntekter.size shouldBe 2
+                behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.size shouldBe 1
+                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe
+                    BigDecimal(
+                        71000,
+                    )
+                behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.size shouldBe 1
+                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe BigDecimal.ZERO
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal slette duplikat barnetillegg med samme type og periode,ved oppdatering av grunnlag`() {
+            // gitt
+            stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkLønnsbeskrivelse()
+            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+            stubUtils.stubKodeverkYtelsesbeskrivelser()
+            stubUtils.stubKodeverkPensjonsbeskrivelser()
+
+            val behandling = testdataManager.opprettBehandling()
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            val originaltBarnetilleggsgrunnlag =
+                BarnetilleggGrunnlagDto(
+                    barnPersonId = behandling.søknadsbarn.first().ident!!,
+                    beløpBrutto = BigDecimal(3500),
+                    barnetilleggType = "Pensjon",
+                    barnType = "særkullsbarn",
+                    partPersonId = behandling.bidragsmottaker!!.ident!!,
+                    periodeFra = YearMonth.now().minusMonths(5).atDay(1),
+                    periodeTil = YearMonth.now().minusMonths(4).atDay(1),
+                )
+
+            val summereOriginalKontantstøtte =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = LocalDate.now(),
+                    barnetillegg = listOf(originaltBarnetilleggsgrunnlag).tilBarnetillegg(behandling.bidragsmottaker!!),
+                ).bygge()
+
+            behandling.inntekter.size shouldBe 0
+
+            val originalTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOriginalKontantstøtte)
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                originalTransformerteInntekterrespons.summertÅrsinntektListe,
+            )
+
+            entityManager.refresh(behandling)
+            behandling.inntekter.size shouldBe 1
+
+            val nyttBarnetilleggsgrunnlag = originaltBarnetilleggsgrunnlag.copy(beløpBrutto = BigDecimal(3750))
+            val summereOppdatertKontantstøtte =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = LocalDate.now(),
+                    barnetillegg = listOf(nyttBarnetilleggsgrunnlag).tilBarnetillegg(behandling.bidragsmottaker!!),
+                ).bygge()
+
+            val nyTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOppdatertKontantstøtte)
+
+            // hvis
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                nyTransformerteInntekterrespons.summertÅrsinntektListe,
+            )
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly {
+                behandling.inntekter.size shouldBe 1
+                behandling.inntekter.filter { Inntektsrapportering.BARNETILLEGG == it.type }.size shouldBe 1
+                behandling.inntekter.first { Inntektsrapportering.BARNETILLEGG == it.type }.belop shouldBe
+                    BigDecimal(
+                        45000,
+                    )
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal slette duplikat kontantstøtte med samme type og periode,ved oppdatering av grunnlag`() {
+            // gitt
+            stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkLønnsbeskrivelse()
+            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+            stubUtils.stubKodeverkYtelsesbeskrivelser()
+            stubUtils.stubKodeverkPensjonsbeskrivelser()
+
+            val behandling = testdataManager.opprettBehandling()
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            val originaltKontantstøttegrunnlag =
+                KontantstøtteGrunnlagDto(
+                    barnPersonId = behandling.søknadsbarn.first().ident!!,
+                    beløp = 3500,
+                    partPersonId = behandling.bidragsmottaker!!.ident!!,
+                    periodeFra = YearMonth.now().minusMonths(5).atDay(1),
+                    periodeTil = YearMonth.now().minusMonths(4).atDay(1),
+                )
+
+            val summereOriginalKontantstøtte =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = LocalDate.now(),
+                    kontantstøtte =
+                        listOf(originaltKontantstøttegrunnlag)
+                            .tilKontantstøtte(behandling.bidragsmottaker!!),
+                ).bygge()
+
+            behandling.inntekter.size shouldBe 0
+
+            val originalTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOriginalKontantstøtte)
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                originalTransformerteInntekterrespons.summertÅrsinntektListe,
+            )
+
+            entityManager.refresh(behandling)
+            behandling.inntekter.size shouldBe 1
+
+            val nyttKontantstøttegrunnlag = originaltKontantstøttegrunnlag.copy(beløp = 3750)
+            val summereOppdatertKontantstøtte =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = LocalDate.now(),
+                    kontantstøtte = listOf(nyttKontantstøttegrunnlag).tilKontantstøtte(behandling.bidragsmottaker!!),
+                ).bygge()
+
+            val nyTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOppdatertKontantstøtte)
+
+            // hvis
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                nyTransformerteInntekterrespons.summertÅrsinntektListe,
+            )
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly {
+                behandling.inntekter.size shouldBe 1
+                behandling.inntekter.filter { Inntektsrapportering.KONTANTSTØTTE == it.type }.size shouldBe 1
+                behandling.inntekter.first { Inntektsrapportering.KONTANTSTØTTE == it.type }.belop shouldBe
+                    BigDecimal(
+                        45000,
+                    )
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal slette duplikat småbarnstillegg med samme type og periode,ved oppdatering av grunnlag`() {
+            // gitt
+            stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkLønnsbeskrivelse()
+            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+            stubUtils.stubKodeverkYtelsesbeskrivelser()
+            stubUtils.stubKodeverkPensjonsbeskrivelser()
+
+            val behandling = testdataManager.opprettBehandling()
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            val originaltSmåbarnstilleggsgrunnlag =
+                SmåbarnstilleggGrunnlagDto(
+                    beløp = BigDecimal(3500),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                    periodeFra = YearMonth.now().minusMonths(5).atDay(1),
+                    periodeTil = YearMonth.now().minusMonths(4).atDay(1),
+                    manueltBeregnet = false,
+                )
+
+            val summereOriginalSmåbarnstillegg =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = LocalDate.now(),
+                    småbarnstillegg = listOf(originaltSmåbarnstilleggsgrunnlag).tilSmåbarnstillegg(behandling.bidragsmottaker!!),
+                ).bygge()
+
+            behandling.inntekter.size shouldBe 0
+
+            val originalTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOriginalSmåbarnstillegg)
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                originalTransformerteInntekterrespons.summertÅrsinntektListe,
+            )
+
+            entityManager.refresh(behandling)
+            behandling.inntekter.size shouldBe 1
+
+            val nyttSmåbarnstilleggsgrunnlag = originaltSmåbarnstilleggsgrunnlag.copy(beløp = BigDecimal(3750))
+            val summereOppdatertSmåbarnstillegg =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = LocalDate.now(),
+                    småbarnstillegg = listOf(nyttSmåbarnstilleggsgrunnlag).tilSmåbarnstillegg(behandling.bidragsmottaker!!),
+                ).bygge()
+
+            val nyTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOppdatertSmåbarnstillegg)
+
+            // hvis
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                nyTransformerteInntekterrespons.summertÅrsinntektListe,
+            )
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly {
+                behandling.inntekter.size shouldBe 1
+                behandling.inntekter.filter { Inntektsrapportering.SMÅBARNSTILLEGG == it.type }.size shouldBe 1
+                behandling.inntekter.first { Inntektsrapportering.SMÅBARNSTILLEGG == it.type }.belop shouldBe
+                    BigDecimal(
+                        45000,
+                    )
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal slette duplikat utvidet barnetrygd med samme type og periode,ved oppdatering av grunnlag`() {
+            // gitt
+            stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkLønnsbeskrivelse()
+            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+            stubUtils.stubKodeverkYtelsesbeskrivelser()
+            stubUtils.stubKodeverkPensjonsbeskrivelser()
+
+            val behandling = testdataManager.opprettBehandling()
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            val originalUtvidetBarnetrygdsgrunnlag =
+                UtvidetBarnetrygdGrunnlagDto(
+                    beløp = BigDecimal(3500),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                    periodeFra = YearMonth.now().minusMonths(5).atDay(1),
+                    periodeTil = YearMonth.now().minusMonths(4).atDay(1),
+                    manueltBeregnet = false,
+                )
+
+            val summereOriginalUtvidetBarnetrygd =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = LocalDate.now(),
+                    utvidetBarnetrygd = listOf(originalUtvidetBarnetrygdsgrunnlag).tilUtvidetBarnetrygd(behandling.bidragsmottaker!!),
+                ).bygge()
+
+            behandling.inntekter.size shouldBe 0
+
+            val originalTransformerteInntekterrespons =
+                inntektApi.transformerInntekter(summereOriginalUtvidetBarnetrygd)
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                originalTransformerteInntekterrespons.summertÅrsinntektListe,
+            )
+
+            entityManager.refresh(behandling)
+            behandling.inntekter.size shouldBe 1
+
+            val nyttUtvidetBarnetrygdsgrunnlag = originalUtvidetBarnetrygdsgrunnlag.copy(beløp = BigDecimal(3750))
+            val summereOppdatertUtvidetBarnetrygd =
+                TransformerInntekterRequestBuilder(
+                    ainntektHentetDato = LocalDate.now(),
+                    utvidetBarnetrygd = listOf(nyttUtvidetBarnetrygdsgrunnlag).tilUtvidetBarnetrygd(behandling.bidragsmottaker!!),
+                ).bygge()
+
+            val nyTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOppdatertUtvidetBarnetrygd)
+
+            // hvis
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+                behandling,
+                behandling.bidragsmottaker!!,
+                nyTransformerteInntekterrespons.summertÅrsinntektListe,
+            )
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly {
+                behandling.inntekter.size shouldBe 1
+                behandling.inntekter.filter { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }.size shouldBe 1
+                behandling.inntekter.first { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }.belop shouldBe
+                    BigDecimal(
+                        45000,
+                    )
             }
         }
     }

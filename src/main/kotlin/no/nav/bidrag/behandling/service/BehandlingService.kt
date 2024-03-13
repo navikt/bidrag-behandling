@@ -67,12 +67,9 @@ class BehandlingService(
             log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
             return OpprettBehandlingResponse(it.id!!)
         }
-        Validate.isTrue(
-            ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller) &&
-                ingenVoksneUtenIdent(
-                    opprettBehandling.roller,
-                ),
-        )
+
+        ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller)
+        ingenVoksneUtenIdent(opprettBehandling.roller)
 
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
@@ -320,12 +317,12 @@ class BehandlingService(
         }
     }
 
-    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>): Boolean {
-        return roller.filter { r -> r.rolletype == Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
-            .none { r -> r.navn.isNullOrBlank() }
+    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>) {
+        roller.filter { r -> r.rolletype == Rolletype.BARN }
+            .forEach { Validate.isTrue(!it.ident?.verdi.isNullOrBlank() || !it.navn.isNullOrBlank()) }
     }
 
-    private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>): Boolean {
-        return roller.none { r -> r.rolletype != Rolletype.BARN && r.ident?.verdi.isNullOrBlank() }
+    private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>) {
+        roller.filter { r -> r.rolletype != Rolletype.BARN }.forEach { Validate.isTrue(!it.ident?.verdi.isNullOrBlank()) }
     }
 }

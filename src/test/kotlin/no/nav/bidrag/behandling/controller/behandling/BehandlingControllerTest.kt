@@ -12,17 +12,6 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
 
-data class OpprettBehandlingRequestTest(
-    val vedtakstype: Vedtakstype,
-    val stønadstype: Stønadstype,
-    val søktFomDato: LocalDate,
-    val mottattdato: LocalDate,
-    val søknadFra: SøktAvType,
-    val saksnummer: String?,
-    val behandlerenhet: String,
-    val roller: Set<OpprettRolleDto>,
-)
-
 @Suppress("NonAsciiCharacters")
 class BehandlingControllerTest : KontrollerTestRunner() {
     @Autowired

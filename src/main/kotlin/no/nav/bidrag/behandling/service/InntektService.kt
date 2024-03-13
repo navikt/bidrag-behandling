@@ -21,7 +21,6 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Month
 import java.time.YearMonth
 
 private val log = KotlinLogging.logger {}
@@ -150,12 +149,7 @@ class InntektService(
         when (nyInntekt) {
             is SummertÅrsinntekt -> {
                 type = nyInntekt.inntektRapportering
-                periode =
-                    if (nyInntekt.periode.til?.month == Month.DECEMBER) {
-                        ÅrMånedsperiode(nyInntekt.periode.fom, nyInntekt.periode.til?.plusMonths(1))
-                    } else {
-                        nyInntekt.periode
-                    }
+                periode = nyInntekt.periode.copy(til = nyInntekt.periode.til?.plusMonths(1))
             }
 
             else -> {
@@ -175,6 +169,7 @@ class InntektService(
                 .filter { i -> Kilde.OFFENTLIG == i.kilde }
                 .filter { i -> type == i.type }
                 .filter { i -> i.opprinneligFom != null }
+                .filter { i -> rolle.ident == i.ident }.toList()
                 .filter { i ->
                     inntekterSomKunIdentifiseresPåType.contains(i.type) ||
                         periode.fom == YearMonth.from(i.opprinneligFom)
@@ -187,7 +182,7 @@ class InntektService(
                         } else {
                             null
                         }
-                }.filter { i -> rolle.ident == i.ident }.toList()
+                }
 
         if (inntekterSomSkalOppdateres.size > 1) {
             log.warn {
@@ -197,12 +192,12 @@ class InntektService(
             }
 
             val inntektSomOppdateres = inntekterSomSkalOppdateres.maxBy { it.id!! }
-            oppdatereBeløpOgPoster(nyInntekt, inntektSomOppdateres)
+            oppdatereBeløpPeriodeOgPoster(nyInntekt, inntektSomOppdateres)
             entityManager.refresh(behandling)
             idTilInntekterSomBleOppdatert.add(inntektSomOppdateres.id!!)
         } else if (inntekterSomSkalOppdateres.size == 1) {
             val inntektSomOppdateres = inntekterSomSkalOppdateres.first()
-            oppdatereBeløpOgPoster(nyInntekt, inntektSomOppdateres)
+            oppdatereBeløpPeriodeOgPoster(nyInntekt, inntektSomOppdateres)
             entityManager.refresh(behandling)
             log.info {
                 "Eksisterende inntekt med id ${inntektSomOppdateres.id} for rolle " +
@@ -224,12 +219,14 @@ class InntektService(
         }
     }
 
-    private fun <T> oppdatereBeløpOgPoster(
+    private fun <T> oppdatereBeløpPeriodeOgPoster(
         nyInntekt: T,
         eksisterendeInntekt: Inntekt,
     ) {
         if (nyInntekt is SummertÅrsinntekt) {
             eksisterendeInntekt.belop = nyInntekt.sumInntekt
+            eksisterendeInntekt.datoFom = nyInntekt.periode.fom.atDay(1)
+            eksisterendeInntekt.datoTom = nyInntekt.periode.til?.atEndOfMonth()
             eksisterendeInntekt.inntektsposter.clear()
             eksisterendeInntekt.inntektsposter.addAll(
                 nyInntekt.inntektPostListe.tilInntektspost(
@@ -238,6 +235,8 @@ class InntektService(
             )
         } else if (nyInntekt is SummertMånedsinntekt) {
             eksisterendeInntekt.belop = nyInntekt.sumInntekt
+            eksisterendeInntekt.datoFom = nyInntekt.gjelderÅrMåned.atDay(1)
+            eksisterendeInntekt.datoTom = nyInntekt.gjelderÅrMåned.atEndOfMonth()
             eksisterendeInntekt.inntektsposter.clear()
             eksisterendeInntekt.inntektsposter.addAll(
                 nyInntekt.inntektPostListe.tilInntektspost(
