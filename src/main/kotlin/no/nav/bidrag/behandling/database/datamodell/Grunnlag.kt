@@ -53,3 +53,9 @@ inline fun <reified T> Grunnlag?.konverterData(): T? {
         objectmapper.readValue(it)
     }
 }
+
+inline fun <reified T> Grunnlag?.konverterData2(): Set<T>? {
+    return this?.data?.let {
+        objectmapper.readValue(it)
+    }
+}

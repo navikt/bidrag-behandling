@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.2.2</version>
+    <version>3.2.3</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>no.nav</groupId>
@@ -28,7 +28,7 @@
     <kotlin-logging-jvm.version>6.0.3</kotlin-logging-jvm.version>
     <flyway.version>10.8.1</flyway.version>
     <jackson.version>2.16.1</jackson.version>
-    <testcontainers.version>1.19.6</testcontainers.version>
+    <testcontainers.version>1.19.7</testcontainers.version>
     <spring-boot-testcontainers.version>3.2.3</spring-boot-testcontainers.version>
     <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
     <snakeyaml.version>2.2</snakeyaml.version>
