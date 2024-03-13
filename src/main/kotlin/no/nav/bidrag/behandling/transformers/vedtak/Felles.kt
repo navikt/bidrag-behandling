@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.vedtak
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -11,6 +12,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.sak.RolleDto
 
 val skyldnerNav = Personident("NAV")
+val inntektsrapporteringSomKreverSøknadsbarn =
+    listOf(
+        Inntektsrapportering.KONTANTSTØTTE,
+        Inntektsrapportering.BARNETILLEGG,
+        Inntektsrapportering.BARNETILSYN,
+    )
 
 fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
     filter { it.erPerson() }.find { it.personIdent == hentNyesteIdent(ident)?.verdi || it.personIdent == ident }

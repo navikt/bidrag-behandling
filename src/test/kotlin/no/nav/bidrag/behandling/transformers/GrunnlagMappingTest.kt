@@ -757,6 +757,31 @@ class GrunnlagMappingTest {
         }
 
         @Test
+        fun `skal feile mapping av inntektperiode hvis søknadsbarn mangler`() {
+            val behandling = oppretteBehandling()
+            behandling.grunnlag =
+                opprettInntekterBearbeidetGrunnlag(
+                    behandling,
+                    testdataBM,
+                ).toMutableSet()
+
+            behandling.inntekter = opprettInntekter(behandling, testdataBM, testdataBarn1)
+            behandling.inntekter.forEach {
+                if (it.type == Inntektsrapportering.BARNETILLEGG) {
+                    it.gjelderBarn = null
+                }
+            }
+            val exception =
+                assertThrows<HttpClientErrorException> {
+                    behandling.tilGrunnlagInntekt(
+                        personobjekter,
+                        søknadsbarnGrunnlag1,
+                    )
+                }
+            exception.message shouldContain "Kunne ikke bygge grunnlag: Mangler søknadsbarn for inntektsrapportering BARNETILLEGG"
+        }
+
+        @Test
         fun `skal mappe inntekt til grunnlag hvis inneholder inntektliste for Barn og BP`() {
             val behandling = oppretteBehandling()
             behandling.grunnlag =

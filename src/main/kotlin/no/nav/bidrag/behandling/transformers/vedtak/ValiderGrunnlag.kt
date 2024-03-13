@@ -1,9 +1,12 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
 import no.nav.bidrag.behandling.vedtakmappingFeilet
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.felles.toCompactString
 
@@ -23,6 +26,8 @@ fun OpprettVedtakRequestDto.validerGrunnlagsreferanser() {
 //            }",
 //        )
 //    }
+
+    feilListe.addAll(grunnlagListe.validerInntekterHarRiktigReferanse())
     grunnlagListe.forEach {
         feilListe.addAll(
             grunnlagListe.validerInneholderListe(
@@ -72,6 +77,24 @@ fun OpprettVedtakRequestDto.validerGrunnlagsreferanser() {
             }",
         )
     }
+}
+
+fun List<BaseGrunnlag>.validerInntekterHarRiktigReferanse(): List<String> {
+    val feilListe = mutableListOf<String>()
+    filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+        .filter {
+            val innhold = it.innholdTilObjekt<InntektsrapporteringPeriode>()
+            inntektsrapporteringSomKreverSøknadsbarn.contains(innhold.inntektsrapportering)
+        }.forEach {
+            val innhold = it.innholdTilObjekt<InntektsrapporteringPeriode>()
+            val gjelderBarn = innhold.gjelderBarn
+            if (gjelderBarn == null ||
+                filtrerBasertPåEgenReferanse(referanse = gjelderBarn).isEmpty()
+            ) {
+                feilListe.add("Grunnlaget med referanse ${it.referanse} mangler referanse til søknadsbarn")
+            }
+        }
+    return feilListe
 }
 
 fun List<BaseGrunnlag>.validerInneholderListe(

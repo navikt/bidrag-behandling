@@ -14,8 +14,8 @@ import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
+import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -223,13 +223,11 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
                         )
                     },
                 gjelderBarn =
-                    when (type) {
-                        Inntektsrapportering.KONTANTSTØTTE,
-                        Inntektsrapportering.BARNETILLEGG,
-                        Inntektsrapportering.BARNETILSYN,
-                        -> søknadsbarn?.referanse
-
-                        else -> null
+                    if (inntektsrapporteringSomKreverSøknadsbarn.contains(type)) {
+                        søknadsbarn?.referanse
+                            ?: inntektManglerSøknadsbarn(type)
+                    } else {
+                        null
                     },
             ),
         ),
