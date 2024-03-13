@@ -139,7 +139,7 @@ class VedtakService(
         request.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for behandling $behandlingId med forespørsel $request" }
         val response = vedtakConsumer.fatteVedtak(request)
-        behandlingService.oppdaterVedtaksId(
+        behandlingService.oppdaterVedtakFattetStatus(
             behandlingId,
             vedtaksid = response.vedtaksid.toLong(),
         )
