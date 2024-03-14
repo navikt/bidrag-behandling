@@ -42,6 +42,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -61,6 +62,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -757,6 +759,106 @@ class GrunnlagMappingTest {
         }
 
         @Test
+        fun `skal ikke mappe inntekt til grunnlag hvis inntekt ikke tilhører søknadsbarn`() {
+            val behandling = oppretteBehandling()
+            behandling.roller = oppretteBehandlingRoller(behandling)
+            behandling.grunnlag =
+                opprettInntekterBearbeidetGrunnlag(
+                    behandling,
+                    testdataBM,
+                ).toMutableSet()
+
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        belop = BigDecimal(50000),
+                        datoTom = LocalDate.parse("2022-06-30"),
+                        datoFom = LocalDate.parse("2022-01-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        id = 1,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        id = 2,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                        type = Inntektsrapportering.KONTANTSTØTTE,
+                        id = 22,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn2.ident,
+                        type = Inntektsrapportering.BARNETILLEGG,
+                        id = 22,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        gjelderBarn = "123123123123",
+                        type = Inntektsrapportering.KONTANTSTØTTE,
+                        id = 33,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoTom = LocalDate.parse("2022-09-01"),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        gjelderBarn = "123123123123",
+                        type = Inntektsrapportering.BARNETILLEGG,
+                        id = 33,
+                    ),
+                )
+            assertSoftly(
+                behandling.tilGrunnlagInntekt(personobjekter).toList(),
+            ) {
+                it shouldHaveSize 4
+
+                it.hentInntekt(Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER) shouldHaveSize 1
+                it.hentInntekt(Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT) shouldHaveSize 1
+                it.hentInntekt(Inntektsrapportering.KONTANTSTØTTE) shouldHaveSize 1
+                it.hentInntekt(Inntektsrapportering.BARNETILLEGG) shouldHaveSize 1
+
+                it.hentInntekt(Inntektsrapportering.KONTANTSTØTTE).first()
+                    .innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
+                it.hentInntekt(Inntektsrapportering.BARNETILLEGG).first()
+                    .innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn shouldBe søknadsbarnGrunnlag2.referanse
+            }
+        }
+
+        @Test
         fun `skal feile mapping av inntektperiode hvis søknadsbarn mangler`() {
             val behandling = oppretteBehandling()
             behandling.grunnlag =
@@ -1099,6 +1201,11 @@ class GrunnlagMappingTest {
                 )
             },
         ).filterNotNull().toMutableSet()
+
+        fun List<GrunnlagDto>.hentInntekt(inntektsrapportering: Inntektsrapportering) =
+            filter {
+                it.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
+            }.filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().inntektsrapportering == inntektsrapportering }
     }
 
     @Nested
