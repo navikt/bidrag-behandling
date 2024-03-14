@@ -69,26 +69,27 @@ fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<Husstands
 
     val søknadsbarn =
         this.filter { !it.ident.isNullOrBlank() && identerSøknadsbarn.contains(it.ident) }.map {
-            it.toDto()
+            it.toDto(behandling)
         }.sortedBy { it.fødselsdato }.toSet()
 
-    val ikkeSøknadsbarnMenErMedISaken =
-        this.filter { it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }
-            .map { it.toDto() }
+    val barnFraOffentligeKilderSomIkkeErDelAvBehandling =
+        this.filter { Kilde.OFFENTLIG == it.kilde }.filter { !identerSøknadsbarn.contains(it.ident) }
+            .map { it.toDto(behandling) }
             .sortedBy { it.fødselsdato }.toSet()
 
     val andreHusstandsbarn =
-        this.filter { !it.medISaken }.filter { !identerSøknadsbarn.contains(it.ident) }
-            .map { it.toDto() }
+        this.filter { Kilde.MANUELL == it.kilde }.filter { !identerSøknadsbarn.contains(it.ident) }
+            .map { it.toDto(behandling) }
             .sortedBy { it.fødselsdato }.toSet()
 
-    return søknadsbarn + ikkeSøknadsbarnMenErMedISaken + andreHusstandsbarn
+    return søknadsbarn + barnFraOffentligeKilderSomIkkeErDelAvBehandling + andreHusstandsbarn
 }
 
-fun Husstandsbarn.toDto(): HusstandsbarnDto =
+fun Husstandsbarn.toDto(behandling: Behandling): HusstandsbarnDto =
     HusstandsbarnDto(
         this.id,
-        this.medISaken,
+        this.kilde,
+        !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
         this.perioder.toHusstandsBarnPeriodeDto().sortedBy { periode -> periode.datoFom }.toSet(),
         this.ident,
         this.navn,
@@ -100,7 +101,7 @@ fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
         val barn =
             Husstandsbarn(
                 behandling,
-                it.medISak,
+                it.kilde,
                 it.id,
                 it.ident,
                 it.navn,
@@ -221,7 +222,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
 fun OpprettRolleDto.toHusstandsbarn(behandling: Behandling): Husstandsbarn =
     Husstandsbarn(
         behandling,
-        true,
+        Kilde.OFFENTLIG,
         ident = this.ident?.verdi,
         foedselsdato =
             this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)

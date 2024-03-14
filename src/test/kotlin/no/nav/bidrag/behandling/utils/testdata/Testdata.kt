@@ -271,7 +271,7 @@ fun opprettHusstandsbarn(
         Husstandsbarn(
             navn = data.navn,
             ident = data.ident,
-            medISaken = true,
+            kilde = Kilde.OFFENTLIG,
             behandling = behandling,
             foedselsdato = data.foedselsdato,
         )
@@ -511,7 +511,7 @@ fun Behandling.opprettHusstandsbarn(
     val husstandsbarn =
         Husstandsbarn(
             behandling = this,
-            medISaken = true,
+            kilde = Kilde.OFFENTLIG,
             ident = ident,
             navn = navn,
             foedselsdato = fødselsdato ?: LocalDate.parse("2020-01-01"),

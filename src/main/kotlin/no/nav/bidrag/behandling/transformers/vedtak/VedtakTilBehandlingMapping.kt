@@ -425,10 +425,10 @@ private fun List<BaseGrunnlag>.tilHusstandsbarn(
             ident = gjelderBarnGrunnlag.personIdent,
             navn = gjelderBarn.navn,
             foedselsdato = gjelderBarn.fødselsdato,
-            medISaken =
+            kilde =
                 when (gjelderBarnGrunnlag.type) {
-                    Grunnlagstype.PERSON_SØKNADSBARN -> true
-                    else -> false
+                    Grunnlagstype.PERSON_SØKNADSBARN -> Kilde.OFFENTLIG
+                    else -> Kilde.MANUELL
                 },
             behandling = behandling,
         )

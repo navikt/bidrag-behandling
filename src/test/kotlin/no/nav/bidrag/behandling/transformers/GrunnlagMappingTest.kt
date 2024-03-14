@@ -511,7 +511,7 @@ class GrunnlagMappingTest {
                     ident = "12345678901",
                     foedselsdato = fødslesdato,
                     perioder = mutableSetOf(),
-                    medISaken = false,
+                    kilde = Kilde.MANUELL,
                     id = 1L,
                 ).tilGrunnlagPerson(),
             ) {
@@ -555,7 +555,7 @@ class GrunnlagMappingTest {
                     navn = "Navn navnesen",
                     foedselsdato = fødslesdato,
                     perioder = mutableSetOf(),
-                    medISaken = false,
+                    kilde = Kilde.MANUELL,
                     id = 1L,
                 ).tilGrunnlagPerson(),
             ) {
@@ -601,7 +601,7 @@ class GrunnlagMappingTest {
                     navn = "Navn navnesen",
                     foedselsdato = fødslesdato,
                     perioder = mutableSetOf(),
-                    medISaken = false,
+                    kilde = Kilde.MANUELL,
                     id = 1L,
                 ).tilGrunnlagPerson(),
             ) {
@@ -1116,7 +1116,7 @@ class GrunnlagMappingTest {
                     navn = navn,
                     foedselsdato = fødselsdato,
                     perioder = mutableSetOf(),
-                    medISaken = false,
+                    kilde = Kilde.MANUELL,
                     id = 1L,
                 )
 
