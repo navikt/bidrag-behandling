@@ -773,9 +773,7 @@ class InntektServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().inntekter.first().datoFom shouldBe
                     forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.fom
                 oppdatertBehandling.get().inntekter.first().datoTom shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.til?.minusDays(
-                        1,
-                    )
+                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.til
                 oppdatertBehandling.get().inntekter.first().opprinneligFom shouldBe ainntekt.opprinneligFom
                 oppdatertBehandling.get().inntekter.first().opprinneligTom shouldBe ainntekt.opprinneligTom
                 oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1
