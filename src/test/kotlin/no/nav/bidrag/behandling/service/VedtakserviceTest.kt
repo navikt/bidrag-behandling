@@ -275,7 +275,7 @@ class VedtakserviceTest {
         val husstandsbarnUtenIdent =
             Husstandsbarn(
                 behandling = behandling,
-                medISaken = false,
+                kilde = Kilde.MANUELL,
                 ident = null,
                 navn = "Mr Hansen",
                 foedselsdato = LocalDate.parse("2020-01-01"),

@@ -251,7 +251,7 @@ class VedtakTilBehandlingTest {
 
             assertSoftly(husstandsbarn.toList()) {
                 this shouldHaveSize 6
-                assertSoftly(filter { it.medISaken }) {
+                assertSoftly(filter { Kilde.OFFENTLIG == it.kilde }) {
                     this shouldHaveSize 2
                     this[0].ident shouldBe testdataBarn1.ident
                     this[0].navn shouldBe null
@@ -350,7 +350,7 @@ class VedtakTilBehandlingTest {
                 it.ident shouldBe testdataBarn1.ident
                 it.foedselsdato shouldBe testdataBarn1.foedselsdato
                 it.navn shouldBe null
-                it.medISaken shouldBe true
+                it.kilde shouldBe Kilde.OFFENTLIG
                 val periode = it.perioder.first()
                 assertSoftly(periode) {
                     it.datoFom shouldBe LocalDate.of(2022, 11, 1)
@@ -363,7 +363,7 @@ class VedtakTilBehandlingTest {
                 it.ident shouldBe testdataBarn2.ident
                 it.foedselsdato shouldBe testdataBarn2.foedselsdato
                 it.navn shouldBe null
-                it.medISaken shouldBe true
+                it.kilde shouldBe Kilde.OFFENTLIG
                 it.perioder shouldHaveSize 2
                 val periode = it.perioder.first()
                 assertSoftly(periode) {
@@ -383,7 +383,7 @@ class VedtakTilBehandlingTest {
                 it.ident shouldBe null
                 it.foedselsdato shouldBe LocalDate.parse("2024-02-06")
                 it.navn shouldBe "Per Hansen"
-                it.medISaken shouldBe false
+                it.kilde shouldBe Kilde.MANUELL
                 it.perioder shouldHaveSize 1
                 val periode = it.perioder.first()
                 assertSoftly(periode) {
@@ -535,9 +535,9 @@ class VedtakTilBehandlingTest {
             val skattepliktigInnhold =
                 skattepliktig[0].konverterData<SummerteInntekter<SummertÅrsinntekt>>()
             skattepliktigInnhold!!.versjon shouldBe "V1"
-            skattepliktigInnhold!!.inntekter shouldHaveSize 10
-            skattepliktigInnhold!!.inntekter.ainntektListe!! shouldHaveSize 4
-            skattepliktigInnhold!!.inntekter.skattegrunnlagListe!! shouldHaveSize 6
+            skattepliktigInnhold.inntekter shouldHaveSize 10
+            skattepliktigInnhold.inntekter.ainntektListe shouldHaveSize 4
+            skattepliktigInnhold.inntekter.skattegrunnlagListe shouldHaveSize 6
         }
     }
 }

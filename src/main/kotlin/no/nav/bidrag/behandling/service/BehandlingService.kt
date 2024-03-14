@@ -277,7 +277,7 @@ class BehandlingService(
             skalSlettes
         }
 
-        oppdaterHusstandsbarnForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
+        oppdaterHusstandsbarnForRoller(behandling, rollerSomLeggesTil)
 
         behandlingRepository.save(behandling)
 
@@ -293,7 +293,6 @@ class BehandlingService(
     private fun oppdaterHusstandsbarnForRoller(
         behandling: Behandling,
         rollerSomLeggesTil: List<OpprettRolleDto>,
-        rollerSomSkalSlettes: List<OpprettRolleDto>,
     ) {
         val nyeRollerSomIkkeHarHusstandsbarn =
             rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsbarn.none { it.ident == nyRolle.ident?.verdi } }
@@ -305,16 +304,6 @@ class BehandlingService(
                 )
             },
         )
-        // TODO: Hent grunnlag for nye husstandsmedlemmer
-        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
-        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
-        behandling.husstandsbarn.forEach {
-            if (identerSomSkalLeggesTil.contains(it.ident)) {
-                it.medISaken = true
-            } else if (identerSomSkalSlettes.contains(it.ident)) {
-                it.medISaken = false
-            }
-        }
     }
 
     private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>) {
@@ -323,6 +312,7 @@ class BehandlingService(
     }
 
     private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>) {
-        roller.filter { r -> r.rolletype != Rolletype.BARN }.forEach { Validate.isTrue(!it.ident?.verdi.isNullOrBlank()) }
+        roller.filter { r -> r.rolletype != Rolletype.BARN }
+            .forEach { Validate.isTrue(!it.ident?.verdi.isNullOrBlank()) }
     }
 }

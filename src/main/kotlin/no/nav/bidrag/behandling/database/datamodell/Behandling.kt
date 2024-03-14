@@ -168,7 +168,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
             },
             {
                 ensure(this@validere.husstandsbarn.size > 0) { raise("Mangler informasjon om husstandsbarn") }
-                this@validere.husstandsbarn.filter { it.medISaken }.forEach {
+                this@validere.husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.forEach {
                     ensure(it.perioder.isNotEmpty()) {
                         raise(
                             "Mangler perioder for husstandsbarn ${it.hentNavn()}/${it.ident}",
@@ -184,7 +184,7 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                     }
                 }
 
-                mapOrAccumulate(husstandsbarn.filter { it.medISaken }.flatMap { it.perioder }) {
+                mapOrAccumulate(husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.flatMap { it.perioder }) {
                     ensure(it.datoFom != null) { raise("Fra-dato mangler for husstandsbarnperiode i behandling") }
                     it
                 }

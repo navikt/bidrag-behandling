@@ -35,6 +35,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             setOf(
                 HusstandsbarnDto(
                     behandling.id,
+                    Kilde.OFFENTLIG,
                     true,
                     perioder,
                     "ident",

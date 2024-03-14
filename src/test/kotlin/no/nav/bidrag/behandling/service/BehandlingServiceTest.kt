@@ -105,7 +105,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         @Transactional
         open fun `skal hente behandling med beregnet inntekter`() {
-            val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
+            val behandling = oppretteBehandling()
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.roller = oppretteBehandlingRoller(behandling)
             behandling.inntekter =
@@ -167,7 +167,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
 
             assertSoftly(behandlingDto) {
-                it.inntekter.beregnetInntekter shouldHaveSize 3
+                it.inntekter.beregnetInntekter shouldHaveSize 4
                 val inntekterAlle =
                     it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
                 val inntekterBarn1 =
@@ -378,7 +378,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingEtter.roller shouldHaveSize 4
             behandlingEtter.husstandsbarn shouldHaveSize 1
             behandlingEtter.husstandsbarn.first().ident shouldBe "newident"
-            behandlingEtter.husstandsbarn.first().medISaken shouldBe true
+            behandlingEtter.husstandsbarn.first().kilde shouldBe Kilde.OFFENTLIG
         }
 
         @Test
@@ -431,13 +431,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                 mutableSetOf(
                     Husstandsbarn(
                         behandling,
-                        medISaken = false,
+                        kilde = Kilde.MANUELL,
                         ident = identOriginaltIkkeMedISaken,
                         foedselsdato = LocalDate.parse("2021-01-01"),
                     ),
                     Husstandsbarn(
                         behandling,
-                        medISaken = true,
+                        kilde = Kilde.OFFENTLIG,
                         ident = identOriginaltMedISaken,
                         foedselsdato = LocalDate.parse("2021-01-01"),
                     ),
@@ -481,9 +481,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
             behandlingEtter.søknadsbarn shouldHaveSize 3
             behandlingEtter.husstandsbarn shouldHaveSize 3
-            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltMedISaken }!!.medISaken shouldBe false
-            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltIkkeMedISaken }!!.medISaken shouldBe true
-            behandlingEtter.husstandsbarn.find { it.ident == "1111234" }!!.medISaken shouldBe true
+            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltMedISaken }!!.kilde shouldBe Kilde.OFFENTLIG
+            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltIkkeMedISaken }!!.kilde shouldBe Kilde.MANUELL
+            behandlingEtter.husstandsbarn.find { it.ident == "1111234" }!!.kilde shouldBe Kilde.OFFENTLIG
         }
 
         @Test
@@ -593,6 +593,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 setOf(
                     HusstandsbarnDto(
                         null,
+                        Kilde.OFFENTLIG,
                         true,
                         emptySet(),
                         ident = "Manuelt",
