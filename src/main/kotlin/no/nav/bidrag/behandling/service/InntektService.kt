@@ -103,7 +103,7 @@ class InntektService(
         oppdatereInntekterRequest.oppdatereInntektsperioder.forEach {
             val inntekt = inntektRepository.findById(it.id).orElseThrow { inntektIkkeFunnetException(it.id) }
             inntekt.datoFom = it.angittPeriode.fom
-            inntekt.datoTom = it.angittPeriode.til?.minusDays(1)
+            inntekt.datoTom = it.angittPeriode.til
             inntekt.taMed = it.taMedIBeregning
         }
 

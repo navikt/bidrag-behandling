@@ -117,7 +117,7 @@ class BehandlingControllerV2(
             ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
         ],
     )
-    fun hentBehandlingV2(
+    fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
     ): BehandlingDtoV2 {
         return behandlingService.henteBehandling(behandlingsid)
