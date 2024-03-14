@@ -136,12 +136,20 @@ fun Behandling.tilGrunnlagInntekt(
     søknadsbarn: GrunnlagDto? = null,
     inkluderAlle: Boolean = true,
 ): Set<GrunnlagDto> {
+    val alleSøknadsbarnIdenter = this.søknadsbarn.mapNotNull { it.ident }
     return inntekter.asSequence()
         .filter { personobjekter.hentPersonNyesteIdent(it.ident) != null && (inkluderAlle || it.taMed) }
         .groupBy { it.ident }
         .flatMap { (ident, innhold) ->
             val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
-            innhold.filter { søknadsbarn == null || it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty() }
+            innhold.filter {
+                søknadsbarn == null && (
+                    it.gjelderBarn.isNullOrEmpty() ||
+                        // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
+                        alleSøknadsbarnIdenter.contains(it.gjelderBarn)
+                ) || søknadsbarn != null &&
+                    (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+            }
                 .groupBy { it.gjelderBarn }
                 .map { (gjelderBarn, innhold) ->
                     val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)
