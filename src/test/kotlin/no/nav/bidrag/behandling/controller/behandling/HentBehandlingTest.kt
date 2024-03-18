@@ -31,7 +31,6 @@ import java.time.LocalDate
 class HentBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal hente behandling`() {
-
         // gitt
         stubUtils.stubHenteGrunnlagOk(
             navnResponsfil = "grunnlagresponse.json",

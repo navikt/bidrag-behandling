@@ -120,45 +120,47 @@ fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
     inntekt.gjelderBarn = this.gjelderBarn?.verdi
     inntekt.kilde = Kilde.MANUELL
     inntekt.taMed = this.taMed
-    inntekt.inntektsposter = if (this.inntektstype != null) {
-        mutableSetOf(
-            Inntektspost(
-                inntekt = inntekt,
-                beløp = this.beløp,
-                inntektstype = this.inntektstype,
-                kode = this.type.toString(),
-                visningsnavn = this.inntektstype.toString()
+    if (this.inntektstype != null) {
+        inntekt.inntektsposter =
+            mutableSetOf(
+                Inntektspost(
+                    inntekt = inntekt,
+                    beløp = this.beløp,
+                    inntektstype = this.inntektstype,
+                    kode = this.type.toString(),
+                    visningsnavn = this.inntektstype.toString(),
+                ),
             )
-        )
-    } else mutableSetOf()
+    }
     return inntekt
 }
 
-
-fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) : Inntekt{
-    val inntekt = Inntekt(
-        type = this.type,
-        belop = this.beløp,
-        datoFom = this.datoFom,
-        datoTom = this.datoTom,
-        ident = this.ident.verdi,
-        gjelderBarn = this.gjelderBarn?.verdi,
-        kilde = Kilde.MANUELL,
-        taMed = this.taMed,
-        id = this.id,
-        behandling = behandling,
-    )
+fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling): Inntekt {
+    val inntekt =
+        Inntekt(
+            type = this.type,
+            belop = this.beløp,
+            datoFom = this.datoFom,
+            datoTom = this.datoTom,
+            ident = this.ident.verdi,
+            gjelderBarn = this.gjelderBarn?.verdi,
+            kilde = Kilde.MANUELL,
+            taMed = this.taMed,
+            id = this.id,
+            behandling = behandling,
+        )
 
     if (this.inntektstype != null) {
-        inntekt.inntektsposter = mutableSetOf(
-            Inntektspost(
-                inntekt = inntekt,
-                beløp = this.beløp,
-                inntektstype = this.inntektstype,
-                kode = this.type.toString(),
-                visningsnavn = this.inntektstype.toString()
+        inntekt.inntektsposter =
+            mutableSetOf(
+                Inntektspost(
+                    inntekt = inntekt,
+                    beløp = this.beløp,
+                    inntektstype = this.inntektstype,
+                    kode = this.type.toString(),
+                    visningsnavn = this.inntektstype.toString(),
+                ),
             )
-        )
     }
 
     return inntekt
@@ -183,14 +185,14 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         ident = Personident(gjelder),
         kilde = Kilde.OFFENTLIG,
         inntektsposter =
-        inntektPostListe.map {
-            InntektspostDtoV2(
-                kode = it.kode,
-                visningsnavn = it.visningsnavn,
-                inntektstype = it.inntekstype,
-                beløp = it.beløp.setScale(0, RoundingMode.HALF_UP),
-            )
-        }.toSet(),
+            inntektPostListe.map {
+                InntektspostDtoV2(
+                    kode = it.kode,
+                    visningsnavn = it.visningsnavn,
+                    inntektstype = it.inntekstype,
+                    beløp = it.beløp.setScale(0, RoundingMode.HALF_UP),
+                )
+            }.toSet(),
         inntektstyper = emptySet(),
         datoFom = gjelderÅrMåned.atDay(1),
         datoTom = gjelderÅrMåned.atEndOfMonth(),
@@ -243,7 +245,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
         rolletype = this.rolletype,
         this.ident?.verdi,
         this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-        ?: rolleManglerFødselsdato(rolletype),
+            ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
     )
 
@@ -253,6 +255,6 @@ fun OpprettRolleDto.toHusstandsbarn(behandling: Behandling): Husstandsbarn =
         Kilde.OFFENTLIG,
         ident = this.ident?.verdi,
         foedselsdato =
-        this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-        ?: rolleManglerFødselsdato(rolletype),
+            this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
+                ?: rolleManglerFødselsdato(rolletype),
     )
