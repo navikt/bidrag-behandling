@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilInntektspost
+import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -97,6 +98,7 @@ class InntektService(
         behandlingsid: Long,
         oppdatereInntekterRequest: OppdatereInntekterRequestV2,
     ) {
+        oppdatereInntekterRequest.valider()
         val behandling =
             behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
 

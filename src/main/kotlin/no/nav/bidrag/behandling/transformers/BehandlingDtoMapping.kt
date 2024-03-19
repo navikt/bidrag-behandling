@@ -45,7 +45,6 @@ fun Behandling.tilBehandlingDtoV2(
             )
         }.toSet(),
     søknadRefId = soknadRefId,
-    grunnlagspakkeid = grunnlagspakkeid,
     virkningstidspunkt =
         VirkningstidspunktDto(
             virkningstidspunkt = virkningstidspunkt,
