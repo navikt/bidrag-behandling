@@ -152,6 +152,7 @@ class InntektServiceTest : TestContainerRunner() {
         open fun `skal slette duplikate inntekter med samme type og periode,ved oppdatering av grunnlag`() {
             // gitt
             stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
             stubUtils.stubKodeverkLønnsbeskrivelse()
             stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
             stubUtils.stubKodeverkYtelsesbeskrivelser()

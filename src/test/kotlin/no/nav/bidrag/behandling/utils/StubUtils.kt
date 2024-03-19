@@ -267,6 +267,23 @@ class StubUtils {
         )
     }
 
+    fun stubKodeverkSpesifisertSummertSkattegrunnlag(
+        response: KodeverkKoderBetydningerResponse? = null,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/SpesifisertSummertSkattegrunnlag.*")).willReturn(
+                if (response != null) {
+                    aClosedJsonResponse().withStatus(status.value()).withBody(
+                        ObjectMapper().findAndRegisterModules().writeValueAsString(response),
+                    )
+                } else {
+                    aClosedJsonResponse().withBodyFile("respons_kodeverk_spesifisertsummertskattegrunnlag.json")
+                },
+            ),
+        )
+    }
+
     fun stubKodeverkLønnsbeskrivelse(
         response: KodeverkKoderBetydningerResponse? = null,
         status: HttpStatus = HttpStatus.OK,

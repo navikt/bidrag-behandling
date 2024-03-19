@@ -842,6 +842,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val behandling = testdataManager.opprettBehandling(false)
 
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+            stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
 
             val skattegrunlagFraDato =
                 behandling.søktFomDato.minusYears(1).withMonth(1).withDayOfMonth(1)

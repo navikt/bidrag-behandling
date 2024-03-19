@@ -31,6 +31,7 @@ import java.time.LocalDate
 class HentBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal hente behandling`() {
+        // gitt
         stubUtils.stubHenteGrunnlagOk(
             navnResponsfil = "grunnlagresponse.json",
             rolle = testdataBM.tilRolle(),
@@ -43,8 +44,10 @@ class HentBehandlingTest : BehandlingControllerTest() {
             tomRespons = true,
             rolle = testdataBarn2.tilRolle(),
         )
-        // gitt
+
         val behandling = testdataManager.lagreBehandling(opprettBehandling())
+
+        // hvis
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/" + behandling.id,
@@ -53,6 +56,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 BehandlingDtoV2::class.java,
             )
 
+        // så
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
         assertSoftly(behandlingRes.body!!) {

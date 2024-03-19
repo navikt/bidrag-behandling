@@ -120,22 +120,51 @@ fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
     inntekt.gjelderBarn = this.gjelderBarn?.verdi
     inntekt.kilde = Kilde.MANUELL
     inntekt.taMed = this.taMed
+    if (this.inntektstype != null) {
+        inntekt.inntektsposter =
+            mutableSetOf(
+                Inntektspost(
+                    inntekt = inntekt,
+                    beløp = this.beløp,
+                    inntektstype = this.inntektstype,
+                    kode = this.type.toString(),
+                    visningsnavn = this.inntektstype.toString(),
+                ),
+            )
+    }
     return inntekt
 }
 
-fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling) =
-    Inntekt(
-        type = this.type,
-        belop = this.beløp,
-        datoFom = this.datoFom,
-        datoTom = this.datoTom,
-        ident = this.ident.verdi,
-        gjelderBarn = this.gjelderBarn?.verdi,
-        kilde = Kilde.MANUELL,
-        taMed = this.taMed,
-        id = this.id,
-        behandling = behandling,
-    )
+fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling): Inntekt {
+    val inntekt =
+        Inntekt(
+            type = this.type,
+            belop = this.beløp,
+            datoFom = this.datoFom,
+            datoTom = this.datoTom,
+            ident = this.ident.verdi,
+            gjelderBarn = this.gjelderBarn?.verdi,
+            kilde = Kilde.MANUELL,
+            taMed = this.taMed,
+            id = this.id,
+            behandling = behandling,
+        )
+
+    if (this.inntektstype != null) {
+        inntekt.inntektsposter =
+            mutableSetOf(
+                Inntektspost(
+                    inntekt = inntekt,
+                    beløp = this.beløp,
+                    inntektstype = this.inntektstype,
+                    kode = this.type.toString(),
+                    visningsnavn = this.inntektstype.toString(),
+                ),
+            )
+    }
+
+    return inntekt
+}
 
 fun Set<Inntektspost>.tilInntektspostDtoV2() =
     this.map {
@@ -173,21 +202,21 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
     )
 
 fun List<Inntekt>.tilInntektDtoV2() =
-    this.map {
+    this.map { inntekt ->
         InntektDtoV2(
-            id = it.id,
-            taMed = it.taMed,
-            rapporteringstype = it.type,
-            beløp = it.belop,
-            datoFom = it.datoFom,
-            datoTom = it.datoTom,
-            ident = Personident(it.ident),
-            gjelderBarn = it.gjelderBarn?.let { it1 -> Personident(it1) },
-            kilde = it.kilde,
-            inntektsposter = it.inntektsposter.tilInntektspostDtoV2().toSet(),
-            inntektstyper = it.type.inneholderInntektstypeListe.toSet(),
-            opprinneligFom = it.opprinneligFom,
-            opprinneligTom = it.opprinneligTom,
+            id = inntekt.id,
+            taMed = inntekt.taMed,
+            rapporteringstype = inntekt.type,
+            beløp = inntekt.belop,
+            datoFom = inntekt.datoFom,
+            datoTom = inntekt.datoTom,
+            ident = Personident(inntekt.ident),
+            gjelderBarn = inntekt.gjelderBarn?.let { it1 -> Personident(it1) },
+            kilde = inntekt.kilde,
+            inntektsposter = inntekt.inntektsposter.tilInntektspostDtoV2().toSet(),
+            inntektstyper = inntekt.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
+            opprinneligFom = inntekt.opprinneligFom,
+            opprinneligTom = inntekt.opprinneligTom,
         )
     }
 
