@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.tilAinntektspostDto
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
@@ -90,7 +91,7 @@ class InntektServiceTest : TestContainerRunner() {
             val behandling = testdataManager.opprettBehandling()
 
             val summerteInntekter =
-                SummerteInntekter<SummertÅrsinntekt>(
+                SummerteInntekter(
                     versjon = "xyz",
                     inntekter =
                         listOf(
@@ -161,29 +162,60 @@ class InntektServiceTest : TestContainerRunner() {
             val behandling = testdataManager.opprettBehandling()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
-            testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
+            testdataManager.oppretteOgLagreGrunnlag<SkattepliktigeInntekter>(
                 behandling = behandling,
                 grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
                 innhentet = LocalDate.of(YearMonth.now().minusYears(1).year, 1, 1).atStartOfDay(),
+                grunnlagsdata =
+                    SkattepliktigeInntekter(
+                        listOf(
+                            AinntektGrunnlagDto(
+                                personId = behandling.bidragsmottaker!!.ident!!,
+                                periodeFra = LocalDate.now().minusMonths(4).withDayOfMonth(1),
+                                periodeTil = LocalDate.now().withDayOfMonth(1),
+                                ainntektspostListe =
+                                    listOf(
+                                        tilAinntektspostDto(
+                                            beløp = BigDecimal(70000),
+                                            fomDato = LocalDate.now().minusMonths(4).withDayOfMonth(1),
+                                            tilDato = LocalDate.now().withDayOfMonth(1),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                    ),
                 aktiv = null,
             )
 
             fun ainntekt12Mnd(): Inntekt {
                 val fom = YearMonth.now().minusMonths(12).atDay(1)
                 val tom = YearMonth.now().atDay(1)
-                return Inntekt(
-                    behandling = behandling,
-                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-                    belop = BigDecimal(14000),
-                    datoFom = fom,
-                    datoTom = tom,
-                    opprinneligFom = fom,
-                    opprinneligTom = tom,
-                    ident = testdataBM.ident,
-                    gjelderBarn = testdataBarn1.ident,
-                    kilde = Kilde.OFFENTLIG,
-                    taMed = true,
-                )
+                val inntekt =
+                    Inntekt(
+                        behandling = behandling,
+                        type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                        belop = BigDecimal(14000),
+                        datoFom = fom,
+                        datoTom = tom,
+                        opprinneligFom = fom,
+                        opprinneligTom = tom,
+                        ident = testdataBM.ident,
+                        gjelderBarn = testdataBarn1.ident,
+                        kilde = Kilde.OFFENTLIG,
+                        taMed = true,
+                    )
+                inntekt.inntektsposter =
+                    mutableSetOf(
+                        Inntektspost(
+                            beløp = BigDecimal(14000),
+                            kode = "fastloenn",
+                            inntektstype = null,
+                            visningsnavn = "",
+                            inntekt = inntekt,
+                        ),
+                    )
+
+                return inntekt
             }
 
             behandling.inntekter.add(ainntekt12Mnd())
@@ -203,7 +235,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             val transformereInntekter =
                 TransformerInntekterRequest(
-                    ainntektHentetDato = grunnlagMedAinntekt.innhentet.toLocalDate(),
+                    ainntektHentetDato = LocalDate.now(),
                     ainntektsposter =
                         skattepliktigeInntekter.ainntekter.flatMap { it.ainntektspostListe }
                             .tilAinntektsposter(testdataBM.tilRolle(behandling)),
@@ -227,14 +259,14 @@ class InntektServiceTest : TestContainerRunner() {
             entityManager.refresh(behandling)
 
             assertSoftly {
-                behandling.inntekter.size shouldBe 2
+                behandling.inntekter.size shouldBe 3
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe
                     BigDecimal(
                         70000,
                     )
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.size shouldBe 1
-                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe BigDecimal.ZERO
+                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe BigDecimal(210000)
             }
         }
 
