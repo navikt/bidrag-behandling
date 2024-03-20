@@ -74,7 +74,8 @@ fun Set<Husstandsbarn>.toHusstandsBarnDto(behandling: Behandling): Set<Husstands
         }.sortedBy { it.fødselsdato }.toSet()
 
     val barnFraOffentligeKilderSomIkkeErDelAvBehandling =
-        this.filter { Kilde.OFFENTLIG == it.kilde }.filter { !identerSøknadsbarn.contains(it.ident) }
+        this.filter { Kilde.OFFENTLIG == it.kilde }
+            .filter { !identerSøknadsbarn.contains(it.ident) }
             .map { it.toDto(behandling) }
             .sortedBy { it.fødselsdato }.toSet()
 
@@ -158,7 +159,6 @@ fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling): Inntekt {
                     beløp = this.beløp,
                     inntektstype = this.inntektstype,
                     kode = this.type.toString(),
-                    visningsnavn = this.inntektstype.toString(),
                 ),
             )
     }

@@ -747,6 +747,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                                         datoTom = LocalDate.now().plusMonths(4),
                                         ident = Personident("123"),
                                     ),
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.BARNETILLEGG,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = Personident("123"),
+                                        gjelderBarn = Personident("1233"),
+                                        inntektstype = Inntektstype.BARNETILLEGG_AAP,
+                                    ),
                                 ),
                             notat =
                                 OppdaterNotat(
@@ -759,9 +768,42 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
 
-            assertEquals(1, expectedBehandling.inntekter.size)
+            assertEquals(2, expectedBehandling.inntekter.size)
             assertEquals("Med i Vedtaket", expectedBehandling.inntektsbegrunnelseIVedtakOgNotat)
             assertEquals("Kun i Notat", expectedBehandling.inntektsbegrunnelseKunINotat)
+        }
+
+        @Test
+        fun `skal feile ved validering hvis barnetillegg legges til uten gjelder barn`() {
+            val actualBehandling = oppretteBehandling()
+
+            val error =
+                assertThrows<HttpClientErrorException> {
+                    behandlingService.oppdaterBehandling(
+                        actualBehandling.id!!,
+                        OppdaterBehandlingRequestV2(
+                            inntekter =
+                                OppdatereInntekterRequestV2(
+                                    oppdatereManuelleInntekter =
+                                        mutableSetOf(
+                                            OppdatereManuellInntekt(
+                                                type = Inntektsrapportering.BARNETILLEGG,
+                                                beløp = BigDecimal.valueOf(4000),
+                                                datoFom = LocalDate.now().minusMonths(4),
+                                                datoTom = LocalDate.now().plusMonths(4),
+                                                ident = Personident("123"),
+                                            ),
+                                        ),
+                                    notat =
+                                        OppdaterNotat(
+                                            "Kun i Notat",
+                                            "Med i Vedtaket",
+                                        ),
+                                ),
+                        ),
+                    )
+                }
+            error.message shouldContain "Ugyldig data ved oppdatering av inntekter: BARNETILLEGG må ha en gyldig barnident, Barnetillegg må ha en gyldig inntektstype"
         }
 
         @Test
