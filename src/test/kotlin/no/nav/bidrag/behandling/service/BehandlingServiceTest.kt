@@ -59,6 +59,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -196,6 +197,56 @@ class BehandlingServiceTest : TestContainerRunner() {
                     summertInntektListe[1].barnetillegg shouldBe BigDecimal(555)
                     summertInntektListe[1].kontantstøtte shouldBe null
                 }
+            }
+        }
+
+        @Disabled("Wiremock issues - OK alene, feiler i fellesskap med andre")
+        @Test
+        @Transactional
+        open fun `ytelser skal ikke listes som årsinntekter i DTO`() {
+            // gitt
+            val behandling = oppretteBehandling()
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                        BigDecimal.valueOf(1234),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = LocalDate.parse("2023-09-01"),
+                        behandling = behandling,
+                    ),
+                )
+            testdataManager.lagreBehandling(behandling)
+
+            entityManager.refresh(behandling)
+
+            // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
+            kjøreStubber(behandling)
+
+            // hvis
+            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
+            // så
+            val ytelser =
+                setOf(
+                    Inntektsrapportering.BARNETILLEGG,
+                    Inntektsrapportering.KONTANTSTØTTE,
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                )
+
+            assertSoftly {
+                behandlingDto.inntekter.årsinntekter.filter { ytelser.contains(it.rapporteringstype) }.size shouldBe 0
+                behandlingDto.inntekter.barnetillegg.size shouldBe 0
+                behandlingDto.inntekter.kontantstøtte.size shouldBe 0
+                behandlingDto.inntekter.småbarnstillegg.size shouldBe 1
+                behandlingDto.inntekter.utvidetBarnetrygd.size shouldBe 1
+                behandlingDto.inntekter.årsinntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }.size shouldBe 3
             }
         }
 

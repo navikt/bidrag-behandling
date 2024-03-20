@@ -47,14 +47,16 @@ class LesBehandlingTest : BehandlingControllerTest() {
             søknadsid shouldBe 101
             behandlerenhet shouldBe "4806"
             roller shouldHaveSize 3
+
             assertSoftly(virkningstidspunkt) {
                 virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
                 årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
                 notat.kunINotat shouldBe "Notat virkningstidspunkt"
                 notat.medIVedtaket shouldBe "Notat virkningstidspunkt med i vedtak"
             }
+
             assertSoftly(inntekter) {
-                årsinntekter shouldHaveSize 10
+                årsinntekter shouldHaveSize 11
                 årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK }
                     .shouldBeEmpty()
                 årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK }

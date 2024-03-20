@@ -7,6 +7,7 @@ import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
@@ -73,7 +74,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 23
+    val totaltAntallGrunnlag = 19
 
     @BeforeEach
     fun setup() {
@@ -119,7 +120,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 oppdatertBehandling.isPresent shouldBe true
                 oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
                 oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
-                oppdatertBehandling.get().inntekter.size shouldBe totaltAntallGrunnlag - 1
+                oppdatertBehandling.get().inntekter.size shouldBe totaltAntallGrunnlag + 1
             }
 
             val alleGrunnlagBm =
@@ -141,11 +142,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().inntekter.filter { behandling.bidragsmottaker!!.ident == it.ident }
 
             assertSoftly {
-                alleInntekterBm.size shouldBe 10
-                alleInntekterBm.filter { Inntektsrapportering.BARNETILLEGG == it.type }.size shouldBe 1
-                oppdatertBehandling.get().inntekter.filter { Inntektsrapportering.BARNETILLEGG == it.type }.size shouldBe 1
-                alleInntekterBm.filter { Inntektsrapportering.KONTANTSTØTTE == it.type }.size shouldBe 1
-                oppdatertBehandling.get().inntekter.filter { Inntektsrapportering.KONTANTSTØTTE == it.type }.size shouldBe 1
+                alleInntekterBm.size shouldBe 8
+                alleInntekterBm.filter { Inntektsrapportering.BARNETILLEGG == it.type }.size shouldBe 0
+                oppdatertBehandling.get().inntekter.filter { Inntektsrapportering.BARNETILLEGG == it.type }.size shouldBe 0
+                alleInntekterBm.filter { Inntektsrapportering.KONTANTSTØTTE == it.type }.size shouldBe 0
+                oppdatertBehandling.get().inntekter.filter { Inntektsrapportering.KONTANTSTØTTE == it.type }.size shouldBe 0
                 alleInntekterBm.filter { Inntektsrapportering.SMÅBARNSTILLEGG == it.type }.size shouldBe 1
                 oppdatertBehandling.get().inntekter.filter { Inntektsrapportering.SMÅBARNSTILLEGG == it.type }.size shouldBe 1
                 alleInntekterBm.filter { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }.size shouldBe 1
@@ -699,7 +700,63 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal lagre yteslser`() {
+        @Transactional
+        open fun `skal lagre barnetillegg og kontantstøtte som gjelder barn med rolle i behandling`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+
+            val barnFraHenteGrunnlagresponsJson = "01057812300"
+
+            behandling.roller.removeAll(behandling.roller.filter { Rolletype.BARN == it.rolletype }.toSet())
+
+            behandling.roller.add(
+                Rolle(
+                    behandling = behandling,
+                    rolletype = Rolletype.BARN,
+                    ident = barnFraHenteGrunnlagresponsJson,
+                    foedselsdato = LocalDate.now().minusYears(14),
+                ),
+            )
+
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            entityManager.refresh(behandling)
+
+            behandling.grunnlag.size shouldBe totaltAntallGrunnlag
+
+            val grunnlagBarnetillegg =
+                behandling.grunnlag.filter { it.behandling.id == behandling.id }
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.BARNETILLEGG == it.type }
+            grunnlagBarnetillegg.isNotEmpty() shouldBe true
+
+            val grunnlagKontantstøtte =
+                behandling.grunnlag.filter { it.behandling.id == behandling.id }
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.KONTANTSTØTTE == it.type }
+            grunnlagKontantstøtte.isNotEmpty() shouldBe true
+
+            val grunnlagUtvidetBarnetrygd =
+                behandling.grunnlag.filter { it.behandling.id == behandling.id }
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.UTVIDET_BARNETRYGD == it.type }
+            grunnlagUtvidetBarnetrygd.isNotEmpty() shouldBe true
+
+            val grunnlagSmåbarnstillegg =
+                behandling.grunnlag.filter { it.behandling.id == behandling.id }
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
+            grunnlagSmåbarnstillegg.isNotEmpty() shouldBe true
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke lagre barnetillegg eller kontantstøtte som gjelder barn som ikke er del av behandling`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
@@ -710,83 +767,33 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+            entityManager.refresh(behandling)
 
-            assertSoftly {
-                oppdatertBehandling.isPresent shouldBe true
-                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
-            }
+            behandling.grunnlag.size shouldBe totaltAntallGrunnlag
 
             val grunnlagBarnetillegg =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                    behandlingsid = behandling.id!!,
-                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                    Grunnlagsdatatype.BARNETILLEGG,
-                    false,
-                )
-            grunnlagBarnetillegg shouldNotBe null
-            val barnetillegg =
-                jsonListeTilObjekt<BarnetilleggGrunnlagDto>(grunnlagBarnetillegg?.data!!)
-            assertSoftly {
-                barnetillegg.size shouldBe 1
-            }
-
-            val grunnlagBarnetilsyn =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                    behandlingsid = behandling.id!!,
-                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                    Grunnlagsdatatype.BARNETILSYN,
-                    false,
-                )
-            grunnlagBarnetilsyn shouldNotBe null
-            val barnetilsyn =
-                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(grunnlagBarnetilsyn?.data!!)
-            assertSoftly {
-                barnetilsyn.size shouldBe 1
-            }
+                behandling.grunnlag.filter { it.behandling.id == behandling.id }
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.BARNETILLEGG == it.type }
+            grunnlagBarnetillegg.isEmpty() shouldBe true
 
             val grunnlagKontantstøtte =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                    behandlingsid = behandling.id!!,
-                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                    Grunnlagsdatatype.KONTANTSTØTTE,
-                    false,
-                )
-            grunnlagKontantstøtte shouldNotBe null
-            val kontantstøtte =
-                jsonListeTilObjekt<KontantstøtteGrunnlagDto>(grunnlagKontantstøtte?.data!!)
-            assertSoftly {
-                kontantstøtte.size shouldBe 1
-            }
+                behandling.grunnlag.filter { it.behandling.id == behandling.id }
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.KONTANTSTØTTE == it.type }
+            grunnlagKontantstøtte.isEmpty() shouldBe true
 
             val grunnlagUtvidetBarnetrygd =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                    behandlingsid = behandling.id!!,
-                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                    false,
-                )
-            grunnlagUtvidetBarnetrygd shouldNotBe null
-
-            val utvidetBarnetrygd =
-                jsonListeTilObjekt<UtvidetBarnetrygdGrunnlagDto>(grunnlagUtvidetBarnetrygd?.data!!)
-            assertSoftly {
-                utvidetBarnetrygd.size shouldBe 1
-            }
+                behandling.grunnlag.filter { it.behandling.id == behandling.id }
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.UTVIDET_BARNETRYGD == it.type }
+            grunnlagUtvidetBarnetrygd.isNotEmpty() shouldBe true
 
             val grunnlagSmåbarnstillegg =
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                    behandlingsid = behandling.id!!,
-                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                    false,
-                )
-            grunnlagSmåbarnstillegg shouldNotBe null
-            val småbarnstillegg =
-                jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(grunnlagSmåbarnstillegg?.data!!)
-            assertSoftly {
-                småbarnstillegg.size shouldBe 1
-            }
+                behandling.grunnlag.filter { it.behandling.id == behandling.id }
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
+            grunnlagSmåbarnstillegg.isNotEmpty() shouldBe true
         }
 
         @Test
@@ -1260,17 +1267,17 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     private fun validereGrunnlagBm(grunnlag: List<Grunnlag>) {
         assertSoftly {
-            grunnlag.size shouldBe 15
+            grunnlag.size shouldBe 11
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 1
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SIVILSTAND }.size shouldBe 1
-            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BARNETILLEGG }.size shouldBe 2
+            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BARNETILLEGG }.size shouldBe 0
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BARNETILLEGG }
-                .filter { it.erBearbeidet }.size shouldBe 1
-            grunnlag.filter { g -> g.type == Grunnlagsdatatype.KONTANTSTØTTE }.size shouldBe 2
+                .filter { it.erBearbeidet }.size shouldBe 0
+            grunnlag.filter { g -> g.type == Grunnlagsdatatype.KONTANTSTØTTE }.size shouldBe 0
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.KONTANTSTØTTE }
-                .filter { it.erBearbeidet }.size shouldBe 1
+                .filter { it.erBearbeidet }.size shouldBe 0
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SMÅBARNSTILLEGG }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SMÅBARNSTILLEGG }
                 .filter { it.erBearbeidet }.size shouldBe 1

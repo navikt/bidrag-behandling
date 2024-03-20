@@ -112,5 +112,5 @@ val eksplisitteYtelser =
         Inntektsrapportering.BARNETILLEGG,
         Inntektsrapportering.KONTANTSTØTTE,
         Inntektsrapportering.SMÅBARNSTILLEGG,
-        Inntektsrapportering.AINNTEKT,
+        Inntektsrapportering.UTVIDET_BARNETRYGD,
     )
