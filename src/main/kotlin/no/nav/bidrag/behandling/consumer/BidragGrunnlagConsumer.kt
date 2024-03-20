@@ -45,24 +45,33 @@ class BidragGrunnlagConsumer(
                 GrunnlagRequestType.AINNTEKT,
             )
 
-        fun oppretteGrunnlagsobjekterBarn(personidentBarn: Personident): List<GrunnlagRequestDto> =
+        fun oppretteGrunnlagsobjekterBarn(
+            personidentBarn: Personident,
+            virkningstidspunktEllerSøktFra: LocalDate,
+        ): List<GrunnlagRequestDto> =
             henteGrunnlag(
                 personidentBarn,
                 grunnlagstyperBarn,
+                virkningstidspunktEllerSøktFra,
             )
 
-        fun oppretteGrunnlagsobjekterBm(personidentBm: Personident): List<GrunnlagRequestDto> =
+        fun oppretteGrunnlagsobjekterBm(
+            personidentBm: Personident,
+            virkningstidspunktEllerSøktFra: LocalDate,
+        ): List<GrunnlagRequestDto> =
             henteGrunnlag(
                 personidentBm,
                 grunnlagstyperBm,
+                virkningstidspunktEllerSøktFra,
             )
 
         private fun henteGrunnlag(
             personident: Personident,
             grunnlagstyper: Set<GrunnlagRequestType>,
+            virkningstidspunktEllerSøktFra: LocalDate,
         ) = grunnlagstyper.map {
-            val fraDato = finneFraDato(it)
-            val tilDato = finneTilDato(it)
+            val fraDato = finneFraDato(it, virkningstidspunktEllerSøktFra)
+            val tilDato = LocalDate.now()
 
             GrunnlagRequestDto(
                 type = it,
@@ -72,31 +81,17 @@ class BidragGrunnlagConsumer(
             )
         }.toList().sortedBy { personident }
 
-        private fun finneFraDato(type: GrunnlagRequestType): LocalDate {
-            val dagensDato = LocalDate.now()
-            return dagensDato.minusMonths(
-                when (type) {
-                    GrunnlagRequestType.SKATTEGRUNNLAG -> 36
-                    GrunnlagRequestType.AINNTEKT -> {
-                        if (dagensDato.dayOfMonth > 6) 12 else 13
-                    }
+        private fun finneFraDato(
+            type: GrunnlagRequestType,
+            virkningstidspunktEllerSøktFra: LocalDate,
+        ): LocalDate {
+            val fradato = setOf(LocalDate.now(), virkningstidspunktEllerSøktFra).min()
 
-                    else -> 0
-                },
-            )
-        }
-
-        private fun finneTilDato(type: GrunnlagRequestType): LocalDate {
-            val dagensDato = LocalDate.now()
-            return dagensDato.minusMonths(
-                when (type) {
-                    GrunnlagRequestType.AINNTEKT -> {
-                        if (dagensDato.dayOfMonth > 6) 0 else 1
-                    }
-
-                    else -> 0
-                },
-            )
+            return when (type) {
+                GrunnlagRequestType.SKATTEGRUNNLAG -> fradato.minusYears(3).withMonth(1).withDayOfMonth(1)
+                GrunnlagRequestType.AINNTEKT -> fradato.minusYears(1).withMonth(1).withDayOfMonth(1)
+                else -> fradato
+            }
         }
     }
 
@@ -105,13 +100,17 @@ class BidragGrunnlagConsumer(
             mutableMapOf(
                 Personident(
                     behandling.bidragsmottaker!!.ident!!,
-                ) to oppretteGrunnlagsobjekterBm(Personident(behandling.bidragsmottaker!!.ident!!)),
+                ) to
+                    oppretteGrunnlagsobjekterBm(
+                        Personident(behandling.bidragsmottaker!!.ident!!),
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                    ),
             )
 
         behandling.søknadsbarn.filter { sb -> sb.ident != null }.map { Personident(it.ident!!) }
             .forEach {
                 requestobjekterGrunnlag[it] =
-                    oppretteGrunnlagsobjekterBarn(Personident(it.verdi))
+                    oppretteGrunnlagsobjekterBarn(Personident(it.verdi), behandling.virkningstidspunktEllerSøktFomDato)
             }
 
         return requestobjekterGrunnlag
