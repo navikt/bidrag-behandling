@@ -43,7 +43,8 @@ class InntektService(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         val inntekterSomSkalSlettes: Set<Inntekt> = emptySet()
-        behandling.inntekter.forEach {
+        val inntektstyper = summerteÅrsinntekter.map { it.inntektRapportering }
+        behandling.inntekter.filter { it.ident == personident.verdi && inntektstyper.contains(it.type) }.forEach {
             if (Kilde.OFFENTLIG == it.kilde) {
                 it.inntektsposter.removeAll(it.inntektsposter)
                 inntekterSomSkalSlettes.plus(it)
