@@ -131,9 +131,9 @@ class InntektService(
         }
 
         behandling.inntekter.removeAll(manuelleInntekterSomSkalSlettes)
-        entityManager.flush()
 
         if (oppdatereInntekterRequest.sletteInntekter.isNotEmpty()) {
+            entityManager.flush()
             log.info {
                 "Slettet ${oppdatereInntekterRequest.sletteInntekter} inntekter fra databasen."
             }

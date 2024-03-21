@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.controller
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -33,6 +34,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
 
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
+
+    @Autowired
+    lateinit var entityManager: EntityManager
 
     @BeforeEach
     fun oppsett() {
@@ -203,7 +207,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         }
 
         @Test
-        open fun `skal kun være mulig å slette inntekter med kilde manuell`() {
+        fun `skal kun være mulig å slette inntekter med kilde manuell`() {
             // given
             val behandling = testdataManager.opprettBehandling(true)
 
@@ -229,15 +233,15 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 )
 
             // then
-            assertSoftly {
-                respons shouldNotBe null
-                respons.statusCode shouldBe HttpStatus.CREATED
-                respons.body shouldNotBe null
-                respons.body?.inntekter?.årsinntekter?.size shouldBe 2
-                respons.body?.inntekter?.barnetillegg?.size shouldBe 0
-                respons.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 0
-                respons.body?.inntekter?.kontantstøtte?.size shouldBe 0
-                respons.body?.inntekter?.månedsinntekter?.size shouldBe 0
+            assertSoftly(respons) {
+                it shouldNotBe null
+                it.statusCode shouldBe HttpStatus.CREATED
+                it.body shouldNotBe null
+                it.body?.inntekter?.årsinntekter?.size shouldBe 2
+                it.body?.inntekter?.barnetillegg?.size shouldBe 0
+                it.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 0
+                it.body?.inntekter?.kontantstøtte?.size shouldBe 0
+                it.body?.inntekter?.månedsinntekter?.size shouldBe 0
             }
         }
     }
