@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.controller.behandling
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -23,6 +24,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -138,6 +140,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val sletteBehandling = testdataManager.hentBehandling(behandling.id!!)!!
         withClue("Skal logisk slettet hvor deleted parameter er true") {
             sletteBehandling.deleted shouldBe true
+            sletteBehandling.slettetTidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
         }
     }
 
