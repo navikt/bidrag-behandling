@@ -30,8 +30,9 @@ import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@Suppress("Unused")
 @Entity(name = "behandling")
-@SQLDelete(sql = "UPDATE behandling SET deleted = true WHERE id=?")
+@SQLDelete(sql = "UPDATE behandling SET deleted = true, slettet_tidspunkt = now() WHERE id=?")
 @SQLRestriction(value = "deleted=false")
 open class Behandling(
     @Enumerated(EnumType.STRING)
@@ -58,6 +59,7 @@ open class Behandling(
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
     open var vedtakstidspunkt: LocalDateTime? = null,
+    open var slettetTidspunkt: LocalDateTime? = null,
     open var vedtakFattetAv: String? = null,
     @Column(name = "aarsak")
     @Convert(converter = ÅrsakConverter::class)
