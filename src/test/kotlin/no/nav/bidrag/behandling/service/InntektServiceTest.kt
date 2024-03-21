@@ -210,7 +210,6 @@ class InntektServiceTest : TestContainerRunner() {
                             beløp = BigDecimal(14000),
                             kode = "fastloenn",
                             inntektstype = null,
-                            visningsnavn = "",
                             inntekt = inntekt,
                         ),
                     )
@@ -604,7 +603,10 @@ class InntektServiceTest : TestContainerRunner() {
             val summereOriginalUtvidetBarnetrygd =
                 TransformerInntekterRequestBuilder(
                     ainntektHentetDato = LocalDate.now(),
-                    utvidetBarnetrygd = listOf(originalUtvidetBarnetrygdsgrunnlag).tilUtvidetBarnetrygd(behandling.bidragsmottaker!!),
+                    utvidetBarnetrygd =
+                        listOf(
+                            originalUtvidetBarnetrygdsgrunnlag,
+                        ).tilUtvidetBarnetrygd(behandling.bidragsmottaker!!),
                 ).bygge()
 
             behandling.inntekter.size shouldBe 0
@@ -766,7 +768,6 @@ class InntektServiceTest : TestContainerRunner() {
                     beløp = ainntekt.belop,
                     inntektstype = Inntektstype.LØNNSINNTEKT,
                     kode = "fastloenn",
-                    visningsnavn = "Fastlønn",
                     inntekt = ainntekt,
                 )
             ainntekt.inntektsposter = mutableSetOf(postAinntekt)

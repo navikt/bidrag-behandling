@@ -49,7 +49,7 @@ open class Inntekt(
         return try {
             "Inntekt($type, beløp=$belop, datoFom=$datoFom, " +
                 "datoTom=$datoTom, ident='$ident', gjelderBarn='$gjelderBarn'," +
-                "opprinneligFom=$opprinneligFom, opprinneligTom=$opprinneligTom, " +
+                "opprinneligFom=$opprinneligFom, opprinneligTom=$opprinneligTom, inntekstposter=${inntektsposter.joinToString(",")} " +
                 " kilde=$kilde, taMed=$taMed, id=$id, behandling=${behandling?.id})"
         } catch (e: Exception) {
             "Inntekt${this.hashCode()}"

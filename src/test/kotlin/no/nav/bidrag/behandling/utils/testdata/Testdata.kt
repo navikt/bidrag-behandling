@@ -215,7 +215,6 @@ fun opprettInntektsposter(inntekt: Inntekt): MutableSet<Inntektspost> =
         Inntektspost(
             BigDecimal.valueOf(400000),
             "lønnFraFluefiske",
-            "Lønn fra fluefiske",
             inntekt = inntekt,
             inntektstype = Inntektstype.NÆRINGSINNTEKT,
         ),

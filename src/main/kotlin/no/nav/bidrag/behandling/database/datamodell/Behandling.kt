@@ -31,7 +31,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity(name = "behandling")
-@SQLDelete(sql = "UPDATE behandling SET deleted = true WHERE id=?")
+@SQLDelete(sql = "UPDATE behandling SET deleted = true and slettet_tidspunkt = now() WHERE id=?")
 @SQLRestriction(value = "deleted=false")
 open class Behandling(
     @Enumerated(EnumType.STRING)
@@ -80,7 +80,6 @@ open class Behandling(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
-    open var grunnlagspakkeid: Long? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,

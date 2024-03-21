@@ -1,0 +1,1 @@
+alter table inntektspost drop column if exists visningsnavn;

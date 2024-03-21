@@ -52,7 +52,6 @@ fun List<InntektPost>.tilInntektspost(inntekt: Inntekt) =
         Inntektspost(
             beløp = it.beløp,
             kode = it.kode,
-            visningsnavn = it.visningsnavn,
             inntektstype = it.inntekstype,
             inntekt = inntekt,
         )

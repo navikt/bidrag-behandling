@@ -203,7 +203,6 @@ class VedtakTilBehandlingTest {
                     this shouldHaveSize 1
                     this[0].beløp shouldBe BigDecimal(5330000)
                     this[0].kode shouldBe "fastloenn"
-                    this[0].visningsnavn shouldBe "Visningsnavn"
                     this[0].inntektstype shouldBe Inntektstype.AAP
                 }
 
@@ -329,7 +328,6 @@ class VedtakTilBehandlingTest {
                 assertSoftly(it[0].inntektsposter.first()) {
                     beløp shouldBe BigDecimal(2859987)
                     kode shouldBe "fastloenn"
-                    visningsnavn shouldBe "Visningsnavn"
                     inntektstype shouldBe Inntektstype.AAP
                 }
             }

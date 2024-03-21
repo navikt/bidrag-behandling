@@ -1104,13 +1104,11 @@ class GrunnlagMappingTest {
                         Inntektspost(
                             beløp = BigDecimal.valueOf(5000),
                             kode = "fisking",
-                            visningsnavn = "",
                             inntektstype = null,
                         ),
                         Inntektspost(
                             beløp = BigDecimal.valueOf(40000),
                             kode = "krypto",
-                            visningsnavn = "",
                             inntektstype = null,
                         ),
                     ),
@@ -1131,13 +1129,11 @@ class GrunnlagMappingTest {
                         Inntektspost(
                             beløp = BigDecimal.valueOf(5000),
                             kode = "",
-                            visningsnavn = "",
                             inntektstype = Inntektstype.NÆRINGSINNTEKT,
                         ),
                         Inntektspost(
                             beløp = BigDecimal.valueOf(28000),
                             kode = "",
-                            visningsnavn = "",
                             inntektstype = Inntektstype.LØNNSINNTEKT,
                         ),
                     ),
@@ -1170,7 +1166,6 @@ class GrunnlagMappingTest {
                             Inntektspost(
                                 beløp = BigDecimal.valueOf(5000),
                                 kode = "",
-                                visningsnavn = "",
                                 inntektstype = Inntektstype.BARNETILLEGG_PENSJON,
                             ),
                         ),
@@ -1194,7 +1189,6 @@ class GrunnlagMappingTest {
                             Inntektspost(
                                 beløp = BigDecimal.valueOf(5000),
                                 kode = "",
-                                visningsnavn = "",
                                 inntektstype = Inntektstype.KONTANTSTØTTE,
                             ),
                         ),

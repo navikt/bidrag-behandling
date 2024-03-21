@@ -25,6 +25,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteG
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
@@ -220,7 +222,8 @@ private fun List<Grunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =
             val barnetillegListe =
                 grunnlag.konverterData<List<BarnetilleggGrunnlagDto>>() ?: emptyList()
             val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
-            barnetillegListe.tilGrunnlagsobjekt(
+            val søknadsbarnIdent = personobjekter.søknadsbarn.map { it.personIdent }
+            barnetillegListe.filter { søknadsbarnIdent.contains(it.barnPersonId) }.tilGrunnlagsobjekt(
                 grunnlag.innhentet,
                 gjelder.referanse,
                 personobjekter,
@@ -234,7 +237,8 @@ private fun List<Grunnlag>.mapBarnetilsyn(personobjekter: Set<GrunnlagDto>) =
             val barnetilsynListe =
                 grunnlag.konverterData<List<BarnetilsynGrunnlagDto>>() ?: emptyList()
             val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
-            barnetilsynListe.tilGrunnlagsobjekt(
+            val søknadsbarnIdent = personobjekter.søknadsbarn.map { it.personIdent }
+            barnetilsynListe.filter { søknadsbarnIdent.contains(it.barnPersonId) }.tilGrunnlagsobjekt(
                 grunnlag.innhentet,
                 gjelder.referanse,
                 personobjekter,
@@ -262,7 +266,8 @@ private fun List<Grunnlag>.mapKontantstøtte(personobjekter: Set<GrunnlagDto>) =
             val kontantstøtteListe =
                 grunnlag.konverterData<List<KontantstøtteGrunnlagDto>>() ?: emptyList()
             val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
-            kontantstøtteListe.tilGrunnlagsobjekt(
+            val søknadsbarnIdent = personobjekter.søknadsbarn.map { it.personIdent }
+            kontantstøtteListe.filter { søknadsbarnIdent.contains(it.barnPersonId) }.tilGrunnlagsobjekt(
                 grunnlag.innhentet,
                 gjelder.referanse,
                 personobjekter,

@@ -18,7 +18,6 @@ open class Inntektspost(
     @Column(name = "belop")
     open val beløp: BigDecimal,
     open val kode: String,
-    open val visningsnavn: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
@@ -28,4 +27,12 @@ open class Inntektspost(
     // TODO: Endre til ikke nullbar
     @Enumerated(EnumType.STRING)
     open val inntektstype: Inntektstype?,
-)
+) {
+    override fun toString(): String {
+        return try {
+            "Inntektspost($beløp, $kode, $id, ${inntekt?.id}, $inntektstype)"
+        } catch (e: Exception) {
+            "Inntektspost${this.hashCode()}"
+        }
+    }
+}

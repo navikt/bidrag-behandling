@@ -129,7 +129,6 @@ fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
                     beløp = this.beløp,
                     inntektstype = this.inntektstype,
                     kode = this.type.toString(),
-                    visningsnavn = this.inntektstype.toString(),
                 ),
             )
     }
