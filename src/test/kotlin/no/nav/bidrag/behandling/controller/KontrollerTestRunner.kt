@@ -87,5 +87,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubKodeverkLønnsbeskrivelse()
         stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
         stubUtils.stubKodeverkYtelsesbeskrivelser()
+        stubUtils.stubKodeverkPensjonsbeskrivelser()
+        stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
     }
 }

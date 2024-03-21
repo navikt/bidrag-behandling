@@ -797,6 +797,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+            entityManager.flush()
             entityManager.refresh(oppdatertBehandling.get())
 
             assertSoftly {

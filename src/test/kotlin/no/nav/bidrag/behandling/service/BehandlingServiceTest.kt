@@ -893,6 +893,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             )
 
             val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
+            entityManager.refresh(expectedBehandling)
 
             assertEquals(1, expectedBehandling.inntekter.size)
             assertNotNull(expectedBehandling.inntektsbegrunnelseIVedtakOgNotat)
