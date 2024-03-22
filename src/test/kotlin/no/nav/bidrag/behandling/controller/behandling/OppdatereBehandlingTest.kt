@@ -35,7 +35,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere behandling for API v2`() {
         // gitt
-        val b = testdataManager.opprettBehandling()
+        val b = testdataManager.opprettBehandling(true)
 
         // hvis
         val behandlingRes =
