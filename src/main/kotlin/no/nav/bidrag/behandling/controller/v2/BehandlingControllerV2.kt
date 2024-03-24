@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.controller.v2
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -11,8 +12,11 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
+import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
 import no.nav.bidrag.domene.ident.Personident
@@ -25,11 +29,14 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
+private val log = KotlinLogging.logger {}
+
 @BehandlingRestControllerV2
 class BehandlingControllerV2(
     private val vedtakService: VedtakService,
     private val behandlingService: BehandlingService,
     private val grunnlagService: GrunnlagService,
+    private val inntektService: InntektService,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -72,7 +79,7 @@ class BehandlingControllerV2(
                 responseCode = "401",
                 description = "Sikkerhetstoken mangler, er utløpt, eller av andre årsaker ugyldig",
             ),
-            ApiResponse(responseCode = "404", description = "Fant ikke forespørsel"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
             ApiResponse(
                 responseCode = "500",
                 description = "Serverfeil",
@@ -103,6 +110,38 @@ class BehandlingControllerV2(
             ),
             HttpStatus.CREATED,
         )
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/inntekt")
+    @Operation(
+        description = "Oppdatere inntekt for behandling. Returnerer inntekt som ble endret, opprettet, eller slettet.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+            ApiResponse(responseCode = "400", description = "Feil opplysninger oppgitt"),
+            ApiResponse(
+                responseCode = "401",
+                description = "Sikkerhetstoken mangler, er utløpt, eller av andre årsaker ugyldig",
+            ),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(
+                responseCode = "500",
+                description = "Serverfeil",
+            ),
+            ApiResponse(responseCode = "503", description = "Tjeneste utilgjengelig"),
+        ],
+    )
+    fun oppdatereInntekt(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdatereInntektRequest,
+    ): InntektDtoV2? {
+        log.info { "Oppdatere inntekter for behandling $behandlingsid" }
+        return inntektService.oppdatereInntektManuelt(behandlingsid, request)
     }
 
     @Suppress("unused")

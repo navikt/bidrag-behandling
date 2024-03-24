@@ -15,9 +15,9 @@ import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.commons.service.finnVisningsnavn
@@ -113,7 +113,7 @@ fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
         barn
     }.toMutableSet()
 
-fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
+fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Inntekt {
     inntekt.type = this.type
     inntekt.belop = this.beløp
     inntekt.datoFom = this.datoFom
@@ -136,7 +136,7 @@ fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
     return inntekt
 }
 
-fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling): Inntekt {
+fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
     val inntekt =
         Inntekt(
             type = this.type,
@@ -162,6 +162,8 @@ fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling): Inntekt {
                 ),
             )
     }
+
+    behandling.inntekter.add(inntekt)
 
     return inntekt
 }
@@ -201,24 +203,24 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         gjelderBarn = null,
     )
 
-fun List<Inntekt>.tilInntektDtoV2() =
-    this.map { inntekt ->
-        InntektDtoV2(
-            id = inntekt.id,
-            taMed = inntekt.taMed,
-            rapporteringstype = inntekt.type,
-            beløp = inntekt.belop,
-            datoFom = inntekt.datoFom,
-            datoTom = inntekt.datoTom,
-            ident = Personident(inntekt.ident),
-            gjelderBarn = inntekt.gjelderBarn?.let { it1 -> Personident(it1) },
-            kilde = inntekt.kilde,
-            inntektsposter = inntekt.inntektsposter.tilInntektspostDtoV2().toSet(),
-            inntektstyper = inntekt.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
-            opprinneligFom = inntekt.opprinneligFom,
-            opprinneligTom = inntekt.opprinneligTom,
-        )
-    }
+fun List<Inntekt>.tilInntektDtoV2() = this.map { it.tilInntektDtoV2() }
+
+fun Inntekt.tilInntektDtoV2() =
+    InntektDtoV2(
+        id = this.id,
+        taMed = this.taMed,
+        rapporteringstype = this.type,
+        beløp = this.belop,
+        datoFom = this.datoFom,
+        datoTom = this.datoTom,
+        ident = Personident(this.ident),
+        gjelderBarn = this.gjelderBarn?.let { it1 -> Personident(it1) },
+        kilde = this.kilde,
+        inntektsposter = this.inntektsposter.tilInntektspostDtoV2().toSet(),
+        inntektstyper = this.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
+        opprinneligFom = this.opprinneligFom,
+        opprinneligTom = this.opprinneligTom,
+    )
 
 fun Grunnlag.toDto(): GrunnlagsdataDto {
     return GrunnlagsdataDto(
