@@ -43,7 +43,7 @@ open class Grunnlag(
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
                 "id=$id, behandling=${behandling.id}, innhentet=$innhentet)"
         } catch (e: Exception) {
-            "Grunnlag${this.hashCode()}"
+            "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet)"
         }
     }
 }
