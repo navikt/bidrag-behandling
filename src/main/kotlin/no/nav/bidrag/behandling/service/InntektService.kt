@@ -47,12 +47,12 @@ class InntektService(
             behandlingRepository.findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        val inntekterSomSkalSlettes: Set<Inntekt> = emptySet()
+        val inntekterSomSkalSlettes: MutableSet<Inntekt> = mutableSetOf()
         val inntektstyper = summerteÅrsinntekter.map { it.inntektRapportering }
         behandling.inntekter.filter { it.ident == personident.verdi && inntektstyper.contains(it.type) }.forEach {
             if (Kilde.OFFENTLIG == it.kilde) {
                 it.inntektsposter.removeAll(it.inntektsposter)
-                inntekterSomSkalSlettes.plus(it)
+                inntekterSomSkalSlettes.add(it)
             }
         }
         behandling.inntekter.removeAll(inntekterSomSkalSlettes)

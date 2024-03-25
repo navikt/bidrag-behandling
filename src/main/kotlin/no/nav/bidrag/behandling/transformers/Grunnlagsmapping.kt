@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -76,7 +77,20 @@ fun SummertÅrsinntekt.tilInntekt(
             kilde = Kilde.OFFENTLIG,
             taMed = false,
         )
-    inntekt.inntektsposter = this.inntektPostListe.tilInntektspost(inntekt)
+    inntekt.inntektsposter =
+        if (this.inntektRapportering == Inntektsrapportering.BARNETILLEGG) {
+            mutableSetOf(
+                Inntektspost(
+                    kode = this.inntektRapportering.name,
+                    beløp = this.sumInntekt.setScale(0, RoundingMode.HALF_UP),
+                    // TODO: Hentes bare fra pensjon i dag. Dette bør endres når vi henter barnetillegg fra andre kilder
+                    inntektstype = Inntektstype.BARNETILLEGG_PENSJON,
+                    inntekt = inntekt,
+                ),
+            )
+        } else {
+            this.inntektPostListe.tilInntektspost(inntekt)
+        }
     return inntekt
 }
 

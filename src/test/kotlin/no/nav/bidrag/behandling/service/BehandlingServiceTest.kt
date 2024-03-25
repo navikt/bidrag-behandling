@@ -106,9 +106,10 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         @Transactional
         open fun `skal hente behandling med beregnet inntekter`() {
-            val behandling = oppretteBehandling()
+            val behandling = prepareBehandling()
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.roller = oppretteBehandlingRoller(behandling)
+            behandling.grunnlagSistInnhentet = LocalDateTime.now()
             behandling.inntekter =
                 mutableSetOf(
                     Inntekt(
@@ -162,13 +163,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                         behandling = behandling,
                     ),
                 )
-            testdataManager.lagreBehandling(behandling)
+            behandlingRepository.save(behandling)
             kjøreStubber(behandling)
 
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
 
             assertSoftly(behandlingDto) {
-                it.inntekter.beregnetInntekter shouldHaveSize 4
+                it.inntekter.beregnetInntekter shouldHaveSize 3
                 val inntekterAlle =
                     it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
                 val inntekterBarn1 =
