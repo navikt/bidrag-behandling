@@ -147,7 +147,6 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
             gjelderBarn = this.gjelderBarn?.verdi,
             kilde = Kilde.MANUELL,
             taMed = this.taMed,
-            id = this.id,
             behandling = behandling,
         )
 

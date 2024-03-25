@@ -16,13 +16,13 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
+import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity(name = "rolle")
 @SQLDelete(sql = "UPDATE rolle SET deleted = true WHERE id=?")
-@Where(clause = "deleted=false")
+@SQLRestriction(value = "deleted=false")
 open class Rolle(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)

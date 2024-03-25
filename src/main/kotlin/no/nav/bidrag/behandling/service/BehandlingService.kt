@@ -43,6 +43,7 @@ class BehandlingService(
     private val inntektService: InntektService,
     private val entityManager: EntityManager,
 ) {
+    @Transactional
     fun slettBehandling(behandlingId: Long) {
         val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
@@ -53,7 +54,7 @@ class BehandlingService(
         }
 
         log.info { "Logisk sletter behandling $behandlingId" }
-        behandlingRepository.delete(behandling)
+        behandlingRepository.logiskSlett(behandling.id!!)
     }
 
     fun opprettBehandling(behandling: Behandling): Behandling =
@@ -238,7 +239,7 @@ class BehandlingService(
         behandlingId: Long,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ): OppdaterRollerResponse {
-        val behandling = behandlingRepository.findById(behandlingId).get()
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -283,7 +284,7 @@ class BehandlingService(
 
         if (behandling.søknadsbarn.isEmpty()) {
             log.info { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
-            behandlingRepository.delete(behandling)
+            behandlingRepository.logiskSlett(behandling.id!!)
             return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
         }
 
