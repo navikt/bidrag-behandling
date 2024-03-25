@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -13,8 +14,10 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterePeriodeInntekt
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdaterePeriodeInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner
 import no.nav.bidrag.behandling.transformers.TransformerInntekterRequestBuilder
 import no.nav.bidrag.behandling.transformers.tilAinntektsposter
@@ -266,7 +269,10 @@ class InntektServiceTest : TestContainerRunner() {
                         70000,
                     )
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.size shouldBe 1
-                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe BigDecimal(210000)
+                behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe
+                    BigDecimal(
+                        210000,
+                    )
             }
         }
 
@@ -808,6 +814,214 @@ class InntektServiceTest : TestContainerRunner() {
                     forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.fom
                 oppdatertBehandling.get().inntekter.first().datoTom shouldBe
                     forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.til
+                oppdatertBehandling.get().inntekter.first().opprinneligFom shouldBe ainntekt.opprinneligFom
+                oppdatertBehandling.get().inntekter.first().opprinneligTom shouldBe ainntekt.opprinneligTom
+                oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1
+                oppdatertBehandling.get().inntekter.first().inntektsposter.first().inntektstype shouldBe postAinntekt.inntektstype
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Teste maunuell oppdatering av inntekt")
+    open inner class OppdatereInntektManuelt {
+        @Test
+        open fun `skal oppdatere eksisterende manuell inntekt`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling()
+
+            val manuellInntekt =
+                Inntekt(
+                    behandling = behandling,
+                    type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                    belop = BigDecimal(563000),
+                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    ident = testdataBM.ident,
+                    kilde = Kilde.MANUELL,
+                    taMed = true,
+                )
+
+            val lagretManuellInntekt = inntektRepository.save(manuellInntekt)
+            val lagretBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            lagretBehandling.isPresent shouldBe true
+            lagretBehandling.get().inntekter.size shouldBe 1
+            lagretBehandling.get().inntekter.first().belop shouldBe manuellInntekt.belop
+            lagretManuellInntekt.id shouldNotBe null
+            lagretManuellInntekt.belop shouldBe manuellInntekt.belop
+
+            val forespørselOmOppdateringAvInntekter =
+                OppdatereInntektRequest(
+                    oppdatereManuellInntekt =
+                        OppdatereManuellInntekt(
+                            id = lagretManuellInntekt.id!!,
+                            taMed = true,
+                            type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                            beløp = BigDecimal(643000),
+                            datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                            datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                            ident = Personident(testdataBM.ident),
+                        ),
+                )
+
+            // hvis
+            inntektService.oppdatereInntektManuelt(
+                behandling.id!!,
+                forespørselOmOppdateringAvInntekter,
+            )
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                shouldBePresent(oppdatertBehandling)
+                oppdatertBehandling.get().inntekter.size shouldBe 1
+                oppdatertBehandling.get().inntekter.first().belop shouldBe
+                    forespørselOmOppdateringAvInntekter.oppdatereManuellInntekt!!.beløp
+            }
+        }
+
+        @Test
+        open fun `skal slette manuell inntekt`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling()
+
+            val kontantstøtte =
+                Inntekt(
+                    behandling = behandling,
+                    type = Inntektsrapportering.KONTANTSTØTTE,
+                    belop = BigDecimal(14000),
+                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    ident = testdataBM.ident,
+                    gjelderBarn = testdataBarn1.ident,
+                    kilde = Kilde.MANUELL,
+                    taMed = true,
+                )
+
+            val lagretKontantstøtte = inntektRepository.save(kontantstøtte)
+            val lagretBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            lagretBehandling.isPresent shouldBe true
+            lagretBehandling.get().inntekter.size shouldBe 1
+            lagretBehandling.get().inntekter.first().belop shouldBe kontantstøtte.belop
+
+            val forespørselOmOppdateringAvInntekter = OppdatereInntektRequest(sletteInntekt = lagretKontantstøtte.id!!)
+
+            // hvis
+            inntektService.oppdatereInntektManuelt(
+                behandling.id!!,
+                forespørselOmOppdateringAvInntekter,
+            )
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                shouldBePresent(oppdatertBehandling)
+                oppdatertBehandling.get().inntekter.size shouldBe 0
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal legge til ny manuell inntekt`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling()
+
+            val oppdatereInntektRequest =
+                OppdatereInntektRequest(
+                    oppdatereManuellInntekt =
+                        OppdatereManuellInntekt(
+                            taMed = true,
+                            type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                            beløp = BigDecimal(643000),
+                            datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                            datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                            ident = Personident(testdataBM.ident),
+                        ),
+                )
+            // hvis
+            inntektService.oppdatereInntektManuelt(behandling.id!!, oppdatereInntektRequest)
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly {
+                shouldBePresent(behandling)
+                behandling.inntekter.size shouldBe 1
+                behandling.inntekter.first().type shouldBe oppdatereInntektRequest.oppdatereManuellInntekt?.type
+                behandling.inntekter.first().belop shouldBe oppdatereInntektRequest.oppdatereManuellInntekt?.beløp
+            }
+        }
+
+        @Test
+        fun `skal oppdatere periode på offentlige inntekter`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling()
+
+            stubUtils.stubKodeverkSkattegrunnlag()
+            stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
+            stubUtils.stubKodeverkLønnsbeskrivelse()
+            stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
+            stubUtils.stubKodeverkYtelsesbeskrivelser()
+            stubUtils.stubKodeverkPensjonsbeskrivelser()
+
+            val ainntekt =
+                Inntekt(
+                    behandling = behandling,
+                    type = Inntektsrapportering.AINNTEKT,
+                    belop = BigDecimal(50000),
+                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    opprinneligFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    opprinneligTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    ident = testdataBM.ident,
+                    kilde = Kilde.OFFENTLIG,
+                    taMed = true,
+                )
+
+            val postAinntekt =
+                Inntektspost(
+                    beløp = ainntekt.belop,
+                    inntektstype = Inntektstype.LØNNSINNTEKT,
+                    kode = "fastloenn",
+                    visningsnavn = "Fastlønn",
+                    inntekt = ainntekt,
+                )
+            ainntekt.inntektsposter = mutableSetOf(postAinntekt)
+
+            val lagretInntekt = inntektRepository.save(ainntekt)
+
+            val oppdatereInntektRequest =
+                OppdatereInntektRequest(
+                    oppdatereInntektsperiode =
+                        OppdaterePeriodeInntekt(
+                            id = lagretInntekt.id!!,
+                            taMedIBeregning = false,
+                            angittPeriode =
+                                Datoperiode(
+                                    lagretInntekt.datoFom.minusYears(2),
+                                    lagretInntekt.datoTom?.plusMonths(1),
+                                ),
+                        ),
+                )
+
+            // hvis
+            inntektService.oppdatereInntektManuelt(behandling.id!!, oppdatereInntektRequest)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                shouldBePresent(oppdatertBehandling)
+                oppdatertBehandling.get().inntekter.size shouldBe 1
+                oppdatertBehandling.get().inntekter.first().belop shouldBe ainntekt.belop
+                oppdatertBehandling.get().inntekter.first().datoFom shouldBe
+                    oppdatereInntektRequest.oppdatereInntektsperiode?.angittPeriode?.fom
+                oppdatertBehandling.get().inntekter.first().datoTom shouldBe
+                    oppdatereInntektRequest.oppdatereInntektsperiode?.angittPeriode?.til
                 oppdatertBehandling.get().inntekter.first().opprinneligFom shouldBe ainntekt.opprinneligFom
                 oppdatertBehandling.get().inntekter.first().opprinneligTom shouldBe ainntekt.opprinneligTom
                 oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1

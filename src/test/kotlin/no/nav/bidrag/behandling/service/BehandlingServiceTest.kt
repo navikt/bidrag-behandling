@@ -29,8 +29,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
@@ -854,7 +854,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         ),
                     )
                 }
-            error.message shouldContain "Ugyldig data ved oppdatering av inntekter: BARNETILLEGG må ha en gyldig barnident, Barnetillegg må ha en gyldig inntektstype"
+            error.message shouldContain "Ugyldig data ved oppdatering av inntekter: BARNETILLEGG må ha gyldig ident for gjelder barn, Barnetillegg må ha gyldig inntektstype"
         }
 
         @Test

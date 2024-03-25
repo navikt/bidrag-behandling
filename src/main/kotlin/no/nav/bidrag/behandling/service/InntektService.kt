@@ -10,9 +10,14 @@ import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
+import no.nav.bidrag.behandling.transformers.lagreSomNyInntekt
+import no.nav.bidrag.behandling.transformers.oppdatereEksisterendeInntekt
 import no.nav.bidrag.behandling.transformers.tilInntekt
+import no.nav.bidrag.behandling.transformers.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilInntektspost
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -53,14 +58,7 @@ class InntektService(
         behandling.inntekter.removeAll(inntekterSomSkalSlettes)
 
         entityManager.flush()
-
-        inntektRepository.saveAll(
-            summerteÅrsinntekter.tilInntekt(
-                behandling,
-                personident,
-            ),
-        )
-
+        inntektRepository.saveAll(summerteÅrsinntekter.tilInntekt(behandling, personident))
         entityManager.refresh(behandling)
     }
 
@@ -95,6 +93,54 @@ class InntektService(
     }
 
     @Transactional
+    fun oppdatereInntektManuelt(
+        behandlingsid: Long,
+        oppdatereInntektRequest: OppdatereInntektRequest,
+    ): InntektDtoV2? {
+        oppdatereInntektRequest.valider()
+        val behandling =
+            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        oppdatereInntektRequest.oppdatereInntektsperiode?.let { periode ->
+            val inntekt = henteInntektMedId(behandling, periode.id)
+            inntekt.datoFom = periode.angittPeriode.fom
+            inntekt.datoTom = periode.angittPeriode.til
+            inntekt.taMed = periode.taMedIBeregning
+
+            return inntekt.tilInntektDtoV2()
+        }
+
+        oppdatereInntektRequest.oppdatereManuellInntekt?.let { manuellInntekt ->
+            val inntekt =
+                behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.firstOrNull { manuellInntekt.id == it.id }
+
+            inntekt?.let {
+                manuellInntekt.oppdatereEksisterendeInntekt(inntekt)
+            } ?: manuellInntekt.lagreSomNyInntekt(behandling)
+
+            return inntekt?.tilInntektDtoV2()
+        }
+
+        oppdatereInntektRequest.sletteInntekt?.let {
+            val inntektSomSkalSlettes =
+                behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.first { i -> it == i.id }
+            behandling.inntekter.remove(inntektSomSkalSlettes)
+            log.info { "Slettet inntekt med id $it fra behandling ${behandling.id}." }
+            entityManager.flush()
+            return inntektSomSkalSlettes.tilInntektDtoV2()
+        }
+
+        oppdatereInntektRequest.oppdatereNotat?.let {
+            behandling.inntektsbegrunnelseKunINotat = it.kunINotat ?: behandling.inntektsbegrunnelseKunINotat
+            behandling.inntektsbegrunnelseIVedtakOgNotat =
+                it.medIVedtaket ?: behandling.inntektsbegrunnelseIVedtakOgNotat
+        }
+
+        return null
+    }
+
+    @Deprecated("Erstattes av oppdatereInntektManuelt")
+    @Transactional
     fun oppdatereInntekterManuelt(
         behandlingsid: Long,
         oppdatereInntekterRequest: OppdatereInntekterRequestV2,
@@ -115,9 +161,9 @@ class InntektService(
                 val inntekt =
                     inntektRepository.findByIdAndKilde(it.id, Kilde.MANUELL)
                         .orElseThrow { inntektIkkeFunnetException(it.id) }
-                it.tilInntekt(inntekt)
+                it.oppdatereEksisterendeInntekt(inntekt)
             } else {
-                inntektRepository.save(it.tilInntekt(behandling))
+                inntektRepository.save(it.lagreSomNyInntekt(behandling))
             }
         }
 
@@ -219,6 +265,17 @@ class InntektService(
             idTilInntekterSomBleOppdatert.add(i.id!!)
             entityManager.refresh(behandling)
             log.info { "Ny offisiell inntekt ble lagt til i behandling ${behandling.id} for rolle ${rolle.rolletype}" }
+        }
+    }
+
+    private fun henteInntektMedId(
+        behandling: Behandling,
+        inntektsid: Long,
+    ): Inntekt {
+        try {
+            return behandling.inntekter.first { i -> inntektsid == i.id }
+        } catch (e: NoSuchElementException) {
+            inntektIkkeFunnetException(inntektsid)
         }
     }
 
