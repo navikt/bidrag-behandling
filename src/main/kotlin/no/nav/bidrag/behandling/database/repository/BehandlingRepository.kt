@@ -12,8 +12,10 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
 
     fun findFirstBySoknadsid(soknadsId: Long): Behandling?
 
-    // Midlertidlig løsning ved debugging.
+    // Ikke erstatt meg med delete(behandling)
+    // Midlertidlig løsning ved testing.
     // delete(behandling) sletter inntekter/grunnlag/husstandsbarn/sivilstand som gjør at det vanskelig å gjenskape det testerne har behandlet før sletting
+    // Behandling slettes hvis vedtak fattes gjennom Bisys
     @Modifying
     @Query("update behandling set deleted = true, slettet_tidspunkt = now() where id = :behandlingsid", nativeQuery = true)
     fun logiskSlett(behandlingsid: Long)
