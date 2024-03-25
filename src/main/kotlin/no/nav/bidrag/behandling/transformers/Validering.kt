@@ -42,9 +42,6 @@ fun OppdatereInntektRequest.valider() {
     if (inntekstrapporteringerSomKreverInnteksttype.contains(this.oppdatereManuellInntekt?.type)) {
         this.oppdatereManuellInntekt?.validerHarInnteksttype(feilListe)
     }
-    if (this.oppdatereManuellInntekt?.type == null) {
-        feilListe.add("Mangler inntektsrapporteringstype")
-    }
 
     if (feilListe.isNotEmpty()) {
         throw HttpClientErrorException(
