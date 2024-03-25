@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilInntektspost
 import no.nav.bidrag.behandling.transformers.valider
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -98,15 +99,16 @@ class InntektService(
         oppdatereInntektRequest: OppdatereInntektRequest,
     ): InntektDtoV2? {
         oppdatereInntektRequest.valider()
+        secureLogger.info { "Oppdaterer inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
         val behandling =
-            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereInntektRequest.oppdatereInntektsperiode?.let { periode ->
             val inntekt = henteInntektMedId(behandling, periode.id)
             inntekt.datoFom = periode.angittPeriode.fom
             inntekt.datoTom = periode.angittPeriode.til
             inntekt.taMed = periode.taMedIBeregning
-
+            entityManager.flush()
             return inntekt.tilInntektDtoV2()
         }
 
@@ -118,6 +120,7 @@ class InntektService(
                 manuellInntekt.oppdatereEksisterendeInntekt(inntekt)
             } ?: manuellInntekt.lagreSomNyInntekt(behandling)
 
+            entityManager.flush()
             return inntekt?.tilInntektDtoV2()
         }
 
