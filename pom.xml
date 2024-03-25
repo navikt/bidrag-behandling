@@ -29,7 +29,7 @@
         <flyway.version>10.8.1</flyway.version>
         <jackson.version>2.17.0</jackson.version>
         <testcontainers.version>1.19.7</testcontainers.version>
-        <spring-boot-testcontainers.version>3.2.3</spring-boot-testcontainers.version>
+        <spring-boot-testcontainers.version>3.2.4</spring-boot-testcontainers.version>
         <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <snappy-java.version>1.1.10.5</snappy-java.version>
