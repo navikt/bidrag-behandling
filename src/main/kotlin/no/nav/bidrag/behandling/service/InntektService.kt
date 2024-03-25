@@ -116,12 +116,13 @@ class InntektService(
             val inntekt =
                 behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.firstOrNull { manuellInntekt.id == it.id }
 
-            inntekt?.let {
-                manuellInntekt.oppdatereEksisterendeInntekt(inntekt)
-            } ?: manuellInntekt.lagreSomNyInntekt(behandling)
+            val oppdatertInntekt =
+                inntekt?.let {
+                    manuellInntekt.oppdatereEksisterendeInntekt(inntekt)
+                } ?: manuellInntekt.lagreSomNyInntekt(behandling)
 
             entityManager.flush()
-            return inntekt?.tilInntektDtoV2()
+            return oppdatertInntekt.tilInntektDtoV2()
         }
 
         oppdatereInntektRequest.sletteInntekt?.let {
