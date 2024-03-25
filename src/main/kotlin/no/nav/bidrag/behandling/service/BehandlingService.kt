@@ -239,7 +239,7 @@ class BehandlingService(
         behandlingId: Long,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ): OppdaterRollerResponse {
-        val behandling = behandlingRepository.findById(behandlingId).get()
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,

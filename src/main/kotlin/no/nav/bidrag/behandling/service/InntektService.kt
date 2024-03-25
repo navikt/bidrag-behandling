@@ -150,7 +150,7 @@ class InntektService(
     ) {
         oppdatereInntekterRequest.valider()
         val behandling =
-            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereInntekterRequest.oppdatereInntektsperioder.forEach {
             val inntekt = inntektRepository.findById(it.id).orElseThrow { inntektIkkeFunnetException(it.id) }
