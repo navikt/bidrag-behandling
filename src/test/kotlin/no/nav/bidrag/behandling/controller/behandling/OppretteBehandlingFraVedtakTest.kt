@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -62,7 +63,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         assertNotNull(behandling)
         assertSoftly(behandling) {
             roller shouldHaveSize 3
-            inntekter shouldHaveSize 13
+            inntekter shouldHaveSize 15
             grunnlag shouldHaveSize 30
             refVedtaksid shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(10)
@@ -70,7 +71,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             husstandsbarn shouldHaveSize 6
             søktFomDato shouldBe LocalDate.parse("2020-01-01")
             vedtakstype shouldBe Vedtakstype.KLAGE
-            årsak shouldBe null
+            årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             avslag shouldBe null
             soknadRefId shouldBe 111
             soknadsid shouldBe 12323
