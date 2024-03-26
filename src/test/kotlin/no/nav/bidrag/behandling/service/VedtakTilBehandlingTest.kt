@@ -143,6 +143,7 @@ class VedtakTilBehandlingTest {
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_KRAVFREMSETTELSE
             avslag shouldBe null
             virkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
+            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
         }
     }
 
@@ -321,6 +322,7 @@ class VedtakTilBehandlingTest {
             årsak shouldBe null
             saksnummer shouldBe SAKSNUMMER
             virkningstidspunkt shouldBe null
+            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-01-01")
             soknadFra shouldBe SøktAvType.BIDRAGSMOTTAKER
             stonadstype shouldBe Stønadstype.FORSKUDD
             behandlerEnhet shouldBe "4806"
