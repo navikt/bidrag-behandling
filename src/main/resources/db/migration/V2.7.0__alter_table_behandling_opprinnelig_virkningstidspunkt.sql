@@ -1,2 +1,2 @@
 alter table behandling
-    add column if not exists opprinnelig_virkningstidspunkt timestamp;
+    add column if not exists opprinnelig_virkningstidspunkt date;

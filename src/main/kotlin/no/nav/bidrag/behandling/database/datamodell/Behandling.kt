@@ -129,6 +129,7 @@ open class Behandling(
 
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
+    val erKlageEllerOmgjøring get() = refVedtaksid != null
 }
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)

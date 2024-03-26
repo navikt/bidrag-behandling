@@ -224,27 +224,27 @@ private fun List<GrunnlagDto>.mapInntekter(
                 )
             }.toMutableSet()
     // TODO: I MVP1 så er det lagt opp til at saksbehandler kan fatte vedtak uten å måtte oppdatere til nyeste opplysninger først
-//    if (!lesemodus) {
-//        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }.ifTaMed {
-//            it.copy(
-//                type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
-//                kilde = Kilde.MANUELL,
-//            ).run {
-//                inntekter.add(this)
-//                it.taMed = false
-//            }
-//        }
-//
-//        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }.ifTaMed {
-//            it.copy(
-//                type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
-//                kilde = Kilde.MANUELL,
-//            ).run {
-//                inntekter.add(this)
-//                it.taMed = false
-//            }
-//        }
-//    }
+    if (!lesemodus) {
+        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }.ifTaMed {
+            it.copy(
+                type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
+                kilde = Kilde.MANUELL,
+            ).run {
+                inntekter.add(this)
+                it.taMed = false
+            }
+        }
+
+        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }.ifTaMed {
+            it.copy(
+                type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
+                kilde = Kilde.MANUELL,
+            ).run {
+                inntekter.add(this)
+                it.taMed = false
+            }
+        }
+    }
     return inntekter
 }
 

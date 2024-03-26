@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
@@ -10,6 +12,23 @@ import org.springframework.web.client.HttpClientErrorException
 private val inntekstrapporteringerSomKreverGjelderBarn =
     listOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.BARNETILSYN)
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
+
+fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
+    val feilListe = mutableListOf<String>()
+    if (behandling.opprinneligVirkningstidspunkt != null &&
+        avslag == null &&
+        virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
+    ) {
+        feilListe.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+    }
+
+    if (feilListe.isNotEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Ugyldig data ved oppdatering av behandling: ${feilListe.joinToString(", ")}",
+        )
+    }
+}
 
 fun OppdatereInntekterRequestV2.valider() {
     val feilListe = mutableListOf<String>()
