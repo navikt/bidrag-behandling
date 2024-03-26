@@ -12,8 +12,10 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
+import no.nav.bidrag.behandling.transformers.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.lagreSomNyInntekt
 import no.nav.bidrag.behandling.transformers.oppdatereEksisterendeInntekt
 import no.nav.bidrag.behandling.transformers.tilInntekt
@@ -97,12 +99,22 @@ class InntektService(
     fun oppdatereInntektManuelt(
         behandlingsid: Long,
         oppdatereInntektRequest: OppdatereInntektRequest,
-    ): InntektDtoV2? {
+    ): OppdatereInntektResponse {
         oppdatereInntektRequest.valider()
         secureLogger.info { "Oppdaterer inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
         val behandling =
             behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
 
+        return OppdatereInntektResponse(
+            inntekt = oppdaterInntekt(oppdatereInntektRequest, behandling),
+            beregnetInntekter = behandling.hentBeregnetInntekter(),
+        )
+    }
+
+    private fun oppdaterInntekt(
+        oppdatereInntektRequest: OppdatereInntektRequest,
+        behandling: Behandling,
+    ): InntektDtoV2? {
         oppdatereInntektRequest.oppdatereInntektsperiode?.let { periode ->
             val inntekt = henteInntektMedId(behandling, periode.id)
             inntekt.datoFom = periode.angittPeriode.fom

@@ -67,6 +67,13 @@ data class OppdatereInntektRequest(
     val sletteInntekt: Long? = null,
 )
 
+data class OppdatereInntektResponse(
+    @Schema(description = "Inntekt som ble oppdatert")
+    val inntekt: InntektDtoV2?,
+    @Schema(description = "Periodisert beregnet inntekter per barn")
+    val beregnetInntekter: List<InntektPerBarn> = emptyList(),
+)
+
 @Deprecated("Erstattes av OppdatereInntektRequest")
 data class OppdatereInntekterRequestV2(
     @Schema(description = "Angi periodeinformasjon for inntekter")
