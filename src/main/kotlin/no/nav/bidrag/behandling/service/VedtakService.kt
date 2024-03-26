@@ -32,7 +32,6 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -220,7 +219,12 @@ class VedtakService(
         val stønadsendringGrunnlagListe = byggGrunnlagForStønad()
 
         val grunnlagListe =
-            (grunnlagListeVedtak + stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag) + stønadsendringGrunnlagListe).toSet()
+            (
+                grunnlagListeVedtak +
+                    stønadsendringPerioder.flatMap(
+                        StønadsendringPeriode::grunnlag,
+                    ) + stønadsendringGrunnlagListe
+            ).toSet()
 
         return OpprettVedtakRequestDto(
             enhetsnummer = Enhetsnummer(behandlerEnhet),
@@ -266,12 +270,19 @@ class VedtakService(
         val ikkeAktivertGrunnlagIkkeInntekt =
             ikkeAktivertGrunnlag.filter { !inntekterOgYtelser.contains(it.type) }
         val feilmelding = "Kan ikke fatte vedtak fordi nyeste opplysninger ikke er hentet inn"
-        if (vedtakstype != Vedtakstype.KLAGE && ikkeAktivertGrunnlag.isNotEmpty()) {
+        if (!erKlageEllerOmgjøring && ikkeAktivertGrunnlag.isNotEmpty()) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
         }
 
-        if (vedtakstype == Vedtakstype.KLAGE && ikkeAktivertGrunnlagIkkeInntekt.isNotEmpty()) {
+        if (erKlageEllerOmgjøring && ikkeAktivertGrunnlagIkkeInntekt.isNotEmpty()) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
+        }
+
+        val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+            erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
+                virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
+        if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Virkningstidspunkt ikke være senere enn opprinnelig virkningstidspunkt")
         }
     }
 

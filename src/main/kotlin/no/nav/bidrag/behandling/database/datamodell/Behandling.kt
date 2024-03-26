@@ -58,6 +58,7 @@ open class Behandling(
     open var refVedtaksid: Long? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
+    open var opprinneligVirkningstidspunkt: LocalDate? = null,
     open var vedtakstidspunkt: LocalDateTime? = null,
     open var slettetTidspunkt: LocalDateTime? = null,
     open var vedtakFattetAv: String? = null,
@@ -128,6 +129,7 @@ open class Behandling(
 
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
+    val erKlageEllerOmgjøring get() = refVedtaksid != null
 }
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)

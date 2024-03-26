@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
+import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -139,8 +140,6 @@ class BehandlingService(
         )
     }
 
-    fun deleteBehandlingById(behandlingId: Long) = behandlingRepository.deleteById(behandlingId)
-
     @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
@@ -167,6 +166,7 @@ class BehandlingService(
                 }
                 request.virkningstidspunkt?.let { vt ->
                     log.info { "Oppdatere informasjon om virkningstidspunkt for behandling $behandlingsid" }
+                    vt.valider(it)
                     it.årsak = vt.årsak
                     it.avslag = vt.avslag
                     it.virkningstidspunkt = vt.virkningstidspunkt

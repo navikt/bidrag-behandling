@@ -45,6 +45,9 @@ data class VirkningstidspunktDto(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningstidspunkt: LocalDate? = null,
+    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val opprinneligVirkningstidspunkt: LocalDate? = null,
     @Schema(name = "årsak", enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)

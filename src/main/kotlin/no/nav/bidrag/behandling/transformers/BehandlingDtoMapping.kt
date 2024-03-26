@@ -48,6 +48,7 @@ fun Behandling.tilBehandlingDtoV2(
     virkningstidspunkt =
         VirkningstidspunktDto(
             virkningstidspunkt = virkningstidspunkt,
+            opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
             årsak = årsak,
             avslag = avslag,
             notat =
