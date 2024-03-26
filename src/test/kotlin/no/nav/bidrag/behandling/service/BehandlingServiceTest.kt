@@ -399,7 +399,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         fun `delete behandling`() {
             val behandling = oppretteBehandling()
-            behandlingService.deleteBehandlingById(behandling.id!!)
+            behandlingRepository.delete(behandling)
 
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.hentBehandlingById(behandling.id!!)

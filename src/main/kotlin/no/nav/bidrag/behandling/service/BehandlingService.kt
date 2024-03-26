@@ -140,8 +140,6 @@ class BehandlingService(
         )
     }
 
-    fun deleteBehandlingById(behandlingId: Long) = behandlingRepository.logiskSlett(behandlingId)
-
     @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,

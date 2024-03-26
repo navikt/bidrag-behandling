@@ -278,7 +278,10 @@ class VedtakService(
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
         }
 
-        if (erKlageEllerOmgjøring && avslag == null && virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true) {
+        val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+            erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
+                virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
+        if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Virkningstidspunkt ikke være senere enn opprinnelig virkningstidspunkt")
         }
     }
