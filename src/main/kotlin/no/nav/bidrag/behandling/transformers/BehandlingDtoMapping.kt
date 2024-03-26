@@ -105,7 +105,10 @@ fun Behandling.tilBehandlingDtoV2(
     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
 )
 
-private fun Behandling.hentBeregnetInntekter() = BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe
+fun Behandling.hentBeregnetInntekter() =
+    BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe.sortedBy {
+        it.inntektGjelderBarnIdent?.verdi
+    }
 
 val eksplisitteYtelser =
     setOf(

@@ -122,16 +122,16 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
     inntekt.kilde = Kilde.MANUELL
     inntekt.taMed = this.taMed
     if (this.inntektstype != null) {
-        inntekt.inntektsposter =
-            mutableSetOf(
-                Inntektspost(
-                    inntekt = inntekt,
-                    beløp = this.beløp,
-                    inntektstype = this.inntektstype,
-                    kode = this.type.toString(),
-                    visningsnavn = this.inntektstype.toString(),
-                ),
-            )
+        inntekt.inntektsposter.removeAll(inntekt.inntektsposter)
+        inntekt.inntektsposter.add(
+            Inntektspost(
+                inntekt = inntekt,
+                beløp = this.beløp,
+                inntektstype = this.inntektstype,
+                kode = this.type.toString(),
+                visningsnavn = this.inntektstype.toString(),
+            ),
+        )
     }
     return inntekt
 }

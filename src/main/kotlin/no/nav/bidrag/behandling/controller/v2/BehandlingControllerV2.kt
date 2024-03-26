@@ -12,8 +12,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
@@ -139,7 +139,7 @@ class BehandlingControllerV2(
     fun oppdatereInntekt(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdatereInntektRequest,
-    ): InntektDtoV2? {
+    ): OppdatereInntektResponse {
         log.info { "Oppdatere inntekter for behandling $behandlingsid" }
         return inntektService.oppdatereInntektManuelt(behandlingsid, request)
     }
