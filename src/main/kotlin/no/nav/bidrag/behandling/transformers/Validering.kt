@@ -1,10 +1,13 @@
 package no.nav.bidrag.behandling.transformers
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.hentNavn
+import no.nav.bidrag.behandling.database.datamodell.valider
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
@@ -27,10 +30,19 @@ data class OverlappendePeriode(
     val inntektstyper: MutableSet<Inntektstype>,
 )
 
-data class BoforholdSivilstandPeriodeseringfeil(
-    val barnIdent: String?,
-    val barnFødselsdato: LocalDate,
-    val husstandsbarnId: Long,
+data class BoforholdPeriodeseringfeil(
+    @JsonIgnore
+    val husstandsbarn: Husstandsbarn,
+    val hullIPerioder: List<Datoperiode>,
+    val ingenLøpendePeriode: Boolean,
+    val fremtidigPeriode: Boolean,
+    val manglerPerioder: Boolean,
+) {
+    val barnIdent get() = husstandsbarn.ident
+    val barnFødselsdato get() = husstandsbarn.foedselsdato
+}
+
+data class SivilstandPeriodeseringfeil(
     val hullIPerioder: List<Datoperiode>,
     val ingenLøpendePeriode: Boolean,
     val fremtidigPeriode: Boolean,
@@ -81,22 +93,85 @@ fun Behandling.validerInntekterForBeregning(type: Inntektsrapportering? = null):
     return feilListe
 }
 
-fun List<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): MutableList<BoforholdSivilstandPeriodeseringfeil> {
-    val valideringsfeil = mutableListOf<BoforholdSivilstandPeriodeseringfeil>()
+fun Set<Husstandsbarn>.validerBoforholdForBeregning(virkniningstidspunkt: LocalDate): List<String> {
+    val feilListe = mutableListOf<String>()
+    validerBoforhold(virkniningstidspunkt).forEach {
+        val identifikator = "${it.husstandsbarn.hentNavn()}/${it.husstandsbarn.foedselsdato.toDDMMYYYY()}"
+        valider(!it.fremtidigPeriode) {
+            feilListe.add(
+                "Det kan ikke periodiseres fremover i tid for husstandsbarn $identifikator",
+            )
+        }
+        valider(!it.ingenLøpendePeriode) {
+            feilListe.add(
+                "Det er ingen løpende periode for husstandsbarn $identifikator",
+            )
+        }
+        valider(!it.manglerPerioder) {
+            feilListe.add(
+                "Mangler perioder for husstandsbarn $identifikator",
+            )
+        }
+
+        it.hullIPerioder.forEach {
+            if (it.til != null) {
+                feilListe.add(
+                    "Det er et hull i perioden ${it.fom} - ${it.til} for husstandsbarn $identifikator",
+                )
+            }
+        }
+    }
+    return feilListe
+}
+
+fun Set<Sivilstand>.validerSivilstandForBeregning(virkniningstidspunkt: LocalDate): List<String> {
+    val feilListe = mutableListOf<String>()
+    val it = validerSivilstand(virkniningstidspunkt)
+    valider(!it.fremtidigPeriode) {
+        feilListe.add(
+            "Det kan ikke periodiseres fremover i tid for sivilstand",
+        )
+    }
+    valider(!it.ingenLøpendePeriode) {
+        feilListe.add(
+            "Det er ingen løpende periode for sivilstand",
+        )
+    }
+    valider(!it.manglerPerioder) {
+        feilListe.add(
+            "Mangler perioder for sivilstand",
+        )
+    }
+
+    it.hullIPerioder.forEach {
+        if (it.til != null) {
+            feilListe.add(
+                "Det er et hull i perioden ${it.fom} - ${it.til} for sivilstand",
+            )
+        }
+    }
+    return feilListe
+}
+
+fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): MutableList<BoforholdPeriodeseringfeil> {
+    val valideringsfeil = mutableListOf<BoforholdPeriodeseringfeil>()
 
     groupBy { it.ident }.forEach {
-        val barn = it.key
         val husstandsbarn = it.value.first()
+        val kanIkkeVæreSenereEnnDato =
+            if (virkniningstidspunkt.isAfter(LocalDate.now())) {
+                maxOf(husstandsbarn.foedselsdato, virkniningstidspunkt.withDayOfMonth(1))
+            } else {
+                LocalDate.now().withDayOfMonth(1)
+            }
         val hullIPerioder = husstandsbarn.perioder.map { Datoperiode(it.datoFom!!, it.datoTom) }.finnHullIPerioder(virkniningstidspunkt)
         valideringsfeil.add(
-            BoforholdSivilstandPeriodeseringfeil(
-                barn,
-                husstandsbarn.foedselsdato,
-                husstandsbarn.id!!,
+            BoforholdPeriodeseringfeil(
+                husstandsbarn,
                 hullIPerioder,
                 manglerPerioder = husstandsbarn.perioder.isEmpty(),
                 ingenLøpendePeriode = husstandsbarn.perioder.none { it.datoTom == null },
-                fremtidigPeriode = husstandsbarn.perioder.any { it.datoFom!!.isAfter(virkniningstidspunkt) },
+                fremtidigPeriode = husstandsbarn.perioder.any { it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) },
             ),
         )
     }
@@ -104,24 +179,14 @@ fun List<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Mutab
     return valideringsfeil
 }
 
-fun List<Sivilstand>.validerSivilstand(virkniningstidspunkt: LocalDate) {
-    val valideringsfeil = mutableListOf<BoforholdSivilstandPeriodeseringfeil>()
-
-//    groupBy { it.ident }.forEach {
-//        val barn = it.key
-//        val husstandsbarn = it.value.first()
-//        val hullIPerioder = husstandsbarn.perioder.map { Datoperiode(it.datoFom!!, it.datoTom) }.finnHullIPerioder(virkniningstidspunkt)
-//        valideringsfeil.add(
-//            BoforholdSivilstandPeriodeseringfeil(
-//                barn,
-//                husstandsbarn.foedselsdato,
-//                husstandsbarn.id!!,
-//                hullIPerioder,
-//                ingenLøpendePeriode = husstandsbarn.perioder.none { it.datoTom == null },
-//                fremtidigPeriode = husstandsbarn.perioder.any { it.datoFom!!.isAfter(virkniningstidspunkt) },
-//            ),
-//        )
-//    }
+fun Set<Sivilstand>.validerSivilstand(virkniningstidspunkt: LocalDate): SivilstandPeriodeseringfeil {
+    val hullIPerioder = map { Datoperiode(it.datoFom!!, it.datoTom) }.finnHullIPerioder(virkniningstidspunkt)
+    return SivilstandPeriodeseringfeil(
+        hullIPerioder,
+        ingenLøpendePeriode = none { it.datoTom == null },
+        fremtidigPeriode = any { it.datoFom!!.isAfter(virkniningstidspunkt) },
+        manglerPerioder = isEmpty(),
+    )
 }
 
 fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
@@ -134,7 +199,11 @@ fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<D
     if (size > 1) {
         perioderSomSkalSjekkes.forEachIndexed { index, periode ->
             perioderSomSkalSjekkes.drop(index + 1).forEachIndexed { indexNestePeriode, nestePeriode ->
-                if (periode.til != null && nestePeriode.fom.isAfter(periode.til!!.plusDays(1))) {
+                if (periode.til != null &&
+                    nestePeriode.fom.isAfter(
+                        periode.til!!.plusDays(1),
+                    ) && virkniningstidspunkt.isBefore(periode.fom)
+                ) {
                     hullPerioder.add(Datoperiode(periode.til!!.plusDays(1), nestePeriode.til))
                 } else if (nestePeriode.til == null) {
                     // Vil ikke være noe hull i perioder videre pga at neste periode er løpende

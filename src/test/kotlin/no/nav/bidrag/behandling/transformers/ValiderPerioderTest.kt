@@ -32,10 +32,43 @@ class ValiderPerioderTest {
         hullPerioder[0].til shouldBe LocalDate.parse("2022-02-01")
 
         hullPerioder[1].fom shouldBe LocalDate.parse("2022-04-01")
-        hullPerioder[1].til shouldBe LocalDate.parse("2022-06-01")
+        hullPerioder[1].til shouldBe LocalDate.parse("2022-08-31")
 
         hullPerioder[2].fom shouldBe LocalDate.parse("2022-08-31")
         hullPerioder[2].til shouldBe null
+    }
+
+    @Test
+    fun `skal finne hull i perioder scenarie 2`() {
+        val inntekter =
+            listOf(
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2023-12"),
+                    YearMonth.parse("2024-03"),
+                    type = Inntektsrapportering.AINNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2023-03"),
+                    YearMonth.parse("2024-02"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2023-12"),
+                    YearMonth.parse("2024-01"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                ),
+            )
+
+        val hullPerioder = inntekter.finnHullIPerioder(LocalDate.parse("2023-12-01")).toList()
+
+        hullPerioder shouldHaveSize 1
+        hullPerioder[0].fom shouldBe LocalDate.parse("2024-01-31")
+        hullPerioder[0].til shouldBe null
     }
 
     @Test
@@ -108,7 +141,7 @@ class ValiderPerioderTest {
 
         overlappendePerioder shouldHaveSize 4
         assertSoftly(overlappendePerioder[0]) {
-            periode.fom shouldBe LocalDate.parse("2022-01-01")
+            periode.fom shouldBe LocalDate.parse("2022-03-01")
             periode.til shouldBe null
             rapporteringTyper shouldContainAll
                 listOf(
@@ -117,7 +150,7 @@ class ValiderPerioderTest {
                 )
         }
         assertSoftly(overlappendePerioder[1]) {
-            periode.fom shouldBe LocalDate.parse("2022-01-01")
+            periode.fom shouldBe LocalDate.parse("2022-04-01")
             periode.til shouldBe null
             rapporteringTyper shouldContainAll
                 listOf(
@@ -126,7 +159,7 @@ class ValiderPerioderTest {
                 )
         }
         assertSoftly(overlappendePerioder[2]) {
-            periode.fom shouldBe LocalDate.parse("2022-03-01")
+            periode.fom shouldBe LocalDate.parse("2022-04-01")
             periode.til shouldBe null
             rapporteringTyper shouldContainAll
                 listOf(
@@ -135,8 +168,8 @@ class ValiderPerioderTest {
                 )
         }
         assertSoftly(overlappendePerioder[3]) {
-            periode.fom shouldBe LocalDate.parse("2022-08-01")
-            periode.til shouldBe LocalDate.parse("2022-11-30")
+            periode.fom shouldBe LocalDate.parse("2022-09-01")
+            periode.til shouldBe LocalDate.parse("2022-10-31")
             rapporteringTyper shouldContainAll
                 listOf(
                     Inntektsrapportering.KAPITALINNTEKT,
