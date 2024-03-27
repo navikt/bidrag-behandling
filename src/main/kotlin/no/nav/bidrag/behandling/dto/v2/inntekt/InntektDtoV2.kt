@@ -46,10 +46,19 @@ data class InntektDtoV2(
     val inntektstyper: Set<Inntektstype> = emptySet(),
 )
 
+data class InntektValideringsfeilDto(
+    val barnetillegg: InntektValideringsfeil,
+    val utvidetBarnetrygd: InntektValideringsfeil,
+    val kontantstøtte: InntektValideringsfeil,
+    val småbarnstillegg: InntektValideringsfeil,
+    @Schema(name = "årsinntekter")
+    val årsinntekter: InntektValideringsfeil,
+)
+
 data class InntektValideringsfeil(
     val type: Inntektsrapportering? = null,
     val overlappendePerioder: Set<OverlappendePeriode>,
-    val hullPerioder: List<Datoperiode>,
+    val hullIPerioder: List<Datoperiode>,
 )
 
 data class InntekterDtoV2(
@@ -62,7 +71,7 @@ data class InntekterDtoV2(
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekter: List<InntektPerBarn> = emptyList(),
     val notat: BehandlingNotatDto,
-    val valideringsfeil: List<InntektValideringsfeil>,
+    val valideringsfeil: InntektValideringsfeilDto,
 )
 
 data class OppdatereInntektRequest(
@@ -80,7 +89,7 @@ data class OppdatereInntektResponse(
     val inntekt: InntektDtoV2?,
     @Schema(description = "Periodisert beregnet inntekter per barn")
     val beregnetInntekter: List<InntektPerBarn> = emptyList(),
-    val valideringsfeil: List<InntektValideringsfeil>,
+    val valideringsfeil: InntektValideringsfeilDto,
 )
 
 @Deprecated("Erstattes av OppdatereInntektRequest")

@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
@@ -12,11 +13,13 @@ import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektValideringsfeil
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import java.time.LocalDate
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 @Suppress("ktlint:standard:value-argument-comment")
@@ -108,22 +111,47 @@ fun Behandling.tilBehandlingDtoV2(
     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
 )
 
-fun Behandling.hentValideringsfeil(): List<InntektValideringsfeil> {
+fun Behandling.hentValideringsfeil(): InntektValideringsfeilDto {
     val inntekterIkkeYtelser = inntekter.filter { !eksplisitteYtelser.contains(it.type) }
-    return listOf(
-        InntektValideringsfeil(
-            hullPerioder = inntekterIkkeYtelser.finnHullIPerioder(virkningstidspunktEllerSøktFomDato),
-            overlappendePerioder = inntekterIkkeYtelser.finnOverlappendePerioder(),
-        ),
-    ) +
-        eksplisitteYtelser.map { type ->
+    return InntektValideringsfeilDto(
+        årsinntekter =
             InntektValideringsfeil(
-                type = type,
-                hullPerioder = inntekter.filter { it.type == type }.finnHullIPerioder(virkningstidspunktEllerSøktFomDato),
-                overlappendePerioder = inntekter.filter { it.type == type }.finnOverlappendePerioder(),
-            )
-        }
+                hullIPerioder = inntekterIkkeYtelser.finnHullIPerioder(virkningstidspunktEllerSøktFomDato),
+                overlappendePerioder = inntekterIkkeYtelser.finnOverlappendePerioder(),
+            ),
+        barnetillegg =
+            inntekter.mapValideringsfeilForType(
+                Inntektsrapportering.BARNETILLEGG,
+                virkningstidspunktEllerSøktFomDato,
+            ),
+        småbarnstillegg =
+            inntekter.mapValideringsfeilForType(
+                Inntektsrapportering.SMÅBARNSTILLEGG,
+                virkningstidspunktEllerSøktFomDato,
+            ),
+        utvidetBarnetrygd =
+            inntekter.mapValideringsfeilForType(
+                Inntektsrapportering.UTVIDET_BARNETRYGD,
+                virkningstidspunktEllerSøktFomDato,
+            ),
+        kontantstøtte =
+            inntekter.mapValideringsfeilForType(
+                Inntektsrapportering.KONTANTSTØTTE,
+                virkningstidspunktEllerSøktFomDato,
+            ),
+    )
 }
+
+fun Set<Inntekt>.mapValideringsfeilForType(
+    type: Inntektsrapportering,
+    virkningstidspunkt: LocalDate,
+) = InntektValideringsfeil(
+    hullIPerioder =
+        filter { it.type == type }.finnHullIPerioder(
+            virkningstidspunkt,
+        ),
+    overlappendePerioder = filter { it.type == type }.finnOverlappendePerioder(),
+)
 
 fun Behandling.hentBeregnetInntekter() =
     BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe.sortedBy {

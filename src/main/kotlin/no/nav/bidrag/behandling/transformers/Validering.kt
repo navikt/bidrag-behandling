@@ -63,17 +63,17 @@ fun Behandling.validerInntekterForBeregning(type: Inntektsrapportering? = null):
     val overlappendePerioder = inntekterTaMed.finnOverlappendePerioder()
 
     hullPerioder.forEach {
-        feilListe.add("Det er et hull i perioden ${it.fom} - ${it.til}")
+        if (it.til == null) {
+            feilListe.add("Det er ingen løpende inntektsperiode. Rediger en av periodene eller legg til en ny periode.")
+        } else {
+            feilListe.add("Det er et hull i perioden ${it.fom} - ${it.til}")
+        }
     }
 
     overlappendePerioder.forEach {
         feilListe.add(
             "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til}",
         )
-    }
-
-    if (!inntekterTaMed.any { it.datoTom == null }) {
-        feilListe.add("Det er ingen løpende inntektsperiode. Rediger en av periodene eller legg til en ny periode.")
     }
 
     return feilListe
