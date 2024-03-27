@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.transformers.OverlappendePeriode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
@@ -45,6 +46,12 @@ data class InntektDtoV2(
     val inntektstyper: Set<Inntektstype> = emptySet(),
 )
 
+data class InntektValideringsfeil(
+    val type: Inntektsrapportering? = null,
+    val overlappendePerioder: Set<OverlappendePeriode>,
+    val hullPerioder: List<Datoperiode>,
+)
+
 data class InntekterDtoV2(
     val barnetillegg: Set<InntektDtoV2> = emptySet(),
     val utvidetBarnetrygd: Set<InntektDtoV2> = emptySet(),
@@ -55,6 +62,7 @@ data class InntekterDtoV2(
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekter: List<InntektPerBarn> = emptyList(),
     val notat: BehandlingNotatDto,
+    val valideringsfeil: List<InntektValideringsfeil>,
 )
 
 data class OppdatereInntektRequest(
@@ -72,6 +80,7 @@ data class OppdatereInntektResponse(
     val inntekt: InntektDtoV2?,
     @Schema(description = "Periodisert beregnet inntekter per barn")
     val beregnetInntekter: List<InntektPerBarn> = emptyList(),
+    val valideringsfeil: List<InntektValideringsfeil>,
 )
 
 @Deprecated("Erstattes av OppdatereInntektRequest")

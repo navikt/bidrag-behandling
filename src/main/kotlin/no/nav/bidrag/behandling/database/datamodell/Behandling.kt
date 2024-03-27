@@ -18,6 +18,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.validerInntekterForBeregning
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -145,25 +147,34 @@ fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
                     )
                 }
             },
-            { ensure(this@validere.virkningstidspunkt != null) { raise("Mangler virkningsdato") } },
+            { ensure(this@validere.virkningstidspunkt != null) { raise("Mangler virkningstidspunkt") } },
             { ensure(this@validere.saksnummer.isNotBlank()) { raise("Saksnummer mangler for behandling") } },
             {
-                ensure(this@validere.sivilstand.size > 0) { raise("Sivilstand mangler i behandling") }
+                ensure(this@validere.sivilstand.size > 0) { raise("Mangler perioder for sivilstand") }
                 mapOrAccumulate(sivilstand) {
-                    ensure(it.datoFom != null) { raise("Til-dato mangler for sivilstand i behandling") }
+                    ensure(it.datoFom != null) { raise("Til-dato mangler for sivilstand") }
                 }
             },
             {
-                mapOrAccumulate(inntekter.filter { it.taMed }) {
-                    it
+                val inntekter =
+                    mapOrAccumulate(inntekter.filter { it.taMed }) {
+                        it
+                    }
+                validerInntekterForBeregning().forEach {
+                    raise(it)
                 }
-                ensure(this@validere.inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {
+                eksplisitteYtelser.forEach {
+                    validerInntekterForBeregning(it).forEach {
+                        raise(it)
+                    }
+                }
+                ensure(inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {
                     raise(
                         "Mangler inntekter for bidragsmottaker",
                     )
                 }
                 if (stonadstype != Stønadstype.FORSKUDD) {
-                    ensure(this@validere.inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
+                    ensure(inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
                         raise(
                             "Mangler innteker for bidragspliktig",
                         )

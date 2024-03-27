@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -101,20 +102,30 @@ fun Behandling.tilBehandlingDtoV2(
                     medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
                     kunINotat = inntektsbegrunnelseKunINotat,
                 ),
+            valideringsfeil = hentValideringsfeil(),
         ),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.map(Grunnlag::toDto).toSet(),
     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
 )
 
+fun Behandling.hentValideringsfeil(): List<InntektValideringsfeil> {
+    val inntekterIkkeYtelser = inntekter.filter { !eksplisitteYtelser.contains(it.type) }
+    return listOf(
+        InntektValideringsfeil(
+            hullPerioder = inntekterIkkeYtelser.finnHullIPerioder(virkningstidspunktEllerSøktFomDato),
+            overlappendePerioder = inntekterIkkeYtelser.finnOverlappendePerioder(),
+        ),
+    ) +
+        eksplisitteYtelser.map { type ->
+            InntektValideringsfeil(
+                type = type,
+                hullPerioder = inntekter.filter { it.type == type }.finnHullIPerioder(virkningstidspunktEllerSøktFomDato),
+                overlappendePerioder = inntekter.filter { it.type == type }.finnOverlappendePerioder(),
+            )
+        }
+}
+
 fun Behandling.hentBeregnetInntekter() =
     BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe.sortedBy {
         it.inntektGjelderBarnIdent?.verdi
     }
-
-val eksplisitteYtelser =
-    setOf(
-        Inntektsrapportering.BARNETILLEGG,
-        Inntektsrapportering.KONTANTSTØTTE,
-        Inntektsrapportering.SMÅBARNSTILLEGG,
-        Inntektsrapportering.UTVIDET_BARNETRYGD,
-    )
