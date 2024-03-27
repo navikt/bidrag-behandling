@@ -1,10 +1,5 @@
 package no.nav.bidrag.behandling.database.datamodell
 
-import arrow.core.Either
-import arrow.core.NonEmptyList
-import arrow.core.raise.either
-import arrow.core.raise.ensure
-import arrow.core.raise.zipOrAccumulate
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -18,8 +13,13 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.behandling.dto.v1.beregning.BeregningValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.beregning.BeregningValideringsfeilType
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.toDDMMYYYY
+import no.nav.bidrag.behandling.transformers.validerBoforholdForBeregning
 import no.nav.bidrag.behandling.transformers.validerInntekterForBeregning
+import no.nav.bidrag.behandling.transformers.validerSivilstandForBeregning
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -27,8 +27,12 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.HttpClientErrorException
+import java.nio.charset.Charset
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -136,81 +140,77 @@ open class Behandling(
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
-fun Behandling.validere(): Either<NonEmptyList<String>, Behandling> =
-    either {
-        zipOrAccumulate(
-            { ensure(this@validere.id != null) { raise("Behandlingsid mangler") } },
-            {
-                ensure(this@validere.datoTom == null || this@validere.datoTom!!.isAfter(this@validere.søktFomDato)) {
-                    raise(
-                        "Til dato må være etter fra dato",
-                    )
-                }
-            },
-            { ensure(this@validere.virkningstidspunkt != null) { raise("Mangler virkningstidspunkt") } },
-            { ensure(this@validere.saksnummer.isNotBlank()) { raise("Saksnummer mangler for behandling") } },
-            {
-                ensure(this@validere.sivilstand.size > 0) { raise("Mangler perioder for sivilstand") }
-                mapOrAccumulate(sivilstand) {
-                    ensure(it.datoFom != null) { raise("Til-dato mangler for sivilstand") }
-                }
-            },
-            {
-                val inntekter =
-                    mapOrAccumulate(inntekter.filter { it.taMed }) {
-                        it
-                    }
-                validerInntekterForBeregning().forEach {
-                    raise(it)
-                }
-                eksplisitteYtelser.forEach {
-                    validerInntekterForBeregning(it).forEach {
-                        raise(it)
-                    }
-                }
-                ensure(inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {
-                    raise(
-                        "Mangler inntekter for bidragsmottaker",
-                    )
-                }
-                if (stonadstype != Stønadstype.FORSKUDD) {
-                    ensure(inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
-                        raise(
-                            "Mangler innteker for bidragspliktig",
-                        )
-                    }
-                }
-            },
-            {
-                ensure(this@validere.husstandsbarn.size > 0) { raise("Mangler informasjon om husstandsbarn") }
-                this@validere.husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.forEach {
-                    ensure(it.perioder.isNotEmpty()) {
-                        raise(
-                            "Mangler perioder for husstandsbarn ${it.hentNavn()}/${it.ident}",
-                        )
-                    }
-                }
+fun Behandling.validerForBeregning(): List<BeregningValideringsfeil> {
+    val feil = mutableListOf<BeregningValideringsfeil>()
+    valider(id != null) { feil.leggTil(BeregningValideringsfeilType.ANDRE, "Behandlingsid mangler") }
+    valider(datoTom == null || datoTom!!.isAfter(søktFomDato)) {
+        feil.leggTil(BeregningValideringsfeilType.ANDRE, "Til dato må være etter fra dato")
+    }
+    valider(virkningstidspunkt != null) { feil.leggTil(BeregningValideringsfeilType.ANDRE, "Mangler virkningstidspunkt") }
+    valider(saksnummer.isNotBlank()) { feil.leggTil(BeregningValideringsfeilType.ANDRE, "Saksnummer mangler for behandling") }
 
-                roller.filter { it.rolletype == Rolletype.BARN }.forEach { barn ->
-                    ensure(this@validere.husstandsbarn.any { it.ident == barn.ident }) {
-                        raise(
-                            "Søknadsbarn ${barn.hentNavn()}/${barn.ident} mangler informasjon om boforhold",
-                        )
-                    }
-                }
-
-                mapOrAccumulate(husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.flatMap { it.perioder }) {
-                    ensure(it.datoFom != null) { raise("Fra-dato mangler for husstandsbarnperiode i behandling") }
-                    it
-                }
-            },
-        ) { _, _, _, _, _, _, _ ->
-            val behandling = this@validere
-            behandling.inntekter = inntekter
-            behandling.husstandsbarn = husstandsbarn
-            behandling
+    valider(sivilstand.size > 0) { feil.leggTil(BeregningValideringsfeilType.SIVILSTAND, "Mangler perioder for sivilstand") }
+    valider(husstandsbarn.size > 0) { feil.leggTil(BeregningValideringsfeilType.BOFORHOLD, "Mangler informasjon om husstandsbarn") }
+    husstandsbarn.validerBoforholdForBeregning(virkningstidspunktEllerSøktFomDato).forEach {
+        feil.leggTil(BeregningValideringsfeilType.BOFORHOLD, it)
+    }
+    roller.filter { it.rolletype == Rolletype.BARN }.forEach { barn ->
+        valider(husstandsbarn.any { it.ident == barn.ident }) {
+            feil.leggTil(
+                BeregningValideringsfeilType.BOFORHOLD,
+                "Søknadsbarn ${barn.hentNavn()}/${barn.foedselsdato.toDDMMYYYY()} mangler informasjon om boforhold",
+            )
         }
     }
+    sivilstand.validerSivilstandForBeregning(virkningstidspunktEllerSøktFomDato).forEach {
+        feil.leggTil(BeregningValideringsfeilType.SIVILSTAND, it)
+    }
+
+    validerInntekterForBeregning().forEach {
+        feil.leggTil(BeregningValideringsfeilType.INNTEKT, it)
+    }
+    eksplisitteYtelser.forEach {
+        validerInntekterForBeregning(it).forEach {
+            feil.leggTil(BeregningValideringsfeilType.INNTEKT, it)
+        }
+    }
+
+    valider(inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {
+        feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler inntekter for bidragsmottaker")
+    }
+    if (stonadstype != Stønadstype.FORSKUDD) {
+        valider(inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
+            feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler innteker for bidragspliktig")
+        }
+    }
+
+    if (feil.isNotEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Feil ved validering av behandling for beregning",
+            commonObjectmapper.writeValueAsBytes(feil),
+            Charset.defaultCharset(),
+        )
+    }
+    return feil
+}
+
+fun MutableList<BeregningValideringsfeil>.leggTil(
+    type: BeregningValideringsfeilType,
+    feilmelding: String,
+) {
+    find { it.type == type }?.feilListe?.add(feilmelding)
+        ?: add(BeregningValideringsfeil(type, mutableListOf(feilmelding)))
+}
+
+inline fun valider(
+    condition: Boolean,
+    onConditionNotTrue: () -> Unit,
+) {
+    if (!condition) {
+        onConditionNotTrue()
+    }
+}
 
 @Converter
 open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {

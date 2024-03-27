@@ -93,6 +93,24 @@ class ValiderPerioderTest {
     }
 
     @Test
+    fun `skal ikke finne hull i perioder scenarie 5`() {
+        val inntekter =
+            listOf(
+                opprettInntekt(YearMonth.parse("2022-01"), YearMonth.parse("2022-02")),
+                opprettInntekt(YearMonth.parse("2022-05"), YearMonth.parse("2022-08")),
+                opprettInntekt(YearMonth.parse("2023-01"), YearMonth.parse("2023-02")),
+                opprettInntekt(YearMonth.parse("2023-03"), YearMonth.parse("2023-08")),
+                opprettInntekt(YearMonth.parse("2023-08"), YearMonth.parse("2024-01")),
+            )
+
+        val hullPerioder = inntekter.finnHullIPerioder(LocalDate.parse("2023-01-01")).toList()
+
+        hullPerioder shouldHaveSize 1
+        hullPerioder[0].fom shouldBe LocalDate.parse("2024-01-31")
+        hullPerioder[0].til shouldBe null
+    }
+
+    @Test
     fun `skal ikke finne hull i perioder når det er en periode med null datoTom`() {
         val inntekter =
             listOf(
