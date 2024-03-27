@@ -21,8 +21,8 @@ class ValiderPerioderTest {
         val inntekter =
             listOf(
                 opprettInntekt(YearMonth.parse("2022-02"), YearMonth.parse("2022-03")),
-                opprettInntekt(YearMonth.parse("2022-04"), YearMonth.parse("2022-05")),
-                opprettInntekt(YearMonth.parse("2022-06"), YearMonth.parse("2022-08")),
+                opprettInntekt(YearMonth.parse("2022-04"), YearMonth.parse("2022-06")),
+                opprettInntekt(YearMonth.parse("2022-08"), YearMonth.parse("2022-09")),
             )
 
         val hullPerioder = inntekter.finnHullIPerioder(LocalDate.parse("2022-01-01"))
@@ -31,10 +31,10 @@ class ValiderPerioderTest {
         hullPerioder[0].fom shouldBe LocalDate.parse("2022-01-01")
         hullPerioder[0].til shouldBe LocalDate.parse("2022-02-01")
 
-        hullPerioder[1].fom shouldBe LocalDate.parse("2022-04-01")
-        hullPerioder[1].til shouldBe LocalDate.parse("2022-08-31")
+        hullPerioder[1].fom shouldBe LocalDate.parse("2022-07-01")
+        hullPerioder[1].til shouldBe LocalDate.parse("2022-08-01")
 
-        hullPerioder[2].fom shouldBe LocalDate.parse("2022-08-31")
+        hullPerioder[2].fom shouldBe LocalDate.parse("2022-09-30")
         hullPerioder[2].til shouldBe null
     }
 
@@ -42,26 +42,10 @@ class ValiderPerioderTest {
     fun `skal finne hull i perioder scenarie 2`() {
         val inntekter =
             listOf(
-                opprettInntekt(
-                    YearMonth.parse("2022-01"),
-                    YearMonth.parse("2022-12"),
-                    type = Inntektsrapportering.AINNTEKT,
-                ),
-                opprettInntekt(
-                    YearMonth.parse("2023-12"),
-                    YearMonth.parse("2024-03"),
-                    type = Inntektsrapportering.AINNTEKT,
-                ),
-                opprettInntekt(
-                    YearMonth.parse("2023-03"),
-                    YearMonth.parse("2024-02"),
-                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-                ),
-                opprettInntekt(
-                    YearMonth.parse("2023-12"),
-                    YearMonth.parse("2024-01"),
-                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
-                ),
+                opprettInntekt(YearMonth.parse("2022-01"), YearMonth.parse("2022-12")),
+                opprettInntekt(YearMonth.parse("2023-12"), YearMonth.parse("2024-03")),
+                opprettInntekt(YearMonth.parse("2023-03"), YearMonth.parse("2024-02")),
+                opprettInntekt(YearMonth.parse("2023-12"), YearMonth.parse("2024-01")),
             )
 
         val hullPerioder = inntekter.finnHullIPerioder(LocalDate.parse("2023-12-01")).toList()
@@ -69,6 +53,43 @@ class ValiderPerioderTest {
         hullPerioder shouldHaveSize 1
         hullPerioder[0].fom shouldBe LocalDate.parse("2024-01-31")
         hullPerioder[0].til shouldBe null
+    }
+
+    @Test
+    fun `skal finne hull i perioder scenarie 3`() {
+        val inntekter =
+            listOf(
+                opprettInntekt(YearMonth.parse("2022-01"), null),
+                opprettInntekt(YearMonth.parse("2023-01"), YearMonth.parse("2023-02")),
+                opprettInntekt(YearMonth.parse("2023-04"), YearMonth.parse("2023-08")),
+                opprettInntekt(YearMonth.parse("2023-12"), YearMonth.parse("2024-01")),
+            )
+
+        val hullPerioder = inntekter.finnHullIPerioder(LocalDate.parse("2023-12-01")).toList()
+
+        hullPerioder shouldHaveSize 0
+    }
+
+    @Test
+    fun `skal finne hull i perioder scenarie 4`() {
+        val inntekter =
+            listOf(
+                opprettInntekt(YearMonth.parse("2023-01"), YearMonth.parse("2023-02")),
+                opprettInntekt(YearMonth.parse("2023-04"), YearMonth.parse("2023-08")),
+                opprettInntekt(YearMonth.parse("2023-12"), YearMonth.parse("2024-01")),
+            )
+
+        val hullPerioder = inntekter.finnHullIPerioder(LocalDate.parse("2023-01-01")).toList()
+
+        hullPerioder shouldHaveSize 3
+        hullPerioder[0].fom shouldBe LocalDate.parse("2023-03-01")
+        hullPerioder[0].til shouldBe LocalDate.parse("2023-04-01")
+
+        hullPerioder[1].fom shouldBe LocalDate.parse("2023-09-01")
+        hullPerioder[1].til shouldBe LocalDate.parse("2023-12-01")
+
+        hullPerioder[2].fom shouldBe LocalDate.parse("2024-01-31")
+        hullPerioder[2].til shouldBe null
     }
 
     @Test

@@ -196,20 +196,16 @@ fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<D
     if (førstePeriode != null && virkniningstidspunkt.isBefore(førstePeriode.fom)) {
         hullPerioder.add(Datoperiode(virkniningstidspunkt, førstePeriode.fom))
     }
-    if (size > 1) {
-        perioderSomSkalSjekkes.forEachIndexed { index, periode ->
-            perioderSomSkalSjekkes.drop(index + 1).forEachIndexed { indexNestePeriode, nestePeriode ->
-                if (periode.til != null &&
-                    nestePeriode.fom.isAfter(
-                        periode.til!!.plusDays(1),
-                    ) && virkniningstidspunkt.isBefore(periode.fom)
-                ) {
-                    hullPerioder.add(Datoperiode(periode.til!!.plusDays(1), nestePeriode.til))
-                } else if (nestePeriode.til == null) {
-                    // Vil ikke være noe hull i perioder videre pga at neste periode er løpende
-                    return hullPerioder
-                }
-            }
+    perioderSomSkalSjekkes.forEachIndexed { index, periode ->
+        val forrigePeriode = perioderSomSkalSjekkes.getOrNull(index - 1)
+        if (forrigePeriode?.til != null &&
+            periode.fom.isAfter(forrigePeriode.til!!.plusDays(1)) &&
+            virkniningstidspunkt.isBefore(periode.fom)
+        ) {
+            hullPerioder.add(Datoperiode(forrigePeriode.til!!.plusDays(1), periode.fom))
+        } else if (periode.til == null) {
+            // Vil ikke være noe hull i perioder videre pga at neste periode er løpende
+            return hullPerioder
         }
     }
     if (perioderSomSkalSjekkes.none { it.til == null }) {
