@@ -1,8 +1,10 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
@@ -23,17 +25,17 @@ data class OverlappendePeriode(
     val idListe: MutableSet<Long>,
     val rapporteringTyper: MutableSet<Inntektsrapportering>,
     val inntektstyper: MutableSet<Inntektstype>,
-) {
-    override fun equals(other: Any?): Boolean {
-        if (other !is OverlappendePeriode) return false
-        return periode == other.periode && idListe == other.idListe && rapporteringTyper == other.rapporteringTyper &&
-            (inntektstyper + other.inntektstyper).size == inntektstyper.size
-    }
+)
 
-    override fun hashCode(): Int {
-        return periode.hashCode() + idListe.hashCode() + rapporteringTyper.hashCode()
-    }
-}
+data class BoforholdSivilstandPeriodeseringfeil(
+    val barnIdent: String?,
+    val barnFødselsdato: LocalDate,
+    val husstandsbarnId: Long,
+    val hullIPerioder: List<Datoperiode>,
+    val ingenLøpendePeriode: Boolean,
+    val fremtidigPeriode: Boolean,
+    val manglerPerioder: Boolean,
+)
 
 fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
     val feilListe = mutableListOf<String>()
@@ -77,6 +79,77 @@ fun Behandling.validerInntekterForBeregning(type: Inntektsrapportering? = null):
     }
 
     return feilListe
+}
+
+fun List<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): MutableList<BoforholdSivilstandPeriodeseringfeil> {
+    val valideringsfeil = mutableListOf<BoforholdSivilstandPeriodeseringfeil>()
+
+    groupBy { it.ident }.forEach {
+        val barn = it.key
+        val husstandsbarn = it.value.first()
+        val hullIPerioder = husstandsbarn.perioder.map { Datoperiode(it.datoFom!!, it.datoTom) }.finnHullIPerioder(virkniningstidspunkt)
+        valideringsfeil.add(
+            BoforholdSivilstandPeriodeseringfeil(
+                barn,
+                husstandsbarn.foedselsdato,
+                husstandsbarn.id!!,
+                hullIPerioder,
+                manglerPerioder = husstandsbarn.perioder.isEmpty(),
+                ingenLøpendePeriode = husstandsbarn.perioder.none { it.datoTom == null },
+                fremtidigPeriode = husstandsbarn.perioder.any { it.datoFom!!.isAfter(virkniningstidspunkt) },
+            ),
+        )
+    }
+
+    return valideringsfeil
+}
+
+fun List<Sivilstand>.validerSivilstand(virkniningstidspunkt: LocalDate) {
+    val valideringsfeil = mutableListOf<BoforholdSivilstandPeriodeseringfeil>()
+
+//    groupBy { it.ident }.forEach {
+//        val barn = it.key
+//        val husstandsbarn = it.value.first()
+//        val hullIPerioder = husstandsbarn.perioder.map { Datoperiode(it.datoFom!!, it.datoTom) }.finnHullIPerioder(virkniningstidspunkt)
+//        valideringsfeil.add(
+//            BoforholdSivilstandPeriodeseringfeil(
+//                barn,
+//                husstandsbarn.foedselsdato,
+//                husstandsbarn.id!!,
+//                hullIPerioder,
+//                ingenLøpendePeriode = husstandsbarn.perioder.none { it.datoTom == null },
+//                fremtidigPeriode = husstandsbarn.perioder.any { it.datoFom!!.isAfter(virkniningstidspunkt) },
+//            ),
+//        )
+//    }
+}
+
+fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
+    val hullPerioder = mutableListOf<Datoperiode>()
+    val perioderSomSkalSjekkes = sortedBy { it.fom }
+    val førstePeriode = perioderSomSkalSjekkes.firstOrNull()
+    if (førstePeriode != null && virkniningstidspunkt.isBefore(førstePeriode.fom)) {
+        hullPerioder.add(Datoperiode(virkniningstidspunkt, førstePeriode.fom))
+    }
+    if (size > 1) {
+        perioderSomSkalSjekkes.forEachIndexed { index, periode ->
+            perioderSomSkalSjekkes.drop(index + 1).forEachIndexed { indexNestePeriode, nestePeriode ->
+                if (periode.til != null && nestePeriode.fom.isAfter(periode.til!!.plusDays(1))) {
+                    hullPerioder.add(Datoperiode(periode.til!!.plusDays(1), nestePeriode.til))
+                } else if (nestePeriode.til == null) {
+                    // Vil ikke være noe hull i perioder videre pga at neste periode er løpende
+                    return hullPerioder
+                }
+            }
+        }
+    }
+    if (perioderSomSkalSjekkes.none { it.til == null }) {
+        val sistePeriode = perioderSomSkalSjekkes.lastOrNull()
+        if (sistePeriode?.til != null) {
+            hullPerioder.add(Datoperiode(sistePeriode.til!!, null as LocalDate?))
+        }
+    }
+    return hullPerioder
 }
 
 fun List<Inntekt>.finnOverlappendePerioder(): Set<OverlappendePeriode> {
@@ -138,32 +211,12 @@ fun finnSenesteDato(
     }
 }
 
+@JvmName("finnHullIPerioderInntekt")
 fun List<Inntekt>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
-    val hullPerioder = mutableListOf<Datoperiode>()
-    val inntekterSomSkalSjekkes = filter { it.taMed && !it.kanHaHullIPerioder() }.sortedBy { it.datoFom }
-    val førstePeriode = inntekterSomSkalSjekkes.firstOrNull()
-    if (førstePeriode != null && virkniningstidspunkt.isBefore(førstePeriode.datoFom)) {
-        hullPerioder.add(Datoperiode(virkniningstidspunkt, førstePeriode.datoFom))
-    }
-    if (size > 1) {
-        inntekterSomSkalSjekkes.forEachIndexed { index, inntekt ->
-            inntekterSomSkalSjekkes.drop(index + 1).forEachIndexed { indexNesteInntekt, nesteInntekt ->
-                if (inntekt.datoTom != null && nesteInntekt.datoFom.isAfter(inntekt.datoTom!!.plusDays(1))) {
-                    hullPerioder.add(Datoperiode(inntekt.datoTom!!.plusDays(1), nesteInntekt.datoFom))
-                } else if (nesteInntekt.datoTom == null) {
-                    // Vil ikke være noe hull i perioder videre pga at neste inntekt er løpende
-                    return hullPerioder
-                }
-            }
-        }
-    }
-    if (inntekterSomSkalSjekkes.none { it.datoTom == null }) {
-        val sistePeriode = inntekterSomSkalSjekkes.lastOrNull()
-        if (sistePeriode?.datoTom != null) {
-            hullPerioder.add(Datoperiode(sistePeriode.datoTom!!, null as LocalDate?))
-        }
-    }
-    return hullPerioder
+    val perioderSomSkalSjekkes =
+        filter { it.taMed && !it.kanHaHullIPerioder() }.sortedBy { it.datoFom }
+            .map { Datoperiode(it.datoFom, it.datoTom) }
+    return perioderSomSkalSjekkes.finnHullIPerioder(virkniningstidspunkt)
 }
 
 val Inntekt.inntektstypeListe
@@ -187,12 +240,12 @@ fun Inntekt.validerOverlapperMedInntekt(sammenlignMedInntekt: Inntekt): Overlapp
     val sammenlignMedInntektPeriode = Datoperiode(sammenlignMedInntekt.datoFom, sammenlignMedInntekt.datoTom)
     val perioderOverlapper = inntektPeriode.overlapper(sammenlignMedInntektPeriode) && !kanOverlappe
     if (perioderOverlapper) {
-        val datoFom = minOf(sammenlignMedInntekt.datoFom, datoFom)
+        val datoFom = maxOf(sammenlignMedInntekt.datoFom, datoFom)
         val senesteDatoTom =
             if (sammenlignMedInntekt.datoTom == null || datoTom == null) {
                 null
             } else {
-                maxOf(
+                minOf(
                     datoTom!!,
                     sammenlignMedInntekt.datoTom!!,
                 )

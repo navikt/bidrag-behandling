@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -93,30 +94,208 @@ class ValiderPerioderTest {
                 ),
                 opprettInntekt(
                     YearMonth.parse("2022-08"),
-                    null,
+                    YearMonth.parse("2022-11"),
                     type = Inntektsrapportering.KAPITALINNTEKT,
                 ),
                 opprettInntekt(
                     YearMonth.parse("2022-09"),
-                    null,
+                    YearMonth.parse("2022-10"),
                     type = Inntektsrapportering.KAPITALINNTEKT_EGNE_OPPLYSNINGER,
                 ),
             )
 
         val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
 
-        overlappendePerioder shouldHaveSize 2
-        overlappendePerioder[0].rapporteringTyper shouldContainAll
+        overlappendePerioder shouldHaveSize 4
+        assertSoftly(overlappendePerioder[0]) {
+            periode.fom shouldBe LocalDate.parse("2022-01-01")
+            periode.til shouldBe null
+            rapporteringTyper shouldContainAll
+                listOf(
+                    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                )
+        }
+        assertSoftly(overlappendePerioder[1]) {
+            periode.fom shouldBe LocalDate.parse("2022-01-01")
+            periode.til shouldBe null
+            rapporteringTyper shouldContainAll
+                listOf(
+                    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                )
+        }
+        assertSoftly(overlappendePerioder[2]) {
+            periode.fom shouldBe LocalDate.parse("2022-03-01")
+            periode.til shouldBe null
+            rapporteringTyper shouldContainAll
+                listOf(
+                    Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                    Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                )
+        }
+        assertSoftly(overlappendePerioder[3]) {
+            periode.fom shouldBe LocalDate.parse("2022-08-01")
+            periode.til shouldBe LocalDate.parse("2022-11-30")
+            rapporteringTyper shouldContainAll
+                listOf(
+                    Inntektsrapportering.KAPITALINNTEKT,
+                    Inntektsrapportering.KAPITALINNTEKT_EGNE_OPPLYSNINGER,
+                )
+        }
+    }
+
+    @Test
+    fun `skal finne overlappende perioder scenarie 2`() {
+        val inntekter =
             listOf(
-                Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
-                Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-                Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2023-01"),
+                    YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2023-03"),
+                    YearMonth.parse("2024-02"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2023-12"),
+                    YearMonth.parse("2024-02"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                ),
             )
-        overlappendePerioder[1].rapporteringTyper shouldContainAll
+
+        val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+
+        overlappendePerioder shouldHaveSize 3
+        assertSoftly(overlappendePerioder[0]) {
+            periode.fom shouldBe LocalDate.parse("2023-03-01")
+            periode.til shouldBe LocalDate.parse("2023-12-31")
+            rapporteringTyper shouldContainAll
+                listOf(
+                    Inntektsrapportering.AINNTEKT,
+                    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                )
+        }
+        assertSoftly(overlappendePerioder[1]) {
+            periode.fom shouldBe LocalDate.parse("2023-12-01")
+            periode.til shouldBe LocalDate.parse("2023-12-31")
+            rapporteringTyper shouldContainAll
+                listOf(
+                    Inntektsrapportering.AINNTEKT,
+                    Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                )
+        }
+        assertSoftly(overlappendePerioder[2]) {
+            periode.fom shouldBe LocalDate.parse("2023-12-01")
+            periode.til shouldBe LocalDate.parse("2024-02-29")
+            rapporteringTyper shouldContainAll
+                listOf(
+                    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                )
+        }
+    }
+
+    @Test
+    fun `skal ikke finne overlappende perioder hvis inntekspostene ikke overlapper`() {
+        val inntekter =
             listOf(
-                Inntektsrapportering.KAPITALINNTEKT_EGNE_OPPLYSNINGER,
-                Inntektsrapportering.KAPITALINNTEKT,
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    YearMonth.parse("2022-05"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    inntektstyper = listOf(Inntektstype.UTVIDET_BARNETRYGD),
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    null,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
             )
+
+        val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+
+        overlappendePerioder shouldHaveSize 0
+    }
+
+    @Test
+    fun `skal finne overlappende perioder for barnetillegg`() {
+        val inntekter =
+            listOf(
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    YearMonth.parse("2022-05"),
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Inntektstype.BARNETILLEGG_PENSJON),
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    null,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Inntektstype.BARNETILLEGG_PENSJON),
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    null,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Inntektstype.BARNETILLEGG_AAP),
+                ),
+            )
+
+        val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+
+        overlappendePerioder shouldHaveSize 1
+        assertSoftly(overlappendePerioder[0]) {
+            periode.fom shouldBe LocalDate.parse("2022-01-01")
+            periode.til shouldBe null
+            rapporteringTyper shouldContainAll
+                listOf(
+                    Inntektsrapportering.BARNETILLEGG,
+                )
+            inntektstyper shouldContainAll listOf(Inntektstype.BARNETILLEGG_PENSJON)
+        }
+    }
+
+    @Test
+    fun `skal ikke finne overlappende perioder for barnetillegg hvis inntekstypene ikke overlapper`() {
+        val inntekter =
+            listOf(
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    YearMonth.parse("2022-05"),
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Inntektstype.BARNETILLEGG_PENSJON),
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    null,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Inntektstype.BARNETILLEGG_AAP),
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    null,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Inntektstype.BARNETILLEGG_DNB),
+                ),
+                opprettInntekt(
+                    YearMonth.parse("2022-01"),
+                    null,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Inntektstype.BARNETILLEGG_DAGPENGER),
+                ),
+            )
+
+        val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+
+        overlappendePerioder shouldHaveSize 0
     }
 
     private fun opprettInntekt(
