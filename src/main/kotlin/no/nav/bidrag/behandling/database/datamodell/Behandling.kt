@@ -13,13 +13,14 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
-import no.nav.bidrag.behandling.dto.v1.beregning.BeregningValideringsfeil
-import no.nav.bidrag.behandling.dto.v1.beregning.BeregningValideringsfeilType
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilType
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.toDDMMYYYY
 import no.nav.bidrag.behandling.transformers.validerBoforholdForBeregning
 import no.nav.bidrag.behandling.transformers.validerInntekterForBeregning
 import no.nav.bidrag.behandling.transformers.validerSivilstandForBeregning
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -146,45 +147,49 @@ fun Behandling.validerForBeregning(): List<BeregningValideringsfeil> {
     valider(datoTom == null || datoTom!!.isAfter(søktFomDato)) {
         feil.leggTil(BeregningValideringsfeilType.ANDRE, "Til dato må være etter fra dato")
     }
-    valider(virkningstidspunkt != null) { feil.leggTil(BeregningValideringsfeilType.ANDRE, "Mangler virkningstidspunkt") }
     valider(saksnummer.isNotBlank()) { feil.leggTil(BeregningValideringsfeilType.ANDRE, "Saksnummer mangler for behandling") }
-
-    valider(sivilstand.size > 0) { feil.leggTil(BeregningValideringsfeilType.SIVILSTAND, "Mangler perioder for sivilstand") }
-    valider(husstandsbarn.size > 0) { feil.leggTil(BeregningValideringsfeilType.BOFORHOLD, "Mangler informasjon om husstandsbarn") }
-    husstandsbarn.validerBoforholdForBeregning(virkningstidspunktEllerSøktFomDato).forEach {
-        feil.leggTil(BeregningValideringsfeilType.BOFORHOLD, it)
+    valider(avslag != null || årsak != null) {
+        feil.leggTil(BeregningValideringsfeilType.VIRKNINGSTIDSPUNKT, "Årsak eller avslag må velges")
     }
-    roller.filter { it.rolletype == Rolletype.BARN }.forEach { barn ->
-        valider(husstandsbarn.any { it.ident == barn.ident }) {
-            feil.leggTil(
-                BeregningValideringsfeilType.BOFORHOLD,
-                "Søknadsbarn ${barn.hentNavn()}/${barn.foedselsdato.toDDMMYYYY()} mangler informasjon om boforhold",
-            )
+
+    if (avslag == null) {
+        valider(virkningstidspunkt != null) { feil.leggTil(BeregningValideringsfeilType.VIRKNINGSTIDSPUNKT, "Mangler virkningstidspunkt") }
+        husstandsbarn.validerBoforholdForBeregning(virkningstidspunktEllerSøktFomDato).forEach {
+            feil.leggTil(BeregningValideringsfeilType.BOFORHOLD, it)
         }
-    }
-    sivilstand.validerSivilstandForBeregning(virkningstidspunktEllerSøktFomDato).forEach {
-        feil.leggTil(BeregningValideringsfeilType.SIVILSTAND, it)
-    }
+        roller.filter { it.rolletype == Rolletype.BARN }.forEach { barn ->
+            valider(husstandsbarn.any { it.ident == barn.ident }) {
+                feil.leggTil(
+                    BeregningValideringsfeilType.BOFORHOLD,
+                    "Søknadsbarn ${barn.hentNavn()}/${barn.foedselsdato.toDDMMYYYY()} mangler informasjon om boforhold",
+                )
+            }
+        }
+        sivilstand.validerSivilstandForBeregning(virkningstidspunktEllerSøktFomDato).forEach {
+            feil.leggTil(BeregningValideringsfeilType.SIVILSTAND, it)
+        }
 
-    validerInntekterForBeregning().forEach {
-        feil.leggTil(BeregningValideringsfeilType.INNTEKT, it)
-    }
-    eksplisitteYtelser.forEach {
-        validerInntekterForBeregning(it).forEach {
+        validerInntekterForBeregning().forEach {
             feil.leggTil(BeregningValideringsfeilType.INNTEKT, it)
         }
-    }
+        eksplisitteYtelser.forEach {
+            validerInntekterForBeregning(it).forEach {
+                feil.leggTil(BeregningValideringsfeilType.INNTEKT, it)
+            }
+        }
 
-    valider(inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {
-        feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler inntekter for bidragsmottaker")
-    }
-    if (stonadstype != Stønadstype.FORSKUDD) {
-        valider(inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
-            feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler innteker for bidragspliktig")
+        valider(inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {
+            feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler inntekter for bidragsmottaker")
+        }
+        if (stonadstype != Stønadstype.FORSKUDD) {
+            valider(inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
+                feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler innteker for bidragspliktig")
+            }
         }
     }
 
     if (feil.isNotEmpty()) {
+        secureLogger.warn { "Feil ved validering av behandling for beregning $feil" }
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
             "Feil ved validering av behandling for beregning",

@@ -138,9 +138,13 @@ class VerdikjedeTest : KontrollerTestRunner() {
     private fun Behandling.taMedInntekt(
         type: Inntektsrapportering,
         gjelder: TestDataPerson,
+        løpende: Boolean = false,
     ) {
         val inntekt = inntekter.find { it.type == type && it.ident == gjelder.ident }!!
         inntekt.taMed = true
+        if (løpende) {
+            inntekt.datoTom = null
+        }
     }
 
     private fun opprettOgVerifiserBehandling(): Behandling {
@@ -189,6 +193,7 @@ class VerdikjedeTest : KontrollerTestRunner() {
         opprettetBehandling.taMedInntekt(
             Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
             testdataBM,
+            true,
         )
         opprettetBehandling.husstandsbarn.add(
             opprettHusstandsbarn(

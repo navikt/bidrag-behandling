@@ -146,6 +146,50 @@ class InntektServiceTest : TestContainerRunner() {
                     }.inntektPostListe.first().kode
             }
         }
+
+        @Test
+        @Transactional
+        open fun `skal lagre innnhentede inntekter for BARNETILLEGG`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling()
+
+            val summerteInntekter =
+                SummerteInntekter(
+                    versjon = "xyz",
+                    inntekter =
+                        listOf(
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.BARNETILLEGG,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                        YearMonth.now().withMonth(1).atDay(1),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                        ),
+                )
+
+            // hvis
+            inntektService.lagreSummerteÅrsinntekter(
+                behandling.id!!,
+                personident = Personident(behandling.bidragsmottaker?.ident!!),
+                summerteÅrsinntekter = summerteInntekter.inntekter,
+            )
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.get().inntekter.size shouldBe 1
+                val barnetillegg = oppdatertBehandling.get().inntekter.first { Inntektsrapportering.BARNETILLEGG == it.type }
+                barnetillegg.belop shouldBe (500 * 12).toBigDecimal()
+                barnetillegg.inntektsposter.size shouldBe 1
+                barnetillegg.inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
+                barnetillegg.inntektsposter.first().beløp shouldBe (500 * 12).toBigDecimal()
+                barnetillegg.inntektsposter.first().kode shouldBe Inntektsrapportering.BARNETILLEGG.name
+            }
+        }
     }
 
     @Nested
@@ -179,7 +223,7 @@ class InntektServiceTest : TestContainerRunner() {
                                 ainntektspostListe =
                                     listOf(
                                         tilAinntektspostDto(
-                                            beløp = BigDecimal(70000),
+                                            beløp = BigDecimal(52500),
                                             fomDato = LocalDate.now().minusMonths(4).withDayOfMonth(1),
                                             tilDato = LocalDate.now().withDayOfMonth(1),
                                         ),
@@ -266,12 +310,12 @@ class InntektServiceTest : TestContainerRunner() {
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe
                     BigDecimal(
-                        70000,
+                        39375,
                     )
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe
                     BigDecimal(
-                        210000,
+                        157500,
                     )
             }
         }
@@ -610,7 +654,10 @@ class InntektServiceTest : TestContainerRunner() {
             val summereOriginalUtvidetBarnetrygd =
                 TransformerInntekterRequestBuilder(
                     ainntektHentetDato = LocalDate.now(),
-                    utvidetBarnetrygd = listOf(originalUtvidetBarnetrygdsgrunnlag).tilUtvidetBarnetrygd(behandling.bidragsmottaker!!),
+                    utvidetBarnetrygd =
+                        listOf(
+                            originalUtvidetBarnetrygdsgrunnlag,
+                        ).tilUtvidetBarnetrygd(behandling.bidragsmottaker!!),
                 ).bygge()
 
             behandling.inntekter.size shouldBe 0

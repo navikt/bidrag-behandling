@@ -33,16 +33,3 @@ data class ResultatRolle(
     val navn: String,
     val fødselsdato: LocalDate,
 )
-
-enum class BeregningValideringsfeilType {
-    BOFORHOLD,
-    SIVILSTAND,
-    INNTEKT,
-    VIRKNINGSTIDSPUNKT,
-    ANDRE,
-}
-
-data class BeregningValideringsfeil(
-    val type: BeregningValideringsfeilType,
-    val feilListe: MutableList<String>,
-)

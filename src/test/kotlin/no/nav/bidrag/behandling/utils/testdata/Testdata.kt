@@ -393,7 +393,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 testdataBarn1.navn,
                 testdataBarn1.foedselsdato,
                 behandling.virkningstidspunkt,
-                behandling.virkningstidspunkt!!.plusMonths(20),
+                behandling.virkningstidspunkt!!.plusMonths(5),
             ),
             behandling.opprettHusstandsbarn(
                 if (generateId) 2 else null,
@@ -401,14 +401,14 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 testdataBarn2.navn,
                 testdataBarn2.foedselsdato,
                 behandling.virkningstidspunkt,
-                behandling.virkningstidspunkt!!.plusMonths(18),
+                behandling.virkningstidspunkt!!.plusMonths(8),
             ),
             behandling.opprettHusstandsbarn(
                 if (generateId) 3 else null,
                 testdataHusstandsmedlem1.ident,
                 testdataHusstandsmedlem1.navn,
                 null,
-                behandling.virkningstidspunkt!!.plusMonths(8),
+                behandling.virkningstidspunkt,
                 behandling.virkningstidspunkt!!.plusMonths(10),
             ),
         )
@@ -425,8 +425,8 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
         mutableSetOf(
             Inntekt(
                 belop = BigDecimal(50000),
-                datoTom = LocalDate.parse("2022-06-30"),
                 datoFom = LocalDate.parse("2022-01-01"),
+                datoTom = LocalDate.parse("2022-06-30"),
                 ident = behandling.bidragsmottaker!!.ident!!,
                 taMed = true,
                 kilde = Kilde.MANUELL,
@@ -436,8 +436,8 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             ),
             Inntekt(
                 belop = BigDecimal(60000),
-                datoTom = LocalDate.parse("2022-09-01"),
                 datoFom = LocalDate.parse("2022-07-01"),
+                datoTom = LocalDate.parse("2022-09-30"),
                 ident = behandling.bidragsmottaker!!.ident!!,
                 taMed = true,
                 kilde = Kilde.MANUELL,
@@ -450,7 +450,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
     val aInntekt =
         Inntekt(
             belop = BigDecimal(60000),
-            datoFom = LocalDate.parse("2022-01-01"),
+            datoFom = LocalDate.parse("2022-10-01"),
             datoTom = null,
             opprinneligFom = LocalDate.parse("2023-02-01"),
             opprinneligTom = LocalDate.parse("2024-01-01"),
@@ -517,19 +517,27 @@ fun Behandling.opprettHusstandsbarn(
             foedselsdato = fødselsdato ?: LocalDate.parse("2020-01-01"),
             id = if (index != null) (index + 1).toLong() else null,
         )
+    val førsteDatoTom =
+        if (førstePeridoeTil != null) {
+            YearMonth.from(
+                førstePeridoeTil,
+            ).atEndOfMonth()
+        } else {
+            YearMonth.from(søktFomDato.plusMonths(3)).atEndOfMonth()
+        }
     husstandsbarn.perioder =
         mutableSetOf(
             Husstandsbarnperiode(
                 husstandsbarn = husstandsbarn,
                 datoFom = førstePeriodeFra ?: søktFomDato,
-                datoTom = førstePeridoeTil ?: søktFomDato.plusMonths(3),
+                datoTom = førsteDatoTom,
                 bostatus = Bostatuskode.MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
                 id = if (index != null) (index + 1).toLong() else null,
             ),
             Husstandsbarnperiode(
                 husstandsbarn = husstandsbarn,
-                datoFom = førstePeridoeTil ?: søktFomDato.plusMonths(3),
+                datoFom = YearMonth.from(førsteDatoTom).plusMonths(1).atDay(1),
                 datoTom = null,
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,

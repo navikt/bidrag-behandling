@@ -10,6 +10,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilList
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilType
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
@@ -78,7 +80,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 barn.ident!!.verdi shouldBe testdataBarn1.ident
                 barn.navn shouldBe testdataBarn1.navn
                 barn.fødselsdato shouldBe testdataBarn1.foedselsdato
-                perioder shouldHaveSize 4
+                perioder shouldHaveSize 5
                 assertSoftly(perioder[0]) {
                     periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
                     beløp shouldBe BigDecimal(1760)
@@ -86,14 +88,14 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                     sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                     resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
                     regel shouldBe "REGEL 6"
-                    antallBarnIHusstanden shouldBe 2
+                    antallBarnIHusstanden shouldBe 3
                 }
             }
             assertSoftly(body!!.find { it.barn.ident!!.verdi == testdataBarn2.ident }!!) {
                 barn.ident!!.verdi shouldBe testdataBarn2.ident
                 barn.navn shouldBe testdataBarn2.navn
                 barn.fødselsdato shouldBe testdataBarn2.foedselsdato
-                perioder shouldHaveSize 4
+                perioder shouldHaveSize 5
                 assertSoftly(perioder[0]) {
                     periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
                     beløp shouldBe BigDecimal(1760)
@@ -101,7 +103,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                     sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                     resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
                     regel shouldBe "REGEL 6"
-                    antallBarnIHusstanden shouldBe 2
+                    antallBarnIHusstanden shouldBe 3
                 }
             }
         }
@@ -118,20 +120,32 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                responseType,
+                BeregningValideringsfeilList::class.java,
             )
 
         // then
         assertSoftly {
             returnert shouldNotBe null
             returnert.statusCode shouldBe HttpStatus.BAD_REQUEST
-            returnert.body shouldBe null
-            returnert.headers["Warning"]?.shouldBe(
+            returnert.body!! shouldHaveSize 3
+            returnert.body!!.find { it.type == BeregningValideringsfeilType.BOFORHOLD }?.feilListe?.shouldHaveSize(2)
+            returnert.body!!.find { it.type == BeregningValideringsfeilType.SIVILSTAND }?.feilListe?.shouldHaveSize(1)
+            returnert.body!!.find { it.type == BeregningValideringsfeilType.INNTEKT }?.feilListe?.shouldHaveSize(1)
+            returnert.body!!.find { it.type == BeregningValideringsfeilType.BOFORHOLD }!!.feilListe shouldBe
                 listOf(
-                    "Sivilstand mangler i behandling",
+                    "Søknadsbarn Gran Mappe/09.05.2018 mangler informasjon om boforhold",
+                    "Søknadsbarn Kran Mappe/01.03.2020 mangler informasjon om boforhold",
+                )
+            returnert.body!!.find { it.type == BeregningValideringsfeilType.SIVILSTAND }!!.feilListe shouldBe
+                listOf(
+                    "Mangler perioder for sivilstand",
+                )
+            returnert.body!!.find { it.type == BeregningValideringsfeilType.INNTEKT }!!.feilListe shouldBe
+                listOf(
                     "Mangler inntekter for bidragsmottaker",
-                    "Mangler informasjon om husstandsbarn",
-                ),
+                )
+            returnert.headers["Warning"]?.shouldBe(
+                listOf("Validering feilet - Feil ved validering av behandling for beregning"),
             )
         }
     }

@@ -84,7 +84,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/vedtak/1",
                 HttpMethod.GET,
                 null,
-                BehandlingDtoV2::class.java,
+                Void::class.java,
             )
 
         behandlingRes.statusCode shouldBe HttpStatus.NOT_FOUND

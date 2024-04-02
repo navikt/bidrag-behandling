@@ -25,7 +25,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             setOf(
                 HusstandsbarnperiodeDto(
                     null,
-                    null,
+                    LocalDate.parse("2022-01-01"),
                     null,
                     Bostatuskode.IKKE_MED_FORELDER,
                     Kilde.OFFENTLIG,

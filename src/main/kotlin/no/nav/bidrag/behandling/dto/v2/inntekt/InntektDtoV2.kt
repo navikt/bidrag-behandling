@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.transformers.OverlappendePeriode
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
@@ -44,21 +44,6 @@ data class InntektDtoV2(
     val inntektsposter: Set<InntektspostDtoV2>,
     @Schema(required = true)
     val inntektstyper: Set<Inntektstype> = emptySet(),
-)
-
-data class InntektValideringsfeilDto(
-    val barnetillegg: InntektValideringsfeil,
-    val utvidetBarnetrygd: InntektValideringsfeil,
-    val kontantstøtte: InntektValideringsfeil,
-    val småbarnstillegg: InntektValideringsfeil,
-    @Schema(name = "årsinntekter")
-    val årsinntekter: InntektValideringsfeil,
-)
-
-data class InntektValideringsfeil(
-    val type: Inntektsrapportering? = null,
-    val overlappendePerioder: Set<OverlappendePeriode>,
-    val hullIPerioder: List<Datoperiode>,
 )
 
 data class InntekterDtoV2(

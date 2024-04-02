@@ -63,10 +63,16 @@ fun SummertÅrsinntekt.tilInntekt(
     behandling: Behandling,
     person: Personident,
 ): Inntekt {
+    val beløp =
+        if (this.inntektRapportering == Inntektsrapportering.BARNETILLEGG) {
+            this.sumInntekt.setScale(0, RoundingMode.HALF_UP) * 12.toBigDecimal()
+        } else {
+            this.sumInntekt.setScale(0, RoundingMode.HALF_UP)
+        }
     val inntekt =
         Inntekt(
             type = this.inntektRapportering,
-            belop = this.sumInntekt.setScale(0, RoundingMode.HALF_UP),
+            belop = beløp,
             behandling = behandling,
             ident = person.verdi,
             gjelderBarn = this.gjelderBarnPersonId,
@@ -82,7 +88,7 @@ fun SummertÅrsinntekt.tilInntekt(
             mutableSetOf(
                 Inntektspost(
                     kode = this.inntektRapportering.name,
-                    beløp = this.sumInntekt.setScale(0, RoundingMode.HALF_UP),
+                    beløp = beløp,
                     // TODO: Hentes bare fra pensjon i dag. Dette bør endres når vi henter barnetillegg fra andre kilder
                     inntektstype = Inntektstype.BARNETILLEGG_PENSJON,
                     inntekt = inntekt,

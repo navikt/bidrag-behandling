@@ -7,14 +7,15 @@ import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.inntekt.InntektValideringsfeil
-import no.nav.bidrag.behandling.dto.v2.inntekt.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -69,6 +70,11 @@ fun Behandling.tilBehandlingDtoV2(
                 BehandlingNotatDto(
                     medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
                     kunINotat = boforholdsbegrunnelseKunINotat,
+                ),
+            valideringsfeil =
+                BoforholdValideringsfeil(
+                    husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato),
+                    sivilstand = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato),
                 ),
         ),
     inntekter =
