@@ -73,8 +73,8 @@ fun Behandling.tilBehandlingDtoV2(
                 ),
             valideringsfeil =
                 BoforholdValideringsfeil(
-                    husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato),
-                    sivilstand = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato),
+                    husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
+                    sivilstand = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
                 ),
         ),
     inntekter =

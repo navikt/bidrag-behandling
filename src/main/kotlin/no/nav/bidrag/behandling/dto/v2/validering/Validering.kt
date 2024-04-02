@@ -24,6 +24,7 @@ data class InntektValideringsfeil(
     val hullIPerioder: List<Datoperiode>,
 ) {
     @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
+    @Suppress("Unused")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 }
 
@@ -53,6 +54,7 @@ data class BoforholdPeriodeseringsfeil(
     @Schema(description = "Er sann hvis husstandsbarn ikke har noen løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 
+    @get:JsonIgnore
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() || overlappendePerioder.isNotEmpty() ||
@@ -91,6 +93,7 @@ data class SivilstandPeriodeseringsfeil(
     @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 
+    @get:JsonIgnore
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() || overlappendePerioder.isNotEmpty() ||
