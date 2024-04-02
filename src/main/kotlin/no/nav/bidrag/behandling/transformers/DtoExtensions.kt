@@ -25,6 +25,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import java.math.BigDecimal
 import java.math.RoundingMode
 
 fun Set<Sivilstand>.toSivilstandDto() =
@@ -209,7 +210,7 @@ fun Inntekt.tilInntektDtoV2() =
         id = this.id,
         taMed = this.taMed,
         rapporteringstype = this.type,
-        beløp = this.belop,
+        beløp = maxOf(belop, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         datoFom = this.datoFom,
         datoTom = this.datoTom,
         ident = Personident(this.ident),

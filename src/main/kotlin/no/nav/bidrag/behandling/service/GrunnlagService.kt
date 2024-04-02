@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
 import no.nav.bidrag.behandling.transformers.toDto
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
@@ -403,6 +404,14 @@ class GrunnlagService(
             }
         }
     }
+
+    private fun HentGrunnlagDto.inneholderFeilForType(
+        ident: String?,
+        grunnlagstype: GrunnlagRequestType,
+    ): Boolean =
+        feilrapporteringListe.any {
+            it.personId == ident && it.grunnlagstype == grunnlagstype
+        }
 
     private fun tilSummerteInntekter(
         sammenstilteInntekter: TransformerInntekterResponse,

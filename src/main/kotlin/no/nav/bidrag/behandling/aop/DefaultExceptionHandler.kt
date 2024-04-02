@@ -64,7 +64,7 @@ class DefaultExceptionHandler {
         secureLogger.warn(exception) { feilmelding }
         return ResponseEntity.status(exception.statusCode)
             .header(HttpHeaders.WARNING, feilmelding)
-            .build<Any>()
+            .body(exception.responseBodyAsString)
     }
 
     @ResponseBody

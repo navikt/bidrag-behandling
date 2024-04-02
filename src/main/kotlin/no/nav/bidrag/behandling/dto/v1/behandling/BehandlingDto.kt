@@ -8,6 +8,8 @@ import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
+import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
+import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -59,6 +61,12 @@ data class BoforholdDto(
     val husstandsbarn: Set<HusstandsbarnDto>,
     val sivilstand: Set<SivilstandDto>,
     val notat: BehandlingNotatDto,
+    val valideringsfeil: BoforholdValideringsfeil,
+)
+
+data class BoforholdValideringsfeil(
+    val husstandsbarn: List<BoforholdPeriodeseringsfeil>,
+    val sivilstand: SivilstandPeriodeseringsfeil?,
 )
 
 data class InntekterDto(

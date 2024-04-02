@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.hentBeregnetInntekter
+import no.nav.bidrag.behandling.transformers.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.lagreSomNyInntekt
 import no.nav.bidrag.behandling.transformers.oppdatereEksisterendeInntekt
 import no.nav.bidrag.behandling.transformers.tilInntekt
@@ -108,6 +109,7 @@ class InntektService(
         return OppdatereInntektResponse(
             inntekt = oppdaterInntekt(oppdatereInntektRequest, behandling),
             beregnetInntekter = behandling.hentBeregnetInntekter(),
+            valideringsfeil = behandling.hentValideringsfeil(),
         )
     }
 
