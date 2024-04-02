@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -131,7 +132,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
             returnert.body!!.find { it.type == BeregningValideringsfeilType.BOFORHOLD }?.feilListe?.shouldHaveSize(2)
             returnert.body!!.find { it.type == BeregningValideringsfeilType.SIVILSTAND }?.feilListe?.shouldHaveSize(1)
             returnert.body!!.find { it.type == BeregningValideringsfeilType.INNTEKT }?.feilListe?.shouldHaveSize(1)
-            returnert.body!!.find { it.type == BeregningValideringsfeilType.BOFORHOLD }!!.feilListe shouldBe
+            returnert.body!!.find { it.type == BeregningValideringsfeilType.BOFORHOLD }!!.feilListe shouldContainAll
                 listOf(
                     "Søknadsbarn Gran Mappe/09.05.2018 mangler informasjon om boforhold",
                     "Søknadsbarn Kran Mappe/01.03.2020 mangler informasjon om boforhold",
