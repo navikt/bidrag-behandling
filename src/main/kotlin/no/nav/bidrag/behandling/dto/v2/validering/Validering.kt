@@ -11,21 +11,52 @@ import no.nav.bidrag.domene.tid.Datoperiode
 import java.time.LocalDate
 
 data class InntektValideringsfeilDto(
-    val barnetillegg: InntektValideringsfeil,
-    val utvidetBarnetrygd: InntektValideringsfeil,
-    val kontantstøtte: InntektValideringsfeil,
-    val småbarnstillegg: InntektValideringsfeil,
+    val barnetillegg: Set<YtelseInntektValideringsfeil>,
+    val utvidetBarnetrygd: YtelseInntektValideringsfeil?,
+    val kontantstøtte: Set<YtelseInntektValideringsfeil>,
+    val småbarnstillegg: YtelseInntektValideringsfeil?,
     @Schema(name = "årsinntekter")
-    val årsinntekter: InntektValideringsfeil,
+    val årsinntekter: Set<ÅrsinntektValideringsfeil>,
 )
 
-data class InntektValideringsfeil(
-    val overlappendePerioder: Set<OverlappendePeriode>,
+interface InntektValideringsfeil {
+    val overlappendePerioder: Set<OverlappendePeriode>
+
+    @get:Schema(description = "Personident valideringen gjelder for")
+    val ident: String
+
+    @get:Schema(description = "Er sann hvis inntekt har en periode som starter senere enn starten av virkningstidspunkt")
+    val fremtidigPeriode: Boolean
+}
+
+data class YtelseInntektValideringsfeil(
+    override val overlappendePerioder: Set<OverlappendePeriode>,
+    override val fremtidigPeriode: Boolean,
+    override val ident: String,
+    @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
+    val gjelderBarn: String? = null,
+) : InntektValideringsfeil {
+    @get:JsonIgnore
+    val harFeil
+        get() = overlappendePerioder.isNotEmpty() || fremtidigPeriode
+}
+
+data class ÅrsinntektValideringsfeil(
+    override val overlappendePerioder: Set<OverlappendePeriode>,
+    override val fremtidigPeriode: Boolean,
+    override val ident: String,
     val hullIPerioder: List<Datoperiode>,
-) {
+    @Schema(description = "Er sann hvis det ikke finnes noen valgte inntekter")
+    val manglerPerioder: Boolean,
+) : InntektValideringsfeil {
     @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
-    @Suppress("Unused")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
+
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty() ||
+                fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
 }
 
 data class OverlappendePeriode(

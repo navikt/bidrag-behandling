@@ -143,7 +143,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 )
             returnert.body!!.find { it.type == BeregningValideringsfeilType.INNTEKT }!!.feilListe shouldBe
                 listOf(
-                    "Mangler inntekter for bidragsmottaker",
+                    "Mangler perioder for ident 313213213",
                 )
             returnert.headers["Warning"]?.shouldBe(
                 listOf("Validering feilet - Feil ved validering av behandling for beregning"),

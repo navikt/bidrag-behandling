@@ -14,17 +14,18 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.HusstandsbarnOverlappendePeriode
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandOverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
+import no.nav.bidrag.behandling.dto.v2.validering.YtelseInntektValideringsfeil
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
-private val inntekstrapporteringerSomKreverGjelderBarn =
-    listOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.BARNETILSYN)
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
 
 fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
@@ -46,26 +47,53 @@ fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
 
 fun Behandling.validerInntekterForBeregning(type: Inntektsrapportering? = null): List<String> {
     val feilListe = mutableListOf<String>()
+    if (type == null) {
+        val inntektValideringsfeil = inntekter.mapValideringsfeilForÅrsinntekter(virkningstidspunktEllerSøktFomDato, roller)
+        inntektValideringsfeil.forEach { valideringsfeil ->
+            valideringsfeil.hullIPerioder.forEach {
+                if (it.til != null) {
+                    feilListe.add("Det er et hull i perioden ${it.fom} - ${it.til} for ident ${valideringsfeil.ident}")
+                }
+            }
 
-    inntekter.groupBy { it.ident }.forEach { (ident, inntekter) ->
-        val inntekterTaMed =
-            inntekter.filter {
-                it.taMed && if (type == null) !eksplisitteYtelser.contains(it.type) else it.type == type
-            }.sortedByDescending { it.datoFom }
-        val hullPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunktEllerSøktFomDato)
-        val overlappendePerioder = inntekterTaMed.finnOverlappendePerioder()
+            valideringsfeil.manglerPerioder.ifTrue {
+                feilListe.add("Mangler perioder for ident ${valideringsfeil.ident}")
+            }
 
-        hullPerioder.forEach {
-            if (it.til == null) {
-                feilListe.add("Det er ingen løpende inntektsperiode for ident $ident")
-            } else {
-                feilListe.add("Det er et hull i perioden ${it.fom} - ${it.til} for ident $ident")
+            valideringsfeil.ingenLøpendePeriode.ifTrue {
+                feilListe.add(
+                    "Det er ingen løpende inntektsperiode for ident ${valideringsfeil.ident}",
+                )
             }
         }
+        feilListe.addAll(inntektValideringsfeil.validerInntekterFelles(type))
+    } else if (inntekstrapporteringerSomKreverGjelderBarn.contains(type)) {
+        val inntektValideringsfeil = inntekter.mapValideringsfeilForYtelseSomGjelderBarn(type, virkningstidspunktEllerSøktFomDato)
+        feilListe.addAll(inntektValideringsfeil.validerInntekterFelles(type))
+    } else {
+        inntekter.mapValideringsfeilForYtelse(type, virkningstidspunktEllerSøktFomDato)?.let {
+            feilListe.addAll(setOf(it).validerInntekterFelles(type))
+        }
+    }
+    return feilListe
+}
 
-        overlappendePerioder.forEach {
+fun Set<InntektValideringsfeil>.validerInntekterFelles(type: Inntektsrapportering? = null): List<String> {
+    val feilListe = mutableListOf<String>()
+
+    forEach { valideringsfeil ->
+        val gjelderBarn = if (valideringsfeil is YtelseInntektValideringsfeil) valideringsfeil.gjelderBarn else null
+        valideringsfeil.overlappendePerioder.forEach {
             feilListe.add(
-                "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til} for ident $ident",
+                "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til} for ident ${valideringsfeil.ident}" +
+                    "${type?.let { " og type $it" }}${gjelderBarn?.let { " og gjelder barn $it" }}",
+            )
+        }
+
+        valider(!valideringsfeil.fremtidigPeriode) {
+            feilListe.add(
+                "Det er periodisert fremover i tid for inntekt som gjelder ident ${valideringsfeil.ident}" +
+                    "${type?.let { " og type $it" }}${gjelderBarn?.let { " og gjelder barn $it" }}",
             )
         }
     }
@@ -172,10 +200,6 @@ fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<Bo
 
     return valideringsfeil.toSet()
 }
-
-fun Sivilstand.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
-
-fun Husstandsbarnperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 
 fun Set<Sivilstand>.validerSivilstand(virkniningstidspunkt: LocalDate): SivilstandPeriodeseringsfeil {
     return SivilstandPeriodeseringsfeil(
@@ -370,6 +394,10 @@ fun OppdatereManuellInntekt.validerHarInnteksttype(feilListe: MutableList<String
         feilListe.add("Barnetillegg må ha gyldig inntektstype")
     }
 }
+
+fun Sivilstand.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
+
+fun Husstandsbarnperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 
 fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
     val sammenstiltePerioder = mutableListOf<OverlappendePeriode>()

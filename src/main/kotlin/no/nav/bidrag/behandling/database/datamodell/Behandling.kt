@@ -178,9 +178,6 @@ fun Behandling.validerForBeregning(): List<BeregningValideringsfeil> {
             }
         }
 
-        valider(inntekter.any { it.taMed && it.ident == bidragsmottaker?.ident }) {
-            feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler inntekter for bidragsmottaker")
-        }
         if (stonadstype != Stønadstype.FORSKUDD) {
             valider(inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
                 feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler innteker for bidragspliktig")

@@ -7,16 +7,51 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.utils.testdata.opprettRolle
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import kotlin.random.Random
 
 class ValiderInntektPerioderTest {
+    @Test
+    fun `Skal validere inntekter hvis ingen periode`() {
+        val bmIdent = "31233123"
+        val barnIdent = "21333123"
+        val barn2Ident = "44444"
+        val roller =
+            setOf(
+                opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER),
+                opprettRolle(barnIdent, Rolletype.BARN),
+                opprettRolle(barn2Ident, Rolletype.BARN),
+            )
+        val inntekter =
+            setOf(
+                opprettInntekt(YearMonth.parse("2022-02"), YearMonth.parse("2022-03"), ident = bmIdent, taMed = false),
+                opprettInntekt(YearMonth.parse("2022-04"), YearMonth.parse("2022-06"), ident = bmIdent, taMed = false),
+                opprettInntekt(YearMonth.parse("2022-08"), YearMonth.parse("2022-09"), ident = bmIdent, taMed = false),
+            )
+
+        val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), roller).toList()
+        resultat shouldHaveSize 1
+
+        assertSoftly(resultat[0]) {
+            hullIPerioder shouldHaveSize 0
+            overlappendePerioder shouldHaveSize 0
+            manglerPerioder shouldBe true
+            ingenLøpendePeriode shouldBe false
+            harFeil shouldBe true
+        }
+    }
+
     @Nested
     inner class HullIPerioderTester {
         @Test
@@ -440,19 +475,36 @@ class ValiderInntektPerioderTest {
         }
     }
 
+    private fun opprettRolle(
+        ident: String,
+        rolletype: Rolletype,
+    ) = Rolle(
+        id = Random.nextLong(1000),
+        navn = "Test 1",
+        ident = ident,
+        rolletype = rolletype,
+        behandling = oppretteBehandling(),
+        foedselsdato = LocalDate.parse("2020-01-01"),
+        opprettet = LocalDateTime.now(),
+    )
+
     private fun opprettInntekt(
         datoFom: YearMonth,
         datoTom: YearMonth?,
         type: Inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
         inntektstyper: List<Inntektstype> = emptyList(),
+        ident: String = "",
+        gjelderBarn: String? = null,
+        taMed: Boolean = true,
     ) = Inntekt(
         datoFom = datoFom.atDay(1),
         datoTom = datoTom?.atEndOfMonth(),
         belop = BigDecimal.ONE,
-        ident = "",
+        ident = ident,
+        gjelderBarn = gjelderBarn,
         id = Random.nextLong(1000),
         kilde = Kilde.OFFENTLIG,
-        taMed = true,
+        taMed = taMed,
         type = type,
         inntektsposter =
             inntektstyper.map {
