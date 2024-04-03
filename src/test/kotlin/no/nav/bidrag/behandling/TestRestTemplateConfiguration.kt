@@ -32,10 +32,12 @@ class TestRestTemplateConfiguration {
     @Bean
     fun httpHeaderTestRestTemplate(): TestRestTemplate {
         return TestRestTemplate(
-            RestTemplateBuilder().additionalInterceptors({ request, body, execution ->
-                request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
-                execution.execute(request, body)
-            }),
+            RestTemplateBuilder()
+                .additionalInterceptors({ request, body, execution ->
+                    request.headers.add(HttpHeaders.CONTENT_TYPE, "application/json")
+                    request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
+                    execution.execute(request, body)
+                }),
         )
     }
 
