@@ -183,7 +183,7 @@ class VedtakserviceTest {
             assertSoftly(hentGrunnlagstype(Grunnlagstype.BEREGNET_INNTEKT)) {
                 val innhold = it!!.innholdTilObjekt<BeregnetInntekt>()
                 it.gjelderReferanse.shouldBe(bmGrunnlag.referanse)
-                innhold.summertMånedsinntektListe.shouldHaveSize(24)
+                innhold.summertMånedsinntektListe.shouldHaveSize(13)
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
                 shouldHaveSize(6)

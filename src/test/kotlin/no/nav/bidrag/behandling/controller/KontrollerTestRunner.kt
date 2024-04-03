@@ -54,6 +54,9 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     lateinit var httpHeaderTestRestTemplate: TestRestTemplate
 
     @Autowired
+    lateinit var httpHeaderTestRestTemplateNoJackson: TestRestTemplate
+
+    @Autowired
     lateinit var testdataManager: TestdataManager
 
     @MockkBean
