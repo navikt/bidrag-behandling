@@ -23,8 +23,10 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import java.math.BigDecimal
 import java.time.YearMonth
 
@@ -134,6 +136,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
                                     oppdatereManuelleInntekter = setOf(endreKontantstøtte),
                                 ),
                         ),
+                        HttpHeaders().apply {
+                            contentType = MediaType.APPLICATION_JSON
+                        },
                     ),
                     BehandlingDtoV2::class.java,
                 )
@@ -190,6 +195,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
                                     oppdatereManuelleInntekter = setOf(endreInntektForespørsel),
                                 ),
                         ),
+                        HttpHeaders().apply {
+                            contentType = MediaType.APPLICATION_JSON
+                        },
                     ),
                     BehandlingDtoV2::class.java,
                 )
@@ -228,6 +236,9 @@ class InntekterControllerTest : KontrollerTestRunner() {
                                     sletteInntekter = behandling.inntekter.map { it.id!! }.toSet(),
                                 ),
                         ),
+                        HttpHeaders().apply {
+                            contentType = MediaType.APPLICATION_JSON
+                        },
                     ),
                     BehandlingDtoV2::class.java,
                 )
