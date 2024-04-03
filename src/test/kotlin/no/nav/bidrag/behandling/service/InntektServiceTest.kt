@@ -218,14 +218,14 @@ class InntektServiceTest : TestContainerRunner() {
                         listOf(
                             AinntektGrunnlagDto(
                                 personId = behandling.bidragsmottaker!!.ident!!,
-                                periodeFra = LocalDate.now().minusMonths(4).withDayOfMonth(1),
-                                periodeTil = LocalDate.now().withDayOfMonth(1),
+                                periodeFra = LocalDate.now().minusMonths(5).withDayOfMonth(1),
+                                periodeTil = LocalDate.now().minusMonths(3).withDayOfMonth(1),
                                 ainntektspostListe =
                                     listOf(
                                         tilAinntektspostDto(
                                             beløp = BigDecimal(52500),
-                                            fomDato = LocalDate.now().minusMonths(4).withDayOfMonth(1),
-                                            tilDato = LocalDate.now().withDayOfMonth(1),
+                                            fomDato = LocalDate.now().minusMonths(5).withDayOfMonth(1),
+                                            tilDato = LocalDate.now().minusMonths(3).withDayOfMonth(1),
                                         ),
                                     ),
                             ),
@@ -306,16 +306,16 @@ class InntektServiceTest : TestContainerRunner() {
             entityManager.refresh(behandling)
 
             assertSoftly {
-                behandling.inntekter.size shouldBe 3
+                behandling.inntekter.size shouldBe 2
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe
                     BigDecimal(
-                        39375,
+                        52500,
                     )
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe
                     BigDecimal(
-                        157500,
+                        210000,
                     )
             }
         }

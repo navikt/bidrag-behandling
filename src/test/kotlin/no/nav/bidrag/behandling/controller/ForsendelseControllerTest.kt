@@ -96,49 +96,50 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         val header = HttpHeaders()
         header.contentType = MediaType.APPLICATION_JSON
         val response =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/forsendelse/init",
-                HttpMethod.POST,
-                HttpEntity(
-                    """
-                    {
-                        "saksnummer": "$SAKSNUMMER",
-                        "behandlingInfo": {
-                            "vedtakId": null,
-                            "behandlingId": null,
-                            "soknadId": 12412421414,
-                            "erFattetBeregnet": null,
-                            "erVedtakIkkeTilbakekreving": false,
-                            "stonadType": "FORSKUDD",
-                            "engangsBelopType": null,
-                            "behandlingType": null,
-                            "soknadType": null,
-                            "soknadFra": null,
-                            "vedtakType": null,
-                            "barnIBehandling": []
-                        },
-                        "enhet": "4860",
-                        "tema": null,
-                        "roller": [
-                            {
-                                "fødselsnummer": "${testdataBM.ident}",
-                                "type": "BM"
+            httpHeaderTestRestTemplateNoJackson
+                .exchange(
+                    "${rootUriV1()}/forsendelse/init",
+                    HttpMethod.POST,
+                    HttpEntity(
+                        """
+                        {
+                            "saksnummer": "$SAKSNUMMER",
+                            "behandlingInfo": {
+                                "vedtakId": null,
+                                "behandlingId": null,
+                                "soknadId": 12412421414,
+                                "erFattetBeregnet": null,
+                                "erVedtakIkkeTilbakekreving": false,
+                                "stonadType": "FORSKUDD",
+                                "engangsBelopType": null,
+                                "behandlingType": null,
+                                "soknadType": null,
+                                "soknadFra": null,
+                                "vedtakType": null,
+                                "barnIBehandling": []
                             },
-                            {
-                                "fødselsnummer": "${testdataBP.ident}",
-                                "type": "BP"
-                            },
-                            {
-                                "fødselsnummer": "${testdataBarn1.ident}",
-                                "type": "BA"
-                            }
-                        ]
-                    }
-                    """.trimIndent(),
-                    header,
-                ),
-                List::class.java,
-            )
+                            "enhet": "4860",
+                            "tema": null,
+                            "roller": [
+                                {
+                                    "fødselsnummer": "${testdataBM.ident}",
+                                    "type": "BM"
+                                },
+                                {
+                                    "fødselsnummer": "${testdataBP.ident}",
+                                    "type": "BP"
+                                },
+                                {
+                                    "fødselsnummer": "${testdataBarn1.ident}",
+                                    "type": "BA"
+                                }
+                            ]
+                        }
+                        """.trimIndent(),
+                        header,
+                    ),
+                    List::class.java,
+                )
 
         response.statusCode shouldBe HttpStatus.OK
         response.body shouldBe listOf(forsendelseId)
