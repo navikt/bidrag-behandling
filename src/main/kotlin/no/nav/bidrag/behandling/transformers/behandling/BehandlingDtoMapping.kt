@@ -1,18 +1,23 @@
-package no.nav.bidrag.behandling.transformers
+package no.nav.bidrag.behandling.transformers.behandling
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
-import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.boforhold.toHusstandsBarnDtoV2
+import no.nav.bidrag.behandling.transformers.grunnlag.toDto
+import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
+import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
@@ -58,8 +63,8 @@ fun Behandling.tilBehandlingDtoV2(
                 ),
         ),
     boforhold =
-        BoforholdDto(
-            husstandsbarn = husstandsbarn.toHusstandsBarnDto(this),
+        BoforholdDtoV2(
+            husstandsbarn = husstandsbarn.toHusstandsBarnDtoV2(this),
             sivilstand = sivilstand.toSivilstandDto(),
             notat =
                 BehandlingNotatDto(

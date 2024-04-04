@@ -162,8 +162,7 @@ private fun Behandling.tilVirkningstidspunkt() =
 private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<RelatertPersonGrunnlagDto>) =
     BoforholdBarn(
         navn = navn!!,
-        fødselsdato =
-        foedselsdato,
+        fødselsdato = fødselsdato,
         opplysningerFraFolkeregisteret =
             opplysningerBoforhold.filter {
                 it.partPersonId == this.ident

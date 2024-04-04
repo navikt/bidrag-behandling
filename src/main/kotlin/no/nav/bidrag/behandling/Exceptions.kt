@@ -17,15 +17,34 @@ fun aktiveringAvGrunnlagFeiletException(behandlingsid: Long): Nothing =
     )
 
 fun inntektIkkeFunnetException(idInntekt: Long): Nothing =
+    throw HttpClientErrorException(HttpStatus.NOT_FOUND, "Fant ikke inntekt med id $idInntekt")
+
+fun husstandsbarnIkkeFunnetException(
+    idHusstandsbarn: Long,
+    behandlingsid: Long,
+): Nothing =
     throw HttpClientErrorException(
         HttpStatus.NOT_FOUND,
-        "Fant ikke inntekt med id $idInntekt",
+        "Fant ikke husstandsbarn med id $idHusstandsbarn knyttet " +
+            "til behandling $behandlingsid",
     )
 
 fun lagringAvGrunnlagFeiletException(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.INTERNAL_SERVER_ERROR,
         "Lagring av grunnlag feilet for behandling $behandlingsid",
+    )
+
+fun aktiveringAvGrunnlagstypeIkkeStøttetException(behandlingsid: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Feil grunnlagstype oppgitt i aktiveringsforespørsel for behandling $behandlingsid",
+    )
+
+fun finnesFraFørException(behandlingsid: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.CONFLICT,
+        "Forsøk på å oppdatere behandling $behandlingsid feilet pga duplikate data.",
     )
 
 class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) :

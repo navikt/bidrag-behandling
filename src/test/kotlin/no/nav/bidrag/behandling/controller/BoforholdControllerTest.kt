@@ -1,13 +1,18 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
+import no.nav.bidrag.behandling.dto.v2.boforhold.PersonaliaHusstandsbarn
+import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
@@ -31,25 +36,27 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     Kilde.OFFENTLIG,
                 ),
             )
-        val husstandsBarn =
-            setOf(
-                HusstandsbarnDto(
-                    behandling.id,
-                    Kilde.OFFENTLIG,
-                    true,
-                    perioder,
-                    "ident",
-                    null,
-                    fødselsdato = LocalDate.now().minusMonths(687),
-                ),
-            )
 
         // 2.2
         val boforholdData =
-            OppdaterBoforholdRequest(
-                husstandsBarn,
-                emptySet(),
-                notat =
+            OppdatereBoforholdRequestV2(
+                oppdatereHusstandsbarn =
+                    OppdatereHusstandsbarn(
+                        PersonaliaHusstandsbarn(
+                            navn = "Per Spelemann",
+                            fødselsdato = LocalDate.now().minusMonths(687),
+                        ),
+                    ),
+                oppdatereSivilstand =
+                    OppdatereSivilstand(
+                        leggeTilSivilstandsperiode =
+                            Sivilstandsperiode(
+                                fraOgMed = LocalDate.now().minusYears(5),
+                                tilOgMed = null,
+                                sivilstand = Sivilstandskode.ENSLIG,
+                            ),
+                    ),
+                oppdatereNotat =
                     OppdaterNotat(
                         "med i vedtak",
                         "kun i notat",

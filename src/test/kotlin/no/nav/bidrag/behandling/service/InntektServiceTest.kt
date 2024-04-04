@@ -16,12 +16,12 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterePeriodeInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner
-import no.nav.bidrag.behandling.transformers.TransformerInntekterRequestBuilder
-import no.nav.bidrag.behandling.transformers.tilAinntektsposter
-import no.nav.bidrag.behandling.transformers.tilBarnetillegg
-import no.nav.bidrag.behandling.transformers.tilKontantstøtte
-import no.nav.bidrag.behandling.transformers.tilSmåbarnstillegg
-import no.nav.bidrag.behandling.transformers.tilUtvidetBarnetrygd
+import no.nav.bidrag.behandling.transformers.inntekt.TransformerInntekterRequestBuilder
+import no.nav.bidrag.behandling.transformers.inntekt.tilAinntektsposter
+import no.nav.bidrag.behandling.transformers.inntekt.tilBarnetillegg
+import no.nav.bidrag.behandling.transformers.inntekt.tilKontantstøtte
+import no.nav.bidrag.behandling.transformers.inntekt.tilSmåbarnstillegg
+import no.nav.bidrag.behandling.transformers.inntekt.tilUtvidetBarnetrygd
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -90,7 +90,7 @@ class InntektServiceTest : TestContainerRunner() {
             val behandling = testdataManager.opprettBehandling()
 
             val summerteInntekter =
-                SummerteInntekter<SummertÅrsinntekt>(
+                SummerteInntekter(
                     versjon = "xyz",
                     inntekter =
                         listOf(
@@ -118,7 +118,7 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            inntektService.lagreSummerteÅrsinntekter(
+            inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
                 behandling.id!!,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
@@ -733,7 +733,6 @@ class InntektServiceTest : TestContainerRunner() {
                     beløp = ainntekt.belop,
                     inntektstype = Inntektstype.LØNNSINNTEKT,
                     kode = "fastloenn",
-                    visningsnavn = "Fastlønn",
                     inntekt = ainntekt,
                 )
             ainntekt.inntektsposter = mutableSetOf(postAinntekt)

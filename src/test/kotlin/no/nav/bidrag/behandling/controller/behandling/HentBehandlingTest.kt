@@ -146,14 +146,12 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 Inntektspost(
                     beløp = BigDecimal.valueOf(5000),
                     kode = "fisking",
-                    visningsnavn = "",
                     inntektstype = null,
                     inntekt = inntekt1,
                 ),
                 Inntektspost(
                     beløp = BigDecimal.valueOf(40000),
                     kode = "krypto",
-                    visningsnavn = "",
                     inntektstype = null,
                     inntekt = inntekt1,
                 ),
@@ -178,14 +176,12 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 Inntektspost(
                     beløp = BigDecimal.valueOf(5000),
                     kode = "",
-                    visningsnavn = "",
                     inntektstype = Inntektstype.NÆRINGSINNTEKT,
                     inntekt = inntekt2,
                 ),
                 Inntektspost(
                     beløp = BigDecimal.valueOf(28000),
                     kode = "",
-                    visningsnavn = "",
                     inntektstype = Inntektstype.LØNNSINNTEKT,
                     inntekt = inntekt2,
                 ),
@@ -224,7 +220,6 @@ class HentBehandlingTest : BehandlingControllerTest() {
                     Inntektspost(
                         beløp = BigDecimal.valueOf(5000),
                         kode = "",
-                        visningsnavn = "",
                         inntektstype = Inntektstype.BARNETILLEGG_PENSJON,
                         inntekt = inntekt3,
                     ),
@@ -250,7 +245,6 @@ class HentBehandlingTest : BehandlingControllerTest() {
                     Inntektspost(
                         beløp = BigDecimal.valueOf(5000),
                         kode = "",
-                        visningsnavn = "",
                         inntektstype = Inntektstype.KONTANTSTØTTE,
                         inntekt = inntekt4,
                     ),

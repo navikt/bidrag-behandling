@@ -2,9 +2,12 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
+import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
@@ -13,6 +16,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
@@ -44,7 +50,7 @@ fun BehandlingDtoV2.tilBehandlingDto() =
         søknadRefId = søknadRefId,
         grunnlagspakkeid = grunnlagspakkeid,
         virkningstidspunkt = virkningstidspunkt,
-        boforhold = boforhold,
+        boforhold = boforhold.tilBoforholdDto(),
         inntekter = inntekter.tilInntekterDto(),
         opplysninger = aktiveGrunnlagsdata.toList(),
     )
@@ -122,10 +128,28 @@ fun Set<InntektspostDtoV2>.tilInntektspostDto() =
         )
     }.toSet()
 
+fun BoforholdDtoV2.tilBoforholdDto() =
+    BoforholdDto(
+        husstandsbarn = this.husstandsbarn.tilHusstandsbarnDto(),
+        sivilstand = this.sivilstand,
+        notat = this.notat,
+    )
+
+fun Set<HusstandsbarnDtoV2>.tilHusstandsbarnDto() =
+    this.map {
+        HusstandsbarnDto(
+            id = it.id,
+            kilde = it.kilde,
+            fødselsdato = it.fødselsdato,
+            medISak = it.medIBehandling,
+            perioder = it.perioder,
+        )
+    }.toSet()
+
 fun OppdaterBehandlingRequest.tilOppdaterBehandlingRequestV2(personidentBm: Personident): OppdaterBehandlingRequestV2 {
     return OppdaterBehandlingRequestV2(
         virkningstidspunkt = this.virkningstidspunkt,
-        boforhold = this.boforhold,
+        boforhold = this.boforhold?.tilOppdatereBoforholdRequestV2(),
         inntekter = this.inntekter?.tilOppdatereInntekterRequestV2(personidentBm),
     )
 }
@@ -153,6 +177,11 @@ fun OppdatereInntekterRequest.tilOppdatereInntekterRequestV2(personidentBm: Pers
         notat = this.notat,
     )
 }
+
+fun OppdaterBoforholdRequest.tilOppdatereBoforholdRequestV2() =
+    OppdatereBoforholdRequestV2(
+        oppdatereNotat = this.notat,
+    )
 
 fun BarnetilleggDto.tilInntektDtoV2() =
     InntektDtoV2(

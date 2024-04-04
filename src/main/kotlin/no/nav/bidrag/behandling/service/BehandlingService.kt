@@ -15,12 +15,10 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
-import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
 import no.nav.bidrag.behandling.transformers.toRolle
-import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -38,6 +36,7 @@ private val log = KotlinLogging.logger {}
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
+    private val boforholdService: BoforholdService,
     private val forsendelseService: ForsendelseService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
@@ -177,19 +176,17 @@ class BehandlingService(
                 }
                 request.boforhold?.let { bf ->
                     log.info { "Oppdatere informasjon om boforhold for behandling $behandlingsid" }
-                    bf.sivilstand?.run {
-                        it.sivilstand.clear()
-                        it.sivilstand.addAll(bf.sivilstand.toSivilstandDomain(it))
+                    bf.oppdatereHusstandsbarn?.run {
+                        boforholdService.oppdatereHusstandsbarnManuelt(behandlingsid, this)
                     }
-                    bf.husstandsbarn?.run {
-                        it.husstandsbarn.clear()
-                        it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
+                    bf.oppdatereSivilstand?.run {
+                        boforholdService.oppdatereSivilstandManuelt(behandlingsid, this)
                     }
-                    entityManager.merge(it)
+                    entityManager.refresh(it)
                     it.boforholdsbegrunnelseKunINotat =
-                        bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
+                        bf.oppdatereNotat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
                     it.boforholdsbegrunnelseIVedtakOgNotat =
-                        bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
+                        bf.oppdatereNotat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
                 }
                 it
             }

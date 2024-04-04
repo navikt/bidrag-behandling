@@ -17,20 +17,22 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
+import no.nav.bidrag.behandling.dto.v2.boforhold.PersonaliaHusstandsbarn
+import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
@@ -433,13 +435,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                         behandling,
                         kilde = Kilde.MANUELL,
                         ident = identOriginaltIkkeMedISaken,
-                        foedselsdato = LocalDate.parse("2021-01-01"),
+                        fødselsdato = LocalDate.parse("2021-01-01"),
                     ),
                     Husstandsbarn(
                         behandling,
                         kilde = Kilde.OFFENTLIG,
                         ident = identOriginaltMedISaken,
-                        foedselsdato = LocalDate.parse("2021-01-01"),
+                        fødselsdato = LocalDate.parse("2021-01-01"),
                     ),
                 )
 
@@ -589,37 +591,23 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertEquals(0, createdBehandling.husstandsbarn.size)
             assertEquals(0, createdBehandling.sivilstand.size)
 
-            val husstandsBarn =
-                setOf(
-                    HusstandsbarnDto(
-                        null,
-                        Kilde.OFFENTLIG,
-                        true,
-                        emptySet(),
-                        ident = "Manuelt",
-                        navn = "ident!",
-                        fødselsdato = LocalDate.now().minusMonths(156),
-                    ),
-                )
-            val sivilstand =
-                setOf(
-                    SivilstandDto(
-                        null,
-                        LocalDate.now(),
-                        LocalDate.now(),
-                        Sivilstandskode.BOR_ALENE_MED_BARN,
-                        Kilde.OFFENTLIG,
-                    ),
-                )
-
             behandlingService.oppdaterBehandling(
                 createdBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     boforhold =
-                        OppdaterBoforholdRequest(
-                            husstandsBarn,
-                            sivilstand,
-                            notat =
+                        OppdatereBoforholdRequestV2(
+                            OppdatereHusstandsbarn(
+                                PersonaliaHusstandsbarn(Personident("12345678910"), LocalDate.now().minusYears(7)),
+                            ),
+                            OppdatereSivilstand(
+                                leggeTilSivilstandsperiode =
+                                    Sivilstandsperiode(
+                                        fraOgMed = LocalDate.now().minusMonths(18).withDayOfMonth(1),
+                                        tilOgMed = null,
+                                        sivilstand = Sivilstandskode.BOR_ALENE_MED_BARN,
+                                    ),
+                            ),
+                            oppdatereNotat =
                                 OppdaterNotat(
                                     kunINotat = notat,
                                     medIVedtaket = medIVedtak,
@@ -668,8 +656,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                                 ),
                         ),
                     boforhold =
-                        OppdaterBoforholdRequest(
-                            notat =
+                        OppdatereBoforholdRequestV2(
+                            oppdatereNotat =
                                 OppdaterNotat(
                                     notat,
                                     medIVedtak,

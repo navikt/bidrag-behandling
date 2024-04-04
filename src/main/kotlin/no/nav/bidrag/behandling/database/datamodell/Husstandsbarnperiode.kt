@@ -12,10 +12,10 @@ import jakarta.persistence.ManyToOne
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.time.LocalDate
 
-@Entity(name = "barn_i_husstand_periode")
+@Entity
 open class Husstandsbarnperiode(
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "barn_i_husstand_id", nullable = false)
+    @JoinColumn(name = "husstandsbarn_id", nullable = false)
     open val husstandsbarn: Husstandsbarn,
     open val datoFom: LocalDate?,
     open val datoTom: LocalDate?,

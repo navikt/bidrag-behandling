@@ -2,9 +2,9 @@ package no.nav.bidrag.behandling.dto.v2.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
@@ -14,7 +14,7 @@ import java.time.LocalDate
 
 data class OppdaterBehandlingRequestV2(
     val virkningstidspunkt: OppdaterVirkningstidspunkt? = null,
-    val boforhold: OppdaterBoforholdRequest? = null,
+    val boforhold: OppdatereBoforholdRequestV2? = null,
     val inntekter: OppdatereInntekterRequestV2? = null,
     val aktivereGrunnlagForPerson: AktivereGrunnlagRequest? = null,
 )

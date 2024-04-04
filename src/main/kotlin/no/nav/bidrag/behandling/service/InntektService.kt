@@ -12,8 +12,9 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
-import no.nav.bidrag.behandling.transformers.tilInntekt
-import no.nav.bidrag.behandling.transformers.tilInntektspost
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
+import no.nav.bidrag.behandling.transformers.inntekt.tilInntekt
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -32,7 +33,7 @@ class InntektService(
     private val entityManager: EntityManager,
 ) {
     @Transactional
-    fun lagreSummerteÅrsinntekter(
+    fun lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
         behandlingsid: Long,
         personident: Personident,
         summerteÅrsinntekter: List<SummertÅrsinntekt>,

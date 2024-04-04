@@ -278,7 +278,7 @@ class VedtakserviceTest {
                 kilde = Kilde.MANUELL,
                 ident = null,
                 navn = "Mr Hansen",
-                foedselsdato = LocalDate.parse("2020-01-01"),
+                fødselsdato = LocalDate.parse("2020-01-01"),
                 id = 8,
             )
         husstandsbarnUtenIdent.perioder =
