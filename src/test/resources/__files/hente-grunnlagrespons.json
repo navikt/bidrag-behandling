@@ -117,8 +117,8 @@
       "partPersonId": "99057812345",
       "barnPersonId": "01057812300",
       "beløp": 2700,
-      "periodeFra":  "2020-06-01",
-      "periodeTil":  "2023-07-01"
+      "periodeFra": "2020-06-01",
+      "periodeTil": "2023-07-01"
     }
   ],
   "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
@@ -201,12 +201,14 @@
       "manueltBeregnet": false
     }
   ],
-  "utvidetBarnetrygdListe": [{
+  "utvidetBarnetrygdListe": [
+    {
       "personId": "99057812345",
       "beløp": 2500,
       "periodeFra": "2020-06-01",
       "periodeTil": "2023-07-01",
       "manueltBeregnet": false
-  }],
+    }
+  ],
   "feilrapporteringListe": []
 }

@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+<<<<<<< HEAD
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
@@ -33,6 +34,10 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.PersonaliaHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
+=======
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+>>>>>>> main
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
@@ -61,6 +66,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -107,9 +113,10 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         @Transactional
         open fun `skal hente behandling med beregnet inntekter`() {
-            val behandling = oppretteBehandling()
+            val behandling = prepareBehandling()
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.roller = oppretteBehandlingRoller(behandling)
+            behandling.grunnlagSistInnhentet = LocalDateTime.now()
             behandling.inntekter =
                 mutableSetOf(
                     Inntekt(
@@ -163,13 +170,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                         behandling = behandling,
                     ),
                 )
-            testdataManager.lagreBehandling(behandling)
+            behandlingRepository.save(behandling)
             kjøreStubber(behandling)
 
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
 
             assertSoftly(behandlingDto) {
-                it.inntekter.beregnetInntekter shouldHaveSize 4
+                it.inntekter.beregnetInntekter shouldHaveSize 3
                 val inntekterAlle =
                     it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
                 val inntekterBarn1 =
@@ -198,6 +205,56 @@ class BehandlingServiceTest : TestContainerRunner() {
                     summertInntektListe[1].barnetillegg shouldBe BigDecimal(555)
                     summertInntektListe[1].kontantstøtte shouldBe null
                 }
+            }
+        }
+
+        @Disabled("Wiremock issues - OK alene, feiler i fellesskap med andre")
+        @Test
+        @Transactional
+        open fun `ytelser skal ikke listes som årsinntekter i DTO`() {
+            // gitt
+            val behandling = oppretteBehandling()
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                        BigDecimal.valueOf(1234),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = LocalDate.parse("2023-09-01"),
+                        behandling = behandling,
+                    ),
+                )
+            testdataManager.lagreBehandling(behandling)
+
+            entityManager.refresh(behandling)
+
+            // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
+            kjøreStubber(behandling)
+
+            // hvis
+            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
+            // så
+            val ytelser =
+                setOf(
+                    Inntektsrapportering.BARNETILLEGG,
+                    Inntektsrapportering.KONTANTSTØTTE,
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                )
+
+            assertSoftly {
+                behandlingDto.inntekter.årsinntekter.filter { ytelser.contains(it.rapporteringstype) }.size shouldBe 0
+                behandlingDto.inntekter.barnetillegg.size shouldBe 0
+                behandlingDto.inntekter.kontantstøtte.size shouldBe 0
+                behandlingDto.inntekter.småbarnstillegg.size shouldBe 1
+                behandlingDto.inntekter.utvidetBarnetrygd.size shouldBe 1
+                behandlingDto.inntekter.årsinntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }.size shouldBe 3
             }
         }
 
@@ -349,7 +406,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         fun `delete behandling`() {
             val behandling = oppretteBehandling()
-            behandlingService.deleteBehandlingById(behandling.id!!)
+            behandlingRepository.delete(behandling)
 
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.hentBehandlingById(behandling.id!!)
@@ -735,6 +792,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                                         datoTom = LocalDate.now().plusMonths(4),
                                         ident = Personident("123"),
                                     ),
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.BARNETILLEGG,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = Personident("123"),
+                                        gjelderBarn = Personident("1233"),
+                                        inntektstype = Inntektstype.BARNETILLEGG_AAP,
+                                    ),
                                 ),
                             notat =
                                 OppdaterNotat(
@@ -747,9 +813,42 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
 
-            assertEquals(1, expectedBehandling.inntekter.size)
+            assertEquals(2, expectedBehandling.inntekter.size)
             assertEquals("Med i Vedtaket", expectedBehandling.inntektsbegrunnelseIVedtakOgNotat)
             assertEquals("Kun i Notat", expectedBehandling.inntektsbegrunnelseKunINotat)
+        }
+
+        @Test
+        fun `skal feile ved validering hvis barnetillegg legges til uten gjelder barn`() {
+            val actualBehandling = oppretteBehandling()
+
+            val error =
+                assertThrows<HttpClientErrorException> {
+                    behandlingService.oppdaterBehandling(
+                        actualBehandling.id!!,
+                        OppdaterBehandlingRequestV2(
+                            inntekter =
+                                OppdatereInntekterRequestV2(
+                                    oppdatereManuelleInntekter =
+                                        mutableSetOf(
+                                            OppdatereManuellInntekt(
+                                                type = Inntektsrapportering.BARNETILLEGG,
+                                                beløp = BigDecimal.valueOf(4000),
+                                                datoFom = LocalDate.now().minusMonths(4),
+                                                datoTom = LocalDate.now().plusMonths(4),
+                                                ident = Personident("123"),
+                                            ),
+                                        ),
+                                    notat =
+                                        OppdaterNotat(
+                                            "Kun i Notat",
+                                            "Med i Vedtaket",
+                                        ),
+                                ),
+                        ),
+                    )
+                }
+            error.message shouldContain "Ugyldig data ved oppdatering av inntekter: BARNETILLEGG må ha gyldig ident for gjelder barn, Barnetillegg må ha gyldig inntektstype"
         }
 
         @Test
@@ -788,6 +887,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             )
 
             val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
+            entityManager.refresh(expectedBehandling)
 
             assertEquals(1, expectedBehandling.inntekter.size)
             assertNotNull(expectedBehandling.inntektsbegrunnelseIVedtakOgNotat)

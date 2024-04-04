@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.tilUtvidetBarnetrygd
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
@@ -475,13 +476,15 @@ class GrunnlagService(
                         )
                     },
                 barnetilleggsliste =
-                    innhentetGrunnlag.barnetilleggListe.tilBarnetillegg(
-                        rolleInhentetFor,
-                    ),
+                    innhentetGrunnlag.barnetilleggListe.filter { harBarnRolleIBehandling(it.barnPersonId, behandling) }
+                        .tilBarnetillegg(
+                            rolleInhentetFor,
+                        ),
                 kontantstøtteliste =
-                    innhentetGrunnlag.kontantstøtteListe.tilKontantstøtte(
-                        rolleInhentetFor,
-                    ),
+                    innhentetGrunnlag.kontantstøtteListe.filter { harBarnRolleIBehandling(it.barnPersonId, behandling) }
+                        .tilKontantstøtte(
+                            rolleInhentetFor,
+                        ),
                 skattegrunnlagsliste =
                     innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
                         rolleInhentetFor,
@@ -533,6 +536,14 @@ class GrunnlagService(
             }
         }
     }
+
+    private fun HentGrunnlagDto.inneholderFeilForType(
+        ident: String?,
+        grunnlagstype: GrunnlagRequestType,
+    ): Boolean =
+        feilrapporteringListe.any {
+            it.personId == ident && it.grunnlagstype == grunnlagstype
+        }
 
     private fun tilSummerteInntekter(
         sammenstilteInntekter: TransformerInntekterResponse,
@@ -875,6 +886,11 @@ class GrunnlagService(
         }
     }
 
+    private fun harBarnRolleIBehandling(
+        personidentBarn: String,
+        behandling: Behandling,
+    ) = behandling.roller.filter { Rolletype.BARN == it.rolletype }.any { personidentBarn == it.ident }
+
     private fun lagreGrunnlagHvisEndret(
         grunnlagsdatatype: Grunnlagsdatatype,
         behandling: Behandling,
@@ -897,7 +913,9 @@ class GrunnlagService(
                     behandling.id!!,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
-                    innhentetGrunnlag.barnetilleggListe.toSet(),
+                    innhentetGrunnlag.barnetilleggListe.filter {
+                        harBarnRolleIBehandling(it.barnPersonId, behandling)
+                    }.toSet(),
                     innhentetGrunnlag.hentetTidspunkt,
                 )
             }
@@ -917,7 +935,9 @@ class GrunnlagService(
                     behandling.id!!,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
-                    innhentetGrunnlag.kontantstøtteListe.toSet(),
+                    innhentetGrunnlag.kontantstøtteListe.filter {
+                        harBarnRolleIBehandling(it.barnPersonId, behandling)
+                    }.toSet(),
                     innhentetGrunnlag.hentetTidspunkt,
                 )
             }

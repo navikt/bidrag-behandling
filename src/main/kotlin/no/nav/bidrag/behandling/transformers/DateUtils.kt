@@ -13,6 +13,9 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+val formatterDDMMYYYY = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+
+fun LocalDate.toDDMMYYYY(): String = this.format(formatterDDMMYYYY)
 
 class LocalDateTypeAdapter(datoformat: DateTimeFormatter? = null) :
     JsonSerializer<LocalDate>,

@@ -3879,13 +3879,12 @@
       "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20170330_1063_202402",
       "type": "SLUTTBEREGNING_FORSKUDD",
       "innhold": {
-        "beløp": 1410,
         "periode": {
-          "fom": "2024-02",
-          "til": null
+          "fom": "2023-07"
         },
-        "aldersgruppe": "ALDER_0_10_ÅR",
-        "resultatKode": "ORDINÆRT_FORSKUDD_75_PROSENT"
+        "beløp": 0,
+        "resultatKode": "AVSLAG",
+        "aldersgruppe": "ALDER_0_10_ÅR"
       },
       "grunnlagsreferanseListe": [
         "bostatus_person_PERSON_SØKNADSBARN_20170330_1063_20240201",
@@ -4065,13 +4064,11 @@
       "type": "FORSKUDD",
       "sak": "1233333",
       "skyldner": "NAV",
-      "kravhaver": "1344124",
-      "mottaker": "313213213",
-      "førsteIndeksreguleringsår": null,
+      "kravhaver": "01451551074",
+      "mottaker": "19427920995",
       "innkreving": "MED_INNKREVING",
       "beslutning": "ENDRING",
-      "omgjørVedtakId": null,
-      "eksternReferanse": null,
+      "omgjørVedtakId": 106,
       "grunnlagReferanseListe": [
         "virkningstidspunkt",
         "søknad"
@@ -4079,15 +4076,13 @@
       "periodeListe": [
         {
           "periode": {
-            "fom": "2024-02",
-            "til": null
+            "fom": "2023-01"
           },
-          "beløp": 1410,
+          "beløp": 0,
           "valutakode": "NOK",
-          "resultatkode": "ORDINÆRT_FORSKUDD_75_PROSENT",
-          "delytelseId": null,
+          "resultatkode": "AVSLAG",
           "grunnlagReferanseListe": [
-            "sluttberegning_person_PERSON_SØKNADSBARN_20170330_1063_202402"
+            "sluttberegning_person_PERSON_SØKNADSBARN_20150501_131_202301"
           ]
         }
       ]

@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpHeaders
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 
 @Configuration
 @Profile("test")
@@ -32,10 +33,23 @@ class TestRestTemplateConfiguration {
     @Bean
     fun httpHeaderTestRestTemplate(): TestRestTemplate {
         return TestRestTemplate(
-            RestTemplateBuilder().additionalInterceptors({ request, body, execution ->
-                request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
-                execution.execute(request, body)
-            }),
+            RestTemplateBuilder()
+                .additionalMessageConverters(MappingJackson2HttpMessageConverter())
+                .additionalInterceptors({ request, body, execution ->
+                    request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
+                    execution.execute(request, body)
+                }),
+        )
+    }
+
+    @Bean
+    fun httpHeaderTestRestTemplateNoJackson(): TestRestTemplate {
+        return TestRestTemplate(
+            RestTemplateBuilder()
+                .additionalInterceptors({ request, body, execution ->
+                    request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
+                    execution.execute(request, body)
+                }),
         )
     }
 

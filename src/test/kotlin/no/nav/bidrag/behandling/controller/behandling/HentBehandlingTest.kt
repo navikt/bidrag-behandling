@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpMethod
@@ -31,6 +32,7 @@ import java.time.LocalDate
 class HentBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal hente behandling`() {
+        // gitt
         stubUtils.stubHenteGrunnlagOk(
             navnResponsfil = "grunnlagresponse.json",
             rolle = testdataBM.tilRolle(),
@@ -43,8 +45,10 @@ class HentBehandlingTest : BehandlingControllerTest() {
             tomRespons = true,
             rolle = testdataBarn2.tilRolle(),
         )
-        // gitt
+
         val behandling = testdataManager.lagreBehandling(opprettBehandling())
+
+        // hvis
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/" + behandling.id,
@@ -53,6 +57,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 BehandlingDtoV2::class.java,
             )
 
+        // så
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
         assertSoftly(behandlingRes.body!!) {
@@ -67,20 +72,28 @@ class HentBehandlingTest : BehandlingControllerTest() {
             inntekterBarn1.shouldNotBeNull()
             inntekterBarn2.shouldNotBeNull()
 
+            assertSoftly(it.inntekter.barnetillegg.toList()) {
+                this shouldHaveSize 2
+                this[0].gjelderBarn shouldBe Personident(testdataBarn1.ident)
+                this[0].inntektsposter shouldHaveSize 1
+                this[0].inntektsposter.first().beløp shouldBe this[0].beløp
+                this[0].inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
+            }
+
             assertSoftly(inntekterAlle) {
-                summertInntektListe shouldHaveSize 3
+                summertInntektListe shouldHaveSize 1
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
                 summertInntektListe[0].barnetillegg shouldBe null
                 summertInntektListe[0].kontantstøtte shouldBe null
             }
             assertSoftly(inntekterBarn2) {
-                summertInntektListe shouldHaveSize 3
+                summertInntektListe shouldHaveSize 1
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
                 summertInntektListe[0].barnetillegg shouldBe null
                 summertInntektListe[0].kontantstøtte shouldBe null
             }
             assertSoftly(inntekterBarn1) {
-                summertInntektListe shouldHaveSize 3
+                summertInntektListe shouldHaveSize 1
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
                 summertInntektListe[0].barnetillegg shouldBe BigDecimal(5000)
                 summertInntektListe[0].kontantstøtte shouldBe null
@@ -208,7 +221,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
                     LocalDate.parse("2022-01-01"),
                     LocalDate.parse("2022-12-31"),
                     gjelder.ident,
-                    Kilde.OFFENTLIG,
+                    Kilde.MANUELL,
                     true,
                     opprinneligFom = LocalDate.parse("2023-01-01"),
                     opprinneligTom = LocalDate.parse("2024-01-01"),
@@ -219,7 +232,12 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 mutableSetOf(
                     Inntektspost(
                         beløp = BigDecimal.valueOf(5000),
+<<<<<<< HEAD
                         kode = "",
+=======
+                        kode = Inntektsrapportering.BARNETILLEGG.name,
+                        visningsnavn = "",
+>>>>>>> main
                         inntektstype = Inntektstype.BARNETILLEGG_PENSJON,
                         inntekt = inntekt3,
                     ),
