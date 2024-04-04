@@ -15,21 +15,16 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
-<<<<<<< HEAD
+import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
+import no.nav.bidrag.behandling.transformers.behandling.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
-import no.nav.bidrag.behandling.transformers.inntekt.tilInntekt
-=======
-import no.nav.bidrag.behandling.transformers.hentBeregnetInntekter
-import no.nav.bidrag.behandling.transformers.hentValideringsfeil
-import no.nav.bidrag.behandling.transformers.lagreSomNyInntekt
-import no.nav.bidrag.behandling.transformers.oppdatereEksisterendeInntekt
-import no.nav.bidrag.behandling.transformers.tilInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilInntektDtoV2
-import no.nav.bidrag.behandling.transformers.tilInntektspost
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
->>>>>>> main
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -110,7 +105,8 @@ class InntektService(
         oppdatereInntektRequest.valider()
         secureLogger.info { "Oppdaterer inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         return OppdatereInntektResponse(
             inntekt = oppdaterInntekt(oppdatereInntektRequest, behandling),
@@ -171,7 +167,8 @@ class InntektService(
     ) {
         oppdatereInntekterRequest.valider()
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereInntekterRequest.oppdatereInntektsperioder.forEach {
             val inntekt = inntektRepository.findById(it.id).orElseThrow { inntektIkkeFunnetException(it.id) }

@@ -1,17 +1,9 @@
 package no.nav.bidrag.behandling.dto.v2.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
-<<<<<<< HEAD
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.inntekt.Inntektstype
-=======
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
->>>>>>> main
 import no.nav.bidrag.domene.ident.Personident
 
 data class OppdaterBehandlingRequestV2(

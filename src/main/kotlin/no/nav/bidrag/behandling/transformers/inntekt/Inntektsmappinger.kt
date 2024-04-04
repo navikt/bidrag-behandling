@@ -4,13 +4,14 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import java.math.BigDecimal
 import java.math.RoundingMode
 
 fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
@@ -100,21 +101,74 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         gjelderBarn = null,
     )
 
-fun List<Inntekt>.tilInntektDtoV2() =
-    this.map {
-        InntektDtoV2(
-            id = it.id,
-            taMed = it.taMed,
-            rapporteringstype = it.type,
-            beløp = it.belop,
-            datoFom = it.datoFom,
-            datoTom = it.datoTom,
-            ident = Personident(it.ident),
-            gjelderBarn = it.gjelderBarn?.let { it1 -> Personident(it1) },
-            kilde = it.kilde,
-            inntektsposter = it.inntektsposter.tilInntektspostDtoV2().toSet(),
-            inntektstyper = it.type.inneholderInntektstypeListe.toSet(),
-            opprinneligFom = it.opprinneligFom,
-            opprinneligTom = it.opprinneligTom,
+fun List<Inntekt>.tilInntektDtoV2() = this.map { it.tilInntektDtoV2() }
+
+fun Inntekt.tilInntektDtoV2() =
+    InntektDtoV2(
+        id = this.id,
+        taMed = this.taMed,
+        rapporteringstype = this.type,
+        beløp = maxOf(belop, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+        datoFom = this.datoFom,
+        datoTom = this.datoTom,
+        ident = Personident(this.ident),
+        gjelderBarn = this.gjelderBarn?.let { it1 -> Personident(it1) },
+        kilde = this.kilde,
+        inntektsposter = this.inntektsposter.tilInntektspostDtoV2().toSet(),
+        inntektstyper = this.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
+        opprinneligFom = this.opprinneligFom,
+        opprinneligTom = this.opprinneligTom,
+    )
+
+fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Inntekt {
+    inntekt.type = this.type
+    inntekt.belop = this.beløp
+    inntekt.datoFom = this.datoFom
+    inntekt.datoTom = this.datoTom
+    inntekt.gjelderBarn = this.gjelderBarn?.verdi
+    inntekt.kilde = Kilde.MANUELL
+    inntekt.taMed = this.taMed
+    if (this.inntektstype != null) {
+        inntekt.inntektsposter.removeAll(inntekt.inntektsposter)
+        inntekt.inntektsposter.add(
+            Inntektspost(
+                inntekt = inntekt,
+                beløp = this.beløp,
+                inntektstype = this.inntektstype,
+                kode = this.type.toString(),
+            ),
         )
     }
+    return inntekt
+}
+
+fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
+    val inntekt =
+        Inntekt(
+            type = this.type,
+            belop = this.beløp,
+            datoFom = this.datoFom,
+            datoTom = this.datoTom,
+            ident = this.ident.verdi,
+            gjelderBarn = this.gjelderBarn?.verdi,
+            kilde = Kilde.MANUELL,
+            taMed = this.taMed,
+            behandling = behandling,
+        )
+
+    if (this.inntektstype != null) {
+        inntekt.inntektsposter =
+            mutableSetOf(
+                Inntektspost(
+                    inntekt = inntekt,
+                    beløp = this.beløp,
+                    inntektstype = this.inntektstype,
+                    kode = this.type.toString(),
+                ),
+            )
+    }
+
+    behandling.inntekter.add(inntekt)
+
+    return inntekt
+}

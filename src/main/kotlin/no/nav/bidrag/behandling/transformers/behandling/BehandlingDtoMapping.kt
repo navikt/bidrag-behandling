@@ -6,11 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
-<<<<<<< HEAD:src/main/kotlin/no/nav/bidrag/behandling/transformers/behandling/BehandlingDtoMapping.kt
-=======
-import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
->>>>>>> main:src/main/kotlin/no/nav/bidrag/behandling/transformers/BehandlingDtoMapping.kt
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
@@ -22,10 +18,15 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.toHusstandsBarnDtoV2
+import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.finnHullIPerioder
+import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.grunnlag.toDto
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import no.nav.bidrag.behandling.transformers.validerBoforhold
+import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt

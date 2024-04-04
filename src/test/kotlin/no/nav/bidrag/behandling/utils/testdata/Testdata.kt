@@ -18,15 +18,9 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-<<<<<<< HEAD
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
-=======
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
-import no.nav.bidrag.behandling.transformers.ainntektListe
-import no.nav.bidrag.behandling.transformers.skattegrunnlagListe
->>>>>>> main
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype

@@ -232,12 +232,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 mutableSetOf(
                     Inntektspost(
                         beløp = BigDecimal.valueOf(5000),
-<<<<<<< HEAD
                         kode = "",
-=======
-                        kode = Inntektsrapportering.BARNETILLEGG.name,
-                        visningsnavn = "",
->>>>>>> main
                         inntektstype = Inntektstype.BARNETILLEGG_PENSJON,
                         inntekt = inntekt3,
                     ),

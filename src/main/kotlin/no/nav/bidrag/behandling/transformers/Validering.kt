@@ -76,7 +76,7 @@ fun Behandling.validerInntekterForBeregning(type: Inntektsrapportering? = null):
 fun Set<Husstandsbarn>.validerBoforholdForBeregning(virkniningstidspunkt: LocalDate): List<String> {
     val feilListe = mutableListOf<String>()
     validerBoforhold(virkniningstidspunkt).forEach {
-        val identifikator = "${it.husstandsbarn?.hentNavn()}/${it.husstandsbarn?.foedselsdato?.toDDMMYYYY()}"
+        val identifikator = "${it.husstandsbarn?.hentNavn()}/${it.husstandsbarn?.fødselsdato?.toDDMMYYYY()}"
         valider(!it.fremtidigPeriode) {
             feilListe.add(
                 "Det er periodisert fremover i tid for husstandsbarn $identifikator",
@@ -151,14 +151,14 @@ fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<Bo
         val husstandsbarn = it.value.first()
         val kanIkkeVæreSenereEnnDato =
             if (virkniningstidspunkt.isAfter(LocalDate.now())) {
-                maxOf(husstandsbarn.foedselsdato, virkniningstidspunkt.withDayOfMonth(1))
+                maxOf(husstandsbarn.fødselsdato, virkniningstidspunkt.withDayOfMonth(1))
             } else {
                 LocalDate.now().withDayOfMonth(1)
             }
         val hullIPerioder =
             husstandsbarn.perioder.map {
                 Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(maxOf(virkniningstidspunkt, husstandsbarn.foedselsdato))
+            }.finnHullIPerioder(maxOf(virkniningstidspunkt, husstandsbarn.fødselsdato))
         valideringsfeil.add(
             BoforholdPeriodeseringsfeil(
                 husstandsbarn,

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import java.time.LocalDate
@@ -12,6 +13,7 @@ data class BoforholdDtoV2(
     val husstandsbarn: Set<HusstandsbarnDtoV2>,
     val sivilstand: Set<SivilstandDto>,
     val notat: BehandlingNotatDto,
+    val valideringsfeil: BoforholdValideringsfeil,
 )
 
 data class HusstandsbarnDtoV2(
