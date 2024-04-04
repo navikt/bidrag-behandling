@@ -7,6 +7,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.time.LocalDate
 
@@ -23,18 +24,25 @@ interface InntektValideringsfeil {
     val overlappendePerioder: Set<OverlappendePeriode>
 
     @get:Schema(description = "Personident valideringen gjelder for")
-    val ident: String
+    val ident: String?
+
+    @get:Schema(description = "Rolle valideringen gjelder for")
+    val rolle: Rolletype?
 
     @get:Schema(description = "Er sann hvis inntekt har en periode som starter senere enn starten av virkningstidspunkt")
     val fremtidigPeriode: Boolean
+
+    @get:JsonIgnore
+    val identifikator get() = "$ident/${rolle?.name}"
 }
 
 data class YtelseInntektValideringsfeil(
     override val overlappendePerioder: Set<OverlappendePeriode>,
     override val fremtidigPeriode: Boolean,
-    override val ident: String,
     @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
     val gjelderBarn: String? = null,
+    override val ident: String? = null,
+    override val rolle: Rolletype? = null,
 ) : InntektValideringsfeil {
     @get:JsonIgnore
     val harFeil
@@ -44,10 +52,11 @@ data class YtelseInntektValideringsfeil(
 data class ÅrsinntektValideringsfeil(
     override val overlappendePerioder: Set<OverlappendePeriode>,
     override val fremtidigPeriode: Boolean,
-    override val ident: String,
     val hullIPerioder: List<Datoperiode>,
     @Schema(description = "Er sann hvis det ikke finnes noen valgte inntekter")
     val manglerPerioder: Boolean,
+    override val ident: String,
+    override val rolle: Rolletype?,
 ) : InntektValideringsfeil {
     @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
