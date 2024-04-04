@@ -12,15 +12,47 @@ import no.nav.bidrag.domene.tid.Datoperiode
 import java.time.LocalDate
 
 data class InntektValideringsfeilDto(
-    val barnetillegg: Set<YtelseInntektValideringsfeil>,
-    val utvidetBarnetrygd: YtelseInntektValideringsfeil?,
-    val kontantstøtte: Set<YtelseInntektValideringsfeil>,
-    val småbarnstillegg: YtelseInntektValideringsfeil?,
+    val barnetillegg: Set<InntektValideringsfeil>,
+    val utvidetBarnetrygd: InntektValideringsfeil?,
+    val kontantstøtte: Set<InntektValideringsfeil>,
+    val småbarnstillegg: InntektValideringsfeil?,
     @Schema(name = "årsinntekter")
-    val årsinntekter: Set<ÅrsinntektValideringsfeil>,
+    val årsinntekter: Set<InntektValideringsfeil>,
 )
 
-interface InntektValideringsfeil {
+data class InntektValideringsfeil(
+    val overlappendePerioder: Set<OverlappendePeriode>,
+    val fremtidigPeriode: Boolean,
+    @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
+    val hullIPerioder: List<Datoperiode> = emptyList(),
+    @Schema(description = "Er sann hvis det ikke finnes noen valgte inntekter. Vil alltid være false hvis det er ytelse")
+    val manglerPerioder: Boolean = false,
+    val ident: String,
+    @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
+    val gjelderBarn: String? = null,
+    @JsonIgnore
+    val rolle: Rolletype?,
+    @JsonIgnore
+    val erYtelse: Boolean = false,
+) {
+    @Schema(
+        description =
+            "Er sann hvis det ikke finnes noe løpende periode. " +
+                "Det vil si en periode hvor datoTom er null. Er bare relevant for årsinntekter",
+    )
+    val ingenLøpendePeriode: Boolean = if (erYtelse) false else hullIPerioder.any { it.til == null }
+
+    @get:JsonIgnore
+    val identifikator get() = "$ident/${rolle?.name}"
+
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty() ||
+                fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
+}
+
+interface InntektValideringsfeil3 {
     val overlappendePerioder: Set<OverlappendePeriode>
 
     @get:Schema(description = "Personident valideringen gjelder for")
@@ -36,20 +68,20 @@ interface InntektValideringsfeil {
     val identifikator get() = "$ident/${rolle?.name}"
 }
 
-data class YtelseInntektValideringsfeil(
+data class YtelseInntektValideringsfeil3(
     override val overlappendePerioder: Set<OverlappendePeriode>,
     override val fremtidigPeriode: Boolean,
     @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
     val gjelderBarn: String? = null,
     override val ident: String? = null,
     override val rolle: Rolletype? = null,
-) : InntektValideringsfeil {
+) : InntektValideringsfeil3 {
     @get:JsonIgnore
     val harFeil
         get() = overlappendePerioder.isNotEmpty() || fremtidigPeriode
 }
 
-data class ÅrsinntektValideringsfeil(
+data class ÅrsinntektValideringsfeil3(
     override val overlappendePerioder: Set<OverlappendePeriode>,
     override val fremtidigPeriode: Boolean,
     val hullIPerioder: List<Datoperiode>,
@@ -57,7 +89,7 @@ data class ÅrsinntektValideringsfeil(
     val manglerPerioder: Boolean,
     override val ident: String,
     override val rolle: Rolletype?,
-) : InntektValideringsfeil {
+) : InntektValideringsfeil3 {
     @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 

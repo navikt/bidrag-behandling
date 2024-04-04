@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandOverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
-import no.nav.bidrag.behandling.dto.v2.validering.YtelseInntektValideringsfeil
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.Datoperiode
@@ -82,7 +81,7 @@ fun Set<InntektValideringsfeil>.validerInntekterFelles(type: Inntektsrapporterin
     val feilListe = mutableListOf<String>()
 
     forEach { valideringsfeil ->
-        val gjelderBarn = if (valideringsfeil is YtelseInntektValideringsfeil) valideringsfeil.gjelderBarn else null
+        val gjelderBarn = if (valideringsfeil.erYtelse) valideringsfeil.gjelderBarn else null
         valideringsfeil.overlappendePerioder.forEach { overlappendePeriode ->
             feilListe.add(
                 "Det er en overlappende periode fra ${overlappendePeriode.periode.fom} til ${overlappendePeriode.periode.til} " +

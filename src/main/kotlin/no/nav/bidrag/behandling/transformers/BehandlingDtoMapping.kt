@@ -15,9 +15,8 @@ import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
-import no.nav.bidrag.behandling.dto.v2.validering.YtelseInntektValideringsfeil
-import no.nav.bidrag.behandling.dto.v2.validering.ÅrsinntektValideringsfeil
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -154,12 +153,12 @@ fun Behandling.hentValideringsfeil(): InntektValideringsfeilDto {
 fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
-): Set<ÅrsinntektValideringsfeil> {
+): Set<InntektValideringsfeil> {
     val inntekterSomSkalSjekkes = filter { !eksplisitteYtelser.contains(it.type) }.filter { it.taMed }
     return roller.map { rolle ->
         val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
         if (inntekterTaMed.isEmpty() && (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER || rolle.rolletype == Rolletype.BIDRAGSPLIKTIG)) {
-            ÅrsinntektValideringsfeil(
+            InntektValideringsfeil(
                 hullIPerioder = emptyList(),
                 overlappendePerioder = emptySet(),
                 fremtidigPeriode = false,
@@ -168,7 +167,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                 rolle = rolle.rolletype,
             )
         } else {
-            ÅrsinntektValideringsfeil(
+            InntektValideringsfeil(
                 hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt),
                 overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                 fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
@@ -188,15 +187,17 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
     roller: Set<Rolle>,
     gjelderBarn: String? = null,
 ) = filter { it.taMed }.filter { it.type == type }.let { inntekterTaMed ->
-    val gjelderIdent = inntekterTaMed.firstOrNull()?.ident
-    val gjelderRolle = roller.find { it.ident == gjelderIdent }
-    YtelseInntektValideringsfeil(
+    val inntektGjelderIdent = inntekterTaMed.firstOrNull()?.ident
+    val gjelderRolle = roller.find { it.ident == inntektGjelderIdent }
+    val gjelderIdent = gjelderRolle?.ident ?: inntektGjelderIdent ?: ""
+    InntektValideringsfeil(
         overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
         fremtidigPeriode =
             inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
-        gjelderBarn = gjelderBarn,
-        ident = gjelderRolle?.ident ?: gjelderIdent ?: "",
+        ident = gjelderIdent,
         rolle = gjelderRolle?.rolletype,
+        gjelderBarn = gjelderBarn,
+        erYtelse = true,
     ).takeIf { it.harFeil }
 }
 

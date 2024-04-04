@@ -10,11 +10,13 @@ import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspu
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
+import java.math.BigDecimal
 import java.time.YearMonth
 
 val beregningTilDato = YearMonth.now().plusMonths(1).atDay(1)
@@ -35,7 +37,14 @@ fun ResultatForskuddsberegningBarn.byggStønadsendringerForVedtak(behandling: Be
         resultat.beregnetForskuddPeriodeListe.map {
             OpprettPeriodeRequestDto(
                 periode = it.periode,
-                beløp = it.resultat.belop,
+                beløp =
+                    if (behandling.stonadstype == Stønadstype.FORSKUDD &&
+                        it.resultat.belop <= BigDecimal.ZERO
+                    ) {
+                        null
+                    } else {
+                        it.resultat.belop
+                    },
                 valutakode = "NOK",
                 resultatkode = it.resultat.kode.name,
                 grunnlagReferanseListe = it.grunnlagsreferanseListe,
