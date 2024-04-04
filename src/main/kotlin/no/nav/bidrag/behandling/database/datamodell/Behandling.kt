@@ -13,13 +13,11 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilType
-import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
-import no.nav.bidrag.behandling.transformers.toDDMMYYYY
-import no.nav.bidrag.behandling.transformers.validerBoforholdForBeregning
-import no.nav.bidrag.behandling.transformers.validerInntekterForBeregning
-import no.nav.bidrag.behandling.transformers.validerSivilstandForBeregning
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil2
+import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
+import no.nav.bidrag.behandling.transformers.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.validerBoforhold
+import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -141,76 +139,36 @@ open class Behandling(
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
-fun Behandling.validerForBeregning(): List<BeregningValideringsfeil> {
-    val feil = mutableListOf<BeregningValideringsfeil>()
-    valider(id != null) { feil.leggTil(BeregningValideringsfeilType.ANDRE, "Behandlingsid mangler") }
-    valider(datoTom == null || datoTom!!.isAfter(søktFomDato)) {
-        feil.leggTil(BeregningValideringsfeilType.ANDRE, "Til dato må være etter fra dato")
-    }
-    valider(saksnummer.isNotBlank()) { feil.leggTil(BeregningValideringsfeilType.ANDRE, "Saksnummer mangler for behandling") }
-    valider(avslag != null || årsak != null) {
-        feil.leggTil(BeregningValideringsfeilType.VIRKNINGSTIDSPUNKT, "Årsak eller avslag må velges")
-    }
-
-    if (avslag == null) {
-        valider(virkningstidspunkt != null) { feil.leggTil(BeregningValideringsfeilType.VIRKNINGSTIDSPUNKT, "Mangler virkningstidspunkt") }
-        husstandsbarn.validerBoforholdForBeregning(virkningstidspunktEllerSøktFomDato).forEach {
-            feil.leggTil(BeregningValideringsfeilType.BOFORHOLD, it)
+fun Behandling.validerForBeregning() {
+    val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
+    val sivilstandFeil = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil }
+    val husstandsbarnFeil =
+        husstandsbarn.validerBoforhold(
+            virkningstidspunktEllerSøktFomDato,
+        ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
+    val virkningstidspunktFeil =
+        VirkningstidspunktFeilDto(
+            manglerÅrsakEllerAvslag = avslag == null && årsak == null,
+            manglerVirkningstidspunkt = avslag == null && virkningstidspunkt == null,
+        ).takeIf { it.harFeil }
+    if (inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null || virkningstidspunktFeil != null) {
+        val feil =
+            BeregningValideringsfeil2(
+                virkningstidspunktFeil,
+                inntekterFeil,
+                husstandsbarnFeil,
+                sivilstandFeil,
+            )
+        secureLogger.warn {
+            "Feil ved validering av behandling for beregning " +
+                commonObjectmapper.writeValueAsString(feil)
         }
-        roller.filter { it.rolletype == Rolletype.BARN }.forEach { barn ->
-            valider(husstandsbarn.any { it.ident == barn.ident }) {
-                feil.leggTil(
-                    BeregningValideringsfeilType.BOFORHOLD,
-                    "Søknadsbarn ${barn.hentNavn()}/${barn.foedselsdato.toDDMMYYYY()} mangler informasjon om boforhold",
-                )
-            }
-        }
-        sivilstand.validerSivilstandForBeregning(virkningstidspunktEllerSøktFomDato).forEach {
-            feil.leggTil(BeregningValideringsfeilType.SIVILSTAND, it)
-        }
-
-        validerInntekterForBeregning().forEach {
-            feil.leggTil(BeregningValideringsfeilType.INNTEKT, it)
-        }
-        eksplisitteYtelser.forEach {
-            validerInntekterForBeregning(it).forEach {
-                feil.leggTil(BeregningValideringsfeilType.INNTEKT, it)
-            }
-        }
-
-        if (stonadstype != Stønadstype.FORSKUDD) {
-            valider(inntekter.any { it.taMed && it.ident == bidragspliktig?.ident }) {
-                feil.leggTil(BeregningValideringsfeilType.INNTEKT, "Mangler innteker for bidragspliktig")
-            }
-        }
-    }
-
-    if (feil.isNotEmpty()) {
-        secureLogger.warn { "Feil ved validering av behandling for beregning $feil" }
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
             "Feil ved validering av behandling for beregning",
             commonObjectmapper.writeValueAsBytes(feil),
             Charset.defaultCharset(),
         )
-    }
-    return feil
-}
-
-fun MutableList<BeregningValideringsfeil>.leggTil(
-    type: BeregningValideringsfeilType,
-    feilmelding: String,
-) {
-    find { it.type == type }?.feilListe?.add(feilmelding)
-        ?: add(BeregningValideringsfeil(type, mutableListOf(feilmelding)))
-}
-
-inline fun valider(
-    condition: Boolean,
-    onConditionNotTrue: () -> Unit,
-) {
-    if (!condition) {
-        onConditionNotTrue()
     }
 }
 

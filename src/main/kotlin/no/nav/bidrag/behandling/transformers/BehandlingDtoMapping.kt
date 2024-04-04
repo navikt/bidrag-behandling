@@ -114,21 +114,25 @@ fun Behandling.tilBehandlingDtoV2(
                     medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
                     kunINotat = inntektsbegrunnelseKunINotat,
                 ),
-            valideringsfeil = hentValideringsfeil(),
+            valideringsfeil = hentInntekterValideringsfeil(),
         ),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.map(Grunnlag::toDto).toSet(),
     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
 )
 
-fun Behandling.hentValideringsfeil(): InntektValideringsfeilDto {
+fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto {
     return InntektValideringsfeilDto(
-        årsinntekter = inntekter.mapValideringsfeilForÅrsinntekter(virkningstidspunktEllerSøktFomDato, roller),
+        årsinntekter =
+            inntekter.mapValideringsfeilForÅrsinntekter(
+                virkningstidspunktEllerSøktFomDato,
+                roller,
+            ).takeIf { it.isNotEmpty() },
         barnetillegg =
             inntekter.mapValideringsfeilForYtelseSomGjelderBarn(
                 Inntektsrapportering.BARNETILLEGG,
                 virkningstidspunktEllerSøktFomDato,
                 roller,
-            ),
+            ).takeIf { it.isNotEmpty() },
         småbarnstillegg =
             inntekter.mapValideringsfeilForYtelse(
                 Inntektsrapportering.SMÅBARNSTILLEGG,
@@ -146,7 +150,7 @@ fun Behandling.hentValideringsfeil(): InntektValideringsfeilDto {
                 Inntektsrapportering.KONTANTSTØTTE,
                 virkningstidspunktEllerSøktFomDato,
                 roller,
-            ),
+            ).takeIf { it.isNotEmpty() },
     )
 }
 

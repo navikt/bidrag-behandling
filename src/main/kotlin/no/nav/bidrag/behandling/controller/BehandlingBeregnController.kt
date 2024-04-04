@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilList
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil2
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.VedtakService
@@ -40,7 +40,7 @@ class BehandlingBeregnController(
                 description = "Validering av grunnlag feilet for beregning",
                 content = [
                     Content(
-                        schema = Schema(implementation = BeregningValideringsfeilList::class),
+                        schema = Schema(implementation = BeregningValideringsfeil2::class),
                     ),
                 ],
             ),

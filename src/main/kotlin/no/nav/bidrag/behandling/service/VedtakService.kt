@@ -283,6 +283,10 @@ class VedtakService(
         if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Virkningstidspunkt ikke være senere enn opprinnelig virkningstidspunkt")
         }
+
+        if (saksnummer.isEmpty()) {
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Saksnummer mangler")
+        }
     }
 
     private fun Behandling.vedtakAlleredeFattet(): Nothing =

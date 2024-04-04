@@ -1,14 +1,14 @@
 package no.nav.bidrag.behandling.transformers.validering
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilList
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilType
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil2
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -24,11 +24,11 @@ import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.test.Test
 
-class ValiderBehandlingTest {
-    val bmIdent = "31233123"
-    val barnIdent = "21333123"
-    val barn2Ident = "44444"
+val bmIdent = "31233123"
+val barnIdent = "21333123"
+val barn2Ident = "44444"
 
+class ValiderBehandlingTest {
     @Test
     fun `skal validere behandling`() {
         val behandling = opprettGyldigBehandling()
@@ -44,12 +44,17 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeilList::class.java)
-        responseBody!! shouldHaveSize 1
-        assertSoftly(responseBody[0]) {
-            type shouldBe BeregningValideringsfeilType.VIRKNINGSTIDSPUNKT
-            feilListe shouldHaveSize 2
-            feilListe shouldContainAll listOf("Mangler virkningstidspunkt", "Årsak eller avslag må velges")
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        assertSoftly(responseBody) {
+            virkningstidspunkt shouldNotBe null
+            inntekter shouldBe null
+            sivilstand shouldBe null
+            husstandsbarn shouldBe null
+            assertSoftly(virkningstidspunkt!!) {
+                harFeil shouldBe true
+                manglerVirkningstidspunkt shouldBe true
+                manglerÅrsakEllerAvslag shouldBe true
+            }
         }
     }
 
@@ -76,17 +81,31 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeilList::class.java)
-        responseBody!! shouldHaveSize 1
-        assertSoftly(responseBody[0]) {
-            type shouldBe BeregningValideringsfeilType.SIVILSTAND
-            feilListe shouldHaveSize 3
-            feilListe shouldContainAll
-                listOf(
-                    "Det er ingen løpende periode for sivilstand",
-                    "Det er et hull i perioden 2022-01-01 - 2022-02-01 for sivilstand",
-                    "Det er en overlappende periode fra 2022-03-01 til 2022-03-31",
-                )
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        assertSoftly(responseBody) {
+            virkningstidspunkt shouldBe null
+            inntekter shouldBe null
+            sivilstand shouldNotBe null
+            husstandsbarn shouldBe null
+            assertSoftly(sivilstand!!) {
+                harFeil shouldBe true
+
+                hullIPerioder shouldHaveSize 2
+                hullIPerioder[0].fom shouldBe LocalDate.parse("2022-01-01")
+                hullIPerioder[0].til shouldBe LocalDate.parse("2022-02-01")
+                hullIPerioder[1].fom shouldBe LocalDate.parse("2024-01-31")
+                hullIPerioder[1].til shouldBe null
+
+                overlappendePerioder shouldHaveSize 1
+                overlappendePerioder[0].periode.fom shouldBe LocalDate.parse("2022-03-01")
+                overlappendePerioder[0].periode.til shouldBe LocalDate.parse("2022-03-31")
+                overlappendePerioder[0].sivilstandskode shouldContain Sivilstandskode.ENSLIG
+                overlappendePerioder[0].sivilstandskode shouldContain Sivilstandskode.GIFT_SAMBOER
+
+                fremtidigPeriode shouldBe false
+                manglerPerioder shouldBe false
+                ingenLøpendePeriode shouldBe true
+            }
         }
     }
 
@@ -113,17 +132,29 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeilList::class.java)
-        responseBody!! shouldHaveSize 1
-        assertSoftly(responseBody[0]) {
-            type shouldBe BeregningValideringsfeilType.BOFORHOLD
-            feilListe shouldHaveSize 3
-            feilListe shouldContainAll
-                listOf(
-                    "Det er ingen løpende periode for husstandsbarn 21333123/01.01.2023",
-                    "Det er en overlappende periode fra 2023-03-01 til 2023-03-31",
-                    "Søknadsbarn Test 1/01.01.2020 mangler informasjon om boforhold",
-                )
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        assertSoftly(responseBody) {
+            virkningstidspunkt shouldBe null
+            inntekter shouldBe null
+            sivilstand shouldBe null
+            husstandsbarn!! shouldHaveSize 1
+            assertSoftly(husstandsbarn!![0]) {
+                harFeil shouldBe true
+
+                hullIPerioder shouldHaveSize 1
+                hullIPerioder[0].fom shouldBe LocalDate.parse("2023-06-30")
+                hullIPerioder[0].til shouldBe null
+
+                overlappendePerioder shouldHaveSize 1
+                overlappendePerioder[0].periode.fom shouldBe LocalDate.parse("2023-03-01")
+                overlappendePerioder[0].periode.til shouldBe LocalDate.parse("2023-03-31")
+                overlappendePerioder[0].bosstatus shouldContain Bostatuskode.IKKE_MED_FORELDER
+                overlappendePerioder[0].bosstatus shouldContain Bostatuskode.MED_FORELDER
+
+                fremtidigPeriode shouldBe false
+                manglerPerioder shouldBe false
+                ingenLøpendePeriode shouldBe true
+            }
         }
     }
 
@@ -183,18 +214,38 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeilList::class.java)
-        responseBody!! shouldHaveSize 1
-        assertSoftly(responseBody[0]) {
-            type shouldBe BeregningValideringsfeilType.INNTEKT
-            feilListe shouldHaveSize 4
-            feilListe shouldContainAll
-                listOf(
-                    "Det er en overlappende periode fra 2022-04-01 til 2022-06-30 for 31233123/BIDRAGSMOTTAKER",
-                    "Det er en overlappende periode fra 2024-06-01 til null for 31233123/BIDRAGSMOTTAKER",
-                    "Det er periodisert fremover i tid for inntekt som gjelder 31233123/BIDRAGSMOTTAKER",
-                    "Det er en overlappende periode fra 2022-05-01 til null for 31233123/BIDRAGSMOTTAKER og type BARNETILLEGG/BARNETILLEGG_PENSJON og gjelder barn 44444",
-                )
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        assertSoftly(responseBody) {
+            virkningstidspunkt shouldBe null
+            inntekter shouldNotBe null
+            sivilstand shouldBe null
+            husstandsbarn shouldBe null
+            assertSoftly(inntekter!!) {
+                harFeil shouldBe true
+                utvidetBarnetrygd shouldBe null
+                småbarnstillegg shouldBe null
+                kontantstøtte shouldBe null
+                årsinntekter!! shouldHaveSize 1
+                barnetillegg!! shouldHaveSize 1
+                assertSoftly(barnetillegg!!.toList()[0]) {
+                    overlappendePerioder shouldHaveSize 1
+                    fremtidigPeriode shouldBe false
+                    hullIPerioder shouldHaveSize 0
+                    manglerPerioder shouldBe false
+                    ingenLøpendePeriode shouldBe false
+                    ident shouldBe bmIdent
+                    gjelderBarn shouldBe barn2Ident
+                }
+                assertSoftly(årsinntekter!!.toList()[0]) {
+                    overlappendePerioder shouldHaveSize 2
+                    fremtidigPeriode shouldBe true
+                    hullIPerioder shouldHaveSize 0
+                    manglerPerioder shouldBe false
+                    ingenLøpendePeriode shouldBe false
+                    ident shouldBe bmIdent
+                    gjelderBarn shouldBe null
+                }
+            }
         }
     }
 
@@ -206,15 +257,29 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeilList::class.java)
-        responseBody!! shouldHaveSize 1
-        assertSoftly(responseBody[0]) {
-            type shouldBe BeregningValideringsfeilType.INNTEKT
-            feilListe shouldHaveSize 1
-            feilListe shouldContainAll
-                listOf(
-                    "Mangler perioder for ident 31233123/BIDRAGSMOTTAKER",
-                )
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        assertSoftly(responseBody) {
+            virkningstidspunkt shouldBe null
+            inntekter shouldNotBe null
+            sivilstand shouldBe null
+            husstandsbarn shouldBe null
+            assertSoftly(inntekter!!) {
+                harFeil shouldBe true
+                utvidetBarnetrygd shouldBe null
+                småbarnstillegg shouldBe null
+                kontantstøtte shouldBe null
+                årsinntekter!! shouldHaveSize 1
+                barnetillegg shouldBe null
+                assertSoftly(årsinntekter!!.toList()[0]) {
+                    overlappendePerioder shouldHaveSize 0
+                    fremtidigPeriode shouldBe false
+                    hullIPerioder shouldHaveSize 0
+                    manglerPerioder shouldBe true
+                    ingenLøpendePeriode shouldBe false
+                    ident shouldBe bmIdent
+                    gjelderBarn shouldBe null
+                }
+            }
         }
     }
 
