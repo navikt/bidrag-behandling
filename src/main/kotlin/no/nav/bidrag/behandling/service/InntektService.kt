@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilInntektspost
 import no.nav.bidrag.behandling.transformers.valider
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
@@ -119,8 +120,14 @@ class InntektService(
     ): InntektDtoV2? {
         oppdatereInntektRequest.oppdatereInntektsperiode?.let { periode ->
             val inntekt = henteInntektMedId(behandling, periode.id)
-            inntekt.datoFom = periode.angittPeriode.fom
-            inntekt.datoTom = periode.angittPeriode.til
+            periode.taMedIBeregning.ifTrue {
+                inntekt.datoFom = periode.angittPeriode.fom
+                inntekt.datoTom = periode.angittPeriode.til
+            } ?: run {
+                inntekt.datoFom = null
+                inntekt.datoTom = null
+            }
+
             inntekt.taMed = periode.taMedIBeregning
             entityManager.flush()
             return inntekt.tilInntektDtoV2()

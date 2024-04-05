@@ -106,7 +106,7 @@ fun Behandling.tilBehandlingDtoV2(
             årsinntekter =
                 inntekter.filter { !eksplisitteYtelser.contains(it.type) }.tilInntektDtoV2()
                     .sortedBy { it.rapporteringstype }
-                    .sortedBy { it.datoFom ?: it.opprinneligFom }
+                    .sortedByDescending { it.datoFom ?: it.opprinneligFom }
                     .toSet(),
             beregnetInntekter = hentBeregnetInntekter(),
             notat =

@@ -45,6 +45,8 @@ open class Inntekt(
     open val opprinneligFom: LocalDate? = null,
     open val opprinneligTom: LocalDate? = null,
 ) {
+    val datoFomEllerOpprinneligFom get() = datoFom ?: opprinneligFom
+
     override fun toString(): String {
         return try {
             "Inntekt($type, beløp=$belop, datoFom=$datoFom, " +
