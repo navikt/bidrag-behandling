@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -11,8 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilList
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeilType
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
@@ -121,33 +119,32 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 "${rootUriV1()}/behandling/${behandling.id}/beregn",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
-                BeregningValideringsfeilList::class.java,
+                BeregningValideringsfeil::class.java,
             )
 
         // then
         assertSoftly {
             returnert shouldNotBe null
             returnert.statusCode shouldBe HttpStatus.BAD_REQUEST
-            returnert.body!! shouldHaveSize 3
-            returnert.body!!.find { it.type == BeregningValideringsfeilType.BOFORHOLD }?.feilListe?.shouldHaveSize(2)
-            returnert.body!!.find { it.type == BeregningValideringsfeilType.SIVILSTAND }?.feilListe?.shouldHaveSize(1)
-            returnert.body!!.find { it.type == BeregningValideringsfeilType.INNTEKT }?.feilListe?.shouldHaveSize(1)
-            returnert.body!!.find { it.type == BeregningValideringsfeilType.BOFORHOLD }!!.feilListe shouldContainAll
-                listOf(
-                    "Søknadsbarn Gran Mappe/09.05.2018 mangler informasjon om boforhold",
-                    "Søknadsbarn Kran Mappe/01.03.2020 mangler informasjon om boforhold",
-                )
-            returnert.body!!.find { it.type == BeregningValideringsfeilType.SIVILSTAND }!!.feilListe shouldBe
-                listOf(
-                    "Mangler perioder for sivilstand",
-                )
-            returnert.body!!.find { it.type == BeregningValideringsfeilType.INNTEKT }!!.feilListe shouldBe
-                listOf(
-                    "Mangler inntekter for bidragsmottaker",
-                )
-            returnert.headers["Warning"]?.shouldBe(
-                listOf("Validering feilet - Feil ved validering av behandling for beregning"),
-            )
+            returnert.body shouldNotBe null
+            returnert.body!!.virkningstidspunkt shouldBe null
+            returnert.body!!.husstandsbarn shouldBe null
+            returnert.body!!.sivilstand shouldNotBe null
+            assertSoftly(returnert.body!!.sivilstand!!) {
+                hullIPerioder shouldHaveSize 0
+                overlappendePerioder shouldHaveSize 0
+                fremtidigPeriode shouldBe false
+                manglerPerioder shouldBe true
+                ingenLøpendePeriode shouldBe false
+            }
+            assertSoftly(returnert.body!!.inntekter!!) {
+                barnetillegg shouldBe null
+                utvidetBarnetrygd shouldBe null
+                kontantstøtte shouldBe null
+                småbarnstillegg shouldBe null
+                årsinntekter shouldNotBe null
+                årsinntekter!! shouldHaveSize 1
+            }
         }
     }
 

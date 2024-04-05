@@ -468,7 +468,7 @@ class VedtakserviceTest {
                                     behandling.søktFomDato,
                                     null,
                                 )
-                            beløp shouldBe BigDecimal.ZERO
+                            beløp shouldBe null
                             valutakode shouldBe "NOK"
                             resultatkode shouldBe Resultatkode.AVSLAG.name
                             grunnlagReferanseListe.shouldBeEmpty()
@@ -491,7 +491,7 @@ class VedtakserviceTest {
                                     behandling.søktFomDato,
                                     null,
                                 )
-                            beløp shouldBe BigDecimal.ZERO
+                            beløp shouldBe null
                             valutakode shouldBe "NOK"
                             resultatkode shouldBe Resultatkode.AVSLAG.name
                             grunnlagReferanseListe.shouldBeEmpty()

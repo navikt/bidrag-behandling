@@ -7,8 +7,6 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.hentNavn
-import no.nav.bidrag.behandling.database.datamodell.valider
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -28,8 +26,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
-private val inntekstrapporteringerSomKreverGjelderBarn =
-    listOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.BARNETILSYN)
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
 
 fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
@@ -47,106 +43,6 @@ fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
             "Ugyldig data ved oppdatering av behandling: ${feilliste.joinToString(", ")}",
         )
     }
-}
-
-fun Behandling.validerInntekterForBeregning(type: Inntektsrapportering? = null): List<String> {
-    val feilliste = mutableListOf<String>()
-
-    inntekter.groupBy { it.ident }.forEach { (ident, inntekter) ->
-        val inntekterTaMed =
-            inntekter.filter {
-                it.taMed && if (type == null) !eksplisitteYtelser.contains(it.type) else it.type == type
-            }.sortedByDescending { it.datoFom }
-        val hullPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunktEllerSøktFomDato)
-        val overlappendePerioder = inntekterTaMed.finnOverlappendePerioder()
-
-        hullPerioder.forEach {
-            if (it.til == null) {
-                feilliste.add("Det er ingen løpende inntektsperiode for ident $ident")
-            } else {
-                feilliste.add("Det er et hull i perioden ${it.fom} - ${it.til} for ident $ident")
-            }
-        }
-
-        overlappendePerioder.forEach {
-            feilliste.add(
-                "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til} for ident $ident",
-            )
-        }
-    }
-
-    return feilliste
-}
-
-fun Set<Husstandsbarn>.validerBoforholdForBeregning(virkniningstidspunkt: LocalDate): List<String> {
-    val feilliste = mutableListOf<String>()
-    validerBoforhold(virkniningstidspunkt).forEach {
-        val identifikator = "${it.husstandsbarn?.hentNavn()}/${it.husstandsbarn?.fødselsdato?.toDDMMYYYY()}"
-        valider(!it.fremtidigPeriode) {
-            feilliste.add(
-                "Det er periodisert fremover i tid for husstandsbarn $identifikator",
-            )
-        }
-        valider(!it.ingenLøpendePeriode) {
-            feilliste.add(
-                "Det er ingen løpende periode for husstandsbarn $identifikator",
-            )
-        }
-        valider(!it.manglerPerioder) {
-            feilliste.add(
-                "Mangler perioder for husstandsbarn $identifikator",
-            )
-        }
-
-        it.hullIPerioder.forEach {
-            if (it.til != null) {
-                feilliste.add(
-                    "Det er et hull i perioden ${it.fom} - ${it.til} for husstandsbarn $identifikator",
-                )
-            }
-        }
-
-        it.overlappendePerioder.forEach {
-            feilliste.add(
-                "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til}",
-            )
-        }
-    }
-    return feilliste
-}
-
-fun Set<Sivilstand>.validerSivilstandForBeregning(virkniningstidspunkt: LocalDate): List<String> {
-    val feilliste = mutableListOf<String>()
-    val it = validerSivilstand(virkniningstidspunkt)
-    valider(!it.fremtidigPeriode) {
-        feilliste.add(
-            "Det er periodisert fremover i tid for sivilstand",
-        )
-    }
-    valider(!it.ingenLøpendePeriode) {
-        feilliste.add(
-            "Det er ingen løpende periode for sivilstand",
-        )
-    }
-    valider(!it.manglerPerioder) {
-        feilliste.add(
-            "Mangler perioder for sivilstand",
-        )
-    }
-
-    it.hullIPerioder.forEach {
-        if (it.til != null) {
-            feilliste.add(
-                "Det er et hull i perioden ${it.fom} - ${it.til} for sivilstand",
-            )
-        }
-    }
-    it.overlappendePerioder.forEach {
-        feilliste.add(
-            "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til}",
-        )
-    }
-    return feilliste
 }
 
 fun Husstandsbarn.validereBoforhold(
@@ -186,10 +82,6 @@ fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<Bo
 
     return valideringsfeil.toSet()
 }
-
-fun Sivilstand.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
-
-fun Husstandsbarnperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 
 fun Set<Sivilstand>.validerSivilstand(virkniningstidspunkt: LocalDate): SivilstandPeriodeseringsfeil {
     return SivilstandPeriodeseringsfeil(
@@ -273,14 +165,14 @@ fun List<Inntekt>.finnOverlappendePerioder(): Set<OverlappendePeriode> {
             }
         }
 
-    return overlappendePerioder.toSet()
+    return overlappendePerioder.toSet().mergePerioder()
 }
 
 @JvmName("finnHullIPerioderInntekt")
 fun List<Inntekt>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
     val perioderSomSkalSjekkes =
         filter { it.taMed && !it.kanHaHullIPerioder() }.sortedBy { it.datoFom }
-            .map { Datoperiode(it.datoFom, it.datoTom) }
+            .map { Datoperiode(it.datoFom!!, it.datoTom) }
     return perioderSomSkalSjekkes.finnHullIPerioder(virkniningstidspunkt)
 }
 
@@ -301,11 +193,11 @@ val Inntekt.inntektstypeListe
 fun Inntekt.validerOverlapperMedInntekt(sammenlignMedInntekt: Inntekt): OverlappendePeriode? {
     val inntektsposterSomOverlapper = inntektstypeListe.filter { sammenlignMedInntekt.inntektstypeListe.contains(it) }
     val kanOverlappe = inntektsposterSomOverlapper.isEmpty()
-    val inntektPeriode = Datoperiode(datoFom, datoTom)
-    val sammenlignMedInntektPeriode = Datoperiode(sammenlignMedInntekt.datoFom, sammenlignMedInntekt.datoTom)
+    val inntektPeriode = Datoperiode(datoFom!!, datoTom)
+    val sammenlignMedInntektPeriode = Datoperiode(sammenlignMedInntekt.datoFom!!, sammenlignMedInntekt.datoTom)
     val perioderOverlapper = inntektPeriode.overlapper(sammenlignMedInntektPeriode) && !kanOverlappe
     if (perioderOverlapper) {
-        val datoFom = maxOf(sammenlignMedInntekt.datoFom, datoFom)
+        val datoFom = maxOf(sammenlignMedInntekt.datoFom!!, datoFom!!)
         val senesteDatoTom = minOfNullable(datoTom, sammenlignMedInntekt.datoTom)
         return OverlappendePeriode(
             Datoperiode(datoFom, senesteDatoTom),
@@ -407,4 +299,118 @@ fun OppdatereManuellInntekt.validerHarInnteksttype(feilliste: MutableList<String
     if (inntektstype == null) {
         feilliste.add("Barnetillegg må ha gyldig inntektstype")
     }
+}
+
+fun Sivilstand.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
+
+fun Husstandsbarnperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
+
+fun finnSenesteDato(
+    dato1: LocalDate?,
+    dato2: LocalDate?,
+): LocalDate? {
+    return if (dato1 == null || dato2 == null) {
+        null
+    } else {
+        maxOf(
+            dato1,
+            dato2,
+        )
+    }
+}
+
+fun finnSenesteDato(
+    dato1: LocalDate?,
+    dato2: LocalDate?,
+    dato3: LocalDate?,
+): LocalDate? {
+    return if (dato1 == null || dato2 == null || dato3 == null) {
+        null
+    } else {
+        maxOf(
+            dato1,
+            dato2,
+            dato3,
+        )
+    }
+}
+
+private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
+    val sammenstiltePerioder = mutableListOf<OverlappendePeriode>()
+    val sortertePerioder = sortedBy { it.periode.fom }
+    sortertePerioder.forEachIndexed { index, overlappendePeriode ->
+        val annenOverlappendePeriode =
+            sortertePerioder.drop(index + 1).find {
+                it.periode.overlapper(overlappendePeriode.periode) &&
+                        it.rapporteringTyper.any {
+                            overlappendePeriode.rapporteringTyper.contains(
+                                it,
+                            )
+                        }
+            }
+
+        val sammenstiltePerioderSomInneholderOverlappende =
+            sammenstiltePerioder.find {
+                it.idListe.any { overlappendePeriode.idListe.contains(it) }
+            }
+        if (annenOverlappendePeriode != null) {
+            if (sammenstiltePerioderSomInneholderOverlappende != null) {
+                sammenstiltePerioder.remove(sammenstiltePerioderSomInneholderOverlappende)
+                sammenstiltePerioder.add(
+                    sammenstiltePerioderSomInneholderOverlappende.copy(
+                        rapporteringTyper =
+                        (
+                                annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper +
+                                        sammenstiltePerioderSomInneholderOverlappende.rapporteringTyper
+                                ).sorted()
+                            .toMutableSet(),
+                        idListe =
+                        (
+                                annenOverlappendePeriode.idListe + overlappendePeriode.idListe +
+                                        sammenstiltePerioderSomInneholderOverlappende.idListe
+                                ).sorted().toMutableSet(),
+                        inntektstyper =
+                        (
+                                annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper +
+                                        sammenstiltePerioderSomInneholderOverlappende.inntektstyper
+                                ).sorted()
+                            .toMutableSet(),
+                        periode =
+                        Datoperiode(
+                            minOf(
+                                annenOverlappendePeriode.periode.fom,
+                                overlappendePeriode.periode.fom,
+                                sammenstiltePerioderSomInneholderOverlappende.periode.fom,
+                            ),
+                            finnSenesteDato(
+                                annenOverlappendePeriode.periode.til,
+                                overlappendePeriode.periode.til,
+                                sammenstiltePerioderSomInneholderOverlappende.periode.til,
+                            ),
+                        ),
+                    ),
+                )
+            } else {
+                sammenstiltePerioder.add(
+                    annenOverlappendePeriode.copy(
+                        periode =
+                        Datoperiode(
+                            minOf(annenOverlappendePeriode.periode.fom, overlappendePeriode.periode.fom),
+                            finnSenesteDato(annenOverlappendePeriode.periode.til, overlappendePeriode.periode.til),
+                        ),
+                        rapporteringTyper =
+                        (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted()
+                            .toMutableSet(),
+                        idListe = (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted().toMutableSet(),
+                        inntektstyper =
+                        (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted()
+                            .toMutableSet(),
+                    ),
+                )
+            }
+        } else if (sammenstiltePerioderSomInneholderOverlappende == null) {
+            sammenstiltePerioder.add(overlappendePeriode)
+        }
+    }
+    return sammenstiltePerioder.toSet()
 }

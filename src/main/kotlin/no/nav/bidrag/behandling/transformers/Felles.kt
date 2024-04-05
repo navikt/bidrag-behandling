@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 
+val inntekstrapporteringerSomKreverGjelderBarn =
+    listOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.BARNETILSYN)
 val eksplisitteYtelser =
     setOf(
         Inntektsrapportering.BARNETILLEGG,

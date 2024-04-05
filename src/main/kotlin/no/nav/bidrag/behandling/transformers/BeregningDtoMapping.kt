@@ -21,13 +21,17 @@ import java.math.BigDecimal
 
 fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag {
     return BeregnValgteInntekterGrunnlag(
-        periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, beregningTilDato),
+        periode =
+            ÅrMånedsperiode(
+                virkningstidspunktEllerSøktFomDato,
+                maxOf(virkningstidspunktEllerSøktFomDato.plusMonths(1).withDayOfMonth(1), beregningTilDato),
+            ),
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
         bidragsmottakerIdent = Personident(bidragsmottaker?.ident!!),
         grunnlagListe =
             inntekter.filter { it.taMed }.map {
                 InntektsgrunnlagPeriode(
-                    periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
                     beløp = it.belop,
                     inntektsrapportering = it.type,
                     inntektGjelderBarnIdent = it.gjelderBarn.takeIfNotNullOrEmpty { Personident(it) },

@@ -209,7 +209,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
             InntektsrapporteringPeriode(
                 beløp = belop,
                 versjon = (kilde == Kilde.OFFENTLIG).ifTrue { grunnlagListe.hentVersjonForInntekt(this) },
-                periode = ÅrMånedsperiode(datoFom, datoTom?.plusDays(1)),
+                periode = ÅrMånedsperiode(datoFomEllerOpprinneligFom!!, datoTom?.plusDays(1)),
                 opprinneligPeriode =
                     if (kilde == Kilde.OFFENTLIG) {
                         ÅrMånedsperiode(
@@ -291,9 +291,9 @@ private fun opprettGrunnlagForBostatusperioder(
 
 private fun Inntekt.tilGrunnlagreferanse(gjelder: GrunnlagDto) =
     if (gjelderBarn != null) {
-        "inntekt_${type}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFom.toCompactString()}"
+        "inntekt_${type}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFomEllerOpprinneligFom.toCompactString()}"
     } else {
-        "inntekt_${type}_${gjelder.referanse}_${datoFom.toCompactString()}"
+        "inntekt_${type}_${gjelder.referanse}_${datoFomEllerOpprinneligFom.toCompactString()}"
     }
 
 fun Person.valider(rolle: Rolletype? = null): Person {

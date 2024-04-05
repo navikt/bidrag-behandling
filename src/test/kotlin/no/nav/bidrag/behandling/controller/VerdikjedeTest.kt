@@ -142,6 +142,7 @@ class VerdikjedeTest : KontrollerTestRunner() {
     ) {
         val inntekt = inntekter.find { it.type == type && it.ident == gjelder.ident }!!
         inntekt.taMed = true
+        inntekt.datoFom = inntekt.opprinneligFom
         if (løpende) {
             inntekt.datoTom = null
         }

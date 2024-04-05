@@ -16,13 +16,14 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
-import no.nav.bidrag.behandling.transformers.behandling.hentValideringsfeil
+import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
 import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.valider
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
@@ -110,7 +111,7 @@ class InntektService(
         return OppdatereInntektResponse(
             inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
             beregnetInntekter = behandling.hentBeregnetInntekter(),
-            valideringsfeil = behandling.hentValideringsfeil(),
+            valideringsfeil = behandling.hentInntekterValideringsfeil(),
         )
     }
 
@@ -120,8 +121,14 @@ class InntektService(
     ): InntektDtoV2? {
         oppdatereInntektRequest.oppdatereInntektsperiode?.let { periode ->
             val inntekt = henteInntektMedId(behandling, periode.id)
-            inntekt.datoFom = periode.angittPeriode.fom
-            inntekt.datoTom = periode.angittPeriode.til
+            periode.taMedIBeregning.ifTrue {
+                inntekt.datoFom = periode.angittPeriode.fom
+                inntekt.datoTom = periode.angittPeriode.til
+            } ?: run {
+                inntekt.datoFom = null
+                inntekt.datoTom = null
+            }
+
             inntekt.taMed = periode.taMedIBeregning
             entityManager.flush()
             return inntekt.tilInntektDtoV2()
@@ -193,7 +200,7 @@ class InntektService(
 
         log.info {
             "Fant ${manuelleInntekterSomSkalSlettes.size} av de oppgitte ${oppdatereInntekterRequest.sletteInntekter} " +
-                "inntektene som skal slettes"
+                    "inntektene som skal slettes"
         }
 
         behandling.inntekter.removeAll(manuelleInntekterSomSkalSlettes)
@@ -224,7 +231,7 @@ class InntektService(
             else -> {
                 log.error {
                     "Feil klassetype for nyInntekt - aktivering av inntektsgrunnlag feilet for behandling: " +
-                        "${behandling.id!!}."
+                            "${behandling.id!!}."
                 }
                 aktiveringAvGrunnlagFeiletException(behandling.id!!)
             }
@@ -241,23 +248,23 @@ class InntektService(
                 .filter { i -> rolle.ident == i.ident }.toList()
                 .filter { i ->
                     inntekterSomKunIdentifiseresPåType.contains(i.type) ||
-                        periode.fom == YearMonth.from(i.opprinneligFom)
+                            periode.fom == YearMonth.from(i.opprinneligFom)
                 }
                 .filter { i ->
                     inntekterSomKunIdentifiseresPåType.contains(i.type) ||
-                        periode.til ==
-                        if (i.opprinneligTom != null) {
-                            YearMonth.from(i.opprinneligTom?.plusDays(1))
-                        } else {
-                            null
-                        }
+                            periode.til ==
+                            if (i.opprinneligTom != null) {
+                                YearMonth.from(i.opprinneligTom?.plusDays(1))
+                            } else {
+                                null
+                            }
                 }
 
         if (inntekterSomSkalOppdateres.size > 1) {
             log.warn {
                 "Forventet kun å finne èn inntekt, fant ${inntekterSomSkalOppdateres.size} inntekter med" +
-                    "samme type og periode for rolle med id ${rolle.id} i behandling med id ${behandling.id}. " +
-                    "Fjerner duplikatene."
+                        "samme type og periode for rolle med id ${rolle.id} i behandling med id ${behandling.id}. " +
+                        "Fjerner duplikatene."
             }
 
             val inntektSomOppdateres = inntekterSomSkalOppdateres.maxBy { it.id!! }
@@ -270,7 +277,7 @@ class InntektService(
             entityManager.refresh(behandling)
             log.info {
                 "Eksisterende inntekt med id ${inntektSomOppdateres.id} for rolle " +
-                    "${rolle.rolletype} i behandling ${behandling.id} ble oppdatert med nytt beløp og poster."
+                        "${rolle.rolletype} i behandling ${behandling.id} ble oppdatert med nytt beløp og poster."
             }
             idTilInntekterSomBleOppdatert.add(inntektSomOppdateres.id!!)
         } else {
