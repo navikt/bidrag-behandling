@@ -577,6 +577,55 @@ class ValiderInntektPerioderTest {
         }
 
         @Test
+        fun `skal finne overlappende perioder scenarie 3`() {
+            val inntekter =
+                listOf(
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.AINNTEKT,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.KAPITALINNTEKT,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.LIGNINGSINNTEKT,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                    ),
+                )
+
+            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+
+            overlappendePerioder shouldHaveSize 1
+            assertSoftly(overlappendePerioder[0]) {
+                periode.fom shouldBe LocalDate.parse("2022-01-01")
+                periode.til shouldBe null
+                rapporteringTyper shouldHaveSize 4
+                idListe shouldHaveSize 4
+                rapporteringTyper shouldContainAll
+                    listOf(
+                        Inntektsrapportering.AINNTEKT,
+                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                        Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                        Inntektsrapportering.LIGNINGSINNTEKT,
+                    )
+            }
+        }
+
+        @Test
         fun `skal ikke finne overlappende perioder hvis inntekspostene ikke overlapper`() {
             val inntekter =
                 listOf(
@@ -817,7 +866,7 @@ class ValiderInntektPerioderTest {
                 periode.fom shouldBe LocalDate.parse("2022-01-01")
                 periode.til shouldBe null
                 rapporteringTyper shouldHaveSize 1
-                idListe shouldHaveSize 3
+                idListe shouldHaveSize 4
                 rapporteringTyper shouldContainAll
                     listOf(
                         Inntektsrapportering.UTVIDET_BARNETRYGD,

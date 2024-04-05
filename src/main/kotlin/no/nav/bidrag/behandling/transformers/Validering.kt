@@ -306,6 +306,23 @@ fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
                 sammenstiltePerioder.remove(sammenstiltePerioderSomInneholderOverlappende)
                 sammenstiltePerioder.add(
                     sammenstiltePerioderSomInneholderOverlappende.copy(
+                        rapporteringTyper =
+                            (
+                                annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper +
+                                    sammenstiltePerioderSomInneholderOverlappende.rapporteringTyper
+                            ).sorted()
+                                .toMutableSet(),
+                        idListe =
+                            (
+                                annenOverlappendePeriode.idListe + overlappendePeriode.idListe +
+                                    sammenstiltePerioderSomInneholderOverlappende.idListe
+                            ).sorted().toMutableSet(),
+                        inntektstyper =
+                            (
+                                annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper +
+                                    sammenstiltePerioderSomInneholderOverlappende.inntektstyper
+                            ).sorted()
+                                .toMutableSet(),
                         periode =
                             Datoperiode(
                                 minOf(
