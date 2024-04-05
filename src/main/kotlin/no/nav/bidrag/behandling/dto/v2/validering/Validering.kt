@@ -3,29 +3,66 @@ package no.nav.bidrag.behandling.dto.v2.validering
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.time.LocalDate
 
+data class VirkningstidspunktFeilDto(
+    val manglerVirkningstidspunkt: Boolean,
+    val manglerÅrsakEllerAvslag: Boolean,
+) {
+    @get:JsonIgnore
+    val harFeil
+        get() = manglerVirkningstidspunkt || manglerÅrsakEllerAvslag
+}
+
 data class InntektValideringsfeilDto(
-    val barnetillegg: InntektValideringsfeil,
-    val utvidetBarnetrygd: InntektValideringsfeil,
-    val kontantstøtte: InntektValideringsfeil,
-    val småbarnstillegg: InntektValideringsfeil,
+    val barnetillegg: Set<InntektValideringsfeil>?,
+    val utvidetBarnetrygd: InntektValideringsfeil?,
+    val kontantstøtte: Set<InntektValideringsfeil>?,
+    val småbarnstillegg: InntektValideringsfeil?,
     @Schema(name = "årsinntekter")
-    val årsinntekter: InntektValideringsfeil,
-)
+    val årsinntekter: Set<InntektValideringsfeil>?,
+) {
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            barnetillegg?.any { it.harFeil } == true || utvidetBarnetrygd?.harFeil == true ||
+                kontantstøtte?.any { it.harFeil } == true || småbarnstillegg?.harFeil == true || årsinntekter?.any { it.harFeil } == true
+}
 
 data class InntektValideringsfeil(
     val overlappendePerioder: Set<OverlappendePeriode>,
-    val hullIPerioder: List<Datoperiode>,
+    val fremtidigPeriode: Boolean,
+    @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
+    val hullIPerioder: List<Datoperiode> = emptyList(),
+    @Schema(description = "Er sann hvis det ikke finnes noen valgte inntekter. Vil alltid være false hvis det er ytelse")
+    val manglerPerioder: Boolean = false,
+    val ident: String,
+    @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
+    val gjelderBarn: String? = null,
+    @JsonIgnore
+    val rolle: Rolletype?,
+    @JsonIgnore
+    val erYtelse: Boolean = false,
 ) {
-    @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
-    @Suppress("Unused")
-    val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
+    @Schema(
+        description =
+            "Er sann hvis det ikke finnes noe løpende periode. " +
+                "Det vil si en periode hvor datoTom er null. Er bare relevant for årsinntekter",
+    )
+    val ingenLøpendePeriode: Boolean = if (erYtelse) false else hullIPerioder.any { it.til == null }
+
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty() ||
+                fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
 }
 
 data class OverlappendePeriode(
@@ -63,6 +100,7 @@ data class BoforholdPeriodeseringsfeil(
         get() =
             husstandsbarn?.let {
                 HusstandsbarnPeriodiseringsfeilDto(
+                    hentPersonVisningsnavn(husstandsbarn.ident) ?: husstandsbarn.navn,
                     husstandsbarn.ident,
                     husstandsbarn.foedselsdato,
                     husstandsbarn.id ?: -1,
@@ -70,6 +108,7 @@ data class BoforholdPeriodeseringsfeil(
             }
 
     data class HusstandsbarnPeriodiseringsfeilDto(
+        val navn: String?,
         val ident: String?,
         val fødselsdato: LocalDate,
         @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil")
@@ -105,25 +144,9 @@ data class SivilstandOverlappendePeriode(
     val sivilstandskode: Set<Sivilstandskode>,
 )
 
-enum class BeregningValideringsfeilType {
-    BOFORHOLD,
-    SIVILSTAND,
-    INNTEKT,
-    VIRKNINGSTIDSPUNKT,
-    ANDRE,
-}
-
-class BeregningValideringsfeilList : ArrayList<BeregningValideringsfeil>()
-
 data class BeregningValideringsfeil(
-    val type: BeregningValideringsfeilType,
-    val feilListe: MutableList<String>,
+    val virkningstidspunkt: VirkningstidspunktFeilDto?,
+    val inntekter: InntektValideringsfeilDto? = null,
+    val husstandsbarn: List<BoforholdPeriodeseringsfeil>? = null,
+    val sivilstand: SivilstandPeriodeseringsfeil?,
 )
-
-enum class ValideringsfeilType {
-    INNTEKT,
-    BOFORHOLD,
-    SIVILSTAND,
-    VIRKNINGSTIDSPUNKT,
-    ANDRE,
-}

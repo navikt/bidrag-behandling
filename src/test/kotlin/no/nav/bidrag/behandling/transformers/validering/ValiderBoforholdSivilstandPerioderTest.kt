@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.transformers
+package no.nav.bidrag.behandling.transformers.validering
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
@@ -7,6 +7,8 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.transformers.validerBoforhold
+import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -531,42 +533,42 @@ class ValiderBoforholdSivilstandPerioderTest {
             }
         }
     }
+}
 
-    fun opprettSivilstand(perioder: List<Pair<Datoperiode, Sivilstandskode>>): MutableSet<Sivilstand> {
-        return perioder.map {
-            Sivilstand(
-                behandling = oppretteBehandling(),
-                kilde = Kilde.MANUELL,
-                id = Random.nextLong(1000),
-                sivilstand = it.second,
-                datoTom = it.first.til,
-                datoFom = it.first.fom,
-            )
-        }.toMutableSet()
-    }
-
-    fun opprettHusstandsbarn(
-        perioder: List<Pair<Datoperiode, Bostatuskode?>>,
-        ident: String,
-        fødselsdato: LocalDate = LocalDate.parse("2022-01-01"),
-    ): Husstandsbarn =
-        Husstandsbarn(
+fun opprettSivilstand(perioder: List<Pair<Datoperiode, Sivilstandskode>>): MutableSet<Sivilstand> {
+    return perioder.map {
+        Sivilstand(
             behandling = oppretteBehandling(),
             kilde = Kilde.MANUELL,
             id = Random.nextLong(1000),
-            ident = ident,
-            navn = ident,
-            foedselsdato = fødselsdato,
-            perioder =
-                perioder.map {
-                    Husstandsbarnperiode(
-                        husstandsbarn = opprettHusstandsbarn(oppretteBehandling(), testdataBP),
-                        datoFom = it.first.fom,
-                        datoTom = it.first.til,
-                        bostatus = it.second ?: Bostatuskode.DELT_BOSTED,
-                        kilde = Kilde.MANUELL,
-                        id = Random.nextLong(1000),
-                    )
-                }.toMutableSet(),
+            sivilstand = it.second,
+            datoTom = it.first.til,
+            datoFom = it.first.fom,
         )
+    }.toMutableSet()
 }
+
+fun opprettHusstandsbarn(
+    perioder: List<Pair<Datoperiode, Bostatuskode?>>,
+    ident: String,
+    fødselsdato: LocalDate = LocalDate.parse("2022-01-01"),
+): Husstandsbarn =
+    Husstandsbarn(
+        behandling = oppretteBehandling(),
+        kilde = Kilde.MANUELL,
+        id = Random.nextLong(1000),
+        ident = ident,
+        navn = ident,
+        foedselsdato = fødselsdato,
+        perioder =
+            perioder.map {
+                Husstandsbarnperiode(
+                    husstandsbarn = opprettHusstandsbarn(oppretteBehandling(), testdataBP),
+                    datoFom = it.first.fom,
+                    datoTom = it.first.til,
+                    bostatus = it.second ?: Bostatuskode.DELT_BOSTED,
+                    kilde = Kilde.MANUELL,
+                    id = Random.nextLong(1000),
+                )
+            }.toMutableSet(),
+    )
