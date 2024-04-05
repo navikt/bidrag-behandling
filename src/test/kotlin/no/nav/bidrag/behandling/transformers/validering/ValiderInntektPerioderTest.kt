@@ -783,6 +783,47 @@ class ValiderInntektPerioderTest {
                     )
             }
         }
+
+        @Test
+        fun `skal finne overlappende perioder og merge sammen 2`() {
+            val inntekter =
+                listOf(
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-02"),
+                        null,
+                        type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    ),
+                )
+
+            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+
+            overlappendePerioder shouldHaveSize 1
+            assertSoftly(overlappendePerioder[0]) {
+                periode.fom shouldBe LocalDate.parse("2022-01-01")
+                periode.til shouldBe null
+                rapporteringTyper shouldHaveSize 1
+                idListe shouldHaveSize 3
+                rapporteringTyper shouldContainAll
+                    listOf(
+                        Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    )
+            }
+        }
     }
 }
 

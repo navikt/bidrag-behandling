@@ -299,9 +299,7 @@ fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
 
         val sammenstiltePerioderSomInneholderOverlappende =
             sammenstiltePerioder.find {
-                it.idListe.containsAll(
-                    overlappendePeriode.idListe,
-                )
+                it.idListe.any { overlappendePeriode.idListe.contains(it) }
             }
         if (annenOverlappendePeriode != null) {
             if (sammenstiltePerioderSomInneholderOverlappende != null) {
