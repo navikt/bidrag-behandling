@@ -213,7 +213,7 @@ private fun Behandling.hentInntekterForIdent(
             .map {
                 InntekterSomLeggesTilGrunn(
                     beløp = it.belop,
-                    periode = ÅrMånedsperiode(it.datoFom, it.datoTom),
+                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
                     beskrivelse = it.type.name,
                     inntektType = it.type,
                 )
@@ -227,7 +227,7 @@ private fun Behandling.hentInntekterForIdent(
                     Barnetillegg(
                         periode =
                             ÅrMånedsperiode(
-                                it.datoFom,
+                                it.datoFom ?: it.opprinneligFom!!,
                                 it.datoTom,
                             ),
                         beløp = it.belop,
@@ -244,7 +244,7 @@ private fun Behandling.hentInntekterForIdent(
                     UtvidetBarnetrygd(
                         periode =
                             ÅrMånedsperiode(
-                                it.datoFom,
+                                it.datoFom ?: it.opprinneligFom!!,
                                 it.datoTom,
                             ),
                         beløp = it.belop,

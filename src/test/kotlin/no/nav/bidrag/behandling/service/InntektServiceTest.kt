@@ -835,7 +835,7 @@ class InntektServiceTest : TestContainerRunner() {
                                 taMedIBeregning = false,
                                 angittPeriode =
                                     Datoperiode(
-                                        lagretInntekt.datoFom.minusYears(2),
+                                        lagretInntekt.datoFom!!.minusYears(2),
                                         lagretInntekt.datoTom?.plusMonths(1),
                                     ),
                             ),
@@ -1049,7 +1049,7 @@ class InntektServiceTest : TestContainerRunner() {
                             taMedIBeregning = false,
                             angittPeriode =
                                 Datoperiode(
-                                    lagretInntekt.datoFom.minusYears(2),
+                                    lagretInntekt.datoFom!!.minusYears(2),
                                     lagretInntekt.datoTom?.plusMonths(1),
                                 ),
                         ),

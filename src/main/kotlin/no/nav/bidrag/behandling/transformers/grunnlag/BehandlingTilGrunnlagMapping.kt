@@ -209,7 +209,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
             InntektsrapporteringPeriode(
                 beløp = belop,
                 versjon = (kilde == Kilde.OFFENTLIG).ifTrue { grunnlagListe.hentVersjonForInntekt(this) },
-                periode = ÅrMånedsperiode(datoFom, datoTom?.plusDays(1)),
+                periode = ÅrMånedsperiode(datoFom ?: opprinneligFom!!, datoTom?.plusDays(1)),
                 opprinneligPeriode =
                     if (kilde == Kilde.OFFENTLIG) {
                         ÅrMånedsperiode(

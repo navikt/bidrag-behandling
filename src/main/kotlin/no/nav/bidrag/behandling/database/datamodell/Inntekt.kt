@@ -22,7 +22,7 @@ open class Inntekt(
     @Column(name = "inntektsrapportering")
     open var type: Inntektsrapportering,
     open var belop: BigDecimal,
-    open var datoFom: LocalDate,
+    open var datoFom: LocalDate?,
     open var datoTom: LocalDate?,
     open val ident: String,
     @Enumerated(EnumType.STRING)
