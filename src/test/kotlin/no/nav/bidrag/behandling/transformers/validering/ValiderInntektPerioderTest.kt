@@ -562,18 +562,6 @@ class ValiderInntektPerioderTest {
                         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                     )
             }
-//            assertSoftly(overlappendePerioder[1]) {
-//                periode.fom shouldBe LocalDate.parse("2023-12-01")
-//                periode.til shouldBe LocalDate.parse("2024-02-29")
-//                rapporteringTyper shouldHaveSize 3
-//                idListe shouldHaveSize 3
-//                rapporteringTyper shouldContainAll
-//                    listOf(
-//                        Inntektsrapportering.AINNTEKT,
-//                        Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-//                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
-//                    )
-//            }
         }
 
         @Test
@@ -584,6 +572,11 @@ class ValiderInntektPerioderTest {
                         YearMonth.parse("2022-01"),
                         null,
                         type = Inntektsrapportering.AINNTEKT,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        null,
+                        type = Inntektsrapportering.KAPITALINNTEKT,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-01"),
@@ -609,8 +602,18 @@ class ValiderInntektPerioderTest {
 
             val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
 
-            overlappendePerioder shouldHaveSize 1
+            overlappendePerioder shouldHaveSize 2
             assertSoftly(overlappendePerioder[0]) {
+                periode.fom shouldBe LocalDate.parse("2022-01-01")
+                periode.til shouldBe null
+                rapporteringTyper shouldHaveSize 1
+                idListe shouldHaveSize 2
+                rapporteringTyper shouldContainAll
+                    listOf(
+                        Inntektsrapportering.KAPITALINNTEKT,
+                    )
+            }
+            assertSoftly(overlappendePerioder[1]) {
                 periode.fom shouldBe LocalDate.parse("2022-01-01")
                 periode.til shouldBe null
                 rapporteringTyper shouldHaveSize 4
@@ -766,25 +769,6 @@ class ValiderInntektPerioderTest {
                         Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                     )
             }
-//            assertSoftly(overlappendePerioder[1]) {
-//                periode.fom shouldBe LocalDate.parse("2022-04-01")
-//                periode.til shouldBe LocalDate.parse("2022-05-31")
-//                rapporteringTyper shouldHaveSize 2
-//                rapporteringTyper shouldContainAll
-//                    listOf(
-//                        Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-//                        Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
-//                    )
-//            }
-//            assertSoftly(overlappendePerioder[2]) {
-//                periode.fom shouldBe LocalDate.parse("2022-04-01")
-//                periode.til shouldBe null
-//                rapporteringTyper shouldContainAll
-//                    listOf(
-//                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
-//                        Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
-//                    )
-//            }
             assertSoftly(overlappendePerioder[1]) {
                 periode.fom shouldBe LocalDate.parse("2022-09-01")
                 periode.til shouldBe LocalDate.parse("2022-10-31")

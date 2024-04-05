@@ -188,7 +188,7 @@ fun finnSenesteDato(
 fun List<Inntekt>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
     val perioderSomSkalSjekkes =
         filter { it.taMed && !it.kanHaHullIPerioder() }.sortedBy { it.datoFom }
-            .map { Datoperiode(it.datoFom, it.datoTom) }
+            .map { Datoperiode(it.datoFom!!, it.datoTom) }
     return perioderSomSkalSjekkes.finnHullIPerioder(virkniningstidspunkt)
 }
 
@@ -209,11 +209,11 @@ val Inntekt.inntektstypeListe
 fun Inntekt.validerOverlapperMedInntekt(sammenlignMedInntekt: Inntekt): OverlappendePeriode? {
     val inntektsposterSomOverlapper = inntektstypeListe.filter { sammenlignMedInntekt.inntektstypeListe.contains(it) }
     val kanOverlappe = inntektsposterSomOverlapper.isEmpty()
-    val inntektPeriode = Datoperiode(datoFom, datoTom)
-    val sammenlignMedInntektPeriode = Datoperiode(sammenlignMedInntekt.datoFom, sammenlignMedInntekt.datoTom)
+    val inntektPeriode = Datoperiode(datoFom!!, datoTom)
+    val sammenlignMedInntektPeriode = Datoperiode(sammenlignMedInntekt.datoFom!!, sammenlignMedInntekt.datoTom)
     val perioderOverlapper = inntektPeriode.overlapper(sammenlignMedInntektPeriode) && !kanOverlappe
     if (perioderOverlapper) {
-        val datoFom = maxOf(sammenlignMedInntekt.datoFom, datoFom)
+        val datoFom = maxOf(sammenlignMedInntekt.datoFom!!, datoFom!!)
         val senesteDatoTom = minOfNullable(datoTom, sammenlignMedInntekt.datoTom)
         return OverlappendePeriode(
             Datoperiode(datoFom, senesteDatoTom),
@@ -283,7 +283,7 @@ fun Sivilstand.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 
 fun Husstandsbarnperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 
-fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
+private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
     val sammenstiltePerioder = mutableListOf<OverlappendePeriode>()
     val sortertePerioder = sortedBy { it.periode.fom }
     sortertePerioder.forEachIndexed { index, overlappendePeriode ->
