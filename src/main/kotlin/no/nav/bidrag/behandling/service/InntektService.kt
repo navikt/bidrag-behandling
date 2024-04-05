@@ -22,7 +22,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
 import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
-import no.nav.bidrag.behandling.transformers.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -109,13 +108,13 @@ class InntektService(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         return OppdatereInntektResponse(
-            inntekt = oppdaterInntekt(oppdatereInntektRequest, behandling),
+            inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
             beregnetInntekter = behandling.hentBeregnetInntekter(),
             valideringsfeil = behandling.hentValideringsfeil(),
         )
     }
 
-    private fun oppdaterInntekt(
+    private fun oppdatereInntekt(
         oppdatereInntektRequest: OppdatereInntektRequest,
         behandling: Behandling,
     ): InntektDtoV2? {

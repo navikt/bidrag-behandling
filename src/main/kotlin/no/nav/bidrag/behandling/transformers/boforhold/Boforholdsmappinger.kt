@@ -4,24 +4,16 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
+import no.nav.bidrag.behandling.transformers.validereBoforhold
 
 fun Set<Husstandsbarnperiode>.toHusstandsBarnPeriodeDto() =
     this.map {
         HusstandsbarnperiodeDto(
             it.id,
-            it.datoFom,
-            it.datoTom,
-            it.bostatus,
-            it.kilde,
-        )
-    }.toSet()
-
-fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
-    this.map {
-        Husstandsbarnperiode(
-            husstandsBarn,
             it.datoFom,
             it.datoTom,
             it.bostatus,
@@ -61,17 +53,10 @@ fun Husstandsbarn.toDto(behandling: Behandling): HusstandsbarnDtoV2 =
         this.fødselsdato,
     )
 
-fun Set<HusstandsbarnDtoV2>.toDomain(behandling: Behandling) =
-    this.map {
-        val barn =
-            Husstandsbarn(
-                behandling,
-                it.kilde,
-                it.id,
-                it.ident,
-                it.navn,
-                it.fødselsdato,
-            )
-        barn.perioder = it.perioder.toDomain(barn).toMutableSet()
-        barn
-    }.toMutableSet()
+fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) = OppdatereBoforholdResponse(
+    oppdatertHusstandsbarn = this.toDto(behandling),
+    valideringsfeil = BoforholdValideringsfeil(
+        husstandsbarn = this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf())
+            .filter { it.harFeil },
+        ),
+)

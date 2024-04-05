@@ -6,13 +6,17 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
-import no.nav.bidrag.behandling.finnesFraFørException
+import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
+import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
+import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
@@ -87,37 +91,56 @@ class BoforholdService(
     fun oppdatereHusstandsbarnManuelt(
         behandlingsid: Long,
         oppdatereHusstandsbarn: OppdatereHusstandsbarn,
-    ) {
+    ): OppdatereBoforholdResponse {
         val behandling =
             behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        oppdatereHusstandsbarn.validere(behandling)
 
         oppdatereHusstandsbarn.sletteHusstandsbarn?.let { idHusstandsbarn ->
             val husstandsbarnSomSkalSlettes = behandling.husstandsbarn.find { idHusstandsbarn == it.id }
             behandling.husstandsbarn.remove(husstandsbarnSomSkalSlettes)
             log.info { "Slettet husstandsbarn med id $idHusstandsbarn fra behandling $behandlingsid." }
-            return
+            return husstandsbarnSomSkalSlettes!!.tilOppdatereBoforholdResponse(behandling)
         }
 
         oppdatereHusstandsbarn.nyttHusstandsbarn?.let { personalia ->
-            val eksisterendeHusstandsbarn =
-                behandling.husstandsbarn.find { it.ident != null && it.ident == personalia.personident?.verdi }
-
-            if (eksisterendeHusstandsbarn != null) {
-                log.error { "Husstandsbarn med id ${eksisterendeHusstandsbarn.id} finnes allerede i behandling $behandlingsid." }
-                finnesFraFørException(behandlingsid)
-            } else {
-                behandling.husstandsbarn.add(
-                    Husstandsbarn(
-                        behandling,
-                        Kilde.MANUELL,
-                        ident = personalia.personident?.verdi,
-                        fødselsdato = personalia.fødselsdato,
-                        navn = personalia.navn,
-                    ),
-                )
-                log.info { "Nytt husstandsbarn ble manuelt lagt til behandling $behandlingsid." }
-            }
+            val husstandsbarn = Husstandsbarn(
+                behandling,
+                Kilde.MANUELL,
+                ident = personalia.personident?.verdi,
+                fødselsdato = personalia.fødselsdato,
+                navn = personalia.navn,
+            )
+            behandling.husstandsbarn.add(husstandsbarn)
+            entityManager.flush()
+            log.info { "Nytt husstandsbarn (id ${husstandsbarn.id}) ble manuelt lagt til behandling $behandlingsid." }
+            return husstandsbarn.tilOppdatereBoforholdResponse(behandling)
         }
+
+        oppdatereHusstandsbarn.nyBostatusperiode?.let { bostatusperiode ->
+
+            val eksisterendeHusstandsbarn =
+                behandling.husstandsbarn.find { it.id != null && it.id == bostatusperiode.idHusstandsbarn }
+
+            val periode = Husstandsbarnperiode(
+                husstandsbarn = eksisterendeHusstandsbarn!!,
+                bostatus = bostatusperiode.bostatus,
+                datoFom = bostatusperiode.fraOgMed,
+                datoTom = bostatusperiode.tilOgMed,
+                kilde = Kilde.MANUELL,
+            )
+
+            eksisterendeHusstandsbarn.perioder.add(periode)
+            entityManager.flush()
+            log.info {
+                "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
+                        "$behandlingsid."
+            }
+
+            return eksisterendeHusstandsbarn.tilOppdatereBoforholdResponse(behandling)
+        }
+        oppdateringAvBoforholdFeiletException(behandlingsid)
     }
 
     @Transactional
@@ -138,7 +161,9 @@ class BoforholdService(
     fun oppdatereSivilstandManuelt(
         behandlingsid: Long,
         oppdatereSivilstand: OppdatereSivilstand,
-    ) {
+    ) : OppdatereBoforholdResponse {
+
+        return OppdatereBoforholdResponse()
     }
 
     private fun sletteHusstandsbarn(
@@ -158,7 +183,7 @@ class BoforholdService(
         entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                "forbindelse med førstegangsoppdatering av boforhold."
+                    "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 }

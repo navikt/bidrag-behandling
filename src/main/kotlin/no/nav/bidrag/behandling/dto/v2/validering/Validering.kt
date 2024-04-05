@@ -64,7 +64,7 @@ data class BoforholdPeriodeseringsfeil(
             husstandsbarn?.let {
                 HusstandsbarnPeriodiseringsfeilDto(
                     husstandsbarn.ident,
-                    husstandsbarn.foedselsdato,
+                    husstandsbarn.fødselsdato,
                     husstandsbarn.id ?: -1,
                 )
             }

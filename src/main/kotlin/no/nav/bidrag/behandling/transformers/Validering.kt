@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.valider
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
@@ -17,6 +18,8 @@ import no.nav.bidrag.behandling.dto.v2.validering.HusstandsbarnOverlappendePerio
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandOverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
+import no.nav.bidrag.behandling.finnesFraFørException
+import no.nav.bidrag.behandling.husstandsbarnIkkeFunnetException
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
@@ -28,24 +31,24 @@ private val inntekstrapporteringerSomKreverGjelderBarn =
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
 
 fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
-    val feilListe = mutableListOf<String>()
+    val feilliste = mutableListOf<String>()
     if (behandling.opprinneligVirkningstidspunkt != null &&
         avslag == null &&
         virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
     ) {
-        feilListe.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+        feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
     }
 
-    if (feilListe.isNotEmpty()) {
+    if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Ugyldig data ved oppdatering av behandling: ${feilListe.joinToString(", ")}",
+            "Ugyldig data ved oppdatering av behandling: ${feilliste.joinToString(", ")}",
         )
     }
 }
 
 fun Behandling.validerInntekterForBeregning(type: Inntektsrapportering? = null): List<String> {
-    val feilListe = mutableListOf<String>()
+    val feilliste = mutableListOf<String>()
 
     inntekter.groupBy { it.ident }.forEach { (ident, inntekter) ->
         val inntekterTaMed =
@@ -57,91 +60,118 @@ fun Behandling.validerInntekterForBeregning(type: Inntektsrapportering? = null):
 
         hullPerioder.forEach {
             if (it.til == null) {
-                feilListe.add("Det er ingen løpende inntektsperiode for ident $ident")
+                feilliste.add("Det er ingen løpende inntektsperiode for ident $ident")
             } else {
-                feilListe.add("Det er et hull i perioden ${it.fom} - ${it.til} for ident $ident")
+                feilliste.add("Det er et hull i perioden ${it.fom} - ${it.til} for ident $ident")
             }
         }
 
         overlappendePerioder.forEach {
-            feilListe.add(
+            feilliste.add(
                 "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til} for ident $ident",
             )
         }
     }
 
-    return feilListe
+    return feilliste
 }
 
 fun Set<Husstandsbarn>.validerBoforholdForBeregning(virkniningstidspunkt: LocalDate): List<String> {
-    val feilListe = mutableListOf<String>()
+    val feilliste = mutableListOf<String>()
     validerBoforhold(virkniningstidspunkt).forEach {
         val identifikator = "${it.husstandsbarn?.hentNavn()}/${it.husstandsbarn?.fødselsdato?.toDDMMYYYY()}"
         valider(!it.fremtidigPeriode) {
-            feilListe.add(
+            feilliste.add(
                 "Det er periodisert fremover i tid for husstandsbarn $identifikator",
             )
         }
         valider(!it.ingenLøpendePeriode) {
-            feilListe.add(
+            feilliste.add(
                 "Det er ingen løpende periode for husstandsbarn $identifikator",
             )
         }
         valider(!it.manglerPerioder) {
-            feilListe.add(
+            feilliste.add(
                 "Mangler perioder for husstandsbarn $identifikator",
             )
         }
 
         it.hullIPerioder.forEach {
             if (it.til != null) {
-                feilListe.add(
+                feilliste.add(
                     "Det er et hull i perioden ${it.fom} - ${it.til} for husstandsbarn $identifikator",
                 )
             }
         }
 
         it.overlappendePerioder.forEach {
-            feilListe.add(
+            feilliste.add(
                 "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til}",
             )
         }
     }
-    return feilListe
+    return feilliste
 }
 
 fun Set<Sivilstand>.validerSivilstandForBeregning(virkniningstidspunkt: LocalDate): List<String> {
-    val feilListe = mutableListOf<String>()
+    val feilliste = mutableListOf<String>()
     val it = validerSivilstand(virkniningstidspunkt)
     valider(!it.fremtidigPeriode) {
-        feilListe.add(
+        feilliste.add(
             "Det er periodisert fremover i tid for sivilstand",
         )
     }
     valider(!it.ingenLøpendePeriode) {
-        feilListe.add(
+        feilliste.add(
             "Det er ingen løpende periode for sivilstand",
         )
     }
     valider(!it.manglerPerioder) {
-        feilListe.add(
+        feilliste.add(
             "Mangler perioder for sivilstand",
         )
     }
 
     it.hullIPerioder.forEach {
         if (it.til != null) {
-            feilListe.add(
+            feilliste.add(
                 "Det er et hull i perioden ${it.fom} - ${it.til} for sivilstand",
             )
         }
     }
     it.overlappendePerioder.forEach {
-        feilListe.add(
+        feilliste.add(
             "Det er en overlappende periode fra ${it.periode.fom} til ${it.periode.til}",
         )
     }
-    return feilListe
+    return feilliste
+}
+
+fun Husstandsbarn.validereBoforhold(
+    virkniningstidspunkt: LocalDate,
+    valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>
+): Set<BoforholdPeriodeseringsfeil> {
+    val kanIkkeVæreSenereEnnDato =
+        if (virkniningstidspunkt.isAfter(LocalDate.now())) {
+            maxOf(this.fødselsdato, virkniningstidspunkt.withDayOfMonth(1))
+        } else {
+            LocalDate.now().withDayOfMonth(1)
+        }
+    val hullIPerioder =
+        this.perioder.map {
+            Datoperiode(it.datoFom!!, it.datoTom)
+        }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato))
+    valideringsfeil.add(
+        BoforholdPeriodeseringsfeil(
+            this,
+            hullIPerioder,
+            overlappendePerioder = this.perioder.finnHusstandsbarnOverlappendePerioder(),
+            manglerPerioder = this.perioder.isEmpty(),
+            fremtidigPeriode = this.perioder.any { it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) },
+        ),
+    )
+
+    return valideringsfeil.toSet()
 }
 
 fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<BoforholdPeriodeseringsfeil> {
@@ -149,25 +179,7 @@ fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<Bo
 
     groupBy { it.ident }.forEach {
         val husstandsbarn = it.value.first()
-        val kanIkkeVæreSenereEnnDato =
-            if (virkniningstidspunkt.isAfter(LocalDate.now())) {
-                maxOf(husstandsbarn.fødselsdato, virkniningstidspunkt.withDayOfMonth(1))
-            } else {
-                LocalDate.now().withDayOfMonth(1)
-            }
-        val hullIPerioder =
-            husstandsbarn.perioder.map {
-                Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(maxOf(virkniningstidspunkt, husstandsbarn.fødselsdato))
-        valideringsfeil.add(
-            BoforholdPeriodeseringsfeil(
-                husstandsbarn,
-                hullIPerioder,
-                overlappendePerioder = husstandsbarn.perioder.finnHusstandsbarnOverlappendePerioder(),
-                manglerPerioder = husstandsbarn.perioder.isEmpty(),
-                fremtidigPeriode = husstandsbarn.perioder.any { it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) },
-            ),
-        )
+        husstandsbarn.validereBoforhold(virkniningstidspunkt, valideringsfeil)
     }
 
     return valideringsfeil.toSet()
@@ -262,20 +274,6 @@ fun List<Inntekt>.finnOverlappendePerioder(): Set<OverlappendePeriode> {
     return overlappendePerioder.toSet()
 }
 
-fun finnSenesteDato(
-    dato1: LocalDate?,
-    dato2: LocalDate?,
-): LocalDate? {
-    return if (dato1 == null || dato2 == null) {
-        null
-    } else {
-        maxOf(
-            dato1,
-            dato2,
-        )
-    }
-}
-
 @JvmName("finnHullIPerioderInntekt")
 fun List<Inntekt>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
     val perioderSomSkalSjekkes =
@@ -320,86 +318,95 @@ fun Inntekt.validerOverlapperMedInntekt(sammenlignMedInntekt: Inntekt): Overlapp
 private fun Inntekt.kanHaHullIPerioder() = inntekterSomKanHaHullIPerioder.contains(this.type)
 
 fun OppdatereInntekterRequestV2.valider() {
-    val feilListe = mutableListOf<String>()
+    val feilliste = mutableListOf<String>()
     oppdatereManuelleInntekter.forEach { oppdaterInntekt ->
         if (inntekstrapporteringerSomKreverGjelderBarn.contains(oppdaterInntekt.type)) {
             oppdaterInntekt.validerHarGjelderBarn(
-                feilListe,
+                feilliste,
             )
         }
         if (inntekstrapporteringerSomKreverInnteksttype.contains(oppdaterInntekt.type)) {
             oppdaterInntekt.validerHarInnteksttype(
-                feilListe,
+                feilliste,
             )
         }
     }
 
-    if (feilListe.isNotEmpty()) {
+    if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Ugyldig data ved oppdatering av inntekter: ${feilListe.joinToString(", ")}",
+            "Ugyldig data ved oppdatering av inntekter: ${feilliste.joinToString(", ")}",
         )
     }
 }
 
 fun OppdatereInntektRequest.valider() {
-    val feilListe = mutableListOf<String>()
+    val feilliste = mutableListOf<String>()
     if (inntekstrapporteringerSomKreverGjelderBarn.contains(this.oppdatereManuellInntekt?.type)) {
-        this.oppdatereManuellInntekt?.validerHarGjelderBarn(feilListe)
+        this.oppdatereManuellInntekt?.validerHarGjelderBarn(feilliste)
     }
     if (inntekstrapporteringerSomKreverInnteksttype.contains(this.oppdatereManuellInntekt?.type)) {
-        this.oppdatereManuellInntekt?.validerHarInnteksttype(feilListe)
+        this.oppdatereManuellInntekt?.validerHarInnteksttype(feilliste)
     }
 
-    if (feilListe.isNotEmpty()) {
+    if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Ugyldig data ved oppdatering av inntekter: ${feilListe.joinToString(", ")}",
+            "Ugyldig data ved oppdatering av inntekter: ${feilliste.joinToString(", ")}",
         )
     }
 }
 
-fun OppdatereManuellInntekt.validerHarGjelderBarn(feilListe: MutableList<String>) {
-    if (gjelderBarn == null || gjelderBarn.verdi.isEmpty()) {
-        feilListe.add("$type må ha gyldig ident for gjelder barn")
-    }
-}
+fun OppdatereHusstandsbarn.validere(behandling: Behandling) {
 
-fun OppdatereManuellInntekt.validerHarInnteksttype(feilListe: MutableList<String>) {
-    if (inntektstype == null) {
-        feilListe.add("Barnetillegg må ha gyldig inntektstype")
-    }
-}
-
-fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
-    val sammenstiltePerioder = mutableListOf<OverlappendePeriode>()
-    forEachIndexed { index, overlappendePeriode ->
-        val eksisterende =
-            drop(index + 1).find {
-                it.periode.overlapper(overlappendePeriode.periode) &&
-                    it.rapporteringTyper.any {
-                        overlappendePeriode.rapporteringTyper.contains(
-                            it,
-                        )
-                    }
-            }
-
-        if (eksisterende != null) {
-            sammenstiltePerioder.add(
-                eksisterende.copy(
-                    periode =
-                        Datoperiode(
-                            minOf(eksisterende.periode.fom, overlappendePeriode.periode.fom),
-                            finnSenesteDato(eksisterende.periode.til, overlappendePeriode.periode.til),
-                        ),
-                    rapporteringTyper = (eksisterende.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted().toMutableSet(),
-                    idListe = (eksisterende.idListe + overlappendePeriode.idListe).sorted().toMutableSet(),
-                    inntektstyper = (eksisterende.inntektstyper + overlappendePeriode.inntektstyper).sorted().toMutableSet(),
-                ),
+    if (this.nyttHusstandsbarn != null) {
+        if (this.nyttHusstandsbarn.navn == null &&
+            this.nyttHusstandsbarn.personident == null
+        )
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST, "Kan ikke opprette husstandsbarn som mangler både navn og personident."
             )
-        } else if (sammenstiltePerioder.none { it.idListe.containsAll(overlappendePeriode.idListe) }) {
-            sammenstiltePerioder.add(overlappendePeriode)
+        else if (this.nyttHusstandsbarn.personident != null) {
+
+            val eksisterendeHusstandsbarn =
+                behandling.husstandsbarn.find { it.ident != null && it.ident == this.nyttHusstandsbarn.personident.verdi }
+
+            if (eksisterendeHusstandsbarn != null) {
+                finnesFraFørException(behandling.id!!)
+            }
         }
     }
-    return sammenstiltePerioder.toSet()
+
+    if (this.nyBostatusperiode != null) {
+        val husstandsbarn = behandling.husstandsbarn.find { this.nyBostatusperiode.idHusstandsbarn == it.id }
+        if (husstandsbarn == null) {
+            husstandsbarnIkkeFunnetException(this.nyBostatusperiode.idHusstandsbarn, behandling.id!!)
+        }
+    }
+
+    if (this.sletteHusstandsbarn != null) {
+        val husstandsbarn = behandling.husstandsbarn.find { this.sletteHusstandsbarn == it.id }
+        if (husstandsbarn == null) {
+            husstandsbarnIkkeFunnetException(this.sletteHusstandsbarn, behandling.id!!)
+        }
+    }
+
+    if (this.nyttHusstandsbarn == null && this.nyBostatusperiode == null && this.sletteHusstandsbarn == null) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Forespørselen om å oppdatere boforhold for behandling ${behandling.id} inneholdt ingen data.",
+        )
+    }
+}
+
+fun OppdatereManuellInntekt.validerHarGjelderBarn(feilliste: MutableList<String>) {
+    if (gjelderBarn == null || gjelderBarn.verdi.isEmpty()) {
+        feilliste.add("$type må ha gyldig ident for gjelder barn")
+    }
+}
+
+fun OppdatereManuellInntekt.validerHarInnteksttype(feilliste: MutableList<String>) {
+    if (inntektstype == null) {
+        feilliste.add("Barnetillegg må ha gyldig inntektstype")
+    }
 }

@@ -405,7 +405,7 @@ class GrunnlagService(
 
         // Oppdatere inntektstabell med sammenstilte inntekter
         if (innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag)) {
-            sammenstilleOgLagreInntekter(innhentetGrunnlag, rolleInhentetFor)
+            sammenstilleOgLagreInntekter(behandling, innhentetGrunnlag, rolleInhentetFor)
         }
 
         // Oppdatere barn_i_husstand og tilhørende periode-tabell med periodisert boforhold
@@ -463,6 +463,7 @@ class GrunnlagService(
             innhentetGrunnlag.småbarnstilleggListe.size > 0 || innhentetGrunnlag.utvidetBarnetrygdListe.size > 0
 
     private fun sammenstilleOgLagreInntekter(
+        behandling: Behandling,
         innhentetGrunnlag: HentGrunnlagDto,
         rolleInhentetFor: Rolle,
     ) {

@@ -207,7 +207,6 @@ class VedtakTilBehandlingTest {
                     this shouldHaveSize 1
                     this[0].beløp shouldBe BigDecimal(25245987)
                     this[0].kode shouldBe "fastloenn"
-                    this[0].visningsnavn shouldBe "Visningsnavn"
                     this[0].inntektstype shouldBe Inntektstype.AAP
                 }
 
@@ -306,7 +305,6 @@ class VedtakTilBehandlingTest {
             this shouldHaveSize other.inntektsposter.size
             this[0].beløp shouldBe other.inntektsposter.first().beløp
             this[0].kode shouldBe other.inntektsposter.first().kode
-            this[0].visningsnavn shouldBe other.inntektsposter.first().visningsnavn
             this[0].inntektstype shouldBe other.inntektsposter.first().inntektstype
         }
     }

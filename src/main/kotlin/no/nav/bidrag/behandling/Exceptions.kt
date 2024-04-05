@@ -26,7 +26,13 @@ fun husstandsbarnIkkeFunnetException(
     throw HttpClientErrorException(
         HttpStatus.NOT_FOUND,
         "Fant ikke husstandsbarn med id $idHusstandsbarn knyttet " +
-            "til behandling $behandlingsid",
+                "til behandling $behandlingsid",
+    )
+
+fun oppdateringAvBoforholdFeiletException(behandlingsid: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Oppdatering av boforhold feilet for behandling $behandlingsid",
     )
 
 fun lagringAvGrunnlagFeiletException(behandlingsid: Long): Nothing =
@@ -95,7 +101,8 @@ fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
         "Fant ikke fødselsdato til søknadsbarn i behandling med id $behandlingsid",
     )
 
-fun valideringAvBehandlingFeilet(valideringsfeil: List<String>): Nothing = throw BeregningAvResultatForBehandlingFeilet(valideringsfeil)
+fun valideringAvBehandlingFeilet(valideringsfeil: List<String>): Nothing =
+    throw BeregningAvResultatForBehandlingFeilet(valideringsfeil)
 
 fun rolleManglerFødselsdato(rolletype: Rolletype): Nothing =
     throw HttpClientErrorException(

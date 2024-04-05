@@ -171,7 +171,7 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            inntektService.lagreSummerteÅrsinntekter(
+            inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
                 behandling.id!!,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
@@ -182,7 +182,8 @@ class InntektServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 oppdatertBehandling.get().inntekter.size shouldBe 1
-                val barnetillegg = oppdatertBehandling.get().inntekter.first { Inntektsrapportering.BARNETILLEGG == it.type }
+                val barnetillegg =
+                    oppdatertBehandling.get().inntekter.first { Inntektsrapportering.BARNETILLEGG == it.type }
                 barnetillegg.belop shouldBe (500 * 12).toBigDecimal()
                 barnetillegg.inntektsposter.size shouldBe 1
                 barnetillegg.inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
@@ -257,7 +258,6 @@ class InntektServiceTest : TestContainerRunner() {
                             beløp = BigDecimal(14000),
                             kode = "fastloenn",
                             inntektstype = null,
-                            visningsnavn = "",
                             inntekt = inntekt,
                         ),
                     )
@@ -1033,7 +1033,6 @@ class InntektServiceTest : TestContainerRunner() {
                     beløp = ainntekt.belop,
                     inntektstype = Inntektstype.LØNNSINNTEKT,
                     kode = "fastloenn",
-                    visningsnavn = "Fastlønn",
                     inntekt = ainntekt,
                 )
             ainntekt.inntektsposter = mutableSetOf(postAinntekt)
