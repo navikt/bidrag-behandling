@@ -15,7 +15,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
-import no.nav.bidrag.behandling.transformers.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.commons.util.secureLogger
