@@ -321,7 +321,7 @@ class VedtakTilBehandlingTest {
             avslag shouldBe Resultatkode.FULLT_UNDERHOLDT_AV_OFFENTLIG
             årsak shouldBe null
             saksnummer shouldBe SAKSNUMMER
-            virkningstidspunkt shouldBe null
+            virkningstidspunkt shouldBe LocalDate.parse("2022-01-01")
             opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-01-01")
             soknadFra shouldBe SøktAvType.BIDRAGSMOTTAKER
             stonadstype shouldBe Stønadstype.FORSKUDD
