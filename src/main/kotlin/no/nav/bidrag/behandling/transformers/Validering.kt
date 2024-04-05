@@ -331,9 +331,13 @@ fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
                                 minOf(annenOverlappendePeriode.periode.fom, overlappendePeriode.periode.fom),
                                 finnSenesteDato(annenOverlappendePeriode.periode.til, overlappendePeriode.periode.til),
                             ),
-                        rapporteringTyper = (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted().toMutableSet(),
+                        rapporteringTyper =
+                            (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted()
+                                .toMutableSet(),
                         idListe = (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted().toMutableSet(),
-                        inntektstyper = (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted().toMutableSet(),
+                        inntektstyper =
+                            (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted()
+                                .toMutableSet(),
                     ),
                 )
             }
