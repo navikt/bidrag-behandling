@@ -237,7 +237,7 @@ class ValiderBehandlingTest {
                     gjelderBarn shouldBe barn2Ident
                 }
                 assertSoftly(årsinntekter!!.toList()[0]) {
-                    overlappendePerioder shouldHaveSize 2
+                    overlappendePerioder shouldHaveSize 1
                     fremtidigPeriode shouldBe true
                     hullIPerioder shouldHaveSize 0
                     manglerPerioder shouldBe false
