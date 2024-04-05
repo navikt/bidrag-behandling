@@ -144,7 +144,7 @@ data class SivilstandOverlappendePeriode(
     val sivilstandskode: Set<Sivilstandskode>,
 )
 
-data class BeregningValideringsfeil2(
+data class BeregningValideringsfeil(
     val virkningstidspunkt: VirkningstidspunktFeilDto?,
     val inntekter: InntektValideringsfeilDto? = null,
     val husstandsbarn: List<BoforholdPeriodeseringsfeil>? = null,

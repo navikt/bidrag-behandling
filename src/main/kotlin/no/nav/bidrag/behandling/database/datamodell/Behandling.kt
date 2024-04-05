@@ -13,7 +13,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil2
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
@@ -153,7 +153,7 @@ fun Behandling.validerForBeregning() {
         ).takeIf { it.harFeil }
     if (inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null || virkningstidspunktFeil != null) {
         val feil =
-            BeregningValideringsfeil2(
+            BeregningValideringsfeil(
                 virkningstidspunktFeil,
                 inntekterFeil,
                 husstandsbarnFeil,

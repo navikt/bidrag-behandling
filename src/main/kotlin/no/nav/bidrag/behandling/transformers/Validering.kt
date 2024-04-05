@@ -151,7 +151,7 @@ fun List<Inntekt>.finnOverlappendePerioder(): Set<OverlappendePeriode> {
             }
         }
 
-    return overlappendePerioder.toSet()
+    return overlappendePerioder.toSet().mergePerioder()
 }
 
 fun finnSenesteDato(
@@ -164,6 +164,22 @@ fun finnSenesteDato(
         maxOf(
             dato1,
             dato2,
+        )
+    }
+}
+
+fun finnSenesteDato(
+    dato1: LocalDate?,
+    dato2: LocalDate?,
+    dato3: LocalDate?,
+): LocalDate? {
+    return if (dato1 == null || dato2 == null || dato3 == null) {
+        null
+    } else {
+        maxOf(
+            dato1,
+            dato2,
+            dato3,
         )
     }
 }
@@ -269,9 +285,10 @@ fun Husstandsbarnperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 
 fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
     val sammenstiltePerioder = mutableListOf<OverlappendePeriode>()
-    forEachIndexed { index, overlappendePeriode ->
-        val eksisterende =
-            drop(index + 1).find {
+    val sortertePerioder = sortedBy { it.periode.fom }
+    sortertePerioder.forEachIndexed { index, overlappendePeriode ->
+        val annenOverlappendePeriode =
+            sortertePerioder.drop(index + 1).find {
                 it.periode.overlapper(overlappendePeriode.periode) &&
                     it.rapporteringTyper.any {
                         overlappendePeriode.rapporteringTyper.contains(
@@ -280,20 +297,47 @@ fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
                     }
             }
 
-        if (eksisterende != null) {
-            sammenstiltePerioder.add(
-                eksisterende.copy(
-                    periode =
-                        Datoperiode(
-                            minOf(eksisterende.periode.fom, overlappendePeriode.periode.fom),
-                            finnSenesteDato(eksisterende.periode.til, overlappendePeriode.periode.til),
-                        ),
-                    rapporteringTyper = (eksisterende.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted().toMutableSet(),
-                    idListe = (eksisterende.idListe + overlappendePeriode.idListe).sorted().toMutableSet(),
-                    inntektstyper = (eksisterende.inntektstyper + overlappendePeriode.inntektstyper).sorted().toMutableSet(),
-                ),
-            )
-        } else if (sammenstiltePerioder.none { it.idListe.containsAll(overlappendePeriode.idListe) }) {
+        val sammenstiltePerioderSomInneholderOverlappende =
+            sammenstiltePerioder.find {
+                it.idListe.containsAll(
+                    overlappendePeriode.idListe,
+                )
+            }
+        if (annenOverlappendePeriode != null) {
+            if (sammenstiltePerioderSomInneholderOverlappende != null) {
+                sammenstiltePerioder.remove(sammenstiltePerioderSomInneholderOverlappende)
+                sammenstiltePerioder.add(
+                    sammenstiltePerioderSomInneholderOverlappende.copy(
+                        periode =
+                            Datoperiode(
+                                minOf(
+                                    annenOverlappendePeriode.periode.fom,
+                                    overlappendePeriode.periode.fom,
+                                    sammenstiltePerioderSomInneholderOverlappende.periode.fom,
+                                ),
+                                finnSenesteDato(
+                                    annenOverlappendePeriode.periode.til,
+                                    overlappendePeriode.periode.til,
+                                    sammenstiltePerioderSomInneholderOverlappende.periode.til,
+                                ),
+                            ),
+                    ),
+                )
+            } else {
+                sammenstiltePerioder.add(
+                    annenOverlappendePeriode.copy(
+                        periode =
+                            Datoperiode(
+                                minOf(annenOverlappendePeriode.periode.fom, overlappendePeriode.periode.fom),
+                                finnSenesteDato(annenOverlappendePeriode.periode.til, overlappendePeriode.periode.til),
+                            ),
+                        rapporteringTyper = (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted().toMutableSet(),
+                        idListe = (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted().toMutableSet(),
+                        inntektstyper = (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted().toMutableSet(),
+                    ),
+                )
+            }
+        } else if (sammenstiltePerioderSomInneholderOverlappende == null) {
             sammenstiltePerioder.add(overlappendePeriode)
         }
     }

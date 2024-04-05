@@ -8,7 +8,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil2
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -44,7 +44,7 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldNotBe null
             inntekter shouldBe null
@@ -81,7 +81,7 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldBe null
             inntekter shouldBe null
@@ -132,7 +132,7 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldBe null
             inntekter shouldBe null
@@ -214,7 +214,7 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldBe null
             inntekter shouldNotBe null
@@ -257,7 +257,7 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil2::class.java)
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldBe null
             inntekter shouldNotBe null
