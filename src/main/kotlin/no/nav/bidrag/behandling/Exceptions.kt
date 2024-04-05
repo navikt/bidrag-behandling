@@ -26,13 +26,23 @@ fun husstandsbarnIkkeFunnetException(
     throw HttpClientErrorException(
         HttpStatus.NOT_FOUND,
         "Fant ikke husstandsbarn med id $idHusstandsbarn knyttet " +
-                "til behandling $behandlingsid",
+            "til behandling $behandlingsid",
     )
 
 fun oppdateringAvBoforholdFeiletException(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.INTERNAL_SERVER_ERROR,
         "Oppdatering av boforhold feilet for behandling $behandlingsid",
+    )
+
+fun requestManglerDataException(
+    behandlingsid: Long,
+    ressurstype: Ressurstype,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Forespørselen om å oppdatere ${ressurstype.toString().lowercase()} for behandling $behandlingsid " +
+            "inneholdt ingen data.",
     )
 
 fun lagringAvGrunnlagFeiletException(behandlingsid: Long): Nothing =
@@ -86,23 +96,11 @@ fun rolleManglerIdent(
         "Manger personident for rolle $rolletype i behandling $behandlingId",
     )
 
-fun manglerBosstatus(
-    behandlingId: Long,
-    navnEllerIdent: String? = null,
-): Nothing =
-    throw HttpClientErrorException(
-        HttpStatus.BAD_REQUEST,
-        "Mangler bosstatus for søknadsbarn $navnEllerIdent i behandling $behandlingId",
-    )
-
 fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.INTERNAL_SERVER_ERROR,
         "Fant ikke fødselsdato til søknadsbarn i behandling med id $behandlingsid",
     )
-
-fun valideringAvBehandlingFeilet(valideringsfeil: List<String>): Nothing =
-    throw BeregningAvResultatForBehandlingFeilet(valideringsfeil)
 
 fun rolleManglerFødselsdato(rolletype: Rolletype): Nothing =
     throw HttpClientErrorException(
@@ -115,3 +113,8 @@ fun vedtakmappingFeilet(melding: String): Nothing =
         HttpStatus.BAD_REQUEST,
         melding,
     )
+
+enum class Ressurstype {
+    BOFORHOLD,
+    INNTEKT,
+}

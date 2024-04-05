@@ -20,6 +20,7 @@ data class OppdatereBoforholdResponse(
     @Schema(description = "Husstandsbarn som ble opprettet")
     val oppdatertHusstandsbarn: HusstandsbarnDtoV2? = null,
     val oppdatertSivilstand: SivilstandDto? = null,
+    val oppdatertNotat: OppdaterNotat? = null,
     val valideringsfeil: BoforholdValideringsfeil,
 )
 
@@ -27,10 +28,6 @@ data class OppdatereHusstandsbarn(
     val nyttHusstandsbarn: PersonaliaHusstandsbarn? = null,
     val nyBostatusperiode: Bostatusperiode? = null,
     val sletteHusstandsbarn: Long? = null,
-)
-
-data class OppdatereHusstandsbarnResponse(
-    val oppdatertHusstandsbarn: HusstandsbarnDtoV2
 )
 
 data class Bostatusperiode(

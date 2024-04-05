@@ -9,6 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
@@ -31,6 +33,24 @@ class BoforholdService(
     private val bidragPersonConsumer: BidragPersonConsumer,
     private val entityManager: EntityManager,
 ) {
+    @Transactional
+    fun oppdatereNotat(
+        behandlingsid: Long,
+        request: OppdaterNotat,
+    ): OppdatereBoforholdResponse {
+        val behandling =
+            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        behandling.inntektsbegrunnelseKunINotat = request.kunINotat ?: behandling.inntektsbegrunnelseKunINotat
+        behandling.inntektsbegrunnelseIVedtakOgNotat =
+            request.medIVedtaket ?: behandling.inntektsbegrunnelseIVedtakOgNotat
+
+        return OppdatereBoforholdResponse(
+            oppdatertNotat = request,
+            valideringsfeil = BoforholdValideringsfeil(husstandsbarn = emptyList()),
+        )
+    }
+
     @Transactional
     fun lagreFørstegangsinnhentingAvPeriodisertBoforhold(
         behandling: Behandling,
@@ -105,13 +125,14 @@ class BoforholdService(
         }
 
         oppdatereHusstandsbarn.nyttHusstandsbarn?.let { personalia ->
-            val husstandsbarn = Husstandsbarn(
-                behandling,
-                Kilde.MANUELL,
-                ident = personalia.personident?.verdi,
-                fødselsdato = personalia.fødselsdato,
-                navn = personalia.navn,
-            )
+            val husstandsbarn =
+                Husstandsbarn(
+                    behandling,
+                    Kilde.MANUELL,
+                    ident = personalia.personident?.verdi,
+                    fødselsdato = personalia.fødselsdato,
+                    navn = personalia.navn,
+                )
             behandling.husstandsbarn.add(husstandsbarn)
             entityManager.flush()
             log.info { "Nytt husstandsbarn (id ${husstandsbarn.id}) ble manuelt lagt til behandling $behandlingsid." }
@@ -123,19 +144,20 @@ class BoforholdService(
             val eksisterendeHusstandsbarn =
                 behandling.husstandsbarn.find { it.id != null && it.id == bostatusperiode.idHusstandsbarn }
 
-            val periode = Husstandsbarnperiode(
-                husstandsbarn = eksisterendeHusstandsbarn!!,
-                bostatus = bostatusperiode.bostatus,
-                datoFom = bostatusperiode.fraOgMed,
-                datoTom = bostatusperiode.tilOgMed,
-                kilde = Kilde.MANUELL,
-            )
+            val periode =
+                Husstandsbarnperiode(
+                    husstandsbarn = eksisterendeHusstandsbarn!!,
+                    bostatus = bostatusperiode.bostatus,
+                    datoFom = bostatusperiode.fraOgMed,
+                    datoTom = bostatusperiode.tilOgMed,
+                    kilde = Kilde.MANUELL,
+                )
 
             eksisterendeHusstandsbarn.perioder.add(periode)
             entityManager.flush()
             log.info {
                 "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
-                        "$behandlingsid."
+                    "$behandlingsid."
             }
 
             return eksisterendeHusstandsbarn.tilOppdatereBoforholdResponse(behandling)
@@ -155,15 +177,16 @@ class BoforholdService(
 
     @Transactional
     fun oppdatereAutomatiskInnhentaSivilstand() {
+        // TODO: Implementere
     }
 
     @Transactional
     fun oppdatereSivilstandManuelt(
         behandlingsid: Long,
         oppdatereSivilstand: OppdatereSivilstand,
-    ) : OppdatereBoforholdResponse {
-
-        return OppdatereBoforholdResponse()
+    ): OppdatereBoforholdResponse? {
+        // TODO: Implementere
+        return null
     }
 
     private fun sletteHusstandsbarn(
@@ -183,7 +206,7 @@ class BoforholdService(
         entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                    "forbindelse med førstegangsoppdatering av boforhold."
+                "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 }

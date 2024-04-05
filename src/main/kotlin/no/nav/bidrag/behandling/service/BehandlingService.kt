@@ -17,8 +17,10 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
+import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
 import no.nav.bidrag.behandling.transformers.toRolle
+import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -154,15 +156,6 @@ class BehandlingService(
                         grunnlagService.aktivereGrunnlag(it, aktivereGrunnlagRequest)
                     }
                 }
-                request.inntekter?.let { inntekter ->
-                    log.info { "Oppdatere inntekter for behandling $behandlingsid" }
-                    inntektService.oppdatereInntekterManuelt(behandlingsid, request.inntekter)
-                    entityManager.refresh(it)
-                    it.inntektsbegrunnelseKunINotat =
-                        inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
-                    it.inntektsbegrunnelseIVedtakOgNotat =
-                        inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
-                }
                 request.virkningstidspunkt?.let { vt ->
                     log.info { "Oppdatere informasjon om virkningstidspunkt for behandling $behandlingsid" }
                     vt.valider(it)
@@ -175,19 +168,32 @@ class BehandlingService(
                         vt.notat?.medIVedtaket
                             ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
                 }
-                request.boforhold?.let { bf ->
-                    log.info { "Oppdatere informasjon om boforhold for behandling $behandlingsid" }
-                    bf.oppdatereHusstandsbarn?.run {
-                        boforholdService.oppdatereHusstandsbarnManuelt(behandlingsid, this)
-                    }
-                    bf.oppdatereSivilstand?.run {
-                        boforholdService.oppdatereSivilstandManuelt(behandlingsid, this)
-                    }
+                // TODO: Fjerne når boforhold v2-migrering er fullført
+                request.inntekter?.let { inntekter ->
+                    log.info { "Bakoverkompatibilitet - Oppdatere inntekter for behandling $behandlingsid" }
+                    inntektService.oppdatereInntekterManuelt(behandlingsid, request.inntekter)
                     entityManager.refresh(it)
+                    it.inntektsbegrunnelseKunINotat =
+                        inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
+                    it.inntektsbegrunnelseIVedtakOgNotat =
+                        inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
+                }
+                // TODO: Fjerne når boforhold v2-migrering er fullført
+                request.boforhold?.let { bf ->
+                    log.info { "Bakoverkompatibilitet - Oppdatere informasjon om boforhold for behandling $behandlingsid" }
+                    bf.sivilstand?.run {
+                        it.sivilstand.clear()
+                        it.sivilstand.addAll(bf.sivilstand.toSivilstandDomain(it))
+                    }
+                    bf.husstandsbarn?.run {
+                        it.husstandsbarn.clear()
+                        it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
+                    }
+                    entityManager.merge(it)
                     it.boforholdsbegrunnelseKunINotat =
-                        bf.oppdatereNotat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
+                        bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
                     it.boforholdsbegrunnelseIVedtakOgNotat =
-                        bf.oppdatereNotat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
+                        bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
                 }
                 it
             }

@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
+import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.SivilstandOverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.behandling.finnesFraFørException
 import no.nav.bidrag.behandling.husstandsbarnIkkeFunnetException
+import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
@@ -149,7 +151,7 @@ fun Set<Sivilstand>.validerSivilstandForBeregning(virkniningstidspunkt: LocalDat
 
 fun Husstandsbarn.validereBoforhold(
     virkniningstidspunkt: LocalDate,
-    valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>
+    valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>,
 ): Set<BoforholdPeriodeseringsfeil> {
     val kanIkkeVæreSenereEnnDato =
         if (virkniningstidspunkt.isAfter(LocalDate.now())) {
@@ -358,16 +360,15 @@ fun OppdatereInntektRequest.valider() {
 }
 
 fun OppdatereHusstandsbarn.validere(behandling: Behandling) {
-
     if (this.nyttHusstandsbarn != null) {
         if (this.nyttHusstandsbarn.navn == null &&
             this.nyttHusstandsbarn.personident == null
-        )
+        ) {
             throw HttpClientErrorException(
-                HttpStatus.BAD_REQUEST, "Kan ikke opprette husstandsbarn som mangler både navn og personident."
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke opprette husstandsbarn som mangler både navn og personident.",
             )
-        else if (this.nyttHusstandsbarn.personident != null) {
-
+        } else if (this.nyttHusstandsbarn.personident != null) {
             val eksisterendeHusstandsbarn =
                 behandling.husstandsbarn.find { it.ident != null && it.ident == this.nyttHusstandsbarn.personident.verdi }
 
@@ -392,10 +393,7 @@ fun OppdatereHusstandsbarn.validere(behandling: Behandling) {
     }
 
     if (this.nyttHusstandsbarn == null && this.nyBostatusperiode == null && this.sletteHusstandsbarn == null) {
-        throw HttpClientErrorException(
-            HttpStatus.BAD_REQUEST,
-            "Forespørselen om å oppdatere boforhold for behandling ${behandling.id} inneholdt ingen data.",
-        )
+        requestManglerDataException(behandling.id!!, Ressurstype.BOFORHOLD)
     }
 }
 

@@ -36,7 +36,6 @@ import no.nav.bidrag.behandling.transformers.inntekt.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.inntekt.tilUtvidetBarnetrygd
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
-import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
@@ -724,11 +723,7 @@ class GrunnlagService(
         return when (grunnlag) {
             is SkattepliktigeInntekter -> grunnlag.ainntekter.isNotEmpty() || grunnlag.skattegrunnlag.isNotEmpty()
             is SummerteInntekter<*> -> grunnlag.inntekter.isNotEmpty()
-            else -> {
-                log.error { "Grunnlag er ikke en inntektstype" }
-                secureLogger.error { "Grunnlag $grunnlag er ikke en inntektstype" }
-                throw IllegalArgumentException("Grunnlag er ikke en inntektstype")
-            }
+            else -> false
         }
     }
 

@@ -1,13 +1,19 @@
 package no.nav.bidrag.behandling.transformers
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
@@ -150,7 +156,7 @@ fun Set<HusstandsbarnDtoV2>.tilHusstandsbarnDto() =
 fun OppdaterBehandlingRequest.tilOppdaterBehandlingRequestV2(personidentBm: Personident): OppdaterBehandlingRequestV2 {
     return OppdaterBehandlingRequestV2(
         virkningstidspunkt = this.virkningstidspunkt,
-        boforhold = this.boforhold?.tilOppdatereBoforholdRequestV2(),
+        boforhold = this.boforhold,
         inntekter = this.inntekter?.tilOppdatereInntekterRequestV2(personidentBm),
     )
 }
@@ -262,3 +268,37 @@ fun UtvidetBarnetrygdDto.tilInntektDtoV2(personidentBm: Personident) =
         inntektsposter = emptySet(),
         inntektstyper = Inntektsrapportering.UTVIDET_BARNETRYGD.inneholderInntektstypeListe.toSet(),
     )
+
+@Deprecated("Utgår når manuell oppdatering av sivilstand kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
+fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
+    this.map {
+        Sivilstand(behandling, it.datoFom, it.datoTom, it.sivilstand, it.kilde, it.id)
+    }.toMutableSet()
+
+@Deprecated("Utgår når manuell oppdatering av husstandsbarn kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
+fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
+    this.map {
+        val barn =
+            Husstandsbarn(
+                behandling,
+                Kilde.MANUELL,
+                it.id,
+                it.ident,
+                it.navn,
+                it.fødselsdato,
+            )
+        barn.perioder = it.perioder.toDomain(barn).toMutableSet()
+        barn
+    }.toMutableSet()
+
+@Deprecated("Utgår når manuell oppdatering av husstandsbarn kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
+fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
+    this.map {
+        Husstandsbarnperiode(
+            husstandsBarn,
+            it.datoFom,
+            it.datoTom,
+            it.bostatus,
+            it.kilde,
+        )
+    }.toSet()

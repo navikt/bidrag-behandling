@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
@@ -16,6 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
+import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
 import no.nav.bidrag.behandling.service.GrunnlagService
@@ -183,9 +185,16 @@ class BehandlingControllerV2(
         }
 
         request.oppdatereSivilstand?.let {
-            return boforholdService.oppdatereSivilstandManuelt(behandlingsid, it)
+            log.warn { "Ikke-implementert funksjon. Oppdatering av sivilstand er ikke klart gjennom boforhold v2-endepunkt" }
+            // TODO: implementere
+            return boforholdService.oppdatereSivilstandManuelt(behandlingsid, it)!!
         }
 
+        request.oppdatereNotat?.let {
+            return boforholdService.oppdatereNotat(behandlingsid, it)
+        }
+
+        requestManglerDataException(behandlingsid, Ressurstype.BOFORHOLD)
     }
 
     @Suppress("unused")

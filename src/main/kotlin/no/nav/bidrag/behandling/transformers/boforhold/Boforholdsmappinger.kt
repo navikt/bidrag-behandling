@@ -53,10 +53,13 @@ fun Husstandsbarn.toDto(behandling: Behandling): HusstandsbarnDtoV2 =
         this.fødselsdato,
     )
 
-fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) = OppdatereBoforholdResponse(
-    oppdatertHusstandsbarn = this.toDto(behandling),
-    valideringsfeil = BoforholdValideringsfeil(
-        husstandsbarn = this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf())
-            .filter { it.harFeil },
-        ),
-)
+fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
+    OppdatereBoforholdResponse(
+        oppdatertHusstandsbarn = this.toDto(behandling),
+        valideringsfeil =
+            BoforholdValideringsfeil(
+                husstandsbarn =
+                    this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf())
+                        .filter { it.harFeil },
+            ),
+    )
