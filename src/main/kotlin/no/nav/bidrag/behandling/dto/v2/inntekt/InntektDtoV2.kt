@@ -24,7 +24,7 @@ data class InntektDtoV2(
     val beløp: BigDecimal,
     @Schema(type = "string", format = "date", example = "2024-01-01")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoFom: LocalDate,
+    val datoFom: LocalDate?,
     @Schema(type = "string", format = "date", example = "2024-12-31")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
@@ -113,7 +113,7 @@ data class OppdatereManuellInntekt(
     val type: Inntektsrapportering,
     @Schema(description = "Inntektens beløp i norske kroner", required = true)
     val beløp: BigDecimal,
-    @Schema(type = "String", format = "date", example = "2024-01-01")
+    @Schema(type = "String", format = "date", example = "2024-01-01", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,
     @Schema(type = "String", format = "date", example = "2024-12-31")

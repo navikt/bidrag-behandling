@@ -106,7 +106,7 @@ fun Behandling.tilBehandlingDtoV2(
             årsinntekter =
                 inntekter.filter { !eksplisitteYtelser.contains(it.type) }.tilInntektDtoV2()
                     .sortedBy { it.rapporteringstype }
-                    .sortedBy { it.datoFom }
+                    .sortedByDescending { it.datoFom ?: it.opprinneligFom }
                     .toSet(),
             beregnetInntekter = hentBeregnetInntekter(),
             notat =
@@ -221,7 +221,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelseSomGjelderBarn(
 
 fun List<Inntekt>.inneholderFremtidigPeriode(virkningstidspunkt: LocalDate) =
     any {
-        it.datoFom.isAfter(maxOf(virkningstidspunkt.withDayOfMonth(1), LocalDate.now().withDayOfMonth(1)))
+        it.datoFom!!.isAfter(maxOf(virkningstidspunkt.withDayOfMonth(1), LocalDate.now().withDayOfMonth(1)))
     }
 
 fun Behandling.hentBeregnetInntekter() =

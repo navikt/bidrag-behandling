@@ -835,7 +835,7 @@ class InntektServiceTest : TestContainerRunner() {
                                 taMedIBeregning = false,
                                 angittPeriode =
                                     Datoperiode(
-                                        lagretInntekt.datoFom.minusYears(2),
+                                        lagretInntekt.datoFom!!.minusYears(2),
                                         lagretInntekt.datoTom?.plusMonths(1),
                                     ),
                             ),
@@ -1049,7 +1049,7 @@ class InntektServiceTest : TestContainerRunner() {
                             taMedIBeregning = false,
                             angittPeriode =
                                 Datoperiode(
-                                    lagretInntekt.datoFom.minusYears(2),
+                                    lagretInntekt.datoFom!!.minusYears(2),
                                     lagretInntekt.datoTom?.plusMonths(1),
                                 ),
                         ),
@@ -1065,10 +1065,8 @@ class InntektServiceTest : TestContainerRunner() {
                 shouldBePresent(oppdatertBehandling)
                 oppdatertBehandling.get().inntekter.size shouldBe 1
                 oppdatertBehandling.get().inntekter.first().belop shouldBe ainntekt.belop
-                oppdatertBehandling.get().inntekter.first().datoFom shouldBe
-                    oppdatereInntektRequest.oppdatereInntektsperiode?.angittPeriode?.fom
-                oppdatertBehandling.get().inntekter.first().datoTom shouldBe
-                    oppdatereInntektRequest.oppdatereInntektsperiode?.angittPeriode?.til
+                oppdatertBehandling.get().inntekter.first().datoFom shouldBe null
+                oppdatertBehandling.get().inntekter.first().datoTom shouldBe null
                 oppdatertBehandling.get().inntekter.first().opprinneligFom shouldBe ainntekt.opprinneligFom
                 oppdatertBehandling.get().inntekter.first().opprinneligTom shouldBe ainntekt.opprinneligTom
                 oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1
