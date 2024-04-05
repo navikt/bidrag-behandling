@@ -227,7 +227,7 @@ private fun Behandling.hentInntekterForIdent(
                     Barnetillegg(
                         periode =
                             ÅrMånedsperiode(
-                                it.datoFom ?: it.opprinneligFom!!,
+                                it.datoFomEllerOpprinneligFom!!,
                                 it.datoTom,
                             ),
                         beløp = it.belop,
@@ -244,7 +244,7 @@ private fun Behandling.hentInntekterForIdent(
                     UtvidetBarnetrygd(
                         periode =
                             ÅrMånedsperiode(
-                                it.datoFom ?: it.opprinneligFom!!,
+                                it.datoFomEllerOpprinneligFom!!,
                                 it.datoTom,
                             ),
                         beløp = it.belop,
