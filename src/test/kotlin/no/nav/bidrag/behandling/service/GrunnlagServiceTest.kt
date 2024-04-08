@@ -74,7 +74,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 19
+    val totaltAntallGrunnlag = 20
 
     @BeforeEach
     fun setup() {
@@ -93,7 +93,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @DisplayName("Teste oppdatereGrunnlagForBehandling")
     open inner class OppdatereGrunnlagForBehandling {
         @Test
-        fun `skal lagre ytelser`() {
+        @Transactional
+        open fun `skal lagre ytelser`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -115,12 +116,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+            entityManager.refresh(oppdatertBehandling.get())
 
             assertSoftly {
                 oppdatertBehandling.isPresent shouldBe true
                 oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
                 oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
-                oppdatertBehandling.get().inntekter.size shouldBe totaltAntallGrunnlag + 1
+                oppdatertBehandling.get().inntekter.size shouldBe totaltAntallGrunnlag
             }
 
             val alleGrunnlagBm =
@@ -155,7 +157,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal lagre skattegrunnlag`() {
+        @Transactional
+        open fun `skal lagre skattegrunnlag`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -177,6 +180,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+            entityManager.refresh(oppdatertBehandling.get())
 
             assertSoftly {
                 oppdatertBehandling.isPresent shouldBe true
@@ -320,7 +324,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal ikke lagre ny innhenting av småbarnstillegg hvis ingen endringer`() {
+        @Transactional
+        open fun `skal ikke lagre ny innhenting av småbarnstillegg hvis ingen endringer`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -410,7 +415,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal lagre tomt grunnlag uten å sette til aktiv dersom sist lagrede grunnlag ikke var tomt`() {
+        @Transactional
+        open fun `skal lagre tomt grunnlag uten å sette til aktiv dersom sist lagrede grunnlag ikke var tomt`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
             stubUtils.stubHenteGrunnlagOk(tomRespons = true)
@@ -511,7 +517,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal sette til aktiv dersom ikke tidligere lagret`() {
+        @Transactional
+        open fun `skal sette til aktiv dersom ikke tidligere lagret`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
@@ -558,9 +565,15 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal lagre husstandsmedlemmer`() {
+        @Transactional
+        open fun `skal lagre husstandsmedlemmer`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
+            behandling.husstandsbarn.clear()
+            behandling.grunnlag.clear()
+            entityManager.persist(behandling)
+            entityManager.flush()
+
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
@@ -570,9 +583,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
-            assertSoftly {
-                oppdatertBehandling.isPresent shouldBe true
-                oppdatertBehandling.get().grunnlag.size shouldBe totaltAntallGrunnlag
+            assertSoftly(oppdatertBehandling) {
+                it.isPresent shouldBe true
+                it.get().grunnlag.size shouldBe totaltAntallGrunnlag
+                it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }.size shouldBe 2
+                it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
+                    .filter { g -> g.erBearbeidet }.size shouldBe 1
+                it.get().husstandsbarn.size shouldBe 2
             }
 
             val grunnlag =
@@ -598,7 +615,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal lagre sivilstand`() {
+        @Transactional
+        open fun `skal lagre sivilstand`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
@@ -649,7 +667,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal lagre småbarnstillegg`() {
+        @Transactional
+        open fun `skal lagre småbarnstillegg`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
@@ -797,7 +816,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal lagre arbeidsforhold`() {
+        @Transactional
+        open fun `skal lagre arbeidsforhold`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
 
@@ -1187,6 +1207,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @DisplayName("Teste hentAlleSistInnhentet")
     open inner class HentAlleSistInnhentet {
         @Test
+        @Transactional
         open fun `skal hente nyeste grunnlagsopplysning per type`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(true)
@@ -1267,9 +1288,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     private fun validereGrunnlagBm(grunnlag: List<Grunnlag>) {
         assertSoftly {
-            grunnlag.size shouldBe 11
+            grunnlag.size shouldBe 12
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
-            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 1
+            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SIVILSTAND }.size shouldBe 1
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BARNETILLEGG }.size shouldBe 0
