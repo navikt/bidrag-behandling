@@ -67,7 +67,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -263,17 +262,16 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // hvis
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
-
             // så
-//            assertSoftly {
-//                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 2
-//                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
-//                    Grunnlagstype(
-//                        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-//                        true,
-//                    ) == it.nyeData.grunnlagsdatatype
-//                }.size shouldBe 1
-//            }
+            assertSoftly {
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 2
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
+                    Grunnlagstype(
+                        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
+                        true,
+                    ) == it.nyeData.grunnlagsdatatype
+                }.size shouldBe 1
+            }
         }
     }
 
@@ -285,7 +283,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val actualBehandling = behandlingRepository.save(prepareBehandling(søknadsid))
             behandlingRepository.delete(actualBehandling)
             stubUtils.stubHenteGrunnlagOk()
-            stubPersonConsumer()
+            stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
             stubKodeverkProvider()
 
             val opprettetBehandling =
@@ -304,12 +302,12 @@ class BehandlingServiceTest : TestContainerRunner() {
                             setOf(
                                 OpprettRolleDto(
                                     rolletype = Rolletype.BARN,
-                                    ident = Personident("213"),
+                                    ident = Personident(testdataBarn1.ident),
                                     fødselsdato = LocalDate.parse("2005-01-01"),
                                 ),
                                 OpprettRolleDto(
                                     rolletype = Rolletype.BIDRAGSMOTTAKER,
-                                    ident = Personident("12321"),
+                                    ident = Personident(testdataBM.ident),
                                     fødselsdato = LocalDate.parse("2005-01-01"),
                                 ),
                             ),

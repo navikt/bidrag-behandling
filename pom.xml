@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.3</version>
+        <version>3.2.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>no.nav</groupId>
@@ -25,8 +25,8 @@
         <springframework-cloud.version>4.1.1</springframework-cloud.version>
         <kotest.version>5.8.1</kotest.version>
         <mockk.version>4.0.2</mockk.version>
-        <kotlin-logging-jvm.version>6.0.3</kotlin-logging-jvm.version>
-        <flyway.version>10.10.0</flyway.version>
+        <kotlin-logging-jvm.version>6.0.4</kotlin-logging-jvm.version>
+        <flyway.version>10.11.0</flyway.version>
         <jackson.version>2.17.0</jackson.version>
         <testcontainers.version>1.19.7</testcontainers.version>
         <spring-boot-testcontainers.version>3.2.3</spring-boot-testcontainers.version>
@@ -34,7 +34,7 @@
         <snakeyaml.version>2.2</snakeyaml.version>
         <snappy-java.version>1.1.10.5</snappy-java.version>
         <skipOwasp>false</skipOwasp>
-        <arrow-core.version>1.2.3</arrow-core.version>
+        <arrow-core.version>1.2.4</arrow-core.version>
         <checker-qual.version>3.42.0</checker-qual.version>
         <asm.version>9.7</asm.version>
         <swagger.version>2.2.21</swagger.version>
@@ -303,6 +303,10 @@
                     <groupId>com.google.errorprone</groupId>
                     <artifactId>error_prone_annotations</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.github.oshai</groupId>
+                    <artifactId>kotlin-logging-jvm</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -329,6 +333,10 @@
                     <groupId>no.nav.bidrag</groupId>
                     <artifactId>bidrag-domene-felles</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.github.oshai</groupId>
+                    <artifactId>kotlin-logging-jvm</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -344,6 +352,10 @@
                     <groupId>no.nav.bidrag</groupId>
                     <artifactId>bidrag-domene-felles</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.github.oshai</groupId>
+                    <artifactId>kotlin-logging-jvm</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -354,6 +366,10 @@
                 <exclusion>
                     <groupId>com.google.errorprone</groupId>
                     <artifactId>error_prone_annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.github.oshai</groupId>
+                    <artifactId>kotlin-logging-jvm</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

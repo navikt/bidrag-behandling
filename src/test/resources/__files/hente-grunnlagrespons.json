@@ -125,7 +125,7 @@
   "husstandsmedlemmerOgEgneBarnListe": [
     {
       "partPersonId": "81020212345",
-      "relatertPersonPersonId": "99057812345",
+      "relatertPersonPersonId": "1344124",
       "navn": "Småstein Nilsen",
       "fødselsdato": "2020-01-24",
       "erBarnAvBmBp": true,
@@ -137,7 +137,7 @@
     },
     {
       "partPersonId": "82020212345",
-      "relatertPersonPersonId": "99057812345",
+      "relatertPersonPersonId": "54545454545",
       "navn": "Brostein Nilsen",
       "fødselsdato": "2022-01-24",
       "erBarnAvBmBp": true,

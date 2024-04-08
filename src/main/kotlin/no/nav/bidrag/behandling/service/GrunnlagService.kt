@@ -550,11 +550,11 @@ class GrunnlagService(
                 innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.tilRelatertPerson(),
             )
 
-        lagreGrunnlagHvisEndret<List<BoforholdBeregnet>>(
+        lagreGrunnlagHvisEndret<BoforholdBeregnet>(
             behandling,
             behandling.bidragsmottaker!!,
             Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-            boforholdPeriodisert,
+            boforholdPeriodisert.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
     }
@@ -707,54 +707,70 @@ class GrunnlagService(
     }
 
     private fun opprett(
-        behandlingsid: Long,
+        behandling: Behandling,
         idTilRolleInnhentetFor: Long,
         grunnlagstype: Grunnlagstype,
         data: String,
         innhentet: LocalDateTime,
         aktiv: LocalDateTime? = null,
     ) {
-        log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id $behandlingsid" }
+        log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id $behandling" }
 
-        behandlingRepository.findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
-                it.grunnlag.add(
-                    Grunnlag(
-                        it,
-                        grunnlagstype.type.getOrMigrate(),
-                        grunnlagstype.erBearbeidet,
-                        data = data,
-                        innhentet = innhentet,
-                        aktiv = aktiv,
-                        rolle = it.roller.first { r -> r.id == idTilRolleInnhentetFor },
-                    ),
-                )
-            }
+        behandling.grunnlag.add(
+            Grunnlag(
+                behandling,
+                grunnlagstype.type.getOrMigrate(),
+                grunnlagstype.erBearbeidet,
+                data = data,
+                innhentet = innhentet,
+                aktiv = aktiv,
+                rolle = behandling.roller.first { r -> r.id == idTilRolleInnhentetFor },
+            ),
+        )
     }
 
     private inline fun <reified T> lagreGrunnlagHvisEndret(
-        behandlingsid: Long,
+        behandling: Behandling,
         rolle: Rolle,
         grunnlagstype: Grunnlagstype,
         innhentetGrunnlag: Set<T>,
         hentetTidspunkt: LocalDateTime,
     ) {
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
-            henteNyesteGrunnlagsdatasett<T>(behandlingsid, rolle.id!!, grunnlagstype).toSet()
+            henteNyesteGrunnlagsdatasett<T>(behandling.id!!, rolle.id!!, grunnlagstype).toSet()
 
         if ((sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
             (sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() && innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle)
         ) {
             opprett(
-                behandlingsid = behandlingsid,
+                behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
                 grunnlagstype = grunnlagstype,
                 innhentet = hentetTidspunkt,
                 aktiv = if (sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) LocalDateTime.now() else null,
                 idTilRolleInnhentetFor = rolle.id!!,
             )
+
+            if (grunnlagstype == Grunnlagstype(Grunnlagsdatatype.BOFORHOLD.getOrMigrate(), true) &&
+                sistInnhentedeGrunnlagAvTypeForRolle.isEmpty()
+            ) {
+                @Suppress("UNCHECKED_CAST")
+                boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
+                    behandling,
+                    Personident(rolle.ident!!),
+                    innhentetGrunnlag.toList() as List<BoforholdBeregnet>,
+                )
+            } else if (grunnlagstype == Grunnlagstype(Grunnlagsdatatype.SIVILSTAND.getOrMigrate(), true) &&
+                sistInnhentedeGrunnlagAvTypeForRolle.isEmpty()
+            ) {
+                boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(
+                    behandling,
+                    Personident(rolle.ident!!),
+                    innhentetGrunnlag as SivilstandBeregnet,
+                )
+            }
         } else {
-            log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandlingsid." }
+            log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandling." }
         }
     }
 
@@ -773,7 +789,7 @@ class GrunnlagService(
             (sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
         ) {
             opprett(
-                behandlingsid = behandling.id!!,
+                behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
                 grunnlagstype = grunnlagstype,
                 innhentet = hentetTidspunkt,
@@ -798,23 +814,6 @@ class GrunnlagService(
                     behandling.id!!,
                     Personident(rolle.ident!!),
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
-                )
-            } else if (grunnlagstype == Grunnlagstype(Grunnlagsdatatype.BOFORHOLD.getOrMigrate(), true) &&
-                sistInnhentedeGrunnlagAvType == null
-            ) {
-                @Suppress("UNCHECKED_CAST")
-                boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
-                    behandling,
-                    Personident(rolle.ident!!),
-                    innhentetGrunnlag as List<BoforholdBeregnet>,
-                )
-            } else if (grunnlagstype == Grunnlagstype(Grunnlagsdatatype.SIVILSTAND.getOrMigrate(), true) &&
-                sistInnhentedeGrunnlagAvType == null
-            ) {
-                boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(
-                    behandling,
-                    Personident(rolle.ident!!),
-                    innhentetGrunnlag as SivilstandBeregnet,
                 )
             }
         } else {
@@ -999,7 +998,7 @@ class GrunnlagService(
         when (grunnlagsdatatype) {
             Grunnlagsdatatype.ARBEIDSFORHOLD -> {
                 lagreGrunnlagHvisEndret(
-                    behandling.id!!,
+                    behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.arbeidsforholdListe.toSet(),
@@ -1009,7 +1008,7 @@ class GrunnlagService(
 
             Grunnlagsdatatype.BARNETILLEGG -> {
                 lagreGrunnlagHvisEndret(
-                    behandling.id!!,
+                    behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.barnetilleggListe.filter {
@@ -1021,7 +1020,7 @@ class GrunnlagService(
 
             Grunnlagsdatatype.BARNETILSYN -> {
                 lagreGrunnlagHvisEndret(
-                    behandling.id!!,
+                    behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.barnetilsynListe.toSet(),
@@ -1031,7 +1030,7 @@ class GrunnlagService(
 
             Grunnlagsdatatype.KONTANTSTØTTE -> {
                 lagreGrunnlagHvisEndret(
-                    behandling.id!!,
+                    behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.kontantstøtteListe.filter {
@@ -1043,7 +1042,7 @@ class GrunnlagService(
 
             Grunnlagsdatatype.BOFORHOLD -> {
                 lagreGrunnlagHvisEndret(
-                    behandling.id!!,
+                    behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
@@ -1053,7 +1052,7 @@ class GrunnlagService(
 
             Grunnlagsdatatype.SIVILSTAND -> {
                 lagreGrunnlagHvisEndret(
-                    behandling.id!!,
+                    behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.sivilstandListe.toSet(),
@@ -1063,7 +1062,7 @@ class GrunnlagService(
 
             Grunnlagsdatatype.SMÅBARNSTILLEGG -> {
                 lagreGrunnlagHvisEndret(
-                    behandling.id!!,
+                    behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.småbarnstilleggListe.toSet(),
@@ -1073,7 +1072,7 @@ class GrunnlagService(
 
             Grunnlagsdatatype.UTVIDET_BARNETRYGD -> {
                 lagreGrunnlagHvisEndret(
-                    behandling.id!!,
+                    behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
