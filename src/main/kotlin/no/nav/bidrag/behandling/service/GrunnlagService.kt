@@ -258,8 +258,31 @@ class GrunnlagService(
                             hentEndringerInntekter(
                                 it,
                                 inntekter,
-                                nyinnhentetGrunnlag.find { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }
-                                    .konverterData<SummerteInntekter<SummertÅrsinntekt>>(),
+                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
+                            )
+                        }.toSet(),
+                    småbarnstillegg =
+                        roller.flatMap {
+                            hentEndringerInntekter(
+                                it,
+                                inntekter,
+                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.SMÅBARNSTILLEGG),
+                            )
+                        }.toSet(),
+                    utvidetBarnetrygd =
+                        roller.flatMap {
+                            hentEndringerInntekter(
+                                it,
+                                inntekter,
+                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.UTVIDET_BARNETRYGD),
+                            )
+                        }.toSet(),
+                    kontantstøtte =
+                        roller.flatMap {
+                            hentEndringerInntekter(
+                                it,
+                                inntekter,
+                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.KONTANTSTØTTE),
                             )
                         }.toSet(),
                     barnetillegg =
@@ -267,8 +290,7 @@ class GrunnlagService(
                             hentEndringerInntekter(
                                 it,
                                 inntekter,
-                                nyinnhentetGrunnlag.find { g -> g.type == Grunnlagsdatatype.BARNETILLEGG }
-                                    .konverterData<SummerteInntekter<SummertÅrsinntekt>>(),
+                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.BARNETILLEGG),
                             )
                         }.toSet(),
                 ),
@@ -276,6 +298,11 @@ class GrunnlagService(
             sivilstand = emptySet(),
         )
     }
+
+    private fun List<Grunnlag>.hentBearbeidetInntekterForType(type: Grunnlagsdatatype) =
+        find {
+            it.type == type && it.erBearbeidet
+        }.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
 
     fun hentEndringerInntekter(
         rolle: Rolle,
@@ -286,7 +313,7 @@ class GrunnlagService(
             val eksisterendeInntekt =
                 inntekter.find { it.type == grunnlag.inntektRapportering }
                     ?: return@map grunnlag.tilInntekt(rolle.behandling, Personident(rolle.ident!!)).tilInntektDtoV2()
-            val eksisterendeInntektPeriode = ÅrMånedsperiode(eksisterendeInntekt.datoFomEllerOpprinneligFom!!, eksisterendeInntekt.datoTom)
+            val eksisterendeInntektPeriode = ÅrMånedsperiode(eksisterendeInntekt.opprinneligFom!!, eksisterendeInntekt.opprinneligTom)
             val erPeriodeEndret = eksisterendeInntektPeriode != grunnlag.periode
             val erBeløpEndret = eksisterendeInntekt.belop != grunnlag.sumInntekt
             if (erBeløpEndret || erPeriodeEndret || erInntektsposterEndret(eksisterendeInntekt.inntektsposter, grunnlag.inntektPostListe)) {
@@ -298,12 +325,13 @@ class GrunnlagService(
     }
 
     private fun erInntektsposterEndret(
-        inntektspost: Set<Inntektspost>,
+        inntektsposter: Set<Inntektspost>,
         nyeInntekstposter: List<InntektPost>,
     ): Boolean {
-        if (inntektspost.size != nyeInntekstposter.size) return true
+        if (inntektsposter.isEmpty() && nyeInntekstposter.isEmpty()) return false
+        if (inntektsposter.size != nyeInntekstposter.size) return true
         return nyeInntekstposter.any { nyInntekstpost ->
-            val eksisterende = inntektspost.find { it.inntektstype == nyInntekstpost.inntekstype }
+            val eksisterende = inntektsposter.find { it.inntektstype == nyInntekstpost.inntekstype }
             eksisterende == null || eksisterende.beløp != nyInntekstpost.beløp
         }
     }

@@ -5,11 +5,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -46,13 +46,13 @@ data class BehandlingDtoV2(
 
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
-    val husstandsbarn: Set<HusstandsbarnDtoV2>,
+    val husstandsbarn: Set<HusstandsbarnGrunnlagDto>,
     val sivilstand: Set<SivilstandGrunnlagDto>,
 )
 
 data class IkkeAktiveGrunnlagsdata(
     val inntekter: IkkeAktiveInntekter,
-    val husstandsbarn: Set<HusstandsbarnDto>,
+    val husstandsbarn: Set<HusstandsbarnGrunnlagDto>,
     val sivilstand: Set<SivilstandDto>,
 )
 
@@ -60,10 +60,31 @@ data class IkkeAktiveInntekter(
     val barnetillegg: Set<InntektDtoV2> = emptySet(),
     val utvidetBarnetrygd: Set<InntektDtoV2> = emptySet(),
     val kontantstøtte: Set<InntektDtoV2> = emptySet(),
-    val månedsinntekter: Set<InntektDtoV2> = emptySet(),
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
+)
+
+data class SivilstandIkkeAktivGrunnlagDto(
+    val sivilstand: Set<SivilstandDto>,
+    val grunnlag: Set<SivilstandGrunnlagDto>,
+    val hentetTidspunkt: LocalDate,
+)
+
+data class SivilstandGrunnlagDto(
+    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val datoFom: LocalDate?,
+    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val datoTom: LocalDate?,
+    val sivilstand: Sivilstandskode,
+)
+
+data class HusstandsbarnGrunnlagDto(
+    val perioder: Set<HusstandsbarnperiodeDto>,
+    val ident: String? = null,
+    val hentetTidspunkt: LocalDate,
 )
 
 data class Grunnlagstype(
