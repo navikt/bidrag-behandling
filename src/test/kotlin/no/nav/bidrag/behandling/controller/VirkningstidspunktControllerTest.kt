@@ -1,11 +1,10 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
-import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.service.BehandlingServiceTest
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.junit.jupiter.api.Assertions
@@ -20,11 +19,8 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
 
-    @Autowired
-    lateinit var behandlingService: BehandlingService
-
     @Test
-    fun `skal oppdatere virknings tidspunkt data`() {
+    fun `skal oppdatere virkningstidspunktdata`() {
         val behandling = behandlingRepository.save(BehandlingServiceTest.prepareBehandling())
 
         val req =
@@ -43,12 +39,12 @@ class VirkningstidspunktControllerTest : KontrollerTestRunner() {
 
         val respons =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/${behandling.id}",
+                "${rootUriV2()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
                 HttpEntity(req),
-                BehandlingDto::class.java,
+                BehandlingDtoV2::class.java,
             )
-        Assertions.assertEquals(HttpStatus.OK, respons.statusCode)
+        Assertions.assertEquals(HttpStatus.CREATED, respons.statusCode)
 
         val body = respons.body!!
         Assertions.assertEquals("KUN I NOTAT", body.virkningstidspunkt.notat.kunINotat)

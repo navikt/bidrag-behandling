@@ -12,7 +12,6 @@ import jakarta.persistence.ManyToOne
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import java.time.LocalDate
 
-// TODO: koble sammen med rolletabellen
 @Entity(name = "sivilstand")
 open class Sivilstand(
     @ManyToOne(fetch = FetchType.LAZY)

@@ -70,7 +70,12 @@ class ValiderBoforholdSivilstandPerioderTest {
                         fødselsdato = LocalDate.parse("2020-01-02"),
                     ),
                     opprettHusstandsbarn(
-                        listOf(Datoperiode(YearMonth.parse("2022-02").atDay(1), null) to Bostatuskode.IKKE_MED_FORELDER),
+                        listOf(
+                            Datoperiode(
+                                YearMonth.parse("2022-02").atDay(1),
+                                null,
+                            ) to Bostatuskode.IKKE_MED_FORELDER,
+                        ),
                         "barn4",
                         fødselsdato = LocalDate.parse("2020-01-03"),
                     ),
@@ -559,7 +564,7 @@ fun opprettHusstandsbarn(
         id = Random.nextLong(1000),
         ident = ident,
         navn = ident,
-        foedselsdato = fødselsdato,
+        fødselsdato = fødselsdato,
         perioder =
             perioder.map {
                 Husstandsbarnperiode(

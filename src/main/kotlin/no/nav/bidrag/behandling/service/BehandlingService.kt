@@ -15,7 +15,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
@@ -39,6 +39,7 @@ private val log = KotlinLogging.logger {}
 @Service
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
+    private val boforholdService: BoforholdService,
     private val forsendelseService: ForsendelseService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
@@ -155,15 +156,6 @@ class BehandlingService(
                         grunnlagService.aktivereGrunnlag(it, aktivereGrunnlagRequest)
                     }
                 }
-                request.inntekter?.let { inntekter ->
-                    log.info { "Oppdatere inntekter for behandling $behandlingsid" }
-                    inntektService.oppdatereInntekterManuelt(behandlingsid, request.inntekter)
-                    entityManager.refresh(it)
-                    it.inntektsbegrunnelseKunINotat =
-                        inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
-                    it.inntektsbegrunnelseIVedtakOgNotat =
-                        inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
-                }
                 request.virkningstidspunkt?.let { vt ->
                     log.info { "Oppdatere informasjon om virkningstidspunkt for behandling $behandlingsid" }
                     vt.valider(it)
@@ -176,8 +168,19 @@ class BehandlingService(
                         vt.notat?.medIVedtaket
                             ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
                 }
+                // TODO: Fjerne når boforhold v2-migrering er fullført
+                request.inntekter?.let { inntekter ->
+                    log.info { "Bakoverkompatibilitet - Oppdatere inntekter for behandling $behandlingsid" }
+                    inntektService.oppdatereInntekterManuelt(behandlingsid, request.inntekter)
+                    entityManager.refresh(it)
+                    it.inntektsbegrunnelseKunINotat =
+                        inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
+                    it.inntektsbegrunnelseIVedtakOgNotat =
+                        inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
+                }
+                // TODO: Fjerne når boforhold v2-migrering er fullført
                 request.boforhold?.let { bf ->
-                    log.info { "Oppdatere informasjon om boforhold for behandling $behandlingsid" }
+                    log.info { "Bakoverkompatibilitet - Oppdatere informasjon om boforhold for behandling $behandlingsid" }
                     bf.sivilstand?.run {
                         it.sivilstand.clear()
                         it.sivilstand.addAll(bf.sivilstand.toSivilstandDomain(it))

@@ -180,7 +180,7 @@ class VerdikjedeTest : KontrollerTestRunner() {
 
         val response =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling",
+                "${rootUriV2()}/behandling",
                 HttpMethod.POST,
                 HttpEntity(behandlingReq),
                 OpprettBehandlingResponse::class.java,

@@ -485,13 +485,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                         behandling,
                         kilde = Kilde.MANUELL,
                         ident = identOriginaltIkkeMedISaken,
-                        foedselsdato = LocalDate.parse("2021-01-01"),
+                        fødselsdato = LocalDate.parse("2021-01-01"),
                     ),
                     Husstandsbarn(
                         behandling,
                         kilde = Kilde.OFFENTLIG,
                         ident = identOriginaltMedISaken,
-                        foedselsdato = LocalDate.parse("2021-01-01"),
+                        fødselsdato = LocalDate.parse("2021-01-01"),
                     ),
                 )
 

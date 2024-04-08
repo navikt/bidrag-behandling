@@ -170,7 +170,7 @@ fun Husstandsbarn.tilGrunnlagPerson(): GrunnlagDto {
     return GrunnlagDto(
         referanse =
             grunnlagstype.tilPersonreferanse(
-                foedselsdato.toCompactString(),
+                fødselsdato.toCompactString(),
                 (rolle?.id ?: id!!).toInt(),
             ),
         type = grunnlagstype,
@@ -182,7 +182,7 @@ fun Husstandsbarn.tilGrunnlagPerson(): GrunnlagDto {
                     fødselsdato =
                         finnFødselsdato(
                             ident,
-                            foedselsdato,
+                            fødselsdato,
                         ) // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(behandling.id ?: -1),
                 ).valider(),

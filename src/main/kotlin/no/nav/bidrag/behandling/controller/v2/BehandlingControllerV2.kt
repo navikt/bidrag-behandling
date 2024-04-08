@@ -6,19 +6,24 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
+import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.BoforholdService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.VedtakService
-import no.nav.bidrag.behandling.transformers.tilBehandlingDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -35,6 +40,7 @@ private val log = KotlinLogging.logger {}
 class BehandlingControllerV2(
     private val vedtakService: VedtakService,
     private val behandlingService: BehandlingService,
+    private val boforholdService: BoforholdService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
 ) {
@@ -142,6 +148,53 @@ class BehandlingControllerV2(
     ): OppdatereInntektResponse {
         log.info { "Oppdatere inntekter for behandling $behandlingsid" }
         return inntektService.oppdatereInntektManuelt(behandlingsid, request)
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/boforhold")
+    @Operation(
+        description = "Oppdatere boforhold for behandling. Returnerer boforhold som ble endret, opprettet, eller slettet.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+            ApiResponse(responseCode = "400", description = "Feil opplysninger oppgitt"),
+            ApiResponse(
+                responseCode = "401",
+                description = "Sikkerhetstoken mangler, er utløpt, eller av andre årsaker ugyldig",
+            ),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(
+                responseCode = "500",
+                description = "Serverfeil",
+            ),
+            ApiResponse(responseCode = "503", description = "Tjeneste utilgjengelig"),
+        ],
+    )
+    fun oppdatereBoforhold(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdatereBoforholdRequestV2,
+    ): OppdatereBoforholdResponse {
+        log.info { "Oppdatere boforhold for behandling $behandlingsid" }
+
+        request.oppdatereHusstandsbarn?.let {
+            return boforholdService.oppdatereHusstandsbarnManuelt(behandlingsid, it)
+        }
+
+        request.oppdatereSivilstand?.let {
+            log.warn { "Ikke-implementert funksjon. Oppdatering av sivilstand er ikke klart gjennom boforhold v2-endepunkt" }
+            // TODO: implementere
+            return boforholdService.oppdatereSivilstandManuelt(behandlingsid, it)!!
+        }
+
+        request.oppdatereNotat?.let {
+            return boforholdService.oppdatereNotat(behandlingsid, it)
+        }
+
+        requestManglerDataException(behandlingsid, Ressurstype.BOFORHOLD)
     }
 
     @Suppress("unused")

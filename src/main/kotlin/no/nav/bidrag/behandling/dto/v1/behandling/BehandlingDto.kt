@@ -65,8 +65,8 @@ data class BoforholdDto(
 )
 
 data class BoforholdValideringsfeil(
-    val husstandsbarn: List<BoforholdPeriodeseringsfeil>,
-    val sivilstand: SivilstandPeriodeseringsfeil?,
+    val husstandsbarn: List<BoforholdPeriodeseringsfeil>? = emptyList(),
+    val sivilstand: SivilstandPeriodeseringsfeil? = null,
 )
 
 data class InntekterDto(

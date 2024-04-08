@@ -1,10 +1,13 @@
-package no.nav.bidrag.behandling.transformers
+package no.nav.bidrag.behandling.transformers.grunnlag
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
@@ -53,7 +56,6 @@ fun List<InntektPost>.tilInntektspost(inntekt: Inntekt) =
         Inntektspost(
             beløp = it.beløp,
             kode = it.kode,
-            visningsnavn = it.visningsnavn,
             inntektstype = it.inntekstype,
             inntekt = inntekt,
         )
@@ -116,3 +118,14 @@ fun Inntektsrapportering.tilGrunnlagsdataType() =
         Inntektsrapportering.KONTANTSTØTTE -> Grunnlagsdatatype.KONTANTSTØTTE
         else -> Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER
     }
+
+fun Grunnlag.toDto(): GrunnlagsdataDto {
+    return GrunnlagsdataDto(
+        this.id!!,
+        this.behandling.id!!,
+        Personident(this.rolle.ident!!),
+        Grunnlagstype(this.type, this.erBearbeidet),
+        this.data,
+        this.innhentet,
+    )
+}

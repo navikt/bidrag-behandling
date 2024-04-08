@@ -18,7 +18,6 @@ open class Inntektspost(
     @Column(name = "belop")
     open val beløp: BigDecimal,
     open val kode: String,
-    open val visningsnavn: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,

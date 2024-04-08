@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.deprecated.dto.AddOpplysningerRequest
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.GrunnlagService
-import no.nav.bidrag.behandling.transformers.toDto
+import no.nav.bidrag.behandling.transformers.grunnlag.toDto
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

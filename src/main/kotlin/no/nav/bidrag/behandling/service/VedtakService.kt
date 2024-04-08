@@ -16,9 +16,9 @@ import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønadAvslag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
+import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
-import no.nav.bidrag.behandling.transformers.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe

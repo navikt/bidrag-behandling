@@ -19,8 +19,8 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
-import no.nav.bidrag.behandling.transformers.ainntektListe
-import no.nav.bidrag.behandling.transformers.skattegrunnlagListe
+import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
+import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -213,9 +213,8 @@ fun opprettInntekter(
 fun opprettInntektsposter(inntekt: Inntekt): MutableSet<Inntektspost> =
     setOf(
         Inntektspost(
-            BigDecimal.valueOf(400000),
-            "lønnFraFluefiske",
-            "Lønn fra fluefiske",
+            beløp = BigDecimal.valueOf(400000),
+            kode = "lønnFraFluefiske",
             inntekt = inntekt,
             inntektstype = Inntektstype.NÆRINGSINNTEKT,
         ),
@@ -273,7 +272,7 @@ fun opprettHusstandsbarn(
             ident = data.ident,
             kilde = Kilde.OFFENTLIG,
             behandling = behandling,
-            foedselsdato = data.foedselsdato,
+            fødselsdato = data.foedselsdato,
         )
     husstandsbarn.perioder =
         mutableSetOf(
@@ -514,7 +513,7 @@ fun Behandling.opprettHusstandsbarn(
             kilde = Kilde.OFFENTLIG,
             ident = ident,
             navn = navn,
-            foedselsdato = fødselsdato ?: LocalDate.parse("2020-01-01"),
+            fødselsdato = fødselsdato ?: LocalDate.parse("2020-01-01"),
             id = if (index != null) (index + 1).toLong() else null,
         )
     val førsteDatoTom =

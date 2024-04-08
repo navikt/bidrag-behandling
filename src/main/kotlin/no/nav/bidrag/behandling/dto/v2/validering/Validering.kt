@@ -102,7 +102,7 @@ data class BoforholdPeriodeseringsfeil(
                 HusstandsbarnPeriodiseringsfeilDto(
                     hentPersonVisningsnavn(husstandsbarn.ident) ?: husstandsbarn.navn,
                     husstandsbarn.ident,
-                    husstandsbarn.foedselsdato,
+                    husstandsbarn.fødselsdato,
                     husstandsbarn.id ?: -1,
                 )
             }

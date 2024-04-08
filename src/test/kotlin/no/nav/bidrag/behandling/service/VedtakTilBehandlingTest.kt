@@ -16,8 +16,8 @@ import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.transformers.ainntektListe
-import no.nav.bidrag.behandling.transformers.skattegrunnlagListe
+import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
+import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.hentFil
@@ -207,7 +207,6 @@ class VedtakTilBehandlingTest {
                     this shouldHaveSize 1
                     this[0].beløp shouldBe BigDecimal(25245987)
                     this[0].kode shouldBe "fastloenn"
-                    this[0].visningsnavn shouldBe "Visningsnavn"
                     this[0].inntektstype shouldBe Inntektstype.AAP
                 }
 
@@ -231,7 +230,6 @@ class VedtakTilBehandlingTest {
                     this shouldHaveSize 1
                     this[0].beløp shouldBe BigDecimal(5330000)
                     this[0].kode shouldBe "fastloenn"
-                    this[0].visningsnavn shouldBe "Visningsnavn"
                     this[0].inntektstype shouldBe Inntektstype.AAP
                 }
 
@@ -292,7 +290,7 @@ class VedtakTilBehandlingTest {
                 val husstandsmedlemUtenIdent = find { it.ident == null }
                 husstandsmedlemUtenIdent shouldNotBe null
                 husstandsmedlemUtenIdent!!.navn shouldBe "Per Hansen"
-                husstandsmedlemUtenIdent.foedselsdato shouldBe LocalDate.parse("2024-02-06")
+                husstandsmedlemUtenIdent.fødselsdato shouldBe LocalDate.parse("2024-02-06")
             }
         }
     }
@@ -307,7 +305,6 @@ class VedtakTilBehandlingTest {
             this shouldHaveSize other.inntektsposter.size
             this[0].beløp shouldBe other.inntektsposter.first().beløp
             this[0].kode shouldBe other.inntektsposter.first().kode
-            this[0].visningsnavn shouldBe other.inntektsposter.first().visningsnavn
             this[0].inntektstype shouldBe other.inntektsposter.first().inntektstype
         }
     }
@@ -373,7 +370,6 @@ class VedtakTilBehandlingTest {
                 assertSoftly(it[0].inntektsposter.first()) {
                     beløp shouldBe BigDecimal(2859987)
                     kode shouldBe "fastloenn"
-                    visningsnavn shouldBe "Visningsnavn"
                     inntektstype shouldBe Inntektstype.AAP
                 }
             }
@@ -392,7 +388,7 @@ class VedtakTilBehandlingTest {
             val barn2 = husstandsbarn.find { it.ident == testdataBarn2.ident }
             assertSoftly(barn1!!) {
                 it.ident shouldBe testdataBarn1.ident
-                it.foedselsdato shouldBe testdataBarn1.foedselsdato
+                it.fødselsdato shouldBe testdataBarn1.foedselsdato
                 it.navn shouldBe null
                 it.kilde shouldBe Kilde.OFFENTLIG
                 val periode = it.perioder.first()
@@ -405,7 +401,7 @@ class VedtakTilBehandlingTest {
             }
             assertSoftly(barn2!!) {
                 it.ident shouldBe testdataBarn2.ident
-                it.foedselsdato shouldBe testdataBarn2.foedselsdato
+                it.fødselsdato shouldBe testdataBarn2.foedselsdato
                 it.navn shouldBe null
                 it.kilde shouldBe Kilde.OFFENTLIG
                 it.perioder shouldHaveSize 2
@@ -425,7 +421,7 @@ class VedtakTilBehandlingTest {
             }
             assertSoftly(it.last()) {
                 it.ident shouldBe null
-                it.foedselsdato shouldBe LocalDate.parse("2024-02-06")
+                it.fødselsdato shouldBe LocalDate.parse("2024-02-06")
                 it.navn shouldBe "Per Hansen"
                 it.kilde shouldBe Kilde.MANUELL
                 it.perioder shouldHaveSize 1

@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntekt
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.commons.security.utils.TokenUtils
-import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -428,7 +427,7 @@ private fun List<BaseGrunnlag>.tilHusstandsbarn(
         Husstandsbarn(
             ident = gjelderBarnGrunnlag.personIdent,
             navn = gjelderBarn.navn,
-            foedselsdato = gjelderBarn.fødselsdato,
+            fødselsdato = gjelderBarn.fødselsdato,
             kilde =
                 when (gjelderBarnGrunnlag.type) {
                     Grunnlagstype.PERSON_SØKNADSBARN -> Kilde.OFFENTLIG
@@ -522,7 +521,6 @@ private fun BaseGrunnlag.tilInntekt(
                 inntektstype = it.inntekstype,
                 beløp = it.beløp,
                 inntekt = inntektBO,
-                visningsnavn = finnVisningsnavn(it.kode),
             )
         }.toMutableSet()
 
@@ -571,7 +569,6 @@ private fun Inntekt.copy(
                 Inntektspost(
                     beløp = it.beløp,
                     inntektstype = it.inntektstype,
-                    visningsnavn = it.visningsnavn,
                     kode = it.kode,
                     inntekt = this,
                 )

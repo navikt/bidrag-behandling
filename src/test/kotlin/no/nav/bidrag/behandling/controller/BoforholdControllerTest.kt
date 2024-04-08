@@ -31,6 +31,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     Kilde.OFFENTLIG,
                 ),
             )
+
         val husstandsBarn =
             setOf(
                 HusstandsbarnDto(
@@ -45,7 +46,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             )
 
         // 2.2
-        val boforholdData =
+        val boforholddata =
             OppdaterBoforholdRequest(
                 husstandsBarn,
                 emptySet(),
@@ -54,12 +55,12 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                         "med i vedtak",
                         "kun i notat",
                     ),
-            ) //
+            )
         val boforholdResponse =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/${behandling.id}",
                 HttpMethod.PUT,
-                HttpEntity(OppdaterBehandlingRequestV2(boforhold = boforholdData)),
+                HttpEntity(OppdaterBehandlingRequestV2(boforhold = boforholddata)),
                 BehandlingDtoV2::class.java,
             )
 

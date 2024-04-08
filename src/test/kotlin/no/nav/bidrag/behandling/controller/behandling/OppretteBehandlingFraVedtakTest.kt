@@ -64,7 +64,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         assertSoftly(behandling) {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 15
-            grunnlag shouldHaveSize 30
+            grunnlag shouldHaveSize 29
             refVedtaksid shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(10)
             sivilstand shouldHaveSize 2
