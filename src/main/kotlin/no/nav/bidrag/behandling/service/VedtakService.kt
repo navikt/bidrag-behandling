@@ -187,7 +187,7 @@ class VedtakService(
                         periodeListe =
                             listOf(
                                 OpprettPeriodeRequestDto(
-                                    periode = ÅrMånedsperiode(søktFomDato, null),
+                                    periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
                                     beløp = null,
                                     resultatkode = avslag!!.name,
                                     valutakode = "NOK",

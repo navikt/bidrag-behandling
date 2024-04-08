@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.transformers.toHusstandsbarn
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.valider
+import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -148,6 +149,7 @@ class BehandlingService(
     ) {
         behandlingRepository.findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+                it.validerKanOppdatere()
                 log.info { "Oppdatere behandling $behandlingsid" }
                 SECURE_LOGGER.info("Oppdatere behandling $behandlingsid for forespørsel $request")
                 request.aktivereGrunnlagForPerson.let { aktivereGrunnlagRequest ->
@@ -222,7 +224,7 @@ class BehandlingService(
         val gjeldendeAktiveGrunnlagsdata =
             grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling)
         val grunnlagsdataEndretEtterAktivering =
-            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandlingsid, behandling.roller)
+            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff2(behandling)
         return behandling.tilBehandlingDtoV2(
             gjeldendeAktiveGrunnlagsdata,
             grunnlagsdataEndretEtterAktivering,

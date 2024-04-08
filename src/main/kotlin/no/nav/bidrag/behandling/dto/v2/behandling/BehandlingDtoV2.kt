@@ -3,15 +3,19 @@ package no.nav.bidrag.behandling.dto.v2.behandling
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
-import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
-import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
+import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import java.time.LocalDate
 
 data class BehandlingDtoV2(
@@ -36,8 +40,30 @@ data class BehandlingDtoV2(
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
-    val aktiveGrunnlagsdata: Set<GrunnlagsdataDto>,
-    val ikkeAktiverteEndringerIGrunnlagsdata: Set<GrunnlagsdataEndretDto>,
+    val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
+    val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
+)
+
+data class AktiveGrunnlagsdata(
+    val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
+    val husstandsbarn: Set<HusstandsbarnDtoV2>,
+    val sivilstand: Set<SivilstandGrunnlagDto>,
+)
+
+data class IkkeAktiveGrunnlagsdata(
+    val inntekter: IkkeAktiveInntekter,
+    val husstandsbarn: Set<HusstandsbarnDto>,
+    val sivilstand: Set<SivilstandDto>,
+)
+
+data class IkkeAktiveInntekter(
+    val barnetillegg: Set<InntektDtoV2> = emptySet(),
+    val utvidetBarnetrygd: Set<InntektDtoV2> = emptySet(),
+    val kontantstøtte: Set<InntektDtoV2> = emptySet(),
+    val månedsinntekter: Set<InntektDtoV2> = emptySet(),
+    val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
+    @Schema(name = "årsinntekter")
+    val årsinntekter: Set<InntektDtoV2> = emptySet(),
 )
 
 data class Grunnlagstype(

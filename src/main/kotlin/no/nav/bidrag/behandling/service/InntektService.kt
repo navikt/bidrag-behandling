@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.valider
+import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -108,6 +109,7 @@ class InntektService(
             behandlingRepository.findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
+        behandling.validerKanOppdatere()
         return OppdatereInntektResponse(
             inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
             beregnetInntekter = behandling.hentBeregnetInntekter(),

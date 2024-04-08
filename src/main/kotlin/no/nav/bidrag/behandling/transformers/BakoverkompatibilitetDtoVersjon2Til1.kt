@@ -58,7 +58,8 @@ fun BehandlingDtoV2.tilBehandlingDto() =
         virkningstidspunkt = virkningstidspunkt,
         boforhold = boforhold.tilBoforholdDto(),
         inntekter = inntekter.tilInntekterDto(),
-        opplysninger = aktiveGrunnlagsdata.toList(),
+        opplysninger = emptyList(),
+//        opplysninger = aktiveGrunnlagsdata.toList(),
     )
 
 fun InntekterDtoV2.tilInntekterDto(): InntekterDto {
