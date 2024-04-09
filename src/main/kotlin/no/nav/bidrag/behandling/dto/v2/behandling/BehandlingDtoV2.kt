@@ -6,6 +6,9 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
+import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
