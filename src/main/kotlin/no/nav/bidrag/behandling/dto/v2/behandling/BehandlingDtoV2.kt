@@ -6,9 +6,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
-import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
-import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
-import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -75,6 +72,7 @@ data class IkkeAktiveInntekter(
 
 enum class GrunnlagInntektEndringstype {
     ENDRING,
+    INGEN_ENDRING,
     SLETTET,
     NY,
 }
@@ -87,8 +85,6 @@ data class IkkeAktivInntektDto(
     val rapporteringstype: Inntektsrapportering,
     @Schema(required = true)
     val beløp: BigDecimal,
-    @Schema(type = "string", format = "date", example = "2024-01-01")
-    @JsonFormat(pattern = "yyyy-MM-dd")
     val periode: ÅrMånedsperiode,
     @Schema(required = true)
     val ident: Personident,

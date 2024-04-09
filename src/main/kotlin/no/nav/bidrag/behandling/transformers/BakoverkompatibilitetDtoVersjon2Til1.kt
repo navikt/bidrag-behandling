@@ -277,7 +277,7 @@ fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
     }.toMutableSet()
 
 @Deprecated("Utgår når manuell oppdatering av husstandsbarn kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
-fun Set<HusstandsbarnDto>.toDomain(behandling: Behandling) =
+fun Set<HusstandsbarnDtoV2>.toDomain(behandling: Behandling) =
     this.map {
         val barn =
             Husstandsbarn(

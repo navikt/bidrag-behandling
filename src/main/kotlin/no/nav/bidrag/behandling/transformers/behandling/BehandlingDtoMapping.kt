@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
@@ -26,17 +25,6 @@ import no.nav.bidrag.behandling.transformers.boforhold.toHusstandsBarnDtoV2
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
-import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
-import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
-import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
-import no.nav.bidrag.behandling.transformers.toSivilstandDto
-import no.nav.bidrag.behandling.transformers.validerBoforhold
-import no.nav.bidrag.behandling.transformers.validerSivilstand
-import no.nav.bidrag.behandling.transformers.boforhold.toHusstandsBarnDtoV2
-import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
-import no.nav.bidrag.behandling.transformers.finnHullIPerioder
-import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
-import no.nav.bidrag.behandling.transformers.grunnlag.toDto
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto

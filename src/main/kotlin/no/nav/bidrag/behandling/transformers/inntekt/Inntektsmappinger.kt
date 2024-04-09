@@ -13,8 +13,6 @@ import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
-import java.math.BigDecimal
-import java.math.RoundingMode
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.math.BigDecimal
 import java.math.RoundingMode

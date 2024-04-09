@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.validereBoforhold
 
 fun Set<Husstandsbarnperiode>.toHusstandsBarnPeriodeDto() =
@@ -49,7 +50,7 @@ fun Husstandsbarn.toDto(behandling: Behandling): HusstandsbarnDtoV2 =
         !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
         this.perioder.toHusstandsBarnPeriodeDto().sortedBy { periode -> periode.datoFom }.toSet(),
         this.ident,
-        this.navn,
+        this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato,
     )
 

@@ -27,8 +27,11 @@ fun erInntektsposterEndret(
     if (inntektsposter.isEmpty() && nyeInntekstposter.isEmpty()) return false
     if (inntektsposter.size != nyeInntekstposter.size) return true
     return nyeInntekstposter.any { nyInntekstpost ->
-        val eksisterende = inntektsposter.find { it.inntektstype == nyInntekstpost.inntekstype || it.kode == nyInntekstpost.kode }
-        eksisterende == null || eksisterende.beløp != nyInntekstpost.beløp
+        val eksisterende =
+            inntektsposter.find {
+                (it.inntektstype != null && it.inntektstype == nyInntekstpost.inntekstype) || it.kode == nyInntekstpost.kode
+            }
+        eksisterende == null || eksisterende.beløp.setScale(0) != nyInntekstpost.beløp.setScale(0)
     }
 }
 
@@ -87,7 +90,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
                         GrunnlagInntektEndringstype.NY,
                         innhentetTidspunkt,
                     )
-            val erBeløpEndret = eksisterendeInntekt.belop != grunnlag.sumInntekt
+            val erBeløpEndret = eksisterendeInntekt.belop.setScale(0) != grunnlag.sumInntekt.setScale(0)
             if (erBeløpEndret || erInntektsposterEndret(eksisterendeInntekt.inntektsposter, grunnlag.inntektPostListe)) {
                 grunnlag.tilIkkeAktivInntektDto(
                     rolle.ident!!,
@@ -96,9 +99,14 @@ fun List<Grunnlag>.hentEndringerInntekter(
                     eksisterendeInntekt.id,
                 )
             } else {
-                null
+                grunnlag.tilIkkeAktivInntektDto(
+                    rolle.ident!!,
+                    GrunnlagInntektEndringstype.INGEN_ENDRING,
+                    innhentetTidspunkt,
+                    eksisterendeInntekt.id,
+                )
             }
-        }?.filterNotNull()?.toSet() ?: emptySet()
+        }?.toSet() ?: emptySet()
 
     val slettetInntekter =
         inntekter
@@ -108,7 +116,8 @@ fun List<Grunnlag>.hentEndringerInntekter(
                     ?.none { inntekt.erLik(it) } == true
             }.map { it.tilIkkeAktivInntektDto(GrunnlagInntektEndringstype.SLETTET, LocalDateTime.now()) }
 
-    return oppdaterteEllerNyInntekter + slettetInntekter
+    return oppdaterteEllerNyInntekter
+        .filter { it.endringstype != GrunnlagInntektEndringstype.INGEN_ENDRING }.toSet() + slettetInntekter
 }
 
 fun Grunnlagsdatatype.inneholder(type: Inntektsrapportering) =
