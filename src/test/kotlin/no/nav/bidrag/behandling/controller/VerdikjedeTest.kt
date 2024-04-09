@@ -68,6 +68,7 @@ class VerdikjedeTest : KontrollerTestRunner() {
             tomRespons = true,
             rolle = testdataBarn2.tilRolle(),
         )
+        stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
 
         val opprettetBehandling = opprettOgVerifiserBehandling()
 
