@@ -72,7 +72,7 @@ data class OppdatereInntektRequest(
 data class OppdatereInntektResponse(
     @Schema(description = "Inntekt som ble oppdatert")
     val inntekt: InntektDtoV2?,
-    @Schema(description = "Periodisert beregnet inntekter per barn")
+    @Schema(description = "Periodiserte inntekter per barn")
     val beregnetInntekter: List<InntektPerBarn> = emptyList(),
     val valideringsfeil: InntektValideringsfeilDto,
 )

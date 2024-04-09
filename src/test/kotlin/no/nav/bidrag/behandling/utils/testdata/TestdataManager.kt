@@ -78,7 +78,7 @@ class TestdataManager(
                 Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 false,
             ),
-        innhentet: LocalDateTime,
+        innhentet: LocalDateTime = LocalDateTime.now(),
         aktiv: LocalDateTime? = null,
         grunnlagsdata: T? = null,
     ) {

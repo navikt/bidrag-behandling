@@ -14,19 +14,19 @@ import jakarta.persistence.OneToMany
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import java.time.LocalDate
 
-@Entity(name = "barn_i_husstand")
+@Entity
 open class Husstandsbarn(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     open val behandling: Behandling,
     @Enumerated(EnumType.STRING)
-    open var kilde: Kilde? = null,
+    open var kilde: Kilde,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
     open val ident: String? = null,
     open val navn: String? = null,
-    open val foedselsdato: LocalDate,
+    open val fødselsdato: LocalDate,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "husstandsbarn",

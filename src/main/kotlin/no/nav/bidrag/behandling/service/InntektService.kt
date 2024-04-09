@@ -15,13 +15,13 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
-import no.nav.bidrag.behandling.transformers.hentBeregnetInntekter
-import no.nav.bidrag.behandling.transformers.hentInntekterValideringsfeil
-import no.nav.bidrag.behandling.transformers.lagreSomNyInntekt
-import no.nav.bidrag.behandling.transformers.oppdatereEksisterendeInntekt
-import no.nav.bidrag.behandling.transformers.tilInntekt
-import no.nav.bidrag.behandling.transformers.tilInntektDtoV2
-import no.nav.bidrag.behandling.transformers.tilInntektspost
+import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
+import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
+import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
@@ -43,7 +43,7 @@ class InntektService(
     private val entityManager: EntityManager,
 ) {
     @Transactional
-    fun lagreSummerteÅrsinntekter(
+    fun lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
         behandlingsid: Long,
         personident: Personident,
         summerteÅrsinntekter: List<SummertÅrsinntekt>,
@@ -105,16 +105,17 @@ class InntektService(
         oppdatereInntektRequest.valider()
         secureLogger.info { "Oppdaterer inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         return OppdatereInntektResponse(
-            inntekt = oppdaterInntekt(oppdatereInntektRequest, behandling),
+            inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
             beregnetInntekter = behandling.hentBeregnetInntekter(),
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
         )
     }
 
-    private fun oppdaterInntekt(
+    private fun oppdatereInntekt(
         oppdatereInntektRequest: OppdatereInntektRequest,
         behandling: Behandling,
     ): InntektDtoV2? {
@@ -172,7 +173,8 @@ class InntektService(
     ) {
         oppdatereInntekterRequest.valider()
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereInntekterRequest.oppdatereInntektsperioder.forEach {
             val inntekt = inntektRepository.findById(it.id).orElseThrow { inntektIkkeFunnetException(it.id) }

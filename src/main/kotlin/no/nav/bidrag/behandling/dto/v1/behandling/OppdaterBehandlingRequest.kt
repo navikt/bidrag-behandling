@@ -47,6 +47,10 @@ data class OppdaterVirkningstidspunkt(
     val notat: OppdaterNotat? = null,
 )
 
+@Deprecated(
+    "Erstattes av OppdatereBoforholdRequestV2 - Oppdatering av boforhold gjøres via eget " +
+        "endepunkt (/behandling/{behandlingsid}/boforhold)",
+)
 @Schema(
     description = """
 For `husstandsbarn` og `sivilstand`

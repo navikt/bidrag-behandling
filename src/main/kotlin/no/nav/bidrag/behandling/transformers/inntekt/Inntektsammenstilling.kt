@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.transformers
+package no.nav.bidrag.behandling.transformers.inntekt
 
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
