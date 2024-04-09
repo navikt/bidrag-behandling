@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettSivilstand
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -195,18 +194,6 @@ class VerdikjedeTest : KontrollerTestRunner() {
             Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
             testdataBM,
             true,
-        )
-        opprettetBehandling.husstandsbarn.add(
-            opprettHusstandsbarn(
-                opprettetBehandling,
-                testdataBarn1,
-            ),
-        )
-        opprettetBehandling.husstandsbarn.add(
-            opprettHusstandsbarn(
-                opprettetBehandling,
-                testdataBarn2,
-            ),
         )
         opprettetBehandling.sivilstand.add(opprettSivilstand(opprettetBehandling))
         return behandlingRepository.save(opprettetBehandling)
