@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import stubPersonConsumer
 import java.math.BigDecimal
