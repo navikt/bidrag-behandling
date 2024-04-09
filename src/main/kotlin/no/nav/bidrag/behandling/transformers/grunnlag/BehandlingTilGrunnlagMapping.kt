@@ -170,7 +170,7 @@ fun Husstandsbarn.tilGrunnlagPerson(): GrunnlagDto {
     return GrunnlagDto(
         referanse =
             grunnlagstype.tilPersonreferanse(
-                fødselsdato.toCompactString(),
+                rolle?.foedselsdato?.toCompactString() ?: fødselsdato.toCompactString(),
                 (rolle?.id ?: id!!).toInt(),
             ),
         type = grunnlagstype,

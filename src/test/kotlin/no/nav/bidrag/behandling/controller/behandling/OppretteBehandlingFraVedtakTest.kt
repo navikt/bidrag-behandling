@@ -64,11 +64,11 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         assertSoftly(behandling) {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 15
-            grunnlag shouldHaveSize 29
+            grunnlag shouldHaveSize 30
             refVedtaksid shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(10)
             sivilstand shouldHaveSize 2
-            husstandsbarn shouldHaveSize 6
+            husstandsbarn shouldHaveSize 7
             søktFomDato shouldBe LocalDate.parse("2020-01-01")
             vedtakstype shouldBe Vedtakstype.KLAGE
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
