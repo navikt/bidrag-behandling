@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDateTime
@@ -31,10 +32,12 @@ fun erInntektsposterEndret(
     }
 }
 
-private fun List<Grunnlag>.hentBearbeidetInntekterForType(type: Grunnlagsdatatype) =
-    find {
-        it.type == type && it.erBearbeidet
-    }.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
+private fun List<Grunnlag>.hentBearbeidetInntekterForType(
+    type: Grunnlagsdatatype,
+    ident: String,
+) = find {
+    it.type == type && it.erBearbeidet && it.rolle.ident == ident
+}.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
 
 fun List<Grunnlag>.hentEndringerBoforhold(aktiveGrunnlag: List<Grunnlag>): Set<HusstandsbarnGrunnlagDto> {
     val aktivBoforholdGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD }
@@ -70,7 +73,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
     inntekter: Set<Inntekt>,
     type: Grunnlagsdatatype,
 ): Set<IkkeAktivInntektDto> {
-    val oppdatertGrunnlag = hentBearbeidetInntekterForType(type)
+    val oppdatertGrunnlag = hentBearbeidetInntekterForType(type, rolle.ident!!)
     val innhentetTidspunkt = find { it.type == type && it.erBearbeidet }?.innhentet ?: LocalDateTime.now()
     val oppdaterteEllerNyInntekter =
         oppdatertGrunnlag?.inntekter?.map { grunnlag ->
@@ -99,7 +102,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
 
     val slettetInntekter =
         inntekter
-            .filter { it.kilde == Kilde.OFFENTLIG }
+            .filter { it.kilde == Kilde.OFFENTLIG && type.inneholder(it.type) }
             .filter { inntekt ->
                 oppdatertGrunnlag?.inntekter
                     ?.none { inntekt.erLik(it) } == true
@@ -107,6 +110,15 @@ fun List<Grunnlag>.hentEndringerInntekter(
 
     return oppdaterteEllerNyInntekter + slettetInntekter
 }
+
+fun Grunnlagsdatatype.inneholder(type: Inntektsrapportering) =
+    when (this) {
+        Grunnlagsdatatype.KONTANTSTØTTE -> type == Inntektsrapportering.KONTANTSTØTTE
+        Grunnlagsdatatype.BARNETILLEGG -> type == Inntektsrapportering.BARNETILLEGG
+        Grunnlagsdatatype.SMÅBARNSTILLEGG -> type == Inntektsrapportering.SMÅBARNSTILLEGG
+        Grunnlagsdatatype.UTVIDET_BARNETRYGD -> type == Inntektsrapportering.UTVIDET_BARNETRYGD
+        else -> !eksplisitteYtelser.contains(type)
+    }
 
 fun Inntekt.erLik(grunnlag: SummertÅrsinntekt): Boolean {
     if (opprinneligPeriode == null || type != grunnlag.inntektRapportering) return false
