@@ -45,6 +45,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -84,7 +85,7 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> {
                         periode = it.periode,
                         resultatKode = Resultatkode.fraKode(it.resultatkode)!!,
                         regel = "",
-                        beløp = it.beløp!!,
+                        beløp = it.beløp ?: BigDecimal.ZERO,
                         sivilstand = grunnlagListe.finnSivilstandForPeriode(it.grunnlagReferanseListe),
                         inntekt = grunnlagListe.finnTotalInntekt(it.grunnlagReferanseListe),
                         antallBarnIHusstanden = grunnlagListe.finnAntallBarnIHusstanden(it.grunnlagReferanseListe),
@@ -123,7 +124,7 @@ fun VedtakDto.tilBehandling(
         Behandling(
             id = if (lesemodus) 1 else null,
             vedtakstype = vedtakType ?: type,
-            virkningstidspunkt = hentVedtakstidspunkt()?.virkningstidspunkt,
+            virkningstidspunkt = hentVedtakstidspunkt()?.virkningstidspunkt ?: hentSøknad().søktFraDato,
             opprinneligVirkningstidspunkt =
                 hentVedtakstidspunkt()?.virkningstidspunkt
                     ?: hentSøknad().søktFraDato,

@@ -2,6 +2,13 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 
+val ainntekt12Og3Måneder =
+    listOf(
+        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+        Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+        Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
+        Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
+    )
 val inntekstrapporteringerSomKreverGjelderBarn =
     listOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.BARNETILSYN)
 val eksplisitteYtelser =

@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.Nulls
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
@@ -60,7 +60,7 @@ For `husstandsbarn` og `sivilstand`
 """,
 )
 data class OppdaterBoforholdRequest(
-    val husstandsbarn: Set<HusstandsbarnDto>? = null,
+    val husstandsbarn: Set<HusstandsbarnDtoV2>? = null,
     val sivilstand: Set<SivilstandDto>? = null,
     val notat: OppdaterNotat? = null,
 )

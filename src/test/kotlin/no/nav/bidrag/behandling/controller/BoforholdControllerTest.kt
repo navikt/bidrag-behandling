@@ -3,10 +3,10 @@ package no.nav.bidrag.behandling.controller
 import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -34,7 +34,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
         val husstandsBarn =
             setOf(
-                HusstandsbarnDto(
+                HusstandsbarnDtoV2(
                     behandling.id,
                     Kilde.OFFENTLIG,
                     true,

@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -46,6 +47,8 @@ open class Inntekt(
     open val opprinneligTom: LocalDate? = null,
 ) {
     val datoFomEllerOpprinneligFom get() = datoFom ?: opprinneligFom
+
+    val opprinneligPeriode get() = opprinneligFom?.let { ÅrMånedsperiode(it, opprinneligTom) }
 
     override fun toString(): String {
         return try {
