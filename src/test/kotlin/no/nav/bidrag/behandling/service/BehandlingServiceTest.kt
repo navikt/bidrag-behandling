@@ -265,6 +265,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
             // så
             assertSoftly {
+                // TODO: Oppdater validering
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
             }
         }

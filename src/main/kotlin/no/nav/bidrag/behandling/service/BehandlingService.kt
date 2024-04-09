@@ -223,7 +223,7 @@ class BehandlingService(
         val gjeldendeAktiveGrunnlagsdata =
             grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling)
         val grunnlagsdataEndretEtterAktivering =
-            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff2(behandling)
+            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
         return behandling.tilBehandlingDtoV2(
             gjeldendeAktiveGrunnlagsdata,
             grunnlagsdataEndretEtterAktivering,

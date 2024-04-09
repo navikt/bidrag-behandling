@@ -73,6 +73,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
                 notat.medIVedtaket shouldBe "Notat boforhold med i vedtak"
             }
 
+            // TODO: Oppdater validering
             aktiveGrunnlagsdata shouldNotBe null
         }
     }

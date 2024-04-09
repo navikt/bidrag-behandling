@@ -109,7 +109,7 @@ class BehandlingControllerV2(
         return ResponseEntity(
             behandling.tilBehandlingDtoV2(
                 grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling),
-                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff2(behandling),
+                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
             ),
             HttpStatus.CREATED,
         )

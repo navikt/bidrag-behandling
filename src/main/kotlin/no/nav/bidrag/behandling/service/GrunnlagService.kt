@@ -236,7 +236,7 @@ class GrunnlagService(
         )
     }
 
-    fun henteNyeGrunnlagsdataMedEndringsdiff2(behandling: Behandling): IkkeAktiveGrunnlagsdata {
+    fun henteNyeGrunnlagsdataMedEndringsdiff(behandling: Behandling): IkkeAktiveGrunnlagsdata {
         val roller = behandling.roller
         val inntekter = behandling.inntekter
         val nyinnhentetGrunnlag =
