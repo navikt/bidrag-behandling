@@ -8,36 +8,31 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
+import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
-import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.boforhold.tilRelatertPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
-import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
-import no.nav.bidrag.behandling.transformers.grunnlag.toDto
 import no.nav.bidrag.behandling.transformers.inntekt.TransformerInntekterRequestBuilder
 import no.nav.bidrag.behandling.transformers.inntekt.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.inntekt.tilBarnetillegg
-import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.inntekt.tilKontantstøtte
 import no.nav.bidrag.behandling.transformers.inntekt.tilSkattegrunnlagForLigningsår
 import no.nav.bidrag.behandling.transformers.inntekt.tilSmåbarnstillegg
@@ -51,7 +46,6 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
@@ -65,7 +59,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
-import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
@@ -249,120 +242,56 @@ class GrunnlagService(
         val nyinnhentetGrunnlag =
             roller.flatMap { hentAlleSistInnhentet(behandling.id!!, it.id!!) }.toSet()
                 .filter { g -> g.aktiv == null && g.erBearbeidet }
-
+        val aktiveGrunnlag =
+            roller.flatMap { hentAlleSistInnhentet(behandling.id!!, it.id!!) }.toSet()
+                .filter { g -> g.aktiv != null && g.erBearbeidet }
         return IkkeAktiveGrunnlagsdata(
             inntekter =
                 IkkeAktiveInntekter(
                     årsinntekter =
                         roller.flatMap {
-                            hentEndringerInntekter(
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
                                 it,
                                 inntekter,
-                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
+                                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                             )
                         }.toSet(),
                     småbarnstillegg =
                         roller.flatMap {
-                            hentEndringerInntekter(
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
                                 it,
                                 inntekter,
-                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.SMÅBARNSTILLEGG),
+                                Grunnlagsdatatype.SMÅBARNSTILLEGG,
                             )
                         }.toSet(),
                     utvidetBarnetrygd =
                         roller.flatMap {
-                            hentEndringerInntekter(
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
                                 it,
                                 inntekter,
-                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.UTVIDET_BARNETRYGD),
+                                Grunnlagsdatatype.UTVIDET_BARNETRYGD,
                             )
                         }.toSet(),
                     kontantstøtte =
                         roller.flatMap {
-                            hentEndringerInntekter(
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
                                 it,
                                 inntekter,
-                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.KONTANTSTØTTE),
+                                Grunnlagsdatatype.KONTANTSTØTTE,
                             )
                         }.toSet(),
                     barnetillegg =
                         roller.flatMap {
-                            hentEndringerInntekter(
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
                                 it,
                                 inntekter,
-                                nyinnhentetGrunnlag.hentBearbeidetInntekterForType(Grunnlagsdatatype.BARNETILLEGG),
+                                Grunnlagsdatatype.BARNETILLEGG,
                             )
                         }.toSet(),
                 ),
-            husstandsbarn = emptySet(),
-            sivilstand = emptySet(),
+            husstandsbarn = nyinnhentetGrunnlag.hentEndringerBoforhold(aktiveGrunnlag),
+            sivilstand = SivilstandIkkeAktivGrunnlagDto(),
         )
-    }
-
-    private fun List<Grunnlag>.hentBearbeidetInntekterForType(type: Grunnlagsdatatype) =
-        find {
-            it.type == type && it.erBearbeidet
-        }.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
-
-    fun hentEndringerInntekter(
-        rolle: Rolle,
-        inntekter: Set<Inntekt>,
-        nyeGrunnlag: SummerteInntekter<SummertÅrsinntekt>?,
-    ): Set<InntektDtoV2> {
-        return nyeGrunnlag?.inntekter?.map { grunnlag ->
-            val eksisterendeInntekt =
-                inntekter.find { it.type == grunnlag.inntektRapportering }
-                    ?: return@map grunnlag.tilInntekt(rolle.behandling, Personident(rolle.ident!!)).tilInntektDtoV2()
-            val eksisterendeInntektPeriode = ÅrMånedsperiode(eksisterendeInntekt.opprinneligFom!!, eksisterendeInntekt.opprinneligTom)
-            val erPeriodeEndret = eksisterendeInntektPeriode != grunnlag.periode
-            val erBeløpEndret = eksisterendeInntekt.belop != grunnlag.sumInntekt
-            if (erBeløpEndret || erPeriodeEndret || erInntektsposterEndret(eksisterendeInntekt.inntektsposter, grunnlag.inntektPostListe)) {
-                grunnlag.tilInntekt(rolle.behandling, Personident(rolle.ident!!)).tilInntektDtoV2()
-            } else {
-                null
-            }
-        }?.filterNotNull()?.toSet() ?: emptySet()
-    }
-
-    private fun erInntektsposterEndret(
-        inntektsposter: Set<Inntektspost>,
-        nyeInntekstposter: List<InntektPost>,
-    ): Boolean {
-        if (inntektsposter.isEmpty() && nyeInntekstposter.isEmpty()) return false
-        if (inntektsposter.size != nyeInntekstposter.size) return true
-        return nyeInntekstposter.any { nyInntekstpost ->
-            val eksisterende = inntektsposter.find { it.inntektstype == nyInntekstpost.inntekstype }
-            eksisterende == null || eksisterende.beløp != nyInntekstpost.beløp
-        }
-    }
-
-    fun henteNyeGrunnlagsdataMedEndringsdiff(
-        behandlingsid: Long,
-        roller: Set<Rolle>,
-    ): Set<GrunnlagsdataEndretDto> {
-        val nyinnhentaGrunnlag =
-            roller.flatMap { hentAlleSistInnhentet(behandlingsid, it.id!!) }.toSet()
-                .filter { g -> g.aktiv == null }
-
-        val grunnlagstyperEndretIBearbeidaInntekter =
-            nyinnhentaGrunnlag.filter { inntekterOgYtelser.contains(it.type) }.map { it.type }
-                .toSet()
-
-        return nyinnhentaGrunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }
-            .map {
-                GrunnlagsdataEndretDto(
-                    nyeData = it.toDto(),
-                    endringerINyeData = grunnlagstyperEndretIBearbeidaInntekter,
-                )
-            }.toSet() +
-            nyinnhentaGrunnlag.filter {
-                it.type != Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER &&
-                    !inntekterOgYtelser.contains(
-                        it.type,
-                    )
-            }.map {
-                GrunnlagsdataEndretDto(nyeData = it.toDto(), endringerINyeData = setOf(it.type))
-            }.toSet()
     }
 
     fun hentAlleSistInnhentet(

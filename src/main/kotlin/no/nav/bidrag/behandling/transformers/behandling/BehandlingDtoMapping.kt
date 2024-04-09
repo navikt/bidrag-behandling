@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.transformers.behandling
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -11,18 +10,16 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
-import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
+import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
-import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.toHusstandsBarnDtoV2
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -138,26 +135,30 @@ fun Behandling.tilBehandlingDtoV2(
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata
-            ?: IkkeAktiveGrunnlagsdata(inntekter = IkkeAktiveInntekter(), husstandsbarn = emptySet(), sivilstand = emptySet()),
+            ?: IkkeAktiveGrunnlagsdata(),
 )
 
-fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnDtoV2> {
+fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
+    val grunnlag = konverterData<List<SivilstandGrunnlagDto>>()
+    return this?.let {
+        SivilstandAktivGrunnlagDto(
+            grunnlag = grunnlag?.toSet() ?: emptySet(),
+            innhentetTidspunkt = innhentet,
+        )
+    }
+}
+
+fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnGrunnlagDto> {
     return konverterData<List<BoforholdBeregnet>>()?.groupBy { it.relatertPersonPersonId }?.map { (barnId, grunnlag) ->
-        HusstandsbarnDtoV2(
-            -1,
-            Kilde.OFFENTLIG,
-            false,
+        HusstandsbarnGrunnlagDto(
+            innhentetTidspunkt = this!!.innhentet,
             ident = barnId,
-            navn = hentPersonVisningsnavn(barnId),
-            fødselsdato = hentPersonFødselsdato(barnId)!!,
             perioder =
                 grunnlag.map {
-                    HusstandsbarnperiodeDto(
-                        -1,
+                    HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
                         it.periodeFom,
                         it.periodeTom,
                         it.bostatus,
-                        Kilde.OFFENTLIG,
                     )
                 }.toSet(),
         )
@@ -172,8 +173,7 @@ fun List<Grunnlag>.tilAktivGrunnlagsdata() =
         husstandsbarn =
             find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.toHusstandsbarn(),
         sivilstand =
-            find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.konverterData<Set<SivilstandGrunnlagDto>>()
-                ?: emptySet(),
+            find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )
 
 fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto {
