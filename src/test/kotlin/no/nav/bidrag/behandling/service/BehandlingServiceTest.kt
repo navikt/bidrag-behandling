@@ -262,12 +262,13 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // hvis
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
             // så
             assertSoftly {
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 2
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
                     Grunnlagstype(
-                        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
+                        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                         true,
                     ) == it.nyeData.grunnlagsdatatype
                 }.size shouldBe 1
