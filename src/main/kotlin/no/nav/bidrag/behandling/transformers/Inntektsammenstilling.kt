@@ -33,6 +33,8 @@ fun List<AinntektspostDto>.tilAinntektsposter(rolle: Rolle) =
             opptjeningsperiodeTil = it.opptjeningsperiodeTil,
             utbetalingsperiode = it.utbetalingsperiode,
             referanse = opprettAinntektGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
+            etterbetalingsperiodeTil = it.etterbetalingsperiodeTil,
+            etterbetalingsperiodeFra = it.etterbetalingsperiodeFra,
         )
     }
 
