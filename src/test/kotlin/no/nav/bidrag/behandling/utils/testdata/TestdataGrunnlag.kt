@@ -230,6 +230,8 @@ fun HentGrunnlagDto.tilTransformerInntekterRequest(
                     utbetalingsperiode = it.utbetalingsperiode,
                     opptjeningsperiodeFra = it.opptjeningsperiodeFra,
                     opptjeningsperiodeTil = it.opptjeningsperiodeTil,
+                    etterbetalingsperiodeFra = it.etterbetalingsperiodeFra,
+                    etterbetalingsperiodeTil = it.etterbetalingsperiodeTil,
                     beskrivelse = it.beskrivelse,
                     beløp = it.beløp,
                     referanse = opprettAinntektGrunnlagsreferanse(rolle.tilGrunnlagPerson().referanse),
