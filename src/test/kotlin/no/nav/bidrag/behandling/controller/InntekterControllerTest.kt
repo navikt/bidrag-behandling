@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -78,7 +79,6 @@ class InntekterControllerTest : KontrollerTestRunner() {
         }
 
         @Test
-        @Disabled("Gir Wiremock-problemer på Github")
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
             val behandling = testdataManager.opprettBehandling(false)
@@ -98,14 +98,18 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1 shouldNotBe null
                 r1.statusCode shouldBe HttpStatus.OK
                 r1.body shouldNotBe null
-                r1.body?.inntekter?.årsinntekter?.size shouldBe 16
+                r1.body?.inntekter?.årsinntekter?.size shouldBe 18
                 r1.body?.inntekter?.barnetillegg?.size shouldBe 0
                 r1.body?.inntekter?.utvidetBarnetrygd?.size shouldBe 1
-                r1.body?.inntekter?.kontantstøtte?.size shouldBe 1
+                r1.body?.inntekter?.kontantstøtte?.size shouldBe 0
                 r1.body?.inntekter?.månedsinntekter?.size shouldBe 3
                 // TODO: Oppdater validering
                 r1.body?.aktiveGrunnlagsdata shouldNotBe null
+                r1.body!!.aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
+                r1.body!!.aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 2
+                r1.body!!.aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 2
                 r1.body?.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
+                r1.body?.ikkeAktiverteEndringerIGrunnlagsdata!!.inntekter.årsinntekter shouldHaveSize 0
             }
         }
     }

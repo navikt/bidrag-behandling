@@ -44,6 +44,13 @@ val inntekterOgYtelser =
         Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
         Grunnlagsdatatype.UTVIDET_BARNETRYGD,
     )
+val grunnlagsdataTyperYtelser =
+    setOf(
+        Grunnlagsdatatype.BARNETILLEGG,
+        Grunnlagsdatatype.KONTANTSTØTTE,
+        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+    )
 val List<SummertÅrsinntekt>.skattegrunnlagListe
     get() =
         filter {

@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
-import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
@@ -26,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilOb
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
+import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilRelatertPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
@@ -290,7 +290,7 @@ class GrunnlagService(
                         }.toSet(),
                 ),
             husstandsbarn = nyinnhentetGrunnlag.hentEndringerBoforhold(aktiveGrunnlag),
-            sivilstand = SivilstandIkkeAktivGrunnlagDto(),
+            sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
     }
 
@@ -376,7 +376,7 @@ class GrunnlagService(
         sistInnhentedeRådata: Grunnlag,
     ) {
         val periodisertBoforhold =
-            BoforholdApi.beregn(
+            BoforholdApi.beregnV1(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 jsonTilObjekt<List<RelatertPersonGrunnlagDto>>(sistInnhentedeRådata.data).tilRelatertPerson(),
             )
@@ -474,7 +474,7 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
     ) {
         val boforholdPeriodisert =
-            BoforholdApi.beregn(
+            BoforholdApi.beregnV1(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.tilRelatertPerson(),
             )

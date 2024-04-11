@@ -22,6 +22,16 @@
       "gjelderReferanse": null
     },
     {
+      "referanse": "virkningstidspunkt",
+      "type": "VIRKNINGSTIDSPUNKT",
+      "innhold": {
+        "avslag": "BARNETS_INNTEKT",
+        "virkningstidspunkt": "2022-11-01"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
       "referanse": "søknad",
       "type": "SØKNAD",
       "innhold": {
@@ -85,12 +95,12 @@
       "periodeListe": [
         {
           "periode": {
-            "fom": "2022-01",
+            "fom": "2022-11",
             "til": null
           },
           "beløp": 0,
           "valutakode": "NOK",
-          "resultatkode": "FULLT_UNDERHOLDT_AV_OFFENTLIG",
+          "resultatkode": "BARNETS_INNTEKT",
           "delytelseId": null,
           "grunnlagReferanseListe": []
         }

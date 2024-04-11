@@ -315,11 +315,11 @@ class VedtakTilBehandlingTest {
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
-            avslag shouldBe Resultatkode.FULLT_UNDERHOLDT_AV_OFFENTLIG
+            avslag shouldBe Resultatkode.BARNETS_INNTEKT
             årsak shouldBe null
             saksnummer shouldBe SAKSNUMMER
-            virkningstidspunkt shouldBe LocalDate.parse("2022-01-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-01-01")
+            virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
+            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
             soknadFra shouldBe SøktAvType.BIDRAGSMOTTAKER
             stonadstype shouldBe Stønadstype.FORSKUDD
             behandlerEnhet shouldBe "4806"

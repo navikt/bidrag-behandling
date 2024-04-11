@@ -124,11 +124,11 @@ fun VedtakDto.tilBehandling(
         Behandling(
             id = if (lesemodus) 1 else null,
             vedtakstype = vedtakType ?: type,
-            virkningstidspunkt = hentVedtakstidspunkt()?.virkningstidspunkt ?: hentSøknad().søktFraDato,
+            virkningstidspunkt = hentVirkningstidspunkt()?.virkningstidspunkt ?: hentSøknad().søktFraDato,
             opprinneligVirkningstidspunkt =
-                hentVedtakstidspunkt()?.virkningstidspunkt
+                hentVirkningstidspunkt()?.virkningstidspunkt
                     ?: hentSøknad().søktFraDato,
-            årsak = hentVedtakstidspunkt()?.årsak,
+            årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
             soknadFra = soknadFra ?: hentSøknad().søktAv,
@@ -395,14 +395,22 @@ private fun VedtakDto.notatMedType(
     .map { it.innholdTilObjekt<NotatGrunnlag>() }
     .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }?.innhold
 
-private fun VedtakDto.avslagskode() =
-    if (stønadsendringListe.all { it.periodeListe.size == 1 } && hentVedtakstidspunkt() == null) {
-        Resultatkode.fraKode(stønadsendringListe.first().periodeListe.first().resultatkode)
+private fun VedtakDto.avslagskode(): Resultatkode? {
+    return if (stønadsendringListe.all { it.periodeListe.size == 1 }) {
+        val virkningstidspunkt = hentVirkningstidspunkt()
+        if (virkningstidspunkt == null) {
+            Resultatkode.fraKode(stønadsendringListe.first().periodeListe.first().resultatkode)
+        } else if (virkningstidspunkt.avslag != null) {
+            virkningstidspunkt.avslag
+        } else {
+            null
+        }
     } else {
         null
     }
+}
 
-private fun VedtakDto.hentVedtakstidspunkt(): VirkningstidspunktGrunnlag? {
+private fun VedtakDto.hentVirkningstidspunkt(): VirkningstidspunktGrunnlag? {
     return grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
         .firstOrNull()?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
 }

@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -54,6 +55,28 @@ class ValiderBehandlingTest {
                 harFeil shouldBe true
                 manglerVirkningstidspunkt shouldBe true
                 manglerÅrsakEllerAvslag shouldBe true
+            }
+        }
+    }
+
+    @Test
+    fun `skal feile validering hvis virkningstidspunkt ikke er satt`() {
+        val behandling = opprettGyldigBehandling()
+        behandling.virkningstidspunkt = null
+        behandling.avslag = Resultatkode.IKKE_OMSORG
+        val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
+
+        resultat.message shouldContain "Feil ved validering av behandling for beregning"
+        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
+        assertSoftly(responseBody) {
+            virkningstidspunkt shouldNotBe null
+            inntekter shouldBe null
+            sivilstand shouldBe null
+            husstandsbarn shouldBe null
+            assertSoftly(virkningstidspunkt!!) {
+                harFeil shouldBe true
+                manglerVirkningstidspunkt shouldBe true
+                manglerÅrsakEllerAvslag shouldBe false
             }
         }
     }

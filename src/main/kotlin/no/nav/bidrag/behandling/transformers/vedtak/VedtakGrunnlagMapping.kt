@@ -66,7 +66,8 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt() =
                 POJONode(
                     VirkningstidspunktGrunnlag(
                         virkningstidspunkt = virkningstidspunkt!!,
-                        årsak = årsak!!,
+                        årsak = årsak,
+                        avslag = (årsak == null).ifTrue { avslag },
                     ),
                 ),
         ),

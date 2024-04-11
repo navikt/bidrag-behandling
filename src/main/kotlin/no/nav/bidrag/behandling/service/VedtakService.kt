@@ -277,6 +277,10 @@ class VedtakService(
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
         }
 
+        if (virkningstidspunkt == null) {
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Virkningstidspunkt må settes")
+        }
+
         val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
             erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
                 virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true

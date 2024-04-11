@@ -149,7 +149,7 @@ fun Behandling.validerForBeregning() {
     val virkningstidspunktFeil =
         VirkningstidspunktFeilDto(
             manglerÅrsakEllerAvslag = avslag == null && årsak == null,
-            manglerVirkningstidspunkt = avslag == null && virkningstidspunkt == null,
+            manglerVirkningstidspunkt = virkningstidspunkt == null,
         ).takeIf { it.harFeil }
     if (inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null || virkningstidspunktFeil != null) {
         val feil =
