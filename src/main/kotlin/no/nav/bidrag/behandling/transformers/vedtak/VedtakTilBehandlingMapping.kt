@@ -431,7 +431,9 @@ private fun List<BaseGrunnlag>.tilHusstandsbarn(
         )
     val gjelderBarn = gjelderBarnGrunnlag.innholdTilObjekt<Person>()
 
-    val erOffentligKilde = grunnlagsListe.hentInnhentetHusstandsmedlem().any { it.relatertPersonPersonId == gjelderBarnGrunnlag.personIdent }
+    val erOffentligKilde =
+        grunnlagsListe.hentInnhentetHusstandsmedlem()
+            .any { it.relatertPersonPersonId == gjelderBarnGrunnlag.personIdent }
     val husstandsbarnBO =
         Husstandsbarn(
             ident = gjelderBarnGrunnlag.personIdent,
