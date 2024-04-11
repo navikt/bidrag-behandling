@@ -431,16 +431,13 @@ private fun List<BaseGrunnlag>.tilHusstandsbarn(
         )
     val gjelderBarn = gjelderBarnGrunnlag.innholdTilObjekt<Person>()
 
+    val erOffentligKilde = grunnlagsListe.hentInnhentetHusstandsmedlem().any { it.relatertPersonPersonId == gjelderBarnGrunnlag.personIdent }
     val husstandsbarnBO =
         Husstandsbarn(
             ident = gjelderBarnGrunnlag.personIdent,
             navn = gjelderBarn.navn,
             fødselsdato = gjelderBarn.fødselsdato,
-            kilde =
-                when (gjelderBarnGrunnlag.type) {
-                    Grunnlagstype.PERSON_SØKNADSBARN -> Kilde.OFFENTLIG
-                    else -> Kilde.MANUELL
-                },
+            kilde = if (erOffentligKilde) Kilde.OFFENTLIG else Kilde.MANUELL,
             behandling = behandling,
         )
     husstandsbarnBO.perioder =

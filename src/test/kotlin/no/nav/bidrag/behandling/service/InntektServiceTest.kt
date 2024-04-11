@@ -184,10 +184,10 @@ class InntektServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().inntekter.size shouldBe 1
                 val barnetillegg =
                     oppdatertBehandling.get().inntekter.first { Inntektsrapportering.BARNETILLEGG == it.type }
-                barnetillegg.belop shouldBe (500 * 12).toBigDecimal()
+                barnetillegg.belop shouldBe (500).toBigDecimal()
                 barnetillegg.inntektsposter.size shouldBe 1
                 barnetillegg.inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
-                barnetillegg.inntektsposter.first().beløp shouldBe (500 * 12).toBigDecimal()
+                barnetillegg.inntektsposter.first().beløp shouldBe (500).toBigDecimal()
                 barnetillegg.inntektsposter.first().kode shouldBe Inntektsrapportering.BARNETILLEGG.name
             }
         }

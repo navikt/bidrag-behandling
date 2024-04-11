@@ -77,11 +77,13 @@ fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<G
 
 fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
     val sortertGrunnlagsListe = grunnlagListe.sortedByDescending { it.innhentet }
-    val innhentetArbeidsforhold = sortertGrunnlagsListe.tilInnhentetArbeidsforhold(personobjekter)
-    val innhentetSivilstand = sortertGrunnlagsListe.tilInnhentetSivilstand(personobjekter)
-    val innhentetHusstandsmedlemmer = sortertGrunnlagsListe.tilInnhentetHusstandsmedlemmer(personobjekter)
-    val beregnetInntekt = sortertGrunnlagsListe.tilBeregnetInntekt(personobjekter)
-    val innhentetInntekter = sortertGrunnlagsListe.tilInnhentetGrunnlagInntekt(personobjekter)
+    val sortertGrunnlagsListeBearbeidet = sortertGrunnlagsListe.filter { it.erBearbeidet }
+    val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
+    val innhentetArbeidsforhold = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetArbeidsforhold(personobjekter)
+    val innhentetSivilstand = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetSivilstand(personobjekter)
+    val innhentetHusstandsmedlemmer = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetHusstandsmedlemmer(personobjekter)
+    val beregnetInntekt = sortertGrunnlagsListeBearbeidet.tilBeregnetInntekt(personobjekter)
+    val innhentetInntekter = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetGrunnlagInntekt(personobjekter)
 
     return innhentetInntekter + innhentetArbeidsforhold + innhentetHusstandsmedlemmer + innhentetSivilstand + beregnetInntekt
 }

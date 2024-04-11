@@ -68,7 +68,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             refVedtaksid shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(10)
             sivilstand shouldHaveSize 2
-            husstandsbarn shouldHaveSize 7
+            husstandsbarn shouldHaveSize 4
             søktFomDato shouldBe LocalDate.parse("2020-01-01")
             vedtakstype shouldBe Vedtakstype.KLAGE
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT

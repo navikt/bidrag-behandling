@@ -72,12 +72,7 @@ fun SummertÅrsinntekt.tilInntekt(
     behandling: Behandling,
     person: Personident,
 ): Inntekt {
-    val beløp =
-        if (this.inntektRapportering == Inntektsrapportering.BARNETILLEGG) {
-            this.sumInntekt.setScale(0, RoundingMode.HALF_UP) * 12.toBigDecimal()
-        } else {
-            this.sumInntekt.setScale(0, RoundingMode.HALF_UP)
-        }
+    val beløp = this.sumInntekt.setScale(0, RoundingMode.HALF_UP)
     val inntekt =
         Inntekt(
             type = this.inntektRapportering,
