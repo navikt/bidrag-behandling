@@ -13,6 +13,13 @@ interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
         erBearbeidet: Boolean,
     ): Grunnlag?
 
+    fun findByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
+        behandlingsid: Long,
+        rolleid: Long,
+        grunnlagsdatatype: Grunnlagsdatatype,
+        erBearbeidet: Boolean,
+    ): List<Grunnlag>
+
     fun findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
         behandlingId: Long,
         grunnlagsdatatype: Grunnlagsdatatype,

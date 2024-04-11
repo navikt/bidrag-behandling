@@ -240,11 +240,13 @@ class GrunnlagService(
         val roller = behandling.roller
         val inntekter = behandling.inntekter
         val nyinnhentetGrunnlag =
-            roller.flatMap { hentAlleSistInnhentet(behandling.id!!, it.id!!) }.toSet()
-                .filter { g -> g.aktiv == null && g.erBearbeidet }
+            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }.toSet()
+                .sortedByDescending { it.innhentet }
+                .filter { g -> g.aktiv == null }
         val aktiveGrunnlag =
-            roller.flatMap { hentAlleSistInnhentet(behandling.id!!, it.id!!) }.toSet()
-                .filter { g -> g.aktiv != null && g.erBearbeidet }
+            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }.toSet()
+                .sortedByDescending { it.innhentet }
+                .filter { g -> g.aktiv != null }
         return IkkeAktiveGrunnlagsdata(
             inntekter =
                 IkkeAktiveInntekter(
@@ -293,6 +295,21 @@ class GrunnlagService(
             sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
     }
+
+    fun hentAlleGrunnlag(
+        behandlingsid: Long,
+        rolleid: Long,
+    ): List<Grunnlag> =
+        Grunnlagsdatatype.entries.toTypedArray().flatMap { grunnlagstype ->
+            listOf(true, false).flatMap { erBearbeidet ->
+                grunnlagRepository.findByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
+                    behandlingsid,
+                    rolleid,
+                    grunnlagstype,
+                    erBearbeidet,
+                )
+            }
+        }
 
     fun hentAlleSistInnhentet(
         behandlingsid: Long,
