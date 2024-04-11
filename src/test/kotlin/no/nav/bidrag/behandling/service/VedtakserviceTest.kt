@@ -180,7 +180,7 @@ class VedtakserviceTest {
                 sivilstandGrunnlag[0].periode.til shouldBe null
             }
 
-            assertSoftly(hentGrunnlagstype(Grunnlagstype.BEREGNET_INNTEKT)) {
+            assertSoftly(hentGrunnlagstype(Grunnlagstype.BEREGNET_INNTEKT, bmGrunnlag.referanse)) {
                 val innhold = it!!.innholdTilObjekt<BeregnetInntekt>()
                 it.gjelderReferanse.shouldBe(bmGrunnlag.referanse)
                 innhold.summertMånedsinntektListe.shouldHaveSize(13)
@@ -819,7 +819,12 @@ fun OpprettVedtakRequestDto.hentGrunnlagstyperForReferanser(
 
 fun OpprettVedtakRequestDto.hentGrunnlagstyper(grunnlagstype: Grunnlagstype) = grunnlagListe.filter { it.type == grunnlagstype }
 
-fun OpprettVedtakRequestDto.hentGrunnlagstype(grunnlagstype: Grunnlagstype) = grunnlagListe.find { it.type == grunnlagstype }
+fun OpprettVedtakRequestDto.hentGrunnlagstype(
+    grunnlagstype: Grunnlagstype,
+    gjelderReferanse: String? = null,
+) = grunnlagListe.find {
+    it.type == grunnlagstype && (gjelderReferanse == null || it.gjelderReferanse == gjelderReferanse)
+}
 
 fun List<OpprettGrunnlagRequestDto>.hentGrunnlagstyper(grunnlagstype: Grunnlagstype) = filter { it.type == grunnlagstype }
 
