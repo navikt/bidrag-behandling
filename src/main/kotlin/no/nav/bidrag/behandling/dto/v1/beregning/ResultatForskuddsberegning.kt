@@ -17,7 +17,7 @@ data class ResultatBeregningBarnDto(
         val beløp: BigDecimal,
         val resultatKode: Resultatkode,
         val regel: String,
-        val sivilstand: Sivilstandskode,
+        val sivilstand: Sivilstandskode?,
         val inntekt: BigDecimal,
         val antallBarnIHusstanden: Int,
     )

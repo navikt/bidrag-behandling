@@ -61,8 +61,8 @@ fun List<ResultatForskuddsberegningBarn>.tilDto() =
         )
     }
 
-fun List<GrunnlagDto>.finnSivilstandForPeriode(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Sivilstandskode {
-    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe)!!
+fun List<GrunnlagDto>.finnSivilstandForPeriode(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Sivilstandskode? {
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
     val sivilstandPeriode =
         find {
             it.type == Grunnlagstype.SIVILSTAND_PERIODE &&
@@ -70,7 +70,7 @@ fun List<GrunnlagDto>.finnSivilstandForPeriode(grunnlagsreferanseListe: List<Gru
                     it.referanse,
                 )
         }
-    return sivilstandPeriode?.innholdTilObjekt<SivilstandPeriode>()?.sivilstand!!
+    return sivilstandPeriode?.innholdTilObjekt<SivilstandPeriode>()?.sivilstand
 }
 
 fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int {

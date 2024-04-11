@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
@@ -70,7 +71,11 @@ data class IkkeAktiveInntekter(
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<IkkeAktivInntektDto> = emptySet(),
 ) {
-    val ingenEndringer get() = barnetillegg.isEmpty() && utvidetBarnetrygd.isEmpty() && kontantstøtte.isEmpty() && småbarnstillegg.isEmpty() && årsinntekter.isEmpty()
+    @get:JsonIgnore
+    val ingenEndringer
+        get() =
+            barnetillegg.isEmpty() && utvidetBarnetrygd.isEmpty() &&
+                kontantstøtte.isEmpty() && småbarnstillegg.isEmpty() && årsinntekter.isEmpty()
 }
 
 enum class GrunnlagInntektEndringstype {
