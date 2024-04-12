@@ -38,7 +38,3 @@ fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
 fun <T> Boolean?.ifTrue(block: (Boolean) -> T?): T? {
     return if (this == true) block(this) else null
 }
-
-fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? {
-    return if (this == false) block(this) else null
-}
