@@ -180,7 +180,12 @@ class GrunnlagService(
                     .filter { grunnlagstype == it.type }
                     .filter { !it.erBearbeidet }
                     .maxByOrNull { it.innhentet }
-
+            val sistInnhentedeBearbeidetRådata =
+                behandling.grunnlag
+                    .filter { rolleGrunnlagSkalAktiveresFor!!.ident == it.rolle.ident }
+                    .filter { grunnlagstype == it.type }
+                    .filter { it.erBearbeidet }
+                    .maxByOrNull { it.innhentet }
             if (sistInnhentedeRådata == null || sistInnhentedeRådata.aktiv != null) {
                 log.warn {
                     "Fant ingen grunnlag med type $grunnlagstype å aktivere for rolleid " +
