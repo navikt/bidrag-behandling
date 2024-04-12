@@ -18,7 +18,7 @@ spring.main.banner-mode: off
 
 egenskaper:
   grunnlag:
-    min-antall-timer-siden-forrige-innhenting: ${GRUNNLAG_MIN_ANT_TIMER_SIDEN_FORRIGE_INNHENTING}
+    min-antall-minutter-siden-forrige-innhenting: ${GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING}
 
 ---
 spring.config.activate.on-profile: nais,lokal-nais
