@@ -149,7 +149,7 @@ class GrunnlagService(
             behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
         } else {
             val nesteInnhenting =
-                behandling.grunnlagSistInnhentet?.plusHours(grenseInnhenting.toLong())
+                behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
 
             log.info {
                 "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
