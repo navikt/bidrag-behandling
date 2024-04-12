@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.utils.testdata.hentFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -278,13 +279,19 @@ class VedtakTilBehandlingTest {
             assertSoftly(husstandsbarn.toList()) {
                 this shouldHaveSize 6
                 assertSoftly(filter { Kilde.OFFENTLIG == it.kilde }) {
-                    this shouldHaveSize 2
+                    this shouldHaveSize 5
                     this[0].ident shouldBe testdataBarn1.ident
                     this[0].navn shouldBe null
                     this[0].perioder shouldHaveSize 1
-                    this[1].ident shouldBe testdataBarn2.ident
+                    this[1].ident shouldBe testdataHusstandsmedlem1.ident
                     this[1].navn shouldBe null
-                    this[1].perioder shouldHaveSize 2
+                    this[1].perioder shouldHaveSize 1
+                    this[2].ident shouldBe "30431750216"
+                    this[2].navn shouldBe null
+                    this[2].perioder shouldHaveSize 1
+                    this[3].ident shouldBe testdataBarn2.ident
+                    this[3].navn shouldBe null
+                    this[3].perioder shouldHaveSize 2
                 }
 
                 val husstandsmedlemUtenIdent = find { it.ident == null }
@@ -315,11 +322,11 @@ class VedtakTilBehandlingTest {
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
-            avslag shouldBe Resultatkode.FULLT_UNDERHOLDT_AV_OFFENTLIG
+            avslag shouldBe Resultatkode.BARNETS_INNTEKT
             årsak shouldBe null
             saksnummer shouldBe SAKSNUMMER
-            virkningstidspunkt shouldBe LocalDate.parse("2022-01-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-01-01")
+            virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
+            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
             soknadFra shouldBe SøktAvType.BIDRAGSMOTTAKER
             stonadstype shouldBe Stønadstype.FORSKUDD
             behandlerEnhet shouldBe "4806"

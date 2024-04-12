@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
-import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
@@ -26,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilOb
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
+import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilRelatertPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
@@ -240,11 +240,13 @@ class GrunnlagService(
         val roller = behandling.roller
         val inntekter = behandling.inntekter
         val nyinnhentetGrunnlag =
-            roller.flatMap { hentAlleSistInnhentet(behandling.id!!, it.id!!) }.toSet()
-                .filter { g -> g.aktiv == null && g.erBearbeidet }
+            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }.toSet()
+                .sortedByDescending { it.innhentet }
+                .filter { g -> g.aktiv == null }
         val aktiveGrunnlag =
-            roller.flatMap { hentAlleSistInnhentet(behandling.id!!, it.id!!) }.toSet()
-                .filter { g -> g.aktiv != null && g.erBearbeidet }
+            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }.toSet()
+                .sortedByDescending { it.innhentet }
+                .filter { g -> g.aktiv != null }
         return IkkeAktiveGrunnlagsdata(
             inntekter =
                 IkkeAktiveInntekter(
@@ -290,9 +292,24 @@ class GrunnlagService(
                         }.toSet(),
                 ),
             husstandsbarn = nyinnhentetGrunnlag.hentEndringerBoforhold(aktiveGrunnlag),
-            sivilstand = SivilstandIkkeAktivGrunnlagDto(),
+            sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
     }
+
+    fun hentAlleGrunnlag(
+        behandlingsid: Long,
+        rolleid: Long,
+    ): List<Grunnlag> =
+        Grunnlagsdatatype.entries.toTypedArray().flatMap { grunnlagstype ->
+            listOf(true, false).flatMap { erBearbeidet ->
+                grunnlagRepository.findByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
+                    behandlingsid,
+                    rolleid,
+                    grunnlagstype,
+                    erBearbeidet,
+                )
+            }
+        }
 
     fun hentAlleSistInnhentet(
         behandlingsid: Long,
@@ -376,7 +393,7 @@ class GrunnlagService(
         sistInnhentedeRådata: Grunnlag,
     ) {
         val periodisertBoforhold =
-            BoforholdApi.beregn(
+            BoforholdApi.beregnV1(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 jsonTilObjekt<List<RelatertPersonGrunnlagDto>>(sistInnhentedeRådata.data).tilRelatertPerson(),
             )
@@ -474,7 +491,7 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
     ) {
         val boforholdPeriodisert =
-            BoforholdApi.beregn(
+            BoforholdApi.beregnV1(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.tilRelatertPerson(),
             )

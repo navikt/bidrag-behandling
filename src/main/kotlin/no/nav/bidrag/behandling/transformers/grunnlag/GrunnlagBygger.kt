@@ -104,5 +104,5 @@ fun Behandling.byggGrunnlagForStønad(): Set<GrunnlagDto> {
 }
 
 fun Behandling.byggGrunnlagForStønadAvslag(): Set<GrunnlagDto> {
-    return (byggGrunnlagNotater() + byggGrunnlagSøknad()).toSet()
+    return (byggGrunnlagNotater() + byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSøknad()).toSet()
 }

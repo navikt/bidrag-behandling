@@ -73,8 +73,10 @@ class LesBehandlingTest : BehandlingControllerTest() {
                 notat.medIVedtaket shouldBe "Notat boforhold med i vedtak"
             }
 
-            // TODO: Oppdater validering
             aktiveGrunnlagsdata shouldNotBe null
+            aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
+            aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 0
+            aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 3
         }
     }
 

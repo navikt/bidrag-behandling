@@ -51,6 +51,8 @@ fun Behandling.tilBehandlingDtoV2(
     vedtakstype = vedtakstype,
     stønadstype = stonadstype,
     engangsbeløptype = engangsbeloptype,
+    erKlageEllerOmgjøring = erKlageEllerOmgjøring,
+    opprettetTidspunkt = opprettetTidspunkt,
     erVedtakFattet = vedtaksid != null,
     søktFomDato = søktFomDato,
     mottattdato = mottattdato,
@@ -69,6 +71,7 @@ fun Behandling.tilBehandlingDtoV2(
             )
         }.toSet(),
     søknadRefId = soknadRefId,
+    vedtakRefId = refVedtaksid,
     virkningstidspunkt =
         VirkningstidspunktDto(
             virkningstidspunkt = virkningstidspunkt,

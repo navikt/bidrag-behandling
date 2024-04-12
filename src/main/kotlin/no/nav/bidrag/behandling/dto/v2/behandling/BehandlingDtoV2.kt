@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
@@ -17,6 +18,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.sivilstand.response.Status
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import java.math.BigDecimal
@@ -29,6 +31,8 @@ data class BehandlingDtoV2(
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
+    val erKlageEllerOmgjøring: Boolean,
+    val opprettetTidspunkt: LocalDateTime,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val søktFomDato: LocalDate,
@@ -39,6 +43,7 @@ data class BehandlingDtoV2(
     val saksnummer: String,
     val søknadsid: Long,
     val søknadRefId: Long? = null,
+    val vedtakRefId: Long? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
     val grunnlagspakkeid: Long? = null,
@@ -68,7 +73,13 @@ data class IkkeAktiveInntekter(
     val småbarnstillegg: Set<IkkeAktivInntektDto> = emptySet(),
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<IkkeAktivInntektDto> = emptySet(),
-)
+) {
+    @get:JsonIgnore
+    val ingenEndringer
+        get() =
+            barnetillegg.isEmpty() && utvidetBarnetrygd.isEmpty() &&
+                kontantstøtte.isEmpty() && småbarnstillegg.isEmpty() && årsinntekter.isEmpty()
+}
 
 enum class GrunnlagInntektEndringstype {
     ENDRING,
@@ -100,7 +111,8 @@ data class SivilstandAktivGrunnlagDto(
 )
 
 data class SivilstandIkkeAktivGrunnlagDto(
-    val sivilstand: Set<SivilstandDto> = emptySet(),
+    val sivilstand: List<SivilstandDto> = emptyList(),
+    val status: Status,
     val grunnlag: Set<SivilstandGrunnlagDto> = emptySet(),
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )

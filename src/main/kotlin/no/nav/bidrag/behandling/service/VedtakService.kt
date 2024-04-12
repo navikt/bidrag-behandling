@@ -269,12 +269,16 @@ class VedtakService(
         val ikkeAktivertGrunnlagIkkeInntekt =
             ikkeAktivertGrunnlag.filter { !inntekterOgYtelser.contains(it.type) }
         val feilmelding = "Kan ikke fatte vedtak fordi nyeste opplysninger ikke er hentet inn"
-        if (!erKlageEllerOmgjøring && ikkeAktivertGrunnlag.isNotEmpty()) {
+        if (avslag == null && !erKlageEllerOmgjøring && ikkeAktivertGrunnlag.isNotEmpty()) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
         }
 
         if (erKlageEllerOmgjøring && ikkeAktivertGrunnlagIkkeInntekt.isNotEmpty()) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
+        }
+
+        if (virkningstidspunkt == null) {
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Virkningstidspunkt må settes")
         }
 
         val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =

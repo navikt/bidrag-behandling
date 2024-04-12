@@ -124,11 +124,11 @@ fun VedtakDto.tilBehandling(
         Behandling(
             id = if (lesemodus) 1 else null,
             vedtakstype = vedtakType ?: type,
-            virkningstidspunkt = hentVedtakstidspunkt()?.virkningstidspunkt ?: hentSøknad().søktFraDato,
+            virkningstidspunkt = hentVirkningstidspunkt()?.virkningstidspunkt ?: hentSøknad().søktFraDato,
             opprinneligVirkningstidspunkt =
-                hentVedtakstidspunkt()?.virkningstidspunkt
+                hentVirkningstidspunkt()?.virkningstidspunkt
                     ?: hentSøknad().søktFraDato,
-            årsak = hentVedtakstidspunkt()?.årsak,
+            årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
             soknadFra = soknadFra ?: hentSøknad().søktAv,
@@ -395,14 +395,22 @@ private fun VedtakDto.notatMedType(
     .map { it.innholdTilObjekt<NotatGrunnlag>() }
     .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }?.innhold
 
-private fun VedtakDto.avslagskode() =
-    if (stønadsendringListe.all { it.periodeListe.size == 1 } && hentVedtakstidspunkt() == null) {
-        Resultatkode.fraKode(stønadsendringListe.first().periodeListe.first().resultatkode)
+private fun VedtakDto.avslagskode(): Resultatkode? {
+    return if (stønadsendringListe.all { it.periodeListe.size == 1 }) {
+        val virkningstidspunkt = hentVirkningstidspunkt()
+        if (virkningstidspunkt == null) {
+            Resultatkode.fraKode(stønadsendringListe.first().periodeListe.first().resultatkode)
+        } else if (virkningstidspunkt.avslag != null) {
+            virkningstidspunkt.avslag
+        } else {
+            null
+        }
     } else {
         null
     }
+}
 
-private fun VedtakDto.hentVedtakstidspunkt(): VirkningstidspunktGrunnlag? {
+private fun VedtakDto.hentVirkningstidspunkt(): VirkningstidspunktGrunnlag? {
     return grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
         .firstOrNull()?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
 }
@@ -423,16 +431,15 @@ private fun List<BaseGrunnlag>.tilHusstandsbarn(
         )
     val gjelderBarn = gjelderBarnGrunnlag.innholdTilObjekt<Person>()
 
+    val erOffentligKilde =
+        grunnlagsListe.hentInnhentetHusstandsmedlem()
+            .any { it.relatertPersonPersonId == gjelderBarnGrunnlag.personIdent }
     val husstandsbarnBO =
         Husstandsbarn(
             ident = gjelderBarnGrunnlag.personIdent,
             navn = gjelderBarn.navn,
             fødselsdato = gjelderBarn.fødselsdato,
-            kilde =
-                when (gjelderBarnGrunnlag.type) {
-                    Grunnlagstype.PERSON_SØKNADSBARN -> Kilde.OFFENTLIG
-                    else -> Kilde.MANUELL
-                },
+            kilde = if (erOffentligKilde) Kilde.OFFENTLIG else Kilde.MANUELL,
             behandling = behandling,
         )
     husstandsbarnBO.perioder =
@@ -552,26 +559,28 @@ private fun Inntekt.copy(
     type: Inntektsrapportering? = null,
     kilde: Kilde? = null,
 ): Inntekt {
-    return Inntekt(
-        type = type ?: this.type,
-        belop = belop,
-        gjelderBarn = gjelderBarn,
-        taMed = taMed,
-        datoFom = datoFom,
-        datoTom = datoTom,
-        ident = ident,
-        kilde = kilde ?: this.kilde,
-        behandling = behandling,
-        opprinneligFom = opprinneligFom,
-        opprinneligTom = opprinneligTom,
-        inntektsposter =
-            inntektsposter.map {
-                Inntektspost(
-                    beløp = it.beløp,
-                    inntektstype = it.inntektstype,
-                    kode = it.kode,
-                    inntekt = this,
-                )
-            }.toMutableSet(),
-    )
+    val nyInntekt =
+        Inntekt(
+            type = type ?: this.type,
+            belop = belop,
+            gjelderBarn = gjelderBarn,
+            taMed = taMed,
+            datoFom = datoFom,
+            datoTom = datoTom,
+            ident = ident,
+            kilde = kilde ?: this.kilde,
+            behandling = behandling,
+            opprinneligFom = opprinneligFom,
+            opprinneligTom = opprinneligTom,
+        )
+    nyInntekt.inntektsposter =
+        inntektsposter.map {
+            Inntektspost(
+                beløp = it.beløp,
+                inntektstype = it.inntektstype,
+                kode = it.kode,
+                inntekt = nyInntekt,
+            )
+        }.toMutableSet()
+    return nyInntekt
 }

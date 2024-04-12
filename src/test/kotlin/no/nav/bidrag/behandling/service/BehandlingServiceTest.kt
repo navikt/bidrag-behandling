@@ -251,7 +251,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        @Disabled("Wiremock-problem")
+        @Disabled("Wiremock issues - OK alene, feiler i fellesskap med andre")
         @Transactional
         open fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
             // gitt
@@ -265,8 +265,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
             // så
             assertSoftly {
-                // TODO: Oppdater validering
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.inntekter.årsinntekter shouldHaveSize 0
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn shouldHaveSize 0
             }
         }
     }

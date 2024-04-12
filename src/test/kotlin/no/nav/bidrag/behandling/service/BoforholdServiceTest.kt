@@ -82,7 +82,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             val periodisertBoforhold =
-                BoforholdApi.beregn(
+                BoforholdApi.beregnV1(
                     minOf(testdataBarn1.foedselsdato, testdataBarn2.foedselsdato),
                     grunnlagBoforhold.tilRelatertPerson(),
                 )
@@ -134,7 +134,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-            val periodisertBoforhold = BoforholdApi.beregn(LocalDate.now(), grunnlagBoforhold.tilRelatertPerson())
+            val periodisertBoforhold = BoforholdApi.beregnV1(LocalDate.now(), grunnlagBoforhold.tilRelatertPerson())
 
             behandling.husstandsbarn.size shouldBe 2
 
@@ -205,7 +205,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             val periodisertBoforhold =
-                BoforholdApi.beregn(testdataBarn2.foedselsdato, grunnlagBoforhold.tilRelatertPerson())
+                BoforholdApi.beregnV1(testdataBarn2.foedselsdato, grunnlagBoforhold.tilRelatertPerson())
 
             // hvis
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(

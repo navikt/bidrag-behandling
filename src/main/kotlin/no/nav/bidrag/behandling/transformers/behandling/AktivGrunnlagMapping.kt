@@ -7,15 +7,20 @@ import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
-import no.nav.bidrag.boforhold.response.BoforholdBeregnet
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDateTime
@@ -43,10 +48,10 @@ private fun List<Grunnlag>.hentBearbeidetInntekterForType(
 }.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
 
 fun List<Grunnlag>.hentEndringerBoforhold(aktiveGrunnlag: List<Grunnlag>): Set<HusstandsbarnGrunnlagDto> {
-    val aktivBoforholdGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD }
-    val aktivBoforholdData = aktivBoforholdGrunnlag.konverterData<List<BoforholdBeregnet>>()
-    val nyBoforholdGrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD }
-    val nyBoforholdData = nyBoforholdGrunnlag.konverterData<List<BoforholdBeregnet>>()
+    val aktivBoforholdGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
+    val aktivBoforholdData = aktivBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()
+    val nyBoforholdGrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
+    val nyBoforholdData = nyBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()
     return nyBoforholdData?.groupBy { it.relatertPersonPersonId }?.map { (barnId, oppdaterGrunnlag) ->
         val aktivGrunnlag = aktivBoforholdData?.filter { it.relatertPersonPersonId == barnId } ?: emptyList()
         if (aktivGrunnlag.erLik(oppdaterGrunnlag)) return@map null
@@ -64,10 +69,60 @@ fun List<Grunnlag>.hentEndringerBoforhold(aktiveGrunnlag: List<Grunnlag>): Set<H
     }?.filterNotNull()?.toSet() ?: emptySet()
 }
 
-fun List<BoforholdBeregnet>.erLik(other: List<BoforholdBeregnet>): Boolean {
+fun List<Grunnlag>.hentEndringerSivilstand(aktiveGrunnlag: List<Grunnlag>): SivilstandIkkeAktivGrunnlagDto? {
+    return try {
+        val aktivSivilstandGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
+        val aktivSivilstandData = aktivSivilstandGrunnlag.konverterData<SivilstandBeregnet>()
+        val nySivilstandGrunnlagBearbeidet = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
+        val nySivilstandGrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
+        val nySivilstandData = nySivilstandGrunnlagBearbeidet.konverterData<SivilstandBeregnet>()
+        if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
+            return SivilstandIkkeAktivGrunnlagDto(
+                sivilstand =
+                    nySivilstandData.sivilstandListe.map {
+                        SivilstandDto(
+                            null,
+                            it.periodeFom,
+                            it.periodeTom,
+                            it.sivilstandskode,
+                            Kilde.OFFENTLIG,
+                        )
+                    },
+                status = nySivilstandData.status,
+                innhentetTidspunkt = nySivilstandGrunnlagBearbeidet!!.innhentet,
+                grunnlag = nySivilstandGrunnlag?.konverterData<Set<SivilstandGrunnlagDto>>() ?: emptySet(),
+            )
+        }
+        return null
+    } catch (e: Exception) {
+        // TODO: Midlertidlig fiks til V2 av sivilstand beregning brukes
+        secureLogger.error(e) { "Det skjedde en feil ved mapping av sivilstand grunnlagdifferanse" }
+        null
+    }
+}
+
+fun SivilstandBeregnet.erLik(other: SivilstandBeregnet): Boolean {
+    if (status != other.status) return false
+    if (sivilstandListe.size != other.sivilstandListe.size) return false
+    sivilstandListe.sortedBy { it.periodeFom }.forEachIndexed { index, sivilstand ->
+        val otherSivilstand = other.sivilstandListe[index]
+        if (otherSivilstand.periodeFom == sivilstand.periodeFom &&
+            otherSivilstand.periodeTom == sivilstand.periodeTom &&
+            otherSivilstand.sivilstandskode == sivilstand.sivilstandskode
+        ) {
+            return true
+        }
+    }
+    return false
+}
+
+fun List<BoforholdResponse>.erLik(other: List<BoforholdResponse>): Boolean {
     if (this.size != other.size) return false
     return this.all { boforhold ->
-        other.any { it.periodeFom == boforhold.periodeFom && it.periodeTom == boforhold.periodeTom }
+        other.any {
+            it.periodeFom == boforhold.periodeFom && it.periodeTom == boforhold.periodeTom &&
+                it.bostatus == boforhold.bostatus
+        }
     }
 }
 
@@ -90,8 +145,14 @@ fun List<Grunnlag>.hentEndringerInntekter(
                         GrunnlagInntektEndringstype.NY,
                         innhentetTidspunkt,
                     )
+            val erPeriodeEndret = eksisterendeInntekt.opprinneligPeriode != grunnlag.periode
             val erBeløpEndret = eksisterendeInntekt.belop.setScale(0) != grunnlag.sumInntekt.setScale(0)
-            if (erBeløpEndret || erInntektsposterEndret(eksisterendeInntekt.inntektsposter, grunnlag.inntektPostListe)) {
+            if (erPeriodeEndret || erBeløpEndret ||
+                erInntektsposterEndret(
+                    eksisterendeInntekt.inntektsposter,
+                    grunnlag.inntektPostListe,
+                )
+            ) {
                 grunnlag.tilIkkeAktivInntektDto(
                     rolle.ident!!,
                     GrunnlagInntektEndringstype.ENDRING,
