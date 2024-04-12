@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
+import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -36,8 +37,15 @@ fun erInntektsposterEndret(
             inntektsposter.find {
                 (it.inntektstype != null && it.inntektstype == nyInntekstpost.inntekstype) || it.kode == nyInntekstpost.kode
             }
-        eksisterende == null || eksisterende.beløp.setScale(0) != nyInntekstpost.beløp.setScale(0)
+        eksisterende == null || eksisterende.beløp.nærmesteHeltall != nyInntekstpost.beløp.nærmesteHeltall
     }
+}
+
+private fun List<Grunnlag>.harInntekterForTypeSomIkkeErBearbeidet(
+    type: Grunnlagsdatatype,
+    ident: String,
+) = any {
+    it.type == type && !it.erBearbeidet && it.rolle.ident == ident
 }
 
 private fun List<Grunnlag>.hentBearbeidetInntekterForType(
@@ -131,6 +139,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
     inntekter: Set<Inntekt>,
     type: Grunnlagsdatatype,
 ): Set<IkkeAktivInntektDto> {
+    if (!harInntekterForTypeSomIkkeErBearbeidet(type, rolle.ident!!)) return emptySet()
     val oppdatertGrunnlag = hentBearbeidetInntekterForType(type, rolle.ident!!)
     val innhentetTidspunkt = find { it.type == type && it.erBearbeidet }?.innhentet ?: LocalDateTime.now()
     val oppdaterteEllerNyInntekter =
@@ -146,7 +155,8 @@ fun List<Grunnlag>.hentEndringerInntekter(
                         innhentetTidspunkt,
                     )
             val erPeriodeEndret = eksisterendeInntekt.opprinneligPeriode != grunnlag.periode
-            val erBeløpEndret = eksisterendeInntekt.belop.setScale(0) != grunnlag.sumInntekt.setScale(0)
+            val erBeløpEndret =
+                eksisterendeInntekt.belop.nærmesteHeltall != grunnlag.sumInntekt.nærmesteHeltall
             if (erPeriodeEndret || erBeløpEndret ||
                 erInntektsposterEndret(
                     eksisterendeInntekt.inntektsposter,
