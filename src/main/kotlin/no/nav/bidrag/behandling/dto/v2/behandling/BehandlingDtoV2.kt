@@ -31,6 +31,10 @@ data class BehandlingDtoV2(
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
+    val erKlageEllerOmgjøring: Boolean,
+    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val opprettetTidspunkt: LocalDateTime,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val søktFomDato: LocalDate,
@@ -41,6 +45,7 @@ data class BehandlingDtoV2(
     val saksnummer: String,
     val søknadsid: Long,
     val søknadRefId: Long? = null,
+    val vedtakRefId: Long? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
     val grunnlagspakkeid: Long? = null,
