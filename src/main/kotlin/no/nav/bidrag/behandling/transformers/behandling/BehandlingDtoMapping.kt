@@ -40,7 +40,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 @Suppress("ktlint:standard:value-argument-comment")
@@ -53,7 +52,7 @@ fun Behandling.tilBehandlingDtoV2(
     stønadstype = stonadstype,
     engangsbeløptype = engangsbeloptype,
     erKlageEllerOmgjøring = erKlageEllerOmgjøring,
-    opprettetTidspunkt = opprettetTidspunkt ?: LocalDateTime.now(),
+    opprettetTidspunkt = opprettetTidspunkt,
     erVedtakFattet = vedtaksid != null,
     søktFomDato = søktFomDato,
     mottattdato = mottattdato,

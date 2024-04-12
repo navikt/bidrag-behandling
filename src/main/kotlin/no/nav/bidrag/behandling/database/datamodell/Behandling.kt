@@ -67,7 +67,7 @@ open class Behandling(
     open var opprinneligVirkningstidspunkt: LocalDate? = null,
     open var vedtakstidspunkt: LocalDateTime? = null,
     open var slettetTidspunkt: LocalDateTime? = null,
-    open var opprettetTidspunkt: LocalDateTime? = null,
+    open var opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
     open var vedtakFattetAv: String? = null,
     @Column(name = "aarsak")
     @Convert(converter = ÅrsakConverter::class)
