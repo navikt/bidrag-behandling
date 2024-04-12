@@ -83,7 +83,7 @@ class GrunnlagService(
     private val inntektApi: InntektApi,
     private val inntektService: InntektService,
 ) {
-    @Value("\${egenskaper.grunnlag.min-antall-timer-siden-forrige-innhenting}")
+    @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
     private lateinit var grenseInnhenting: String
 
     @Transactional
@@ -149,7 +149,7 @@ class GrunnlagService(
             behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
         } else {
             val nesteInnhenting =
-                behandling.grunnlagSistInnhentet?.plusHours(grenseInnhenting.toLong())
+                behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
 
             log.info {
                 "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
@@ -428,7 +428,7 @@ class GrunnlagService(
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean {
         return behandling.grunnlagSistInnhentet == null ||
             LocalDateTime.now()
-                .minusHours(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+                .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
     }
 
     private fun henteOglagreGrunnlag(
