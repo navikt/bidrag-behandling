@@ -559,26 +559,28 @@ private fun Inntekt.copy(
     type: Inntektsrapportering? = null,
     kilde: Kilde? = null,
 ): Inntekt {
-    return Inntekt(
-        type = type ?: this.type,
-        belop = belop,
-        gjelderBarn = gjelderBarn,
-        taMed = taMed,
-        datoFom = datoFom,
-        datoTom = datoTom,
-        ident = ident,
-        kilde = kilde ?: this.kilde,
-        behandling = behandling,
-        opprinneligFom = opprinneligFom,
-        opprinneligTom = opprinneligTom,
-        inntektsposter =
-            inntektsposter.map {
-                Inntektspost(
-                    beløp = it.beløp,
-                    inntektstype = it.inntektstype,
-                    kode = it.kode,
-                    inntekt = this,
-                )
-            }.toMutableSet(),
-    )
+    val nyInntekt =
+        Inntekt(
+            type = type ?: this.type,
+            belop = belop,
+            gjelderBarn = gjelderBarn,
+            taMed = taMed,
+            datoFom = datoFom,
+            datoTom = datoTom,
+            ident = ident,
+            kilde = kilde ?: this.kilde,
+            behandling = behandling,
+            opprinneligFom = opprinneligFom,
+            opprinneligTom = opprinneligTom,
+        )
+    nyInntekt.inntektsposter =
+        inntektsposter.map {
+            Inntektspost(
+                beløp = it.beløp,
+                inntektstype = it.inntektstype,
+                kode = it.kode,
+                inntekt = nyInntekt,
+            )
+        }.toMutableSet()
+    return nyInntekt
 }
