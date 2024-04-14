@@ -205,7 +205,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
         gjelder =
             PersonNotatDto(
                 rolle = null,
-                navn = navn ?: hentPersonVisningsnavn(ident),
+                navn = hentPersonVisningsnavn(ident) ?: navn,
                 fødselsdato = fødselsdato,
                 ident = ident?.let { Personident(it) },
             ),
