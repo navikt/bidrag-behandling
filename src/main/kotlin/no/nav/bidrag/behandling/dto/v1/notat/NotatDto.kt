@@ -78,6 +78,7 @@ data class SivilstandNotat(
 data class BoforholdBarn(
     val gjelder: PersonNotatDto,
     val medIBehandling: Boolean,
+    val kilde: Kilde,
     val opplysningerFraFolkeregisteret: List<OpplysningerFraFolkeregisteret<Bostatuskode>> =
         emptyList(),
     val opplysningerBruktTilBeregning: List<OpplysningerBruktTilBeregning<Bostatuskode>> =

@@ -209,6 +209,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
                 fødselsdato = fødselsdato,
                 ident = ident?.let { Personident(it) },
             ),
+        kilde = kilde.tilNotatKilde(),
         medIBehandling = behandling.roller.any { it.ident == this.ident },
         opplysningerFraFolkeregisteret =
             opplysningerBoforhold.filter {
