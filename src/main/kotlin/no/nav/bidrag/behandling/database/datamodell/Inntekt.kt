@@ -49,6 +49,7 @@ open class Inntekt(
     val datoFomEllerOpprinneligFom get() = datoFom ?: opprinneligFom
 
     val opprinneligPeriode get() = opprinneligFom?.let { ÅrMånedsperiode(it, opprinneligTom) }
+    val periode get() = datoFom?.let { ÅrMånedsperiode(it, datoTom) }
 
     override fun toString(): String {
         return try {
