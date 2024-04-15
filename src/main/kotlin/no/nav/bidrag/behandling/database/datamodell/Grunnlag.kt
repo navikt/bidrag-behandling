@@ -12,8 +12,10 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
 
@@ -47,6 +49,31 @@ open class Grunnlag(
         }
     }
 }
+
+fun List<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
+
+fun List<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+
+fun List<Grunnlag>.harInntekterForTypeSomIkkeErBearbeidet(
+    type: Grunnlagsdatatype,
+    ident: String,
+) = any {
+    it.type == type && !it.erBearbeidet && it.rolle.ident == ident
+}
+
+fun List<Grunnlag>.hentGrunnlagForType(
+    type: Grunnlagsdatatype,
+    ident: String,
+) = filter {
+    it.type == type && it.rolle.ident == ident
+}
+
+fun List<Grunnlag>.hentBearbeidetInntekterForType(
+    type: Grunnlagsdatatype,
+    ident: String,
+) = find {
+    it.type == type && it.erBearbeidet && it.rolle.ident == ident
+}.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
 
 inline fun <reified T> Grunnlag?.konverterData(): T? {
     return this?.data?.let {

@@ -9,6 +9,10 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
+import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -174,14 +178,13 @@ class GrunnlagService(
         )
 
         aktivereGrunnlagRequest.grunnlagsdatatyper.forEach { grunnlagstype ->
-            val sistInnhentedeRådata =
+            val harIkkeAktivGrunnlag =
                 behandling.grunnlag
                     .filter { rolleGrunnlagSkalAktiveresFor!!.ident == it.rolle.ident }
                     .filter { grunnlagstype == it.type }
-                    .filter { !it.erBearbeidet }
-                    .maxByOrNull { it.innhentet }
+                    .filter { !it.erBearbeidet && it.aktiv == null }.isNotEmpty()
 
-            if (sistInnhentedeRådata == null || sistInnhentedeRådata.aktiv != null) {
+            if (!harIkkeAktivGrunnlag) {
                 log.warn {
                     "Fant ingen grunnlag med type $grunnlagstype å aktivere for rolleid " +
                         "${rolleGrunnlagSkalAktiveresFor!!.id} i behandling ${behandling.id} "
@@ -195,7 +198,6 @@ class GrunnlagService(
                     grunnlagstype,
                     rolleGrunnlagSkalAktiveresFor!!,
                     aktiveringstidspunkt,
-                    sistInnhentedeRådata,
                 )
             } else if (Grunnlagsdatatype.BOFORHOLD == grunnlagstype) {
                 aktivereBoforhold(
@@ -203,7 +205,6 @@ class GrunnlagService(
                     grunnlagstype,
                     rolleGrunnlagSkalAktiveresFor!!,
                     aktiveringstidspunkt,
-                    sistInnhentedeRådata,
                 )
             } else if (Grunnlagsdatatype.SIVILSTAND == grunnlagstype) {
                 aktivereSivilstand(
@@ -211,7 +212,6 @@ class GrunnlagService(
                     grunnlagstype,
                     rolleGrunnlagSkalAktiveresFor!!,
                     aktiveringstidspunkt,
-                    sistInnhentedeRådata,
                 )
             } else {
                 log.error {
@@ -240,13 +240,11 @@ class GrunnlagService(
         val roller = behandling.roller
         val inntekter = behandling.inntekter
         val nyinnhentetGrunnlag =
-            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }.toSet()
-                .sortedByDescending { it.innhentet }
-                .filter { g -> g.aktiv == null }
+            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }
+                .hentAlleIkkeAktiv()
         val aktiveGrunnlag =
-            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }.toSet()
-                .sortedByDescending { it.innhentet }
-                .filter { g -> g.aktiv != null }
+            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }.toList()
+                .hentAlleAktiv()
         return IkkeAktiveGrunnlagsdata(
             inntekter =
                 IkkeAktiveInntekter(
@@ -345,43 +343,21 @@ class GrunnlagService(
         grunnlagstype: Grunnlagsdatatype,
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
-        sistInnhentedeRådata: Grunnlag,
     ) {
-        val transformereInntekter =
-            oppretteTransformereInntekterRequestPerType(grunnlagstype, sistInnhentedeRådata, rolle)
+        val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
 
-        val summerteInntekter = inntektApi.transformerInntekter(transformereInntekter)
-        lagreGrunnlagHvisEndret(
-            behandling,
-            rolle,
-            Grunnlagstype(grunnlagstype, true),
-            SummerteInntekter(
-                versjon = summerteInntekter.versjon,
-                inntekter = summerteInntekter.summertÅrsinntektListe,
-            ),
-            LocalDateTime.now(),
-            aktiveringstidspunkt,
-        )
+        val summerteInntekter = ikkeAktivGrunnlag.hentBearbeidetInntekterForType(grunnlagstype, rolle.ident!!)
 
-        lagreGrunnlagHvisEndret(
-            behandling,
-            rolle,
-            Grunnlagstype(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, true),
-            SummerteInntekter(
-                versjon = summerteInntekter.versjon,
-                inntekter = summerteInntekter.summertMånedsinntektListe,
-            ),
-            LocalDateTime.now(),
-            aktiveringstidspunkt,
-        )
         entityManager.merge(behandling)
 
         inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
             behandling,
             rolle,
-            summerteInntekter.summertÅrsinntektListe,
+            summerteInntekter?.inntekter ?: emptyList(),
         )
-        sistInnhentedeRådata.aktiv = aktiveringstidspunkt
+        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).forEach {
+            it.aktiv = aktiveringstidspunkt
+        }
         entityManager.flush()
     }
 
@@ -390,12 +366,18 @@ class GrunnlagService(
         grunnlagstype: Grunnlagsdatatype,
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
-        sistInnhentedeRådata: Grunnlag,
     ) {
+        val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
+        val sistInnhentedeRådata =
+            behandling.grunnlag
+                .filter { rolle!!.ident == it.rolle.ident }
+                .filter { grunnlagstype == it.type }
+                .filter { !it.erBearbeidet }
+                .maxByOrNull { it.innhentet }
         val periodisertBoforhold =
             BoforholdApi.beregnV1(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                jsonTilObjekt<List<RelatertPersonGrunnlagDto>>(sistInnhentedeRådata.data).tilRelatertPerson(),
+                jsonTilObjekt<List<RelatertPersonGrunnlagDto>>(sistInnhentedeRådata!!.data).tilRelatertPerson(),
             )
 
         lagreGrunnlagHvisEndret<List<BoforholdBeregnet>>(
@@ -412,7 +394,9 @@ class GrunnlagService(
             behandling,
             periodisertBoforhold,
         )
-        sistInnhentedeRådata.aktiv = aktiveringstidspunkt
+        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).forEach {
+            it.aktiv = aktiveringstidspunkt
+        }
         entityManager.flush()
     }
 
@@ -421,14 +405,14 @@ class GrunnlagService(
         grunnlagstype: Grunnlagsdatatype,
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
-        sistInnhentedeRådata: Grunnlag,
     ) {
     }
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean {
-        return behandling.grunnlagSistInnhentet == null ||
-            LocalDateTime.now()
-                .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+        return true
+//        return behandling.grunnlagSistInnhentet == null ||
+//            LocalDateTime.now()
+//                .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
     }
 
     private fun henteOglagreGrunnlag(
@@ -582,6 +566,20 @@ class GrunnlagService(
                         "${rolleInhentetFor.behandling.id!!}"
                 }
                 lagringAvGrunnlagFeiletException(rolleInhentetFor.behandling.id!!)
+            }
+
+            val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
+
+            val inneholderEndringer =
+                ikkeAktivGrunnlag.hentEndringerInntekter(
+                    rolleInhentetFor,
+                    behandling.inntekter,
+                    type,
+                ).isNotEmpty()
+            if (!inneholderEndringer) {
+                ikkeAktivGrunnlag.hentGrunnlagForType(type, rolleInhentetFor.ident!!).forEach {
+                    it.aktiv = LocalDateTime.now()
+                }
             }
         }
     }

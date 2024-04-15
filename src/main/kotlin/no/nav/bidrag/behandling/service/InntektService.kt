@@ -95,7 +95,6 @@ class InntektService(
                 .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
         behandling.inntekter.removeAll(offentligeInntekterSomSkalSlettes)
-        entityManager.flush()
     }
 
     @Transactional
@@ -271,12 +270,10 @@ class InntektService(
 
             val inntektSomOppdateres = inntekterSomSkalOppdateres.maxBy { it.id!! }
             oppdatereBeløpPeriodeOgPoster(nyInntekt, inntektSomOppdateres)
-            entityManager.refresh(behandling)
             idTilInntekterSomBleOppdatert.add(inntektSomOppdateres.id!!)
         } else if (inntekterSomSkalOppdateres.size == 1) {
             val inntektSomOppdateres = inntekterSomSkalOppdateres.first()
             oppdatereBeløpPeriodeOgPoster(nyInntekt, inntektSomOppdateres)
-            entityManager.refresh(behandling)
             log.info {
                 "Eksisterende inntekt med id ${inntektSomOppdateres.id} for rolle " +
                     "${rolle.rolletype} i behandling ${behandling.id} ble oppdatert med nytt beløp og poster."
@@ -333,7 +330,5 @@ class InntektService(
                 ),
             )
         }
-
-        entityManager.flush()
     }
 }
