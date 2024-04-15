@@ -36,10 +36,13 @@ import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 @Suppress("ktlint:standard:value-argument-comment")
@@ -289,3 +292,27 @@ fun Behandling.hentBeregnetInntekter() =
     BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe.sortedBy {
         it.inntektGjelderBarnIdent?.verdi
     }
+
+fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
+
+fun Behandling.notatTittel(): String {
+    val prefiks =
+        when (stonadstype) {
+            Stønadstype.FORSKUDD -> "Bidragsforskudd"
+            Stønadstype.BIDRAG -> "Barnebidrag"
+            Stønadstype.BIDRAG18AAR -> "Barnebidrag 18 år"
+            Stønadstype.EKTEFELLEBIDRAG -> "Ektefellebidrag"
+            Stønadstype.OPPFOSTRINGSBIDRAG -> "Oppfostringbidrag"
+            Stønadstype.MOTREGNING -> "Motregning"
+            else ->
+                when (engangsbeloptype) {
+                    Engangsbeløptype.ETTERGIVELSE -> "Ettergivelse"
+                    Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> "Ettergivelse tilbakekreving"
+                    Engangsbeløptype.GEBYR_MOTTAKER -> "Gebyr"
+                    Engangsbeløptype.GEBYR_SKYLDNER -> "Gebyr"
+                    Engangsbeløptype.TILBAKEKREVING -> "Tilbakekreving"
+                    else -> null
+                }
+        }
+    return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
+}

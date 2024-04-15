@@ -270,7 +270,8 @@ class VedtakService(
             ikkeAktivertGrunnlag.filter { !inntekterOgYtelser.contains(it.type) }
         val feilmelding = "Kan ikke fatte vedtak fordi nyeste opplysninger ikke er hentet inn"
         if (avslag == null && !erKlageEllerOmgjøring && ikkeAktivertGrunnlag.isNotEmpty()) {
-            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
+//            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
+            LOGGER.warn { feilmelding }
         }
 
         if (erKlageEllerOmgjøring && ikkeAktivertGrunnlagIkkeInntekt.isNotEmpty()) {

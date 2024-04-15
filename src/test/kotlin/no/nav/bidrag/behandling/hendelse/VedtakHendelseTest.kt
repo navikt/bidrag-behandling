@@ -45,6 +45,8 @@ class VedtakHendelseTest : TestContainerRunner() {
         WireMock.resetAllRequests()
         stubUtils.stubHentForsendelserForSak()
         stubUtils.stubSlettForsendelse()
+        stubUtils.stubOpprettNotat()
+        stubUtils.stubOpprettJournalpost("12333")
     }
 
     @Test
@@ -75,6 +77,8 @@ class VedtakHendelseTest : TestContainerRunner() {
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
         stubUtils.Verify().forsendelseSlettet("2")
+        stubUtils.Verify().opprettNotatKalt()
+        stubUtils.Verify().opprettJournalpostKaltMed()
     }
 
     @Test

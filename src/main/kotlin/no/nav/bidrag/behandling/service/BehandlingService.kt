@@ -209,9 +209,9 @@ class BehandlingService(
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
                 it.vedtaksid = vedtaksid
-                it.vedtakstidspunkt = LocalDateTime.now()
-                it.vedtakFattetAv =
-                    TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn()
+                it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()
+                it.vedtakFattetAv = it.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
+                    ?: TokenUtils.hentApplikasjonsnavn()
             }
     }
 
