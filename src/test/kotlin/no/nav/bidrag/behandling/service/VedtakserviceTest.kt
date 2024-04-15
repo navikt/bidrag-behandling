@@ -160,8 +160,8 @@ class VedtakserviceTest {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            withClue("Grunnlagliste skal inneholde 75 grunnlag") {
-                request.grunnlagListe shouldHaveSize 75
+            withClue("Grunnlagliste skal inneholde 78 grunnlag") {
+                request.grunnlagListe shouldHaveSize 78
             }
 
             validerVedtaksdetaljer(behandling)
@@ -329,7 +329,7 @@ class VedtakserviceTest {
                 mottaker.verdi shouldBe nyIdentBm
             }
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe.shouldHaveSize(71)
+            request.grunnlagListe.shouldHaveSize(76)
 
             grunnlagListe.hentAllePersoner() shouldHaveSize 7
             grunnlagListe.søknadsbarn.toList()[0].personIdent shouldBe nyIdentBarn1
@@ -750,7 +750,7 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
                         it.grunnlagsreferanseListe,
                     )
                 assertSoftly(delberegningInntekt) {
-                    shouldHaveSize(2)
+                    shouldHaveSize(1)
                     assertSoftly(it[0]) { delberegning ->
                         val delberegningInnhold =
                             delberegning.innholdTilObjekt<DelberegningSumInntekt>()
