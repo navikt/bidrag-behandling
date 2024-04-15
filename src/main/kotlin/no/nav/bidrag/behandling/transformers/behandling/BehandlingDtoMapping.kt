@@ -103,12 +103,14 @@ fun Behandling.tilBehandlingDtoV2(
         InntekterDtoV2(
             barnetillegg =
                 inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
+                    .sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
                     .tilInntektDtoV2().toSet(),
             utvidetBarnetrygd =
                 inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }.tilInntektDtoV2()
                     .toSet(),
             kontantstøtte =
                 inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+                    .sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
                     .tilInntektDtoV2().toSet(),
             småbarnstillegg =
                 inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
