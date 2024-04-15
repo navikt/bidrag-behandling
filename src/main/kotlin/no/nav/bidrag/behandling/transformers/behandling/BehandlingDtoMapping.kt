@@ -293,7 +293,7 @@ fun Behandling.hentBeregnetInntekter() =
         it.inntektGjelderBarnIdent?.verdi
     }
 
-fun Behandling.tilReferanseId() = "bidrag_behandling_${id!! * 10000L}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
+fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
 
 fun Behandling.notatTittel(): String {
     val prefiks =
