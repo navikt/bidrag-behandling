@@ -127,6 +127,7 @@ class InntektServiceTest : TestContainerRunner() {
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
+            entityManager.merge(behandling)
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -176,6 +177,8 @@ class InntektServiceTest : TestContainerRunner() {
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
+
+            entityManager.merge(behandling)
 
             // så
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)

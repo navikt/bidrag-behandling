@@ -62,7 +62,8 @@ class InntektService(
         }
         behandling.inntekter.removeAll(inntekterSomSkalSlettes)
 
-        inntektRepository.saveAll(summerteÅrsinntekter.tilInntekt(behandling, personident))
+        val lagretInntekter = inntektRepository.saveAll(summerteÅrsinntekter.tilInntekt(behandling, personident))
+        behandling.inntekter.addAll(lagretInntekter)
     }
 
     @Transactional
@@ -188,7 +189,8 @@ class InntektService(
                         .orElseThrow { inntektIkkeFunnetException(it.id) }
                 it.oppdatereEksisterendeInntekt(inntekt)
             } else {
-                inntektRepository.save(it.lagreSomNyInntekt(behandling))
+                val nyInntekt = inntektRepository.save(it.lagreSomNyInntekt(behandling))
+                behandling.inntekter.add(nyInntekt)
             }
         }
 
@@ -277,7 +279,7 @@ class InntektService(
             }
             idTilInntekterSomBleOppdatert.add(inntektSomOppdateres.id!!)
         } else {
-            val i =
+            val nyInntekt =
                 inntektRepository.save(
                     nyInntekt.tilInntekt(
                         behandling,
@@ -285,9 +287,9 @@ class InntektService(
                     ),
                 )
 
-            idTilInntekterSomBleOppdatert.add(i.id!!)
-            entityManager.refresh(behandling)
-            log.info { "Ny offisiell inntekt ble lagt til i behandling ${behandling.id} for rolle ${rolle.rolletype}" }
+            idTilInntekterSomBleOppdatert.add(nyInntekt.id!!)
+            behandling.inntekter.add(nyInntekt)
+            log.info { "Ny offisiell inntekt ${nyInntekt.id} ble lagt til i behandling ${behandling.id} for rolle ${rolle.rolletype}" }
         }
     }
 

@@ -484,6 +484,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
+        @Transactional
         fun `skal ikke lagre tomt grunnlag dersom sist lagrede grunnlag var tomt`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)

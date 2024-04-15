@@ -448,7 +448,8 @@ class GrunnlagService(
             periodisereOgLagreSivilstand(behandling, innhentetGrunnlag)
         }
 
-        entityManager.refresh(behandling)
+//        entityManager.flush()
+//        entityManager.refresh(behandling)
     }
 
     private fun periodisereOgLagreSivilstand(
