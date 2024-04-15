@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
@@ -27,6 +26,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -155,22 +155,26 @@ class VedtakserviceTest {
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
-        assertSoftly(opprettVedtakRequest) { request ->
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            withClue("Grunnlagliste skal inneholde 75 grunnlag") {
-                request.grunnlagListe shouldHaveSize 75
+            withClue("Grunnlagliste skal inneholde 78 grunnlag") {
+                request.grunnlagListe shouldHaveSize 78
             }
+        }
 
-            validerVedtaksdetaljer(behandling)
-            validerPersongrunnlag()
-            validerSluttberegning()
-            validerBosstatusPerioder()
-            validerInntektrapportering()
+        opprettVedtakRequest.validerVedtaksdetaljer(behandling)
+        opprettVedtakRequest.validerPersongrunnlag()
+        opprettVedtakRequest.validerSluttberegning()
+        opprettVedtakRequest.validerBosstatusPerioder()
+        opprettVedtakRequest.validerInntektrapportering()
 
+        assertSoftly(opprettVedtakRequest) {
             val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
+
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.SIVILSTAND_PERIODE)) {
                 shouldHaveSize(1)
                 it[0].gjelderReferanse.shouldBe(bmGrunnlag.referanse)
@@ -208,6 +212,7 @@ class VedtakserviceTest {
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 5
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 1
         }
+
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
         }
@@ -735,80 +740,86 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
     val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)
     val søknadsbarn2Grunnlag = grunnlagListe.hentPerson(testdataBarn2.ident)
+
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_FORSKUDD)) {
         shouldHaveSize(10)
         it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag!!.referanse) shouldHaveSize 5
-        assertSoftly(it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag!!.referanse)) {
-            shouldHaveSize(5)
-            assertSoftly(it[3]) {
-                val innhold = innholdTilObjekt<SluttberegningForskudd>()
-                innhold.beløp.toBigInteger() shouldBe 1880.toBigInteger()
-                innhold.resultatKode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
-                innhold.aldersgruppe shouldBe AldersgruppeForskudd.ALDER_0_10_ÅR
-                val delberegningInntekt =
-                    hentGrunnlagstyperForReferanser(
-                        Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
-                        it.grunnlagsreferanseListe,
-                    )
-                assertSoftly(delberegningInntekt) {
-                    shouldHaveSize(2)
-                    assertSoftly(it[0]) { delberegning ->
-                        val delberegningInnhold =
-                            delberegning.innholdTilObjekt<DelberegningSumInntekt>()
-                        delberegningInnhold.totalinntekt shouldBe 120000.toBigDecimal()
-                        delberegningInnhold.skattepliktigInntekt shouldBe 60000.toBigDecimal()
-                        delberegningInnhold.barnetillegg shouldBe 60000.toBigDecimal()
-                        delberegning.grunnlagsreferanseListe shouldHaveSize 2
+    }
 
-                        val delberegningInntekt =
-                            grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegning.grunnlagsreferanseListe[0])
-                                .first()
-                        delberegningInntekt.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
-                        delberegningInntekt.grunnlagsreferanseListe shouldHaveSize 1
+    val sluttberegningForskudd =
+        hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_FORSKUDD)
+            .filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag!!.referanse)
+    sluttberegningForskudd shouldHaveSize (5)
 
-                        val innhentetAinntekt =
-                            grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegningInntekt.grunnlagsreferanseListe[0])
-                                .first()
-                        innhentetAinntekt.type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT
-                        innhentetAinntekt.grunnlagsreferanseListe shouldHaveSize 0
-                        innhentetAinntekt.gjelderReferanse shouldBe bmGrunnlag.referanse
-                    }
-                }
-                val delberegningBarnIHusstand =
-                    hentGrunnlagstyperForReferanser(
-                        Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND,
-                        it.grunnlagsreferanseListe,
-                    )
+    assertSoftly(sluttberegningForskudd[3]) {
+        val innhold = innholdTilObjekt<SluttberegningForskudd>()
+        innhold.beløp.toBigInteger() shouldBe 1880.toBigInteger()
+        innhold.resultatKode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
+        innhold.aldersgruppe shouldBe AldersgruppeForskudd.ALDER_0_10_ÅR
+    }
+    val delberegningInntekt =
+        hentGrunnlagstyperForReferanser(
+            Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
+            sluttberegningForskudd[3].grunnlagsreferanseListe,
+        )
 
-                assertSoftly(delberegningBarnIHusstand) {
-                    shouldHaveSize(1)
-                    assertSoftly(it[0]) { delberegning ->
-                        delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().antallBarn shouldBe 3
-                        delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.fom shouldBe
-                            YearMonth.parse(
-                                "2023-02",
-                            )
-                        delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.til shouldBe
-                            YearMonth.parse(
-                                "2023-08",
-                            )
-                        delberegning.grunnlagsreferanseListe shouldHaveSize 3
+    delberegningInntekt shouldHaveSize (1)
+    val delberegningInnhold = delberegningInntekt[0].innholdTilObjekt<DelberegningSumInntekt>()
 
-                        val bosstatusHusstandsmedlem =
-                            grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegning.grunnlagsreferanseListe[0])
-                                .first()
-                        bosstatusHusstandsmedlem.type shouldBe Grunnlagstype.BOSTATUS_PERIODE
-                        bosstatusHusstandsmedlem.grunnlagsreferanseListe shouldHaveSize 1
+    assertSoftly(delberegningInntekt[0]) { delberegning ->
+        delberegningInnhold.totalinntekt shouldBe 120000.toBigDecimal()
+        delberegningInnhold.skattepliktigInntekt shouldBe 60000.toBigDecimal()
+        delberegningInnhold.barnetillegg shouldBe 60000.toBigDecimal()
+        delberegning.grunnlagsreferanseListe shouldHaveSize 2
+    }
 
-                        val innhentetHusstandsmedlem =
-                            grunnlagListe.filtrerBasertPåEgenReferanse(referanse = bosstatusHusstandsmedlem.grunnlagsreferanseListe[0])
-                                .first()
-                        innhentetHusstandsmedlem.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
-                        innhentetHusstandsmedlem.grunnlagsreferanseListe shouldHaveSize 0
-                        innhentetHusstandsmedlem.gjelderReferanse shouldBe bmGrunnlag.referanse
-                    }
-                }
-            }
+    val delberegningInntektFiltrertPåEgenReferanse =
+        grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegningInntekt[0].grunnlagsreferanseListe[0])
+            .first()
+
+    assertSoftly(delberegningInntektFiltrertPåEgenReferanse) {
+        it.type shouldBe Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE
+        it.grunnlagsreferanseListe shouldHaveSize 1
+    }
+
+    val innhentetAinntekt =
+        grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegningInntektFiltrertPåEgenReferanse.grunnlagsreferanseListe[0])
+            .first()
+    assertSoftly(innhentetAinntekt) {
+        it.type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT
+        it.grunnlagsreferanseListe shouldHaveSize 0
+        it.gjelderReferanse shouldBe bmGrunnlag.referanse
+    }
+
+    val delberegningBarnIHusstand =
+        hentGrunnlagstyperForReferanser(
+            Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND,
+            sluttberegningForskudd[3].grunnlagsreferanseListe,
+        )
+
+    assertSoftly(delberegningBarnIHusstand) {
+        shouldHaveSize(1)
+        assertSoftly(it[0]) { delberegning ->
+            delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().antallBarn shouldBe 3
+            delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.fom shouldBe
+                YearMonth.parse(
+                    "2023-02",
+                )
+            delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.til shouldBe YearMonth.parse("2023-08")
+            delberegning.grunnlagsreferanseListe shouldHaveSize 3
+
+            val bosstatusHusstandsmedlem =
+                grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegning.grunnlagsreferanseListe[0])
+                    .first()
+            bosstatusHusstandsmedlem.type shouldBe Grunnlagstype.BOSTATUS_PERIODE
+            bosstatusHusstandsmedlem.grunnlagsreferanseListe shouldHaveSize 1
+
+            val innhentetHusstandsmedlem =
+                grunnlagListe.filtrerBasertPåEgenReferanse(referanse = bosstatusHusstandsmedlem.grunnlagsreferanseListe[0])
+                    .first()
+            innhentetHusstandsmedlem.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
+            innhentetHusstandsmedlem.grunnlagsreferanseListe shouldHaveSize 0
+            innhentetHusstandsmedlem.gjelderReferanse shouldBe bmGrunnlag.referanse
         }
     }
 }

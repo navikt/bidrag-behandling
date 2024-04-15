@@ -5,10 +5,11 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.repository.HusstandsbarnperiodeRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
@@ -20,6 +21,10 @@ import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.behandling.finnesFraFørException
 import no.nav.bidrag.behandling.husstandsbarnIkkeFunnetException
 import no.nav.bidrag.behandling.requestManglerDataException
+import no.nav.bidrag.behandling.ressursHarFeilKildeException
+import no.nav.bidrag.behandling.ressursIkkeFunnetException
+import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
@@ -251,8 +256,11 @@ fun OppdatereInntektRequest.valider() {
     }
 }
 
-fun OppdatereHusstandsbarn.validere(behandling: Behandling) {
-    if (this.nyttHusstandsbarn != null) {
+fun OppdatereHusstandsbarn.validere(
+    behandling: Behandling,
+    husstandsbarnperiodeRepository: HusstandsbarnperiodeRepository,
+) {
+    this.nyttHusstandsbarn?.let {
         if (this.nyttHusstandsbarn.navn == null &&
             this.nyttHusstandsbarn.personident == null
         ) {
@@ -270,22 +278,56 @@ fun OppdatereHusstandsbarn.validere(behandling: Behandling) {
         }
     }
 
-    if (this.nyBostatusperiode != null) {
-        val husstandsbarn = behandling.husstandsbarn.find { this.nyBostatusperiode.idHusstandsbarn == it.id }
+    this.nyHusstandsbarnperiode?.let {
+        val husstandsbarn = behandling.husstandsbarn.find { this.nyHusstandsbarnperiode.idHusstandsbarn == it.id }
         if (husstandsbarn == null) {
-            husstandsbarnIkkeFunnetException(this.nyBostatusperiode.idHusstandsbarn, behandling.id!!)
+            husstandsbarnIkkeFunnetException(this.nyHusstandsbarnperiode.idHusstandsbarn, behandling.id!!)
         }
     }
 
-    if (this.sletteHusstandsbarn != null) {
+    this.sletteHusstandsbarnperiode?.let {
+        val husstandsbarnperiode = husstandsbarnperiodeRepository.findById(it)
+        if (husstandsbarnperiode.isEmpty) {
+            ressursIkkeFunnetException("Fant ikke husstandsbarnsperiode med id $it.")
+        } else if (behandling.id != husstandsbarnperiode.get().husstandsbarn.behandling.id) {
+            ressursIkkeTilknyttetBehandling(
+                "Husstandsbarnperiode $it hører ikke til behandling med id" +
+                    "${behandling.id}.",
+            )
+        }
+    }
+
+    this.sletteHusstandsbarn?.let {
         val husstandsbarn = behandling.husstandsbarn.find { this.sletteHusstandsbarn == it.id }
         if (husstandsbarn == null) {
             husstandsbarnIkkeFunnetException(this.sletteHusstandsbarn, behandling.id!!)
+        } else if (Kilde.OFFENTLIG == husstandsbarn.kilde) {
+            ressursHarFeilKildeException(
+                "Husstandsbarn med id ${husstandsbarn.id} i behandling ${husstandsbarn.behandling.id} " +
+                    "kommer fra offentlige registre, og kan derfor ikke slettes.",
+            )
         }
     }
 
-    if (this.nyttHusstandsbarn == null && this.nyBostatusperiode == null && this.sletteHusstandsbarn == null) {
+    if (this.nyttHusstandsbarn == null && this.nyHusstandsbarnperiode == null && this.sletteHusstandsbarnperiode == null &&
+        this.sletteHusstandsbarn == null
+    ) {
         requestManglerDataException(behandling.id!!, Ressurstype.BOFORHOLD)
+    }
+}
+
+fun OppdatereSivilstand.validere(behandling: Behandling) {
+    this.sletteSivilstandsperiode?.let {
+        val sivilstand = behandling.sivilstand.find { this.sletteSivilstandsperiode == it.id }
+        if (sivilstand == null) {
+        }
+    }
+
+    this.leggeTilSivilstandsperiode.let {
+    }
+
+    if (this.sletteSivilstandsperiode == null && this.leggeTilSivilstandsperiode == null) {
+        requestManglerDataException(behandling.id!!, Ressurstype.SIVILSTAND)
     }
 }
 
@@ -401,7 +443,9 @@ private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
                         rapporteringTyper =
                             (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted()
                                 .toMutableSet(),
-                        idListe = (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted().toMutableSet(),
+                        idListe =
+                            (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted()
+                                .toMutableSet(),
                         inntektstyper =
                             (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted()
                                 .toMutableSet(),

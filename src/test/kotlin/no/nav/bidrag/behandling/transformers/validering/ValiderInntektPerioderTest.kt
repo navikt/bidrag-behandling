@@ -6,13 +6,13 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForYtelseSomGjelderBarn
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForÅrsinntekter
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -54,7 +54,12 @@ class ValiderInntektPerioderTest {
                         taMed = true,
                         type = Inntektsrapportering.KAPITALINNTEKT,
                     ),
-                    opprettInntekt(YearMonth.parse("2022-04"), YearMonth.parse("2022-06"), ident = bmIdent, taMed = false),
+                    opprettInntekt(
+                        YearMonth.parse("2022-04"),
+                        YearMonth.parse("2022-06"),
+                        ident = bmIdent,
+                        taMed = false,
+                    ),
                     opprettInntekt(
                         YearMonth.parse("2022-04"),
                         null,
@@ -202,9 +207,24 @@ class ValiderInntektPerioderTest {
                 )
             val inntekter =
                 setOf(
-                    opprettInntekt(YearMonth.parse("2022-02"), YearMonth.parse("2022-03"), ident = bmIdent, taMed = false),
-                    opprettInntekt(YearMonth.parse("2022-04"), YearMonth.parse("2022-06"), ident = bmIdent, taMed = false),
-                    opprettInntekt(YearMonth.parse("2022-08"), YearMonth.parse("2022-09"), ident = bmIdent, taMed = false),
+                    opprettInntekt(
+                        YearMonth.parse("2022-02"),
+                        YearMonth.parse("2022-03"),
+                        ident = bmIdent,
+                        taMed = false,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-04"),
+                        YearMonth.parse("2022-06"),
+                        ident = bmIdent,
+                        taMed = false,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-08"),
+                        YearMonth.parse("2022-09"),
+                        ident = bmIdent,
+                        taMed = false,
+                    ),
                 )
 
             val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), roller).toList()
@@ -236,8 +256,18 @@ class ValiderInntektPerioderTest {
             val inntekter =
                 setOf(
                     opprettInntekt(YearMonth.parse("2022-01"), null, ident = bmIdent, taMed = true),
-                    opprettInntekt(YearMonth.parse("2022-01"), YearMonth.parse("2022-06"), ident = barnIdent, taMed = true),
-                    opprettInntekt(YearMonth.parse("2022-08"), YearMonth.parse("2022-09"), ident = bmIdent, taMed = false),
+                    opprettInntekt(
+                        YearMonth.parse("2022-01"),
+                        YearMonth.parse("2022-06"),
+                        ident = barnIdent,
+                        taMed = true,
+                    ),
+                    opprettInntekt(
+                        YearMonth.parse("2022-08"),
+                        YearMonth.parse("2022-09"),
+                        ident = bmIdent,
+                        taMed = false,
+                    ),
                 )
 
             val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), roller).toList()

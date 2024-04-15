@@ -12,6 +12,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import java.math.BigDecimal
 import java.time.LocalDate
