@@ -39,6 +39,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.YearMonth
 
 @Service
@@ -53,16 +54,14 @@ class NotatOpplysningerService(
         val opplysningerBoforhold =
             grunnlagService.hentSistInnhentet(
                 behandlingId,
-                behandling.roller
-                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
+                behandling.bidragsmottaker!!.id!!,
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
             )
                 ?.konverterData<List<BoforholdResponse>>() ?: emptyList()
         val opplysningerSivilstand =
             grunnlagService.hentSistInnhentet(
                 behandlingId,
-                behandling.roller
-                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
+                behandling.bidragsmottaker!!.id!!,
                 Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
             )
                 ?.konverterData<List<SivilstandGrunnlagDto>>() ?: emptyList()
@@ -169,7 +168,7 @@ private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandGrun
                 OpplysningerFraFolkeregisteret(
                     periode =
                         ÅrMånedsperiode(
-                            periode.gyldigFom!!,
+                            periode.gyldigFom ?: LocalDate.MIN,
                             null,
                         ),
                     status = periode.type,
@@ -292,8 +291,7 @@ private fun Behandling.hentInntekterForIdent(
             },
     barnetillegg =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedBy { it.datoFom }
-                // TODO: Endre til
+            inntekter.sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
                 .filter { it.type == Inntektsrapportering.BARNETILLEGG }
                 .map {
                     it.tilNotatInntektDto()
@@ -313,7 +311,7 @@ private fun Behandling.hentInntekterForIdent(
         },
     kontantstøtte =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedBy { it.datoFom }
+            inntekter.sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
                 .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
                 .map {
                     it.tilNotatInntektDto()
