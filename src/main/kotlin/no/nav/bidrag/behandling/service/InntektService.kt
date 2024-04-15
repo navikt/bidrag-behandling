@@ -29,7 +29,6 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -63,13 +62,11 @@ class InntektService(
         }
         behandling.inntekter.removeAll(inntekterSomSkalSlettes)
 
-        entityManager.flush()
         inntektRepository.saveAll(summerteÅrsinntekter.tilInntekt(behandling, personident))
-        entityManager.refresh(behandling)
     }
 
     @Transactional
-    fun oppdatereAutomatiskInnhentaOffentligeInntekter(
+    fun oppdatereAutomatiskInnhentetOffentligeInntekter(
         behandling: Behandling,
         rolle: Rolle,
         summerteÅrsinntekter: List<SummertÅrsinntekt>,
@@ -311,18 +308,8 @@ class InntektService(
     ) {
         if (nyInntekt is SummertÅrsinntekt) {
             eksisterendeInntekt.belop = nyInntekt.sumInntekt
-            eksisterendeInntekt.datoFom = nyInntekt.periode.fom.atDay(1)
-            eksisterendeInntekt.datoTom = nyInntekt.periode.til?.atEndOfMonth()
-            eksisterendeInntekt.inntektsposter.clear()
-            eksisterendeInntekt.inntektsposter.addAll(
-                nyInntekt.inntektPostListe.tilInntektspost(
-                    eksisterendeInntekt,
-                ),
-            )
-        } else if (nyInntekt is SummertMånedsinntekt) {
-            eksisterendeInntekt.belop = nyInntekt.sumInntekt
-            eksisterendeInntekt.datoFom = nyInntekt.gjelderÅrMåned.atDay(1)
-            eksisterendeInntekt.datoTom = nyInntekt.gjelderÅrMåned.atEndOfMonth()
+            eksisterendeInntekt.opprinneligFom = nyInntekt.periode.fom.atDay(1)
+            eksisterendeInntekt.opprinneligTom = nyInntekt.periode.til?.atEndOfMonth()
             eksisterendeInntekt.inntektsposter.clear()
             eksisterendeInntekt.inntektsposter.addAll(
                 nyInntekt.inntektPostListe.tilInntektspost(

@@ -43,8 +43,8 @@ open class Inntekt(
     )
     open var inntektsposter: MutableSet<Inntektspost> = mutableSetOf(),
     open var gjelderBarn: String? = null,
-    open val opprinneligFom: LocalDate? = null,
-    open val opprinneligTom: LocalDate? = null,
+    open var opprinneligFom: LocalDate? = null,
+    open var opprinneligTom: LocalDate? = null,
 ) {
     val datoFomEllerOpprinneligFom get() = datoFom ?: opprinneligFom
 

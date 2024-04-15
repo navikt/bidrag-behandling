@@ -275,7 +275,8 @@ class BehandlingServiceTest : TestContainerRunner() {
     @Nested
     open inner class OppretteBehandling {
         @Test
-        fun `skal opprette en forskuddsbehandling hvis det finnes behandling med samme søknadsid men som er slettet`() {
+        @Transactional
+        open fun `skal opprette en forskuddsbehandling hvis det finnes behandling med samme søknadsid men som er slettet`() {
             val søknadsid = 123213L
             val actualBehandling = behandlingRepository.save(prepareBehandling(søknadsid))
             behandlingRepository.delete(actualBehandling)

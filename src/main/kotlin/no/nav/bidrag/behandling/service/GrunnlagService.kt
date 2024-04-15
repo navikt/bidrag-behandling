@@ -348,15 +348,12 @@ class GrunnlagService(
 
         val summerteInntekter = ikkeAktivGrunnlag.hentBearbeidetInntekterForType(grunnlagstype, rolle.ident!!)
 
-        entityManager.merge(behandling)
-
-        inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
+        inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
             behandling,
             rolle,
             summerteInntekter?.inntekter ?: emptyList(),
         )
         ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(aktiveringstidspunkt)
-        entityManager.flush()
     }
 
     private fun aktivereBoforhold(
@@ -447,9 +444,11 @@ class GrunnlagService(
         }
 
         // Oppdatere sivilstandstabell med periodisert sivilstand
-        if (innhentetGrunnlag.sivilstandListe.size > 0) {
+        if (innhentetGrunnlag.sivilstandListe.isNotEmpty()) {
             periodisereOgLagreSivilstand(behandling, innhentetGrunnlag)
         }
+
+        entityManager.refresh(behandling)
     }
 
     private fun periodisereOgLagreSivilstand(
@@ -569,17 +568,28 @@ class GrunnlagService(
                 lagringAvGrunnlagFeiletException(rolleInhentetFor.behandling.id!!)
             }
 
-            val ikkeAktiveGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
+            aktiverGrunnlagForInntekterHvisIngenEndringSomMåBekreftes(behandling, type, rolleInhentetFor)
+        }
+    }
 
-            val inneholderEndringerSomMåBekreftes =
-                ikkeAktiveGrunnlag.hentEndringerInntekter(
-                    rolleInhentetFor,
-                    behandling.inntekter,
-                    type,
-                ).isNotEmpty()
-            if (!inneholderEndringerSomMåBekreftes) {
-                ikkeAktiveGrunnlag.hentGrunnlagForType(type, rolleInhentetFor.ident!!).oppdaterStatusTilAktiv(LocalDateTime.now())
+    private fun aktiverGrunnlagForInntekterHvisIngenEndringSomMåBekreftes(
+        behandling: Behandling,
+        type: Grunnlagsdatatype,
+        rolleInhentetFor: Rolle,
+    ) {
+        val ikkeAktiveGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
+        val inneholderEndringerSomMåBekreftes =
+            ikkeAktiveGrunnlag.hentEndringerInntekter(
+                rolleInhentetFor,
+                behandling.inntekter,
+                type,
+            ).isNotEmpty()
+        if (!inneholderEndringerSomMåBekreftes) {
+            log.info {
+                "Ikke aktive grunnlag med type $type for rolle ${rolleInhentetFor.rolletype}" +
+                    " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. Automatisk aktiverer ny innhentet grunnlag."
             }
+            ikkeAktiveGrunnlag.hentGrunnlagForType(type, rolleInhentetFor.ident!!).oppdaterStatusTilAktiv(LocalDateTime.now())
         }
     }
 
@@ -728,9 +738,9 @@ class GrunnlagService(
         val sistInnhentedeGrunnlagAvType: T? =
             henteNyesteGrunnlagsdataobjekt<T>(behandling.id!!, rolle.id!!, grunnlagstype)
 
-        if ((sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)) ||
-            (sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
-        ) {
+        val erFørstegangsinnhentingAvInntekter = sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)
+        val erGrunnlagEndretSidenSistInnhentet = sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
+        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
