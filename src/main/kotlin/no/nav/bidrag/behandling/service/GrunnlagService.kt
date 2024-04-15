@@ -355,9 +355,7 @@ class GrunnlagService(
             rolle,
             summerteInntekter?.inntekter ?: emptyList(),
         )
-        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).forEach {
-            it.aktiv = aktiveringstidspunkt
-        }
+        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(aktiveringstidspunkt)
         entityManager.flush()
     }
 
@@ -394,10 +392,14 @@ class GrunnlagService(
             behandling,
             periodisertBoforhold,
         )
-        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).forEach {
+        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(aktiveringstidspunkt)
+        entityManager.flush()
+    }
+
+    private fun List<Grunnlag>.oppdaterStatusTilAktiv(aktiveringstidspunkt: LocalDateTime) {
+        forEach {
             it.aktiv = aktiveringstidspunkt
         }
-        entityManager.flush()
     }
 
     private fun aktivereSivilstand(
@@ -567,18 +569,16 @@ class GrunnlagService(
                 lagringAvGrunnlagFeiletException(rolleInhentetFor.behandling.id!!)
             }
 
-            val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
+            val ikkeAktiveGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
 
-            val inneholderEndringer =
-                ikkeAktivGrunnlag.hentEndringerInntekter(
+            val inneholderEndringerSomMåBekreftes =
+                ikkeAktiveGrunnlag.hentEndringerInntekter(
                     rolleInhentetFor,
                     behandling.inntekter,
                     type,
                 ).isNotEmpty()
-            if (!inneholderEndringer) {
-                ikkeAktivGrunnlag.hentGrunnlagForType(type, rolleInhentetFor.ident!!).forEach {
-                    it.aktiv = LocalDateTime.now()
-                }
+            if (!inneholderEndringerSomMåBekreftes) {
+                ikkeAktiveGrunnlag.hentGrunnlagForType(type, rolleInhentetFor.ident!!).oppdaterStatusTilAktiv(LocalDateTime.now())
             }
         }
     }
