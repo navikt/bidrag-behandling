@@ -37,8 +37,8 @@ fun Set<Inntekt>.årsinntekterSortert(inkluderTaMed: Boolean = true) =
                         )
                     if (index == -1 || it.taMed && inkluderTaMed) 1000 else index
                 }.thenBy {
-                    it.opprinneligFom
-                }.thenBy { it.datoFom },
+                    if (it.taMed && inkluderTaMed) it.datoFom else it.opprinneligFom
+                },
         )
 
 fun Husstandsbarn.erSøknadsbarn() = this.behandling.søknadsbarn.map { it.ident }.contains(this.ident)
