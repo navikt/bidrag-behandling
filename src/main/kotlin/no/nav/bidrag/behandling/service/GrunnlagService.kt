@@ -151,7 +151,7 @@ class GrunnlagService(
 
             log.info {
                 "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
-                        "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
+                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
     }
@@ -220,48 +220,48 @@ class GrunnlagService(
                 .filter { g -> g.aktiv != null }
         return IkkeAktiveGrunnlagsdata(
             inntekter =
-            IkkeAktiveInntekter(
-                årsinntekter =
-                roller.flatMap {
-                    nyinnhentetGrunnlag.hentEndringerInntekter(
-                        it,
-                        inntekter,
-                        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-                    )
-                }.toSet(),
-                småbarnstillegg =
-                roller.flatMap {
-                    nyinnhentetGrunnlag.hentEndringerInntekter(
-                        it,
-                        inntekter,
-                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                    )
-                }.toSet(),
-                utvidetBarnetrygd =
-                roller.flatMap {
-                    nyinnhentetGrunnlag.hentEndringerInntekter(
-                        it,
-                        inntekter,
-                        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                    )
-                }.toSet(),
-                kontantstøtte =
-                roller.flatMap {
-                    nyinnhentetGrunnlag.hentEndringerInntekter(
-                        it,
-                        inntekter,
-                        Grunnlagsdatatype.KONTANTSTØTTE,
-                    )
-                }.toSet(),
-                barnetillegg =
-                roller.flatMap {
-                    nyinnhentetGrunnlag.hentEndringerInntekter(
-                        it,
-                        inntekter,
-                        Grunnlagsdatatype.BARNETILLEGG,
-                    )
-                }.toSet(),
-            ),
+                IkkeAktiveInntekter(
+                    årsinntekter =
+                        roller.flatMap {
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
+                                it,
+                                inntekter,
+                                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                            )
+                        }.toSet(),
+                    småbarnstillegg =
+                        roller.flatMap {
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
+                                it,
+                                inntekter,
+                                Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                            )
+                        }.toSet(),
+                    utvidetBarnetrygd =
+                        roller.flatMap {
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
+                                it,
+                                inntekter,
+                                Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                            )
+                        }.toSet(),
+                    kontantstøtte =
+                        roller.flatMap {
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
+                                it,
+                                inntekter,
+                                Grunnlagsdatatype.KONTANTSTØTTE,
+                            )
+                        }.toSet(),
+                    barnetillegg =
+                        roller.flatMap {
+                            nyinnhentetGrunnlag.hentEndringerInntekter(
+                                it,
+                                inntekter,
+                                Grunnlagsdatatype.BARNETILLEGG,
+                            )
+                        }.toSet(),
+                ),
             husstandsbarn = nyinnhentetGrunnlag.hentEndringerBoforhold(aktiveGrunnlag),
             sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
@@ -358,7 +358,7 @@ class GrunnlagService(
         } else {
             log.error {
                 "Grunnlagstype $grunnlagstype ikke støttet ved aktivering av grunnlag. Aktivering feilet " +
-                        "for behandling ${behandling.id}  "
+                    "for behandling ${behandling.id}  "
             }
             aktiveringAvGrunnlagstypeIkkeStøttetException(behandling.id!!)
         }
@@ -475,7 +475,7 @@ class GrunnlagService(
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean {
         return behandling.grunnlagSistInnhentet == null ||
-                LocalDateTime.now().minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+            LocalDateTime.now().minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
     }
 
     private fun henteOglagreGrunnlag(
@@ -554,8 +554,8 @@ class GrunnlagService(
 
     private fun innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag: HentGrunnlagDto): Boolean =
         innhentetGrunnlag.ainntektListe.size > 0 || innhentetGrunnlag.skattegrunnlagListe.size > 0 ||
-                innhentetGrunnlag.barnetilleggListe.size > 0 || innhentetGrunnlag.kontantstøtteListe.size > 0 ||
-                innhentetGrunnlag.småbarnstilleggListe.size > 0 || innhentetGrunnlag.utvidetBarnetrygdListe.size > 0
+            innhentetGrunnlag.barnetilleggListe.size > 0 || innhentetGrunnlag.kontantstøtteListe.size > 0 ||
+            innhentetGrunnlag.småbarnstilleggListe.size > 0 || innhentetGrunnlag.utvidetBarnetrygdListe.size > 0
 
     private fun sammenstilleOgLagreInntekter(
         behandling: Behandling,
@@ -566,41 +566,41 @@ class GrunnlagService(
             TransformerInntekterRequest(
                 ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
                 ainntektsposter =
-                innhentetGrunnlag.ainntektListe.flatMap {
-                    it.ainntektspostListe.tilAinntektsposter(
-                        rolleInhentetFor,
-                    )
-                },
+                    innhentetGrunnlag.ainntektListe.flatMap {
+                        it.ainntektspostListe.tilAinntektsposter(
+                            rolleInhentetFor,
+                        )
+                    },
                 barnetilleggsliste =
-                innhentetGrunnlag.barnetilleggListe.filter {
-                    harBarnRolleIBehandling(
-                        it.barnPersonId,
-                        behandling,
-                    )
-                }.tilBarnetillegg(
-                    rolleInhentetFor,
-                ),
+                    innhentetGrunnlag.barnetilleggListe.filter {
+                        harBarnRolleIBehandling(
+                            it.barnPersonId,
+                            behandling,
+                        )
+                    }.tilBarnetillegg(
+                        rolleInhentetFor,
+                    ),
                 kontantstøtteliste =
-                innhentetGrunnlag.kontantstøtteListe.filter {
-                    harBarnRolleIBehandling(
-                        it.barnPersonId,
-                        behandling,
-                    )
-                }.tilKontantstøtte(
-                    rolleInhentetFor,
-                ),
+                    innhentetGrunnlag.kontantstøtteListe.filter {
+                        harBarnRolleIBehandling(
+                            it.barnPersonId,
+                            behandling,
+                        )
+                    }.tilKontantstøtte(
+                        rolleInhentetFor,
+                    ),
                 skattegrunnlagsliste =
-                innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
-                    rolleInhentetFor,
-                ),
+                    innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
+                        rolleInhentetFor,
+                    ),
                 småbarnstilleggliste =
-                innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
-                    rolleInhentetFor,
-                ),
+                    innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
+                        rolleInhentetFor,
+                    ),
                 utvidetBarnetrygdliste =
-                innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
-                    rolleInhentetFor,
-                ),
+                    innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
+                        rolleInhentetFor,
+                    ),
             )
 
         val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
@@ -634,7 +634,7 @@ class GrunnlagService(
             } else {
                 log.error {
                     "Grunnlagsdatatype $type skal ikke lagres som inntektsgrunnlag i behandling " +
-                            "${rolleInhentetFor.behandling.id!!}"
+                        "${rolleInhentetFor.behandling.id!!}"
                 }
                 lagringAvGrunnlagFeiletException(rolleInhentetFor.behandling.id!!)
             }
@@ -656,8 +656,8 @@ class GrunnlagService(
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                    sammenstilteInntekter.summertÅrsinntektListe
-                        .filter { summertAinntektstyper.contains(it.inntektRapportering) } +
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { summertAinntektstyper.contains(it.inntektRapportering) } +
                             sammenstilteInntekter.summertÅrsinntektListe.filter {
                                 summertSkattegrunnlagstyper.contains(it.inntektRapportering)
                             },
@@ -667,32 +667,32 @@ class GrunnlagService(
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                    sammenstilteInntekter.summertÅrsinntektListe
-                        .filter { BARNETILLEGG == it.inntektRapportering },
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { BARNETILLEGG == it.inntektRapportering },
                 )
 
             Grunnlagsdatatype.KONTANTSTØTTE ->
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                    sammenstilteInntekter.summertÅrsinntektListe
-                        .filter { KONTANTSTØTTE == it.inntektRapportering },
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { KONTANTSTØTTE == it.inntektRapportering },
                 )
 
             Grunnlagsdatatype.SMÅBARNSTILLEGG ->
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                    sammenstilteInntekter.summertÅrsinntektListe
-                        .filter { SMÅBARNSTILLEGG == it.inntektRapportering },
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { SMÅBARNSTILLEGG == it.inntektRapportering },
                 )
 
             Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                    sammenstilteInntekter.summertÅrsinntektListe
-                        .filter { UTVIDET_BARNETRYGD == it.inntektRapportering },
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { UTVIDET_BARNETRYGD == it.inntektRapportering },
                 )
 
             // Ikke-tilgjengelig kode
@@ -736,9 +736,9 @@ class GrunnlagService(
 
         if ((sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
             (
-                    sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
-                            innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
-                    )
+                sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
+                    innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
+            )
         ) {
             opprett(
                 behandling = behandling,
@@ -746,13 +746,13 @@ class GrunnlagService(
                 grunnlagstype = grunnlagstype,
                 innhentet = hentetTidspunkt,
                 aktiv =
-                if (sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() &&
-                    innhentetGrunnlag.isNotEmpty()
-                ) {
-                    LocalDateTime.now()
-                } else {
-                    aktiveringstidspunkt
-                },
+                    if (sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() &&
+                        innhentetGrunnlag.isNotEmpty()
+                    ) {
+                        LocalDateTime.now()
+                    } else {
+                        aktiveringstidspunkt
+                    },
                 idTilRolleInnhentetFor = rolle.id!!,
             )
 
@@ -786,13 +786,13 @@ class GrunnlagService(
             henteNyesteGrunnlagsdataobjekt<T>(behandling.id!!, rolle.id!!, grunnlagstype)
 
         if ((
-                    sistInnhentedeGrunnlagAvType == null && (
-                            inneholderInntekter(innhentetGrunnlag) || Grunnlagstype(
-                                Grunnlagsdatatype.SIVILSTAND,
-                                true,
-                            ) == grunnlagstype
-                            )
-                    ) || (sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
+                sistInnhentedeGrunnlagAvType == null && (
+                    inneholderInntekter(innhentetGrunnlag) || Grunnlagstype(
+                        Grunnlagsdatatype.SIVILSTAND,
+                        true,
+                    ) == grunnlagstype
+                )
+            ) || (sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
         ) {
             opprett(
                 behandling = behandling,
@@ -801,13 +801,13 @@ class GrunnlagService(
                 innhentet = hentetTidspunkt,
                 // Summerte månedsinntekter settes alltid til aktiv
                 aktiv =
-                if (sistInnhentedeGrunnlagAvType == null ||
-                    Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == grunnlagstype.type.getOrMigrate()
-                ) {
-                    LocalDateTime.now()
-                } else {
-                    aktiveringstidspunkt
-                },
+                    if (sistInnhentedeGrunnlagAvType == null ||
+                        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == grunnlagstype.type.getOrMigrate()
+                    ) {
+                        LocalDateTime.now()
+                    } else {
+                        aktiveringstidspunkt
+                    },
                 idTilRolleInnhentetFor = rolle.id!!,
             )
 
@@ -882,87 +882,87 @@ class GrunnlagService(
         Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
             TransformerInntekterRequestBuilder(
                 ainntektsposter =
-                grunnlag.let { g ->
-                    var dataInn: List<AinntektspostDto> = emptyList()
-                    if (g.data.trim().isNotEmpty()) {
-                        dataInn =
-                            jsonTilObjekt<SkattepliktigeInntekter>(
-                                g.data,
-                            ).ainntekter.flatMap { it.ainntektspostListe }
-                    }
-                    dataInn.tilAinntektsposter(rolle)
-                },
+                    grunnlag.let { g ->
+                        var dataInn: List<AinntektspostDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            dataInn =
+                                jsonTilObjekt<SkattepliktigeInntekter>(
+                                    g.data,
+                                ).ainntekter.flatMap { it.ainntektspostListe }
+                        }
+                        dataInn.tilAinntektsposter(rolle)
+                    },
                 skattegrunnlag =
-                grunnlag.let { g ->
-                    var dataInn: List<SkattegrunnlagGrunnlagDto> = emptyList()
-                    if (g.data.trim().isNotEmpty()) {
-                        dataInn =
-                            jsonTilObjekt<SkattepliktigeInntekter>(
-                                g.data,
-                            ).skattegrunnlag
-                    }
-                    dataInn.tilSkattegrunnlagForLigningsår(rolle)
-                },
+                    grunnlag.let { g ->
+                        var dataInn: List<SkattegrunnlagGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            dataInn =
+                                jsonTilObjekt<SkattepliktigeInntekter>(
+                                    g.data,
+                                ).skattegrunnlag
+                        }
+                        dataInn.tilSkattegrunnlagForLigningsår(rolle)
+                    },
             ).bygge()
 
         Grunnlagsdatatype.BARNETILLEGG ->
             TransformerInntekterRequestBuilder(
                 barnetillegg =
-                grunnlag.let { g ->
-                    var rådata: List<BarnetilleggGrunnlagDto> = emptyList()
-                    if (g.data.trim().isNotEmpty()) {
-                        rådata =
-                            jsonListeTilObjekt<BarnetilleggGrunnlagDto>(
-                                g.data,
-                            ).toList()
-                    }
-                    rådata.tilBarnetillegg(rolle)
-                },
+                    grunnlag.let { g ->
+                        var rådata: List<BarnetilleggGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            rådata =
+                                jsonListeTilObjekt<BarnetilleggGrunnlagDto>(
+                                    g.data,
+                                ).toList()
+                        }
+                        rådata.tilBarnetillegg(rolle)
+                    },
             ).bygge()
 
         Grunnlagsdatatype.KONTANTSTØTTE ->
             TransformerInntekterRequestBuilder(
                 kontantstøtte =
-                grunnlag.let { g ->
-                    var rådata: List<KontantstøtteGrunnlagDto> = emptyList()
-                    if (g.data.trim().isNotEmpty()) {
-                        rådata =
-                            jsonListeTilObjekt<KontantstøtteGrunnlagDto>(
-                                g.data,
-                            ).toList()
-                    }
-                    rådata.tilKontantstøtte(rolle)
-                },
+                    grunnlag.let { g ->
+                        var rådata: List<KontantstøtteGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            rådata =
+                                jsonListeTilObjekt<KontantstøtteGrunnlagDto>(
+                                    g.data,
+                                ).toList()
+                        }
+                        rådata.tilKontantstøtte(rolle)
+                    },
             ).bygge()
 
         Grunnlagsdatatype.SMÅBARNSTILLEGG ->
             TransformerInntekterRequestBuilder(
                 småbarnstillegg =
-                grunnlag.let { g ->
-                    var rådata: List<SmåbarnstilleggGrunnlagDto> = emptyList()
-                    if (g.data.trim().isNotEmpty()) {
-                        rådata =
-                            jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(
-                                g.data,
-                            ).toList()
-                    }
-                    rådata.tilSmåbarnstillegg(rolle)
-                },
+                    grunnlag.let { g ->
+                        var rådata: List<SmåbarnstilleggGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            rådata =
+                                jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(
+                                    g.data,
+                                ).toList()
+                        }
+                        rådata.tilSmåbarnstillegg(rolle)
+                    },
             ).bygge()
 
         Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
             TransformerInntekterRequestBuilder(
                 utvidetBarnetrygd =
-                grunnlag.let { g ->
-                    var rådata: List<UtvidetBarnetrygdGrunnlagDto> = emptyList()
-                    if (g.data.trim().isNotEmpty()) {
-                        rådata =
-                            jsonListeTilObjekt<UtvidetBarnetrygdGrunnlagDto>(
-                                g.data,
-                            ).toList()
-                    }
-                    rådata.tilUtvidetBarnetrygd(rolle)
-                },
+                    grunnlag.let { g ->
+                        var rådata: List<UtvidetBarnetrygdGrunnlagDto> = emptyList()
+                        if (g.data.trim().isNotEmpty()) {
+                            rådata =
+                                jsonListeTilObjekt<UtvidetBarnetrygdGrunnlagDto>(
+                                    g.data,
+                                ).toList()
+                        }
+                        rådata.tilUtvidetBarnetrygd(rolle)
+                    },
             ).bygge()
 
         else -> lagringAvGrunnlagFeiletException(grunnlag.behandling.id!!)
@@ -991,7 +991,7 @@ class GrunnlagService(
                 else -> {
                     log.warn {
                         "Forsøkte å lagre grunnlag for rolle ${rolleInhentetFor.rolletype} i behandling " +
-                                "${behandling.id}"
+                            "${behandling.id}"
                     }
                     lagringAvGrunnlagFeiletException(behandling.id!!)
                 }
@@ -1100,7 +1100,7 @@ class GrunnlagService(
             else -> {
                 log.warn {
                     "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
-                            "i behandling ${behandling.id}"
+                        "i behandling ${behandling.id}"
                 }
                 lagringAvGrunnlagFeiletException(behandling.id!!)
             }
