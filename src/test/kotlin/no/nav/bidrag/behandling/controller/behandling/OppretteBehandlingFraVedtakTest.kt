@@ -68,7 +68,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             inntekter shouldHaveSize 15
             grunnlag shouldHaveSize 30
             refVedtaksid shouldBe 12333
-            grunnlag.filter { it.aktiv == null }.shouldHaveSize(6)
+            grunnlag.filter { it.aktiv == null }.shouldHaveSize(10)
             sivilstand shouldHaveSize 2
             husstandsbarn shouldHaveSize 4
             søktFomDato shouldBe LocalDate.parse("2020-01-01")
