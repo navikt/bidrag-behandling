@@ -91,61 +91,8 @@ fun Behandling.tilBehandlingDtoV2(
                     kunINotat = virkningstidspunktbegrunnelseKunINotat,
                 ),
         ),
-    boforhold =
-        BoforholdDtoV2(
-            husstandsbarn = husstandsbarn.sortert().map { it.toDto() }.toSet(),
-            sivilstand = sivilstand.toSivilstandDto(),
-            notat =
-                BehandlingNotatDto(
-                    medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                    kunINotat = boforholdsbegrunnelseKunINotat,
-                ),
-            valideringsfeil =
-                BoforholdValideringsfeil(
-                    husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
-                    sivilstand = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
-                ),
-        ),
-    inntekter =
-        InntekterDtoV2(
-            barnetillegg =
-                inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                    .sorterEtterDatoOgBarn()
-                    .tilInntektDtoV2().toSet(),
-            utvidetBarnetrygd =
-                inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
-                    .sorterEtterDato()
-                    .tilInntektDtoV2()
-                    .toSet(),
-            kontantstøtte =
-                inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                    .sorterEtterDatoOgBarn()
-                    .tilInntektDtoV2().toSet(),
-            småbarnstillegg =
-                inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
-                    .sorterEtterDato()
-                    .tilInntektDtoV2().toSet(),
-            månedsinntekter =
-                gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
-                    .flatMap { grunnlag ->
-                        grunnlag.konverterData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
-                            it.tilInntektDtoV2(
-                                grunnlag.rolle.ident!!,
-                            )
-                        } ?: emptyList()
-                    }.toSet(),
-            årsinntekter =
-                inntekter.årsinntekterSortert()
-                    .tilInntektDtoV2()
-                    .toSet(),
-            beregnetInntekter = hentBeregnetInntekter(),
-            notat =
-                BehandlingNotatDto(
-                    medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                    kunINotat = inntektsbegrunnelseKunINotat,
-                ),
-            valideringsfeil = hentInntekterValideringsfeil(),
-        ),
+    boforhold = tilBoforholdV2(),
+    inntekter = tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata
@@ -178,6 +125,63 @@ fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnGrunnlagDto> {
         )
     }?.toSet() ?: emptySet()
 }
+
+fun Behandling.tilBoforholdV2() =
+    BoforholdDtoV2(
+        husstandsbarn = husstandsbarn.sortert().map { it.toDto() }.toSet(),
+        sivilstand = sivilstand.toSivilstandDto(),
+        notat =
+            BehandlingNotatDto(
+                medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                kunINotat = boforholdsbegrunnelseKunINotat,
+            ),
+        valideringsfeil =
+            BoforholdValideringsfeil(
+                husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
+                sivilstand = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
+            ),
+    )
+
+fun Behandling.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList()) =
+    InntekterDtoV2(
+        barnetillegg =
+            inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
+                .sorterEtterDatoOgBarn()
+                .tilInntektDtoV2().toSet(),
+        utvidetBarnetrygd =
+            inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+                .sorterEtterDato()
+                .tilInntektDtoV2()
+                .toSet(),
+        kontantstøtte =
+            inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+                .sorterEtterDatoOgBarn()
+                .tilInntektDtoV2().toSet(),
+        småbarnstillegg =
+            inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+                .sorterEtterDato()
+                .tilInntektDtoV2().toSet(),
+        månedsinntekter =
+            gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
+                .flatMap { grunnlag ->
+                    grunnlag.konverterData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
+                        it.tilInntektDtoV2(
+                            grunnlag.rolle.ident!!,
+                        )
+                    } ?: emptyList()
+                }.toSet(),
+        årsinntekter =
+            inntekter.årsinntekterSortert()
+                .tilInntektDtoV2()
+                .toSet(),
+        beregnetInntekter = hentBeregnetInntekter(),
+        notat =
+            BehandlingNotatDto(
+                medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+                kunINotat = inntektsbegrunnelseKunINotat,
+            ),
+        valideringsfeil = hentInntekterValideringsfeil(),
+    )
 
 fun List<Grunnlag>.tilAktivGrunnlagsdata() =
     AktiveGrunnlagsdata(

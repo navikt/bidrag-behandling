@@ -14,10 +14,14 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.toV2
+import no.nav.bidrag.behandling.transformers.behandling.tilAktivGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
+import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
@@ -147,7 +151,7 @@ class BehandlingService(
     fun aktiverGrunnlagsdata(
         behandlingsid: Long,
         request: AktivereGrunnlagRequestV2,
-    ) {
+    ): AktivereGrunnlagResponseV2 {
         behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
             log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagsdatatype}" }
             secureLogger.info {
@@ -155,6 +159,16 @@ class BehandlingService(
                     "for person ${request.personident}"
             }
             grunnlagService.aktivereGrunnlag(it, request)
+            val gjeldendeAktiveGrunnlagsdata =
+                grunnlagService.henteGjeldendeAktiveGrunnlagsdata(it)
+            val ikkeAktiverteEndringerIGrunnlagsdata =
+                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
+            return AktivereGrunnlagResponseV2(
+                boforhold = it.tilBoforholdV2(),
+                inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
+                aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+                ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
+            )
         }
     }
 

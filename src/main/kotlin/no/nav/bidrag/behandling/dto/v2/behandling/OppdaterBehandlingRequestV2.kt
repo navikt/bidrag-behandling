@@ -39,4 +39,5 @@ data class AktivereGrunnlagResponseV2(
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
+    val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
 )

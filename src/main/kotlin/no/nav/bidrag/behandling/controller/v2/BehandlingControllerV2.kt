@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequ
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
@@ -132,9 +133,8 @@ class BehandlingControllerV2(
     fun aktiverGrunnlag(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
-    ): BehandlingDtoV2 {
-        behandlingService.aktiverGrunnlagsdata(behandlingsid, request)
-        return behandlingService.henteBehandling(behandlingsid)
+    ): AktivereGrunnlagResponseV2 {
+        return behandlingService.aktiverGrunnlagsdata(behandlingsid, request)
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")

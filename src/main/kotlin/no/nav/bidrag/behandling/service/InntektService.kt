@@ -129,7 +129,6 @@ class InntektService(
             }
 
             inntekt.taMed = periode.taMedIBeregning
-            entityManager.flush()
             return inntekt.tilInntektDtoV2()
         }
 
@@ -140,9 +139,8 @@ class InntektService(
             val oppdatertInntekt =
                 inntekt?.let {
                     manuellInntekt.oppdatereEksisterendeInntekt(inntekt)
-                } ?: manuellInntekt.lagreSomNyInntekt(behandling)
+                } ?: inntektRepository.save(manuellInntekt.lagreSomNyInntekt(behandling))
 
-            entityManager.flush()
             return oppdatertInntekt.tilInntektDtoV2()
         }
 
@@ -151,7 +149,6 @@ class InntektService(
                 behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.first { i -> it == i.id }
             behandling.inntekter.remove(inntektSomSkalSlettes)
             log.info { "Slettet inntekt med id $it fra behandling ${behandling.id}." }
-            entityManager.flush()
             return inntektSomSkalSlettes.tilInntektDtoV2()
         }
 
