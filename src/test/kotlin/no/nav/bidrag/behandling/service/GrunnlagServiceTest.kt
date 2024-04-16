@@ -509,7 +509,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagListe.size shouldBe 3
                 grunnlagListe.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 3
                 grunnlagListe.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 1
-                grunnlagListe.filter { !it.erBearbeidet } shouldHaveSize 2
+                grunnlagListe.filter { !it.erBearbeidet } shouldHaveSize 1
             }
         }
 
