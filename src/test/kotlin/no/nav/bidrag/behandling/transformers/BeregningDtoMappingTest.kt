@@ -23,6 +23,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.LocalDate
 
 class BeregningDtoMappingTest {
     @Test
@@ -56,6 +57,53 @@ class BeregningDtoMappingTest {
                     antallBarnIHusstanden shouldBe 3
                     regel shouldBe "Regel beregning"
                     sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `skal mappe beregning resultat til DTO for avslag`() {
+        val beregningBarn =
+            listOf(
+                ResultatForskuddsberegningBarn(
+                    ResultatRolle(
+                        Personident(testdataBarn1.ident),
+                        testdataBarn1.navn,
+                        testdataBarn1.foedselsdato,
+                    ),
+                    BeregnetForskuddResultat(
+                        beregnetForskuddPeriodeListe =
+                            listOf(
+                                ResultatPeriode(
+                                    periode = ÅrMånedsperiode(LocalDate.parse("2022-01-01"), null),
+                                    grunnlagsreferanseListe = emptyList(),
+                                    resultat =
+                                        ResultatBeregning(
+                                            belop = BigDecimal.ZERO,
+                                            kode = Resultatkode.BARNETS_INNTEKT,
+                                            regel = "",
+                                        ),
+                                ),
+                            ),
+                    ),
+                ),
+            )
+        val resultatDto = beregningBarn.tilDto()
+
+        assertSoftly {
+            resultatDto.size shouldBe 1
+            assertSoftly(resultatDto.find { it.barn.ident!!.verdi == testdataBarn1.ident }!!) {
+                barn.navn shouldBe testdataBarn1.navn
+                barn.fødselsdato shouldBe testdataBarn1.foedselsdato
+                barn.ident!!.verdi shouldBe testdataBarn1.ident
+                perioder shouldHaveSize 1
+                assertSoftly(perioder[0]) {
+                    beløp shouldBe BigDecimal(0)
+                    inntekt shouldBe BigDecimal(0)
+                    antallBarnIHusstanden shouldBe 0
+                    regel shouldBe ""
+                    resultatKode shouldBe Resultatkode.BARNETS_INNTEKT
                 }
             }
         }

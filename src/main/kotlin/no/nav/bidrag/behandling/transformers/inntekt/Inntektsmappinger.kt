@@ -3,16 +3,21 @@ package no.nav.bidrag.behandling.transformers.inntekt
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
+import no.nav.bidrag.behandling.database.datamodell.Inntektspostß
+import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
+import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.math.BigDecimal
-import java.math.RoundingMode
+import java.time.LocalDateTime
 
 fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
     inntekt.type = this.type
@@ -81,7 +86,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         id = -1,
         taMed = false,
         rapporteringstype = Inntektsrapportering.AINNTEKT,
-        beløp = sumInntekt.setScale(0, RoundingMode.HALF_UP),
+        beløp = sumInntekt.nærmesteHeltall,
         ident = Personident(gjelder),
         kilde = Kilde.OFFENTLIG,
         inntektsposter =
@@ -90,7 +95,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
                     kode = it.kode,
                     visningsnavn = it.visningsnavn,
                     inntektstype = it.inntekstype,
-                    beløp = it.beløp.setScale(0, RoundingMode.HALF_UP),
+                    beløp = it.beløp.nærmesteHeltall,
                 )
             }.toSet(),
         inntektstyper = emptySet(),
@@ -141,6 +146,54 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
     }
     return inntekt
 }
+
+fun Inntekt.tilIkkeAktivInntektDto(
+    endringstype: GrunnlagInntektEndringstype,
+    innhentetTidspunkt: LocalDateTime,
+) = IkkeAktivInntektDto(
+    rapporteringstype = this.type,
+    beløp = maxOf(this.belop, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+    periode = this.opprinneligPeriode!!,
+    ident = Personident(this.ident),
+    gjelderBarn = gjelderBarn?.let { Personident(it) },
+    endringstype = endringstype,
+    innhentetTidspunkt = innhentetTidspunkt,
+    originalId = id,
+    inntektsposter =
+        inntektsposter.map {
+            InntektspostDtoV2(
+                it.kode,
+                finnVisningsnavn(it.kode),
+                it.inntektstype,
+                it.beløp,
+            )
+        }.toSet(),
+)
+
+fun SummertÅrsinntekt.tilIkkeAktivInntektDto(
+    gjelderIdent: String,
+    endringstype: GrunnlagInntektEndringstype,
+    innhentetTidspunkt: LocalDateTime,
+    id: Long? = null,
+) = IkkeAktivInntektDto(
+    rapporteringstype = this.inntektRapportering,
+    beløp = maxOf(this.sumInntekt, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+    periode = this.periode,
+    ident = Personident(gjelderIdent),
+    gjelderBarn = gjelderBarnPersonId?.let { Personident(it) },
+    endringstype = endringstype,
+    innhentetTidspunkt = innhentetTidspunkt,
+    originalId = id,
+    inntektsposter =
+        inntektPostListe.map {
+            InntektspostDtoV2(
+                it.kode,
+                it.visningsnavn,
+                it.inntekstype,
+                it.beløp,
+            )
+        }.toSet(),
+)
 
 fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
     val inntekt =

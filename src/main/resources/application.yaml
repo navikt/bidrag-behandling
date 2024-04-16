@@ -18,7 +18,7 @@ spring.main.banner-mode: off
 
 egenskaper:
   grunnlag:
-    min-antall-timer-siden-forrige-innhenting: ${GRUNNLAG_MIN_ANT_TIMER_SIDEN_FORRIGE_INNHENTING}
+    min-antall-minutter-siden-forrige-innhenting: ${GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING}
 
 ---
 spring.config.activate.on-profile: nais,lokal-nais
@@ -85,6 +85,24 @@ no.nav.security.jwt:
         token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
         grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
         scope: api://${BIDRAG_SAK_SCOPE}/.default
+        authentication:
+          client-id: ${AZURE_APP_CLIENT_ID}
+          client-secret: ${AZURE_APP_CLIENT_SECRET}
+          client-auth-method: client_secret_post
+      bidrag-dokument:
+        resource-url: ${BIDRAG_DOKUMENT_URL}
+        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
+        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
+        scope: api://${BIDRAG_DOKUMENT_SCOPE}/.default
+        authentication:
+          client-id: ${AZURE_APP_CLIENT_ID}
+          client-secret: ${AZURE_APP_CLIENT_SECRET}
+          client-auth-method: client_secret_post
+      bidrag-dokument-produksjon:
+        resource-url: ${BIDRAG_DOKUMENT_PRODUKSJON_URL}
+        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
+        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
+        scope: api://${BIDRAG_DOKUMENT_PRODUKSJON_SCOPE}/.default
         authentication:
           client-id: ${AZURE_APP_CLIENT_ID}
           client-secret: ${AZURE_APP_CLIENT_SECRET}

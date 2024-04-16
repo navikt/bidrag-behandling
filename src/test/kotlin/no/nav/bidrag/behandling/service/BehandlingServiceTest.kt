@@ -23,11 +23,11 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
@@ -251,7 +251,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         }
 
         @Test
-        @Disabled("Wiremock-problem")
+        @Disabled("Wiremock issues - OK alene, feiler i fellesskap med andre")
         @Transactional
         open fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
             // gitt
@@ -263,16 +263,11 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // hvis
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
-
             // så
             assertSoftly {
-                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.size shouldBe 2
-                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.filter {
-                    Grunnlagstype(
-                        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-                        true,
-                    ) == it.nyeData.grunnlagsdatatype
-                }.size shouldBe 1
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.inntekter.årsinntekter shouldHaveSize 0
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn shouldHaveSize 0
             }
         }
     }
@@ -643,7 +638,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val husstandsBarn =
                 setOf(
-                    HusstandsbarnDto(
+                    HusstandsbarnDtoV2(
                         null,
                         Kilde.OFFENTLIG,
                         true,

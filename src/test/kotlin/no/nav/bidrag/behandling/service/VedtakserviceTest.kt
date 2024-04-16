@@ -146,10 +146,10 @@ class VedtakserviceTest {
 
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
-            OpprettVedtakResponseDto(
-                1,
-                emptyList(),
-            )
+                OpprettVedtakResponseDto(
+                    1,
+                    emptyList(),
+                )
 
         vedtakService.fatteVedtak(behandling.id!!)
 
@@ -231,16 +231,16 @@ class VedtakserviceTest {
         every { behandlingService.hentBehandlingById(any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns
-            opprettSakForBehandlingMedReelMottaker(
-                behandling,
-            )
+                opprettSakForBehandlingMedReelMottaker(
+                    behandling,
+                )
 
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
-            OpprettVedtakResponseDto(
-                1,
-                emptyList(),
-            )
+                OpprettVedtakResponseDto(
+                    1,
+                    emptyList(),
+                )
 
         vedtakService.fatteVedtak(behandling.id!!)
 
@@ -310,10 +310,10 @@ class VedtakserviceTest {
 
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
-            OpprettVedtakResponseDto(
-                1,
-                emptyList(),
-            )
+                OpprettVedtakResponseDto(
+                    1,
+                    emptyList(),
+                )
 
         vedtakService.fatteVedtak(behandling.id!!)
 
@@ -381,10 +381,10 @@ class VedtakserviceTest {
 
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
-            OpprettVedtakResponseDto(
-                1,
-                emptyList(),
-            )
+                OpprettVedtakResponseDto(
+                    1,
+                    emptyList(),
+                )
 
         vedtakService.fatteVedtak(behandling.id!!)
 
@@ -430,10 +430,10 @@ class VedtakserviceTest {
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
-            OpprettVedtakResponseDto(
-                1,
-                emptyList(),
-            )
+                OpprettVedtakResponseDto(
+                    1,
+                    emptyList(),
+                )
 
         vedtakService.fatteVedtak(behandling.id!!)
 
@@ -469,10 +469,10 @@ class VedtakserviceTest {
                         shouldHaveSize(1)
                         assertSoftly(it[0]) {
                             periode shouldBe
-                                ÅrMånedsperiode(
-                                    behandling.søktFomDato,
-                                    null,
-                                )
+                                    ÅrMånedsperiode(
+                                        behandling.søktFomDato,
+                                        null,
+                                    )
                             beløp shouldBe null
                             valutakode shouldBe "NOK"
                             resultatkode shouldBe Resultatkode.AVSLAG.name
@@ -492,10 +492,10 @@ class VedtakserviceTest {
                         shouldHaveSize(1)
                         assertSoftly(it[0]) {
                             periode shouldBe
-                                ÅrMånedsperiode(
-                                    behandling.søktFomDato,
-                                    null,
-                                )
+                                    ÅrMånedsperiode(
+                                        behandling.søktFomDato,
+                                        null,
+                                    )
                             beløp shouldBe null
                             valutakode shouldBe "NOK"
                             resultatkode shouldBe Resultatkode.AVSLAG.name
@@ -584,10 +584,10 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 shouldHaveSize(5)
                 assertSoftly(it[0]) {
                     periode shouldBe
-                        ÅrMånedsperiode(
-                            YearMonth.parse("2023-02"),
-                            YearMonth.parse("2023-07"),
-                        )
+                            ÅrMånedsperiode(
+                                YearMonth.parse("2023-02"),
+                                YearMonth.parse("2023-07"),
+                            )
                     beløp shouldBe BigDecimal(1760)
                     valutakode shouldBe "NOK"
                     resultatkode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT.name
@@ -612,10 +612,10 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 shouldHaveSize(5)
                 assertSoftly(it[0]) {
                     periode shouldBe
-                        ÅrMånedsperiode(
-                            YearMonth.parse("2023-02"),
-                            YearMonth.parse("2023-07"),
-                        )
+                            ÅrMånedsperiode(
+                                YearMonth.parse("2023-02"),
+                                YearMonth.parse("2023-07"),
+                            )
                     beløp shouldBe BigDecimal(1760)
                     valutakode shouldBe "NOK"
                     resultatkode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT.name
@@ -802,9 +802,9 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
         assertSoftly(it[0]) { delberegning ->
             delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().antallBarn shouldBe 3
             delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.fom shouldBe
-                YearMonth.parse(
-                    "2023-02",
-                )
+                    YearMonth.parse(
+                        "2023-02",
+                    )
             delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.til shouldBe YearMonth.parse("2023-08")
             delberegning.grunnlagsreferanseListe shouldHaveSize 3
 

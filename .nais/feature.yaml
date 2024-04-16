@@ -12,6 +12,10 @@ env:
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
   BIDRAG_VEDTAK_URL: http://bidrag-vedtak-feature
   BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-feature
+  BIDRAG_DOKUMENT_PRODUKSJON_URL: http://bidrag-dokument-produksjon
+  BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
+  BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
+  BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument-feature
   BIDRAG_SAK_URL: https://bidrag-sak-feature.dev-fss-pub.nais.io/bidrag-sak
   BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-feature
   TOPIC_VEDTAK: bidrag.vedtak-feature
@@ -19,7 +23,7 @@ env:
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt-q1.dev-fss-pub.nais.io/api/v2
-  GRUNNLAG_MIN_ANT_TIMER_SIDEN_FORRIGE_INNHENTING: 1
+  GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 1
   KODEVERK_URL: https://kodeverk-api.nav.no
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
@@ -46,7 +50,9 @@ outbound-access-apps:
   - bidrag-dokument-forsendelse-feature
   - bidrag-tilgangskontroll-feature
   - bidrag-vedtak-feature
+  - bidrag-dokument-produksjon-feature
 outbound-access-hosts:
+  - bidrag-dokument-feature.dev-fss-pub.nais.io
   - bidrag-person-feature.dev-fss-pub.nais.io
   - bidrag-organisasjon-feature.dev-fss-pub.nais.io
   - bidrag-sjablon-feature.dev-fss-pub.nais.io

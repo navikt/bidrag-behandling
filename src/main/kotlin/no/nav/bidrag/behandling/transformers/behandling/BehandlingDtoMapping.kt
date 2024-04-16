@@ -10,9 +10,12 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
-import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataEndretDto
+import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
+import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
@@ -22,7 +25,6 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsBarnDtoV2
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
-import no.nav.bidrag.behandling.transformers.grunnlag.toDto
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
@@ -31,21 +33,29 @@ import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.beregn.core.BeregnApi
+import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 @Suppress("ktlint:standard:value-argument-comment")
 fun Behandling.tilBehandlingDtoV2(
     gjeldendeAktiveGrunnlagsdata: List<Grunnlag>,
-    ikkeAktiverteEndringerIGrunnlagsdata: Set<GrunnlagsdataEndretDto>,
+    ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata? = null,
 ) = BehandlingDtoV2(
     id = id!!,
     vedtakstype = vedtakstype,
     stønadstype = stonadstype,
     engangsbeløptype = engangsbeloptype,
+    erKlageEllerOmgjøring = erKlageEllerOmgjøring,
+    opprettetTidspunkt = opprettetTidspunkt,
     erVedtakFattet = vedtaksid != null,
     søktFomDato = søktFomDato,
     mottattdato = mottattdato,
@@ -64,6 +74,7 @@ fun Behandling.tilBehandlingDtoV2(
             )
         }.toSet(),
     søknadRefId = soknadRefId,
+    vedtakRefId = refVedtaksid,
     virkningstidspunkt =
         VirkningstidspunktDto(
             virkningstidspunkt = virkningstidspunkt,
@@ -95,12 +106,14 @@ fun Behandling.tilBehandlingDtoV2(
         InntekterDtoV2(
             barnetillegg =
                 inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
+                    .sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
                     .tilInntektDtoV2().toSet(),
             utvidetBarnetrygd =
                 inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }.tilInntektDtoV2()
                     .toSet(),
             kontantstøtte =
                 inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+                    .sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
                     .tilInntektDtoV2().toSet(),
             småbarnstillegg =
                 inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
@@ -127,9 +140,49 @@ fun Behandling.tilBehandlingDtoV2(
                 ),
             valideringsfeil = hentInntekterValideringsfeil(),
         ),
-    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.map(Grunnlag::toDto).toSet(),
-    ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
+    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+    ikkeAktiverteEndringerIGrunnlagsdata =
+        ikkeAktiverteEndringerIGrunnlagsdata
+            ?: IkkeAktiveGrunnlagsdata(),
 )
+
+fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
+    val grunnlag = konverterData<List<SivilstandGrunnlagDto>>()
+    return this?.let {
+        SivilstandAktivGrunnlagDto(
+            grunnlag = grunnlag?.toSet() ?: emptySet(),
+            innhentetTidspunkt = innhentet,
+        )
+    }
+}
+
+fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnGrunnlagDto> {
+    return konverterData<List<BoforholdBeregnet>>()?.groupBy { it.relatertPersonPersonId }?.map { (barnId, grunnlag) ->
+        HusstandsbarnGrunnlagDto(
+            innhentetTidspunkt = this!!.innhentet,
+            ident = barnId,
+            perioder =
+                grunnlag.map {
+                    HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
+                        it.periodeFom,
+                        it.periodeTom,
+                        it.bostatus,
+                    )
+                }.toSet(),
+        )
+    }?.toSet() ?: emptySet()
+}
+
+fun List<Grunnlag>.tilAktivGrunnlagsdata() =
+    AktiveGrunnlagsdata(
+        arbeidsforhold =
+            find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konverterData<Set<ArbeidsforholdGrunnlagDto>>()
+                ?: emptySet(),
+        husstandsbarn =
+            find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.toHusstandsbarn(),
+        sivilstand =
+            find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
+    )
 
 fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto {
     return InntektValideringsfeilDto(
@@ -239,3 +292,27 @@ fun Behandling.hentBeregnetInntekter() =
     BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe.sortedBy {
         it.inntektGjelderBarnIdent?.verdi
     }
+
+fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
+
+fun Behandling.notatTittel(): String {
+    val prefiks =
+        when (stonadstype) {
+            Stønadstype.FORSKUDD -> "Bidragsforskudd"
+            Stønadstype.BIDRAG -> "Barnebidrag"
+            Stønadstype.BIDRAG18AAR -> "Barnebidrag 18 år"
+            Stønadstype.EKTEFELLEBIDRAG -> "Ektefellebidrag"
+            Stønadstype.OPPFOSTRINGSBIDRAG -> "Oppfostringbidrag"
+            Stønadstype.MOTREGNING -> "Motregning"
+            else ->
+                when (engangsbeloptype) {
+                    Engangsbeløptype.ETTERGIVELSE -> "Ettergivelse"
+                    Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> "Ettergivelse tilbakekreving"
+                    Engangsbeløptype.GEBYR_MOTTAKER -> "Gebyr"
+                    Engangsbeløptype.GEBYR_SKYLDNER -> "Gebyr"
+                    Engangsbeløptype.TILBAKEKREVING -> "Tilbakekreving"
+                    else -> null
+                }
+        }
+    return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
+}

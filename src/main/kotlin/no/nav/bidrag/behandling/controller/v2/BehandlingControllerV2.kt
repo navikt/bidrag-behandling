@@ -66,7 +66,7 @@ class BehandlingControllerV2(
         val resultat =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return resultat.tilBehandlingDtoV2(resultat.grunnlagListe, emptySet())
+        return resultat.tilBehandlingDtoV2(resultat.grunnlagListe)
     }
 
     @Suppress("unused")
@@ -110,10 +110,7 @@ class BehandlingControllerV2(
         return ResponseEntity(
             behandling.tilBehandlingDtoV2(
                 grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling),
-                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(
-                    behandlingsid,
-                    behandling.roller,
-                ),
+                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
             ),
             HttpStatus.CREATED,
         )

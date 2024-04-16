@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -66,6 +67,7 @@ open class Behandling(
     open var opprinneligVirkningstidspunkt: LocalDate? = null,
     open var vedtakstidspunkt: LocalDateTime? = null,
     open var slettetTidspunkt: LocalDateTime? = null,
+    open var opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
     open var vedtakFattetAv: String? = null,
     @Column(name = "aarsak")
     @Convert(converter = ÅrsakConverter::class)
@@ -140,25 +142,35 @@ open class Behandling(
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
 fun Behandling.validerForBeregning() {
-    val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
-    val sivilstandFeil = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil }
-    val husstandsbarnFeil =
-        husstandsbarn.validerBoforhold(
-            virkningstidspunktEllerSøktFomDato,
-        ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
     val virkningstidspunktFeil =
         VirkningstidspunktFeilDto(
             manglerÅrsakEllerAvslag = avslag == null && årsak == null,
-            manglerVirkningstidspunkt = avslag == null && virkningstidspunkt == null,
+            manglerVirkningstidspunkt = virkningstidspunkt == null,
         ).takeIf { it.harFeil }
-    if (inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null || virkningstidspunktFeil != null) {
-        val feil =
-            BeregningValideringsfeil(
-                virkningstidspunktFeil,
-                inntekterFeil,
-                husstandsbarnFeil,
-                sivilstandFeil,
-            )
+    val feil =
+        if (avslag == null) {
+            val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
+            val sivilstandFeil = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil }
+            val husstandsbarnFeil =
+                husstandsbarn.validerBoforhold(
+                    virkningstidspunktEllerSøktFomDato,
+                ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
+            val harFeil = inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null || virkningstidspunktFeil != null
+            harFeil.ifTrue {
+                BeregningValideringsfeil(
+                    virkningstidspunktFeil,
+                    inntekterFeil,
+                    husstandsbarnFeil,
+                    sivilstandFeil,
+                )
+            }
+        } else if (virkningstidspunktFeil != null) {
+            BeregningValideringsfeil(virkningstidspunktFeil, null, null, null)
+        } else {
+            null
+        }
+
+    if (feil != null) {
         secureLogger.warn {
             "Feil ved validering av behandling for beregning " +
                 commonObjectmapper.writeValueAsString(feil)

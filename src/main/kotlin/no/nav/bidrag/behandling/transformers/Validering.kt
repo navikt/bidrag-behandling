@@ -33,6 +33,15 @@ import java.time.LocalDate
 
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
 
+fun Behandling.validerKanOppdatere() {
+    if (erVedtakFattet) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Vedtak er fattet for behandling og kan derfor ikke oppdateres",
+        )
+    }
+}
+
 fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
     if (behandling.opprinneligVirkningstidspunkt != null &&

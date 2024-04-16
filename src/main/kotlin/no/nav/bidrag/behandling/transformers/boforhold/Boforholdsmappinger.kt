@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.validerSivilstand
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.validereBoforhold
 import no.nav.bidrag.boforhold.dto.Kilde
 import java.time.LocalDate
@@ -53,7 +54,7 @@ fun Husstandsbarn.tilDto(behandling: Behandling) =
         !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
         this.perioder.tilDto().sortedBy { periode -> periode.datoFom }.toSet(),
         this.ident,
-        this.navn,
+        this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato,
     )
 
