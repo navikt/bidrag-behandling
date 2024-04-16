@@ -19,3 +19,16 @@ data class AktivereGrunnlagRequest(
     @Schema(description = "Grunnlagstyper som skal aktiveres")
     val grunnlagsdatatyper: Set<Grunnlagsdatatype> = emptySet(),
 )
+
+fun AktivereGrunnlagRequest.toV2() =
+    AktivereGrunnlagRequestV2(
+        personident,
+        grunnlagsdatatype = grunnlagsdatatyper.first(),
+    )
+
+data class AktivereGrunnlagRequestV2(
+    @Schema(description = "Personident tilhørende rolle i behandling grunnlag skal aktiveres for")
+    val personident: Personident,
+    @Schema(description = "Grunnlagstyper som skal aktiveres")
+    val grunnlagsdatatype: Grunnlagsdatatype,
+)

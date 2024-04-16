@@ -21,17 +21,21 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.transformers.boforhold.toHusstandsBarnDtoV2
+import no.nav.bidrag.behandling.transformers.boforhold.toDto
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.sorterEtterDato
+import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
+import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
+import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.response.BoforholdBeregnet
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -89,7 +93,7 @@ fun Behandling.tilBehandlingDtoV2(
         ),
     boforhold =
         BoforholdDtoV2(
-            husstandsbarn = husstandsbarn.toHusstandsBarnDtoV2(this),
+            husstandsbarn = husstandsbarn.sortert().map { it.toDto() }.toSet(),
             sivilstand = sivilstand.toSivilstandDto(),
             notat =
                 BehandlingNotatDto(
@@ -106,17 +110,20 @@ fun Behandling.tilBehandlingDtoV2(
         InntekterDtoV2(
             barnetillegg =
                 inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                    .sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
+                    .sorterEtterDatoOgBarn()
                     .tilInntektDtoV2().toSet(),
             utvidetBarnetrygd =
-                inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }.tilInntektDtoV2()
+                inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+                    .sorterEtterDato()
+                    .tilInntektDtoV2()
                     .toSet(),
             kontantstøtte =
                 inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                    .sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
+                    .sorterEtterDatoOgBarn()
                     .tilInntektDtoV2().toSet(),
             småbarnstillegg =
                 inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+                    .sorterEtterDato()
                     .tilInntektDtoV2().toSet(),
             månedsinntekter =
                 gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
@@ -128,9 +135,8 @@ fun Behandling.tilBehandlingDtoV2(
                         } ?: emptyList()
                     }.toSet(),
             årsinntekter =
-                inntekter.filter { !eksplisitteYtelser.contains(it.type) }.tilInntektDtoV2()
-                    .sortedBy { it.rapporteringstype }
-                    .sortedByDescending { it.datoFom ?: it.opprinneligFom }
+                inntekter.årsinntekterSortert()
+                    .tilInntektDtoV2()
                     .toSet(),
             beregnetInntekter = hentBeregnetInntekter(),
             notat =

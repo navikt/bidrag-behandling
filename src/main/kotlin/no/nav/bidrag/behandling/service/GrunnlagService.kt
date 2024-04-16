@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
@@ -185,7 +185,7 @@ class GrunnlagService(
     @Transactional
     fun aktivereGrunnlag(
         behandling: Behandling,
-        aktivereGrunnlagRequest: AktivereGrunnlagRequest,
+        aktivereGrunnlagRequest: AktivereGrunnlagRequestV2,
     ) {
         val aktiveringstidspunkt = LocalDateTime.now()
 
@@ -197,49 +197,49 @@ class GrunnlagService(
             "Personident oppgitt i AktivereGrunnlagRequest har ikke rolle i behandling ${behandling.id}",
         )
 
-        aktivereGrunnlagRequest.grunnlagsdatatyper.forEach { grunnlagstype ->
-            val harIkkeAktivGrunnlag =
-                behandling.grunnlag
-                    .filter { rolleGrunnlagSkalAktiveresFor!!.ident == it.rolle.ident }
-                    .filter { grunnlagstype == it.type }
-                    .filter { it.aktiv == null }.isNotEmpty()
+        val grunnlagstype = aktivereGrunnlagRequest.grunnlagsdatatype
 
-            if (!harIkkeAktivGrunnlag) {
-                log.warn {
-                    "Fant ingen grunnlag med type $grunnlagstype å aktivere for rolleid " +
-                        "${rolleGrunnlagSkalAktiveresFor!!.id} i behandling ${behandling.id} "
-                }
-                return
-            }
+        val harIkkeAktivGrunnlag =
+            behandling.grunnlag
+                .filter { rolleGrunnlagSkalAktiveresFor!!.ident == it.rolle.ident }
+                .filter { grunnlagstype == it.type }
+                .filter { it.aktiv == null }.isNotEmpty()
 
-            if (inntekterOgYtelser.contains(grunnlagstype)) {
-                aktivereYtelserOgInntekter(
-                    behandling,
-                    grunnlagstype,
-                    rolleGrunnlagSkalAktiveresFor!!,
-                    aktiveringstidspunkt,
-                )
-            } else if (Grunnlagsdatatype.BOFORHOLD == grunnlagstype) {
-                aktivereBoforhold(
-                    behandling,
-                    grunnlagstype,
-                    rolleGrunnlagSkalAktiveresFor!!,
-                    aktiveringstidspunkt,
-                )
-            } else if (Grunnlagsdatatype.SIVILSTAND == grunnlagstype) {
-                aktivereSivilstand(
-                    behandling,
-                    grunnlagstype,
-                    rolleGrunnlagSkalAktiveresFor!!,
-                    aktiveringstidspunkt,
-                )
-            } else {
-                log.error {
-                    "Grunnlagstype $grunnlagstype ikke støttet ved aktivering av grunnlag. Aktivering feilet " +
-                        "for behandling ${behandling.id}  "
-                }
-                aktiveringAvGrunnlagstypeIkkeStøttetException(behandling.id!!)
+        if (!harIkkeAktivGrunnlag) {
+            log.warn {
+                "Fant ingen grunnlag med type $grunnlagstype å aktivere for rolleid " +
+                    "${rolleGrunnlagSkalAktiveresFor!!.id} i behandling ${behandling.id} "
             }
+            return
+        }
+
+        if (inntekterOgYtelser.contains(grunnlagstype)) {
+            aktivereYtelserOgInntekter(
+                behandling,
+                grunnlagstype,
+                rolleGrunnlagSkalAktiveresFor!!,
+                aktiveringstidspunkt,
+            )
+        } else if (Grunnlagsdatatype.BOFORHOLD == grunnlagstype) {
+            aktivereBoforhold(
+                behandling,
+                grunnlagstype,
+                rolleGrunnlagSkalAktiveresFor!!,
+                aktiveringstidspunkt,
+            )
+        } else if (Grunnlagsdatatype.SIVILSTAND == grunnlagstype) {
+            aktivereSivilstand(
+                behandling,
+                grunnlagstype,
+                rolleGrunnlagSkalAktiveresFor!!,
+                aktiveringstidspunkt,
+            )
+        } else {
+            log.error {
+                "Grunnlagstype $grunnlagstype ikke støttet ved aktivering av grunnlag. Aktivering feilet " +
+                    "for behandling ${behandling.id}  "
+            }
+            aktiveringAvGrunnlagstypeIkkeStøttetException(behandling.id!!)
         }
     }
 
