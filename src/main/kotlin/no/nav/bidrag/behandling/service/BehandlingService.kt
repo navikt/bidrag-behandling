@@ -13,8 +13,10 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.toV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
@@ -142,6 +144,21 @@ class BehandlingService(
     }
 
     @Transactional
+    fun aktiverGrunnlagsdata(
+        behandlingsid: Long,
+        request: AktivereGrunnlagRequestV2,
+    ) {
+        behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+            log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagsdatatype}" }
+            secureLogger.info {
+                "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagsdatatype} " +
+                    "for person ${request.personident}"
+            }
+            grunnlagService.aktivereGrunnlag(it, request)
+        }
+    }
+
+    @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
         request: OppdaterBehandlingRequestV2,
@@ -154,7 +171,7 @@ class BehandlingService(
                 request.aktivereGrunnlagForPerson.let { aktivereGrunnlagRequest ->
                     if (aktivereGrunnlagRequest != null) {
                         log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
-                        grunnlagService.aktivereGrunnlag(it, aktivereGrunnlagRequest)
+                        grunnlagService.aktivereGrunnlag(it, aktivereGrunnlagRequest.toV2())
                     }
                 }
                 request.virkningstidspunkt?.let { vt ->

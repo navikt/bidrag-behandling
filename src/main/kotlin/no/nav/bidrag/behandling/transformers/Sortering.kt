@@ -24,12 +24,21 @@ val årsinntekterPrioriteringsliste =
         Inntektsrapportering.LIGNINGSINNTEKT,
     )
 
-fun Set<Inntekt>.årsinntekterSortert() =
+fun Set<Inntekt>.årsinntekterSortert(inkluderTaMed: Boolean = true) =
     this.filter { !eksplisitteYtelser.contains(it.type) }
         .sortedWith(
-            compareByDescending<Inntekt> { årsinntekterPrioriteringsliste.indexOf(it.type) }.thenByDescending {
-                it.datoTom ?: it.opprinneligTom
-            },
+            compareBy<Inntekt> {
+                it.taMed && inkluderTaMed
+            }
+                .thenBy {
+                    val index =
+                        årsinntekterPrioriteringsliste.indexOf(
+                            it.type,
+                        )
+                    if (index == -1 || it.taMed && inkluderTaMed) 1000 else index
+                }.thenBy {
+                    it.opprinneligFom
+                }.thenBy { it.datoFom },
         )
 
 fun Husstandsbarn.erSøknadsbarn() = this.behandling.søknadsbarn.map { it.ident }.contains(this.ident)
@@ -42,9 +51,10 @@ fun Set<Husstandsbarn>.sortert() =
     )
 
 fun List<Inntekt>.sorterEtterDatoOgBarn() =
-    this.filter { it.type == Inntektsrapportering.BARNETILLEGG }
-        .sortedWith(compareBy({ it.datoFom ?: it.opprinneligTom }, { it.gjelderBarn }))
+    sortedWith(
+        compareBy({
+            it.datoFom ?: it.opprinneligFom
+        }, { it.gjelderBarn }),
+    )
 
-fun List<Inntekt>.sorterEtterDato() =
-    this.filter { it.type == Inntektsrapportering.BARNETILLEGG }
-        .sortedWith(compareBy({ it.datoFom ?: it.opprinneligTom }, { it.gjelderBarn }))
+fun List<Inntekt>.sorterEtterDato() = sortedWith(compareBy({ it.datoFom ?: it.opprinneligFom }))

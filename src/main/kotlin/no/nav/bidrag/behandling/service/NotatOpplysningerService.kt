@@ -333,7 +333,7 @@ private fun Behandling.hentInntekterForIdent(
             )
         },
     årsinntekter =
-        inntekter.årsinntekterSortert()
+        inntekter.årsinntekterSortert(false)
             .filter { it.ident == ident }
             .map {
                 it.tilNotatInntektDto()

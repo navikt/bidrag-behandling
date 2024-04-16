@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
@@ -113,6 +114,27 @@ class BehandlingControllerV2(
             ),
             HttpStatus.CREATED,
         )
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/grunnlag/aktiver")
+    @Operation(
+        description = "Aktiver grunnlag for en grunnlagstype i behandling. Returnerer behandling etter aktivering av grunnlag",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Grunnlag aktivert uten feil",
+            ),
+        ],
+    )
+    fun aktiverGrunnlag(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
+    ): BehandlingDtoV2 {
+        behandlingService.aktiverGrunnlagsdata(behandlingsid, request)
+        return behandlingService.henteBehandling(behandlingsid)
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")

@@ -13,7 +13,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
@@ -952,9 +952,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             )
 
             val aktivereGrunnlagRequest =
-                AktivereGrunnlagRequest(
+                AktivereGrunnlagRequestV2(
                     Personident(behandling.bidragsmottaker?.ident!!),
-                    setOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
 
             // hvis
@@ -1023,9 +1023,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             )
 
             val aktivereGrunnlagRequest =
-                AktivereGrunnlagRequest(
+                AktivereGrunnlagRequestV2(
                     Personident(behandling.bidragsmottaker?.ident!!),
-                    setOf(Grunnlagsdatatype.BARNETILLEGG),
+                    Grunnlagsdatatype.BARNETILLEGG,
                 )
 
             // hvis
@@ -1085,9 +1085,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             )
 
             val aktivereGrunnlagRequest =
-                AktivereGrunnlagRequest(
+                AktivereGrunnlagRequestV2(
                     Personident(behandling.bidragsmottaker?.ident!!),
-                    setOf(Grunnlagsdatatype.KONTANTSTØTTE),
+                    Grunnlagsdatatype.KONTANTSTØTTE,
                 )
 
             // hvis
@@ -1147,9 +1147,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             )
 
             val aktivereGrunnlagRequest =
-                AktivereGrunnlagRequest(
+                AktivereGrunnlagRequestV2(
                     Personident(behandling.bidragsmottaker?.ident!!),
-                    setOf(Grunnlagsdatatype.SMÅBARNSTILLEGG),
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
                 )
 
             // hvis
@@ -1206,9 +1206,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     ).tilSummerInntekt(behandling),
             )
             val aktivereGrunnlagRequest =
-                AktivereGrunnlagRequest(
+                AktivereGrunnlagRequestV2(
                     Personident(behandling.bidragsmottaker?.ident!!),
-                    setOf(Grunnlagsdatatype.UTVIDET_BARNETRYGD),
+                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
                 )
 
             // hvis
