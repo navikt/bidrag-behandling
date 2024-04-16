@@ -2,29 +2,38 @@ package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Kilde
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
-import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.service.opprettHentGrunnlagDto
+import no.nav.bidrag.behandling.service.tilSummerInntekt
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagspostDto
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -66,49 +75,128 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
     @Test
     @Transactional
-    @Disabled("Gir 404 - lagret behandling ikke tilgjengelig")
     fun `skal aktivere grunnlag`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling()
-
-        testdataManager.oppretteOgLagreGrunnlag<SkattegrunnlagGrunnlagDto>(
-            behandling = behandling,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
-            innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
-            aktiv = null,
+        var behandling = testdataManager.opprettBehandlingNewTransacion(false)
+        behandling.inntekter.add(
+            Inntekt(
+                Inntektsrapportering.LIGNINGSINNTEKT,
+                BigDecimal.valueOf(33000),
+                LocalDate.parse("2023-01-01"),
+                LocalDate.parse("2023-12-31"),
+                behandling.bidragsmottaker!!.ident!!,
+                Kilde.OFFENTLIG,
+                true,
+                behandling = behandling,
+                opprinneligFom = LocalDate.parse("2023-01-01"),
+                opprinneligTom = LocalDate.parse("2023-12-31"),
+            ),
         )
-
-        entityManager.persist(behandling)
+        behandling.inntekter.add(
+            Inntekt(
+                Inntektsrapportering.LIGNINGSINNTEKT,
+                BigDecimal.valueOf(333000),
+                LocalDate.parse("2022-01-01"),
+                LocalDate.parse("2022-12-31"),
+                behandling.bidragsmottaker!!.ident!!,
+                Kilde.OFFENTLIG,
+                true,
+                behandling = behandling,
+                opprinneligFom = LocalDate.parse("2022-01-01"),
+                opprinneligTom = LocalDate.parse("2022-12-31"),
+            ),
+        )
+        behandling = testdataManager.lagreBehandlingNewTransaction(behandling)
+        val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
+        val grunnlagLagret =
+            SkattegrunnlagGrunnlagDto(
+                periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                personId = behandling.bidragsmottaker!!.ident!!,
+                skattegrunnlagspostListe =
+                    listOf(
+                        SkattegrunnlagspostDto(
+                            beløp = BigDecimal(450000),
+                            belop = BigDecimal(450000),
+                            inntektType = "renteinntektAvObligasjon",
+                            skattegrunnlagType = "Something else",
+                        ),
+                        SkattegrunnlagspostDto(
+                            beløp = BigDecimal(100000),
+                            belop = BigDecimal(100000),
+                            inntektType = "gevinstVedRealisasjonAvAksje",
+                            skattegrunnlagType = "Something else",
+                        ),
+                    ),
+            )
+        behandling =
+            testdataManager.oppretteOgLagreGrunnlagNewTransaction(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+                innhentingstidspunkt,
+                grunnlagsdata = SkattepliktigeInntekter(skattegrunnlag = listOf(grunnlagLagret)),
+            )
+        behandling =
+            testdataManager.oppretteOgLagreGrunnlagNewTransaction(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
+                innhentingstidspunkt,
+                grunnlagsdata =
+                    opprettHentGrunnlagDto().copy(
+                        skattegrunnlagListe = listOf(grunnlagLagret),
+                    ).tilSummerInntekt(behandling),
+            )
 
         val aktivereGrunnlagRequest =
-            AktivereGrunnlagRequest(
+            AktivereGrunnlagRequestV2(
                 Personident(behandling.bidragsmottaker?.ident!!),
-                setOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
             )
 
         // hvis
         val respons =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/" + behandling.id,
+                "${rootUriV2()}/behandling/${behandling.id}/grunnlag/aktiver",
                 HttpMethod.PUT,
                 HttpEntity(
-                    OppdaterBehandlingRequestV2(
-                        aktivereGrunnlagForPerson = aktivereGrunnlagRequest,
-                    ),
+                    aktivereGrunnlagRequest,
                 ),
-                BehandlingDtoV2::class.java,
+                AktivereGrunnlagResponseV2::class.java,
             )
 
-        Assertions.assertEquals(HttpStatus.CREATED, respons.statusCode)
+        Assertions.assertEquals(HttpStatus.OK, respons.statusCode)
 
         // så
-        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
 
         assertSoftly {
-            oppdatertBehandling.isPresent
-            oppdatertBehandling.get().grunnlag.size shouldBe 1
-            oppdatertBehandling.get().grunnlag.first().aktiv shouldNotBe null
-            oppdatertBehandling.get().grunnlag.first().aktiv?.toLocalDate() shouldBe LocalDate.now()
+            val oppdatertGrunnlag = oppdatertBehandling.grunnlag
+            oppdatertGrunnlag.size shouldBe 2
+            oppdatertGrunnlag.filter { it.aktiv == null }.shouldBeEmpty()
+        }
+
+        assertSoftly(oppdatertBehandling.inntekter.toList()) {
+            this shouldHaveSize 2
+            assertSoftly(find { it.type == Inntektsrapportering.LIGNINGSINNTEKT }!!) {
+                type shouldBe Inntektsrapportering.LIGNINGSINNTEKT
+                belop shouldBe 0.toBigDecimal()
+                opprinneligFom shouldBe LocalDate.parse("2023-01-01")
+                opprinneligTom shouldBe LocalDate.parse("2023-12-31")
+                taMed shouldBe true
+                datoFom shouldBe LocalDate.parse("2023-01-01")
+                datoTom shouldBe LocalDate.parse("2023-12-31")
+                inntektsposter shouldHaveSize 0
+            }
+            assertSoftly(find { it.type == Inntektsrapportering.KAPITALINNTEKT }!!) {
+                type shouldBe Inntektsrapportering.KAPITALINNTEKT
+                belop shouldBe 550000.toBigDecimal()
+                opprinneligFom shouldBe LocalDate.parse("2023-01-01")
+                opprinneligTom shouldBe LocalDate.parse("2023-12-31")
+                taMed shouldBe false
+                datoTom shouldBe null
+                datoFom shouldBe null
+                inntektsposter shouldHaveSize 2
+            }
         }
     }
 

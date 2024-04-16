@@ -618,6 +618,7 @@ class GrunnlagService(
         rolleInhentetFor: Rolle,
     ) {
         val ikkeAktiveGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
+        if (ikkeAktiveGrunnlag.isEmpty()) return
         val inneholderEndringerSomMåBekreftes =
             ikkeAktiveGrunnlag.hentEndringerInntekter(
                 rolleInhentetFor,

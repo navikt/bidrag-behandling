@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -325,6 +326,190 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 oppdaterteSkattegrunnlag.skattegrunnlag.filter { it.personId == behandling.bidragsmottaker!!.ident }.size shouldBe 1
                 oppdaterteSkattegrunnlag.skattegrunnlag.filter { it.personId == behandling.bidragsmottaker!!.ident }
                     .map { it.skattegrunnlagspostListe }.size shouldBe 1
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal automatisk aktivere grunnlag hvis ingen endringer som må bekreftes`() {
+            // gitt
+            val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
+            val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            val skattegrunnlag =
+                SkattegrunnlagGrunnlagDto(
+                    periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                    skattegrunnlagspostListe =
+                        listOf(
+                            SkattegrunnlagspostDto(
+                                beløp = BigDecimal(450000),
+                                belop = BigDecimal(450000),
+                                inntektType = "renteinntektAvObligasjon",
+                                skattegrunnlagType = "ORINÆR",
+                            ),
+                        ),
+                )
+            val skattegrunnlagNy =
+                SkattegrunnlagGrunnlagDto(
+                    periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                    skattegrunnlagspostListe =
+                        listOf(
+                            SkattegrunnlagspostDto(
+                                beløp = BigDecimal(450000),
+                                belop = BigDecimal(450000),
+                                inntektType = "renteinntektAvObligasjon",
+                                skattegrunnlagType = "Something else",
+                            ),
+                        ),
+                )
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+                innhentingstidspunkt,
+                innhentingstidspunkt,
+                grunnlagsdata = SkattepliktigeInntekter(skattegrunnlag = listOf(skattegrunnlag)),
+            )
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
+                innhentingstidspunkt,
+                innhentingstidspunkt,
+                grunnlagsdata =
+                    opprettHentGrunnlagDto().copy(
+                        skattegrunnlagListe = listOf(skattegrunnlag),
+                    ).tilSummerInntekt(behandling),
+            )
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER ->
+                        stubUtils.stubHenteGrunnlagOk(
+                            rolle = it,
+                            responsobjekt =
+                                tilHentGrunnlagDto(
+                                    skattegrunnlag =
+                                        listOf(
+                                            skattegrunnlagNy,
+                                        ),
+                                ),
+                        )
+
+                    else -> stubUtils.stubHenteGrunnlagOk(rolle = it, tomRespons = true)
+                }
+            }
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                val grunnlagListe = oppdatertBehandling.get().grunnlag
+                grunnlagListe.size shouldBe 3
+                grunnlagListe.filter { it.aktiv == null } shouldHaveSize 0
+                grunnlagListe
+                    .filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet } shouldHaveSize 2
+            }
+        }
+
+        @Transactional
+        @Test
+        open fun `skal lage ikke aktiv grunnlag hvis beregnet inntekt ikke er lik lagret grunnlag`() {
+            // gitt
+            val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
+            val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            val skattegrunnlag =
+                SkattegrunnlagGrunnlagDto(
+                    periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                    skattegrunnlagspostListe =
+                        listOf(
+                            SkattegrunnlagspostDto(
+                                beløp = BigDecimal(450000),
+                                belop = BigDecimal(450000),
+                                inntektType = "renteinntektAvObligasjon",
+                                skattegrunnlagType = "ORINÆR",
+                            ),
+                        ),
+                )
+            val skattegrunnlagNy =
+                SkattegrunnlagGrunnlagDto(
+                    periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                    periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                    skattegrunnlagspostListe =
+                        listOf(
+                            SkattegrunnlagspostDto(
+                                beløp = BigDecimal(450000),
+                                belop = BigDecimal(450000),
+                                inntektType = "renteinntektAvObligasjon",
+                                skattegrunnlagType = "Something else",
+                            ),
+                            SkattegrunnlagspostDto(
+                                beløp = BigDecimal(100000),
+                                belop = BigDecimal(100000),
+                                inntektType = "gevinstVedRealisasjonAvAksje",
+                                skattegrunnlagType = "Something else",
+                            ),
+                        ),
+                )
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+                innhentingstidspunkt,
+                innhentingstidspunkt,
+                grunnlagsdata = SkattepliktigeInntekter(skattegrunnlag = listOf(skattegrunnlagNy)),
+            )
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
+                innhentingstidspunkt,
+                innhentingstidspunkt,
+                grunnlagsdata =
+                    opprettHentGrunnlagDto().copy(
+                        skattegrunnlagListe = listOf(skattegrunnlag),
+                    ).tilSummerInntekt(behandling),
+            )
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER ->
+                        stubUtils.stubHenteGrunnlagOk(
+                            rolle = it,
+                            responsobjekt =
+                                tilHentGrunnlagDto(
+                                    skattegrunnlag =
+                                        listOf(
+                                            skattegrunnlagNy,
+                                        ),
+                                ),
+                        )
+
+                    else -> stubUtils.stubHenteGrunnlagOk(rolle = it, tomRespons = true)
+                }
+            }
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly {
+                oppdatertBehandling.isPresent shouldBe true
+                val grunnlagListe = oppdatertBehandling.get().grunnlag
+                grunnlagListe.size shouldBe 3
+                grunnlagListe.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 3
+                grunnlagListe.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 1
+                grunnlagListe.filter { !it.erBearbeidet } shouldHaveSize 2
             }
         }
 

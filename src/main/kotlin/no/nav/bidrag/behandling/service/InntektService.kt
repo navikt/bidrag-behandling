@@ -30,6 +30,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.YearMonth
@@ -92,6 +93,12 @@ class InntektService(
                 .filter { !inntektsrapporteringerForYtelser.contains(it.type) }.filter { rolle.ident == it.ident }
                 .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
+        offentligeInntekterSomSkalSlettes.forEach {
+            log.info {
+                "Sletter offentlig inntekt med type ${it.type} " +
+                    "og periode ${it.opprinneligFom.toCompactString()} - ${it.opprinneligTom.toCompactString()} fra behandling ${behandling.id}"
+            }
+        }
         behandling.inntekter.removeAll(offentligeInntekterSomSkalSlettes)
     }
 
