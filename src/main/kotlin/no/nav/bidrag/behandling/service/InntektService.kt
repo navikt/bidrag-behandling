@@ -29,8 +29,8 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.YearMonth
@@ -63,13 +63,12 @@ class InntektService(
         }
         behandling.inntekter.removeAll(inntekterSomSkalSlettes)
 
-        entityManager.flush()
-        inntektRepository.saveAll(summerteÅrsinntekter.tilInntekt(behandling, personident))
-        entityManager.refresh(behandling)
+        val lagretInntekter = inntektRepository.saveAll(summerteÅrsinntekter.tilInntekt(behandling, personident))
+        behandling.inntekter.addAll(lagretInntekter)
     }
 
     @Transactional
-    fun oppdatereAutomatiskInnhentaOffentligeInntekter(
+    fun oppdatereAutomatiskInnhentetOffentligeInntekter(
         behandling: Behandling,
         rolle: Rolle,
         summerteÅrsinntekter: List<SummertÅrsinntekt>,
@@ -94,8 +93,13 @@ class InntektService(
                 .filter { !inntektsrapporteringerForYtelser.contains(it.type) }.filter { rolle.ident == it.ident }
                 .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
+        offentligeInntekterSomSkalSlettes.forEach {
+            log.info {
+                "Sletter offentlig inntekt med type ${it.type} " +
+                    "og periode ${it.opprinneligFom.toCompactString()} - ${it.opprinneligTom.toCompactString()} fra behandling ${behandling.id}"
+            }
+        }
         behandling.inntekter.removeAll(offentligeInntekterSomSkalSlettes)
-        entityManager.flush()
     }
 
     @Transactional
@@ -132,7 +136,6 @@ class InntektService(
             }
 
             inntekt.taMed = periode.taMedIBeregning
-            entityManager.flush()
             return inntekt.tilInntektDtoV2()
         }
 
@@ -143,9 +146,8 @@ class InntektService(
             val oppdatertInntekt =
                 inntekt?.let {
                     manuellInntekt.oppdatereEksisterendeInntekt(inntekt)
-                } ?: manuellInntekt.lagreSomNyInntekt(behandling)
+                } ?: inntektRepository.save(manuellInntekt.lagreSomNyInntekt(behandling))
 
-            entityManager.flush()
             return oppdatertInntekt.tilInntektDtoV2()
         }
 
@@ -154,7 +156,6 @@ class InntektService(
                 behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.first { i -> it == i.id }
             behandling.inntekter.remove(inntektSomSkalSlettes)
             log.info { "Slettet inntekt med id $it fra behandling ${behandling.id}." }
-            entityManager.flush()
             return inntektSomSkalSlettes.tilInntektDtoV2()
         }
 
@@ -192,7 +193,8 @@ class InntektService(
                         .orElseThrow { inntektIkkeFunnetException(it.id) }
                 it.oppdatereEksisterendeInntekt(inntekt)
             } else {
-                inntektRepository.save(it.lagreSomNyInntekt(behandling))
+                val nyInntekt = inntektRepository.save(it.lagreSomNyInntekt(behandling))
+                behandling.inntekter.add(nyInntekt)
             }
         }
 
@@ -271,19 +273,17 @@ class InntektService(
 
             val inntektSomOppdateres = inntekterSomSkalOppdateres.maxBy { it.id!! }
             oppdatereBeløpPeriodeOgPoster(nyInntekt, inntektSomOppdateres)
-            entityManager.refresh(behandling)
             idTilInntekterSomBleOppdatert.add(inntektSomOppdateres.id!!)
         } else if (inntekterSomSkalOppdateres.size == 1) {
             val inntektSomOppdateres = inntekterSomSkalOppdateres.first()
             oppdatereBeløpPeriodeOgPoster(nyInntekt, inntektSomOppdateres)
-            entityManager.refresh(behandling)
             log.info {
                 "Eksisterende inntekt med id ${inntektSomOppdateres.id} for rolle " +
                     "${rolle.rolletype} i behandling ${behandling.id} ble oppdatert med nytt beløp og poster."
             }
             idTilInntekterSomBleOppdatert.add(inntektSomOppdateres.id!!)
         } else {
-            val i =
+            val nyInntekt =
                 inntektRepository.save(
                     nyInntekt.tilInntekt(
                         behandling,
@@ -291,9 +291,9 @@ class InntektService(
                     ),
                 )
 
-            idTilInntekterSomBleOppdatert.add(i.id!!)
-            entityManager.refresh(behandling)
-            log.info { "Ny offisiell inntekt ble lagt til i behandling ${behandling.id} for rolle ${rolle.rolletype}" }
+            idTilInntekterSomBleOppdatert.add(nyInntekt.id!!)
+            behandling.inntekter.add(nyInntekt)
+            log.info { "Ny offisiell inntekt ${nyInntekt.id} ble lagt til i behandling ${behandling.id} for rolle ${rolle.rolletype}" }
         }
     }
 
@@ -314,18 +314,8 @@ class InntektService(
     ) {
         if (nyInntekt is SummertÅrsinntekt) {
             eksisterendeInntekt.belop = nyInntekt.sumInntekt
-            eksisterendeInntekt.datoFom = nyInntekt.periode.fom.atDay(1)
-            eksisterendeInntekt.datoTom = nyInntekt.periode.til?.atEndOfMonth()
-            eksisterendeInntekt.inntektsposter.clear()
-            eksisterendeInntekt.inntektsposter.addAll(
-                nyInntekt.inntektPostListe.tilInntektspost(
-                    eksisterendeInntekt,
-                ),
-            )
-        } else if (nyInntekt is SummertMånedsinntekt) {
-            eksisterendeInntekt.belop = nyInntekt.sumInntekt
-            eksisterendeInntekt.datoFom = nyInntekt.gjelderÅrMåned.atDay(1)
-            eksisterendeInntekt.datoTom = nyInntekt.gjelderÅrMåned.atEndOfMonth()
+            eksisterendeInntekt.opprinneligFom = nyInntekt.periode.fom.atDay(1)
+            eksisterendeInntekt.opprinneligTom = nyInntekt.periode.til?.atEndOfMonth()
             eksisterendeInntekt.inntektsposter.clear()
             eksisterendeInntekt.inntektsposter.addAll(
                 nyInntekt.inntektPostListe.tilInntektspost(
@@ -333,7 +323,5 @@ class InntektService(
                 ),
             )
         }
-
-        entityManager.flush()
     }
 }

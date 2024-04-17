@@ -4,8 +4,8 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konverterData
-import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -40,20 +40,6 @@ fun erInntektsposterEndret(
         eksisterende == null || eksisterende.beløp.nærmesteHeltall != nyInntekstpost.beløp.nærmesteHeltall
     }
 }
-
-private fun List<Grunnlag>.harInntekterForTypeSomIkkeErBearbeidet(
-    type: Grunnlagsdatatype,
-    ident: String,
-) = any {
-    it.type == type && !it.erBearbeidet && it.rolle.ident == ident
-}
-
-private fun List<Grunnlag>.hentBearbeidetInntekterForType(
-    type: Grunnlagsdatatype,
-    ident: String,
-) = find {
-    it.type == type && it.erBearbeidet && it.rolle.ident == ident
-}.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
 
 fun List<Grunnlag>.hentEndringerBoforhold(aktiveGrunnlag: List<Grunnlag>): Set<HusstandsbarnGrunnlagDto> {
     val aktivBoforholdGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
@@ -139,7 +125,6 @@ fun List<Grunnlag>.hentEndringerInntekter(
     inntekter: Set<Inntekt>,
     type: Grunnlagsdatatype,
 ): Set<IkkeAktivInntektDto> {
-    if (!harInntekterForTypeSomIkkeErBearbeidet(type, rolle.ident!!)) return emptySet()
     val oppdatertGrunnlag = hentBearbeidetInntekterForType(type, rolle.ident!!)
     val innhentetTidspunkt = find { it.type == type && it.erBearbeidet }?.innhentet ?: LocalDateTime.now()
     val oppdaterteEllerNyInntekter =

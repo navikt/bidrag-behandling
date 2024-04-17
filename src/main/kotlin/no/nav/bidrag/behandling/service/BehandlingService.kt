@@ -13,9 +13,15 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.toV2
+import no.nav.bidrag.behandling.transformers.behandling.tilAktivGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
+import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
@@ -142,6 +148,31 @@ class BehandlingService(
     }
 
     @Transactional
+    fun aktiverGrunnlag(
+        behandlingsid: Long,
+        request: AktivereGrunnlagRequestV2,
+    ): AktivereGrunnlagResponseV2 {
+        behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+            log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
+            secureLogger.info {
+                "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
+                    "for person ${request.personident}"
+            }
+            grunnlagService.aktivereGrunnlag(it, request)
+            val gjeldendeAktiveGrunnlagsdata =
+                grunnlagService.henteGjeldendeAktiveGrunnlagsdata(it)
+            val ikkeAktiverteEndringerIGrunnlagsdata =
+                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
+            return AktivereGrunnlagResponseV2(
+                boforhold = it.tilBoforholdV2(),
+                inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
+                aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+                ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
+            )
+        }
+    }
+
+    @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
         request: OppdaterBehandlingRequestV2,
@@ -154,7 +185,7 @@ class BehandlingService(
                 request.aktivereGrunnlagForPerson.let { aktivereGrunnlagRequest ->
                     if (aktivereGrunnlagRequest != null) {
                         log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
-                        grunnlagService.aktivereGrunnlag(it, aktivereGrunnlagRequest)
+                        grunnlagService.aktivereGrunnlag(it, aktivereGrunnlagRequest.toV2())
                     }
                 }
                 request.virkningstidspunkt?.let { vt ->

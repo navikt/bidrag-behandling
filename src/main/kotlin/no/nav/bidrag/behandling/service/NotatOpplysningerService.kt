@@ -32,8 +32,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
-import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.sorterEtterDato
+import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
+import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilDto
+import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -136,7 +139,7 @@ class NotatOpplysningerService(
                     notat = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
                     barn =
-                        behandling.husstandsbarn.sortedBy { it.ident }
+                        behandling.husstandsbarn.sortert()
                             .map { it.tilBoforholdBarn(opplysningerBoforhold) },
                 ),
             roller = behandling.roller.map(Rolle::tilNotatRolle),
@@ -168,11 +171,11 @@ class NotatOpplysningerService(
             fattetTidspunkt = vedtakstidspunkt,
             fattetAvSaksbehandler = vedtakFattetAv?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
             resultat =
-                resultat.map { resultat ->
+                resultat.map { beregning ->
                     NotatResultatBeregningBarnDto(
-                        barn = roller.find { it.ident == resultat.barn.ident!!.verdi }!!.tilNotatRolle(),
+                        barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
                         perioder =
-                            resultat.perioder.map {
+                            beregning.perioder.map {
                                 NotatResultatBeregningBarnDto.NotatResultatPeriodeDto(
                                     periode = it.periode,
                                     beløp = it.beløp,
@@ -330,18 +333,16 @@ private fun Behandling.hentInntekterForIdent(
             )
         },
     årsinntekter =
-        inntekter.sortedBy { it.datoFom }
-            .filter { !eksplisitteYtelser.contains(it.type) }
-            .sortedBy { it.type }
-            .sortedByDescending { it.datoFom ?: it.opprinneligFom }
+        inntekter.årsinntekterSortert(false)
             .filter { it.ident == ident }
             .map {
                 it.tilNotatInntektDto()
             },
     barnetillegg =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
+            inntekter
                 .filter { it.type == Inntektsrapportering.BARNETILLEGG }
+                .sorterEtterDatoOgBarn()
                 .map {
                     it.tilNotatInntektDto()
                 }
@@ -352,6 +353,7 @@ private fun Behandling.hentInntekterForIdent(
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
             inntekter.sortedBy { it.datoFom }
                 .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+                .sorterEtterDato()
                 .map {
                     it.tilNotatInntektDto()
                 }
@@ -360,8 +362,8 @@ private fun Behandling.hentInntekterForIdent(
         },
     kontantstøtte =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
-                .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+            inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+                .sorterEtterDatoOgBarn()
                 .map {
                     it.tilNotatInntektDto()
                 }

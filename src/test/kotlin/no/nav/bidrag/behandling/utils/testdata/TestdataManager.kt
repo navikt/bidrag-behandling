@@ -28,6 +28,16 @@ class TestdataManager(
         return behandlingRepository.save(behandling)
     }
 
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
+        return behandlingRepository.save(behandling)
+    }
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    fun opprettBehandlingNewTransacion(inkluderInntekter: Boolean = false): Behandling {
+        return opprettBehandling(inkluderInntekter)
+    }
+
     @Transactional
     fun opprettBehandling(inkluderInntekter: Boolean = false): Behandling {
         val behandling = oppretteBehandling()
@@ -67,6 +77,22 @@ class TestdataManager(
             }
         }
 
+        return behandlingRepository.save(behandling)
+    }
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    fun <T> oppretteOgLagreGrunnlagNewTransaction(
+        behandling: Behandling,
+        grunnlagstype: Grunnlagstype =
+            Grunnlagstype(
+                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                false,
+            ),
+        innhentet: LocalDateTime = LocalDateTime.now(),
+        aktiv: LocalDateTime? = null,
+        grunnlagsdata: T? = null,
+    ): Behandling {
+        oppretteOgLagreGrunnlag(behandling, grunnlagstype, innhentet, aktiv, grunnlagsdata)
         return behandlingRepository.save(behandling)
     }
 

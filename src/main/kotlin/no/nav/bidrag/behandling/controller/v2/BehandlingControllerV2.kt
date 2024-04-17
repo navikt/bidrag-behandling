@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequ
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
@@ -315,13 +316,7 @@ class BehandlingControllerV2(
     fun aktivereGrunnlag(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
-    ) {
-        log.info { "Aktivere grunnlag av type ${request.grunnlagstype} for  behandling $behandlingsid." }
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
-
-        behandling.bidragsmottaker?.ident?.let { Personident(it) }
-            ?: throw IllegalArgumentException("Behandling mangler BM!")
-
-        grunnlagService.aktivereGrunnlag(behandling = behandling, request)
+    ): AktivereGrunnlagResponseV2 {
+        return behandlingService.aktiverGrunnlag(behandlingsid, request)
     }
 }

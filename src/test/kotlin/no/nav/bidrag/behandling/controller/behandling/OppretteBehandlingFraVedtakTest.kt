@@ -16,12 +16,14 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import kotlin.test.assertNotNull
 
 @Suppress("NonAsciiCharacters")
 class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
     @Test
+    @Transactional
     fun `skal opprette en behandling fra vedtak`() {
         stubUtils.stubHenteGrunnlagOk(
             navnResponsfil = "grunnlagresponse.json",
