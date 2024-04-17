@@ -159,7 +159,7 @@
   ],
   "sivilstandListe": [
     {
-      "personId": "99057812345",
+      "personId": "313213213",
       "type": "GIFT",
       "gyldigFom": "2021-01-01",
       "bekreftelsesdato": "2021-01-01",
@@ -168,7 +168,7 @@
       "historisk": true
     },
     {
-      "personId": "99057812345",
+      "personId": "313213213",
       "type": "SKILT",
       "gyldigFom": "2023-01-01",
       "bekreftelsesdato": "2023-01-01",

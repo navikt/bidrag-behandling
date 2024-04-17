@@ -160,17 +160,17 @@ class VerdikjedeTest : KontrollerTestRunner() {
                 OpprettRolleDto(
                     Rolletype.BARN,
                     personidentBarn1,
-                    fødselsdato = testdataBarn1.foedselsdato,
+                    fødselsdato = testdataBarn1.fødselsdato,
                 ),
                 OpprettRolleDto(
                     Rolletype.BARN,
                     personidentBarn2,
-                    fødselsdato = testdataBarn2.foedselsdato,
+                    fødselsdato = testdataBarn2.fødselsdato,
                 ),
                 OpprettRolleDto(
                     Rolletype.BIDRAGSMOTTAKER,
                     personidentBm,
-                    fødselsdato = testdataBM.foedselsdato,
+                    fødselsdato = testdataBM.fødselsdato,
                 ),
             )
         val behandlingReq =

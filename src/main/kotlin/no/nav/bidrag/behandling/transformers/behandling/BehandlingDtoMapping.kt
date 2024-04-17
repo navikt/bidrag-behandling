@@ -21,7 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.transformers.boforhold.toHusstandsBarnDtoV2
+import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsBarnDtoV2
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
@@ -89,7 +89,7 @@ fun Behandling.tilBehandlingDtoV2(
         ),
     boforhold =
         BoforholdDtoV2(
-            husstandsbarn = husstandsbarn.toHusstandsBarnDtoV2(this),
+            husstandsbarn = husstandsbarn.tilHusstandsBarnDtoV2(this),
             sivilstand = sivilstand.toSivilstandDto(),
             notat =
                 BehandlingNotatDto(

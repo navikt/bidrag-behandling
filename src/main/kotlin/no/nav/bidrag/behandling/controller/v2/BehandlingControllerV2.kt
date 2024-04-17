@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
@@ -183,7 +184,6 @@ class BehandlingControllerV2(
 
         request.oppdatereSivilstand?.let {
             log.warn { "Ikke-implementert funksjon. Oppdatering av sivilstand er ikke klart gjennom boforhold v2-endepunkt" }
-            // TODO: implementere
             return boforholdService.oppdatereSivilstandManuelt(behandlingsid, it)!!
         }
 
@@ -287,4 +287,41 @@ class BehandlingControllerV2(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
     ) = behandlingService.oppdaterRoller(behandlingId, request.roller)
+
+    @PutMapping("/behandling/{behandlingsid}/aktivere")
+    @Operation(
+        description = "Aktivere grunnlag for behandling. Returnerer grunnlag som ble aktivert.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+            ApiResponse(responseCode = "400", description = "Feil opplysninger oppgitt"),
+            ApiResponse(
+                responseCode = "401",
+                description = "Sikkerhetstoken mangler, er utløpt, eller av andre årsaker ugyldig",
+            ),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(
+                responseCode = "500",
+                description = "Serverfeil",
+            ),
+            ApiResponse(responseCode = "503", description = "Tjeneste utilgjengelig"),
+        ],
+    )
+    fun aktivereGrunnlag(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
+    ) {
+        log.info { "Aktivere grunnlag av type ${request.grunnlagstype} for  behandling $behandlingsid." }
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+
+        behandling.bidragsmottaker?.ident?.let { Personident(it) }
+            ?: throw IllegalArgumentException("Behandling mangler BM!")
+
+        grunnlagService.aktivereGrunnlag(behandling = behandling, request)
+    }
 }

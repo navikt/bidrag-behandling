@@ -208,10 +208,10 @@ data class NotatResultatBeregningBarnDto(
     }
 }
 
-fun no.nav.bidrag.behandling.database.datamodell.Kilde.tilNotatKilde() =
+fun no.nav.bidrag.boforhold.dto.Kilde.tilNotatKilde() =
     when (this) {
-        no.nav.bidrag.behandling.database.datamodell.Kilde.MANUELL -> Kilde.MANUELT
-        no.nav.bidrag.behandling.database.datamodell.Kilde.OFFENTLIG -> Kilde.OFFENTLIG
+        no.nav.bidrag.boforhold.dto.Kilde.MANUELL -> Kilde.MANUELT
+        no.nav.bidrag.boforhold.dto.Kilde.OFFENTLIG -> Kilde.OFFENTLIG
     }
 
 @Schema(enumAsRef = true)

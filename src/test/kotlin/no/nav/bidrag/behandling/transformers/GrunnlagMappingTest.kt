@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -47,6 +46,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -109,7 +109,7 @@ class GrunnlagMappingTest {
             behandling = oppretteBehandling(),
             ident = testdataBM.ident,
             rolletype = Rolletype.BIDRAGSMOTTAKER,
-            foedselsdato = testdataBM.foedselsdato,
+            foedselsdato = testdataBM.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val grunnlagBp =
@@ -117,7 +117,7 @@ class GrunnlagMappingTest {
             behandling = oppretteBehandling(),
             ident = testdataBP.ident,
             rolletype = Rolletype.BIDRAGSPLIKTIG,
-            foedselsdato = testdataBP.foedselsdato,
+            foedselsdato = testdataBP.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag1 =
@@ -125,7 +125,7 @@ class GrunnlagMappingTest {
             behandling = oppretteBehandling(),
             ident = testdataBarn1.ident,
             rolletype = Rolletype.BARN,
-            foedselsdato = testdataBarn1.foedselsdato,
+            foedselsdato = testdataBarn1.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag2 =
@@ -133,7 +133,7 @@ class GrunnlagMappingTest {
             behandling = oppretteBehandling(),
             ident = testdataBarn2.ident,
             rolletype = Rolletype.BARN,
-            foedselsdato = testdataBarn2.foedselsdato,
+            foedselsdato = testdataBarn2.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
 
@@ -1276,12 +1276,12 @@ class GrunnlagMappingTest {
                     opprettHusstandsbarn(
                         behandling,
                         testdataBarn1.ident,
-                        testdataBarn1.foedselsdato,
+                        testdataBarn1.fødselsdato,
                     ),
                     opprettHusstandsbarn(
                         behandling,
                         testdataBarn2.ident,
-                        testdataBarn2.foedselsdato,
+                        testdataBarn2.fødselsdato,
                     ),
                     opprettHusstandsbarn(behandling, "123213123123"),
                     opprettHusstandsbarn(
@@ -1370,12 +1370,12 @@ class GrunnlagMappingTest {
                     opprettHusstandsbarn(
                         behandling,
                         testdataBarn1.ident,
-                        testdataBarn1.foedselsdato,
+                        testdataBarn1.fødselsdato,
                     ),
                     opprettHusstandsbarn(
                         behandling,
                         testdataBarn2.ident,
-                        testdataBarn2.foedselsdato,
+                        testdataBarn2.fødselsdato,
                     ),
                     opprettHusstandsbarn(behandling, "123213123123"),
                     opprettHusstandsbarn(
