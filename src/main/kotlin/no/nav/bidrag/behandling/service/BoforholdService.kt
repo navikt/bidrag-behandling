@@ -99,7 +99,6 @@ class BoforholdService(
             leggeTilNyeEllerOppdatereEksisterendeOffentligeHusstandsbarn(behandling, nyeHusstandsbarnMedPerioder)
         }
 
-        entityManager.refresh(behandling)
         log.info { "Husstandsbarn ble oppdatert for behandling ${behandling.id}" }
     }
 
@@ -193,8 +192,6 @@ class BoforholdService(
                 .toSet(),
         )
         behandling.sivilstand.addAll(sivilstand)
-
-        entityManager.refresh(behandling)
         log.info { "Sivilstand fra offentlige kilder ble oppdatert for behandling ${behandling.id}" }
     }
 

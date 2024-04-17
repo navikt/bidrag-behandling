@@ -160,15 +160,20 @@ class GrunnlagService(
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+            val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
 
             grunnlagRequestobjekter.forEach {
-                henteOglagreGrunnlag(
-                    behandling,
-                    it,
-                )
+                feilrapporteringer += henteOglagreGrunnlag(behandling, it)
             }
 
             behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
+            if (feilrapporteringer.isNotEmpty()) {
+                log.error {
+                    "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
+                        "Innhentingen ble derfor ikke gjort for følgende grunnlagstyper: " +
+                        "${feilrapporteringer.map { it.key }}"
+                }
+            }
         } else {
             val nesteInnhenting =
                 behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
@@ -480,11 +485,11 @@ class GrunnlagService(
     private fun henteOglagreGrunnlag(
         behandling: Behandling,
         grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
-    ) {
+    ): Map<Grunnlagsdatatype, FeilrapporteringDto?> {
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
         val rolleInhentetFor = behandling.roller.first { grunnlagsrequest.key.verdi == it.ident }
 
-        val feilrapporteringer =
+        val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
             grunnlagsdatatyperBm.associateWith {
                 hentFeilrapporteringForGrunnlag(it, rolleInhentetFor, innhentetGrunnlag)
             }.filterNot { it.value == null }
@@ -524,6 +529,8 @@ class GrunnlagService(
         if (innhentetGrunnlag.sivilstandListe.isNotEmpty()) {
             periodisereOgLagreSivilstand(behandling, innhentetGrunnlag)
         }
+
+        return feilrapporteringer
     }
 
     private fun periodisereOgLagreSivilstand(
@@ -682,7 +689,8 @@ class GrunnlagService(
                 "Ikke aktive grunnlag med type $type for rolle ${rolleInhentetFor.rolletype}" +
                     " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. Automatisk aktiverer ny innhentet grunnlag."
             }
-            ikkeAktiveGrunnlag.hentGrunnlagForType(type, rolleInhentetFor.ident!!).oppdaterStatusTilAktiv(LocalDateTime.now())
+            ikkeAktiveGrunnlag.hentGrunnlagForType(type, rolleInhentetFor.ident!!)
+                .oppdaterStatusTilAktiv(LocalDateTime.now())
         }
     }
 
@@ -830,8 +838,10 @@ class GrunnlagService(
         val sistInnhentedeGrunnlagAvType: T? =
             henteNyesteGrunnlagsdataobjekt<T>(behandling.id!!, rolle.id!!, grunnlagstype)
 
-        val erFørstegangsinnhentingAvInntekter = sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)
-        val erGrunnlagEndretSidenSistInnhentet = sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
+        val erFørstegangsinnhentingAvInntekter =
+            sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)
+        val erGrunnlagEndretSidenSistInnhentet =
+            sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
         val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet || erAvTypeBearbeidetSivilstand) {
             opprett(
@@ -1056,8 +1066,18 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
     ): FeilrapporteringDto? {
         return when (grunnlagsdatatype) {
-            Grunnlagsdatatype.ARBEIDSFORHOLD -> innhentetGrunnlag.hentFeilFor(GrunnlagRequestType.ARBEIDSFORHOLD, rolleInhentetFor)
-            Grunnlagsdatatype.BARNETILLEGG -> innhentetGrunnlag.hentFeilFor(GrunnlagRequestType.BARNETILLEGG, rolleInhentetFor)
+            Grunnlagsdatatype.ARBEIDSFORHOLD ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.ARBEIDSFORHOLD,
+                    rolleInhentetFor,
+                )
+
+            Grunnlagsdatatype.BARNETILLEGG ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.BARNETILLEGG,
+                    rolleInhentetFor,
+                )
+
             Grunnlagsdatatype.SMÅBARNSTILLEGG ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
@@ -1073,8 +1093,18 @@ class GrunnlagService(
                     rolleInhentetFor,
                 )
 
-            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> innhentetGrunnlag.hentFeilFor(GrunnlagRequestType.AINNTEKT, rolleInhentetFor)
-            Grunnlagsdatatype.KONTANTSTØTTE -> innhentetGrunnlag.hentFeilFor(GrunnlagRequestType.KONTANTSTØTTE, rolleInhentetFor)
+            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.AINNTEKT,
+                    rolleInhentetFor,
+                )
+
+            Grunnlagsdatatype.KONTANTSTØTTE ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.KONTANTSTØTTE,
+                    rolleInhentetFor,
+                )
+
             Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
@@ -1087,7 +1117,12 @@ class GrunnlagService(
                     rolleInhentetFor,
                 )
 
-            Grunnlagsdatatype.SIVILSTAND -> innhentetGrunnlag.hentFeilFor(GrunnlagRequestType.SIVILSTAND, rolleInhentetFor)
+            Grunnlagsdatatype.SIVILSTAND ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.SIVILSTAND,
+                    rolleInhentetFor,
+                )
+
             else -> null
         }
     }
