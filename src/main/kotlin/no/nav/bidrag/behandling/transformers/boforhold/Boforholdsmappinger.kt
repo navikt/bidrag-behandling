@@ -12,7 +12,6 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.behandling.transformers.validereBoforhold
-import no.nav.bidrag.boforhold.dto.Kilde
 import java.time.LocalDate
 
 fun Set<Husstandsbarnperiode>.tilDto() =
@@ -26,28 +25,7 @@ fun Set<Husstandsbarnperiode>.tilDto() =
         )
     }.toSet()
 
-fun Set<Husstandsbarn>.tilHusstandsBarnDtoV2(behandling: Behandling): Set<HusstandsbarnDtoV2> {
-    val identerSøknadsbarn = behandling.søknadsbarn.map { sb -> sb.ident!! }.toSet()
-
-    val søknadsbarn =
-        this.filter { !it.ident.isNullOrBlank() && identerSøknadsbarn.contains(it.ident) }.map {
-            it.tilDto(behandling)
-        }.sortedBy { it.fødselsdato }.toSet()
-
-    val barnFraOffentligeKilderSomIkkeErDelAvBehandling =
-        this.filter { Kilde.OFFENTLIG == it.kilde }.filter { !identerSøknadsbarn.contains(it.ident) }
-            .map { it.tilDto(behandling) }
-            .sortedBy { it.fødselsdato }.toSet()
-
-    val andreHusstandsbarn =
-        this.filter { Kilde.MANUELL == it.kilde }.filter { !identerSøknadsbarn.contains(it.ident) }
-            .map { it.tilDto(behandling) }
-            .sortedBy { it.fødselsdato }.toSet()
-
-    return søknadsbarn + barnFraOffentligeKilderSomIkkeErDelAvBehandling + andreHusstandsbarn
-}
-
-fun Husstandsbarn.tilDto(behandling: Behandling) =
+fun Husstandsbarn.tilDto() =
     HusstandsbarnDtoV2(
         this.id,
         this.kilde,
@@ -57,16 +35,7 @@ fun Husstandsbarn.tilDto(behandling: Behandling) =
         this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato,
     )
-fun Husstandsbarn.toDto2(): HusstandsbarnDtoV2 =
-        HusstandsbarnDtoV2(
-                this.id,
-                this.kilde,
-                !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
-                this.perioder.toHusstandsBarnPeriodeDto().sortedBy { periode -> periode.datoFom }.toSet(),
-                this.ident,
-                this.navn ?: hentPersonVisningsnavn(this.ident),
-                this.fødselsdato,
-        )
+
 fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
     OppdatereBoforholdResponse(
         oppdatertHusstandsbarn = this.tilDto(),
@@ -80,7 +49,7 @@ fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
 
 fun Husstandsbarnperiode.tilOppdatereBoforholdResponse(behandling: Behandling) =
     OppdatereBoforholdResponse(
-        oppdatertHusstandsbarn = this.husstandsbarn.tilDto(behandling),
+        oppdatertHusstandsbarn = this.husstandsbarn.tilDto(),
         valideringsfeil =
             BoforholdValideringsfeil(
                 husstandsbarn =

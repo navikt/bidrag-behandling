@@ -117,26 +117,6 @@ class BehandlingControllerV2(
         )
     }
 
-    @PutMapping("/behandling/{behandlingsid}/grunnlag/aktiver")
-    @Operation(
-        description = "Aktiver grunnlag for en grunnlagstype i behandling. Returnerer behandling etter aktivering av grunnlag",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "201",
-                description = "Grunnlag aktivert uten feil",
-            ),
-        ],
-    )
-    fun aktiverGrunnlag(
-        @PathVariable behandlingsid: Long,
-        @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
-    ): AktivereGrunnlagResponseV2 {
-        return behandlingService.aktiverGrunnlagsdata(behandlingsid, request)
-    }
-
     @PutMapping("/behandling/{behandlingsid}/inntekt")
     @Operation(
         description = "Oppdatere inntekt for behandling. Returnerer inntekt som ble endret, opprettet, eller slettet.",
@@ -336,13 +316,27 @@ class BehandlingControllerV2(
     fun aktivereGrunnlag(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
-    ) {
-        log.info { "Aktivere grunnlag av type ${request.grunnlagstype} for  behandling $behandlingsid." }
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+    ): AktivereGrunnlagResponseV2 {
+        return behandlingService.aktiverGrunnlag(behandlingsid, request)
+    }
 
-        behandling.bidragsmottaker?.ident?.let { Personident(it) }
-            ?: throw IllegalArgumentException("Behandling mangler BM!")
-
-        grunnlagService.aktivereGrunnlag(behandling = behandling, request)
+    @PutMapping("/behandling/{behandlingsid}/grunnlag/aktiver")
+    @Operation(
+        description = "Aktiver grunnlag for en grunnlagstype i behandling. Returnerer behandling etter aktivering av grunnlag",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Grunnlag aktivert uten feil",
+            ),
+        ],
+    )
+    fun aktiverGrunnlag(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
+    ): AktivereGrunnlagResponseV2 {
+        return behandlingService.aktiverGrunnlag(behandlingsid, request)
     }
 }

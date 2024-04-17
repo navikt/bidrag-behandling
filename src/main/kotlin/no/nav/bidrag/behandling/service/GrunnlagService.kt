@@ -43,6 +43,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.inntekt.tilUtvidetBarnetrygd
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
@@ -202,51 +203,50 @@ class GrunnlagService(
     @Transactional
     fun aktivereGrunnlag(
         behandling: Behandling,
-        aktivereGrunnlagRequest: AktivereGrunnlagRequestV2,
+        rolleGrunnlagSkalAktiveresFor: Rolle,
+        grunnlagstype: Grunnlagsdatatype,
+        overskriveManuelleOpplysninger: Boolean,
     ) {
-        val rolleGrunnlagSkalAktiveresFor =
-            behandling.roller.find { aktivereGrunnlagRequest.personident.verdi == it.ident }
-
         Validate.notNull(
             rolleGrunnlagSkalAktiveresFor,
             "Personident oppgitt i AktivereGrunnlagRequest har ikke rolle i behandling ${behandling.id}",
         )
 
-        val grunnlagstype = aktivereGrunnlagRequest.grunnlagsdatatype
-
         val harIkkeAktivGrunnlag =
             behandling.grunnlag
-                .filter { rolleGrunnlagSkalAktiveresFor!!.ident == it.rolle.ident }
-                .filter { grunnlagstype == it.type }
-                .filter { it.aktiv == null }.isNotEmpty()
+                .filter { rolleGrunnlagSkalAktiveresFor.ident == it.rolle.ident }
+                .filter { grunnlagstype == it.type }.any { it.aktiv == null }
 
         if (!harIkkeAktivGrunnlag) {
             log.warn {
                 "Fant ingen grunnlag med type $grunnlagstype å aktivere for rolleid " +
-                    "${rolleGrunnlagSkalAktiveresFor!!.id} i behandling ${behandling.id} "
+                    "${rolleGrunnlagSkalAktiveresFor.id} i behandling ${behandling.id} "
             }
             return
         }
+
+        val aktiveringstidspunkt = LocalDateTime.now()
 
         if (inntekterOgYtelser.contains(grunnlagstype)) {
             aktivereYtelserOgInntekter(
                 behandling,
                 grunnlagstype,
-                rolleGrunnlagSkalAktiveresFor!!,
+                rolleGrunnlagSkalAktiveresFor,
                 aktiveringstidspunkt,
             )
         } else if (Grunnlagsdatatype.BOFORHOLD == grunnlagstype) {
             aktivereBoforhold(
                 behandling,
                 grunnlagstype,
-                rolleGrunnlagSkalAktiveresFor!!,
+                rolleGrunnlagSkalAktiveresFor,
                 aktiveringstidspunkt,
+                overskriveManuelleOpplysninger,
             )
         } else if (Grunnlagsdatatype.SIVILSTAND == grunnlagstype) {
             aktivereSivilstand(
                 behandling,
                 grunnlagstype,
-                rolleGrunnlagSkalAktiveresFor!!,
+                rolleGrunnlagSkalAktiveresFor,
                 aktiveringstidspunkt,
             )
         } else {
@@ -373,59 +373,6 @@ class GrunnlagService(
             }
         }
 
-    private fun aktivereGrunnlag(
-        behandling: Behandling,
-        rolle: Rolle,
-        grunnlagstype: Grunnlagsdatatype,
-        overskriveManuelleOpplysninger: Boolean,
-    ) {
-        val aktiveringstidspunkt = LocalDateTime.now()
-
-        val sistInnhentedeRådata =
-            behandling.grunnlag.filter { rolle.ident == it.rolle.ident }.filter { grunnlagstype == it.type }
-                .filter { !it.erBearbeidet }.maxByOrNull { it.innhentet }
-
-        if (sistInnhentedeRådata == null || sistInnhentedeRådata.aktiv != null) {
-            log.warn {
-                "Fant ingen grunnlag med type $grunnlagstype å aktivere for rolleid " + "${rolle.id} i behandling ${behandling.id} "
-            }
-            return
-        }
-
-        if (inntekterOgYtelser.contains(grunnlagstype)) {
-            aktivereYtelserOgInntekter(
-                behandling,
-                grunnlagstype,
-                rolle,
-                aktiveringstidspunkt,
-                sistInnhentedeRådata,
-            )
-        } else if (Grunnlagsdatatype.BOFORHOLD == grunnlagstype) {
-            aktivereBoforhold(
-                behandling,
-                grunnlagstype,
-                rolle,
-                aktiveringstidspunkt,
-                sistInnhentedeRådata,
-                overskriveManuelleOpplysninger,
-            )
-        } else if (Grunnlagsdatatype.SIVILSTAND == grunnlagstype) {
-            aktivereSivilstand(
-                behandling,
-                grunnlagstype,
-                rolle,
-                aktiveringstidspunkt,
-                sistInnhentedeRådata,
-            )
-        } else {
-            log.error {
-                "Grunnlagstype $grunnlagstype ikke støttet ved aktivering av grunnlag. Aktivering feilet " +
-                    "for behandling ${behandling.id}  "
-            }
-            aktiveringAvGrunnlagstypeIkkeStøttetException(behandling.id!!)
-        }
-    }
-
     private fun aktivereYtelserOgInntekter(
         behandling: Behandling,
         grunnlagstype: Grunnlagsdatatype,
@@ -449,12 +396,11 @@ class GrunnlagService(
         grunnlagstype: Grunnlagsdatatype,
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
-        sistInnhentedeRådata: Grunnlag,
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
         val sistInnhentedeRådata =
-            behandling.grunnlag
+            ikkeAktivGrunnlag
                 .filter { rolle!!.ident == it.rolle.ident }
                 .filter { grunnlagstype == it.type }
                 .filter { !it.erBearbeidet }
@@ -496,6 +442,12 @@ class GrunnlagService(
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
     ) {
+        val sistInnhentedeRådata =
+            behandling.grunnlag.toList().hentAlleIkkeAktiv()
+                .filter { rolle!!.ident == it.rolle.ident }
+                .filter { grunnlagstype == it.type }
+                .filter { !it.erBearbeidet }
+                .maxByOrNull { it.innhentet }!!
         val periodisertSivilstand =
             SivilstandApi.beregn(
                 behandling.virkningstidspunktEllerSøktFomDato,

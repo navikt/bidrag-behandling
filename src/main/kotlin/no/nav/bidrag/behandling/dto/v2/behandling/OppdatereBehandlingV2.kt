@@ -26,15 +26,8 @@ data class AktivereGrunnlagRequest(
 fun AktivereGrunnlagRequest.toV2() =
     AktivereGrunnlagRequestV2(
         personident,
-        grunnlagsdatatype = grunnlagsdatatyper.first(),
+        grunnlagstype = grunnlagsdatatyper.first(),
     )
-
-data class AktivereGrunnlagRequestV2(
-    @Schema(description = "Personident tilhørende rolle i behandling grunnlag skal aktiveres for")
-    val personident: Personident,
-    @Schema(description = "Grunnlagstyper som skal aktiveres")
-    val grunnlagsdatatype: Grunnlagsdatatype,
-)
 
 data class AktivereGrunnlagResponseV2(
     val inntekter: InntekterDtoV2,

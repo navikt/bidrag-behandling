@@ -6,8 +6,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
-import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
@@ -1448,9 +1448,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             entityManager.refresh(behandling)
 
             val aktivereGrunnlagRequest =
-                AktivereGrunnlagRequest(
+                AktivereGrunnlagRequestV2(
                     Personident(behandling.bidragsmottaker?.ident!!),
-                    setOf(Grunnlagsdatatype.BOFORHOLD),
+                    Grunnlagsdatatype.BOFORHOLD,
                 )
 
             // hvis
@@ -1508,9 +1508,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             entityManager.refresh(behandling)
 
             val aktivereGrunnlagRequest =
-                AktivereGrunnlagRequest(
+                AktivereGrunnlagRequestV2(
                     Personident(behandling.bidragsmottaker?.ident!!),
-                    setOf(Grunnlagsdatatype.SIVILSTAND),
+                    Grunnlagsdatatype.SIVILSTAND,
                 )
 
             // hvis
