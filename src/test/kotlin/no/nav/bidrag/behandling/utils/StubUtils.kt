@@ -40,6 +40,8 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.dokument.OpprettDokumentDto
+import no.nav.bidrag.transport.dokument.OpprettJournalpostResponse
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
@@ -205,6 +207,31 @@ class StubUtils {
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(response)),
+            ),
+        )
+    }
+
+    fun stubOpprettNotat(status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/dokumentproduksjon/api/notat/pdf/forskudd")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
+                    .withBody("DOK".toByteArray()),
+            ),
+        )
+    }
+
+    fun stubOpprettJournalpost(
+        nyJournalpostId: String,
+        dokumenter: List<OpprettDokumentDto> = emptyList(),
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/dokument/journalpost/JOARK")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(nyOpprettJournalpostResponse(nyJournalpostId, dokumenter))),
             ),
         )
     }
@@ -554,6 +581,18 @@ class StubUtils {
             WireMock.verify(antallGanger, verify)
         }
 
+        fun opprettNotatKalt() {
+            WireMock.verify(postRequestedFor(WireMock.urlMatching("/dokumentproduksjon/api/notat/pdf/forskudd")))
+        }
+
+        fun opprettJournalpostKaltMed(vararg contains: String) {
+            val verify =
+                WireMock.postRequestedFor(
+                    WireMock.urlMatching("/dokument/journalpost/JOARK"),
+                )
+            verifyContains(verify, *contains)
+        }
+
         fun opprettForsendelseIkkeKalt() {
             opprettForsendelseKaltAntallGanger(0)
         }
@@ -575,4 +614,15 @@ class StubUtils {
             ""
         }
     }
+}
+
+fun nyOpprettJournalpostResponse(
+    journalpostId: String = "123123123",
+    dokumenter: List<OpprettDokumentDto> =
+        listOf(OpprettDokumentDto(tittel = "Tittel på dokument", dokumentreferanse = "dokref1")),
+): OpprettJournalpostResponse {
+    return OpprettJournalpostResponse(
+        dokumenter = dokumenter,
+        journalpostId = journalpostId,
+    )
 }

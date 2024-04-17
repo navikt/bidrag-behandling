@@ -1,5 +1,8 @@
 package no.nav.bidrag.behandling.service
 
+import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.consumer.BidragDokumentConsumer
+import no.nav.bidrag.behandling.consumer.BidragDokumentProduksjonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -27,42 +30,87 @@ import no.nav.bidrag.behandling.dto.v1.notat.tilNotatKilde
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
+import no.nav.bidrag.behandling.transformers.behandling.notatTittel
+import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.tilDto
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import no.nav.bidrag.transport.dokument.JournalpostType
+import no.nav.bidrag.transport.dokument.OpprettDokumentDto
+import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.YearMonth
+
+private val log = KotlinLogging.logger {}
 
 @Service
 class NotatOpplysningerService(
     private val behandlingService: BehandlingService,
     private val grunnlagService: GrunnlagService,
     private val beregningService: BeregningService,
+    private val bidragDokumentProduksjonConsumer: BidragDokumentProduksjonConsumer,
+    private val bidragDokumentConsumer: BidragDokumentConsumer,
 ) {
+    @Retryable(value = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0))
+    fun opprettNotat(behandlingId: Long) {
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        val notatDto = hentNotatOpplysninger(behandlingId)
+        val notatPdf = bidragDokumentProduksjonConsumer.opprettNotat(notatDto)
+        log.info { "Oppretter notat for behandling $behandlingId i sak ${behandling.saksnummer}" }
+        val forespørsel =
+            OpprettJournalpostRequest(
+                skalFerdigstilles = true,
+                journalposttype = JournalpostType.NOTAT,
+                journalførendeEnhet = behandling.behandlerEnhet,
+                tilknyttSaker = listOf(behandling.saksnummer),
+                gjelderIdent = behandling.bidragsmottaker!!.ident,
+                referanseId = behandling.tilReferanseId(),
+                dokumenter =
+                    listOf(
+                        OpprettDokumentDto(
+                            fysiskDokument = notatPdf,
+                            tittel = behandling.notatTittel(),
+                        ),
+                    ),
+            )
+        val response =
+            bidragDokumentConsumer.opprettJournalpost(forespørsel)
+        secureLogger.info {
+            "Opprettet notat for behandling $behandlingId i sak ${behandling.saksnummer} " +
+                "med journalpostId ${response?.journalpostId} med forespørsel $forespørsel"
+        }
+        log.info {
+            "Opprettet notat for behandling $behandlingId i sak ${behandling.saksnummer} " +
+                "med journalpostId ${response?.journalpostId}"
+        }
+    }
+
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         val opplysningerBoforhold =
             grunnlagService.hentSistInnhentet(
                 behandlingId,
-                behandling.roller
-                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
+                behandling.bidragsmottaker!!.id!!,
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
             )
                 ?.konverterData<List<BoforholdResponse>>() ?: emptyList()
         val opplysningerSivilstand =
             grunnlagService.hentSistInnhentet(
                 behandlingId,
-                behandling.roller
-                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.first().id!!,
+                behandling.bidragsmottaker!!.id!!,
                 Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
             )
                 ?.konverterData<List<SivilstandGrunnlagDto>>() ?: emptyList()
@@ -169,7 +217,7 @@ private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandGrun
                 OpplysningerFraFolkeregisteret(
                     periode =
                         ÅrMånedsperiode(
-                            periode.gyldigFom!!,
+                            periode.gyldigFom ?: LocalDate.MIN,
                             null,
                         ),
                     status = periode.type,
@@ -292,8 +340,7 @@ private fun Behandling.hentInntekterForIdent(
             },
     barnetillegg =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedBy { it.datoFom }
-                // TODO: Endre til
+            inntekter.sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
                 .filter { it.type == Inntektsrapportering.BARNETILLEGG }
                 .map {
                     it.tilNotatInntektDto()
@@ -313,7 +360,7 @@ private fun Behandling.hentInntekterForIdent(
         },
     kontantstøtte =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedBy { it.datoFom }
+            inntekter.sortedWith(compareBy({ it.datoFom }, { it.gjelderBarn }))
                 .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
                 .map {
                     it.tilNotatInntektDto()

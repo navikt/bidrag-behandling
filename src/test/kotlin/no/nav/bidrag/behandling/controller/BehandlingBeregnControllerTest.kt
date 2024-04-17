@@ -78,7 +78,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
             assertSoftly(body!!.find { it.barn.ident!!.verdi == testdataBarn1.ident }!!) {
                 barn.ident!!.verdi shouldBe testdataBarn1.ident
                 barn.navn shouldBe testdataBarn1.navn
-                barn.fødselsdato shouldBe testdataBarn1.foedselsdato
+                barn.fødselsdato shouldBe testdataBarn1.fødselsdato
                 perioder shouldHaveSize 5
                 assertSoftly(perioder[0]) {
                     periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
@@ -93,7 +93,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
             assertSoftly(body!!.find { it.barn.ident!!.verdi == testdataBarn2.ident }!!) {
                 barn.ident!!.verdi shouldBe testdataBarn2.ident
                 barn.navn shouldBe testdataBarn2.navn
-                barn.fødselsdato shouldBe testdataBarn2.foedselsdato
+                barn.fødselsdato shouldBe testdataBarn2.fødselsdato
                 perioder shouldHaveSize 5
                 assertSoftly(perioder[0]) {
                     periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")

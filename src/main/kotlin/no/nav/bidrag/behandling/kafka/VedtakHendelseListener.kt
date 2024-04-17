@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
+import no.nav.bidrag.behandling.service.NotatOpplysningerService
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
@@ -27,6 +28,7 @@ class VedtakHendelseListener(
     val objectMapper: ObjectMapper,
     val forsendelseService: ForsendelseService,
     val behandlingService: BehandlingService,
+    val notatOpplysningerService: NotatOpplysningerService,
 ) {
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
@@ -51,9 +53,20 @@ class VedtakHendelseListener(
         behandlingService.oppdaterVedtakFattetStatus(
             vedtak.behandlingId!!,
             vedtaksid = vedtak.id.toLong(),
-        ) // Lagre vedtakId i tilfelle respons i frontend timet ut (eller nettverksfeil osv) slik at vedtakId ikke ble lagret på behandling.
+        )
+
         opprettForsendelse(vedtak, behandling)
-        // TODO: Lagre notat for vedtaket
+        opprettNotat(behandling)
+    }
+
+    private fun opprettNotat(behandling: Behandling) {
+        try {
+            notatOpplysningerService.opprettNotat(behandling.id!!)
+        } catch (e: Exception) {
+            log.error(
+                e,
+            ) { "Det skjedde en feil ved opprettelse av notat for behandling ${behandling.id} og vedtaksid ${behandling.vedtaksid}" }
+        }
     }
 
     private fun opprettForsendelse(

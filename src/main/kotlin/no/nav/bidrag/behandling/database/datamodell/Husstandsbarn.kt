@@ -11,7 +11,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.boforhold.dto.Kilde
 import java.time.LocalDate
 
 @Entity
@@ -30,10 +30,8 @@ open class Husstandsbarn(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "husstandsbarn",
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        cascade = [CascadeType.ALL],
         orphanRemoval = true,
     )
     open var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
 )
-
-fun Husstandsbarn.hentNavn() = navn ?: hentPersonVisningsnavn(ident)

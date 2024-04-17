@@ -12,6 +12,10 @@ env:
   BIDRAG_TILGANGGSKONTROLL_SCOPE: prod-gcp.bidrag.bidrag-tilgangskontroll
   BIDRAG_VEDTAK_URL: http://bidrag-vedtak
   BIDRAG_VEDTAK_SCOPE: prod-gcp.bidrag.bidrag-vedtak
+  BIDRAG_DOKUMENT_PRODUKSJON_URL: http://bidrag-dokument-produksjon
+  BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: prod-gcp.bidrag.bidrag-dokument-produksjon
+  BIDRAG_DOKUMENT_URL: https://bidrag-dokument.prod-fss-pub.nais.io/bidrag-dokument
+  BIDRAG_DOKUMENT_SCOPE: prod-fss.bidrag.bidrag-dokument
   BIDRAG_SAK_URL: https://bidrag-sak.prod-fss-pub.nais.io/bidrag-sak
   BIDRAG_SAK_SCOPE: prod-fss.bidrag.bidrag-sak
   BIDRAG_ORGANISASJON_SCOPE: prod-fss.bidrag.bidrag-organisasjon
@@ -45,7 +49,9 @@ outbound-access-apps:
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll
   - bidrag-vedtak
+  - bidrag-dokument-produksjon
 outbound-access-hosts:
+  - bidrag-dokument.prod-fss-pub.nais.io
   - bidrag-person.prod-fss-pub.nais.io
   - bidrag-organisasjon.prod-fss-pub.nais.io
   - bidrag-sjablon.prod-fss-pub.nais.io

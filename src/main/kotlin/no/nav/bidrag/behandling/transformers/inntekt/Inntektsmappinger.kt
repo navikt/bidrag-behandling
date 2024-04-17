@@ -3,13 +3,13 @@ package no.nav.bidrag.behandling.transformers.inntekt
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident

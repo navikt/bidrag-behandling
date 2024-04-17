@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.time.LocalDate
 
@@ -16,13 +17,13 @@ import java.time.LocalDate
 open class Husstandsbarnperiode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "husstandsbarn_id", nullable = false)
-    open val husstandsbarn: Husstandsbarn,
+    open var husstandsbarn: Husstandsbarn,
     open val datoFom: LocalDate?,
     open val datoTom: LocalDate?,
     @Enumerated(EnumType.STRING)
     open val bostatus: Bostatuskode,
     @Enumerated(EnumType.STRING)
-    open val kilde: Kilde,
+    open var kilde: Kilde,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,

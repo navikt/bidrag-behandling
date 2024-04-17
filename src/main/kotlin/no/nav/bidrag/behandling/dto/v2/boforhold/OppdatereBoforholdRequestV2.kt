@@ -26,11 +26,12 @@ data class OppdatereBoforholdResponse(
 
 data class OppdatereHusstandsbarn(
     val nyttHusstandsbarn: PersonaliaHusstandsbarn? = null,
-    val nyBostatusperiode: Bostatusperiode? = null,
+    val nyHusstandsbarnperiode: Husstandsbarnperiode? = null,
+    val sletteHusstandsbarnperiode: Long? = null,
     val sletteHusstandsbarn: Long? = null,
 )
 
-data class Bostatusperiode(
+data class Husstandsbarnperiode(
     val idHusstandsbarn: Long,
     val fraOgMed: LocalDate,
     val tilOgMed: LocalDate?,

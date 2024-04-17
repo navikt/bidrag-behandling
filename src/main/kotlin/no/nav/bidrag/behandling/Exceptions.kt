@@ -29,6 +29,20 @@ fun husstandsbarnIkkeFunnetException(
             "til behandling $behandlingsid",
     )
 
+fun ressursIkkeFunnetException(feilmelding: String): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.NOT_FOUND,
+        feilmelding,
+    )
+
+fun ressursIkkeTilknyttetBehandling(feilmelding: String): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        feilmelding,
+    )
+
+fun ressursHarFeilKildeException(feilmelding: String): Nothing = throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
+
 fun oppdateringAvBoforholdFeiletException(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -117,4 +131,5 @@ fun vedtakmappingFeilet(melding: String): Nothing =
 enum class Ressurstype {
     BOFORHOLD,
     INNTEKT,
+    SIVILSTAND,
 }

@@ -5,13 +5,13 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.tid.Datoperiode
