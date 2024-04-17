@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
+import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -26,12 +27,15 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.tilTransformerInntekterRequest
 import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
+import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
+import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -1599,6 +1603,45 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
     }
 
+    @Nested
+    @DisplayName("Teste feilhåndtering")
+    open inner class Feilhåndtering {
+        @MockBean
+        lateinit var bidragGrunnlagConsumerMock: BidragGrunnlagConsumer
+
+        @Autowired
+        lateinit var grunnlagServiceMock: GrunnlagService
+
+        @Test
+        @Transactional
+        open fun `skal ikke lagre tomt grunnlag dersom innhenting feiler`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+
+            behandling.grunnlag shouldBe emptySet()
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlag shouldBe emptySet()
+        }
+    }
+
     companion object {
         fun tilHentGrunnlagDto(
             hentet: LocalDateTime = LocalDateTime.now(),
@@ -1717,6 +1760,23 @@ fun opprettHentGrunnlagDto() =
         feilrapporteringListe = emptyList(),
         hentetTidspunkt = LocalDateTime.now(),
     )
+
+fun oppretteFeilrapporteringer(personident: String): List<FeilrapporteringDto> {
+    val feilrapporteringer = mutableListOf<FeilrapporteringDto>()
+
+    GrunnlagRequestType.entries.forEach {
+        feilrapporteringer +=
+            FeilrapporteringDto(
+                feilmelding = "Ouups!",
+                grunnlagstype = it,
+                feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+                periodeFra = LocalDate.now().minusYears(1).withMonth(1).withDayOfMonth(1),
+                periodeTil = LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
+                personId = personident,
+            )
+    }
+    return feilrapporteringer
+}
 
 fun HentGrunnlagDto.tilSummerInntekt(behandling: Behandling): SummerteInntekter<SummertÅrsinntekt> {
     val request = tilTransformerInntekterRequest(behandling.bidragsmottaker!!, LocalDate.now())
