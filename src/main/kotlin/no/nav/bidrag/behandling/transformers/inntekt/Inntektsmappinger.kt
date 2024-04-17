@@ -151,7 +151,7 @@ fun Inntekt.tilIkkeAktivInntektDto(
     innhentetTidspunkt: LocalDateTime,
 ) = IkkeAktivInntektDto(
     rapporteringstype = this.type,
-    beløp = maxOf(this.belop, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+    beløp = maxOf(this.belop.nærmesteHeltall, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
     periode = this.opprinneligPeriode!!,
     ident = Personident(this.ident),
     gjelderBarn = gjelderBarn?.let { Personident(it) },
@@ -164,7 +164,7 @@ fun Inntekt.tilIkkeAktivInntektDto(
                 it.kode,
                 finnVisningsnavn(it.kode),
                 it.inntektstype,
-                it.beløp,
+                it.beløp.nærmesteHeltall,
             )
         }.toSet(),
 )
@@ -176,7 +176,8 @@ fun SummertÅrsinntekt.tilIkkeAktivInntektDto(
     id: Long? = null,
 ) = IkkeAktivInntektDto(
     rapporteringstype = this.inntektRapportering,
-    beløp = maxOf(this.sumInntekt, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+    // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+    beløp = maxOf(this.sumInntekt.nærmesteHeltall, BigDecimal.ZERO),
     periode = this.periode,
     ident = Personident(gjelderIdent),
     gjelderBarn = gjelderBarnPersonId?.let { Personident(it) },
@@ -189,7 +190,7 @@ fun SummertÅrsinntekt.tilIkkeAktivInntektDto(
                 it.kode,
                 it.visningsnavn,
                 it.inntekstype,
-                it.beløp,
+                it.beløp.nærmesteHeltall,
             )
         }.toSet(),
 )

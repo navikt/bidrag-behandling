@@ -25,8 +25,8 @@ import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.test.Test
 
-val bmIdent = "31233123"
-val barnIdent = "21333123"
+val bmIdent = "313213213"
+val barnIdent = "1344124"
 val barn2Ident = "44444"
 
 class ValiderBehandlingTest {
