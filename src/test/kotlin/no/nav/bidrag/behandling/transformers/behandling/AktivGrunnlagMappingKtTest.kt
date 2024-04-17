@@ -217,13 +217,13 @@ class AktivGrunnlagMappingKtTest {
                 resultatNy.find {
                     it.rapporteringstype == Inntektsrapportering.BARNETILLEGG && it.gjelderBarn!!.verdi == testdataBarn1.ident
                 }
-            barnetilleggNy!!.beløp shouldBe 12000.0.toBigDecimal()
+            barnetilleggNy!!.beløp shouldBe 12000.toBigDecimal()
 
             val barnetilleggNyBarn2 =
                 resultatNy.find {
                     it.rapporteringstype == Inntektsrapportering.BARNETILLEGG && it.gjelderBarn!!.verdi == testdataBarn2.ident
                 }
-            barnetilleggNyBarn2!!.beløp shouldBe 24000.0.toBigDecimal()
+            barnetilleggNyBarn2!!.beløp shouldBe 24000.toBigDecimal()
         }
 
         @Test
