@@ -830,19 +830,10 @@ class GrunnlagService(
         val sistInnhentedeGrunnlagAvType: T? =
             henteNyesteGrunnlagsdataobjekt<T>(behandling.id!!, rolle.id!!, grunnlagstype)
 
-//        if ((
-//                        sistInnhentedeGrunnlagAvType == null && (
-//                                inneholderInntekter(innhentetGrunnlag) || Grunnlagstype(
-//                                        Grunnlagsdatatype.SIVILSTAND,
-//                                        true,
-//                                ) == grunnlagstype
-//                                )
-//                        ) || (sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType)
-//        )
-
         val erFørstegangsinnhentingAvInntekter = sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)
         val erGrunnlagEndretSidenSistInnhentet = sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
-        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet) {
+        val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
+        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet || erAvTypeBearbeidetSivilstand) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -871,12 +862,7 @@ class GrunnlagService(
                     Personident(rolle.ident!!),
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
                 )
-            } else if (grunnlagstype ==
-                Grunnlagstype(
-                    Grunnlagsdatatype.SIVILSTAND.getOrMigrate(),
-                    true,
-                ) && sistInnhentedeGrunnlagAvType == null
-            ) {
+            } else if (erAvTypeBearbeidetSivilstand && sistInnhentedeGrunnlagAvType == null) {
                 boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(
                     behandling,
                     Personident(rolle.ident!!),
