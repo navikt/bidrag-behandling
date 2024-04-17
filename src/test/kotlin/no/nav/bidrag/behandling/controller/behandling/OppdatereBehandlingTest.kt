@@ -156,7 +156,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         // hvis
         val respons =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/${behandling.id}/grunnlag/aktiver",
+                "${rootUriV2()}/behandling/${behandling.id}/aktivere",
                 HttpMethod.PUT,
                 HttpEntity(
                     aktivereGrunnlagRequest,
