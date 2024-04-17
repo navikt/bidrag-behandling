@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.transformers.behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konverterData
@@ -18,6 +17,7 @@ import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet

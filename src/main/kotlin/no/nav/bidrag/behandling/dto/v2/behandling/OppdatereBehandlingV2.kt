@@ -15,6 +15,7 @@ data class OppdaterBehandlingRequestV2(
     val aktivereGrunnlagForPerson: AktivereGrunnlagRequest? = null,
 )
 
+@Deprecated("Bruk AktivereGrunnlagRequestV2 via eget endepunkt /behandling/{behandlingsid}/aktivere.")
 data class AktivereGrunnlagRequest(
     @Schema(description = "Personident tilhørende rolle i behandling grunnlag skal aktiveres for")
     val personident: Personident,
@@ -40,4 +41,13 @@ data class AktivereGrunnlagResponseV2(
     val boforhold: BoforholdDtoV2,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
+)
+
+data class AktivereGrunnlagRequestV2(
+    @Schema(description = "Personident tilhørende rolle i behandling grunnlag skal aktiveres for")
+    val personident: Personident,
+    @Schema(description = "Grunnlagstype som skal aktiveres")
+    val grunnlagstype: Grunnlagsdatatype,
+    @Schema(description = "Angi om manuelle opplysninger skal overskrives")
+    val overskriveManuelleOpplysninger: Boolean = true,
 )

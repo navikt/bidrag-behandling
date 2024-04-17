@@ -41,7 +41,7 @@ class BeregningDtoMappingTest {
             resultatDto.size shouldBe 2
             assertSoftly(resultatDto.find { it.barn.ident!!.verdi == testdataBarn1.ident }!!) {
                 barn.navn shouldBe testdataBarn1.navn
-                barn.fødselsdato shouldBe testdataBarn1.foedselsdato
+                barn.fødselsdato shouldBe testdataBarn1.fødselsdato
                 barn.ident!!.verdi shouldBe testdataBarn1.ident
                 perioder shouldHaveSize 2
                 assertSoftly(perioder[0]) {
@@ -70,7 +70,7 @@ class BeregningDtoMappingTest {
                     ResultatRolle(
                         Personident(testdataBarn1.ident),
                         testdataBarn1.navn,
-                        testdataBarn1.foedselsdato,
+                        testdataBarn1.fødselsdato,
                     ),
                     BeregnetForskuddResultat(
                         beregnetForskuddPeriodeListe =
@@ -95,7 +95,7 @@ class BeregningDtoMappingTest {
             resultatDto.size shouldBe 1
             assertSoftly(resultatDto.find { it.barn.ident!!.verdi == testdataBarn1.ident }!!) {
                 barn.navn shouldBe testdataBarn1.navn
-                barn.fødselsdato shouldBe testdataBarn1.foedselsdato
+                barn.fødselsdato shouldBe testdataBarn1.fødselsdato
                 barn.ident!!.verdi shouldBe testdataBarn1.ident
                 perioder shouldHaveSize 1
                 assertSoftly(perioder[0]) {
@@ -118,7 +118,7 @@ class BeregningDtoMappingTest {
                         ResultatRolle(
                             Personident(testdataBarn1.ident),
                             testdataBarn1.navn,
-                            testdataBarn1.foedselsdato,
+                            testdataBarn1.fødselsdato,
                         ),
                     resultat =
                         BeregnetForskuddResultat(
@@ -163,7 +163,7 @@ class BeregningDtoMappingTest {
 
         assertSoftly(resultatDto[0]) {
             barn.navn shouldBe testdataBarn1.navn
-            barn.fødselsdato shouldBe testdataBarn1.foedselsdato
+            barn.fødselsdato shouldBe testdataBarn1.fødselsdato
             barn.ident!!.verdi shouldBe testdataBarn1.ident
             assertSoftly(perioder[0]) {
                 beløp shouldBe BigDecimal(1000)
@@ -180,7 +180,7 @@ class BeregningDtoMappingTest {
                 ResultatRolle(
                     Personident(testDataPerson.ident),
                     testDataPerson.navn,
-                    testDataPerson.foedselsdato,
+                    testDataPerson.fødselsdato,
                 ),
             resultat =
                 BeregnetForskuddResultat(

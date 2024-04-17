@@ -76,7 +76,7 @@ class VedtakInnhentetGrunnlagTest {
             behandling = oppretteBehandling(),
             ident = testdataBM.ident,
             rolletype = Rolletype.BIDRAGSMOTTAKER,
-            foedselsdato = testdataBM.foedselsdato,
+            foedselsdato = testdataBM.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val grunnlagBp =
@@ -84,7 +84,7 @@ class VedtakInnhentetGrunnlagTest {
             behandling = oppretteBehandling(),
             ident = testdataBP.ident,
             rolletype = Rolletype.BIDRAGSPLIKTIG,
-            foedselsdato = testdataBP.foedselsdato,
+            foedselsdato = testdataBP.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag1 =
@@ -92,7 +92,7 @@ class VedtakInnhentetGrunnlagTest {
             behandling = oppretteBehandling(),
             ident = testdataBarn1.ident,
             rolletype = Rolletype.BARN,
-            foedselsdato = testdataBarn1.foedselsdato,
+            foedselsdato = testdataBarn1.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag2 =
@@ -100,7 +100,7 @@ class VedtakInnhentetGrunnlagTest {
             behandling = oppretteBehandling(),
             ident = testdataBarn2.ident,
             rolletype = Rolletype.BARN,
-            foedselsdato = testdataBarn2.foedselsdato,
+            foedselsdato = testdataBarn2.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val personobjekter = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
@@ -307,7 +307,7 @@ class VedtakInnhentetGrunnlagTest {
                         partPersonId = testdataBM.ident,
                         relatertPersonPersonId = testdataBarn1.ident,
                         navn = testdataBarn1.navn,
-                        fødselsdato = testdataBarn1.foedselsdato,
+                        fødselsdato = testdataBarn1.fødselsdato,
                         erBarnAvBmBp = true,
                         borISammeHusstandDtoListe =
                             listOf(
@@ -333,7 +333,7 @@ class VedtakInnhentetGrunnlagTest {
                         partPersonId = testdataBM.ident,
                         relatertPersonPersonId = testdataBarn2.ident,
                         navn = testdataBarn2.navn,
-                        fødselsdato = testdataBarn2.foedselsdato,
+                        fødselsdato = testdataBarn2.fødselsdato,
                         erBarnAvBmBp = true,
                         borISammeHusstandDtoListe =
                             listOf(
@@ -361,7 +361,7 @@ class VedtakInnhentetGrunnlagTest {
                         partPersonId = testdataBP.ident,
                         relatertPersonPersonId = testdataBarn1.ident,
                         navn = testdataBarn1.navn,
-                        fødselsdato = testdataBarn1.foedselsdato,
+                        fødselsdato = testdataBarn1.fødselsdato,
                         erBarnAvBmBp = true,
                         borISammeHusstandDtoListe =
                             listOf(
@@ -398,7 +398,7 @@ class VedtakInnhentetGrunnlagTest {
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
                     grunnlag.grunnlag.relatertPerson shouldBe søknadsbarnGrunnlag1.referanse
                     grunnlag.grunnlag.navn shouldBe testdataBarn1.navn
-                    grunnlag.grunnlag.fødselsdato shouldBe testdataBarn1.foedselsdato
+                    grunnlag.grunnlag.fødselsdato shouldBe testdataBarn1.fødselsdato
                     grunnlag.grunnlag.erBarnAvBmBp shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 4
                     grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2022-01-01")

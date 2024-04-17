@@ -11,7 +11,6 @@ import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
@@ -25,6 +24,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -189,7 +189,8 @@ class VedtakTilBehandlingTest {
             assertSoftly(inntekter) {
                 this shouldHaveSize 15
                 val inntekt12Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
-                val inntekt12MndOpprinnelig = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK }
+                val inntekt12MndOpprinnelig =
+                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK }
                 inntekt12Mnd shouldNotBe null
                 inntekt12Mnd!!.taMed shouldBe false
                 inntekt12Mnd!!.kilde shouldBe Kilde.OFFENTLIG
@@ -212,7 +213,8 @@ class VedtakTilBehandlingTest {
                 }
 
                 val inntekt3Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }
-                val inntekt3MndOpprinnelig = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK }
+                val inntekt3MndOpprinnelig =
+                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK }
                 inntekt3Mnd shouldNotBe null
                 inntekt3MndOpprinnelig shouldNotBe null
                 inntekt3Mnd!!.taMed shouldBe false
@@ -395,7 +397,7 @@ class VedtakTilBehandlingTest {
             val barn2 = husstandsbarn.find { it.ident == testdataBarn2.ident }
             assertSoftly(barn1!!) {
                 it.ident shouldBe testdataBarn1.ident
-                it.fødselsdato shouldBe testdataBarn1.foedselsdato
+                it.fødselsdato shouldBe testdataBarn1.fødselsdato
                 it.navn shouldBe null
                 it.kilde shouldBe Kilde.OFFENTLIG
                 val periode = it.perioder.first()
@@ -408,7 +410,7 @@ class VedtakTilBehandlingTest {
             }
             assertSoftly(barn2!!) {
                 it.ident shouldBe testdataBarn2.ident
-                it.fødselsdato shouldBe testdataBarn2.foedselsdato
+                it.fødselsdato shouldBe testdataBarn2.fødselsdato
                 it.navn shouldBe null
                 it.kilde shouldBe Kilde.OFFENTLIG
                 it.perioder shouldHaveSize 2
@@ -450,7 +452,7 @@ class VedtakTilBehandlingTest {
             bidragsmotaker shouldNotBe null
             assertSoftly(bidragsmotaker!!) {
                 it.ident shouldBe testdataBM.ident
-                it.foedselsdato shouldBe testdataBM.foedselsdato
+                it.foedselsdato shouldBe testdataBM.fødselsdato
                 it.navn shouldBe null
                 it.deleted shouldBe false
             }
@@ -460,13 +462,13 @@ class VedtakTilBehandlingTest {
             val søknadsbarn2 = søknadsbarn[1]
             assertSoftly(søknadsbarn1) {
                 it.ident shouldBe testdataBarn1.ident
-                it.foedselsdato shouldBe testdataBarn1.foedselsdato
+                it.foedselsdato shouldBe testdataBarn1.fødselsdato
                 it.navn shouldBe null
                 it.deleted shouldBe false
             }
             assertSoftly(søknadsbarn2) {
                 it.ident shouldBe testdataBarn2.ident
-                it.foedselsdato shouldBe testdataBarn2.foedselsdato
+                it.foedselsdato shouldBe testdataBarn2.fødselsdato
                 it.navn shouldBe null
                 it.deleted shouldBe false
             }

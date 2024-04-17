@@ -12,7 +12,6 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -21,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -63,14 +63,14 @@ val testdataBP =
         navn = "Kor Mappe",
         ident = "213244124",
         rolletype = Rolletype.BIDRAGSPLIKTIG,
-        foedselsdato = LocalDate.parse("2000-03-01"),
+        fødselsdato = LocalDate.parse("2000-03-01"),
     )
 val testdataBM =
     TestDataPerson(
         navn = "Oran Mappe",
         ident = "313213213",
         rolletype = Rolletype.BIDRAGSMOTTAKER,
-        foedselsdato = LocalDate.parse("1978-08-25"),
+        fødselsdato = LocalDate.parse("1978-08-25"),
     )
 
 val testdataBarn1 =
@@ -78,27 +78,27 @@ val testdataBarn1 =
         navn = "Kran Mappe",
         ident = "1344124",
         rolletype = Rolletype.BARN,
-        foedselsdato = LocalDate.parse("2020-03-01"),
+        fødselsdato = LocalDate.parse("2020-03-01"),
     )
 val testdataBarn2 =
     TestDataPerson(
         navn = "Gran Mappe",
         ident = "54545454545",
         rolletype = Rolletype.BARN,
-        foedselsdato = LocalDate.parse("2018-05-09"),
+        fødselsdato = LocalDate.parse("2018-05-09"),
     )
 val testdataHusstandsmedlem1 =
     TestDataPerson(
         navn = "Huststand Gapp",
         ident = "231323123123123123",
         rolletype = Rolletype.BARN,
-        foedselsdato = LocalDate.parse("2001-05-09"),
+        fødselsdato = LocalDate.parse("2001-05-09"),
     )
 
 data class TestDataPerson(
     val ident: String,
     val navn: String,
-    val foedselsdato: LocalDate,
+    val fødselsdato: LocalDate,
     val rolletype: Rolletype,
 ) {
     fun tilRolle(behandling: Behandling = oppretteBehandling()) =
@@ -106,7 +106,7 @@ data class TestDataPerson(
             id = behandling.roller.find { it.ident == ident }?.id ?: 1,
             ident = ident,
             navn = navn,
-            foedselsdato = foedselsdato,
+            foedselsdato = fødselsdato,
             rolletype = rolletype,
             opprettet = LocalDateTime.now(),
             behandling = behandling,
@@ -116,7 +116,7 @@ data class TestDataPerson(
         PersonDto(
             ident = Personident(ident),
             navn = navn,
-            foedselsdato = foedselsdato,
+            fødselsdato = fødselsdato,
         )
 
     fun tilGrunnlagDto() =
@@ -128,7 +128,7 @@ data class TestDataPerson(
                     Person(
                         ident = Personident(ident),
                         navn = navn,
-                        fødselsdato = foedselsdato,
+                        fødselsdato = fødselsdato,
                     ),
                 ),
         )
@@ -246,7 +246,7 @@ fun opprettRolle(
         ident = data.ident,
         rolletype = data.rolletype,
         behandling = behandling,
-        foedselsdato = data.foedselsdato,
+        foedselsdato = data.fødselsdato,
         opprettet = LocalDateTime.now(),
     )
 }
@@ -272,10 +272,17 @@ fun opprettHusstandsbarn(
             ident = data.ident,
             kilde = Kilde.OFFENTLIG,
             behandling = behandling,
-            fødselsdato = data.foedselsdato,
+            fødselsdato = data.fødselsdato,
         )
     husstandsbarn.perioder =
         mutableSetOf(
+            Husstandsbarnperiode(
+                datoFom = LocalDate.parse("2022-01-01"),
+                datoTom = LocalDate.parse("2022-12-31"),
+                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                kilde = Kilde.MANUELL,
+                husstandsbarn = husstandsbarn,
+            ),
             Husstandsbarnperiode(
                 datoFom = LocalDate.parse("2023-01-01"),
                 datoTom = LocalDate.parse("2023-05-31"),
@@ -305,21 +312,21 @@ fun oppretteBehandlingRoller(
                 ident = testdataBM.ident,
                 rolletype = Rolletype.BIDRAGSMOTTAKER,
                 behandling = behandling,
-                foedselsdato = testdataBM.foedselsdato,
+                foedselsdato = testdataBM.fødselsdato,
                 id = if (generateId) (1).toLong() else null,
             ),
             Rolle(
                 ident = testdataBarn1.ident,
                 rolletype = Rolletype.BARN,
                 behandling = behandling,
-                foedselsdato = testdataBarn1.foedselsdato,
+                foedselsdato = testdataBarn1.fødselsdato,
                 id = if (generateId) (2).toLong() else null,
             ),
             Rolle(
                 ident = testdataBarn2.ident,
                 rolletype = Rolletype.BARN,
                 behandling = behandling,
-                foedselsdato = testdataBarn2.foedselsdato,
+                foedselsdato = testdataBarn2.fødselsdato,
                 id = if (generateId) (3).toLong() else null,
             ),
         )
@@ -330,7 +337,7 @@ fun oppretteBehandlingRoller(
                 ident = testdataBP.ident,
                 rolletype = Rolletype.BIDRAGSPLIKTIG,
                 behandling = behandling,
-                foedselsdato = testdataBP.foedselsdato,
+                foedselsdato = testdataBP.fødselsdato,
                 id = if (generateId) (4).toLong() else null,
             ),
         )
@@ -390,7 +397,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 if (generateId) 1 else null,
                 testdataBarn1.ident,
                 testdataBarn1.navn,
-                testdataBarn1.foedselsdato,
+                testdataBarn1.fødselsdato,
                 behandling.virkningstidspunkt,
                 behandling.virkningstidspunkt!!.plusMonths(5),
             ),
@@ -398,7 +405,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 if (generateId) 2 else null,
                 testdataBarn2.ident,
                 testdataBarn2.navn,
-                testdataBarn2.foedselsdato,
+                testdataBarn2.fødselsdato,
                 behandling.virkningstidspunkt,
                 behandling.virkningstidspunkt!!.plusMonths(8),
             ),

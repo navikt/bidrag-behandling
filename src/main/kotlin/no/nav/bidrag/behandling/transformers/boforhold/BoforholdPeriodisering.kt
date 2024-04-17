@@ -4,26 +4,69 @@ import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
-import no.nav.bidrag.behandling.database.datamodell.Kilde
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.boforhold.response.BoforholdBeregnet
-import no.nav.bidrag.boforhold.response.RelatertPerson
+import no.nav.bidrag.boforhold.dto.BoforholdRequest
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
+import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 
-fun List<RelatertPersonGrunnlagDto>.tilRelatertPerson() =
+fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
     this.map {
-        RelatertPerson(
-            borISammeHusstandDtoListe = it.borISammeHusstandDtoListe,
+        BoforholdRequest(
+            bostatusListe =
+                it.borISammeHusstandDtoListe.tilBostatus(
+                    Bostatuskode.MED_FORELDER,
+                    Kilde.OFFENTLIG,
+                ),
             erBarnAvBmBp = it.erBarnAvBmBp,
-            fødselsdato = it.fødselsdato,
+            fødselsdato = it.fødselsdato!!,
             relatertPersonPersonId = it.relatertPersonPersonId,
         )
     }
 
-fun List<BoforholdBeregnet>.tilHusstandsbarn(
+fun Set<Husstandsbarnperiode>.tilBoforholdRequest(): List<BoforholdRequest> {
+    val bostatus = this.map { it.tilBostatus() }
+    return this.map {
+        BoforholdRequest(
+            bostatusListe = bostatus,
+            erBarnAvBmBp = true,
+            fødselsdato = it.husstandsbarn.fødselsdato,
+            relatertPersonPersonId = it.husstandsbarn.ident,
+        )
+    }
+}
+
+fun Husstandsbarnperiode.tilBostatus() =
+    Bostatus(
+        bostatus = this.bostatus,
+        kilde = this.kilde,
+        periodeFom = this.datoFom,
+        periodeTom = this.datoTom,
+    )
+
+fun List<BorISammeHusstandDto>.tilBostatus(
+    bostatus: Bostatuskode,
+    kilde: no.nav.bidrag.boforhold.dto.Kilde,
+) = this.map {
+    Bostatus(
+        bostatus = bostatus,
+        kilde = kilde,
+        periodeFom = it.periodeFra,
+        periodeTom = it.periodeTil,
+    )
+}
+
+fun List<BoforholdResponse>.tilHusstandsbarn(
     behandling: Behandling,
     bidragPersonConsumer: BidragPersonConsumer,
-): List<Husstandsbarn> {
+): Set<Husstandsbarn> {
     return this.groupBy { it.relatertPersonPersonId }.map {
         val husstandsbarn =
             Husstandsbarn(
@@ -38,12 +81,12 @@ fun List<BoforholdBeregnet>.tilHusstandsbarn(
                     bostatus = boforhold.bostatus,
                     datoFom = boforhold.periodeFom,
                     datoTom = boforhold.periodeTom,
-                    kilde = Kilde.OFFENTLIG,
+                    kilde = boforhold.kilde,
                     husstandsbarn = husstandsbarn,
                 )
             }.toMutableSet()
         husstandsbarn
-    }
+    }.toSet()
 }
 
 fun List<no.nav.bidrag.sivilstand.response.Sivilstand>.tilSivilstand(behandling: Behandling): List<Sivilstand> =
@@ -55,4 +98,36 @@ fun List<no.nav.bidrag.sivilstand.response.Sivilstand>.tilSivilstand(behandling:
             datoTom = it.periodeTom,
             sivilstand = it.sivilstandskode,
         )
+    }
+
+fun SivilstandBeregnet.tilSivilstand(behandling: Behandling): List<Sivilstand> =
+    this.sivilstandListe.map {
+        Sivilstand(
+            behandling = behandling,
+            kilde = Kilde.OFFENTLIG,
+            datoFom = it.periodeFom,
+            datoTom = it.periodeTom,
+            sivilstand = it.sivilstandskode,
+        )
+    }
+
+fun Set<Sivilstand>.tilSivilstandGrunnlagDto() =
+    this.map {
+        SivilstandGrunnlagDto(
+            gyldigFom = it.datoFom,
+            type = it.sivilstand.tilSivilstandskodePDL(),
+            bekreftelsesdato = null,
+            personId = null,
+            master = null,
+            historisk = null,
+            registrert = null,
+        )
+    }
+
+fun Sivilstandskode.tilSivilstandskodePDL() =
+    when (this) {
+        Sivilstandskode.BOR_ALENE_MED_BARN -> SivilstandskodePDL.SKILT
+        Sivilstandskode.GIFT_SAMBOER -> SivilstandskodePDL.GIFT
+        Sivilstandskode.SAMBOER -> SivilstandskodePDL.GIFT
+        Sivilstandskode.ENSLIG -> SivilstandskodePDL.SKILT
     }
