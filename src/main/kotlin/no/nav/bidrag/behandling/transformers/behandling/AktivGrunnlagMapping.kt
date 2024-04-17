@@ -125,12 +125,13 @@ fun List<Grunnlag>.hentEndringerInntekter(
     inntekter: Set<Inntekt>,
     type: Grunnlagsdatatype,
 ): Set<IkkeAktivInntektDto> {
+    val inntekterRolle = inntekter.filter { it.ident == rolle.ident }
     val oppdatertGrunnlag = hentBearbeidetInntekterForType(type, rolle.ident!!)
     val innhentetTidspunkt = find { it.type == type && it.erBearbeidet }?.innhentet ?: LocalDateTime.now()
     val oppdaterteEllerNyInntekter =
         oppdatertGrunnlag?.inntekter?.map { grunnlag ->
             val eksisterendeInntekt =
-                inntekter.find {
+                inntekterRolle.find {
                     it.kilde == Kilde.OFFENTLIG &&
                         it.erLik(grunnlag)
                 }
@@ -165,7 +166,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
         }?.toSet() ?: emptySet()
 
     val slettetInntekter =
-        inntekter
+        inntekterRolle
             .filter { it.kilde == Kilde.OFFENTLIG && type.inneholder(it.type) }
             .filter { inntekt ->
                 oppdatertGrunnlag?.inntekter

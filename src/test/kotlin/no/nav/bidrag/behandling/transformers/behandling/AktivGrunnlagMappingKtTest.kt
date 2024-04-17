@@ -12,6 +12,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.transformers.grunnlag.grunnlagsdataTyperYtelser
+import no.nav.bidrag.behandling.transformers.validering.barnIdent
+import no.nav.bidrag.behandling.transformers.validering.bmIdent
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -61,6 +63,85 @@ class AktivGrunnlagMappingKtTest {
     @Nested
     inner class InntekterEndringerTest {
         @Test
+        fun `skal ikke finne differanser i inntekter hvis ikke endret for BM`() {
+            val behandling = byggBehandling()
+            val inntekter =
+                setOf(
+                    opprettInntekt(
+                        datoFom = YearMonth.of(2023, 2),
+                        datoTom = YearMonth.of(2024, 1),
+                        type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                        beløp = 32160000.toBigDecimal(),
+                        ident = bmIdent,
+                        inntektstyperKode =
+                            listOf("fastloenn" to BigDecimal(32160000)),
+                    ),
+                    opprettInntekt(
+                        datoFom = YearMonth.of(2023, 1),
+                        datoTom = YearMonth.of(2023, 12),
+                        type = Inntektsrapportering.LIGNINGSINNTEKT,
+                        beløp = 16000.toBigDecimal(),
+                        ident = bmIdent,
+                        inntektstyperKode =
+                            listOf("annenArbeidsinntekt" to BigDecimal(6000), "arbeidsavklaringspenger" to BigDecimal(10000)),
+                    ),
+                    opprettInntekt(
+                        datoFom = YearMonth.of(2022, 1),
+                        datoTom = YearMonth.of(2022, 12),
+                        type = Inntektsrapportering.LIGNINGSINNTEKT,
+                        beløp = 5000.toBigDecimal(),
+                        ident = bmIdent,
+                        inntektstyperKode =
+                            listOf("annenArbeidsinntekt" to BigDecimal(5000)),
+                    ),
+                    opprettInntekt(
+                        datoFom = YearMonth.of(2023, 2),
+                        datoTom = YearMonth.of(2024, 1),
+                        type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                        beløp = 0.toBigDecimal(),
+                        ident = barnIdent,
+                        inntektstyperKode =
+                            listOf("fastloenn" to BigDecimal(32160000)),
+                    ),
+                    opprettInntekt(
+                        datoFom = YearMonth.of(2023, 1),
+                        datoTom = YearMonth.of(2023, 12),
+                        type = Inntektsrapportering.LIGNINGSINNTEKT,
+                        beløp = 16000.toBigDecimal(),
+                        ident = barnIdent,
+                        inntektstyperKode =
+                            listOf("annenArbeidsinntekt" to BigDecimal(6000), "arbeidsavklaringspenger" to BigDecimal(10000)),
+                    ),
+                    opprettInntekt(
+                        datoFom = YearMonth.of(2022, 1),
+                        datoTom = YearMonth.of(2022, 12),
+                        type = Inntektsrapportering.LIGNINGSINNTEKT,
+                        beløp = 5000.toBigDecimal(),
+                        ident = barnIdent,
+                        inntektstyperKode =
+                            listOf("annenArbeidsinntekt" to BigDecimal(5000)),
+                    ),
+                )
+
+            val resultat =
+                behandling.grunnlag.toList().hentEndringerInntekter(
+                    behandling.bidragsmottaker!!,
+                    inntekter,
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                )
+            resultat.shouldHaveSize(6)
+            resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }.shouldHaveSize(0)
+
+            val resultatBarn =
+                behandling.grunnlag.toList().hentEndringerInntekter(
+                    testdataBarn1.tilRolle(behandling)!!,
+                    inntekter,
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                )
+            resultatBarn.shouldHaveSize(5)
+        }
+
+        @Test
         fun `skal ikke finne differanser i inntekter hvis ikke endret`() {
             val behandling = byggBehandling()
             val inntekter =
@@ -70,6 +151,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2024, 1),
                         type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                         beløp = 32160000.toBigDecimal(),
+                        ident = bmIdent,
                         inntektstyperKode =
                             listOf("fastloenn" to BigDecimal(32160000)),
                     ),
@@ -78,6 +160,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2023, 12),
                         type = Inntektsrapportering.LIGNINGSINNTEKT,
                         beløp = 16000.toBigDecimal(),
+                        ident = bmIdent,
                         inntektstyperKode =
                             listOf("annenArbeidsinntekt" to BigDecimal(6000), "arbeidsavklaringspenger" to BigDecimal(10000)),
                     ),
@@ -86,6 +169,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2022, 12),
                         type = Inntektsrapportering.LIGNINGSINNTEKT,
                         beløp = 5000.toBigDecimal(),
+                        ident = bmIdent,
                         inntektstyperKode =
                             listOf("annenArbeidsinntekt" to BigDecimal(5000)),
                     ),
@@ -119,6 +203,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2023, 11),
                         type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                         beløp = 32160000.toBigDecimal(),
+                        ident = bmIdent,
                         inntektstyperKode =
                             listOf("fastloenn" to BigDecimal(32160000)),
                     ),
@@ -127,6 +212,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2023, 12),
                         type = Inntektsrapportering.LIGNINGSINNTEKT,
                         beløp = 17000.toBigDecimal(),
+                        ident = bmIdent,
                         inntektstyperKode =
                             listOf("annenArbeidsinntekt" to BigDecimal(6000), "arbeidsavklaringspenger" to BigDecimal(11000)),
                     ),
@@ -135,6 +221,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2022, 12),
                         type = Inntektsrapportering.LIGNINGSINNTEKT,
                         beløp = 5000.toBigDecimal(),
+                        ident = bmIdent,
                         inntektstyperKode =
                             listOf("arbeidsavklaringspenger" to BigDecimal(5000)),
                     ),
@@ -143,6 +230,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2024, 12),
                         type = Inntektsrapportering.LIGNINGSINNTEKT,
                         beløp = 5000.toBigDecimal(),
+                        ident = bmIdent,
                         inntektstyperKode =
                             listOf("arbeidsavklaringspenger" to BigDecimal(5000)),
                     ),
@@ -180,6 +268,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2023, 11),
                         type = Inntektsrapportering.BARNETILLEGG,
                         gjelderBarn = testdataBarn1.ident,
+                        ident = bmIdent,
                         beløp = 32160000.toBigDecimal(),
                     ),
                     opprettInntekt(
@@ -187,6 +276,7 @@ class AktivGrunnlagMappingKtTest {
                         datoTom = YearMonth.of(2023, 11),
                         type = Inntektsrapportering.BARNETILLEGG,
                         gjelderBarn = testdataBarn2.ident,
+                        ident = bmIdent,
                         beløp = 32160000.toBigDecimal(),
                     ),
                 )
