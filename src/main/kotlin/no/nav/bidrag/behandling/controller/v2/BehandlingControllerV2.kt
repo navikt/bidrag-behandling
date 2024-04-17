@@ -319,24 +319,4 @@ class BehandlingControllerV2(
     ): AktivereGrunnlagResponseV2 {
         return behandlingService.aktiverGrunnlag(behandlingsid, request)
     }
-
-    @PutMapping("/behandling/{behandlingsid}/grunnlag/aktiver")
-    @Operation(
-        description = "Aktiver grunnlag for en grunnlagstype i behandling. Returnerer behandling etter aktivering av grunnlag",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "201",
-                description = "Grunnlag aktivert uten feil",
-            ),
-        ],
-    )
-    fun aktiverGrunnlag(
-        @PathVariable behandlingsid: Long,
-        @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
-    ): AktivereGrunnlagResponseV2 {
-        return behandlingService.aktiverGrunnlag(behandlingsid, request)
-    }
 }
