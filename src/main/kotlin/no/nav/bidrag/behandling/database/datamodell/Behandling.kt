@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
+import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -156,6 +157,7 @@ fun Behandling.validerForBeregning() {
                 husstandsbarn.validerBoforhold(
                     virkningstidspunktEllerSøktFomDato,
                 ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
+            val måBekrefteOpplysninger = grunnlagListe.hentAlleSomMåBekreftes().map { it.type }.toSet()
             val harFeil = inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null || virkningstidspunktFeil != null
             harFeil.ifTrue {
                 BeregningValideringsfeil(
@@ -163,6 +165,7 @@ fun Behandling.validerForBeregning() {
                     inntekterFeil,
                     husstandsbarnFeil,
                     sivilstandFeil,
+                    måBekrefteOpplysninger,
                 )
             }
         } else if (virkningstidspunktFeil != null) {

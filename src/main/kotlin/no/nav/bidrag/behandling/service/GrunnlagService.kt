@@ -454,7 +454,7 @@ class GrunnlagService(
                 .filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }!!
         val periodisertSivilstand =
-            SivilstandApi.beregn(
+            SivilstandApi.beregnV1(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 jsonTilObjekt<List<SivilstandGrunnlagDto>>(sistInnhentedeRådata.data),
             )
@@ -539,7 +539,7 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
     ) {
         val sivilstandPeriodisert =
-            SivilstandApi.beregn(
+            SivilstandApi.beregnV1(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 innhentetGrunnlag.sivilstandListe,
             )
