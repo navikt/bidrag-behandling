@@ -497,9 +497,8 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(behandling, rolleInhentetFor, innhentetGrunnlag, feilrapporteringer)
 
         val feilSkattepliktig = feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
-        val feilMånedsinntekt = feilrapporteringer[Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER]
 
-        if (feilSkattepliktig == null || feilMånedsinntekt == null) {
+        if (feilSkattepliktig == null) {
             lagreGrunnlagHvisEndret(
                 behandling,
                 rolleInhentetFor,
@@ -805,7 +804,7 @@ class GrunnlagService(
             sistInnhentedeGrunnlagAvType == null && (inneholderInntekter(innhentetGrunnlag) || erAvTypeBearbeidetSivilstand)
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
-        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet ) {
+        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -1046,17 +1045,11 @@ class GrunnlagService(
                     rolleInhentetFor,
                 )
 
-            Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
+            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.SKATTEGRUNNLAG,
                     rolleInhentetFor,
                 ) ?: innhentetGrunnlag.hentFeilFor(
-                    GrunnlagRequestType.AINNTEKT,
-                    rolleInhentetFor,
-                )
-
-            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER ->
-                innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.AINNTEKT,
                     rolleInhentetFor,
                 )
