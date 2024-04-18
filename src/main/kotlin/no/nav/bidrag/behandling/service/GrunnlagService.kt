@@ -805,7 +805,7 @@ class GrunnlagService(
             sistInnhentedeGrunnlagAvType == null && (inneholderInntekter(innhentetGrunnlag) || erAvTypeBearbeidetSivilstand)
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
-        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet || erAvTypeBearbeidetSivilstand) {
+        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet ) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
