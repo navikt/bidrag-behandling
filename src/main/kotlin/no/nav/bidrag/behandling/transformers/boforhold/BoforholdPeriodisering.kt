@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.boforhold.dto.BoforholdRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
-import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
@@ -53,7 +53,7 @@ fun Husstandsbarnperiode.tilBostatus() =
 
 fun List<BorISammeHusstandDto>.tilBostatus(
     bostatus: Bostatuskode,
-    kilde: no.nav.bidrag.boforhold.dto.Kilde,
+    kilde: no.nav.bidrag.domene.enums.diverse.Kilde,
 ) = this.map {
     Bostatus(
         bostatus = bostatus,
@@ -89,7 +89,7 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
     }.toSet()
 }
 
-fun List<no.nav.bidrag.sivilstand.response.Sivilstand>.tilSivilstand(behandling: Behandling): List<Sivilstand> =
+fun List<no.nav.bidrag.sivilstand.response.SivilstandV1>.tilSivilstand(behandling: Behandling): List<Sivilstand> =
     this.map {
         Sivilstand(
             behandling = behandling,
@@ -130,4 +130,5 @@ fun Sivilstandskode.tilSivilstandskodePDL() =
         Sivilstandskode.GIFT_SAMBOER -> SivilstandskodePDL.GIFT
         Sivilstandskode.SAMBOER -> SivilstandskodePDL.GIFT
         Sivilstandskode.ENSLIG -> SivilstandskodePDL.SKILT
+        Sivilstandskode.UKJENT -> SivilstandskodePDL.UOPPGITT
     }
