@@ -242,6 +242,7 @@ private fun Sivilstand.tilSivilstandsperiode() =
 private fun Behandling.tilVirkningstidspunkt() =
     Virkningstidspunkt(
         søknadstype = vedtakstype.name,
+        vedtakstype = vedtakstype,
         søktAv = soknadFra,
         avslag = avslag,
         årsak = årsak,
