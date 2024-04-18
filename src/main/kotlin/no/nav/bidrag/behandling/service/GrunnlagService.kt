@@ -35,7 +35,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.TransformerInntekterRequestBuilder
-import no.nav.bidrag.behandling.transformers.inntekt.opprettInntetektTransformRequest
+import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.inntekt.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.inntekt.tilBarnetillegg
 import no.nav.bidrag.behandling.transformers.inntekt.tilKontantstøtte
@@ -583,7 +583,7 @@ class GrunnlagService(
         rolleInhentetFor: Rolle,
         feilliste: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
     ) {
-        val transformereInntekter = opprettInntetektTransformRequest(behandling, innhentetGrunnlag, rolleInhentetFor)
+        val transformereInntekter = opprettTransformerInntekterRequest(behandling, innhentetGrunnlag, rolleInhentetFor)
 
         val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
 

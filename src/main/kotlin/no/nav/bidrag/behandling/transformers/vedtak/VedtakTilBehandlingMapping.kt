@@ -128,6 +128,7 @@ fun VedtakDto.tilBehandling(
             opprinneligVirkningstidspunkt =
                 hentVirkningstidspunkt()?.virkningstidspunkt
                     ?: hentSøknad().søktFraDato,
+            opprinneligVedtakstidspunkt = opprettetTidspunkt,
             årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
@@ -227,21 +228,21 @@ private fun List<GrunnlagDto>.mapInntekter(
             }.toMutableSet()
     // TODO: I MVP1 så er det lagt opp til at saksbehandler kan fatte vedtak uten å måtte oppdatere til nyeste opplysninger først
     if (!lesemodus) {
-        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }.ifTaMed {
-            it.copy(
+        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }?.let { originalInntekt ->
+            originalInntekt.copy(
                 type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
             ).run {
                 inntekter.add(this)
-                it.taMed = false
+                originalInntekt.taMed = false
             }
         }
 
-        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }.ifTaMed {
-            it.copy(
+        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }?.let { originalInntekt ->
+            originalInntekt.copy(
                 type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
             ).run {
                 inntekter.add(this)
-                it.taMed = false
+                originalInntekt.taMed = false
             }
         }
     }

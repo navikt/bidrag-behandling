@@ -230,13 +230,13 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
     return inntekt
 }
 
-fun opprettInntetektTransformRequest(
+fun opprettTransformerInntekterRequest(
     behandling: Behandling,
     innhentetGrunnlag: HentGrunnlagDto,
     rolleInhentetFor: Rolle,
 ) = TransformerInntekterRequest(
     ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
-    vedtakstidspunktOpprinneligVedtak = behandling.opprinneligVirkningstidspunkt,
+    vedtakstidspunktOpprinneligVedtak = behandling.opprinneligVedtakstidspunkt?.toLocalDate(),
     ainntektsposter =
         innhentetGrunnlag.ainntektListe.flatMap {
             it.ainntektspostListe.tilAinntektsposter(
