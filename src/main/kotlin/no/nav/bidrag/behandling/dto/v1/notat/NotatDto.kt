@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.v1.notat
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -207,16 +208,4 @@ data class NotatResultatBeregningBarnDto(
         val resultatKodeVisningsnavn get() = resultatKode.visningsnavn.intern
         val sivilstandVisningsnavn get() = sivilstand?.visningsnavn?.intern
     }
-}
-
-fun no.nav.bidrag.boforhold.dto.Kilde.tilNotatKilde() =
-    when (this) {
-        no.nav.bidrag.boforhold.dto.Kilde.MANUELL -> Kilde.MANUELT
-        no.nav.bidrag.boforhold.dto.Kilde.OFFENTLIG -> Kilde.OFFENTLIG
-    }
-
-@Schema(enumAsRef = true)
-enum class Kilde {
-    MANUELT,
-    OFFENTLIG,
 }

@@ -497,7 +497,9 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(behandling, rolleInhentetFor, innhentetGrunnlag, feilrapporteringer)
 
         val feilSkattepliktig = feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
-        if (feilSkattepliktig == null) {
+        val feilMånedsinntekt = feilrapporteringer[Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER]
+
+        if (feilSkattepliktig == null || feilMånedsinntekt == null) {
             lagreGrunnlagHvisEndret(
                 behandling,
                 rolleInhentetFor,
@@ -798,12 +800,11 @@ class GrunnlagService(
     ) {
         val sistInnhentedeGrunnlagAvType: T? =
             henteNyesteGrunnlagsdataobjekt<T>(behandling.id!!, rolle.id!!, grunnlagstype)
-
+        val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         val erFørstegangsinnhentingAvInntekter =
-            sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)
+            sistInnhentedeGrunnlagAvType == null && (inneholderInntekter(innhentetGrunnlag) || erAvTypeBearbeidetSivilstand)
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
-        val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet || erAvTypeBearbeidetSivilstand) {
             opprett(
                 behandling = behandling,

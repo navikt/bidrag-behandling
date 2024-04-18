@@ -26,7 +26,6 @@ import no.nav.bidrag.behandling.dto.v1.notat.PersonNotatDto
 import no.nav.bidrag.behandling.dto.v1.notat.SivilstandNotat
 import no.nav.bidrag.behandling.dto.v1.notat.Vedtak
 import no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt
-import no.nav.bidrag.behandling.dto.v1.notat.tilNotatKilde
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
@@ -80,6 +79,7 @@ class NotatOpplysningerService(
                 tilknyttSaker = listOf(behandling.saksnummer),
                 gjelderIdent = behandling.bidragsmottaker!!.ident,
                 referanseId = behandling.tilReferanseId(),
+                saksbehandlerIdent = behandling.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent(),
                 dokumenter =
                     listOf(
                         OpprettDokumentDto(
@@ -236,7 +236,7 @@ private fun Sivilstand.tilSivilstandsperiode() =
                 datoTom,
             ),
         status = sivilstand,
-        kilde = kilde.tilNotatKilde(),
+        kilde = kilde,
     )
 
 private fun Behandling.tilVirkningstidspunkt() =
@@ -260,7 +260,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
                 fødselsdato = fødselsdato,
                 ident = ident?.let { Personident(it) },
             ),
-        kilde = kilde.tilNotatKilde(),
+        kilde = kilde,
         medIBehandling = behandling.roller.any { it.ident == this.ident },
         opplysningerFraFolkeregisteret =
             opplysningerBoforhold.filter {
@@ -284,7 +284,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
                             periode.datoTom,
                         ),
                     status = periode.bostatus,
-                    kilde = periode.kilde.tilNotatKilde(),
+                    kilde = periode.kilde,
                 )
             },
     )
@@ -303,7 +303,7 @@ private fun Inntekt.tilNotatInntektDto() =
         periode = periode,
         opprinneligPeriode = opprinneligPeriode,
         type = type,
-        kilde = kilde.tilNotatKilde(),
+        kilde = kilde,
         medIBeregning = taMed,
         gjelderBarn =
             gjelderBarn?.let { gjelderBarn ->

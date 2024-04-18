@@ -17,9 +17,11 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.YearMonth
 
-val beregningTilDato = YearMonth.now().plusMonths(1).atDay(1)
+fun finnBeregnTilDato(virkningstidspunkt: LocalDate) =
+    maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1))
 
 data class StønadsendringPeriode(
     val barn: Rolle,
@@ -68,12 +70,12 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
         tilGrunnlagSivilstand(
             personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),
         )
+    val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+    val beregningTilDato = finnBeregnTilDato(virkningstidspunkt!!)
     return BeregnGrunnlag(
         periode =
             ÅrMånedsperiode(
-                virkningstidspunkt ?: vedtakmappingFeilet(
-                    "Virkningstidspunkt må settes for beregning",
-                ),
+                beregnFraDato,
                 beregningTilDato,
             ),
         søknadsbarnReferanse = søknadsbarn.referanse,
