@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.TransformerInntekterRequestBuilder
+import no.nav.bidrag.behandling.transformers.inntekt.opprettInntetektTransformRequest
 import no.nav.bidrag.behandling.transformers.inntekt.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.inntekt.tilBarnetillegg
 import no.nav.bidrag.behandling.transformers.inntekt.tilKontantstøtte
@@ -64,7 +65,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
-import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
@@ -582,46 +582,7 @@ class GrunnlagService(
         rolleInhentetFor: Rolle,
         feilliste: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
     ) {
-        val transformereInntekter =
-            TransformerInntekterRequest(
-                ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
-                ainntektsposter =
-                    innhentetGrunnlag.ainntektListe.flatMap {
-                        it.ainntektspostListe.tilAinntektsposter(
-                            rolleInhentetFor,
-                        )
-                    },
-                barnetilleggsliste =
-                    innhentetGrunnlag.barnetilleggListe.filter {
-                        harBarnRolleIBehandling(
-                            it.barnPersonId,
-                            behandling,
-                        )
-                    }.tilBarnetillegg(
-                        rolleInhentetFor,
-                    ),
-                kontantstøtteliste =
-                    innhentetGrunnlag.kontantstøtteListe.filter {
-                        harBarnRolleIBehandling(
-                            it.barnPersonId,
-                            behandling,
-                        )
-                    }.tilKontantstøtte(
-                        rolleInhentetFor,
-                    ),
-                skattegrunnlagsliste =
-                    innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
-                        rolleInhentetFor,
-                    ),
-                småbarnstilleggliste =
-                    innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
-                        rolleInhentetFor,
-                    ),
-                utvidetBarnetrygdliste =
-                    innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
-                        rolleInhentetFor,
-                    ),
-            )
+        val transformereInntekter = opprettInntetektTransformRequest(behandling, innhentetGrunnlag, rolleInhentetFor)
 
         val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
 

@@ -15,7 +15,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
-import no.nav.bidrag.domene.util.visningsnavnIntern
+import no.nav.bidrag.domene.util.visningsnavnMedÅrstall
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -170,8 +170,9 @@ data class NotatInntektDto(
 ) {
     val visningsnavn
         get() =
-            type.visningsnavnIntern(
+            type.visningsnavnMedÅrstall(
                 periode?.fom?.year ?: opprinneligPeriode?.fom?.year,
+                opprinneligPeriode,
             )
 }
 

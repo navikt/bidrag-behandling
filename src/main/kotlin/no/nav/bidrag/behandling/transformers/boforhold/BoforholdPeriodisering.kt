@@ -130,4 +130,5 @@ fun Sivilstandskode.tilSivilstandskodePDL() =
         Sivilstandskode.GIFT_SAMBOER -> SivilstandskodePDL.GIFT
         Sivilstandskode.SAMBOER -> SivilstandskodePDL.GIFT
         Sivilstandskode.ENSLIG -> SivilstandskodePDL.SKILT
+        Sivilstandskode.UKJENT -> SivilstandskodePDL.UOPPGITT
     }

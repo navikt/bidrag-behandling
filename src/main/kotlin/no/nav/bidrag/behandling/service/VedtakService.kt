@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
@@ -263,9 +264,11 @@ class VedtakService(
         )
     }
 
+    val grunnlagstyperSomIkkeSkalSjekkes = listOf(Grunnlagsdatatype.SIVILSTAND, Grunnlagsdatatype.BOFORHOLD)
+
     private fun Behandling.validerKanFatteVedtak() {
         if (erVedtakFattet) vedtakAlleredeFattet()
-        val ikkeAktivertGrunnlag = grunnlag.filter { it.aktiv == null }
+        val ikkeAktivertGrunnlag = grunnlag.filter { it.aktiv == null && !grunnlagstyperSomIkkeSkalSjekkes.contains(it.type) }
         val ikkeAktivertGrunnlagIkkeInntekt =
             ikkeAktivertGrunnlag.filter { !inntekterOgYtelser.contains(it.type) }
         val feilmelding = "Kan ikke fatte vedtak fordi nyeste opplysninger ikke er hentet inn"

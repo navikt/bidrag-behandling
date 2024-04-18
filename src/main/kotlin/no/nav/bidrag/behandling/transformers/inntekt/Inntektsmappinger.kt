@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.inntekt
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
@@ -12,7 +13,10 @@ import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.boforhold.dto.Kilde
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.math.BigDecimal
@@ -225,3 +229,53 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
 
     return inntekt
 }
+
+fun opprettInntetektTransformRequest(
+    behandling: Behandling,
+    innhentetGrunnlag: HentGrunnlagDto,
+    rolleInhentetFor: Rolle,
+) = TransformerInntekterRequest(
+    ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
+    vedtakstidspunktOpprinneligVedtak = behandling.opprinneligVirkningstidspunkt,
+    ainntektsposter =
+        innhentetGrunnlag.ainntektListe.flatMap {
+            it.ainntektspostListe.tilAinntektsposter(
+                rolleInhentetFor,
+            )
+        },
+    barnetilleggsliste =
+        innhentetGrunnlag.barnetilleggListe.filter {
+            harBarnRolleIBehandling(
+                it.barnPersonId,
+                behandling,
+            )
+        }.tilBarnetillegg(
+            rolleInhentetFor,
+        ),
+    kontantstøtteliste =
+        innhentetGrunnlag.kontantstøtteListe.filter {
+            harBarnRolleIBehandling(
+                it.barnPersonId,
+                behandling,
+            )
+        }.tilKontantstøtte(
+            rolleInhentetFor,
+        ),
+    skattegrunnlagsliste =
+        innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
+            rolleInhentetFor,
+        ),
+    småbarnstilleggliste =
+        innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
+            rolleInhentetFor,
+        ),
+    utvidetBarnetrygdliste =
+        innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
+            rolleInhentetFor,
+        ),
+)
+
+private fun harBarnRolleIBehandling(
+    personidentBarn: String,
+    behandling: Behandling,
+) = behandling.roller.filter { Rolletype.BARN == it.rolletype }.any { personidentBarn == it.ident }

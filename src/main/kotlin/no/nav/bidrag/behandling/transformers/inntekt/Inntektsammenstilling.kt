@@ -105,6 +105,7 @@ data class TransformerInntekterRequestBuilder(
     fun bygge(): TransformerInntekterRequest {
         return TransformerInntekterRequest(
             ainntektHentetDato!!,
+            null,
             ainntektsposter!!,
             skattegrunnlag!!,
             kontantstøtte!!,

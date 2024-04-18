@@ -229,8 +229,7 @@ private fun List<GrunnlagDto>.mapInntekter(
     if (!lesemodus) {
         inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }.ifTaMed {
             it.copy(
-                type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
-                kilde = Kilde.MANUELL,
+                type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
             ).run {
                 inntekter.add(this)
                 it.taMed = false
@@ -239,8 +238,7 @@ private fun List<GrunnlagDto>.mapInntekter(
 
         inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }.ifTaMed {
             it.copy(
-                type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
-                kilde = Kilde.MANUELL,
+                type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
             ).run {
                 inntekter.add(this)
                 it.taMed = false
