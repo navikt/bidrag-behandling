@@ -17,6 +17,8 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
+import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
@@ -138,9 +140,26 @@ class BoforholdService(
 
         oppdatereHusstandsbarn.sletteHusstandsbarnperiode?.let { idHusstandsbarnperiode ->
             val husstandsbarnperiodeSomSkalSlettes = husstandsbarnperiodeRepository.findById(idHusstandsbarnperiode)
-            husstandsbarnperiodeRepository.delete(husstandsbarnperiodeSomSkalSlettes.get())
+            val husstandsbarn =
+                behandling.husstandsbarn.find { it.id == husstandsbarnperiodeSomSkalSlettes.get().husstandsbarn.id }
+            husstandsbarn!!.perioder.remove(husstandsbarnperiodeSomSkalSlettes.get())
+            val perioderTilPeriodsering = husstandsbarn.perioder.tilBoforholdRequest(husstandsbarn)
+            val nyttPeriodisertBoforhold =
+                BoforholdApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    listOf(perioderTilPeriodsering),
+                ).tilHusstandsbarn(behandling, bidragPersonConsumer).first().perioder
+            husstandsbarn.perioder.clear()
+            husstandsbarn.perioder = nyttPeriodisertBoforhold
+
+            nyttPeriodisertBoforhold.forEach {
+                it.husstandsbarn = husstandsbarn
+                husstandsbarnperiodeRepository.save(it)
+                husstandsbarn.perioder.add(it)
+            }
+
             log.info { "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling $behandlingsid." }
-            return husstandsbarnperiodeSomSkalSlettes.get().tilOppdatereBoforholdResponse(behandling)
+            return husstandsbarn.tilOppdatereBoforholdResponse(behandling)
         }
 
         oppdatereHusstandsbarn.nyHusstandsbarnperiode?.let { bostatusperiode ->
@@ -148,7 +167,7 @@ class BoforholdService(
             val eksisterendeHusstandsbarn =
                 behandling.husstandsbarn.find { it.id != null && it.id == bostatusperiode.idHusstandsbarn }
 
-            val periode =
+            val nyperiode =
                 Husstandsbarnperiode(
                     husstandsbarn = eksisterendeHusstandsbarn!!,
                     bostatus = bostatusperiode.bostatus,
@@ -157,8 +176,20 @@ class BoforholdService(
                     kilde = Kilde.MANUELL,
                 )
 
-            eksisterendeHusstandsbarn.perioder.add(periode)
-            entityManager.flush()
+            val nyttIkkePeriodisertBoforhold = eksisterendeHusstandsbarn.perioder + nyperiode
+
+            val nyttPeriodisertBoforhold =
+                BoforholdApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    listOf(nyttIkkePeriodisertBoforhold.tilBoforholdRequest(eksisterendeHusstandsbarn)),
+                ).tilHusstandsbarn(behandling, bidragPersonConsumer).first().perioder
+
+            eksisterendeHusstandsbarn.perioder.clear()
+            nyttPeriodisertBoforhold.forEach {
+                it.husstandsbarn = eksisterendeHusstandsbarn
+                husstandsbarnperiodeRepository.save(it)
+                eksisterendeHusstandsbarn.perioder.add(it)
+            }
             log.info {
                 "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
                     "$behandlingsid."
@@ -291,16 +322,17 @@ class BoforholdService(
                     husstandsbarnSomSkalOppdateres.find { it.ident == nyttHusstandsbarn.ident }!!
                 val manuellePerioder = eksisterendeHusstandsbarn.perioder.filter { it.kilde == Kilde.MANUELL }.toSet()
 
-                val requestManuelle = manuellePerioder.tilBoforholdRequest()
-                val requestOffentlige = nyttHusstandsbarn.perioder.tilBoforholdRequest()
-                val requestManuelleOgOffentlige = requestOffentlige.plus(requestManuelle)
+                val manuelleBostatuser = manuellePerioder.map { it.tilBostatus() }
+                val offentligeBostatuser = nyttHusstandsbarn.perioder.map { it.tilBostatus() }
+                val requestManuelleOgOffentlige =
+                    offentligeBostatuser.plus(manuelleBostatuser).tilBostatusRequest(eksisterendeHusstandsbarn)
 
                 val husstandsbarnperioder =
                     when (overskriveManuelleOpplysninger) {
                         false ->
                             BoforholdApi.beregnV2(
                                 behandling.virkningstidspunktEllerSøktFomDato,
-                                requestManuelleOgOffentlige,
+                                listOf(requestManuelleOgOffentlige),
                             ).tilHusstandsbarn(behandling, bidragPersonConsumer).first().perioder
 
                         true -> nyttHusstandsbarn.perioder
@@ -327,27 +359,28 @@ class BoforholdService(
         val manuelleBarnMedIdent =
             behandling.husstandsbarn.filter { Kilde.MANUELL == it.kilde }.filter { it.ident != null }
         val identerOffisielleBarn =
-            nyttPeriodisertBoforhold.filter { Kilde.MANUELL == it.kilde }.mapNotNull { it.ident }.toSet()
+            nyttPeriodisertBoforhold.mapNotNull { it.ident }.toSet()
 
         manuelleBarnMedIdent.forEach { manueltBarn ->
             if (identerOffisielleBarn.contains(manueltBarn.ident)) {
                 val offisieltBarn = nyttPeriodisertBoforhold.find { manueltBarn.ident == it.ident }
-                val perioder =
+                val bostatuser: List<Bostatus>? =
                     when (sletteManuellePerioder) {
                         false ->
-                            offisieltBarn?.perioder?.tilBoforholdRequest()
-                                ?.plus(manueltBarn.perioder.tilBoforholdRequest())
+                            offisieltBarn?.perioder?.map { it.tilBostatus() }
+                                ?.plus(manueltBarn.perioder.map { it.tilBostatus() })
 
-                        true -> offisieltBarn?.perioder?.tilBoforholdRequest()
+                        true -> offisieltBarn?.perioder?.map { it.tilBostatus() }
                     }
 
-                offisieltBarn?.perioder?.tilBoforholdRequest()?.plus(manueltBarn.perioder.tilBoforholdRequest())
-
-                perioder?.let {
+                bostatuser?.let {
                     val periodisertBoforhold =
-                        BoforholdApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, perioder)
+                        BoforholdApi.beregnV2(
+                            behandling.virkningstidspunktEllerSøktFomDato,
+                            listOf(bostatuser.tilBostatusRequest(offisieltBarn!!)),
+                        )
                     val hbp =
-                        periodisertBoforhold.tilHusstandsbarn(offisieltBarn?.behandling!!, bidragPersonConsumer)
+                        periodisertBoforhold.tilHusstandsbarn(offisieltBarn.behandling, bidragPersonConsumer)
                             .flatMap { it.perioder }
 
                     manueltBarn.perioder.clear()
