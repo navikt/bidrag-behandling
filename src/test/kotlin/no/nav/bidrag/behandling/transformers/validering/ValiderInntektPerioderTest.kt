@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForÅr
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
-import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype

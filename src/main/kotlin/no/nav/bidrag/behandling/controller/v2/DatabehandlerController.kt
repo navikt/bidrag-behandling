@@ -20,6 +20,6 @@ class DatabehandlerController(
         @RequestBody request: List<SivilstandGrunnlagDto>,
     ): SivilstandBeregnet {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        return SivilstandApi.beregn(behandling.virkningstidspunktEllerSøktFomDato, request)
+        return SivilstandApi.beregnV1(behandling.virkningstidspunktEllerSøktFomDato, request)
     }
 }

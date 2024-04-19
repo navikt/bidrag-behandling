@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
-import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.tid.Datoperiode

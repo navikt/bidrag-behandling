@@ -18,7 +18,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.ident.Personident
@@ -350,7 +350,9 @@ class BoforholdServiceTest : TestContainerRunner() {
             assertFailsWith<HttpClientErrorException> {
                 boforholdService.oppdatereHusstandsbarnManuelt(
                     behandling.id!!,
-                    OppdatereHusstandsbarn(sletteHusstandsbarn = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!.id),
+                    OppdatereHusstandsbarn(
+                        sletteHusstandsbarn = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!.id,
+                    ),
                 )
             }
         }
@@ -445,7 +447,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             val periodisertSivilstand =
-                SivilstandApi.beregn(
+                SivilstandApi.beregnV1(
                     minOf(behandling.virkningstidspunktEllerSøktFomDato),
                     grunnlagSivilstand,
                 )
@@ -509,7 +511,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             val periodisertSivilstand =
-                SivilstandApi.beregn(behandling.virkningstidspunktEllerSøktFomDato, grunnlagSivilstand)
+                SivilstandApi.beregnV1(behandling.virkningstidspunktEllerSøktFomDato, grunnlagSivilstand)
 
             // hvis
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(

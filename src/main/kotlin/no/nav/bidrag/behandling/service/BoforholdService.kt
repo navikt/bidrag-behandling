@@ -25,7 +25,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandGrunnlagDto
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
-import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
@@ -209,7 +209,7 @@ class BoforholdService(
             val periodeSomSkalSlettes = behandling.sivilstand.find { idSivilstandsperiode == it.id }
             behandling.sivilstand.remove(periodeSomSkalSlettes)
             val periodisertSivilstand =
-                SivilstandApi.beregn(
+                SivilstandApi.beregnV1(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.sivilstand.tilSivilstandGrunnlagDto(),
                 )
