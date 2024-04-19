@@ -140,7 +140,6 @@ fun List<Grunnlag>.hentEndringerInntekter(
                         GrunnlagInntektEndringstype.NY,
                         innhentetTidspunkt,
                     )
-//            val erPeriodeEndret = eksisterendeInntekt.opprinneligPeriode != grunnlag.periode
             val erBeløpEndret =
                 eksisterendeInntekt.belop.nærmesteHeltall != grunnlag.sumInntekt.nærmesteHeltall
             if (erBeløpEndret ||

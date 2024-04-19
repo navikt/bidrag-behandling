@@ -277,7 +277,7 @@ class GrunnlagService(
     }
 
     fun henteNyeGrunnlagsdataMedEndringsdiff(behandling: Behandling): IkkeAktiveGrunnlagsdata {
-        val roller = behandling.roller
+        val roller = behandling.roller.sortedBy { if (it.rolletype == Rolletype.BARN) 1 else -1 }
         val inntekter = behandling.inntekter
         val nyinnhentetGrunnlag =
             roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }
