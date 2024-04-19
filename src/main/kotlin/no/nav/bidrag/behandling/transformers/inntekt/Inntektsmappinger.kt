@@ -80,7 +80,7 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
             kode = it.kode,
             visningsnavn = finnVisningsnavn(it.kode),
             inntektstype = it.inntektstype,
-            beløp = it.beløp,
+            beløp = it.beløp.nærmesteHeltall,
         )
     }
 
@@ -116,7 +116,7 @@ fun Inntekt.tilInntektDtoV2() =
         id = this.id,
         taMed = this.taMed,
         rapporteringstype = this.type,
-        beløp = maxOf(belop, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+        beløp = maxOf(belop.nærmesteHeltall, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         datoFom = this.datoFom,
         datoTom = this.datoTom,
         ident = Personident(this.ident),
