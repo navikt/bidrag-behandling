@@ -129,7 +129,7 @@ class AktivGrunnlagMappingKtTest {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(6)
+            resultat.shouldHaveSize(4)
             resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }.shouldHaveSize(0)
 
             val resultatBarn =
@@ -181,15 +181,15 @@ class AktivGrunnlagMappingKtTest {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(6)
+            resultat.shouldHaveSize(4)
             resultat.none { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldBe true
             resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2023 } shouldBe true
             resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2022 } shouldBe true
             val resultatNy = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.NY }
-            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 1
+            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND } shouldHaveSize 1
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
-            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 3
+            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 2
         }
 
         @Test
@@ -242,7 +242,7 @@ class AktivGrunnlagMappingKtTest {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(9)
+            resultat.shouldHaveSize(7)
 
             val resultatSlettet = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.SLETTET }
             resultatSlettet shouldHaveSize 1
@@ -254,7 +254,7 @@ class AktivGrunnlagMappingKtTest {
             resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 0
 
             val resultatNy = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.NY }
-            resultatNy shouldHaveSize 6
+            resultatNy shouldHaveSize 4
         }
 
         @Test
