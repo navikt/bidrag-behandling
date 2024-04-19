@@ -104,13 +104,13 @@ data class TransformerInntekterRequestBuilder(
 ) {
     fun bygge(): TransformerInntekterRequest {
         return TransformerInntekterRequest(
-            ainntektHentetDato!!,
-            ainntektsposter!!,
-            skattegrunnlag!!,
-            kontantstøtte!!,
-            utvidetBarnetrygd!!,
-            småbarnstillegg!!,
-            barnetillegg!!,
+            ainntektHentetDato = ainntektHentetDato!!,
+            ainntektsposter = ainntektsposter!!,
+            skattegrunnlagsliste = skattegrunnlag!!,
+            kontantstøtteliste = kontantstøtte!!,
+            utvidetBarnetrygdliste = utvidetBarnetrygd!!,
+            småbarnstilleggliste = småbarnstillegg!!,
+            barnetilleggsliste = barnetillegg!!,
         )
     }
 }

@@ -31,17 +31,23 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
         )
     }
 
-fun Set<Husstandsbarnperiode>.tilBoforholdRequest(): List<BoforholdRequest> {
+fun Set<Husstandsbarnperiode>.tilBoforholdRequest(husstandsbarn: Husstandsbarn): BoforholdRequest {
     val bostatus = this.map { it.tilBostatus() }
-    return this.map {
-        BoforholdRequest(
-            bostatusListe = bostatus,
-            erBarnAvBmBp = true,
-            fødselsdato = it.husstandsbarn.fødselsdato,
-            relatertPersonPersonId = it.husstandsbarn.ident,
-        )
-    }
+    return BoforholdRequest(
+        bostatusListe = bostatus,
+        erBarnAvBmBp = true,
+        fødselsdato = husstandsbarn.fødselsdato,
+        relatertPersonPersonId = husstandsbarn.ident,
+    )
 }
+
+fun List<Bostatus>.tilBostatusRequest(husstandsbarn: Husstandsbarn) =
+    BoforholdRequest(
+        relatertPersonPersonId = husstandsbarn.ident,
+        fødselsdato = husstandsbarn.fødselsdato,
+        erBarnAvBmBp = true,
+        bostatusListe = this,
+    )
 
 fun Husstandsbarnperiode.tilBostatus() =
     Bostatus(
@@ -53,7 +59,7 @@ fun Husstandsbarnperiode.tilBostatus() =
 
 fun List<BorISammeHusstandDto>.tilBostatus(
     bostatus: Bostatuskode,
-    kilde: no.nav.bidrag.boforhold.dto.Kilde,
+    kilde: Kilde,
 ) = this.map {
     Bostatus(
         bostatus = bostatus,
@@ -89,7 +95,7 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
     }.toSet()
 }
 
-fun List<no.nav.bidrag.sivilstand.response.Sivilstand>.tilSivilstand(behandling: Behandling): List<Sivilstand> =
+fun List<no.nav.bidrag.sivilstand.response.SivilstandV1>.tilSivilstand(behandling: Behandling): List<Sivilstand> =
     this.map {
         Sivilstand(
             behandling = behandling,
@@ -130,4 +136,5 @@ fun Sivilstandskode.tilSivilstandskodePDL() =
         Sivilstandskode.GIFT_SAMBOER -> SivilstandskodePDL.GIFT
         Sivilstandskode.SAMBOER -> SivilstandskodePDL.GIFT
         Sivilstandskode.ENSLIG -> SivilstandskodePDL.SKILT
+        Sivilstandskode.UKJENT -> SivilstandskodePDL.UOPPGITT
     }

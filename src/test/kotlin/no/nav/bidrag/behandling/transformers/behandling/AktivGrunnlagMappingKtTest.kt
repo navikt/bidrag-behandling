@@ -26,8 +26,8 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
-import no.nav.bidrag.sivilstand.response.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.sivilstand.response.SivilstandV1
 import no.nav.bidrag.sivilstand.response.Status
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -533,12 +533,12 @@ class AktivGrunnlagMappingKtTest {
                     status = Status.OK,
                     sivilstandListe =
                         listOf(
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2022, 1).atDay(1),
                                 periodeTom = YearMonth.of(2022, 12).atEndOfMonth(),
                                 sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
                             ),
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2023, 1).atDay(1),
                                 periodeTom = null,
                                 sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
@@ -582,12 +582,12 @@ class AktivGrunnlagMappingKtTest {
                     status = Status.OK,
                     sivilstandListe =
                         listOf(
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2022, 1).atDay(1),
                                 periodeTom = YearMonth.of(2022, 12).atEndOfMonth(),
                                 sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
                             ),
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2023, 1).atDay(1),
                                 periodeTom = null,
                                 sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
@@ -609,12 +609,12 @@ class AktivGrunnlagMappingKtTest {
                     status = Status.OK,
                     sivilstandListe =
                         listOf(
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2022, 1).atDay(1),
                                 periodeTom = YearMonth.of(2022, 8).atEndOfMonth(),
                                 sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
                             ),
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2022, 9).atDay(1),
                                 periodeTom = null,
                                 sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
@@ -662,12 +662,12 @@ class AktivGrunnlagMappingKtTest {
                     status = Status.OK,
                     sivilstandListe =
                         listOf(
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2022, 1).atDay(1),
                                 periodeTom = YearMonth.of(2022, 12).atEndOfMonth(),
                                 sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
                             ),
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2023, 1).atDay(1),
                                 periodeTom = null,
                                 sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
@@ -720,17 +720,17 @@ class AktivGrunnlagMappingKtTest {
                     status = Status.OK,
                     sivilstandListe =
                         listOf(
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2021, 1).atDay(1),
                                 periodeTom = YearMonth.of(2021, 12).atEndOfMonth(),
                                 sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
                             ),
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2022, 1).atDay(1),
                                 periodeTom = YearMonth.of(2022, 12).atEndOfMonth(),
                                 sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
                             ),
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2023, 1).atDay(1),
                                 periodeTom = null,
                                 sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
@@ -753,12 +753,12 @@ class AktivGrunnlagMappingKtTest {
                     status = Status.OK,
                     sivilstandListe =
                         listOf(
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2021, 1).atDay(1),
                                 periodeTom = YearMonth.of(2022, 12).atEndOfMonth(),
                                 sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
                             ),
-                            Sivilstand(
+                            SivilstandV1(
                                 periodeFom = YearMonth.of(2023, 1).atDay(1),
                                 periodeTom = null,
                                 sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
