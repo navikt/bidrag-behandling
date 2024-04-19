@@ -144,10 +144,14 @@ open class Behandling(
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
 fun Behandling.validerForBeregning() {
+    val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+        erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
+            virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
     val virkningstidspunktFeil =
         VirkningstidspunktFeilDto(
             manglerÅrsakEllerAvslag = avslag == null && årsak == null,
             manglerVirkningstidspunkt = virkningstidspunkt == null,
+            virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
         ).takeIf { it.harFeil }
     val feil =
         if (avslag == null) {
