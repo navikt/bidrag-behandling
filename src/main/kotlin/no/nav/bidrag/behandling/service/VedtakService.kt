@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
+import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
@@ -16,10 +17,8 @@ import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønadAvslag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
-import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
-import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
@@ -126,6 +125,7 @@ class VedtakService(
         }
 
         val behandling = behandlingService.hentBehandlingById(behandlingId)
+        behandling.validerForBeregning()
         behandling.validerKanFatteVedtak()
 
         val request =
@@ -266,19 +266,6 @@ class VedtakService(
 
     private fun Behandling.validerKanFatteVedtak() {
         if (erVedtakFattet) vedtakAlleredeFattet()
-        val ikkeAktivertGrunnlag = grunnlagListe.hentAlleSomMåBekreftes()
-        val ikkeAktivertGrunnlagIkkeInntekt =
-            ikkeAktivertGrunnlag.filter { !inntekterOgYtelser.contains(it.type) }
-        val feilmelding = "Kan ikke fatte vedtak fordi nyeste opplysninger ikke er hentet inn"
-        if (avslag == null && !erKlageEllerOmgjøring && ikkeAktivertGrunnlag.isNotEmpty()) {
-            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
-//            LOGGER.warn { feilmelding }
-        }
-
-        if (erKlageEllerOmgjøring && ikkeAktivertGrunnlagIkkeInntekt.isNotEmpty()) {
-            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
-        }
-
         if (virkningstidspunkt == null) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Virkningstidspunkt må settes")
         }
