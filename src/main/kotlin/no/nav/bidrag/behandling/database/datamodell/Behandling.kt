@@ -158,7 +158,9 @@ fun Behandling.validerForBeregning() {
                     virkningstidspunktEllerSøktFomDato,
                 ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
             val måBekrefteOpplysninger = grunnlagListe.hentAlleSomMåBekreftes().map { it.type }.toSet()
-            val harFeil = inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null || virkningstidspunktFeil != null
+            val harFeil =
+                inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null ||
+                    virkningstidspunktFeil != null || måBekrefteOpplysninger.isNotEmpty()
             harFeil.ifTrue {
                 BeregningValideringsfeil(
                     virkningstidspunktFeil,

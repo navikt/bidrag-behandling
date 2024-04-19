@@ -242,7 +242,7 @@ class AktivGrunnlagMappingKtTest {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(10)
+            resultat.shouldHaveSize(9)
 
             val resultatSlettet = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.SLETTET }
             resultatSlettet shouldHaveSize 1
@@ -251,7 +251,7 @@ class AktivGrunnlagMappingKtTest {
             val resultatEndring = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }
             resultatEndring shouldHaveSize 3
             resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 2
-            resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 1
+            resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 0
 
             val resultatNy = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.NY }
             resultatNy shouldHaveSize 6
