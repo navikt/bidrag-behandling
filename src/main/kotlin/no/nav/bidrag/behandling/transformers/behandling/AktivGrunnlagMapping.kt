@@ -11,10 +11,12 @@ import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
+import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
+import no.nav.bidrag.behandling.transformers.inntekt.tilInntektspostEndring
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.util.secureLogger
@@ -33,12 +35,49 @@ fun erInntektsposterEndret(
     if (inntektsposter.isEmpty() && nyeInntekstposter.isEmpty()) return false
     if (inntektsposter.size != nyeInntekstposter.size) return true
     return nyeInntekstposter.sortedBy { it.kode }.any { nyInntekstpost ->
-        val eksisterende =
-            inntektsposter.sortedBy { it.kode }.find {
-                (it.inntektstype != null && it.inntektstype == nyInntekstpost.inntekstype) || it.kode == nyInntekstpost.kode
-            }
-        eksisterende == null || eksisterende.beløp.nærmesteHeltall != nyInntekstpost.beløp.nærmesteHeltall
+        erInntektspostEndret(nyInntekstpost, inntektsposter)
     }
+}
+
+fun erInntektspostEndret(
+    nyInntekstpost: InntektPost,
+    eksisterendePoster: Set<Inntektspost>,
+): Boolean {
+    val eksisterende =
+        eksisterendePoster.sortedBy { it.kode }.find {
+            (it.inntektstype != null && it.inntektstype == nyInntekstpost.inntekstype) || it.kode == nyInntekstpost.kode
+        }
+    return eksisterende == null || eksisterende.beløp.nærmesteHeltall != nyInntekstpost.beløp.nærmesteHeltall
+}
+
+fun mapTilInntektspostEndringer(
+    nyeInntektsposter: Set<InntektPost>,
+    eksisterendePoster: Set<Inntektspost>,
+): Set<InntektspostEndringDto> {
+    val endringer =
+        nyeInntektsposter.map {
+            if (eksisterendePoster.none { eksisterende -> it.erLik(eksisterende) }) {
+                it.tilInntektspostEndring(GrunnlagInntektEndringstype.NY)
+            } else if (erInntektspostEndret(it, eksisterendePoster)) {
+                it.tilInntektspostEndring(GrunnlagInntektEndringstype.ENDRING)
+            } else {
+                null
+            }
+        }
+    val slettetPoster =
+        eksisterendePoster.map {
+            if (nyeInntektsposter.none { ny -> ny.erLik(it) }) {
+                it.tilInntektspostEndring(GrunnlagInntektEndringstype.SLETTET)
+            } else {
+                null
+            }
+        }
+
+    return (endringer + slettetPoster).filterNotNull().toSet()
+}
+
+fun InntektPost.erLik(inntektPost: Inntektspost): Boolean {
+    return kode == inntektPost.kode && inntekstype == inntektPost.inntektstype
 }
 
 fun List<Grunnlag>.hentEndringerBoforhold(aktiveGrunnlag: List<Grunnlag>): Set<HusstandsbarnGrunnlagDto> {
@@ -152,14 +191,14 @@ fun List<Grunnlag>.hentEndringerInntekter(
                     rolle.ident!!,
                     GrunnlagInntektEndringstype.ENDRING,
                     innhentetTidspunkt,
-                    eksisterendeInntekt.id,
+                    eksisterendeInntekt,
                 )
             } else {
                 grunnlag.tilIkkeAktivInntektDto(
                     rolle.ident!!,
                     GrunnlagInntektEndringstype.INGEN_ENDRING,
                     innhentetTidspunkt,
-                    eksisterendeInntekt.id,
+                    eksisterendeInntekt,
                 )
             }
         }?.toSet() ?: emptySet()
