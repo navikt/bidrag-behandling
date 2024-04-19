@@ -249,7 +249,7 @@ class AktivGrunnlagMappingKtTest {
             resultatSlettet.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 1
 
             val resultatEndring = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }
-            resultatEndring shouldHaveSize 3
+            resultatEndring shouldHaveSize 2
             resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 2
             resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 0
 

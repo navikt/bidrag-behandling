@@ -31,7 +31,7 @@ fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag {
         grunnlagListe =
             inntekter.filter { it.taMed }.map {
                 InntektsgrunnlagPeriode(
-                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
+                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
                     beløp = it.belop,
                     inntektsrapportering = it.type,
                     inntektGjelderBarnIdent = it.gjelderBarn.takeIfNotNullOrEmpty { Personident(it) },
