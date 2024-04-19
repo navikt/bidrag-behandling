@@ -90,13 +90,13 @@ class InntektService(
                 Inntektsrapportering.UTVIDET_BARNETRYGD,
             )
 
-        val ytelseTypeSomOppdateres = grunnlagstype?.tilInntektrapporteringYtelse()
+        val ytelsetypeSomOppdateres = grunnlagstype?.tilInntektrapporteringYtelse()
         // Sletter tidligere innhentede inntekter knyttet til ainntekt og skattegrunnlag som ikke finnes i nyeste uttrekk
         val offentligeInntekterSomSkalSlettes =
             behandling.inntekter.filter { Kilde.OFFENTLIG == it.kilde }
                 .filter {
-                    ytelseTypeSomOppdateres != null && it.type == ytelseTypeSomOppdateres ||
-                        ytelseTypeSomOppdateres == null && !inntektsrapporteringerForYtelser.contains(it.type)
+                    ytelsetypeSomOppdateres != null && it.type == ytelsetypeSomOppdateres ||
+                        ytelsetypeSomOppdateres == null && !inntektsrapporteringerForYtelser.contains(it.type)
                 }.filter { rolle.ident == it.ident }
                 .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
