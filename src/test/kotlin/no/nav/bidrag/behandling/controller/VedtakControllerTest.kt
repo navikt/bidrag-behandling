@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -10,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
@@ -20,7 +22,6 @@ import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
@@ -122,7 +123,6 @@ class VedtakControllerTest : KontrollerTestRunner() {
     }
 
     @Test
-    @Disabled("Aktivering fungerer ikke")
     fun `Skal ikke fatte vedtak hvis nyeste opplysninger ikke er aktivert`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
         behandlingRepository.save(behandling)
@@ -148,11 +148,12 @@ class VedtakControllerTest : KontrollerTestRunner() {
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
                 HttpEntity(""),
-                Int::class.java,
+                BeregningValideringsfeil::class.java,
             )
 
         response.statusCode shouldBe HttpStatus.BAD_REQUEST
-        response.headers[HttpHeaders.WARNING]!!.first() shouldContain "Kan ikke fatte vedtak fordi nyeste opplysninger ikke er hentet inn"
+        response.headers[HttpHeaders.WARNING]!!.first() shouldContain "Validering feilet - Feil ved validering av behandling for beregning"
+        response.body!!.måBekrefteNyeOpplysninger shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
     }
 
     @Test
@@ -182,10 +183,12 @@ class VedtakControllerTest : KontrollerTestRunner() {
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
                 HttpEntity(""),
-                Int::class.java,
+                BeregningValideringsfeil::class.java,
             )
 
-        response.statusCode shouldBe HttpStatus.OK
+        response.statusCode shouldBe HttpStatus.BAD_REQUEST
+        response.headers[HttpHeaders.WARNING]!!.first() shouldContain "Validering feilet - Feil ved validering av behandling for beregning"
+        response.body!!.måBekrefteNyeOpplysninger shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
     }
 
     private fun save(behandling: Behandling) {

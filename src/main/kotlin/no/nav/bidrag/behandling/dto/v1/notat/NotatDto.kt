@@ -175,6 +175,7 @@ data class NotatInntektDto(
         get() =
             type.visningsnavnMedÅrstall(
                 periode?.fom?.year ?: opprinneligPeriode?.fom?.year,
+                opprinneligPeriode,
             )
 }
 

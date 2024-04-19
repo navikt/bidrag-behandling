@@ -32,9 +32,9 @@ fun erInntektsposterEndret(
 ): Boolean {
     if (inntektsposter.isEmpty() && nyeInntekstposter.isEmpty()) return false
     if (inntektsposter.size != nyeInntekstposter.size) return true
-    return nyeInntekstposter.any { nyInntekstpost ->
+    return nyeInntekstposter.sortedBy { it.kode }.any { nyInntekstpost ->
         val eksisterende =
-            inntektsposter.find {
+            inntektsposter.sortedBy { it.kode }.find {
                 (it.inntektstype != null && it.inntektstype == nyInntekstpost.inntekstype) || it.kode == nyInntekstpost.kode
             }
         eksisterende == null || eksisterende.beløp.nærmesteHeltall != nyInntekstpost.beløp.nærmesteHeltall
@@ -140,10 +140,9 @@ fun List<Grunnlag>.hentEndringerInntekter(
                         GrunnlagInntektEndringstype.NY,
                         innhentetTidspunkt,
                     )
-            val erPeriodeEndret = eksisterendeInntekt.opprinneligPeriode != grunnlag.periode
             val erBeløpEndret =
                 eksisterendeInntekt.belop.nærmesteHeltall != grunnlag.sumInntekt.nærmesteHeltall
-            if (erPeriodeEndret || erBeløpEndret ||
+            if (erBeløpEndret ||
                 erInntektsposterEndret(
                     eksisterendeInntekt.inntektsposter,
                     grunnlag.inntektPostListe,

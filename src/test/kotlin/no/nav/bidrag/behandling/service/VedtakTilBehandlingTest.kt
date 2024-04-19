@@ -190,14 +190,14 @@ class VedtakTilBehandlingTest {
                 this shouldHaveSize 15
                 val inntekt12Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
                 val inntekt12MndOpprinnelig =
-                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK }
+                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
                 inntekt12Mnd shouldNotBe null
                 inntekt12Mnd!!.taMed shouldBe false
                 inntekt12Mnd!!.kilde shouldBe Kilde.OFFENTLIG
 
                 inntekt12MndOpprinnelig shouldNotBe null
                 inntekt12MndOpprinnelig!!.taMed shouldBe true
-                inntekt12MndOpprinnelig.kilde shouldBe Kilde.MANUELL
+                inntekt12MndOpprinnelig.kilde shouldBe Kilde.OFFENTLIG
                 inntekt12Mnd.isEqual(inntekt12MndOpprinnelig)
 
                 inntekt12Mnd.opprinneligFom shouldBe LocalDate.parse("2023-02-01")
@@ -214,12 +214,12 @@ class VedtakTilBehandlingTest {
 
                 val inntekt3Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }
                 val inntekt3MndOpprinnelig =
-                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK }
+                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
                 inntekt3Mnd shouldNotBe null
                 inntekt3MndOpprinnelig shouldNotBe null
                 inntekt3Mnd!!.taMed shouldBe false
                 inntekt3MndOpprinnelig!!.taMed shouldBe true
-                inntekt3MndOpprinnelig!!.kilde shouldBe Kilde.MANUELL
+                inntekt3MndOpprinnelig!!.kilde shouldBe Kilde.OFFENTLIG
                 inntekt3Mnd.isEqual(inntekt3MndOpprinnelig)
                 inntekt3Mnd.opprinneligFom shouldBe LocalDate.parse("2023-11-01")
                 inntekt3Mnd.datoFom shouldBe LocalDate.parse("2023-11-01")

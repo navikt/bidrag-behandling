@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
-import no.nav.bidrag.behandling.transformers.grunnlag.beregningTilDato
+import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -24,14 +24,14 @@ fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag {
         periode =
             ÅrMånedsperiode(
                 virkningstidspunktEllerSøktFomDato,
-                maxOf(virkningstidspunktEllerSøktFomDato.plusMonths(1).withDayOfMonth(1), beregningTilDato),
+                finnBeregnTilDato(virkningstidspunktEllerSøktFomDato),
             ),
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
         bidragsmottakerIdent = Personident(bidragsmottaker?.ident!!),
         grunnlagListe =
             inntekter.filter { it.taMed }.map {
                 InntektsgrunnlagPeriode(
-                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom),
+                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
                     beløp = it.belop,
                     inntektsrapportering = it.type,
                     inntektGjelderBarnIdent = it.gjelderBarn.takeIfNotNullOrEmpty { Personident(it) },

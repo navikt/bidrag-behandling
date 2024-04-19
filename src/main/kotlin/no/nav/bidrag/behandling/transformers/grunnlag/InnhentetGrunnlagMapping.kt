@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.grunnlag
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -156,7 +157,7 @@ fun List<Grunnlag>.hentGrunnlagsreferanserForInntekt(
     if (inntekt.kilde == Kilde.MANUELL) return emptyList()
     val periode = ÅrMånedsperiode(inntekt.opprinneligFom!!, inntekt.opprinneligTom)
     val inntekterGjelderGrunnlag =
-        find {
+        hentAlleAktiv().find {
             it.type == inntekt.type.tilGrunnlagsdataType() && it.erBearbeidet && hentNyesteIdent(
                 it.rolle.ident,
             )?.verdi == gjelderIdent
