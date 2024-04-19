@@ -9,6 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.tilInntektrapporteringYtelse
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
@@ -72,6 +74,7 @@ class InntektService(
         behandling: Behandling,
         rolle: Rolle,
         summerteÅrsinntekter: List<SummertÅrsinntekt>,
+        grunnlagstype: Grunnlagsdatatype? = null,
     ) {
         val idTilInntekterSomBleOppdatert: MutableSet<Long> = mutableSetOf()
 
@@ -87,10 +90,14 @@ class InntektService(
                 Inntektsrapportering.UTVIDET_BARNETRYGD,
             )
 
+        val ytelseTypeSomOppdateres = grunnlagstype?.tilInntektrapporteringYtelse()
         // Sletter tidligere innhentede inntekter knyttet til ainntekt og skattegrunnlag som ikke finnes i nyeste uttrekk
         val offentligeInntekterSomSkalSlettes =
             behandling.inntekter.filter { Kilde.OFFENTLIG == it.kilde }
-                .filter { !inntektsrapporteringerForYtelser.contains(it.type) }.filter { rolle.ident == it.ident }
+                .filter {
+                    ytelseTypeSomOppdateres != null && it.type == ytelseTypeSomOppdateres ||
+                        ytelseTypeSomOppdateres == null && !inntektsrapporteringerForYtelser.contains(it.type)
+                }.filter { rolle.ident == it.ident }
                 .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
         offentligeInntekterSomSkalSlettes.forEach {

@@ -6,9 +6,11 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
+import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndringer
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -17,6 +19,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
+import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.math.BigDecimal
@@ -177,7 +180,7 @@ fun SummertÅrsinntekt.tilIkkeAktivInntektDto(
     gjelderIdent: String,
     endringstype: GrunnlagInntektEndringstype,
     innhentetTidspunkt: LocalDateTime,
-    id: Long? = null,
+    eksisterendeInntekt: Inntekt? = null,
 ) = IkkeAktivInntektDto(
     rapporteringstype = this.inntektRapportering,
     // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
@@ -187,17 +190,42 @@ fun SummertÅrsinntekt.tilIkkeAktivInntektDto(
     gjelderBarn = gjelderBarnPersonId?.let { Personident(it) },
     endringstype = endringstype,
     innhentetTidspunkt = innhentetTidspunkt,
-    originalId = id,
+    originalId = eksisterendeInntekt?.id,
     inntektsposter =
-        inntektPostListe.map {
-            InntektspostDtoV2(
-                it.kode,
-                it.visningsnavn,
-                it.inntekstype,
-                it.beløp.nærmesteHeltall,
-            )
-        }.toSet(),
+        inntektPostListe.map { it.toInntektpost() }.toSet(),
+    inntektsposterSomErEndret =
+        if (eksisterendeInntekt != null) {
+            mapTilInntektspostEndringer(inntektPostListe.toSet(), eksisterendeInntekt.inntektsposter)
+        } else {
+            emptySet()
+        },
 )
+
+fun Inntektspost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype) =
+    InntektspostEndringDto(
+        kode,
+        finnVisningsnavn(kode),
+        inntektstype,
+        beløp.nærmesteHeltall,
+        endringstype,
+    )
+
+fun InntektPost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype) =
+    InntektspostEndringDto(
+        kode,
+        visningsnavn,
+        inntekstype,
+        beløp.nærmesteHeltall,
+        endringstype,
+    )
+
+fun InntektPost.toInntektpost() =
+    InntektspostDtoV2(
+        kode,
+        visningsnavn,
+        inntekstype,
+        beløp.nærmesteHeltall,
+    )
 
 fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
     val inntekt =
