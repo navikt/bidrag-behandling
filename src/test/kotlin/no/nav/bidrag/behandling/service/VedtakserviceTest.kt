@@ -78,6 +78,9 @@ class VedtakserviceTest {
     lateinit var grunnlagService: GrunnlagService
 
     @MockkBean
+    lateinit var notatOpplysningerService: NotatOpplysningerService
+
+    @MockkBean
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
@@ -100,11 +103,13 @@ class VedtakserviceTest {
             VedtakService(
                 behandlingService,
                 grunnlagService,
+                notatOpplysningerService,
                 beregningService,
                 vedtakConsumer,
                 sakConsumer,
                 unleash,
             )
+        every { notatOpplysningerService.opprettNotat(any()) } returns Unit
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every {
             behandlingService.oppdaterBehandling(

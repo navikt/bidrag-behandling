@@ -50,13 +50,14 @@ class VedtakHendelseListener(
                 "oppretter forsendelse og notat for vedtaket"
         }
 
+        // Dette gjøres synkront etter fatte vedtak
+//        opprettNotat(behandling)
+        opprettForsendelse(vedtak, behandling)
+
         behandlingService.oppdaterVedtakFattetStatus(
             vedtak.behandlingId!!,
             vedtaksid = vedtak.id.toLong(),
         )
-
-        opprettForsendelse(vedtak, behandling)
-        opprettNotat(behandling)
     }
 
     private fun opprettNotat(behandling: Behandling) {
@@ -81,6 +82,7 @@ class VedtakHendelseListener(
                     BehandlingInfoDto(
                         soknadId = vedtak.søknadId ?: behandling.soknadsid,
                         vedtakId = vedtak.id.toLong(),
+                        behandlingId = behandling.id!!,
                         soknadFra = behandling.soknadFra,
                         stonadType = vedtak.stønadstype,
                         engangsBelopType = vedtak.engangsbeløptype,
