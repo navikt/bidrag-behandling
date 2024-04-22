@@ -295,9 +295,9 @@ private fun opprettGrunnlagForBostatusperioder(
 
 private fun Inntekt.tilGrunnlagreferanse(gjelder: GrunnlagDto) =
     if (gjelderBarn != null) {
-        "inntekt_${type}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFomEllerOpprinneligFom.toCompactString()}"
+        "inntekt_${type}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
     } else {
-        "inntekt_${type}_${gjelder.referanse}_${datoFomEllerOpprinneligFom.toCompactString()}"
+        "inntekt_${type}_${gjelder.referanse}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
     }
 
 fun Person.valider(rolle: Rolletype? = null): Person {
