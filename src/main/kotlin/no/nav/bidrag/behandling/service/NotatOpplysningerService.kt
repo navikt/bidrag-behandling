@@ -52,6 +52,7 @@ import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -66,6 +67,7 @@ class NotatOpplysningerService(
     private val bidragDokumentConsumer: BidragDokumentConsumer,
 ) {
     @Retryable(value = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0))
+    @Transactional
     fun opprettNotat(behandlingId: Long) {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val notatDto = hentNotatOpplysninger(behandlingId)
@@ -90,14 +92,22 @@ class NotatOpplysningerService(
             )
         val response =
             bidragDokumentConsumer.opprettJournalpost(forespørsel)
+        lagreJournalpostId(behandling, response.journalpostId)
         secureLogger.info {
             "Opprettet notat for behandling $behandlingId i sak ${behandling.saksnummer} " +
-                "med journalpostId ${response?.journalpostId} med forespørsel $forespørsel"
+                "med journalpostId ${response.journalpostId} med forespørsel $forespørsel"
         }
         log.info {
             "Opprettet notat for behandling $behandlingId i sak ${behandling.saksnummer} " +
-                "med journalpostId ${response?.journalpostId}"
+                "med journalpostId ${response.journalpostId}"
         }
+    }
+
+    private fun lagreJournalpostId(
+        behandling: Behandling,
+        journalpostId: String?,
+    ) {
+        behandling.notatJournalpostId = journalpostId
     }
 
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
