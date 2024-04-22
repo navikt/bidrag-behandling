@@ -4,18 +4,13 @@ import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
-import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.boforhold.dto.BoforholdRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
-import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
-import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 
 fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
     this.map {
@@ -94,47 +89,3 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
         husstandsbarn
     }.toSet()
 }
-
-fun List<no.nav.bidrag.sivilstand.response.SivilstandV1>.tilSivilstand(behandling: Behandling): List<Sivilstand> =
-    this.map {
-        Sivilstand(
-            behandling = behandling,
-            kilde = Kilde.OFFENTLIG,
-            datoFom = it.periodeFom,
-            datoTom = it.periodeTom,
-            sivilstand = it.sivilstandskode,
-        )
-    }
-
-fun SivilstandBeregnet.tilSivilstand(behandling: Behandling): List<Sivilstand> =
-    this.sivilstandListe.map {
-        Sivilstand(
-            behandling = behandling,
-            kilde = Kilde.OFFENTLIG,
-            datoFom = it.periodeFom,
-            datoTom = it.periodeTom,
-            sivilstand = it.sivilstandskode,
-        )
-    }
-
-fun Set<Sivilstand>.tilSivilstandGrunnlagDto() =
-    this.map {
-        SivilstandGrunnlagDto(
-            gyldigFom = it.datoFom,
-            type = it.sivilstand.tilSivilstandskodePDL(),
-            bekreftelsesdato = null,
-            personId = null,
-            master = null,
-            historisk = null,
-            registrert = null,
-        )
-    }
-
-fun Sivilstandskode.tilSivilstandskodePDL() =
-    when (this) {
-        Sivilstandskode.BOR_ALENE_MED_BARN -> SivilstandskodePDL.SKILT
-        Sivilstandskode.GIFT_SAMBOER -> SivilstandskodePDL.GIFT
-        Sivilstandskode.SAMBOER -> SivilstandskodePDL.GIFT
-        Sivilstandskode.ENSLIG -> SivilstandskodePDL.SKILT
-        Sivilstandskode.UKJENT -> SivilstandskodePDL.UOPPGITT
-    }

@@ -8,12 +8,12 @@ import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
-import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.behandling.dto.v2.boforhold.Husstandsbarnperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.Disabled

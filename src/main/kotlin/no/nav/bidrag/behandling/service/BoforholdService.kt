@@ -9,9 +9,12 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsbarnperiodeRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
@@ -23,16 +26,19 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandGrunnlagDto
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
 
@@ -40,6 +46,7 @@ private val log = KotlinLogging.logger {}
 class BoforholdService(
     private val behandlingRepository: BehandlingRepository,
     private val bidragPersonConsumer: BidragPersonConsumer,
+    private val grunnlagRepository: GrunnlagRepository,
     private val husstandsbarnperiodeRepository: HusstandsbarnperiodeRepository,
     private val entityManager: EntityManager,
 ) {
@@ -192,7 +199,7 @@ class BoforholdService(
             }
             log.info {
                 "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
-                    "$behandlingsid."
+                        "$behandlingsid."
             }
 
             return eksisterendeHusstandsbarn.tilOppdatereBoforholdResponse(behandling)
@@ -214,15 +221,31 @@ class BoforholdService(
     @Transactional
     fun oppdatereAutomatiskInnhentaSivilstand(
         behandling: Behandling,
-        periodisertSivilstand: SivilstandBeregnet,
+        nyttGrunnlag: List<SivilstandBeregnV2Dto>,
+        overskriveManuelleOpplysninger: Boolean,
     ) {
-        val sivilstand = periodisertSivilstand.tilSivilstand(behandling)
+        when (overskriveManuelleOpplysninger) {
+            true -> {
+                log.info { "Oppdaterer automatisk innhenta sivilstand for behandling ${behandling.id}" +
+                        "- overskriver manuelle opplysninger" }
+                behandling.sivilstand.removeAll(
+                    behandling.sivilstand.asSequence().filter { s -> Kilde.OFFENTLIG == s.kilde }.toSet(),
+                )
+                behandling.sivilstand.addAll(nyttGrunnlag.tilSivilstand(behandling))
+            }
 
-        behandling.sivilstand.removeAll(
-            behandling.sivilstand.asSequence().filter { s -> Kilde.OFFENTLIG == s.kilde }
-                .toSet(),
-        )
-        behandling.sivilstand.addAll(sivilstand)
+            false -> {
+                log.info { "Oppdaterer automatisk innhenta sivilstand for behandling ${behandling.id}" +
+                        "- overskriver ikke manuelle opplysninger" }
+                val opprinneligSivilstand = behandling.sivilstand
+
+                SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, nyttGrunnlag.tilSivilstandRequest(
+                    opprinneligSivilstand
+                ) )
+
+            }
+        }
+
         log.info { "Sivilstand fra offentlige kilder ble oppdatert for behandling ${behandling.id}" }
     }
 
@@ -239,10 +262,15 @@ class BoforholdService(
         oppdatereSivilstand.sletteSivilstandsperiode?.let { idSivilstandsperiode ->
             val periodeSomSkalSlettes = behandling.sivilstand.find { idSivilstandsperiode == it.id }
             behandling.sivilstand.remove(periodeSomSkalSlettes)
+
+           val nyesteAktiveSivilstandsgrunnlag =  grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
+                behandling.id!!,Grunnlagsdatatype.SIVILSTAND, false, behandling.bidragsmottaker!!)
+
+            nyesteAktiveSivilstandsgrunnlag
             val periodisertSivilstand =
-                SivilstandApi.beregnV1(
+                SivilstandApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.sivilstand.tilSivilstandGrunnlagDto(),
+                    nyesteAktiveSivilstandsgrunnlag.,
                 )
 
             log.info { "Slettet sivilstand med id $idSivilstandsperiode fra behandling $behandlingsid." }
@@ -281,7 +309,7 @@ class BoforholdService(
         entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                "forbindelse med førstegangsoppdatering av boforhold."
+                    "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 

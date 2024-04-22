@@ -31,6 +31,8 @@ import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
+import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
@@ -253,6 +255,7 @@ class GrunnlagService(
                 grunnlagstype,
                 rolleGrunnlagSkalAktiveresFor,
                 aktiveringstidspunkt,
+                overskriveManuelleOpplysninger
             )
         } else {
             log.error {
@@ -406,7 +409,7 @@ class GrunnlagService(
         val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
         val sistInnhentedeRådata =
             ikkeAktivGrunnlag
-                .filter { rolle!!.ident == it.rolle.ident }
+                .filter { rolle.ident == it.rolle.ident }
                 .filter { grunnlagstype == it.type }
                 .filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }
@@ -446,24 +449,27 @@ class GrunnlagService(
         grunnlagstype: Grunnlagsdatatype,
         rolle: Rolle,
         aktiveringstidspunkt: LocalDateTime,
+        overskriveManuelleOpplysninger: Boolean,
     ) {
         val sistInnhentedeRådata =
             behandling.grunnlag.toList().hentAlleIkkeAktiv()
-                .filter { rolle!!.ident == it.rolle.ident }
+                .filter { rolle.ident == it.rolle.ident }
                 .filter { grunnlagstype == it.type }
                 .filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }!!
+
+        val nyttGrunnlag = jsonTilObjekt<List<SivilstandGrunnlagDto>>(sistInnhentedeRådata.data)
         val periodisertSivilstand =
-            SivilstandApi.beregnV1(
+            SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                jsonTilObjekt<List<SivilstandGrunnlagDto>>(sistInnhentedeRådata.data),
+                nyttGrunnlag.tilSivilstandRequest(),
             )
 
-        lagreGrunnlagHvisEndret<SivilstandBeregnet>(
+        lagreGrunnlagHvisEndret<SivilstandBeregnV2Dto>(
             behandling,
             rolle,
             Grunnlagstype(grunnlagstype, true),
-            periodisertSivilstand,
+            periodisertSivilstand.toSet(),
             LocalDateTime.now(),
             aktiveringstidspunkt,
         )
@@ -472,6 +478,7 @@ class GrunnlagService(
         boforholdService.oppdatereAutomatiskInnhentaSivilstand(
             behandling,
             periodisertSivilstand,
+            overskriveManuelleOpplysninger
         )
         sistInnhentedeRådata.aktiv = aktiveringstidspunkt
         entityManager.flush()
@@ -539,16 +546,16 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
     ) {
         val sivilstandPeriodisert =
-            SivilstandApi.beregnV1(
+            SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                innhentetGrunnlag.sivilstandListe,
+                innhentetGrunnlag.sivilstandListe.tilSivilstandRequest(),
             )
 
-        lagreGrunnlagHvisEndret<SivilstandBeregnet>(
+        lagreGrunnlagHvisEndret<SivilstandBeregnV2Dto>(
             behandling,
             behandling.bidragsmottaker!!,
             Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
-            sivilstandPeriodisert,
+            sivilstandPeriodisert.toSet(),
             innhentetGrunnlag.hentetTidspunkt,
         )
     }
