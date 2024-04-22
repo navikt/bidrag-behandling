@@ -132,7 +132,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
                 barn1 shouldNotBe null
-                barn1!!.perioder.size shouldBe 2
+                barn1!!.perioder.size shouldBe 1
                 barn1.perioder.filter { Kilde.MANUELL == it.kilde } shouldBe emptyList()
             }
 
@@ -213,7 +213,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
                 barn1 shouldNotBe null
-                barn1!!.perioder.size shouldBe 8
+                barn1!!.perioder.size shouldBe 7
                 barn1.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 6
             }
 
