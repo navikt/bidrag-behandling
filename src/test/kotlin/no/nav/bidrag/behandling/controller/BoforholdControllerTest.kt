@@ -11,7 +11,6 @@ import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.Husstandsbarnperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.NyHusstandsbarnperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
