@@ -30,6 +30,7 @@ import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.sivilstand.response.SivilstandV1
 import no.nav.bidrag.sivilstand.response.Status
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -58,6 +59,117 @@ class AktivGrunnlagMappingKtTest {
 
         behandling.grunnlag = grunnlag
         return behandling
+    }
+
+    @Nested
+    inner class InntektPosterEndringerTest {
+        @Test
+        fun `skal finne endringer i inntekstposter`() {
+            val nyeInntektsposter =
+                setOf(
+                    InntektPost(
+                        kode = "kode",
+                        beløp = BigDecimal(1000),
+                    ),
+                    InntektPost(
+                        kode = "kode2",
+                        beløp = BigDecimal(1000),
+                    ),
+                    InntektPost(
+                        kode = "kode6",
+                        beløp = BigDecimal(1000),
+                    ),
+                )
+
+            val eksisterendePoster =
+                setOf(
+                    Inntektspost(
+                        kode = "kode",
+                        beløp = BigDecimal(2000),
+                        id = 1,
+                        inntektstype = null,
+                        inntekt = null,
+                    ),
+                    Inntektspost(
+                        kode = "kode3",
+                        beløp = BigDecimal(3000),
+                        id = 2,
+                        inntektstype = null,
+                        inntekt = null,
+                    ),
+                    Inntektspost(
+                        kode = "kode4",
+                        beløp = BigDecimal(2000),
+                        id = 3,
+                        inntektstype = null,
+                        inntekt = null,
+                    ),
+                    Inntektspost(
+                        kode = "kode6",
+                        beløp = BigDecimal(1000),
+                        id = 4,
+                        inntektstype = null,
+                        inntekt = null,
+                    ),
+                )
+
+            val endringer = mapTilInntektspostEndringer(nyeInntektsposter, eksisterendePoster).toList()
+
+            endringer shouldHaveSize 4
+            assertSoftly(endringer.find { it.kode == "kode" }!!) {
+                endringstype shouldBe GrunnlagInntektEndringstype.ENDRING
+                beløp shouldBe BigDecimal(1000)
+            }
+            assertSoftly(endringer.find { it.kode == "kode2" }!!) {
+                endringstype shouldBe GrunnlagInntektEndringstype.NY
+                beløp shouldBe BigDecimal(1000)
+            }
+            assertSoftly(endringer.find { it.kode == "kode3" }!!) {
+                endringstype shouldBe GrunnlagInntektEndringstype.SLETTET
+                beløp shouldBe BigDecimal(3000)
+            }
+            assertSoftly(endringer.find { it.kode == "kode4" }!!) {
+                endringstype shouldBe GrunnlagInntektEndringstype.SLETTET
+                beløp shouldBe BigDecimal(2000)
+            }
+        }
+
+        @Test
+        fun `skal ikke finne endringer i inntekstposter hvis ingen endring`() {
+            val nyeInntektsposter =
+                setOf(
+                    InntektPost(
+                        kode = "kode",
+                        beløp = BigDecimal(1000),
+                    ),
+                    InntektPost(
+                        kode = "kode2",
+                        beløp = BigDecimal(1000),
+                    ),
+                )
+
+            val eksisterendePoster =
+                setOf(
+                    Inntektspost(
+                        kode = "kode",
+                        beløp = BigDecimal(1000),
+                        id = 1,
+                        inntektstype = null,
+                        inntekt = null,
+                    ),
+                    Inntektspost(
+                        kode = "kode2",
+                        beløp = BigDecimal(1000),
+                        id = 2,
+                        inntektstype = null,
+                        inntekt = null,
+                    ),
+                )
+
+            val endringer = mapTilInntektspostEndringer(nyeInntektsposter, eksisterendePoster).toList()
+
+            endringer shouldHaveSize 0
+        }
     }
 
     @Nested
@@ -129,7 +241,7 @@ class AktivGrunnlagMappingKtTest {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(6)
+            resultat.shouldHaveSize(4)
             resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }.shouldHaveSize(0)
 
             val resultatBarn =
@@ -181,15 +293,15 @@ class AktivGrunnlagMappingKtTest {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(6)
+            resultat.shouldHaveSize(4)
             resultat.none { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldBe true
             resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2023 } shouldBe true
             resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2022 } shouldBe true
             val resultatNy = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.NY }
-            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 1
+            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND } shouldHaveSize 1
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
-            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 3
+            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 2
         }
 
         @Test
@@ -242,19 +354,36 @@ class AktivGrunnlagMappingKtTest {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(10)
+            resultat.shouldHaveSize(7)
 
             val resultatSlettet = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.SLETTET }
             resultatSlettet shouldHaveSize 1
             resultatSlettet.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 1
 
             val resultatEndring = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }
-            resultatEndring shouldHaveSize 3
+            resultatEndring shouldHaveSize 2
             resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 2
-            resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 1
+            assertSoftly(
+                resultatEndring.find {
+                    it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom == YearMonth.parse("2022-01")
+                }!!,
+            ) {
+                inntektsposterSomErEndret shouldHaveSize 2
+                inntektsposterSomErEndret.find { it.kode == "arbeidsavklaringspenger" }!!.endringstype shouldBe GrunnlagInntektEndringstype.SLETTET
+                inntektsposterSomErEndret.find { it.kode == "annenArbeidsinntekt" }!!.endringstype shouldBe GrunnlagInntektEndringstype.NY
+            }
+            assertSoftly(
+                resultatEndring.find {
+                    it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom == YearMonth.parse("2023-01")
+                }!!,
+            ) {
+                inntektsposterSomErEndret shouldHaveSize 1
+                inntektsposterSomErEndret.find { it.kode == "arbeidsavklaringspenger" }!!.endringstype shouldBe GrunnlagInntektEndringstype.ENDRING
+            }
+            resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 0
 
             val resultatNy = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.NY }
-            resultatNy shouldHaveSize 6
+            resultatNy shouldHaveSize 4
         }
 
         @Test

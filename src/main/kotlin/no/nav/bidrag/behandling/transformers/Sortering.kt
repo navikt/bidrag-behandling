@@ -8,9 +8,9 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 val årsinntekterPrioriteringsliste =
     listOf(
         Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
-        Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
+        Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-        Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
+        Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
         Inntektsrapportering.OVERGANGSSTØNAD,
         Inntektsrapportering.INTRODUKSJONSSTØNAD,
         Inntektsrapportering.KVALIFISERINGSSTØNAD,

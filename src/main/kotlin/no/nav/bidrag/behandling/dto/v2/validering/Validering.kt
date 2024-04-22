@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.validering
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -15,10 +16,11 @@ import java.time.LocalDate
 data class VirkningstidspunktFeilDto(
     val manglerVirkningstidspunkt: Boolean,
     val manglerÅrsakEllerAvslag: Boolean,
+    val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean,
 ) {
     @get:JsonIgnore
     val harFeil
-        get() = manglerVirkningstidspunkt || manglerÅrsakEllerAvslag
+        get() = manglerVirkningstidspunkt || manglerÅrsakEllerAvslag || virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig
 }
 
 data class InntektValideringsfeilDto(
@@ -33,7 +35,9 @@ data class InntektValideringsfeilDto(
     val harFeil
         get() =
             barnetillegg?.any { it.harFeil } == true || utvidetBarnetrygd?.harFeil == true ||
-                kontantstøtte?.any { it.harFeil } == true || småbarnstillegg?.harFeil == true || årsinntekter?.any { it.harFeil } == true
+                kontantstøtte?.any {
+                    it.harFeil
+                } == true || småbarnstillegg?.harFeil == true || årsinntekter?.any { it.harFeil } == true
 }
 
 data class InntektValideringsfeil(
@@ -149,4 +153,5 @@ data class BeregningValideringsfeil(
     val inntekter: InntektValideringsfeilDto? = null,
     val husstandsbarn: List<BoforholdPeriodeseringsfeil>? = null,
     val sivilstand: SivilstandPeriodeseringsfeil?,
+    val måBekrefteNyeOpplysninger: Set<Grunnlagsdatatype> = emptySet(),
 )

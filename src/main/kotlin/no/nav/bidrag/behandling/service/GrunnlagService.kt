@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.TransformerInntekterRequestBuilder
+import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.inntekt.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.inntekt.tilBarnetillegg
 import no.nav.bidrag.behandling.transformers.inntekt.tilKontantstøtte
@@ -64,7 +65,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
-import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
@@ -277,7 +277,7 @@ class GrunnlagService(
     }
 
     fun henteNyeGrunnlagsdataMedEndringsdiff(behandling: Behandling): IkkeAktiveGrunnlagsdata {
-        val roller = behandling.roller
+        val roller = behandling.roller.sortedBy { if (it.rolletype == Rolletype.BARN) 1 else -1 }
         val inntekter = behandling.inntekter
         val nyinnhentetGrunnlag =
             roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }
@@ -392,6 +392,7 @@ class GrunnlagService(
             behandling,
             rolle,
             summerteInntekter?.inntekter ?: emptyList(),
+            grunnlagstype,
         )
         ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(aktiveringstidspunkt)
     }
@@ -497,6 +498,7 @@ class GrunnlagService(
         lagreGrunnlagHvisEndret(behandling, rolleInhentetFor, innhentetGrunnlag, feilrapporteringer)
 
         val feilSkattepliktig = feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
+
         if (feilSkattepliktig == null) {
             lagreGrunnlagHvisEndret(
                 behandling,
@@ -582,46 +584,7 @@ class GrunnlagService(
         rolleInhentetFor: Rolle,
         feilliste: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
     ) {
-        val transformereInntekter =
-            TransformerInntekterRequest(
-                ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
-                ainntektsposter =
-                    innhentetGrunnlag.ainntektListe.flatMap {
-                        it.ainntektspostListe.tilAinntektsposter(
-                            rolleInhentetFor,
-                        )
-                    },
-                barnetilleggsliste =
-                    innhentetGrunnlag.barnetilleggListe.filter {
-                        harBarnRolleIBehandling(
-                            it.barnPersonId,
-                            behandling,
-                        )
-                    }.tilBarnetillegg(
-                        rolleInhentetFor,
-                    ),
-                kontantstøtteliste =
-                    innhentetGrunnlag.kontantstøtteListe.filter {
-                        harBarnRolleIBehandling(
-                            it.barnPersonId,
-                            behandling,
-                        )
-                    }.tilKontantstøtte(
-                        rolleInhentetFor,
-                    ),
-                skattegrunnlagsliste =
-                    innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
-                        rolleInhentetFor,
-                    ),
-                småbarnstilleggliste =
-                    innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
-                        rolleInhentetFor,
-                    ),
-                utvidetBarnetrygdliste =
-                    innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
-                        rolleInhentetFor,
-                    ),
-            )
+        val transformereInntekter = opprettTransformerInntekterRequest(behandling, innhentetGrunnlag, rolleInhentetFor)
 
         val sammenstilteInntekter = inntektApi.transformerInntekter(transformereInntekter)
 
@@ -837,13 +800,12 @@ class GrunnlagService(
     ) {
         val sistInnhentedeGrunnlagAvType: T? =
             henteNyesteGrunnlagsdataobjekt<T>(behandling.id!!, rolle.id!!, grunnlagstype)
-
+        val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         val erFørstegangsinnhentingAvInntekter =
-            sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)
+            sistInnhentedeGrunnlagAvType == null && (inneholderInntekter(innhentetGrunnlag) || erAvTypeBearbeidetSivilstand)
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
-        val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
-        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet || erAvTypeBearbeidetSivilstand) {
+        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -1084,17 +1046,11 @@ class GrunnlagService(
                     rolleInhentetFor,
                 )
 
-            Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
+            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.SKATTEGRUNNLAG,
                     rolleInhentetFor,
                 ) ?: innhentetGrunnlag.hentFeilFor(
-                    GrunnlagRequestType.AINNTEKT,
-                    rolleInhentetFor,
-                )
-
-            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER ->
-                innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.AINNTEKT,
                     rolleInhentetFor,
                 )

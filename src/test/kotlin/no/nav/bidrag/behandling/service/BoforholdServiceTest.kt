@@ -359,7 +359,9 @@ class BoforholdServiceTest : TestContainerRunner() {
             assertFailsWith<HttpClientErrorException> {
                 boforholdService.oppdatereHusstandsbarnManuelt(
                     behandling.id!!,
-                    OppdatereHusstandsbarn(sletteHusstandsbarn = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!.id),
+                    OppdatereHusstandsbarn(
+                        sletteHusstandsbarn = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!.id,
+                    ),
                 )
             }
         }

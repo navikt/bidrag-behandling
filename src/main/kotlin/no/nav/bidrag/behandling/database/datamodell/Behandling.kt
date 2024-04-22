@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
+import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -65,6 +66,7 @@ open class Behandling(
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
     open var opprinneligVirkningstidspunkt: LocalDate? = null,
+    open var opprinneligVedtakstidspunkt: LocalDateTime? = null,
     open var vedtakstidspunkt: LocalDateTime? = null,
     open var slettetTidspunkt: LocalDateTime? = null,
     open var opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
@@ -142,10 +144,14 @@ open class Behandling(
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
 fun Behandling.validerForBeregning() {
+    val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+        erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
+            virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
     val virkningstidspunktFeil =
         VirkningstidspunktFeilDto(
             manglerÅrsakEllerAvslag = avslag == null && årsak == null,
             manglerVirkningstidspunkt = virkningstidspunkt == null,
+            virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
         ).takeIf { it.harFeil }
     val feil =
         if (avslag == null) {
@@ -155,13 +161,17 @@ fun Behandling.validerForBeregning() {
                 husstandsbarn.validerBoforhold(
                     virkningstidspunktEllerSøktFomDato,
                 ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
-            val harFeil = inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null || virkningstidspunktFeil != null
+            val måBekrefteOpplysninger = grunnlagListe.hentAlleSomMåBekreftes().map { it.type }.toSet()
+            val harFeil =
+                inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null ||
+                    virkningstidspunktFeil != null || måBekrefteOpplysninger.isNotEmpty()
             harFeil.ifTrue {
                 BeregningValideringsfeil(
                     virkningstidspunktFeil,
                     inntekterFeil,
                     husstandsbarnFeil,
                     sivilstandFeil,
+                    måBekrefteOpplysninger,
                 )
             }
         } else if (virkningstidspunktFeil != null) {

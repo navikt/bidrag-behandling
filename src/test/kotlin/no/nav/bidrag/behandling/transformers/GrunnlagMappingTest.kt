@@ -992,6 +992,7 @@ class GrunnlagMappingTest {
                     type = Grunnlagsdatatype.KONTANTSTØTTE,
                     rolle = gjelder.tilRolle(behandling),
                     innhentet = LocalDateTime.now(),
+                    aktiv = LocalDateTime.now(),
                     erBearbeidet = true,
                     data =
                         commonObjectmapper.writeValueAsString(
@@ -1020,6 +1021,7 @@ class GrunnlagMappingTest {
                     type = Grunnlagsdatatype.BARNETILLEGG,
                     rolle = gjelder.tilRolle(behandling),
                     innhentet = LocalDateTime.now(),
+                    aktiv = LocalDateTime.now(),
                     erBearbeidet = true,
                     data =
                         commonObjectmapper.writeValueAsString(
@@ -1048,6 +1050,7 @@ class GrunnlagMappingTest {
                     type = Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                     rolle = gjelder.tilRolle(behandling),
                     innhentet = LocalDateTime.now(),
+                    aktiv = LocalDateTime.now(),
                     erBearbeidet = true,
                     data =
                         commonObjectmapper.writeValueAsString(

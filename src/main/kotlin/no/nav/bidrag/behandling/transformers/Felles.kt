@@ -9,8 +9,8 @@ val ainntekt12Og3Måneder =
     listOf(
         Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-        Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAK,
-        Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAK,
+        Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+        Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
     )
 val inntekstrapporteringerSomKreverGjelderBarn =
     listOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.BARNETILSYN)
