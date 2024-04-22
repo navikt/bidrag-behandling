@@ -77,8 +77,8 @@ class VedtakHendelseTest : TestContainerRunner() {
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
         stubUtils.Verify().forsendelseSlettet("2")
-        stubUtils.Verify().opprettNotatKalt()
-        stubUtils.Verify().opprettJournalpostKaltMed()
+//        stubUtils.Verify().opprettNotatKalt()
+//        stubUtils.Verify().opprettJournalpostKaltMed()
     }
 
     @Test

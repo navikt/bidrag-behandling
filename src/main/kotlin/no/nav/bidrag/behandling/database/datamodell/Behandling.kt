@@ -63,6 +63,7 @@ open class Behandling(
     open var engangsbeloptype: Engangsbeløptype?,
     open var vedtaksid: Long? = null,
     open var refVedtaksid: Long? = null,
+    open var notatJournalpostId: String? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
     open var opprinneligVirkningstidspunkt: LocalDate? = null,

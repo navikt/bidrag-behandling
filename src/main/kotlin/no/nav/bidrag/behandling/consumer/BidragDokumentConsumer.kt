@@ -22,7 +22,7 @@ class BidragDokumentConsumer(
             .path(path ?: "").build().toUri()
 
     @Retryable(value = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0))
-    fun opprettJournalpost(opprettJournalpostRequest: OpprettJournalpostRequest): OpprettJournalpostResponse? {
-        return postForEntity(createUri("/journalpost/JOARK"), opprettJournalpostRequest)
+    fun opprettJournalpost(opprettJournalpostRequest: OpprettJournalpostRequest): OpprettJournalpostResponse {
+        return postForNonNullEntity(createUri("/journalpost/JOARK"), opprettJournalpostRequest)
     }
 }
