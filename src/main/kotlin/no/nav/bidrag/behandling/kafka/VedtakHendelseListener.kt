@@ -49,7 +49,9 @@ class VedtakHendelseListener(
             "Lagrer vedtakId ${vedtak.id} på behandling ${vedtak.behandlingId} og " +
                 "oppretter forsendelse og notat for vedtaket"
         }
-        opprettNotat(behandling)
+
+        // Dette gjøres synkront etter fatte vedtak
+//        opprettNotat(behandling)
         opprettForsendelse(vedtak, behandling)
 
         behandlingService.oppdaterVedtakFattetStatus(

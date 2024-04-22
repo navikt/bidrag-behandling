@@ -53,6 +53,7 @@ private val LOGGER = KotlinLogging.logger {}
 class VedtakService(
     private val behandlingService: BehandlingService,
     private val grunnlagService: GrunnlagService,
+    private val notatOpplysningerService: NotatOpplysningerService,
     private val beregningService: BeregningService,
     private val vedtakConsumer: BidragVedtakConsumer,
     private val sakConsumer: BidragSakConsumer,
@@ -142,6 +143,7 @@ class VedtakService(
             behandlingId,
             vedtaksid = response.vedtaksid.toLong(),
         )
+        opprettNotat(behandling)
         LOGGER.info {
             "Fattet vedtak for behandling $behandlingId med ${
                 behandling.årsak?.let { "årsakstype $it" }
@@ -279,6 +281,16 @@ class VedtakService(
 
         if (saksnummer.isEmpty()) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Saksnummer mangler")
+        }
+    }
+
+    private fun opprettNotat(behandling: Behandling) {
+        try {
+            notatOpplysningerService.opprettNotat(behandling.id!!)
+        } catch (e: Exception) {
+            LOGGER.error(
+                e,
+            ) { "Det skjedde en feil ved opprettelse av notat for behandling ${behandling.id} og vedtaksid ${behandling.vedtaksid}" }
         }
     }
 

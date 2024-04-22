@@ -45,6 +45,8 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
+        stubUtils.stubOpprettNotat()
+        stubUtils.stubOpprettJournalpost("12333")
     }
 
     @Test
@@ -102,6 +104,8 @@ class VedtakControllerTest : KontrollerTestRunner() {
         behandlingEtter.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
         stubUtils.Verify().fatteVedtakKalt()
         stubUtils.Verify().hentSakKalt(behandling.saksnummer)
+        stubUtils.Verify().opprettNotatKalt()
+        stubUtils.Verify().opprettJournalpostKaltMed()
     }
 
     @Test
