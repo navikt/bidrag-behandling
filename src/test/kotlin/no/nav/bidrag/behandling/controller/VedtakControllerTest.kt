@@ -76,6 +76,8 @@ class VedtakControllerTest : KontrollerTestRunner() {
 
     @Test
     fun `Skal fatte vedtak`() {
+        stubUtils.stubOpprettJournalpost("12333")
+
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
         behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
@@ -102,6 +104,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         behandlingEtter.vedtaksid shouldBe 1
         behandlingEtter.vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
         behandlingEtter.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
+        behandlingEtter.notatJournalpostId shouldBe "12333"
         stubUtils.Verify().fatteVedtakKalt()
         stubUtils.Verify().hentSakKalt(behandling.saksnummer)
         stubUtils.Verify().opprettNotatKalt()
