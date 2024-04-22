@@ -23,14 +23,14 @@ fun Set<Husstandsbarnperiode>.tilDto() =
             it.bostatus,
             it.kilde,
         )
-    }.toSet()
+    }.sortedBy { it.datoFom }.toSet()
 
 fun Husstandsbarn.tilDto() =
     HusstandsbarnDtoV2(
         this.id,
         this.kilde,
         !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
-        this.perioder.tilDto().sortedBy { periode -> periode.datoFom }.toSet(),
+        this.perioder.tilDto(),
         this.ident,
         this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato,

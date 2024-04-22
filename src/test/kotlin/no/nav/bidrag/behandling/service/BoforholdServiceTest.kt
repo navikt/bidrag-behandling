@@ -18,7 +18,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
@@ -133,7 +133,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
                 barn1 shouldNotBe null
-                barn1!!.perioder.size shouldBe 2
+                barn1!!.perioder.size shouldBe 1
                 barn1.perioder.filter { Kilde.MANUELL == it.kilde } shouldBe emptyList()
             }
 
@@ -146,8 +146,6 @@ class BoforholdServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        @Disabled("Skrudd av i påvente av BoforholdApi-fiks")
-        // TODO: Skru på test etter at bidrag-beregn-felles er oppdatert med fiks-versjon
         open fun `skal oppdatere automatisk innhenta husstandsbarn og flette inn manuell informasjon`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
@@ -217,21 +215,21 @@ class BoforholdServiceTest : TestContainerRunner() {
             assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
                 barn1 shouldNotBe null
                 barn1!!.perioder.size shouldBe 4
-                barn1.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 2
+                barn1.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 3
                 barn1.perioder.last().kilde shouldBe Kilde.MANUELL
                 barn1.perioder.last().datoFom shouldBe LocalDate.of(2023, 6, 1)
                 barn1.perioder.last().datoTom shouldBe null
-                barn1.perioder.last().bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER.name
+                barn1.perioder.last().bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
             }
 
             assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }) { barn2 ->
                 barn2 shouldNotBe null
-                barn2!!.perioder.size shouldBe 4
-                barn2.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 2
+                barn2!!.perioder.size shouldBe 3
+                barn2.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 3
                 barn2.perioder.last().kilde shouldBe Kilde.MANUELL
                 barn2.perioder.last().datoFom shouldBe LocalDate.of(2023, 6, 1)
                 barn2.perioder.last().datoTom shouldBe null
-                barn2.perioder.last().bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER.name
+                barn2.perioder.last().bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
             }
         }
 

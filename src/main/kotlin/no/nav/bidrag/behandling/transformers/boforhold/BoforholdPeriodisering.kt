@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.boforhold.dto.BoforholdRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
-import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
@@ -34,7 +34,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
 fun Set<Husstandsbarnperiode>.tilBoforholdRequest(husstandsbarn: Husstandsbarn): BoforholdRequest {
     val bostatus = this.map { it.tilBostatus() }
     return BoforholdRequest(
-        bostatusListe = bostatus,
+        bostatusListe = bostatus.sortedBy { it.periodeFom },
         erBarnAvBmBp = true,
         fødselsdato = husstandsbarn.fødselsdato,
         relatertPersonPersonId = husstandsbarn.ident,

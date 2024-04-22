@@ -1,7 +1,10 @@
 package no.nav.bidrag.behandling.controller
 
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
-import junit.framework.TestCase.assertFalse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
@@ -13,16 +16,16 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
-import no.nav.bidrag.boforhold.dto.Kilde
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import org.junit.experimental.runners.Enclosed
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import kotlin.test.assertEquals
 
@@ -90,12 +93,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
     @Nested
     open inner class OppdatereBoforhold {
-        // TODO: Ferdigstille etter np er fikset i BoforholdApi.beregn2
         @Test
-        @Disabled(
-            "Skrudd av i påvente av fiks i beregnV2. Får nullpointer dersom to " +
-                "bostatus-innslag med null tom-dato kommer etter hverandre",
-        )
         fun `skal kunne legge til åpen manuell periode like etter en åpen offentlig periode`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
@@ -127,7 +125,22 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 )
 
             // så
-            assertFalse(true)
+            assertSoftly(boforholdResponse) {
+                it.statusCode shouldBe HttpStatus.OK
+                it.body shouldNotBe null
+                it.body?.valideringsfeil?.husstandsbarn shouldBe emptyList()
+                it.body?.oppdatertHusstandsbarn shouldNotBe null
+            }
+
+            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
+                oppdatertHusstandsbarn?.perioder shouldNotBe emptySet<HusstandsbarnperiodeDto>()
+                oppdatertHusstandsbarn!!.perioder shouldHaveSize 3
+                oppdatertHusstandsbarn.perioder.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
+                oppdatertHusstandsbarn.perioder.maxBy { it.datoFom!! }.datoFom shouldBe
+                    request.oppdatereHusstandsbarn!!.nyHusstandsbarnperiode!!.fraOgMed
+                oppdatertHusstandsbarn.perioder.maxBy { it.datoFom!! }.kilde shouldBe
+                    Kilde.MANUELL
+            }
         }
     }
 }
