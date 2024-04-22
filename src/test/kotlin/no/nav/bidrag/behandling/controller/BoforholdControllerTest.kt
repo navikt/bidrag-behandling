@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.Husstandsbarnperiode
+import no.nav.bidrag.behandling.dto.v2.boforhold.NyHusstandsbarnperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
@@ -106,7 +107,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     oppdatereHusstandsbarn =
                         OppdatereHusstandsbarn(
                             nyHusstandsbarnperiode =
-                                Husstandsbarnperiode(
+                                NyHusstandsbarnperiode(
                                     idHusstandsbarn = eksisterendeHusstandsbarn.id!!,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     fraOgMed = sistePeriode.datoFom!!.plusMonths(2),
