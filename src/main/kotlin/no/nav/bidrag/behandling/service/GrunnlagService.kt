@@ -1104,6 +1104,7 @@ class GrunnlagService(
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.arbeidsforholdListe.toSet(),
                     innhentetGrunnlag.hentetTidspunkt,
+                    LocalDateTime.now(),
                 )
             }
 
