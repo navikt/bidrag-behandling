@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v2.boforhold
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
@@ -26,9 +27,22 @@ data class OppdatereBoforholdResponse(
 
 data class OppdatereHusstandsbarn(
     val nyttHusstandsbarn: PersonaliaHusstandsbarn? = null,
-    val nyHusstandsbarnperiode: Husstandsbarnperiode? = null,
+    val nyHusstandsbarnperiode: NyHusstandsbarnperiode? = null,
     val sletteHusstandsbarnperiode: Long? = null,
     val sletteHusstandsbarn: Long? = null,
+)
+
+data class NyHusstandsbarnperiode(
+    @Schema(type = "Long", description = "Id til husstandsbarnet perioden skal gjelde for")
+    val idHusstandsbarn: Long,
+    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val fraOgMed: LocalDate?,
+    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val tilOgMed: LocalDate?,
+    @Schema(required = true)
+    val bostatus: Bostatuskode,
 )
 
 data class Husstandsbarnperiode(

@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
@@ -301,6 +302,20 @@ fun List<Inntekt>.inneholderFremtidigPeriode(virkningstidspunkt: LocalDate) =
 fun Behandling.hentBeregnetInntekter() =
     BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe.sortedBy {
         it.inntektGjelderBarnIdent?.verdi
+    }.map {
+        it.copy(
+            summertInntektListe =
+                it.summertInntektListe.map { delberegning ->
+                    delberegning.copy(
+                        barnetillegg = delberegning.barnetillegg?.nærmesteHeltall,
+                        småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
+                        kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
+                        utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
+                        skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
+                        totalinntekt = delberegning.totalinntekt.nærmesteHeltall,
+                    )
+                },
+        )
     }
 
 fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"

@@ -48,6 +48,7 @@ open class Inntekt(
     open var opprinneligTom: LocalDate? = null,
 ) {
     val datoFomEllerOpprinneligFom get() = datoFom ?: opprinneligFom
+    val datoTomEllerOpprinneligFom get() = datoTom ?: opprinneligTom
 
     val opprinneligPeriode get() = opprinneligFom?.let { ÅrMånedsperiode(it, opprinneligTom) }
     val periode get() = datoFom?.let { ÅrMånedsperiode(it, datoTom) }

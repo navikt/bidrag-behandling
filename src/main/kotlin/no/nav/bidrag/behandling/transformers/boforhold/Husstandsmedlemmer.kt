@@ -29,7 +29,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
 fun Set<Husstandsbarnperiode>.tilBoforholdRequest(husstandsbarn: Husstandsbarn): BoforholdRequest {
     val bostatus = this.map { it.tilBostatus() }
     return BoforholdRequest(
-        bostatusListe = bostatus,
+        bostatusListe = bostatus.sortedBy { it.periodeFom },
         erBarnAvBmBp = true,
         fødselsdato = husstandsbarn.fødselsdato,
         relatertPersonPersonId = husstandsbarn.ident,
@@ -54,7 +54,7 @@ fun Husstandsbarnperiode.tilBostatus() =
 
 fun List<BorISammeHusstandDto>.tilBostatus(
     bostatus: Bostatuskode,
-    kilde: no.nav.bidrag.domene.enums.diverse.Kilde,
+    kilde: Kilde,
 ) = this.map {
     Bostatus(
         bostatus = bostatus,

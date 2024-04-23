@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.4</version>
+        <version>3.2.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>no.nav</groupId>
@@ -16,8 +16,8 @@
     <properties>
         <java.version>21</java.version>
         <kotlin.version>1.9.23</kotlin.version>
-        <bidrag-felles.version>2024.04.18.152335</bidrag-felles.version>
-        <bidrag-beregn-felles.version>2024.04.19.110737</bidrag-beregn-felles.version>
+        <bidrag-felles.version>2024.04.21.095424</bidrag-felles.version>
+        <bidrag-beregn-felles.version>2024.04.23.081732</bidrag-beregn-felles.version>
         <h2.version>2.2.224</h2.version>
         <logback-encoder.version>7.4</logback-encoder.version>
         <token-support.version>3.2.0</token-support.version>
@@ -26,7 +26,7 @@
         <kotest.version>5.8.1</kotest.version>
         <mockk.version>4.0.2</mockk.version>
         <kotlin-logging-jvm.version>6.0.9</kotlin-logging-jvm.version>
-        <flyway.version>10.11.0</flyway.version>
+        <flyway.version>10.11.1</flyway.version>
         <jackson.version>2.17.0</jackson.version>
         <testcontainers.version>1.19.7</testcontainers.version>
         <spring-boot-testcontainers.version>3.2.3</spring-boot-testcontainers.version>

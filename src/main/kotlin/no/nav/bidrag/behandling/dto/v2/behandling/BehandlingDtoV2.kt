@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -81,6 +82,7 @@ data class IkkeAktiveInntekter(
                 kontantstøtte.isEmpty() && småbarnstillegg.isEmpty() && årsinntekter.isEmpty()
 }
 
+@Schema(enumAsRef = true)
 enum class GrunnlagInntektEndringstype {
     ENDRING,
     INGEN_ENDRING,
@@ -103,6 +105,15 @@ data class IkkeAktivInntektDto(
     val gjelderBarn: Personident?,
     @Schema(required = true)
     val inntektsposter: Set<InntektspostDtoV2>,
+    val inntektsposterSomErEndret: Set<InntektspostEndringDto> = emptySet(),
+)
+
+data class InntektspostEndringDto(
+    val kode: String,
+    val visningsnavn: String,
+    val inntektstype: Inntektstype?,
+    val beløp: BigDecimal?,
+    val endringstype: GrunnlagInntektEndringstype,
 )
 
 data class SivilstandAktivGrunnlagDto(
@@ -192,4 +203,14 @@ fun Grunnlagsdatatype.getOrMigrate() =
 
         Grunnlagsdatatype.HUSSTANDSMEDLEMMER, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> Grunnlagsdatatype.BOFORHOLD
         else -> this
+    }
+
+fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
+    when (this) {
+        Grunnlagsdatatype.UTVIDET_BARNETRYGD -> Inntektsrapportering.UTVIDET_BARNETRYGD
+        Grunnlagsdatatype.SMÅBARNSTILLEGG -> Inntektsrapportering.SMÅBARNSTILLEGG
+        Grunnlagsdatatype.BARNETILLEGG -> Inntektsrapportering.BARNETILLEGG
+        Grunnlagsdatatype.BARNETILSYN -> Inntektsrapportering.BARNETILSYN
+        Grunnlagsdatatype.KONTANTSTØTTE -> Inntektsrapportering.KONTANTSTØTTE
+        else -> null
     }

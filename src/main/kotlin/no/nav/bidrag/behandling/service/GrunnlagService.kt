@@ -395,6 +395,7 @@ class GrunnlagService(
             behandling,
             rolle,
             summerteInntekter?.inntekter ?: emptyList(),
+            grunnlagstype,
         )
         ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(aktiveringstidspunkt)
     }
