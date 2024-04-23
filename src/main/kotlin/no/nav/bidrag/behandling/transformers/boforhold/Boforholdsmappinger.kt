@@ -23,42 +23,31 @@ fun Set<Husstandsbarnperiode>.tilDto() =
             it.bostatus,
             it.kilde,
         )
-    }.toSet()
+    }.sortedBy { it.datoFom }.toSet()
 
 fun Husstandsbarn.tilDto() =
     HusstandsbarnDtoV2(
         this.id,
         this.kilde,
         !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
-        this.perioder.tilDto().sortedBy { periode -> periode.datoFom }.toSet(),
+        this.perioder.tilDto(),
         this.ident,
         this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato,
     )
 
-fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
-    OppdatereBoforholdResponse(
-        oppdatertHusstandsbarn = this.tilDto(),
-        valideringsfeil =
-            BoforholdValideringsfeil(
-                husstandsbarn =
-                    this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf())
-                        .filter { it.harFeil },
-            ),
-    )
-
-fun Husstandsbarnperiode.tilOppdatereBoforholdResponse(behandling: Behandling) =
-    OppdatereBoforholdResponse(
-        oppdatertHusstandsbarn = this.husstandsbarn.tilDto(),
-        valideringsfeil =
-            BoforholdValideringsfeil(
-                husstandsbarn =
-                    this.husstandsbarn.validereBoforhold(
-                        behandling.virkningstidspunktEllerSøktFomDato,
-                        mutableListOf(),
-                    ).filter { it.harFeil },
-            ),
-    )
+fun Husstandsbarn.tilOppdatereBoforholdResponse(
+    behandling: Behandling,
+    validerePerioder: Boolean = true,
+) = OppdatereBoforholdResponse(
+    oppdatertHusstandsbarn = this.tilDto(),
+    valideringsfeil =
+        BoforholdValideringsfeil(
+            husstandsbarn =
+                this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf(), validerePerioder)
+                    .filter { it.harFeil },
+        ),
+)
 
 fun Sivilstand.tilDto() = SivilstandDto(this.id, this.datoFom, datoTom = this.datoTom, this.sivilstand, this.kilde)
 
