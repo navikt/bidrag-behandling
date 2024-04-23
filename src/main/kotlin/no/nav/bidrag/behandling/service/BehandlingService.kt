@@ -176,8 +176,8 @@ class BehandlingService(
     fun oppdaterBehandling(
         behandlingsid: Long,
         request: OppdaterBehandlingRequestV2,
-    ) {
-        behandlingRepository.findBehandlingById(behandlingsid)
+    ): Behandling {
+        return behandlingRepository.findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 it.validerKanOppdatere()
                 log.info { "Oppdatere behandling $behandlingsid" }
@@ -221,7 +221,7 @@ class BehandlingService(
                         it.husstandsbarn.clear()
                         it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
                     }
-                    entityManager.merge(it)
+//                    entityManager.merge(it)
                     it.boforholdsbegrunnelseKunINotat =
                         bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
                     it.boforholdsbegrunnelseIVedtakOgNotat =

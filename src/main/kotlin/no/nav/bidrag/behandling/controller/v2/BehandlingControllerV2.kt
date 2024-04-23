@@ -104,9 +104,7 @@ class BehandlingControllerV2(
         behandlingFørOppdatering.bidragsmottaker?.ident?.let { Personident(it) }
             ?: throw IllegalArgumentException("Behandling mangler BM!")
 
-        behandlingService.oppdaterBehandling(behandlingsid, request)
-
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val behandling = behandlingService.oppdaterBehandling(behandlingsid, request)
 
         return ResponseEntity(
             behandling.tilBehandlingDtoV2(
