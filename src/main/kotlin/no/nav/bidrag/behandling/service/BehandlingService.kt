@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
@@ -251,12 +252,10 @@ class BehandlingService(
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
-        val gjeldendeAktiveGrunnlagsdata =
-            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling)
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
         return behandling.tilBehandlingDtoV2(
-            gjeldendeAktiveGrunnlagsdata,
+            behandling.grunnlagListe.hentSisteAktiv(),
             grunnlagsdataEndretEtterAktivering,
         )
     }

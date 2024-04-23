@@ -107,7 +107,7 @@ fun List<Grunnlag>.hentEndringerSivilstand(aktiveGrunnlag: List<Grunnlag>): Sivi
         val aktivSivilstandGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val aktivSivilstandData = aktivSivilstandGrunnlag.konverterData<SivilstandBeregnet>()
         val nySivilstandGrunnlagBearbeidet = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
-        val nySivilstandGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
+        val nySivilstandGrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
         val nySivilstandData = nySivilstandGrunnlagBearbeidet.konverterData<SivilstandBeregnet>()
         if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
             return SivilstandIkkeAktivGrunnlagDto(

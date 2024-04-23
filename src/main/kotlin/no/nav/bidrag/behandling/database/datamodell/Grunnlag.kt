@@ -50,9 +50,21 @@ open class Grunnlag(
     }
 }
 
-fun List<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
+fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
 
-fun List<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+fun List<Grunnlag>.hentAlleAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+
+fun List<Grunnlag>.hentSisteIkkeAktiv() =
+    hentAlleIkkeAktiv().groupBy { it.type }
+        .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
+        .values
+        .filterNotNull()
+
+fun List<Grunnlag>.hentSisteAktiv() =
+    hentAlleAktiv().groupBy { it.type }
+        .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
+        .values
+        .filterNotNull()
 
 fun List<Grunnlag>.harInntekterForTypeSomIkkeErBearbeidet(
     type: Grunnlagsdatatype,

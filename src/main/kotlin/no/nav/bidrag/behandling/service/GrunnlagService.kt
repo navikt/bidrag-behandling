@@ -9,10 +9,11 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -280,11 +281,11 @@ class GrunnlagService(
         val roller = behandling.roller.sortedBy { if (it.rolletype == Rolletype.BARN) 1 else -1 }
         val inntekter = behandling.inntekter
         val nyinnhentetGrunnlag =
-            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }
-                .hentAlleIkkeAktiv()
+            behandling.grunnlagListe
+                .hentSisteIkkeAktiv()
         val aktiveGrunnlag =
-            roller.flatMap { hentAlleGrunnlag(behandling.id!!, it.id!!) }.toList()
-                .hentAlleAktiv()
+            behandling.grunnlagListe
+                .hentSisteAktiv()
         return IkkeAktiveGrunnlagsdata(
             inntekter =
                 IkkeAktiveInntekter(

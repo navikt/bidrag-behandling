@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
@@ -108,7 +109,7 @@ class BehandlingControllerV2(
 
         return ResponseEntity(
             behandling.tilBehandlingDtoV2(
-                grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling),
+                behandling.grunnlagListe.hentSisteAktiv(),
                 grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
             ),
             HttpStatus.CREATED,
