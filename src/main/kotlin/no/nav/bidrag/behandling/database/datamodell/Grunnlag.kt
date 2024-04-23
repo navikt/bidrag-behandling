@@ -48,6 +48,8 @@ open class Grunnlag(
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet)"
         }
     }
+
+    val identifikator get() = type.name + rolle.ident + erBearbeidet
 }
 
 fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
@@ -55,13 +57,13 @@ fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedB
 fun List<Grunnlag>.hentAlleAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
 
 fun List<Grunnlag>.hentSisteIkkeAktiv() =
-    hentAlleIkkeAktiv().groupBy { it.type.name + it.erBearbeidet.toString() }
+    hentAlleIkkeAktiv().groupBy { it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
 
 fun List<Grunnlag>.hentSisteAktiv() =
-    hentAlleAktiv().groupBy { it.type.name + it.erBearbeidet.toString() }
+    hentAlleAktiv().groupBy { it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
