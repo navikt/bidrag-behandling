@@ -28,7 +28,6 @@ import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.behandling.filtrerPerioderEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
@@ -332,8 +331,9 @@ class GrunnlagService(
                         }.toSet(),
                 ),
             husstandsbarn =
-                nyinnhentetGrunnlag.hentEndringerBoforhold(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato)
-                    .filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato),
+                nyinnhentetGrunnlag.hentEndringerBoforhold(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato),
+            // TODO: Test dette før det tas i bruk
+            // .filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato),
             sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
     }

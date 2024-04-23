@@ -126,7 +126,7 @@ fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnGrunnlagDto> {
                     )
                 }.toSet(),
         )
-    }?.toSet()?.filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
+    }?.toSet() // ?.filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
         ?: emptySet()
 }
 
