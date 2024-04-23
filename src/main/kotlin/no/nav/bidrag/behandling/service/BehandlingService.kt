@@ -221,7 +221,7 @@ class BehandlingService(
                         it.husstandsbarn.clear()
                         it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
                     }
-//                    entityManager.merge(it)
+                    entityManager.merge(it)
                     it.boforholdsbegrunnelseKunINotat =
                         bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
                     it.boforholdsbegrunnelseIVedtakOgNotat =
