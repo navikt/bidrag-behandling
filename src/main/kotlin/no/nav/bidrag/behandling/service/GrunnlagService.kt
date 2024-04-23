@@ -335,21 +335,6 @@ class GrunnlagService(
         )
     }
 
-    fun hentAlleGrunnlag(
-        behandlingsid: Long,
-        rolleid: Long,
-    ): List<Grunnlag> =
-        Grunnlagsdatatype.entries.toTypedArray().flatMap { grunnlagstype ->
-            listOf(true, false).flatMap { erBearbeidet ->
-                grunnlagRepository.findByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                    behandlingsid,
-                    rolleid,
-                    grunnlagstype,
-                    erBearbeidet,
-                )
-            }
-        }
-
     fun hentAlleSistInnhentet(
         behandlingsid: Long,
         rolleid: Long,

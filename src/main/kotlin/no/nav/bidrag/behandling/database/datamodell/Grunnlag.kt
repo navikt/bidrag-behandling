@@ -55,13 +55,13 @@ fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedB
 fun List<Grunnlag>.hentAlleAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
 
 fun List<Grunnlag>.hentSisteIkkeAktiv() =
-    hentAlleIkkeAktiv().groupBy { it.type }
+    hentAlleIkkeAktiv().groupBy { it.type.name + it.erBearbeidet.toString() }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
 
 fun List<Grunnlag>.hentSisteAktiv() =
-    hentAlleAktiv().groupBy { it.type }
+    hentAlleAktiv().groupBy { it.type.name + it.erBearbeidet.toString() }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
