@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.behandling
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konverterData
@@ -111,9 +112,10 @@ fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
 }
 
 fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnGrunnlagDto> {
+    if (this == null) return emptySet()
     return konverterData<List<BoforholdBeregnet>>()?.groupBy { it.relatertPersonPersonId }?.map { (barnId, grunnlag) ->
         HusstandsbarnGrunnlagDto(
-            innhentetTidspunkt = this!!.innhentet,
+            innhentetTidspunkt = this.innhentet,
             ident = barnId,
             perioder =
                 grunnlag.map {
@@ -124,7 +126,8 @@ fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnGrunnlagDto> {
                     )
                 }.toSet(),
         )
-    }?.toSet() ?: emptySet()
+    }?.toSet() // ?.filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
+        ?: emptySet()
 }
 
 fun Behandling.tilBoforholdV2() =
@@ -340,4 +343,54 @@ fun Behandling.notatTittel(): String {
                 }
         }
     return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
+}
+
+fun Set<HusstandsbarnGrunnlagDto>.filtrerPerioderEtterVirkningstidspunkt(
+    husstandsbarnListe: Set<Husstandsbarn>,
+    virkningstidspunkt: LocalDate,
+): Set<HusstandsbarnGrunnlagDto> {
+    return map { husstandsbarnGrunnlagDto ->
+        val barn = husstandsbarnListe.find { it.ident == husstandsbarnGrunnlagDto.ident }
+        val cutoffPeriodeFom =
+            if (barn != null &&
+                virkningstidspunkt.isAfter(LocalDate.now())
+            ) {
+                maxOf(
+                    virkningstidspunkt.withDayOfMonth(1),
+                    barn.fødselsdato,
+                )
+            } else {
+                virkningstidspunkt
+            }
+        if (barn != null) {
+            val perioderSorted = husstandsbarnGrunnlagDto.perioder.sortedBy { it.datoFom }
+            val perioder =
+                perioderSorted.filterIndexed { index, periode ->
+                    val erEtterVirkningstidspunkt = periode.datoFom == null || periode.datoFom!! >= cutoffPeriodeFom
+                    if (!erEtterVirkningstidspunkt) {
+                        val nestePeriode = perioderSorted.drop(index + 1).firstOrNull()
+                        nestePeriode?.datoFom == null || nestePeriode.datoFom!! > cutoffPeriodeFom
+                    } else {
+                        true
+                    }
+                }
+            husstandsbarnGrunnlagDto.copy(
+                perioder =
+                    perioder.mapIndexed {
+                            index,
+                            periode,
+                        ->
+                        if (index == 0 && periode.datoFom != null) {
+                            periode.copy(
+                                datoFom = maxOf(periode.datoFom, cutoffPeriodeFom),
+                            )
+                        } else {
+                            periode
+                        }
+                    }.toSet(),
+            )
+        } else {
+            husstandsbarnGrunnlagDto
+        }
+    }.toSet()
 }

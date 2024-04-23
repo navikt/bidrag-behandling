@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
@@ -159,8 +160,7 @@ class BehandlingService(
                     "for person ${request.personident}"
             }
             grunnlagService.aktivereGrunnlag(it, request)
-            val gjeldendeAktiveGrunnlagsdata =
-                grunnlagService.henteGjeldendeAktiveGrunnlagsdata(it)
+            val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.hentSisteAktiv()
             val ikkeAktiverteEndringerIGrunnlagsdata =
                 grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
             return AktivereGrunnlagResponseV2(
@@ -176,8 +176,8 @@ class BehandlingService(
     fun oppdaterBehandling(
         behandlingsid: Long,
         request: OppdaterBehandlingRequestV2,
-    ) {
-        behandlingRepository.findBehandlingById(behandlingsid)
+    ): Behandling {
+        return behandlingRepository.findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 it.validerKanOppdatere()
                 log.info { "Oppdatere behandling $behandlingsid" }
@@ -251,12 +251,10 @@ class BehandlingService(
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
-        val gjeldendeAktiveGrunnlagsdata =
-            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling)
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
         return behandling.tilBehandlingDtoV2(
-            gjeldendeAktiveGrunnlagsdata,
+            behandling.grunnlagListe.hentSisteAktiv(),
             grunnlagsdataEndretEtterAktivering,
         )
     }

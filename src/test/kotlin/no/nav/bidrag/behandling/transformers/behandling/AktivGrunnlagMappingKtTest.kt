@@ -491,7 +491,7 @@ class AktivGrunnlagMappingKtTest {
                     innhentet = LocalDateTime.now(),
                 )
 
-            val resultat = listOf(nyGrunnlagBoforhold).hentEndringerBoforhold(listOf(aktivGrunnlagBoforhold))
+            val resultat = listOf(nyGrunnlagBoforhold).hentEndringerBoforhold(listOf(aktivGrunnlagBoforhold), LocalDate.parse("2020-01-01"))
 
             resultat shouldHaveSize 0
         }
@@ -562,7 +562,7 @@ class AktivGrunnlagMappingKtTest {
                     innhentet = LocalDateTime.now(),
                 )
 
-            val resultat = listOf(nyGrunnlagBoforhold).hentEndringerBoforhold(listOf(aktivGrunnlagBoforhold))
+            val resultat = listOf(nyGrunnlagBoforhold).hentEndringerBoforhold(listOf(aktivGrunnlagBoforhold), LocalDate.parse("2020-01-01"))
 
             resultat shouldHaveSize 2
             val resultatBarn1 = resultat.find { it.ident == testdataBarn1.ident }
@@ -641,7 +641,7 @@ class AktivGrunnlagMappingKtTest {
                     innhentet = LocalDateTime.now(),
                 )
 
-            val resultat = listOf(nyGrunnlagBoforhold).hentEndringerBoforhold(listOf(aktivGrunnlagBoforhold))
+            val resultat = listOf(nyGrunnlagBoforhold).hentEndringerBoforhold(listOf(aktivGrunnlagBoforhold), LocalDate.parse("2020-01-01"))
 
             resultat shouldHaveSize 1
             val resultatBarn1 = resultat.find { it.ident == testdataBarn1.ident }
