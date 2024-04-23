@@ -120,7 +120,7 @@ class BoforholdService(
             if (Kilde.MANUELL == husstandsbarnSomSkalSlettes?.kilde) {
                 behandling.husstandsbarn.remove(husstandsbarnSomSkalSlettes)
                 log.info { "Slettet husstandsbarn med id $idHusstandsbarn fra behandling $behandlingsid." }
-                return husstandsbarnSomSkalSlettes.tilOppdatereBoforholdResponse(behandling)
+                return husstandsbarnSomSkalSlettes.tilOppdatereBoforholdResponse(behandling, false)
             }
         }
 
@@ -136,7 +136,7 @@ class BoforholdService(
             behandling.husstandsbarn.add(husstandsbarn)
             entityManager.flush()
             log.info { "Nytt husstandsbarn (id ${husstandsbarn.id}) ble manuelt lagt til behandling $behandlingsid." }
-            return husstandsbarn.tilOppdatereBoforholdResponse(behandling)
+            return husstandsbarn.tilOppdatereBoforholdResponse(behandling, false)
         }
 
         oppdatereHusstandsbarn.sletteHusstandsbarnperiode?.let { idHusstandsbarnperiode ->
@@ -150,14 +150,15 @@ class BoforholdService(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     listOf(perioderTilPeriodsering),
                 ).tilHusstandsbarn(behandling, bidragPersonConsumer).first().perioder
-            husstandsbarn.perioder.clear()
-            husstandsbarn.perioder = nyttPeriodisertBoforhold
 
             nyttPeriodisertBoforhold.forEach {
                 it.husstandsbarn = husstandsbarn
                 husstandsbarnperiodeRepository.save(it)
                 husstandsbarn.perioder.add(it)
             }
+
+            husstandsbarn.perioder.clear()
+            husstandsbarn.perioder.addAll(nyttPeriodisertBoforhold)
 
             log.info { "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling $behandlingsid." }
             return husstandsbarn.tilOppdatereBoforholdResponse(behandling)

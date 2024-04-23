@@ -36,29 +36,18 @@ fun Husstandsbarn.tilDto() =
         this.fødselsdato,
     )
 
-fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
-    OppdatereBoforholdResponse(
-        oppdatertHusstandsbarn = this.tilDto(),
-        valideringsfeil =
-            BoforholdValideringsfeil(
-                husstandsbarn =
-                    this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf())
-                        .filter { it.harFeil },
-            ),
-    )
-
-fun Husstandsbarnperiode.tilOppdatereBoforholdResponse(behandling: Behandling) =
-    OppdatereBoforholdResponse(
-        oppdatertHusstandsbarn = this.husstandsbarn.tilDto(),
-        valideringsfeil =
-            BoforholdValideringsfeil(
-                husstandsbarn =
-                    this.husstandsbarn.validereBoforhold(
-                        behandling.virkningstidspunktEllerSøktFomDato,
-                        mutableListOf(),
-                    ).filter { it.harFeil },
-            ),
-    )
+fun Husstandsbarn.tilOppdatereBoforholdResponse(
+    behandling: Behandling,
+    validerePerioder: Boolean = true,
+) = OppdatereBoforholdResponse(
+    oppdatertHusstandsbarn = this.tilDto(),
+    valideringsfeil =
+        BoforholdValideringsfeil(
+            husstandsbarn =
+                this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf(), validerePerioder)
+                    .filter { it.harFeil },
+        ),
+)
 
 fun Sivilstand.tilDto() = SivilstandDto(this.id, this.datoFom, datoTom = this.datoTom, this.sivilstand, this.kilde)
 

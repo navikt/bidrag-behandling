@@ -62,6 +62,7 @@ fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
 fun Husstandsbarn.validereBoforhold(
     virkniningstidspunkt: LocalDate,
     valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>,
+    validerePerioder: Boolean = true,
 ): Set<BoforholdPeriodeseringsfeil> {
     val kanIkkeVæreSenereEnnDato =
         if (virkniningstidspunkt.isAfter(LocalDate.now())) {
@@ -73,15 +74,17 @@ fun Husstandsbarn.validereBoforhold(
         this.perioder.map {
             Datoperiode(it.datoFom!!, it.datoTom)
         }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato))
-    valideringsfeil.add(
-        BoforholdPeriodeseringsfeil(
-            this,
-            hullIPerioder,
-            overlappendePerioder = this.perioder.finnHusstandsbarnOverlappendePerioder(),
-            manglerPerioder = this.perioder.isEmpty(),
-            fremtidigPeriode = this.perioder.any { it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) },
-        ),
-    )
+    if (validerePerioder) {
+        valideringsfeil.add(
+            BoforholdPeriodeseringsfeil(
+                this,
+                hullIPerioder,
+                overlappendePerioder = this.perioder.finnHusstandsbarnOverlappendePerioder(),
+                manglerPerioder = this.perioder.isEmpty(),
+                fremtidigPeriode = this.perioder.any { it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) },
+            ),
+        )
+    }
 
     return valideringsfeil.toSet()
 }
