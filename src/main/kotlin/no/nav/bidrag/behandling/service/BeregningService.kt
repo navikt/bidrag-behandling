@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
-import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -44,20 +43,9 @@ class BeregningService(
                 val beregnForskudd = behandling.byggGrunnlagForBeregning(it)
 
                 try {
-                    val resultat = beregnApi.beregn(beregnForskudd)
                     ResultatForskuddsberegningBarn(
                         it.mapTilResultatBarn(),
-                        resultat.copy(
-                            beregnetForskuddPeriodeListe =
-                                resultat.beregnetForskuddPeriodeListe.map { resultatPeriode ->
-                                    resultatPeriode.copy(
-                                        resultat =
-                                            resultatPeriode.resultat.copy(
-                                                belop = resultatPeriode.resultat.belop.nærmesteHeltall,
-                                            ),
-                                    )
-                                },
-                        ),
+                        beregnApi.beregn(beregnForskudd),
                     )
                 } catch (e: Exception) {
                     LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
