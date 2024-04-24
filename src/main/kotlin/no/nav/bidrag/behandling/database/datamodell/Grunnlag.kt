@@ -14,9 +14,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.objectmapper
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
@@ -46,9 +44,9 @@ open class Grunnlag(
     override fun toString(): String {
         return try {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
-                "id=$id, behandling=${behandling.id}, innhentet=$innhentet)"
+                "id=$id, behandling=${behandling.id}, innhentet=$innhentet, gjelder=$gjelder)"
         } catch (e: Exception) {
-            "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet)"
+            "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
     }
 
@@ -70,16 +68,6 @@ fun List<Grunnlag>.hentSisteAktiv() =
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
-
-fun <T> List<Grunnlag>.hentSisteAktivForTypeOgRolle(
-    grunnlagstype: Grunnlagstype,
-    rolle: Rolle,
-    gjelderPerson: String?,
-) = hentSisteAktiv().find {
-    it.type == grunnlagstype.type &&
-        it.rolle.id == rolle.id && it.gjelder == gjelderPerson &&
-        grunnlagstype.erBearbeidet == it.erBearbeidet
-}?.let { Jsonoperasjoner.jsonTilObjekt<Set<T>>(it.data) }?.toSet()
 
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,
