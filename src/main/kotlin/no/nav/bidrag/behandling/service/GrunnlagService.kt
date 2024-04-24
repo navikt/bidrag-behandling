@@ -701,12 +701,11 @@ class GrunnlagService(
         gjelderPerson: Personident? = null,
     ) {
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
-            behandling.grunnlagListe.hentSisteAktiv().find {
-                it.type == grunnlagstype.type &&
-                    it.rolle.id == innhentetForRolle.id && it.gjelder == gjelderPerson?.verdi &&
-                    grunnlagstype.erBearbeidet == it.erBearbeidet
-            }?.let { commonObjectmapper.readValue<Set<T>>(it.data) }?.toSet()
-                ?: emptySet()
+            behandling.hentSisteInnhentetGrunnlagSet(
+                grunnlagstype,
+                innhentetForRolle,
+                gjelderPerson,
+            )
 
         val erFørstegangsinnhenting =
             sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
@@ -757,10 +756,7 @@ class GrunnlagService(
         hentetTidspunkt: LocalDateTime,
         aktiveringstidspunkt: LocalDateTime? = null,
     ) {
-        val sistInnhentedeGrunnlagAvType: T? =
-            behandling.grunnlagListe.hentSisteAktiv().find {
-                it.rolle.id == rolle.id && it.type == grunnlagstype.type.getOrMigrate() && it.erBearbeidet == grunnlagstype.erBearbeidet
-            }?.let { commonObjectmapper.readValue<T>(it.data) }
+        val sistInnhentedeGrunnlagAvType: T? = behandling.hentSisteInnhentetGrunnlag(grunnlagstype, rolle)
         val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         val erFørstegangsinnhentingAvInntekter =
             sistInnhentedeGrunnlagAvType == null && (inneholderInntekter(innhentetGrunnlag) || erAvTypeBearbeidetSivilstand)
@@ -814,6 +810,25 @@ class GrunnlagService(
             else -> false
         }
     }
+
+    private inline fun <reified T> Behandling.hentSisteInnhentetGrunnlagSet(
+        grunnlagstype: Grunnlagstype,
+        rolle: Rolle,
+        gjelderPerson: Personident?,
+    ): Set<T> =
+        grunnlagListe.hentSisteAktiv().find {
+            it.type == grunnlagstype.type &&
+                it.rolle.id == rolle.id && it.gjelder == gjelderPerson?.verdi &&
+                grunnlagstype.erBearbeidet == it.erBearbeidet
+        }?.let { commonObjectmapper.readValue<Set<T>>(it.data) }?.toSet() ?: emptySet()
+
+    private inline fun <reified T> Behandling.hentSisteInnhentetGrunnlag(
+        grunnlagstype: Grunnlagstype,
+        rolle: Rolle,
+    ): T? =
+        grunnlagListe.hentSisteAktiv().find {
+            it.rolle.id == rolle.id && it.type == grunnlagstype.type.getOrMigrate() && it.erBearbeidet == grunnlagstype.erBearbeidet
+        }?.let { commonObjectmapper.readValue<T>(it.data) }
 
     private fun oppretteTransformereInntekterRequestPerType(
         grunnlagstype: Grunnlagsdatatype,

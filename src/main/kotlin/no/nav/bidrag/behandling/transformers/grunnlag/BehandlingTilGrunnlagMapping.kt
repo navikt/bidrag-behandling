@@ -295,7 +295,8 @@ private fun opprettGrunnlagForBostatusperioder(
 
 private fun Inntekt.tilGrunnlagreferanse(gjelder: GrunnlagDto) =
     if (!gjelderBarn.isNullOrEmpty()) {
-        "inntekt_${type}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
+        val innektsposterType = inntektsposter.mapNotNull { it.inntektstype }.distinct().joinToString("", prefix = "_")
+        "inntekt_${type}${innektsposterType}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
     } else {
         "inntekt_${type}_${gjelder.referanse}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
     }
