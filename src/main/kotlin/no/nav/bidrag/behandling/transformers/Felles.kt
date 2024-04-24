@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.LocalDate
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =
@@ -38,3 +39,15 @@ fun <T : Comparable<T>> minOfNullable(
         minOf(a, b)
     }
 }
+
+fun finnCutoffHusstandsmedlemDatoFom(
+    virkningstidspunkt: LocalDate,
+    fødselsdato: LocalDate,
+) = if (virkningstidspunkt.isAfter(LocalDate.now())) {
+    maxOf(virkningstidspunkt.withDayOfMonth(1), fødselsdato)
+} else {
+    virkningstidspunkt
+}
+
+fun finnCutoffSivilstandDatoFom(virkningstidspunkt: LocalDate) =
+    minOf(LocalDate.now().withDayOfMonth(1), virkningstidspunkt.withDayOfMonth(1))

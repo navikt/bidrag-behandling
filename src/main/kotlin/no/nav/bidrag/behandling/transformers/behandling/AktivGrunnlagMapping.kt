@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -84,27 +85,41 @@ fun InntektPost.erLik(inntektPost: Inntektspost): Boolean {
 fun List<Grunnlag>.hentEndringerBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     virkniningstidspunkt: LocalDate,
+    husstandsbarn: Set<Husstandsbarn>,
 ): Set<HusstandsbarnGrunnlagDto> {
     val aktivBoforholdGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val aktivBoforholdData = aktivBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()
+    val aktivBoforholdData =
+        aktivBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()?.filtrerPerioderEtterVirkningstidspunkt(
+            husstandsbarn,
+            virkniningstidspunkt,
+        )
     val nyBoforholdGrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val nyBoforholdData = nyBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()
+    val nyBoforholdData =
+        nyBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()?.filtrerPerioderEtterVirkningstidspunkt(
+            husstandsbarn,
+            virkniningstidspunkt,
+        )
     return nyBoforholdData?.groupBy { it.relatertPersonPersonId }?.map { (barnId, oppdaterGrunnlag) ->
         val aktivGrunnlag = aktivBoforholdData?.filter { it.relatertPersonPersonId == barnId } ?: emptyList()
         if (aktivGrunnlag.erLik(oppdaterGrunnlag, virkniningstidspunkt)) return@map null
-        HusstandsbarnGrunnlagDto(
-            oppdaterGrunnlag.map {
-                HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
-                    it.periodeFom,
-                    it.periodeTom,
-                    it.bostatus,
-                )
-            }.toSet(),
-            barnId,
-            nyBoforholdGrunnlag!!.innhentet,
-        )
+        oppdaterGrunnlag.tilHusstandsbarnGrunnlagDto(barnId, nyBoforholdGrunnlag!!.innhentet)
     }?.filterNotNull()?.toSet() ?: emptySet()
 }
+
+private fun List<BoforholdResponse>.tilHusstandsbarnGrunnlagDto(
+    barnId: String?,
+    innhentetTidspunkt: LocalDateTime,
+) = HusstandsbarnGrunnlagDto(
+    map {
+        HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
+            it.periodeFom,
+            it.periodeTom,
+            it.bostatus,
+        )
+    }.toSet(),
+    barnId,
+    innhentetTidspunkt,
+)
 
 fun List<Grunnlag>.hentEndringerSivilstand(aktiveGrunnlag: List<Grunnlag>): SivilstandIkkeAktivGrunnlagDto? {
     return try {

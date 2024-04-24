@@ -100,10 +100,10 @@ fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<Bo
     return valideringsfeil.toSet()
 }
 
-fun Set<Sivilstand>.validerSivilstand(virkniningstidspunkt: LocalDate): SivilstandPeriodeseringsfeil {
-    val kanIkkeVæreSenereEnnDato = maxOf(LocalDate.now().withDayOfMonth(1), virkniningstidspunkt.withDayOfMonth(1))
+fun Set<Sivilstand>.validerSivilstand(virkningstidspunkt: LocalDate): SivilstandPeriodeseringsfeil {
+    val kanIkkeVæreSenereEnnDato = maxOf(LocalDate.now().withDayOfMonth(1), virkningstidspunkt.withDayOfMonth(1))
     return SivilstandPeriodeseringsfeil(
-        map { Datoperiode(it.datoFom!!, it.datoTom) }.finnHullIPerioder(virkniningstidspunkt),
+        map { Datoperiode(it.datoFom!!, it.datoTom) }.finnHullIPerioder(virkningstidspunkt),
         fremtidigPeriode = any { it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) },
         manglerPerioder = isEmpty(),
         overlappendePerioder = finnSivilstandOverlappendePerioder(),

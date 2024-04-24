@@ -255,6 +255,13 @@ class GrunnlagService(
                 rolleGrunnlagSkalAktiveresFor,
                 aktiveringstidspunkt,
             )
+        } else if (Grunnlagsdatatype.ARBEIDSFORHOLD == grunnlagstype) {
+            log.info { "Aktiverer grunnlag ARBEIDSFORHOLD for rolle ${rolleGrunnlagSkalAktiveresFor.rolletype}" }
+            val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
+            ikkeAktivGrunnlag.hentGrunnlagForType(
+                grunnlagstype,
+                rolleGrunnlagSkalAktiveresFor.ident!!,
+            ).oppdaterStatusTilAktiv(aktiveringstidspunkt)
         } else {
             log.error {
                 "Grunnlagstype $grunnlagstype ikke støttet ved aktivering av grunnlag. Aktivering feilet " +
@@ -331,9 +338,11 @@ class GrunnlagService(
                         }.toSet(),
                 ),
             husstandsbarn =
-                nyinnhentetGrunnlag.hentEndringerBoforhold(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato),
-            // TODO: Test dette før det tas i bruk
-            // .filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato),
+                nyinnhentetGrunnlag.hentEndringerBoforhold(
+                    aktiveGrunnlag,
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.husstandsbarn,
+                ),
             sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
     }
@@ -350,20 +359,6 @@ class GrunnlagService(
                     grunnlagstype,
                     erBearbeidet,
                 )
-            }
-        }
-
-    fun henteGjeldendeAktiveGrunnlagsdata(behandling: Behandling): List<Grunnlag> =
-        Grunnlagsdatatype.entries.toTypedArray().flatMap { type ->
-            listOf(true, false).flatMap { erBearbeidet ->
-                behandling.roller.mapNotNull { rolle ->
-                    grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
-                        behandling.id!!,
-                        type,
-                        erBearbeidet,
-                        rolle,
-                    )
-                }
             }
         }
 
@@ -713,7 +708,7 @@ class GrunnlagService(
         innhentet: LocalDateTime,
         aktiv: LocalDateTime? = null,
     ) {
-        log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id $behandling" }
+        log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id ${behandling.id}" }
 
         behandling.grunnlag.add(
             Grunnlag(
@@ -788,7 +783,9 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime? = null,
     ) {
         val sistInnhentedeGrunnlagAvType: T? =
-            henteNyesteGrunnlagsdataobjekt<T>(behandling.id!!, rolle.id!!, grunnlagstype)
+            behandling.grunnlagListe.hentSisteAktiv().find {
+                it.type == innhentetGrunnlag && it.rolle.id == rolle.id
+            }?.let { jsonTilObjekt<T>(it.data) }
         val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         val erFørstegangsinnhentingAvInntekter =
             sistInnhentedeGrunnlagAvType == null && (inneholderInntekter(innhentetGrunnlag) || erAvTypeBearbeidetSivilstand)
@@ -853,20 +850,6 @@ class GrunnlagService(
             commonObjectmapper.readValue<Set<T>>(grunnlagsdata)
         } else {
             emptySet()
-        }
-    }
-
-    private inline fun <reified T> henteNyesteGrunnlagsdataobjekt(
-        behandlingsid: Long,
-        rolleid: Long,
-        grunnlagstype: Grunnlagstype,
-    ): T? {
-        val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
-
-        return if (grunnlagsdata != null) {
-            jsonTilObjekt<T>(grunnlagsdata)
-        } else {
-            null
         }
     }
 
