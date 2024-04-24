@@ -46,6 +46,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.inntekt.tilUtvidetBarnetrygd
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
@@ -316,9 +317,12 @@ class GrunnlagService(
                         }.toSet(),
                 ),
             husstandsbarn =
-                nyinnhentetGrunnlag.hentEndringerBoforhold(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato),
-            // TODO: Test dette før det tas i bruk
-            // .filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato),
+                nyinnhentetGrunnlag.hentEndringerBoforhold(
+                    aktiveGrunnlag,
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.husstandsbarn,
+                    behandling.bidragsmottaker!!,
+                ),
             sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
     }
@@ -327,30 +331,9 @@ class GrunnlagService(
         behandlingsid: Long,
         rolleid: Long,
     ): List<Grunnlag> =
-        Grunnlagsdatatype.entries.toTypedArray().flatMap { grunnlagstype ->
-            listOf(true, false).mapNotNull { erBearbeidet ->
-                grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                    behandlingsid,
-                    rolleid,
-                    grunnlagstype,
-                    erBearbeidet,
-                )
-            }
-        }
-
-    fun henteGjeldendeAktiveGrunnlagsdata(behandling: Behandling): List<Grunnlag> =
-        Grunnlagsdatatype.entries.toTypedArray().flatMap { type ->
-            listOf(true, false).flatMap { erBearbeidet ->
-                behandling.roller.mapNotNull { rolle ->
-                    grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
-                        behandling.id!!,
-                        type,
-                        erBearbeidet,
-                        rolle,
-                    )
-                }
-            }
-        }
+        behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            .grunnlagListe.hentSisteAktiv().filter { it.rolle.id == rolleid }
 
     private fun aktivereYtelserOgInntekter(
         behandling: Behandling,
@@ -691,7 +674,8 @@ class GrunnlagService(
         aktiv: LocalDateTime? = null,
         gjelder: Personident? = null,
     ) {
-        log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id $behandling" }
+        log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id ${behandling.id}" }
+        secureLogger.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id ${behandling.id} og gjelder ${gjelder?.verdi}" }
 
         behandling.grunnlag.add(
             Grunnlag(
@@ -717,14 +701,19 @@ class GrunnlagService(
         gjelderPerson: Personident? = null,
     ) {
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
-            henteNyesteGrunnlagsdatasett<T>(behandling.id!!, innhentetForRolle.id!!, grunnlagstype).toSet()
+            behandling.grunnlagListe.hentSisteAktiv().find {
+                it.type == grunnlagstype.type &&
+                    it.rolle.id == innhentetForRolle.id && it.gjelder == gjelderPerson?.verdi &&
+                    grunnlagstype.erBearbeidet == it.erBearbeidet
+            }?.let { commonObjectmapper.readValue<Set<T>>(it.data) }?.toSet()
+                ?: emptySet()
 
-        if ((sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
-            (
-                sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
-                    innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
-            )
-        ) {
+        val erFørstegangsinnhenting =
+            sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
+        val erGrunnlagEndret =
+            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
+                innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
+        if (erFørstegangsinnhenting || erGrunnlagEndret) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -769,7 +758,9 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime? = null,
     ) {
         val sistInnhentedeGrunnlagAvType: T? =
-            henteNyesteGrunnlagsdataobjekt<T>(behandling.id!!, rolle.id!!, grunnlagstype)
+            behandling.grunnlagListe.hentSisteAktiv().find {
+                it.rolle.id == rolle.id && it.type == grunnlagstype.type.getOrMigrate() && it.erBearbeidet == grunnlagstype.erBearbeidet
+            }?.let { commonObjectmapper.readValue<T>(it.data) }
         val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         val erFørstegangsinnhentingAvInntekter =
             sistInnhentedeGrunnlagAvType == null && (inneholderInntekter(innhentetGrunnlag) || erAvTypeBearbeidetSivilstand)
@@ -821,33 +812,6 @@ class GrunnlagService(
             is SkattepliktigeInntekter -> grunnlag.ainntekter.isNotEmpty() || grunnlag.skattegrunnlag.isNotEmpty()
             is SummerteInntekter<*> -> grunnlag.inntekter.isNotEmpty()
             else -> false
-        }
-    }
-
-    private inline fun <reified T> henteNyesteGrunnlagsdatasett(
-        behandlingsid: Long,
-        rolleid: Long,
-        grunnlagstype: Grunnlagstype,
-    ): Set<T> {
-        val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
-        return if (grunnlagsdata != null) {
-            commonObjectmapper.readValue<Set<T>>(grunnlagsdata)
-        } else {
-            emptySet()
-        }
-    }
-
-    private inline fun <reified T> henteNyesteGrunnlagsdataobjekt(
-        behandlingsid: Long,
-        rolleid: Long,
-        grunnlagstype: Grunnlagstype,
-    ): T? {
-        val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
-
-        return if (grunnlagsdata != null) {
-            jsonTilObjekt<T>(grunnlagsdata)
-        } else {
-            null
         }
     }
 

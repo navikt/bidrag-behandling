@@ -37,7 +37,18 @@ fun Set<Inntekt>.årsinntekterSortert(inkluderTaMed: Boolean = true) =
                         )
                     if (index == -1 || it.taMed && inkluderTaMed) 1000 else index
                 }.thenBy {
-                    if (it.taMed && inkluderTaMed) it.datoFom else it.opprinneligFom
+                    val index =
+                        årsinntekterPrioriteringsliste.indexOf(
+                            it.type,
+                        )
+                    if (it.taMed && inkluderTaMed) {
+                        (
+                            it.datoFom?.toEpochDay()
+                                ?: 1
+                        ) + index
+                    } else {
+                        it.opprinneligFom
+                    }
                 },
         )
 

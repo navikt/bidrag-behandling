@@ -44,13 +44,13 @@ open class Grunnlag(
     override fun toString(): String {
         return try {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
-                "id=$id, behandling=${behandling.id}, innhentet=$innhentet)"
+                "id=$id, behandling=${behandling.id}, innhentet=$innhentet, gjelder=$gjelder)"
         } catch (e: Exception) {
-            "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet)"
+            "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
     }
 
-    val identifikator get() = type.name + rolle.ident + erBearbeidet
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
 }
 
 fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }

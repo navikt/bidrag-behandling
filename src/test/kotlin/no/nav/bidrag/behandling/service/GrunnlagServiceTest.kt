@@ -94,7 +94,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 21
+    val totaltAntallGrunnlag = 22
 
     @BeforeEach
     fun setup() {
@@ -795,9 +795,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly(oppdatertBehandling) {
                 it.isPresent shouldBe true
                 it.get().grunnlag.size shouldBe totaltAntallGrunnlag
-                it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }.size shouldBe 2
+                it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }.size shouldBe 3
                 it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
-                    .filter { g -> g.erBearbeidet }.size shouldBe 1
+                    .filter { g -> g.erBearbeidet }.size shouldBe 2
                 it.get().husstandsbarn.size shouldBe 2
             }
 
@@ -1698,9 +1698,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     private fun validereGrunnlagBm(grunnlag: List<Grunnlag>) {
         assertSoftly {
-            grunnlag.size shouldBe 13
+            grunnlag.size shouldBe 14
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
-            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 2
+            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 3
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SIVILSTAND }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BARNETILLEGG }.size shouldBe 0
