@@ -84,7 +84,7 @@ class BehandlingService(
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
             "${OpprettBehandlingRequest::stønadstype.name} eller " +
-                    "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
+                "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -122,8 +122,8 @@ class BehandlingService(
 
         log.info {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
-                    "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
-                    "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
+                "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
+                "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -135,15 +135,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadsid,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.tilBehandlingstype(),
-                    stonadType = behandling.stonadstype,
-                    engangsBelopType = behandling.engangsbeloptype,
-                    vedtakType = behandling.vedtakstype,
-                ),
+                    BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadsid,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.tilBehandlingstype(),
+                        stonadType = behandling.stonadstype,
+                        engangsBelopType = behandling.engangsbeloptype,
+                        vedtakType = behandling.vedtakstype,
+                    ),
             ),
         )
     }
@@ -158,7 +158,7 @@ class BehandlingService(
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
                 secureLogger.info {
                     "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
-                            "for person ${request.personident}"
+                        "for person ${request.personident}"
                 }
                 grunnlagService.aktivereGrunnlag(it, request)
                 val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.hentSisteAktiv()
@@ -243,7 +243,7 @@ class BehandlingService(
                 it.vedtaksid = vedtaksid
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()
                 it.vedtakFattetAv = it.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
-                        ?: TokenUtils.hentApplikasjonsnavn()
+                    ?: TokenUtils.hentApplikasjonsnavn()
             }
     }
 

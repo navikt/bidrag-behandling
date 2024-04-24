@@ -116,15 +116,15 @@ fun List<Grunnlag>.hentEndringerSivilstand(aktiveGrunnlag: List<Grunnlag>): Sivi
         if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
             return SivilstandIkkeAktivGrunnlagDto(
                 sivilstand =
-                nySivilstandData.sivilstandListe.map {
-                    SivilstandDto(
-                        null,
-                        it.periodeFom,
-                        it.periodeTom,
-                        it.sivilstandskode,
-                        Kilde.OFFENTLIG,
-                    )
-                },
+                    nySivilstandData.sivilstandListe.map {
+                        SivilstandDto(
+                            null,
+                            it.periodeFom,
+                            it.periodeTom,
+                            it.sivilstandskode,
+                            Kilde.OFFENTLIG,
+                        )
+                    },
                 status = nySivilstandData.status,
                 innhentetTidspunkt = nySivilstandGrunnlagBearbeidet!!.innhentet,
                 grunnlag = nySivilstandGrunnlag?.konverterData<Set<SivilstandGrunnlagDto>>() ?: emptySet(),
@@ -168,7 +168,7 @@ fun List<BoforholdResponse>.erLik(
     return this.all { boforhold ->
         other.any {
             it.justertDatoFom() == boforhold.justertDatoFom() && it.periodeTom == boforhold.periodeTom &&
-                    it.bostatus == boforhold.bostatus
+                it.bostatus == boforhold.bostatus
         }
     }
 }
@@ -186,7 +186,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
             val eksisterendeInntekt =
                 inntekterRolle.find {
                     it.kilde == Kilde.OFFENTLIG &&
-                            it.erLik(grunnlag)
+                        it.erLik(grunnlag)
                 }
                     ?: return@map grunnlag.tilIkkeAktivInntektDto(
                         rolle.ident!!,
