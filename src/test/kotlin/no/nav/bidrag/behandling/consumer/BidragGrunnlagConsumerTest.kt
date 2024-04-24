@@ -65,7 +65,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
         assertSoftly {
             grunnlagRequest.entries.forEach {
                 it.value.forEach { request ->
-                    request.periodeTil shouldBe LocalDate.now()
+                    request.periodeTil shouldBe LocalDate.now().plusDays(1)
                     if (GrunnlagRequestType.AINNTEKT == request.type) {
                         request.periodeFra shouldBe periodeFra.minusYears(1).withMonth(1).withDayOfMonth(1)
                     } else if (GrunnlagRequestType.SKATTEGRUNNLAG == request.type) {
