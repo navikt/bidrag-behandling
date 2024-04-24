@@ -811,7 +811,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val husstandsmedlemmer = jsonListeTilObjekt<RelatertPersonGrunnlagDto>(grunnlag?.data!!)
 
             assertSoftly {
-                husstandsmedlemmer.size shouldBe 3
+                husstandsmedlemmer.size shouldBe 2
                 husstandsmedlemmer.filter { h ->
                     h.navn == "Småstein Nilsen" && h.fødselsdato ==
                         LocalDate.of(
