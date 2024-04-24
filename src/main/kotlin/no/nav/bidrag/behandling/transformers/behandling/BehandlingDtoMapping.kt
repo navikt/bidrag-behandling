@@ -396,3 +396,15 @@ fun List<SivilstandGrunnlagDto>.filtrerSivilstandPerioderEtterVirkningstidspunkt
         }
     }
 }
+
+fun List<Grunnlag>.hentAlleBearbeidetBoforhold(
+    virkniningstidspunkt: LocalDate,
+    husstandsbarn: Set<Husstandsbarn>,
+    rolle: Rolle?,
+) = asSequence()
+    .filter { (rolle == null || it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
+    .mapNotNull { it.konverterData<List<BoforholdResponse>>() }
+    .flatten().distinct().toList().filtrerPerioderEtterVirkningstidspunkt(
+        husstandsbarn,
+        virkniningstidspunkt,
+    )

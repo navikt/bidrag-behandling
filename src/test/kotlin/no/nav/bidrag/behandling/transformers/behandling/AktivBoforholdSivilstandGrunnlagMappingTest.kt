@@ -47,6 +47,9 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                         periodeTom = null,
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
+                )
+            val aktivBoforholdGrunnlagListe2 =
+                listOf(
                     BoforholdBeregnet(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
@@ -56,14 +59,27 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                     ),
                 )
             val aktivGrunnlagBoforhold =
-                Grunnlag(
-                    erBearbeidet = true,
-                    rolle = behandling.bidragsmottaker!!,
-                    type = Grunnlagsdatatype.BOFORHOLD,
-                    data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe),
-                    behandling = behandling,
-                    innhentet = LocalDateTime.now(),
+                listOf(
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe),
+                        behandling = behandling,
+                        gjelder = testdataBarn1.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe2),
+                        behandling = behandling,
+                        gjelder = testdataBarn2.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
                 )
+
             val boforholdGrunnlagListe =
                 listOf(
                     BoforholdBeregnet(
@@ -73,6 +89,9 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                         periodeTom = null,
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
+                )
+            val boforholdGrunnlagListe2 =
+                listOf(
                     BoforholdBeregnet(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
@@ -82,22 +101,33 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                     ),
                 )
             val nyGrunnlagBoforhold =
-                Grunnlag(
-                    erBearbeidet = true,
-                    rolle = behandling.bidragsmottaker!!,
-                    type = Grunnlagsdatatype.BOFORHOLD,
-                    data = commonObjectmapper.writeValueAsString(boforholdGrunnlagListe),
-                    behandling = behandling,
-                    innhentet = LocalDateTime.now(),
+                listOf(
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        data = commonObjectmapper.writeValueAsString(boforholdGrunnlagListe),
+                        behandling = behandling,
+                        gjelder = testdataBarn1.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        data = commonObjectmapper.writeValueAsString(boforholdGrunnlagListe2),
+                        behandling = behandling,
+                        gjelder = testdataBarn2.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
                 )
 
             val resultat =
-                listOf(
-                    nyGrunnlagBoforhold,
-                ).hentEndringerBoforhold(
-                    listOf(aktivGrunnlagBoforhold),
+                nyGrunnlagBoforhold.hentEndringerBoforhold(
+                    aktivGrunnlagBoforhold,
                     LocalDate.parse("2020-01-01"),
                     opprettHusstandsmedlemmer(behandling),
+                    behandling.bidragsmottaker!!,
                 )
 
             resultat shouldHaveSize 2
@@ -184,6 +214,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                     listOf(aktivGrunnlagBoforhold),
                     LocalDate.parse("2020-01-01"),
                     opprettHusstandsmedlemmer(behandling),
+                    behandling.bidragsmottaker!!,
                 )
 
             resultat shouldHaveSize 1
@@ -271,6 +302,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                     listOf(aktivGrunnlagBoforhold),
                     LocalDate.parse("2022-12-01"),
                     opprettHusstandsmedlemmer(behandling),
+                    behandling.bidragsmottaker!!,
                 )
 
             resultat shouldHaveSize 0
@@ -295,6 +327,9 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                         periodeTom = null,
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
+                )
+            val aktivBoforholdGrunnlagListe2 =
+                listOf(
                     BoforholdBeregnet(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
@@ -304,31 +339,55 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                     ),
                 )
             val aktivGrunnlagBoforhold =
-                Grunnlag(
-                    erBearbeidet = true,
-                    rolle = behandling.bidragsmottaker!!,
-                    type = Grunnlagsdatatype.BOFORHOLD,
-                    data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe),
-                    behandling = behandling,
-                    innhentet = LocalDateTime.now(),
+                listOf(
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe),
+                        behandling = behandling,
+                        gjelder = testdataBarn1.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe2),
+                        behandling = behandling,
+                        gjelder = testdataBarn2.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
                 )
+
             val nyGrunnlagBoforhold =
-                Grunnlag(
-                    erBearbeidet = true,
-                    rolle = behandling.bidragsmottaker!!,
-                    type = Grunnlagsdatatype.BOFORHOLD,
-                    data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe),
-                    behandling = behandling,
-                    innhentet = LocalDateTime.now(),
+                listOf(
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe),
+                        behandling = behandling,
+                        gjelder = testdataBarn1.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe2),
+                        behandling = behandling,
+                        gjelder = testdataBarn2.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
                 )
 
             val resultat =
-                listOf(
-                    nyGrunnlagBoforhold,
-                ).hentEndringerBoforhold(
-                    listOf(aktivGrunnlagBoforhold),
+                nyGrunnlagBoforhold.hentEndringerBoforhold(
+                    aktivGrunnlagBoforhold,
                     LocalDate.parse("2020-01-01"),
                     opprettHusstandsmedlemmer(behandling),
+                    behandling.bidragsmottaker!!,
                 )
 
             resultat shouldHaveSize 0

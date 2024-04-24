@@ -86,24 +86,17 @@ fun List<Grunnlag>.hentEndringerBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     virkniningstidspunkt: LocalDate,
     husstandsbarn: Set<Husstandsbarn>,
+    rolle: Rolle,
 ): Set<HusstandsbarnGrunnlagDto> {
-    val aktivBoforholdGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val aktivBoforholdData =
-        aktivBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()?.filtrerPerioderEtterVirkningstidspunkt(
-            husstandsbarn,
-            virkniningstidspunkt,
-        )
+    val aktivBoforholdData = aktiveGrunnlag.hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle)
+    // Hent første for å finne innhentet tidspunkt
     val nyBoforholdGrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val nyBoforholdData =
-        nyBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()?.filtrerPerioderEtterVirkningstidspunkt(
-            husstandsbarn,
-            virkniningstidspunkt,
-        )
-    return nyBoforholdData?.groupBy { it.relatertPersonPersonId }?.map { (barnId, oppdaterGrunnlag) ->
-        val aktivGrunnlag = aktivBoforholdData?.filter { it.relatertPersonPersonId == barnId } ?: emptyList()
+    val nyBoforholdData = hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle)
+    return nyBoforholdData.groupBy { it.relatertPersonPersonId }.map { (barnId, oppdaterGrunnlag) ->
+        val aktivGrunnlag = aktivBoforholdData.filter { it.relatertPersonPersonId == barnId }
         if (aktivGrunnlag.erLik(oppdaterGrunnlag, virkniningstidspunkt)) return@map null
         oppdaterGrunnlag.tilHusstandsbarnGrunnlagDto(barnId, nyBoforholdGrunnlag!!.innhentet)
-    }?.filterNotNull()?.toSet() ?: emptySet()
+    }.filterNotNull().toSet()
 }
 
 private fun List<BoforholdResponse>.tilHusstandsbarnGrunnlagDto(

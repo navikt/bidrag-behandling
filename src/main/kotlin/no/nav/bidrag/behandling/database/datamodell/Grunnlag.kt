@@ -14,7 +14,9 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
@@ -50,7 +52,7 @@ open class Grunnlag(
         }
     }
 
-    val identifikator get() = type.name + rolle.ident + erBearbeidet
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
 }
 
 fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
@@ -68,6 +70,16 @@ fun List<Grunnlag>.hentSisteAktiv() =
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
+
+fun <T> List<Grunnlag>.hentSisteAktivForTypeOgRolle(
+    grunnlagstype: Grunnlagstype,
+    rolle: Rolle,
+    gjelderPerson: String?,
+) = hentSisteAktiv().find {
+    it.type == grunnlagstype.type &&
+        it.rolle.id == rolle.id && it.gjelder == gjelderPerson &&
+        grunnlagstype.erBearbeidet == it.erBearbeidet
+}?.let { Jsonoperasjoner.jsonTilObjekt<Set<T>>(it.data) }?.toSet()
 
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,

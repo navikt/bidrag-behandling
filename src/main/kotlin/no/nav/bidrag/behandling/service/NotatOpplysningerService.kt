@@ -28,8 +28,8 @@ import no.nav.bidrag.behandling.dto.v1.notat.SivilstandNotat
 import no.nav.bidrag.behandling.dto.v1.notat.Vedtak
 import no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.transformers.behandling.filtrerPerioderEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandPerioderEtterVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidetBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
@@ -63,7 +63,6 @@ private val log = KotlinLogging.logger {}
 @Service
 class NotatOpplysningerService(
     private val behandlingService: BehandlingService,
-    private val grunnlagService: GrunnlagService,
     private val beregningService: BeregningService,
     private val bidragDokumentProduksjonConsumer: BidragDokumentProduksjonConsumer,
     private val bidragDokumentConsumer: BidragDokumentConsumer,
@@ -117,14 +116,15 @@ class NotatOpplysningerService(
 
         val opplysningerBoforhold =
             behandling.grunnlagListe.hentSisteAktiv()
-                .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-                ?.konverterData<List<BoforholdResponse>>()
-                ?.filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
-                ?: emptyList()
+                .hentAlleBearbeidetBoforhold(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.husstandsbarn,
+                    behandling.bidragsmottaker,
+                )
+
         val opplysningerSivilstand =
             behandling.grunnlagListe.hentSisteAktiv()
                 .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
-
                 ?.konverterData<List<SivilstandGrunnlagDto>>()
                 ?.filtrerSivilstandPerioderEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
                 ?: emptyList()

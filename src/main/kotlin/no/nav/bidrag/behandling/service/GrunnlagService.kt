@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
@@ -13,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktivForTypeOgRolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -69,7 +69,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
-import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -240,12 +239,12 @@ class GrunnlagService(
                 rolleGrunnlagErInnhentetFor!!,
                 aktiveringstidspunkt,
             )
-        } else if (Grunnlagsdatatype.ARBEIDSFORHOLD == grunnlagstype) {
-            log.info { "Aktiverer grunnlag ARBEIDSFORHOLD for rolle ${rolleGrunnlagSkalAktiveresFor.rolletype}" }
+        } else if (Grunnlagsdatatype.ARBEIDSFORHOLD == request.grunnlagstype) {
+            log.info { "Aktiverer grunnlag ARBEIDSFORHOLD for rolle ${rolleGrunnlagErInnhentetFor!!.rolletype}" }
             val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
             ikkeAktivGrunnlag.hentGrunnlagForType(
-                grunnlagstype,
-                rolleGrunnlagSkalAktiveresFor.ident!!,
+                request.grunnlagstype,
+                rolleGrunnlagErInnhentetFor!!.ident!!,
             ).oppdaterStatusTilAktiv(aktiveringstidspunkt)
         } else {
             log.error {
@@ -327,6 +326,7 @@ class GrunnlagService(
                     aktiveGrunnlag,
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsbarn,
+                    behandling.bidragsmottaker!!,
                 ),
             sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
@@ -712,14 +712,15 @@ class GrunnlagService(
         gjelderPerson: Personident? = null,
     ) {
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
-            henteNyesteGrunnlagsdatasett<T>(behandling.id!!, innhentetForRolle.id!!, grunnlagstype).toSet()
+            behandling.grunnlagListe.hentSisteAktivForTypeOgRolle(grunnlagstype, innhentetForRolle, gjelderPerson?.verdi)
+                ?: emptySet()
 
-        if ((sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
-            (
-                sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
-                    innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
-            )
-        ) {
+        val erFørstegangsinnhentingAvInntekter =
+            sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
+        val erGrunnlagEndret =
+            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
+                innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
+        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndret) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -818,19 +819,6 @@ class GrunnlagService(
             is SkattepliktigeInntekter -> grunnlag.ainntekter.isNotEmpty() || grunnlag.skattegrunnlag.isNotEmpty()
             is SummerteInntekter<*> -> grunnlag.inntekter.isNotEmpty()
             else -> false
-        }
-    }
-
-    private inline fun <reified T> henteNyesteGrunnlagsdatasett(
-        behandlingsid: Long,
-        rolleid: Long,
-        grunnlagstype: Grunnlagstype,
-    ): Set<T> {
-        val grunnlagsdata = hentSistInnhentet(behandlingsid, rolleid, grunnlagstype)?.data
-        return if (grunnlagsdata != null) {
-            commonObjectmapper.readValue<Set<T>>(grunnlagsdata)
-        } else {
-            emptySet()
         }
     }
 
