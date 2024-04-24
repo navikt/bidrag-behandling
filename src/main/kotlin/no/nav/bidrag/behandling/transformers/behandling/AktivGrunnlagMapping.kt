@@ -81,12 +81,12 @@ fun InntektPost.erLik(inntektPost: Inntektspost): Boolean {
 }
 
 fun List<Grunnlag>.hentEndringerBoforhold(aktiveGrunnlag: List<Grunnlag>): Set<HusstandsbarnGrunnlagDto> {
-    val aktivBoforholdGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val aktivBoforholdData = aktivBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()
-    val nyBoforholdGrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val nyBoforholdData = nyBoforholdGrunnlag.konverterData<List<BoforholdResponse>>()
-    return nyBoforholdData?.groupBy { it.relatertPersonPersonId }?.map { (barnId, oppdaterGrunnlag) ->
-        val aktivGrunnlag = aktivBoforholdData?.filter { it.relatertPersonPersonId == barnId } ?: emptyList()
+    val aktivtBoforholdsgrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
+    val aktivtBoforholdsdata = aktivtBoforholdsgrunnlag.konverterData<List<BoforholdResponse>>()
+    val nyttBoforholdsgrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
+    val nyeBoforholdsdata = nyttBoforholdsgrunnlag.konverterData<List<BoforholdResponse>>()
+    return nyeBoforholdsdata?.groupBy { it.relatertPersonPersonId }?.map { (barnId, oppdaterGrunnlag) ->
+        val aktivGrunnlag = aktivtBoforholdsdata?.filter { it.relatertPersonPersonId == barnId } ?: emptyList()
         if (aktivGrunnlag.erLik(oppdaterGrunnlag)) return@map null
         HusstandsbarnGrunnlagDto(
             oppdaterGrunnlag.map {
@@ -97,7 +97,7 @@ fun List<Grunnlag>.hentEndringerBoforhold(aktiveGrunnlag: List<Grunnlag>): Set<H
                 )
             }.toSet(),
             barnId,
-            nyBoforholdGrunnlag!!.innhentet,
+            nyttBoforholdsgrunnlag!!.innhentet,
         )
     }?.filterNotNull()?.toSet() ?: emptySet()
 }

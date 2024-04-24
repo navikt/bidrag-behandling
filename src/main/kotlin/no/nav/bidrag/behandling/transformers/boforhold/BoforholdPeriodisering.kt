@@ -31,6 +31,26 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
         )
     }
 
+fun BoforholdResponse.tilBostatus() =
+    Bostatus(
+        bostatus = this.bostatus,
+        kilde = this.kilde,
+        periodeFom = this.periodeFom,
+        periodeTom = this.periodeTom,
+    )
+
+fun List<BoforholdResponse>.konvertereTilBoforholdRequest() =
+    this.groupBy { it.relatertPersonPersonId }.map {
+        BoforholdRequest(
+            bostatusListe = it.value.map { it.tilBostatus() },
+            // TODO: Alltid sant for forskudd, men oppdatere med nytt felt fra BoforholdResponse når dette
+            //  gjøres tilgjengelig
+            erBarnAvBmBp = true,
+            fødselsdato = it.value.first().fødselsdato,
+            relatertPersonPersonId = it.key,
+        )
+    }
+
 fun Set<Husstandsbarnperiode>.tilBoforholdRequest(husstandsbarn: Husstandsbarn): BoforholdRequest {
     val bostatus = this.map { it.tilBostatus() }
     return BoforholdRequest(

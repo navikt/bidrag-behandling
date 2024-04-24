@@ -168,7 +168,7 @@ fun VedtakDto.tilBehandling(
         )
     behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
     behandling.inntekter = grunnlagListe.mapInntekter(behandling, lesemodus)
-    behandling.husstandsbarn = grunnlagListe.mapHusstandsbarn(behandling, lesemodus)
+    behandling.husstandsbarn = grunnlagListe.mapHusstandsbarn(behandling)
     behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
     behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
@@ -197,7 +197,6 @@ private fun List<GrunnlagDto>.mapRoller(
 
 private fun List<GrunnlagDto>.mapHusstandsbarn(
     behandling: Behandling,
-    lesemodus: Boolean,
 ): MutableSet<Husstandsbarn> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
         .groupBy { it.gjelderReferanse }.map {

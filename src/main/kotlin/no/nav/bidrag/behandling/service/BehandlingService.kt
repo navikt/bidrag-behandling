@@ -152,24 +152,25 @@ class BehandlingService(
         behandlingsid: Long,
         request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 {
-        behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
-            log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
-            secureLogger.info {
-                "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
-                    "for person ${request.personident}"
+        behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+                log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
+                secureLogger.info {
+                    "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
+                        "for person ${request.personident}"
+                }
+                grunnlagService.aktivereGrunnlag(it, request)
+                val gjeldendeAktiveGrunnlagsdata =
+                    grunnlagService.henteGjeldendeAktiveGrunnlagsdata(it)
+                val ikkeAktiverteEndringerIGrunnlagsdata =
+                    grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
+                return AktivereGrunnlagResponseV2(
+                    boforhold = it.tilBoforholdV2(),
+                    inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
+                    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+                    ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
+                )
             }
-            grunnlagService.aktivereGrunnlag(it, request)
-            val gjeldendeAktiveGrunnlagsdata =
-                grunnlagService.henteGjeldendeAktiveGrunnlagsdata(it)
-            val ikkeAktiverteEndringerIGrunnlagsdata =
-                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
-            return AktivereGrunnlagResponseV2(
-                boforhold = it.tilBoforholdV2(),
-                inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
-                aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
-                ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
-            )
-        }
     }
 
     @Transactional
