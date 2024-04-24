@@ -26,6 +26,7 @@ import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 fun erInntektsposterEndret(
@@ -80,14 +81,17 @@ fun InntektPost.erLik(inntektPost: Inntektspost): Boolean {
     return kode == inntektPost.kode && inntekstype == inntektPost.inntektstype
 }
 
-fun List<Grunnlag>.hentEndringerBoforhold(aktiveGrunnlag: List<Grunnlag>): Set<HusstandsbarnGrunnlagDto> {
+fun List<Grunnlag>.hentEndringerBoforhold(
+    aktiveGrunnlag: List<Grunnlag>,
+    virkniningstidspunkt: LocalDate,
+): Set<HusstandsbarnGrunnlagDto> {
     val aktivtBoforholdsgrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val aktivtBoforholdsdata = aktivtBoforholdsgrunnlag.konverterData<List<BoforholdResponse>>()
+    val aktiveBoforholdsdata = aktivtBoforholdsgrunnlag.konverterData<List<BoforholdResponse>>()
     val nyttBoforholdsgrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val nyeBoforholdsdata = nyttBoforholdsgrunnlag.konverterData<List<BoforholdResponse>>()
-    return nyeBoforholdsdata?.groupBy { it.relatertPersonPersonId }?.map { (barnId, oppdaterGrunnlag) ->
-        val aktivGrunnlag = aktivtBoforholdsdata?.filter { it.relatertPersonPersonId == barnId } ?: emptyList()
-        if (aktivGrunnlag.erLik(oppdaterGrunnlag)) return@map null
+    val nyBoforholdData = nyttBoforholdsgrunnlag.konverterData<List<BoforholdResponse>>()
+    return nyBoforholdData?.groupBy { it.relatertPersonPersonId }?.map { (barnId, oppdaterGrunnlag) ->
+        val aktivGrunnlag = aktiveBoforholdsdata?.filter { it.relatertPersonPersonId == barnId } ?: emptyList()
+        if (aktivGrunnlag.erLik(oppdaterGrunnlag, virkniningstidspunkt)) return@map null
         HusstandsbarnGrunnlagDto(
             oppdaterGrunnlag.map {
                 HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
@@ -112,15 +116,15 @@ fun List<Grunnlag>.hentEndringerSivilstand(aktiveGrunnlag: List<Grunnlag>): Sivi
         if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
             return SivilstandIkkeAktivGrunnlagDto(
                 sivilstand =
-                    nySivilstandData.sivilstandListe.map {
-                        SivilstandDto(
-                            null,
-                            it.periodeFom,
-                            it.periodeTom,
-                            it.sivilstandskode,
-                            Kilde.OFFENTLIG,
-                        )
-                    },
+                nySivilstandData.sivilstandListe.map {
+                    SivilstandDto(
+                        null,
+                        it.periodeFom,
+                        it.periodeTom,
+                        it.sivilstandskode,
+                        Kilde.OFFENTLIG,
+                    )
+                },
                 status = nySivilstandData.status,
                 innhentetTidspunkt = nySivilstandGrunnlagBearbeidet!!.innhentet,
                 grunnlag = nySivilstandGrunnlag?.konverterData<Set<SivilstandGrunnlagDto>>() ?: emptySet(),
@@ -149,12 +153,22 @@ fun SivilstandBeregnet.erLik(other: SivilstandBeregnet): Boolean {
     return false
 }
 
-fun List<BoforholdResponse>.erLik(other: List<BoforholdResponse>): Boolean {
+fun List<BoforholdResponse>.erLik(
+    other: List<BoforholdResponse>,
+    virkniningstidspunkt: LocalDate,
+): Boolean {
     if (this.size != other.size) return false
+
+    fun BoforholdResponse.justertDatoFom() =
+        if (virkniningstidspunkt.isAfter(LocalDate.now())) {
+            maxOf(fødselsdato, virkniningstidspunkt.withDayOfMonth(1))
+        } else {
+            maxOf(virkniningstidspunkt.withDayOfMonth(1), periodeFom)
+        }
     return this.all { boforhold ->
         other.any {
-            it.periodeFom == boforhold.periodeFom && it.periodeTom == boforhold.periodeTom &&
-                it.bostatus == boforhold.bostatus
+            it.justertDatoFom() == boforhold.justertDatoFom() && it.periodeTom == boforhold.periodeTom &&
+                    it.bostatus == boforhold.bostatus
         }
     }
 }
@@ -172,7 +186,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
             val eksisterendeInntekt =
                 inntekterRolle.find {
                     it.kilde == Kilde.OFFENTLIG &&
-                        it.erLik(grunnlag)
+                            it.erLik(grunnlag)
                 }
                     ?: return@map grunnlag.tilIkkeAktivInntektDto(
                         rolle.ident!!,

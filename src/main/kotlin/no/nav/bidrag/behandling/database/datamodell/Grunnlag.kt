@@ -49,11 +49,25 @@ open class Grunnlag(
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet)"
         }
     }
+
+    val identifikator get() = type.name + rolle.ident + erBearbeidet
 }
 
-fun List<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
+fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
 
-fun List<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+fun List<Grunnlag>.hentAlleAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+
+fun List<Grunnlag>.hentSisteIkkeAktiv() =
+    hentAlleIkkeAktiv().groupBy { it.identifikator }
+        .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
+        .values
+        .filterNotNull()
+
+fun List<Grunnlag>.hentSisteAktiv() =
+    hentAlleAktiv().groupBy { it.identifikator }
+        .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
+        .values
+        .filterNotNull()
 
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,

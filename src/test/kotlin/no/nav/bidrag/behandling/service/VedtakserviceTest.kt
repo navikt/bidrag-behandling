@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandlingMedReelMottaker
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -116,7 +117,7 @@ class VedtakserviceTest {
                 any(),
                 any(),
             )
-        } returns Unit
+        } returns oppretteBehandling()
         every {
             behandlingService.oppdaterVedtakFattetStatus(
                 any(),

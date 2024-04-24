@@ -71,7 +71,7 @@ class BidragGrunnlagConsumer(
             virkningstidspunktEllerSøktFra: LocalDate,
         ) = grunnlagstyper.map {
             val fraDato = finneFraDato(it, virkningstidspunktEllerSøktFra)
-            val tilDato = LocalDate.now()
+            val tilDato = LocalDate.now().plusDays(1)
 
             GrunnlagRequestDto(
                 type = it,

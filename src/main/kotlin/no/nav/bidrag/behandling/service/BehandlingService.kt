@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
@@ -83,7 +84,7 @@ class BehandlingService(
         Validate.isTrue(
             opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
             "${OpprettBehandlingRequest::stønadstype.name} eller " +
-                "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
+                    "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
         )
 
         val opprettetAv =
@@ -121,8 +122,8 @@ class BehandlingService(
 
         log.info {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
-                "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
-                "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
+                    "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
+                    "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -134,15 +135,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                    BehandlingInfoDto(
-                        behandlingId = behandling.id,
-                        soknadId = behandling.soknadsid,
-                        soknadFra = behandling.soknadFra,
-                        behandlingType = behandling.tilBehandlingstype(),
-                        stonadType = behandling.stonadstype,
-                        engangsBelopType = behandling.engangsbeloptype,
-                        vedtakType = behandling.vedtakstype,
-                    ),
+                BehandlingInfoDto(
+                    behandlingId = behandling.id,
+                    soknadId = behandling.soknadsid,
+                    soknadFra = behandling.soknadFra,
+                    behandlingType = behandling.tilBehandlingstype(),
+                    stonadType = behandling.stonadstype,
+                    engangsBelopType = behandling.engangsbeloptype,
+                    vedtakType = behandling.vedtakstype,
+                ),
             ),
         )
     }
@@ -157,11 +158,10 @@ class BehandlingService(
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
                 secureLogger.info {
                     "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
-                        "for person ${request.personident}"
+                            "for person ${request.personident}"
                 }
                 grunnlagService.aktivereGrunnlag(it, request)
-                val gjeldendeAktiveGrunnlagsdata =
-                    grunnlagService.henteGjeldendeAktiveGrunnlagsdata(it)
+                val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.hentSisteAktiv()
                 val ikkeAktiverteEndringerIGrunnlagsdata =
                     grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
                 return AktivereGrunnlagResponseV2(
@@ -177,8 +177,8 @@ class BehandlingService(
     fun oppdaterBehandling(
         behandlingsid: Long,
         request: OppdaterBehandlingRequestV2,
-    ) {
-        behandlingRepository.findBehandlingById(behandlingsid)
+    ): Behandling {
+        return behandlingRepository.findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 it.validerKanOppdatere()
                 log.info { "Oppdatere behandling $behandlingsid" }
@@ -243,7 +243,7 @@ class BehandlingService(
                 it.vedtaksid = vedtaksid
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()
                 it.vedtakFattetAv = it.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
-                    ?: TokenUtils.hentApplikasjonsnavn()
+                        ?: TokenUtils.hentApplikasjonsnavn()
             }
     }
 
@@ -252,12 +252,10 @@ class BehandlingService(
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
-        val gjeldendeAktiveGrunnlagsdata =
-            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling)
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
         return behandling.tilBehandlingDtoV2(
-            gjeldendeAktiveGrunnlagsdata,
+            behandling.grunnlagListe.hentSisteAktiv(),
             grunnlagsdataEndretEtterAktivering,
         )
     }
