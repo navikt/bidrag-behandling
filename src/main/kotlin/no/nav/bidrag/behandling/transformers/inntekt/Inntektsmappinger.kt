@@ -133,7 +133,7 @@ fun Inntekt.tilInntektDtoV2() =
 
 fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Inntekt {
     inntekt.type = this.type
-    inntekt.belop = this.beløp
+    inntekt.belop = this.beløp.nærmesteHeltall
     inntekt.datoFom = this.datoFom
     inntekt.datoTom = this.datoTom
     inntekt.gjelderBarn = this.gjelderBarn?.verdi
@@ -144,7 +144,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
         inntekt.inntektsposter.add(
             Inntektspost(
                 inntekt = inntekt,
-                beløp = this.beløp,
+                beløp = this.beløp.nærmesteHeltall,
                 inntektstype = this.inntektstype,
                 kode = this.type.toString(),
             ),
@@ -231,7 +231,7 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
     val inntekt =
         Inntekt(
             type = this.type,
-            belop = this.beløp,
+            belop = this.beløp.nærmesteHeltall,
             datoFom = this.datoFom,
             datoTom = this.datoTom,
             ident = this.ident.verdi,
@@ -246,7 +246,7 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
             mutableSetOf(
                 Inntektspost(
                     inntekt = inntekt,
-                    beløp = this.beløp,
+                    beløp = this.beløp.nærmesteHeltall,
                     inntektstype = this.inntektstype,
                     kode = this.type.toString(),
                 ),
