@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
+import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
@@ -61,7 +62,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
@@ -90,13 +90,6 @@ val grunnlagsdatatyperBm =
         Grunnlagsdatatype.BOFORHOLD,
         Grunnlagsdatatype.SIVILSTAND,
         Grunnlagsdatatype.ARBEIDSFORHOLD,
-    )
-
-val grunnlagsdatatyperBarn =
-    setOf(
-        Grunnlagsdatatype.ARBEIDSFORHOLD,
-        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
     )
 
 @Service
@@ -191,73 +184,65 @@ class GrunnlagService(
         behandling: Behandling,
         request: AktivereGrunnlagRequestV2,
     ) {
-        val rolleGrunnlagSkalAktiveresFor = behandling.roller.find { request.personident.verdi == it.ident }
+        val rolleGrunnlagErInnhentetFor =
+            behandling.roller.find { request.personident.verdi == it.ident } ?: behandling.bidragsmottaker
 
-        Validate.notNull(
-            rolleGrunnlagSkalAktiveresFor,
-            "Personident oppgitt i AktivereGrunnlagRequest har ikke rolle i behandling ${behandling.id}",
-        )
+        if (Grunnlagsdatatype.BOFORHOLD != request.grunnlagstype) {
+            Validate.notNull(
+                rolleGrunnlagErInnhentetFor,
+                "Personident oppgitt i AktivereGrunnlagRequest har ikke rolle i behandling ${behandling.id}",
+            )
+        }
 
-        aktivereGrunnlag(
-            behandling,
-            rolleGrunnlagSkalAktiveresFor!!,
-            request.grunnlagstype,
-            request.overskriveManuelleOpplysninger,
-        )
-    }
-
-    @Transactional
-    fun aktivereGrunnlag(
-        behandling: Behandling,
-        rolleGrunnlagSkalAktiveresFor: Rolle,
-        grunnlagstype: Grunnlagsdatatype,
-        overskriveManuelleOpplysninger: Boolean,
-    ) {
-        Validate.notNull(
-            rolleGrunnlagSkalAktiveresFor,
-            "Personident oppgitt i AktivereGrunnlagRequest har ikke rolle i behandling ${behandling.id}",
-        )
-
-        val harIkkeAktivGrunnlag =
-            behandling.grunnlag
-                .filter { rolleGrunnlagSkalAktiveresFor.ident == it.rolle.ident }
-                .filter { grunnlagstype == it.type }.any { it.aktiv == null }
-
-        if (!harIkkeAktivGrunnlag) {
-            log.warn {
-                "Fant ingen grunnlag med type $grunnlagstype å aktivere for rolleid " +
-                    "${rolleGrunnlagSkalAktiveresFor.id} i behandling ${behandling.id} "
+        val rolleGrunnlagetErLagretPå =
+            when (request.grunnlagstype) {
+                Grunnlagsdatatype.BOFORHOLD -> behandling.bidragsmottaker
+                else -> rolleGrunnlagErInnhentetFor
             }
-            return
+
+        val harIkkeAktivtGrunnlag =
+            behandling.grunnlag
+                .filter { rolleGrunnlagetErLagretPå!!.ident == it.rolle.ident }
+                .filter { request.grunnlagstype == it.type }.any { it.aktiv == null }
+
+        if (!harIkkeAktivtGrunnlag) {
+            log.warn {
+                "Fant ingen grunnlag med type ${request.grunnlagstype} å aktivere for i behandling ${behandling.id} " +
+                    " for oppgitt person."
+            }
+            ressursIkkeFunnetException(
+                "Fant ikke grunnlag av tye ${request.grunnlagstype} å aktivere " +
+                    "i behandling ${behandling.id} for oppgitt personident.",
+            )
         }
 
         val aktiveringstidspunkt = LocalDateTime.now()
 
-        if (inntekterOgYtelser.contains(grunnlagstype)) {
+        if (inntekterOgYtelser.contains(request.grunnlagstype)) {
             aktivereYtelserOgInntekter(
                 behandling,
-                grunnlagstype,
-                rolleGrunnlagSkalAktiveresFor,
+                request.grunnlagstype,
+                rolleGrunnlagErInnhentetFor!!,
                 aktiveringstidspunkt,
             )
-        } else if (Grunnlagsdatatype.BOFORHOLD == grunnlagstype) {
+        } else if (Grunnlagsdatatype.BOFORHOLD == request.grunnlagstype) {
             aktivereBoforhold(
                 behandling,
-                grunnlagstype,
-                rolleGrunnlagSkalAktiveresFor,
+                request.grunnlagstype,
+                request.personident,
                 aktiveringstidspunkt,
-                overskriveManuelleOpplysninger,
+                request.overskriveManuelleOpplysninger,
             )
-        } else if (Grunnlagsdatatype.SIVILSTAND == grunnlagstype) {
+        } else if (Grunnlagsdatatype.SIVILSTAND == request.grunnlagstype) {
             aktivereSivilstand(
                 behandling,
-                grunnlagstype,
-                rolleGrunnlagSkalAktiveresFor,
+                request.grunnlagstype,
+                rolleGrunnlagErInnhentetFor!!,
                 aktiveringstidspunkt,
             )
         } else {
             log.error {
-                "Grunnlagstype $grunnlagstype ikke støttet ved aktivering av grunnlag. Aktivering feilet " +
+                "Grunnlagstype ${request.grunnlagstype} ikke støttet ved aktivering av grunnlag. Aktivering feilet " +
                     "for behandling ${behandling.id}  "
             }
             aktiveringAvGrunnlagstypeIkkeStøttetException(behandling.id!!)
@@ -389,39 +374,27 @@ class GrunnlagService(
     private fun aktivereBoforhold(
         behandling: Behandling,
         grunnlagstype: Grunnlagsdatatype,
-        rolle: Rolle,
+        gjelderHusstandsbarn: Personident,
         aktiveringstidspunkt: LocalDateTime,
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
-        val sistInnhentedeRådata =
+
+        val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
             ikkeAktivGrunnlag
-                .filter { rolle!!.ident == it.rolle.ident }
+                .filter { gjelderHusstandsbarn.verdi == it.gjelder }
                 .filter { grunnlagstype == it.type }
-                .filter { !it.erBearbeidet }
+                .filter { it.erBearbeidet }
                 .maxByOrNull { it.innhentet }
-        val periodisertBoforhold =
-            BoforholdApi.beregnV2(
-                behandling.virkningstidspunktEllerSøktFomDato,
-                jsonTilObjekt<List<RelatertPersonGrunnlagDto>>(sistInnhentedeRådata!!.data).tilBoforholdRequest(),
-            )
 
-        lagreGrunnlagHvisEndret<BoforholdResponse>(
-            behandling,
-            rolle,
-            Grunnlagstype(grunnlagstype, true),
-            periodisertBoforhold.toSet(),
-            LocalDateTime.now(),
-            aktiveringstidspunkt,
-        )
-
-        entityManager.merge(behandling)
         boforholdService.oppdatereAutomatiskInnhentaBoforhold(
             behandling,
-            periodisertBoforhold,
+            jsonTilObjekt<List<BoforholdResponse>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem!!.data),
             overskriveManuelleOpplysninger,
         )
-        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(aktiveringstidspunkt)
+        nyesteIkkeAktiverteBoforholdForHusstandsmedlem.aktiv = aktiveringstidspunkt
+
+        entityManager.merge(behandling)
         entityManager.flush()
     }
 
@@ -439,7 +412,7 @@ class GrunnlagService(
     ) {
         val sistInnhentedeRådata =
             behandling.grunnlag.toList().hentAlleIkkeAktiv()
-                .filter { rolle!!.ident == it.rolle.ident }
+                .filter { rolle.ident == it.rolle.ident }
                 .filter { grunnlagstype == it.type }
                 .filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }!!
@@ -553,13 +526,17 @@ class GrunnlagService(
                 innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.tilBoforholdRequest(),
             )
 
-        lagreGrunnlagHvisEndret<BoforholdResponse>(
-            behandling = behandling,
-            rolle = behandling.bidragsmottaker!!,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-            innhentetGrunnlag = boforholdPeriodisert.toSet(),
-            hentetTidspunkt = innhentetGrunnlag.hentetTidspunkt,
-        )
+        boforholdPeriodisert.filter { it.relatertPersonPersonId != null }.groupBy { it.relatertPersonPersonId }
+            .forEach {
+                lagreGrunnlagHvisEndret<BoforholdResponse>(
+                    behandling = behandling,
+                    innhentetForRolle = behandling.bidragsmottaker!!,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                    innhentetGrunnlag = boforholdPeriodisert.toSet(),
+                    hentetTidspunkt = innhentetGrunnlag.hentetTidspunkt,
+                    gjelderPerson = Personident(it.key!!),
+                )
+            }
     }
 
     private fun innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag: HentGrunnlagDto): Boolean =
@@ -712,6 +689,7 @@ class GrunnlagService(
         data: String,
         innhentet: LocalDateTime,
         aktiv: LocalDateTime? = null,
+        gjelder: Personident? = null,
     ) {
         log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id $behandling" }
 
@@ -724,20 +702,22 @@ class GrunnlagService(
                 innhentet = innhentet,
                 aktiv = aktiv,
                 rolle = behandling.roller.first { r -> r.id == idTilRolleInnhentetFor },
+                gjelder = gjelder?.verdi,
             ),
         )
     }
 
     private inline fun <reified T> lagreGrunnlagHvisEndret(
         behandling: Behandling,
-        rolle: Rolle,
+        innhentetForRolle: Rolle,
         grunnlagstype: Grunnlagstype,
         innhentetGrunnlag: Set<T>,
         hentetTidspunkt: LocalDateTime,
         aktiveringstidspunkt: LocalDateTime? = null,
+        gjelderPerson: Personident? = null,
     ) {
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
-            henteNyesteGrunnlagsdatasett<T>(behandling.id!!, rolle.id!!, grunnlagstype).toSet()
+            henteNyesteGrunnlagsdatasett<T>(behandling.id!!, innhentetForRolle.id!!, grunnlagstype).toSet()
 
         if ((sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) ||
             (
@@ -758,7 +738,8 @@ class GrunnlagService(
                     } else {
                         aktiveringstidspunkt
                     },
-                idTilRolleInnhentetFor = rolle.id!!,
+                idTilRolleInnhentetFor = innhentetForRolle.id!!,
+                gjelder = gjelderPerson,
             )
 
             if (grunnlagstype ==
@@ -770,7 +751,7 @@ class GrunnlagService(
                 @Suppress("UNCHECKED_CAST")
                 boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
                     behandling,
-                    Personident(rolle.ident!!),
+                    Personident(innhentetForRolle.ident!!),
                     innhentetGrunnlag.toList() as List<BoforholdResponse>,
                 )
             }

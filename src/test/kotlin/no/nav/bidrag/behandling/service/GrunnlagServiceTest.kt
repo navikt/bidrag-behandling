@@ -25,11 +25,14 @@ import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.testdata.tilTransformerInntekterRequest
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -41,7 +44,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
@@ -1417,6 +1419,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal aktivere grunnlag av type boforhold, og oppdatere husstandsbarntabell`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
             Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                 .thenReturn(testdataBarn1.tilPersonDto())
 
@@ -1426,24 +1429,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling = behandling,
-                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
                 innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                 aktiv = null,
+                gjelderIdent = testdataHusstandsmedlem1.ident,
                 grunnlagsdata =
                     setOf(
-                        RelatertPersonGrunnlagDto(
-                            partPersonId = testdataBM.ident,
-                            relatertPersonPersonId = testdataBarn1.ident,
-                            navn = testdataBarn1.navn,
-                            fødselsdato = testdataBarn1.fødselsdato,
-                            erBarnAvBmBp = true,
-                            borISammeHusstandDtoListe =
-                                listOf(
-                                    BorISammeHusstandDto(
-                                        periodeFra = testdataBarn1.fødselsdato,
-                                        periodeTil = null,
-                                    ),
-                                ),
+                        BoforholdResponse(
+                            bostatus = Bostatuskode.MED_FORELDER,
+                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                            kilde = Kilde.OFFENTLIG,
+                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                            periodeTom = null,
                         ),
                     ),
             )
@@ -1453,7 +1451,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             val aktivereGrunnlagRequest =
                 AktivereGrunnlagRequestV2(
-                    Personident(behandling.bidragsmottaker?.ident!!),
+                    Personident(testdataHusstandsmedlem1.ident),
                     Grunnlagsdatatype.BOFORHOLD,
                 )
 
@@ -1465,17 +1463,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             assertSoftly(behandling.grunnlag) { g ->
                 g.isNotEmpty()
-                g.size shouldBe 2
-                g.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.size shouldBe 2
+                g.size shouldBe 1
+                g.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.size shouldBe 1
                 g.filter { it.erBearbeidet }.size shouldBe 1
                 g.find { it.aktiv == null } shouldBe null
-                g.filter { LocalDate.now() == it.aktiv!!.toLocalDate() }.size shouldBe 2
+                g.filter { LocalDate.now() == it.aktiv!!.toLocalDate() }.size shouldBe 1
             }
 
             assertSoftly(behandling.husstandsbarn) {
                 it.size shouldBe 1
                 it.first().perioder.size shouldBe 1
-                it.first().perioder.first { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
             }
         }
 
@@ -1733,6 +1730,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             .thenReturn(testdataBarn1.tilPersonDto())
         Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn2.ident))
             .thenReturn(testdataBarn2.tilPersonDto())
+        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataHusstandsmedlem1.ident))
+            .thenReturn(testdataHusstandsmedlem1.tilPersonDto())
     }
 }
 

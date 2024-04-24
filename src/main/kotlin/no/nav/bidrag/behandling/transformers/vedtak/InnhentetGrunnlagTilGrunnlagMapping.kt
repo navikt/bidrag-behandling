@@ -84,12 +84,6 @@ fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<Summe
     }.associate { it.first!! to it.second }
 }
 
-fun List<GrunnlagDto>.hentVersjonBeregnetInntekt(ident: String) =
-    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT).find {
-        val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
-        gjelder.personIdent == ident
-    }?.innholdTilObjekt<BeregnetInntekt>()?.versjon ?: ""
-
 fun List<GrunnlagDto>.hentInnhentetHusstandsmedlem(): List<RelatertPersonGrunnlagDto> =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM)
         .map {

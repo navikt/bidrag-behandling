@@ -36,6 +36,7 @@ open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
     open val rolle: Rolle,
+    open val gjelder: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
@@ -68,13 +69,6 @@ fun List<Grunnlag>.hentSisteAktiv() =
         .values
         .filterNotNull()
 
-fun List<Grunnlag>.harInntekterForTypeSomIkkeErBearbeidet(
-    type: Grunnlagsdatatype,
-    ident: String,
-) = any {
-    it.type == type && !it.erBearbeidet && it.rolle.ident == ident
-}
-
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,
     ident: String,
@@ -90,12 +84,6 @@ fun List<Grunnlag>.hentBearbeidetInntekterForType(
 }.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
 
 inline fun <reified T> Grunnlag?.konverterData(): T? {
-    return this?.data?.let {
-        objectmapper.readValue(it)
-    }
-}
-
-inline fun <reified T> Grunnlag?.konverterData2(): Set<T>? {
     return this?.data?.let {
         objectmapper.readValue(it)
     }
