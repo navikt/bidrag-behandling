@@ -107,6 +107,7 @@ class TestdataManager(
         innhentet: LocalDateTime = LocalDateTime.now(),
         aktiv: LocalDateTime? = null,
         grunnlagsdata: T? = null,
+        gjelderIdent: String? = null,
     ) {
         behandling.grunnlag.add(
             Grunnlag(
@@ -126,6 +127,7 @@ class TestdataManager(
                 innhentet = innhentet,
                 aktiv = aktiv,
                 rolle = behandling.roller.first { r -> Rolletype.BIDRAGSMOTTAKER == r.rolletype },
+                gjelder = gjelderIdent,
             ),
         )
     }

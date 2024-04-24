@@ -90,7 +90,7 @@ val testdataBarn2 =
 val testdataHusstandsmedlem1 =
     TestDataPerson(
         navn = "Huststand Gapp",
-        ident = "231323123123123123",
+        ident = "31231231231",
         rolletype = Rolletype.BARN,
         fødselsdato = LocalDate.parse("2001-05-09"),
     )
