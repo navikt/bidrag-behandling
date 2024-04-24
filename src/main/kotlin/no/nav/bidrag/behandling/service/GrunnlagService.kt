@@ -711,7 +711,7 @@ class GrunnlagService(
             sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
         val erGrunnlagEndret =
             sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
-                innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
+                innhentetGrunnlag.toSet() != sistInnhentedeGrunnlagAvTypeForRolle.toSet()
         if (erFørstegangsinnhenting || erGrunnlagEndret) {
             opprett(
                 behandling = behandling,
