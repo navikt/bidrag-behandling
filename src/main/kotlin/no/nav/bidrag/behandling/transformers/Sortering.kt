@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import java.time.YearMonth
 
 val årsinntekterPrioriteringsliste =
     listOf(
@@ -26,6 +27,14 @@ val årsinntekterPrioriteringsliste =
 
 fun Set<Inntekt>.årsinntekterSortert(inkluderTaMed: Boolean = true) =
     this.filter { !eksplisitteYtelser.contains(it.type) }
+        .filter {
+            if (årsinntekterYtelser.contains(it.type)) {
+                it.opprinneligPeriode
+                    ?.inneholder(YearMonth.from(it.behandling?.virkningstidspunktEllerSøktFomDato)) ?: true
+            } else {
+                true
+            }
+        }
         .sortedWith(
             compareBy<Inntekt> {
                 it.taMed && inkluderTaMed
