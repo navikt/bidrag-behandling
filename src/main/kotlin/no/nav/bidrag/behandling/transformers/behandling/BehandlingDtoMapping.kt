@@ -386,7 +386,7 @@ fun List<SivilstandGrunnlagDto>.filtrerSivilstandPerioderEtterVirkningstidspunkt
     val kanIkkeVæreSenereEnnDato = finnCutoffSivilstandDatoFom(virkningstidspunkt)
     val sivilstandSortert = sortedBy { it.gyldigFom }
 
-    return filterIndexed { index, periode ->
+    return sivilstandSortert.filterIndexed { index, periode ->
         if (periode.gyldigFom == null) {
             true
         } else {
