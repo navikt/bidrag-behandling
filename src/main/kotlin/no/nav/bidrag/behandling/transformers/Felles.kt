@@ -13,6 +13,17 @@ val ainntekt12Og3Måneder =
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
         Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
     )
+val årsinntekterYtelser =
+    listOf(
+        Inntektsrapportering.OVERGANGSSTØNAD,
+        Inntektsrapportering.INTRODUKSJONSSTØNAD,
+        Inntektsrapportering.KVALIFISERINGSSTØNAD,
+        Inntektsrapportering.SYKEPENGER,
+        Inntektsrapportering.FORELDREPENGER,
+        Inntektsrapportering.DAGPENGER,
+        Inntektsrapportering.AAP,
+        Inntektsrapportering.PENSJON,
+    )
 val inntekstrapporteringerSomKreverGjelderBarn =
     listOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.BARNETILSYN)
 val eksplisitteYtelser =
