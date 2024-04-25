@@ -62,6 +62,9 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
         val behandling = behandlingRepository.findBehandlingById(behandlingRes.body!!.id).get()
+
+        val aktiveGrunnlag = behandling.grunnlag.filter { it.aktiv == null }
+
         assertNotNull(behandling)
         assertSoftly(behandling) {
             roller shouldHaveSize 3
