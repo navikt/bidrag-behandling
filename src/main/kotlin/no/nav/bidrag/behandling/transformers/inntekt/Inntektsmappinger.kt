@@ -99,7 +99,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
             inntektPostListe.map {
                 InntektspostDtoV2(
                     kode = it.kode,
-                    visningsnavn = it.visningsnavn,
+                    visningsnavn = finnVisningsnavn(it.kode),
                     inntektstype = it.inntekstype,
                     beløp = it.beløp.nærmesteHeltall,
                 )
@@ -119,7 +119,12 @@ fun Inntekt.tilInntektDtoV2() =
         id = this.id,
         taMed = this.taMed,
         rapporteringstype = this.type,
-        beløp = maxOf(belop.nærmesteHeltall, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+        beløp =
+            maxOf(
+                belop.nærmesteHeltall,
+                BigDecimal.ZERO,
+            ),
+        // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         datoFom = this.datoFom,
         datoTom = this.datoTom,
         ident = Personident(this.ident),
@@ -158,7 +163,12 @@ fun Inntekt.tilIkkeAktivInntektDto(
     innhentetTidspunkt: LocalDateTime,
 ) = IkkeAktivInntektDto(
     rapporteringstype = this.type,
-    beløp = maxOf(this.belop.nærmesteHeltall, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+    beløp =
+        maxOf(
+            this.belop.nærmesteHeltall,
+            BigDecimal.ZERO,
+        ),
+    // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
     periode = this.opprinneligPeriode!!,
     ident = Personident(this.ident),
     gjelderBarn = gjelderBarn?.let { Personident(it) },
@@ -213,7 +223,7 @@ fun Inntektspost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstyp
 fun InntektPost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype) =
     InntektspostEndringDto(
         kode,
-        visningsnavn,
+        finnVisningsnavn(kode),
         inntekstype,
         beløp.nærmesteHeltall,
         endringstype,
@@ -222,7 +232,7 @@ fun InntektPost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype
 fun InntektPost.toInntektpost() =
     InntektspostDtoV2(
         kode,
-        visningsnavn,
+        finnVisningsnavn(kode),
         inntekstype,
         beløp.nærmesteHeltall,
     )
@@ -264,7 +274,10 @@ fun opprettTransformerInntekterRequest(
     rolleInhentetFor: Rolle,
 ) = TransformerInntekterRequest(
     ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
-    vedtakstidspunktOpprinneligVedtak = behandling.opprinneligVedtakstidspunkt?.toLocalDate(),
+    vedtakstidspunktOpprinneligeVedtak =
+        behandling.opprinneligVedtakstidspunkt?.let {
+            listOf(behandling.opprinneligVedtakstidspunkt!!.toLocalDate())
+        } ?: emptyList(),
     ainntektsposter =
         innhentetGrunnlag.ainntektListe.flatMap {
             it.ainntektspostListe.tilAinntektsposter(
