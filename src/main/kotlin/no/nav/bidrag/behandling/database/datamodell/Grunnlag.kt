@@ -50,20 +50,20 @@ open class Grunnlag(
         }
     }
 
-    val identifikator get() = type.name + rolle.ident + erBearbeidet
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
 }
 
-fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
+fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
 
-fun List<Grunnlag>.hentAlleAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+fun Set<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
 
-fun List<Grunnlag>.hentSisteIkkeAktiv() =
+fun Set<Grunnlag>.hentSisteIkkeAktiv() =
     hentAlleIkkeAktiv().groupBy { it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
 
-fun List<Grunnlag>.hentSisteAktiv() =
+fun Set<Grunnlag>.hentSisteAktiv() =
     hentAlleAktiv().groupBy { it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values

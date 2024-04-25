@@ -77,7 +77,7 @@ fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<G
 }
 
 fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
-    val sortertGrunnlagsListe = grunnlagListe.hentAlleAktiv()
+    val sortertGrunnlagsListe = grunnlagListe.toSet().hentAlleAktiv()
     val sortertGrunnlagsListeBearbeidet = sortertGrunnlagsListe.filter { it.erBearbeidet }
     val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
     val innhentetArbeidsforhold = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetArbeidsforhold(personobjekter)
@@ -203,7 +203,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
     referanse = tilGrunnlagreferanse(gjelder),
     // Liste med referanser fra bidrag-inntekt
     grunnlagsreferanseListe =
-        grunnlagListe.hentGrunnlagsreferanserForInntekt(
+        grunnlagListe.toSet().hentGrunnlagsreferanserForInntekt(
             gjelder.personIdent!!,
             this,
         ),

@@ -39,7 +39,7 @@ import no.nav.bidrag.behandling.transformers.validerSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
-import no.nav.bidrag.boforhold.response.BoforholdBeregnet
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -111,24 +111,22 @@ fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     }
 }
 
-fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnGrunnlagDto> {
-    if (this == null) return emptySet()
-    return konverterData<List<BoforholdBeregnet>>()?.groupBy { it.relatertPersonPersonId }?.map { (barnId, grunnlag) ->
+fun List<Grunnlag>.tilHusstandsbarn() =
+    this.map {
         HusstandsbarnGrunnlagDto(
-            innhentetTidspunkt = this.innhentet,
-            ident = barnId,
+            innhentetTidspunkt = it.innhentet,
+            ident = it.gjelder,
             perioder =
-                grunnlag.map {
+                it.konverterData<List<BoforholdResponse>>()?.map {
+                        boforholdrespons ->
                     HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
-                        it.periodeFom,
-                        it.periodeTom,
-                        it.bostatus,
+                        boforholdrespons.periodeFom,
+                        boforholdrespons.periodeTom,
+                        boforholdrespons.bostatus,
                     )
-                }.toSet(),
+                }?.toSet() ?: emptySet(),
         )
-    }?.toSet() // ?.filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
-        ?: emptySet()
-}
+    }.toSet()
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
@@ -193,7 +191,7 @@ fun List<Grunnlag>.tilAktivGrunnlagsdata() =
             find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konverterData<Set<ArbeidsforholdGrunnlagDto>>()
                 ?: emptySet(),
         husstandsbarn =
-            find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.toHusstandsbarn(),
+            filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsbarn(),
         sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )
@@ -366,10 +364,10 @@ fun Set<HusstandsbarnGrunnlagDto>.filtrerPerioderEtterVirkningstidspunkt(
             val perioderSorted = husstandsbarnGrunnlagDto.perioder.sortedBy { it.datoFom }
             val perioder =
                 perioderSorted.filterIndexed { index, periode ->
-                    val erEtterVirkningstidspunkt = periode.datoFom == null || periode.datoFom!! >= cutoffPeriodeFom
+                    val erEtterVirkningstidspunkt = periode.datoFom == null || periode.datoFom >= cutoffPeriodeFom
                     if (!erEtterVirkningstidspunkt) {
                         val nestePeriode = perioderSorted.drop(index + 1).firstOrNull()
-                        nestePeriode?.datoFom == null || nestePeriode.datoFom!! > cutoffPeriodeFom
+                        nestePeriode?.datoFom == null || nestePeriode.datoFom > cutoffPeriodeFom
                     } else {
                         true
                     }

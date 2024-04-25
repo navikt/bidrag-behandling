@@ -94,7 +94,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 21
+    val totaltAntallGrunnlag = 22
 
     @BeforeEach
     fun setup() {
@@ -436,7 +436,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Transactional
         @Test
-        open fun `skal lage ikke aktiv grunnlag hvis beregnet inntekt ikke er lik lagret grunnlag`() {
+        open fun `skal lagre ikke aktiv grunnlag hvis beregnet inntekt ikke er lik lagret grunnlag`() {
             // gitt
             val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
             val behandling = testdataManager.opprettBehandling(false)
@@ -795,9 +795,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly(oppdatertBehandling) {
                 it.isPresent shouldBe true
                 it.get().grunnlag.size shouldBe totaltAntallGrunnlag
-                it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }.size shouldBe 2
+                it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }.size shouldBe 3
                 it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
-                    .filter { g -> g.erBearbeidet }.size shouldBe 1
+                    .filter { g -> g.erBearbeidet }.size shouldBe 2
                 it.get().husstandsbarn.size shouldBe 2
             }
 
@@ -1575,32 +1575,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
     }
 
     @Nested
-    @DisplayName("Teste hentAlleSistInnhentet")
-    open inner class HentAlleSistInnhentet {
-        @Test
-        @Transactional
-        open fun `skal hente nyeste grunnlagsopplysning per type`() {
-            // gitt
-            val behandling = testdataManager.opprettBehandling(true)
-            stubbeHentingAvPersoninfoForTestpersoner()
-            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
-            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
-
-            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
-
-            // hvis
-            val nyesteGrunnlagPerType =
-                grunnlagService.hentAlleSistInnhentet(
-                    behandling.id!!,
-                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                )
-
-            // så
-            validereGrunnlagBm(nyesteGrunnlagPerType)
-        }
-    }
-
-    @Nested
     @DisplayName("Teste feilhåndtering")
     open inner class Feilhåndtering {
         @MockBean
@@ -1698,9 +1672,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     private fun validereGrunnlagBm(grunnlag: List<Grunnlag>) {
         assertSoftly {
-            grunnlag.size shouldBe 13
+            grunnlag.size shouldBe 14
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
-            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 2
+            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 3
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SIVILSTAND }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BARNETILLEGG }.size shouldBe 0
