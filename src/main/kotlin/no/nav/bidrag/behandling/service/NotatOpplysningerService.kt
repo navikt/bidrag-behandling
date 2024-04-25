@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidetBoforh
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
+import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
@@ -55,6 +56,7 @@ import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -307,7 +309,7 @@ private fun Rolle.tilNotatRolle() =
 
 private fun Inntekt.tilNotatInntektDto() =
     NotatInntektDto(
-        beløp = belop,
+        beløp = maxOf(belop.nærmesteHeltall, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         periode = periode,
         opprinneligPeriode = opprinneligPeriode,
         type = type,
@@ -322,7 +324,7 @@ private fun Inntekt.tilNotatInntektDto() =
                 NotatInntektspostDto(
                     it.kode,
                     it.inntektstype,
-                    it.beløp,
+                    it.beløp.nærmesteHeltall,
                 )
             },
     )
@@ -341,7 +343,7 @@ private fun Behandling.hentInntekterForIdent(
             )
         },
     årsinntekter =
-        inntekter.årsinntekterSortert(false)
+        inntekter.årsinntekterSortert(sorterTaMed = false, eksluderYtelserUtenforVirkningstidspunkt = true)
             .filter { it.ident == ident }
             .map {
                 it.tilNotatInntektDto()
