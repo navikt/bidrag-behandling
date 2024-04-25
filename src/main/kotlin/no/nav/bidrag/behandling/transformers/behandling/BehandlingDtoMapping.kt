@@ -387,12 +387,16 @@ fun List<SivilstandGrunnlagDto>.filtrerSivilstandPerioderEtterVirkningstidspunkt
     val sivilstandSortert = sortedBy { it.gyldigFom }
 
     return filterIndexed { index, periode ->
-        val erEtterVirkningstidspunkt = periode.gyldigFom != null && periode.gyldigFom!! >= kanIkkeVæreSenereEnnDato
-        if (!erEtterVirkningstidspunkt) {
-            val nestePeriode = sivilstandSortert.drop(index + 1).firstOrNull()
-            nestePeriode?.gyldigFom == null || nestePeriode.gyldigFom!! > kanIkkeVæreSenereEnnDato
-        } else {
+        if (periode.gyldigFom == null) {
             true
+        } else {
+            val erEtterVirkningstidspunkt = periode.gyldigFom!! >= kanIkkeVæreSenereEnnDato
+            if (!erEtterVirkningstidspunkt) {
+                val nestePeriode = sivilstandSortert.drop(index + 1).firstOrNull()
+                nestePeriode?.gyldigFom == null || nestePeriode.gyldigFom!! > kanIkkeVæreSenereEnnDato
+            } else {
+                true
+            }
         }
     }
 }
