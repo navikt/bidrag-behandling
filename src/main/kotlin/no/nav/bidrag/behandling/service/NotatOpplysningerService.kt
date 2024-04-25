@@ -28,7 +28,7 @@ import no.nav.bidrag.behandling.dto.v1.notat.SivilstandNotat
 import no.nav.bidrag.behandling.dto.v1.notat.Vedtak
 import no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandPerioderEtterVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidetBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
@@ -126,7 +126,7 @@ class NotatOpplysningerService(
             behandling.grunnlagListe.hentSisteAktiv()
                 .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
                 ?.konverterData<List<SivilstandGrunnlagDto>>()
-                ?.filtrerSivilstandPerioderEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
+                ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
                 ?: emptyList()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =

@@ -29,6 +29,8 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.behandling.filtrerPerioderEtterVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.finnEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
@@ -323,7 +325,7 @@ class GrunnlagService(
                     behandling.husstandsbarn,
                     behandling.bidragsmottaker!!,
                 ),
-            sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
+            sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato),
         )
     }
 
@@ -711,7 +713,12 @@ class GrunnlagService(
             sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
         val erGrunnlagEndret =
             sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
-                innhentetGrunnlag.toSet() != sistInnhentedeGrunnlagAvTypeForRolle.toSet()
+                erBoforholdEllerSivilstandGrunnlagEndret(
+                    grunnlagstype,
+                    innhentetGrunnlag,
+                    sistInnhentedeGrunnlagAvTypeForRolle,
+                    behandling,
+                )
         if (erFørstegangsinnhenting || erGrunnlagEndret) {
             opprett(
                 behandling = behandling,
@@ -745,6 +752,35 @@ class GrunnlagService(
             }
         } else {
             log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandling." }
+        }
+    }
+
+    private fun <T> erBoforholdEllerSivilstandGrunnlagEndret(
+        grunnlagstype: Grunnlagstype,
+        aktivGrunnlag: Set<T>,
+        nyGrunnlag: Set<T>,
+        behandling: Behandling,
+    ): Boolean {
+        if (!grunnlagstype.erBearbeidet) return aktivGrunnlag.toSet() != nyGrunnlag.toSet()
+        return if (grunnlagstype.type == Grunnlagsdatatype.BOFORHOLD) {
+            val aktivGrunnlagFiltrert =
+                (aktivGrunnlag as Set<BoforholdResponse>)
+                    .toList()
+                    .filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
+                    .toSet()
+            val nyGrunnlagFiltrert =
+                (nyGrunnlag as Set<BoforholdResponse>)
+                    .toList()
+                    .filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
+                    .toSet()
+            aktivGrunnlagFiltrert
+                .finnEndringerBoforhold(behandling.virkningstidspunktEllerSøktFomDato, nyGrunnlagFiltrert)
+                .isNotEmpty()
+        } else if (grunnlagstype.type == Grunnlagsdatatype.SIVILSTAND) {
+            aktivGrunnlag.toSet() != nyGrunnlag.toSet()
+            // TODO
+        } else {
+            aktivGrunnlag.toSet() != nyGrunnlag.toSet()
         }
     }
 

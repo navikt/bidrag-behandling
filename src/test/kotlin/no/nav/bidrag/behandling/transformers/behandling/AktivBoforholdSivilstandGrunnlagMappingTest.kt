@@ -440,7 +440,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 listOf(
                     nyGrunnlagSivilstandBeregnet,
                     opprettSivilstandGrunnlag(behandling),
-                ).hentEndringerSivilstand(listOf(aktivSivilstandGrunnlag))
+                ).hentEndringerSivilstand(listOf(aktivSivilstandGrunnlag), LocalDate.parse("2020-01-01"))
 
             resultat shouldBe null
         }
@@ -505,7 +505,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 listOf(
                     nyGrunnlagSivilstandBeregnet,
                     opprettSivilstandGrunnlag(behandling),
-                ).hentEndringerSivilstand(listOf(aktivSivilstandGrunnlag))
+                ).hentEndringerSivilstand(listOf(aktivSivilstandGrunnlag), LocalDate.parse("2020-01-01"))
 
             resultat shouldNotBe null
             resultat!!.grunnlag shouldHaveSize 2
@@ -575,7 +575,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 listOf(
                     nyGrunnlagSivilstandBeregnet,
                     opprettSivilstandGrunnlag(behandling),
-                ).hentEndringerSivilstand(listOf(aktivSivilstandGrunnlag))
+                ).hentEndringerSivilstand(listOf(aktivSivilstandGrunnlag), LocalDate.parse("2020-01-01"))
 
             resultat shouldNotBe null
             resultat!!.status shouldBe Status.LOGISK_FEIL_I_TIDSLINJE
@@ -650,7 +650,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 listOf(
                     nyGrunnlagSivilstandBeregnet,
                     opprettSivilstandGrunnlag(behandling),
-                ).hentEndringerSivilstand(listOf(aktivSivilstandGrunnlag))
+                ).hentEndringerSivilstand(listOf(aktivSivilstandGrunnlag), LocalDate.parse("2020-01-01"))
 
             resultat shouldNotBe null
             resultat!!.status shouldBe Status.OK
