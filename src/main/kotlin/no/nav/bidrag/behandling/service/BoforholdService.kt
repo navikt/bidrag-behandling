@@ -197,7 +197,7 @@ class BoforholdService(
 
             log.info {
                 "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
-                        "$behandlingsid."
+                    "$behandlingsid."
             }
 
             return husstandsbarnRepository.save(eksisterendeHusstandsbarn).tilOppdatereBoforholdResponse(behandling)
@@ -327,7 +327,7 @@ class BoforholdService(
         entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                    "forbindelse med førstegangsoppdatering av boforhold."
+                "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 
