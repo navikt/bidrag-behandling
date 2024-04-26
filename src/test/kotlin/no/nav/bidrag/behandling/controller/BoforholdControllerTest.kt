@@ -6,14 +6,11 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.NyHusstandsbarnperiode
@@ -21,12 +18,11 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.PersonaliaHusstandsbarn
+import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnlag
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -36,7 +32,6 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
-import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 @RunWith(Enclosed::class)
@@ -297,35 +292,6 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     slettetBarn.id == request.oppdatereHusstandsmedlem!!.slettHusstandsmedlem
                 } shouldBe null
             }
-        }
-    }
-
-    private fun opprettBoforholdBearbeidetGrunnlag(behandling: Behandling): List<Grunnlag> {
-        return behandling.husstandsbarn.groupBy { it.ident }.map { (ident, husstandsbarn) ->
-            Grunnlag(
-                behandling = behandling,
-                type = Grunnlagsdatatype.BOFORHOLD,
-                erBearbeidet = true,
-                gjelder = ident,
-                aktiv = LocalDateTime.now(),
-                rolle = behandling.bidragsmottaker!!,
-                innhentet = LocalDateTime.now(),
-                data =
-                    commonObjectmapper.writeValueAsString(
-                        husstandsbarn.flatMap { hb ->
-                            hb.perioder.map {
-                                BoforholdResponse(
-                                    relatertPersonPersonId = hb.ident,
-                                    periodeFom = it.datoFom!!,
-                                    periodeTom = it.datoTom,
-                                    kilde = it.kilde,
-                                    bostatus = it.bostatus,
-                                    fødselsdato = hb.fødselsdato,
-                                )
-                            }
-                        },
-                    ),
-            )
         }
     }
 }

@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnlag
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -374,7 +375,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             stubbeHentingAvPersoninfoForTestpersoner()
 
             val husstandsbarnperiodeSomSkalSlettes = behandling.husstandsbarn.first().perioder.first()
-
+            behandling.grunnlag.addAll(opprettBoforholdBearbeidetGrunnlag(behandling))
             assertSoftly {
                 husstandsbarnperiodeSomSkalSlettes shouldNotBe null
                 husstandsbarnperiodeRepository.findById(husstandsbarnperiodeSomSkalSlettes.id!!).isPresent
