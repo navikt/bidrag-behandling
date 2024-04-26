@@ -36,16 +36,16 @@ fun Husstandsbarn.tilDto() =
         this.fødselsdato,
     )
 
-fun Husstandsbarn.tilOppdatereBoforholdResponse(
-    behandling: Behandling,
-) = OppdatereBoforholdResponse(
-    oppdatertHusstandsbarn = this.tilDto(),
-    valideringsfeil =
-    BoforholdValideringsfeil(
-        husstandsbarn = behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
-            .filter { it.harFeil },
-    ),
-)
+fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
+    OppdatereBoforholdResponse(
+        oppdatertHusstandsbarn = this.tilDto(),
+        valideringsfeil =
+            BoforholdValideringsfeil(
+                husstandsbarn =
+                    behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                        .filter { it.harFeil },
+            ),
+    )
 
 fun Sivilstand.tilDto() = SivilstandDto(this.id, this.datoFom, datoTom = this.datoTom, this.sivilstand, this.kilde)
 
@@ -53,7 +53,7 @@ fun Sivilstand.tilOppdatereBoforholdResponse(virkningstidspunkt: LocalDate) =
     OppdatereBoforholdResponse(
         oppdatertSivilstand = this.tilDto(),
         valideringsfeil =
-        BoforholdValideringsfeil(
-            sivilstand = setOf(this).validerSivilstand(virkningstidspunkt),
-        ),
+            BoforholdValideringsfeil(
+                sivilstand = setOf(this).validerSivilstand(virkningstidspunkt),
+            ),
     )

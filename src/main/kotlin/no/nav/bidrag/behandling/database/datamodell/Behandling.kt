@@ -143,13 +143,15 @@ open class Behandling(
 }
 
 fun Behandling.hentAlleHusstandsmedlemPerioder() = husstandsbarn.flatMap { it.perioder }
+
 fun Behandling.finnHusstandsbarnperiode(id: Long) = hentAlleHusstandsmedlemPerioder().find { it.id == id }
+
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
 fun Behandling.validerForBeregning() {
     val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
         erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
-                virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
+            virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
     val virkningstidspunktFeil =
         VirkningstidspunktFeilDto(
             manglerÅrsakEllerAvslag = avslag == null && årsak == null,
@@ -167,7 +169,7 @@ fun Behandling.validerForBeregning() {
             val måBekrefteOpplysninger = grunnlagListe.hentAlleSomMåBekreftes().map { it.type }.toSet()
             val harFeil =
                 inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null ||
-                        virkningstidspunktFeil != null || måBekrefteOpplysninger.isNotEmpty()
+                    virkningstidspunktFeil != null || måBekrefteOpplysninger.isNotEmpty()
             harFeil.ifTrue {
                 BeregningValideringsfeil(
                     virkningstidspunktFeil,
@@ -186,7 +188,7 @@ fun Behandling.validerForBeregning() {
     if (feil != null) {
         secureLogger.warn {
             "Feil ved validering av behandling for beregning " +
-                    commonObjectmapper.writeValueAsString(feil)
+                commonObjectmapper.writeValueAsString(feil)
         }
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,

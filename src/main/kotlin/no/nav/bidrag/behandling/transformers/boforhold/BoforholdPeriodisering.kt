@@ -21,10 +21,10 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
     this.map {
         BoforholdRequest(
             bostatusListe =
-            it.borISammeHusstandDtoListe.tilBostatus(
-                Bostatuskode.MED_FORELDER,
-                Kilde.OFFENTLIG,
-            ),
+                it.borISammeHusstandDtoListe.tilBostatus(
+                    Bostatuskode.MED_FORELDER,
+                    Kilde.OFFENTLIG,
+                ),
             erBarnAvBmBp = it.erBarnAvBmBp,
             fødselsdato = it.fødselsdato!!,
             relatertPersonPersonId = it.relatertPersonPersonId,
@@ -91,7 +91,7 @@ fun List<BorISammeHusstandDto>.tilBostatus(
 
 fun List<BoforholdResponse>.tilHusstandsbarn(
     behandling: Behandling,
-    originalHusstandsbarn: Husstandsbarn? = null
+    originalHusstandsbarn: Husstandsbarn? = null,
 ): Set<Husstandsbarn> {
     return this.groupBy { it.relatertPersonPersonId }.map {
         if (originalHusstandsbarn != null && it.key != originalHusstandsbarn.ident) {
@@ -102,7 +102,7 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
                 behandling = behandling,
                 kilde = Kilde.OFFENTLIG,
                 ident = it.key,
-                fødselsdato = finnFødselsdato(it.key!!, null)!!
+                fødselsdato = finnFødselsdato(it.key!!, null)!!,
             )
         husstandsbarn.perioder.clear()
         husstandsbarn.perioder.addAll(
@@ -114,7 +114,7 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
                     kilde = boforhold.kilde,
                     husstandsbarn = husstandsbarn,
                 )
-            }.toMutableSet()
+            }.toMutableSet(),
         )
         husstandsbarn
     }.toSet()

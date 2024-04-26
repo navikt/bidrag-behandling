@@ -38,5 +38,5 @@ open class Husstandsbarn(
     open var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
     @Column(name = "forrige_perioder", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
-    open var forrigePerioder: String? = null
+    open var forrigePerioder: String? = null,
 )

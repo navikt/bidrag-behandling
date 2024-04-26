@@ -51,9 +51,11 @@ fun <T : Comparable<T>> minOfNullable(
     }
 }
 
-fun finnCutoffDatoFom(virkningstidspunkt: LocalDate, fødselsdato: LocalDate? = null) =
-    if (virkningstidspunkt.isAfter(LocalDate.now()) && fødselsdato != null) {
-        maxOf(virkningstidspunkt.withDayOfMonth(1), fødselsdato)
-    } else {
-        virkningstidspunkt
-    }
+fun finnCutoffDatoFom(
+    virkningstidspunkt: LocalDate,
+    fødselsdato: LocalDate? = null,
+) = if (virkningstidspunkt.isAfter(LocalDate.now()) && fødselsdato != null) {
+    maxOf(virkningstidspunkt.withDayOfMonth(1), fødselsdato)
+} else {
+    virkningstidspunkt
+}

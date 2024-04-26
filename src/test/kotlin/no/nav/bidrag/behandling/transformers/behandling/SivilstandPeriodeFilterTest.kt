@@ -82,9 +82,7 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
             this shouldHaveSize 1
             this[0].gyldigFom!! shouldBe YearMonth.of(2023, 1).atDay(1)
         }
-
     }
-
 
     @Test
     fun `skal filtrere bort perioder som kommer før virkningstidspunkt hvis en av periodene inneholder null gyldigFom`() {
@@ -221,23 +219,23 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         val sivilstandGrunnlagDtoList =
             SivilstandBeregnet(
                 sivilstandListe =
-                listOf(
-                    SivilstandV1(
-                        periodeFom = YearMonth.of(2020, 1).atDay(1),
-                        periodeTom = YearMonth.of(2020, 12).atEndOfMonth(),
-                        sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                    listOf(
+                        SivilstandV1(
+                            periodeFom = YearMonth.of(2020, 1).atDay(1),
+                            periodeTom = YearMonth.of(2020, 12).atEndOfMonth(),
+                            sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        ),
+                        SivilstandV1(
+                            periodeFom = YearMonth.of(2021, 1).atDay(1),
+                            periodeTom = YearMonth.of(2022, 1).atEndOfMonth(),
+                            sivilstandskode = Sivilstandskode.ENSLIG,
+                        ),
+                        SivilstandV1(
+                            periodeFom = YearMonth.of(2023, 1).atDay(1),
+                            periodeTom = null,
+                            sivilstandskode = Sivilstandskode.ENSLIG,
+                        ),
                     ),
-                    SivilstandV1(
-                        periodeFom = YearMonth.of(2021, 1).atDay(1),
-                        periodeTom = YearMonth.of(2022, 1).atEndOfMonth(),
-                        sivilstandskode = Sivilstandskode.ENSLIG,
-                    ),
-                    SivilstandV1(
-                        periodeFom = YearMonth.of(2023, 1).atDay(1),
-                        periodeTom = null,
-                        sivilstandskode = Sivilstandskode.ENSLIG,
-                    ),
-                ),
                 status = Status.OK,
             )
 

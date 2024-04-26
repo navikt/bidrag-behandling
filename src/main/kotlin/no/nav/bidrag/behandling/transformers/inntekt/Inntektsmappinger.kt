@@ -96,14 +96,14 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         ident = Personident(gjelder),
         kilde = Kilde.OFFENTLIG,
         inntektsposter =
-        inntektPostListe.map {
-            InntektspostDtoV2(
-                kode = it.kode,
-                visningsnavn = "",
-                inntektstype = it.inntekstype,
-                beløp = it.beløp.nærmesteHeltall,
-            )
-        }.toSet(),
+            inntektPostListe.map {
+                InntektspostDtoV2(
+                    kode = it.kode,
+                    visningsnavn = "",
+                    inntektstype = it.inntekstype,
+                    beløp = it.beløp.nærmesteHeltall,
+                )
+            }.toSet(),
         inntektstyper = emptySet(),
         datoFom = gjelderÅrMåned.atDay(1),
         datoTom = gjelderÅrMåned.atEndOfMonth(),
@@ -119,10 +119,12 @@ fun Inntekt.tilInntektDtoV2() =
         id = this.id,
         taMed = this.taMed,
         rapporteringstype = this.type,
-        beløp = maxOf(
-            belop.nærmesteHeltall,
-            BigDecimal.ZERO
-        ), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+        beløp =
+            maxOf(
+                belop.nærmesteHeltall,
+                BigDecimal.ZERO,
+            ),
+        // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         datoFom = this.datoFom,
         datoTom = this.datoTom,
         ident = Personident(this.ident),
@@ -161,10 +163,12 @@ fun Inntekt.tilIkkeAktivInntektDto(
     innhentetTidspunkt: LocalDateTime,
 ) = IkkeAktivInntektDto(
     rapporteringstype = this.type,
-    beløp = maxOf(
-        this.belop.nærmesteHeltall,
-        BigDecimal.ZERO
-    ), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+    beløp =
+        maxOf(
+            this.belop.nærmesteHeltall,
+            BigDecimal.ZERO,
+        ),
+    // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
     periode = this.opprinneligPeriode!!,
     ident = Personident(this.ident),
     gjelderBarn = gjelderBarn?.let { Personident(it) },
@@ -172,14 +176,14 @@ fun Inntekt.tilIkkeAktivInntektDto(
     innhentetTidspunkt = innhentetTidspunkt,
     originalId = id,
     inntektsposter =
-    inntektsposter.map {
-        InntektspostDtoV2(
-            it.kode,
-            finnVisningsnavn(it.kode),
-            it.inntektstype,
-            it.beløp.nærmesteHeltall,
-        )
-    }.toSet(),
+        inntektsposter.map {
+            InntektspostDtoV2(
+                it.kode,
+                finnVisningsnavn(it.kode),
+                it.inntektstype,
+                it.beløp.nærmesteHeltall,
+            )
+        }.toSet(),
 )
 
 fun SummertÅrsinntekt.tilIkkeAktivInntektDto(
@@ -198,13 +202,13 @@ fun SummertÅrsinntekt.tilIkkeAktivInntektDto(
     innhentetTidspunkt = innhentetTidspunkt,
     originalId = eksisterendeInntekt?.id,
     inntektsposter =
-    inntektPostListe.map { it.toInntektpost() }.toSet(),
+        inntektPostListe.map { it.toInntektpost() }.toSet(),
     inntektsposterSomErEndret =
-    if (eksisterendeInntekt != null) {
-        mapTilInntektspostEndringer(inntektPostListe.toSet(), eksisterendeInntekt.inntektsposter)
-    } else {
-        emptySet()
-    },
+        if (eksisterendeInntekt != null) {
+            mapTilInntektspostEndringer(inntektPostListe.toSet(), eksisterendeInntekt.inntektsposter)
+        } else {
+            emptySet()
+        },
 )
 
 fun Inntektspost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype) =
@@ -270,44 +274,45 @@ fun opprettTransformerInntekterRequest(
     rolleInhentetFor: Rolle,
 ) = TransformerInntekterRequest(
     ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
-    vedtakstidspunktOpprinneligeVedtak = behandling.opprinneligVedtakstidspunkt?.toLocalDate()?.let { listOf(it) }
-        ?: emptyList(),
+    vedtakstidspunktOpprinneligeVedtak =
+        behandling.opprinneligVedtakstidspunkt?.toLocalDate()?.let { listOf(it) }
+            ?: emptyList(),
     ainntektsposter =
-    innhentetGrunnlag.ainntektListe.flatMap {
-        it.ainntektspostListe.tilAinntektsposter(
-            rolleInhentetFor,
-        )
-    },
+        innhentetGrunnlag.ainntektListe.flatMap {
+            it.ainntektspostListe.tilAinntektsposter(
+                rolleInhentetFor,
+            )
+        },
     barnetilleggsliste =
-    innhentetGrunnlag.barnetilleggListe.filter {
-        harBarnRolleIBehandling(
-            it.barnPersonId,
-            behandling,
-        )
-    }.tilBarnetillegg(
-        rolleInhentetFor,
-    ),
+        innhentetGrunnlag.barnetilleggListe.filter {
+            harBarnRolleIBehandling(
+                it.barnPersonId,
+                behandling,
+            )
+        }.tilBarnetillegg(
+            rolleInhentetFor,
+        ),
     kontantstøtteliste =
-    innhentetGrunnlag.kontantstøtteListe.filter {
-        harBarnRolleIBehandling(
-            it.barnPersonId,
-            behandling,
-        )
-    }.tilKontantstøtte(
-        rolleInhentetFor,
-    ),
+        innhentetGrunnlag.kontantstøtteListe.filter {
+            harBarnRolleIBehandling(
+                it.barnPersonId,
+                behandling,
+            )
+        }.tilKontantstøtte(
+            rolleInhentetFor,
+        ),
     skattegrunnlagsliste =
-    innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
-        rolleInhentetFor,
-    ),
+        innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
+            rolleInhentetFor,
+        ),
     småbarnstilleggliste =
-    innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
-        rolleInhentetFor,
-    ),
+        innhentetGrunnlag.småbarnstilleggListe.tilSmåbarnstillegg(
+            rolleInhentetFor,
+        ),
     utvidetBarnetrygdliste =
-    innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
-        rolleInhentetFor,
-    ),
+        innhentetGrunnlag.utvidetBarnetrygdListe.tilUtvidetBarnetrygd(
+            rolleInhentetFor,
+        ),
 )
 
 private fun harBarnRolleIBehandling(
