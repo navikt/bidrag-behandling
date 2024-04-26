@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManager
@@ -35,12 +36,14 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
@@ -194,7 +197,7 @@ class BoforholdService(
 
             log.info {
                 "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
-                    "$behandlingsid."
+                        "$behandlingsid."
             }
 
             return husstandsbarnRepository.save(eksisterendeHusstandsbarn).tilOppdatereBoforholdResponse(behandling)
@@ -210,7 +213,8 @@ class BoforholdService(
                     .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == husstandsmedlem.ident }
                     .konverterData<List<BoforholdResponse>>() ?: oppdateringAvBoforholdFeiletException(behandlingsid)
 
-            husstandsmedlem.perioder.addAll(sistInnhentetGrunnlag.tilHusstandsbarn(behandling).first().perioder)
+            sistInnhentetGrunnlag.tilHusstandsbarn(behandling, husstandsmedlem)
+            return husstandsbarnRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
 
         oppdatereHusstandsmedlem.angreSisteStegForHusstandsmedlem?.let { husstandsmedlemId ->
@@ -219,17 +223,22 @@ class BoforholdService(
                     ?: oppdateringAvBoforholdFeiletException(behandlingsid)
             husstandsmedlem.perioder.clear()
             husstandsmedlem.perioder.addAll(husstandsmedlem.hentForrigePerioder(behandlingsid))
+            return husstandsbarnRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
         oppdateringAvBoforholdFeiletException(behandlingsid)
     }
 
     fun Husstandsbarn.hentForrigePerioder(behandlingsid: Long): Set<Husstandsbarnperiode> {
-        val forrigePerioder: Set<Husstandsbarnperiode> =
+        val forrigePerioder: Set<JsonNode> =
             commonObjectmapper.readValue(forrigePerioder ?: manglerForrigePeriode(behandlingsid))
         return forrigePerioder.map {
-            it.id = null
-            it.husstandsbarn = this
-            it
+            Husstandsbarnperiode(
+                husstandsbarn = this,
+                datoFom = LocalDate.parse(it["datoFom"].textValue()),
+                datoTom = it["datoTom"]?.textValue()?.let { LocalDate.parse(it) },
+                bostatus = Bostatuskode.valueOf(it["bostatus"].textValue()),
+                kilde = Kilde.valueOf(it["kilde"].textValue()),
+            )
         }.toSet()
     }
 
@@ -318,7 +327,7 @@ class BoforholdService(
         entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                "forbindelse med førstegangsoppdatering av boforhold."
+                    "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 
