@@ -212,7 +212,6 @@ class BoforholdService(
             val husstandsmedlem =
                 behandling.husstandsbarn.find { it.id == husstandsmedlemId }
                     ?: oppdateringAvBoforholdFeiletException(behandlingsid)
-            husstandsmedlem.lagreEksisterendePerioder()
             husstandsmedlem.oppdaterTilForrigeLagredePerioder()
             return husstandsbarnRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
@@ -241,8 +240,10 @@ class BoforholdService(
     }
 
     private fun Husstandsbarn.oppdaterTilForrigeLagredePerioder() {
+        val lagredePerioder = commonObjectmapper.writeValueAsString(perioder)
         perioder.clear()
         perioder.addAll(hentForrigeLagredePerioder())
+        forrigePerioder = lagredePerioder
     }
 
     private fun Husstandsbarn.hentForrigeLagredePerioder(): Set<Husstandsbarnperiode> {
