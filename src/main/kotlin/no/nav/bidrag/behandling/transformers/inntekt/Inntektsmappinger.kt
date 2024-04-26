@@ -99,7 +99,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
             inntektPostListe.map {
                 InntektspostDtoV2(
                     kode = it.kode,
-                    visningsnavn = "",
+                    visningsnavn = finnVisningsnavn(it.kode),
                     inntektstype = it.inntekstype,
                     beløp = it.beløp.nærmesteHeltall,
                 )

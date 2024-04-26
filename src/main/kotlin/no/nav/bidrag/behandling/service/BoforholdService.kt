@@ -136,13 +136,14 @@ class BoforholdService(
         }
 
         oppdatereHusstandsmedlem.opprett?.let { personalia ->
-            val husstandsbarn = Husstandsbarn(
-                behandling,
-                Kilde.MANUELL,
-                ident = personalia.personident?.verdi,
-                fødselsdato = personalia.fødselsdato,
-                navn = personalia.navn,
-            )
+            val husstandsbarn =
+                Husstandsbarn(
+                    behandling,
+                    Kilde.MANUELL,
+                    ident = personalia.personident?.verdi,
+                    fødselsdato = personalia.fødselsdato,
+                    navn = personalia.navn,
+                )
             husstandsbarn.perioder.add(
                 Husstandsbarnperiode(
                     husstandsbarn = husstandsbarn,
@@ -150,7 +151,7 @@ class BoforholdService(
                     datoFom = behandling.virkningstidspunktEllerSøktFomDato,
                     datoTom = null,
                     kilde = Kilde.MANUELL,
-                )
+                ),
             )
             behandling.husstandsbarn.add(husstandsbarn)
             log.info { "Nytt husstandsmedlem (id ${husstandsbarn.id}) ble manuelt lagt til behandling $behandlingsid." }
@@ -181,19 +182,19 @@ class BoforholdService(
             }
 
             eksisterendeHusstandsbarn.oppdaterPerioder(
-                nyHusstandsbarnperiode = Husstandsbarnperiode(
-                    husstandsbarn = eksisterendeHusstandsbarn,
-                    bostatus = bostatusperiode.bostatus,
-                    datoFom = bostatusperiode.fraOgMed,
-                    datoTom = bostatusperiode.tilOgMed,
-                    kilde = Kilde.MANUELL,
-                )
+                nyHusstandsbarnperiode =
+                    Husstandsbarnperiode(
+                        husstandsbarn = eksisterendeHusstandsbarn,
+                        bostatus = bostatusperiode.bostatus,
+                        datoFom = bostatusperiode.fraOgMed,
+                        datoTom = bostatusperiode.tilOgMed,
+                        kilde = Kilde.MANUELL,
+                    ),
             )
-
 
             log.info {
                 "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
-                        "$behandlingsid."
+                    "$behandlingsid."
             }
 
             return husstandsbarnRepository.save(eksisterendeHusstandsbarn).tilOppdatereBoforholdResponse(behandling)
@@ -220,7 +221,7 @@ class BoforholdService(
 
     private fun Husstandsbarn.oppdaterPerioder(
         nyHusstandsbarnperiode: Husstandsbarnperiode? = null,
-        slettHusstandsbarnperiode: Long? = null
+        slettHusstandsbarnperiode: Long? = null,
     ) {
         val manuellePerioder =
             (perioder.filter { it.kilde == Kilde.MANUELL && it.id != slettHusstandsbarnperiode } + nyHusstandsbarnperiode).filterNotNull()
@@ -250,7 +251,7 @@ class BoforholdService(
         val forrigePerioder: Set<JsonNode> =
             commonObjectmapper.readValue(
                 forrigePerioder
-                    ?: oppdateringAvBoforholdFeilet("Mangler forrige perioder for husstandsbarn $id i behandling ${behandling.id}")
+                    ?: oppdateringAvBoforholdFeilet("Mangler forrige perioder for husstandsbarn $id i behandling ${behandling.id}"),
             )
         return forrigePerioder.map {
             Husstandsbarnperiode(
@@ -348,7 +349,7 @@ class BoforholdService(
         entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                    "forbindelse med førstegangsoppdatering av boforhold."
+                "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 

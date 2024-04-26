@@ -2,13 +2,18 @@ package no.nav.bidrag.behandling.controller
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.NyHusstandsbarnperiode
@@ -17,9 +22,11 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.PersonaliaHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -29,6 +36,7 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 @RunWith(Enclosed::class)
@@ -102,7 +110,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
             val eksisterendeHusstandsbarn = behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }
             val sistePeriode = eksisterendeHusstandsbarn!!.perioder.maxBy { it.datoFom!! }
-
+            behandling.grunnlag.addAll(opprettBoforholdBearbeidetGrunnlag(behandling))
+            testdataManager.lagreBehandlingNewTransaction(behandling)
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
@@ -149,7 +158,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         fun `skal kunne slette husstandsbarnperiode`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
-
+            behandling.grunnlag.addAll(opprettBoforholdBearbeidetGrunnlag(behandling))
+            testdataManager.lagreBehandlingNewTransaction(behandling)
             val eksisterendeHusstandsbarn = behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }
 
             val request =
@@ -190,7 +200,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         open fun `skal kunne legge til et nytt husstandsbarn`() {
             // gitt
             val behandling = testdataManager.opprettBehandling()
-
+            behandling.grunnlag.addAll(opprettBoforholdBearbeidetGrunnlag(behandling))
+            testdataManager.lagreBehandlingNewTransaction(behandling)
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
@@ -226,7 +237,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 oppdatertHusstandsbarn.ident shouldBe
                     request.oppdatereHusstandsmedlem!!.opprett!!.personident!!.verdi
                 oppdatertHusstandsbarn.navn shouldBe request.oppdatereHusstandsmedlem!!.opprett!!.navn
-                oppdatertHusstandsbarn.perioder shouldBe emptySet()
+                oppdatertHusstandsbarn.perioder.shouldNotBeEmpty()
+                oppdatertHusstandsbarn.perioder.first().kilde shouldBe Kilde.MANUELL
+                oppdatertHusstandsbarn.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
+                oppdatertHusstandsbarn.perioder.first().datoTom.shouldBeNull()
             }
 
             assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsbarn) {
@@ -283,6 +297,35 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     slettetBarn.id == request.oppdatereHusstandsmedlem!!.slettHusstandsmedlem
                 } shouldBe null
             }
+        }
+    }
+
+    private fun opprettBoforholdBearbeidetGrunnlag(behandling: Behandling): List<Grunnlag> {
+        return behandling.husstandsbarn.groupBy { it.ident }.map { (ident, husstandsbarn) ->
+            Grunnlag(
+                behandling = behandling,
+                type = Grunnlagsdatatype.BOFORHOLD,
+                erBearbeidet = true,
+                gjelder = ident,
+                aktiv = LocalDateTime.now(),
+                rolle = behandling.bidragsmottaker!!,
+                innhentet = LocalDateTime.now(),
+                data =
+                    commonObjectmapper.writeValueAsString(
+                        husstandsbarn.flatMap { hb ->
+                            hb.perioder.map {
+                                BoforholdResponse(
+                                    relatertPersonPersonId = hb.ident,
+                                    periodeFom = it.datoFom!!,
+                                    periodeTom = it.datoTom,
+                                    kilde = it.kilde,
+                                    bostatus = it.bostatus,
+                                    fødselsdato = hb.fødselsdato,
+                                )
+                            }
+                        },
+                    ),
+            )
         }
     }
 }
