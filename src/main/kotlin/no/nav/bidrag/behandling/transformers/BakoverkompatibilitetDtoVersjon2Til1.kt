@@ -130,7 +130,6 @@ fun Set<InntektspostDtoV2>.tilInntektspostDto() =
     this.map {
         InntektPost(
             kode = it.kode,
-            visningsnavn = it.visningsnavn,
             beløp = it.beløp ?: BigDecimal.ZERO,
         )
     }.toSet()
@@ -178,10 +177,10 @@ fun OppdatereInntekterRequest.tilOppdatereInntekterRequestV2(personidentBm: Pers
 
     return OppdatereInntekterRequestV2(
         oppdatereManuelleInntekter =
-            inntekt.filter { inntektDto ->
-                Inntektsrapportering.entries.filter { i -> i.kanLeggesInnManuelt }
-                    .contains(inntektDto.type)
-            }.toSet() + barnetillegg + kontantstøtte + utvidetBarnetrygd,
+        inntekt.filter { inntektDto ->
+            Inntektsrapportering.entries.filter { i -> i.kanLeggesInnManuelt }
+                .contains(inntektDto.type)
+        }.toSet() + barnetillegg + kontantstøtte + utvidetBarnetrygd,
         notat = this.notat,
     )
 }
@@ -220,11 +219,11 @@ fun InntektDto.tilInntektDtoV2() =
         gjelderBarn = null,
         kilde = if (this.fraGrunnlag) Kilde.OFFENTLIG else Kilde.MANUELL,
         inntektsposter =
-            this.inntektsposter.tilInntektspostDtoV2(
-                this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {
-                    Inntektstype.LØNNSINNTEKT
-                },
-            ).toSet(),
+        this.inntektsposter.tilInntektspostDtoV2(
+            this.inntektstype.inneholderInntektstypeListe.getOrElse(0) {
+                Inntektstype.LØNNSINNTEKT
+            },
+        ).toSet(),
         inntektstyper = this.inntektstype.inneholderInntektstypeListe.toSet(),
     )
 
@@ -233,7 +232,7 @@ fun Set<InntektPost>.tilInntektspostDtoV2(inntektstype: Inntektstype) =
         InntektspostDtoV2(
             kode = it.kode,
             beløp = it.beløp,
-            visningsnavn = it.visningsnavn,
+            visningsnavn = "",
             inntektstype = inntektstype,
         )
     }
