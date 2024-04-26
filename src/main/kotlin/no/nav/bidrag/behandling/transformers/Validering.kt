@@ -295,14 +295,14 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
         }
     }
 
-    this.slettHusstandsmedlem?.let { id ->
+    this.slettPeriode?.let { id ->
         val husstandsbarnperiode = behandling.hentAlleHusstandsmedlemPerioder().find { it.id == id }
         if (husstandsbarnperiode == null) {
             ressursIkkeFunnetException("Fant ikke husstandsbarnsperiode med id $id.")
         } else if (behandling.id != husstandsbarnperiode.husstandsbarn.behandling.id) {
             ressursIkkeTilknyttetBehandling(
                 "Husstandsbarnperiode $id hører ikke til behandling med id" +
-                    "${behandling.id}.",
+                        "${behandling.id}.",
             )
         }
     }
@@ -314,7 +314,7 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
         } else if (Kilde.OFFENTLIG == husstandsbarn.kilde) {
             ressursHarFeilKildeException(
                 "Husstandsbarn med id ${husstandsbarn.id} i behandling ${husstandsbarn.behandling.id} " +
-                    "kommer fra offentlige registre, og kan derfor ikke slettes.",
+                        "kommer fra offentlige registre, og kan derfor ikke slettes.",
             )
         }
     }
@@ -395,11 +395,11 @@ private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
         val annenOverlappendePeriode =
             sortertePerioder.drop(index + 1).find {
                 it.periode.overlapper(overlappendePeriode.periode) &&
-                    it.rapporteringTyper.any {
-                        overlappendePeriode.rapporteringTyper.contains(
-                            it,
-                        )
-                    }
+                        it.rapporteringTyper.any {
+                            overlappendePeriode.rapporteringTyper.contains(
+                                it,
+                            )
+                        }
             }
 
         val sammenstiltePerioderSomInneholderOverlappende =
@@ -412,54 +412,54 @@ private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
                 sammenstiltePerioder.add(
                     sammenstiltePerioderSomInneholderOverlappende.copy(
                         rapporteringTyper =
-                            (
+                        (
                                 annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper +
-                                    sammenstiltePerioderSomInneholderOverlappende.rapporteringTyper
-                            ).sorted()
-                                .toMutableSet(),
+                                        sammenstiltePerioderSomInneholderOverlappende.rapporteringTyper
+                                ).sorted()
+                            .toMutableSet(),
                         idListe =
-                            (
+                        (
                                 annenOverlappendePeriode.idListe + overlappendePeriode.idListe +
-                                    sammenstiltePerioderSomInneholderOverlappende.idListe
-                            ).sorted().toMutableSet(),
+                                        sammenstiltePerioderSomInneholderOverlappende.idListe
+                                ).sorted().toMutableSet(),
                         inntektstyper =
-                            (
+                        (
                                 annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper +
-                                    sammenstiltePerioderSomInneholderOverlappende.inntektstyper
-                            ).sorted()
-                                .toMutableSet(),
+                                        sammenstiltePerioderSomInneholderOverlappende.inntektstyper
+                                ).sorted()
+                            .toMutableSet(),
                         periode =
-                            Datoperiode(
-                                minOf(
-                                    annenOverlappendePeriode.periode.fom,
-                                    overlappendePeriode.periode.fom,
-                                    sammenstiltePerioderSomInneholderOverlappende.periode.fom,
-                                ),
-                                finnSenesteDato(
-                                    annenOverlappendePeriode.periode.til,
-                                    overlappendePeriode.periode.til,
-                                    sammenstiltePerioderSomInneholderOverlappende.periode.til,
-                                ),
+                        Datoperiode(
+                            minOf(
+                                annenOverlappendePeriode.periode.fom,
+                                overlappendePeriode.periode.fom,
+                                sammenstiltePerioderSomInneholderOverlappende.periode.fom,
                             ),
+                            finnSenesteDato(
+                                annenOverlappendePeriode.periode.til,
+                                overlappendePeriode.periode.til,
+                                sammenstiltePerioderSomInneholderOverlappende.periode.til,
+                            ),
+                        ),
                     ),
                 )
             } else {
                 sammenstiltePerioder.add(
                     annenOverlappendePeriode.copy(
                         periode =
-                            Datoperiode(
-                                minOf(annenOverlappendePeriode.periode.fom, overlappendePeriode.periode.fom),
-                                finnSenesteDato(annenOverlappendePeriode.periode.til, overlappendePeriode.periode.til),
-                            ),
+                        Datoperiode(
+                            minOf(annenOverlappendePeriode.periode.fom, overlappendePeriode.periode.fom),
+                            finnSenesteDato(annenOverlappendePeriode.periode.til, overlappendePeriode.periode.til),
+                        ),
                         rapporteringTyper =
-                            (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted()
-                                .toMutableSet(),
+                        (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted()
+                            .toMutableSet(),
                         idListe =
-                            (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted()
-                                .toMutableSet(),
+                        (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted()
+                            .toMutableSet(),
                         inntektstyper =
-                            (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted()
-                                .toMutableSet(),
+                        (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted()
+                            .toMutableSet(),
                     ),
                 )
             }
