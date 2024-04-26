@@ -51,14 +51,9 @@ fun <T : Comparable<T>> minOfNullable(
     }
 }
 
-fun finnCutoffHusstandsmedlemDatoFom(
-    virkningstidspunkt: LocalDate,
-    fødselsdato: LocalDate,
-) = if (virkningstidspunkt.isAfter(LocalDate.now())) {
-    maxOf(virkningstidspunkt.withDayOfMonth(1), fødselsdato)
-} else {
-    virkningstidspunkt
-}
-
-fun finnCutoffSivilstandDatoFom(virkningstidspunkt: LocalDate) =
-    minOf(LocalDate.now().withDayOfMonth(1), virkningstidspunkt.withDayOfMonth(1))
+fun finnCutoffDatoFom(virkningstidspunkt: LocalDate, fødselsdato: LocalDate? = null) =
+    if (virkningstidspunkt.isAfter(LocalDate.now()) && fødselsdato != null) {
+        maxOf(virkningstidspunkt.withDayOfMonth(1), fødselsdato)
+    } else {
+        virkningstidspunkt
+    }

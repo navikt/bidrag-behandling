@@ -26,7 +26,7 @@ fun husstandsbarnIkkeFunnetException(
     throw HttpClientErrorException(
         HttpStatus.NOT_FOUND,
         "Fant ikke husstandsbarn med id $idHusstandsbarn knyttet " +
-            "til behandling $behandlingsid",
+                "til behandling $behandlingsid",
     )
 
 fun ressursIkkeFunnetException(feilmelding: String): Nothing =
@@ -41,12 +41,19 @@ fun ressursIkkeTilknyttetBehandling(feilmelding: String): Nothing =
         feilmelding,
     )
 
-fun ressursHarFeilKildeException(feilmelding: String): Nothing = throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
+fun ressursHarFeilKildeException(feilmelding: String): Nothing =
+    throw HttpClientErrorException(HttpStatus.BAD_REQUEST, feilmelding)
 
 fun oppdateringAvBoforholdFeiletException(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.INTERNAL_SERVER_ERROR,
         "Oppdatering av boforhold feilet for behandling $behandlingsid",
+    )
+
+fun manglerForrigePeriode(behandlingsid: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Angre siste endringer av boforhold feilet for behandling $behandlingsid. Mangler forrige periode",
     )
 
 fun requestManglerDataException(
@@ -56,7 +63,7 @@ fun requestManglerDataException(
     throw HttpClientErrorException(
         HttpStatus.BAD_REQUEST,
         "Forespørselen om å oppdatere ${ressurstype.toString().lowercase()} for behandling $behandlingsid " +
-            "inneholdt ingen data.",
+                "inneholdt ingen data.",
     )
 
 fun lagringAvGrunnlagFeiletException(behandlingsid: Long): Nothing =

@@ -1,10 +1,10 @@
 package no.nav.bidrag.behandling.transformers.boforhold
 
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.boforhold.dto.BoforholdRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -21,10 +21,10 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
     this.map {
         BoforholdRequest(
             bostatusListe =
-                it.borISammeHusstandDtoListe.tilBostatus(
-                    Bostatuskode.MED_FORELDER,
-                    Kilde.OFFENTLIG,
-                ),
+            it.borISammeHusstandDtoListe.tilBostatus(
+                Bostatuskode.MED_FORELDER,
+                Kilde.OFFENTLIG,
+            ),
             erBarnAvBmBp = it.erBarnAvBmBp,
             fødselsdato = it.fødselsdato!!,
             relatertPersonPersonId = it.relatertPersonPersonId,
@@ -91,17 +91,21 @@ fun List<BorISammeHusstandDto>.tilBostatus(
 
 fun List<BoforholdResponse>.tilHusstandsbarn(
     behandling: Behandling,
-    bidragPersonConsumer: BidragPersonConsumer,
+    originalHusstandsbarn: Husstandsbarn? = null
 ): Set<Husstandsbarn> {
     return this.groupBy { it.relatertPersonPersonId }.map {
+        if (originalHusstandsbarn != null && it.key != originalHusstandsbarn.ident) {
+            return@map originalHusstandsbarn
+        }
         val husstandsbarn =
-            Husstandsbarn(
+            originalHusstandsbarn ?: Husstandsbarn(
                 behandling = behandling,
                 kilde = Kilde.OFFENTLIG,
                 ident = it.key,
-                fødselsdato = bidragPersonConsumer.hentPerson(it.key!!).fødselsdato!!,
+                fødselsdato = finnFødselsdato(it.key!!, null)!!
             )
-        husstandsbarn.perioder =
+        husstandsbarn.perioder.clear()
+        husstandsbarn.perioder.addAll(
             it.value.map { boforhold ->
                 Husstandsbarnperiode(
                     bostatus = boforhold.bostatus,
@@ -111,6 +115,7 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
                     husstandsbarn = husstandsbarn,
                 )
             }.toMutableSet()
+        )
         husstandsbarn
     }.toSet()
 }

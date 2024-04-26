@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -12,6 +13,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDate
 
 @Entity
@@ -34,4 +36,7 @@ open class Husstandsbarn(
         orphanRemoval = true,
     )
     open var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
+    @Column(name = "forrige_perioder", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    open var forrigePerioder: String? = null
 )

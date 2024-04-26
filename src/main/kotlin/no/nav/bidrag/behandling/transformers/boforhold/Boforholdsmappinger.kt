@@ -10,8 +10,8 @@ import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
-import no.nav.bidrag.behandling.transformers.validereBoforhold
 import java.time.LocalDate
 
 fun Set<Husstandsbarnperiode>.tilDto() =
@@ -38,15 +38,13 @@ fun Husstandsbarn.tilDto() =
 
 fun Husstandsbarn.tilOppdatereBoforholdResponse(
     behandling: Behandling,
-    validerePerioder: Boolean = true,
 ) = OppdatereBoforholdResponse(
     oppdatertHusstandsbarn = this.tilDto(),
     valideringsfeil =
-        BoforholdValideringsfeil(
-            husstandsbarn =
-                this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf(), validerePerioder)
-                    .filter { it.harFeil },
-        ),
+    BoforholdValideringsfeil(
+        husstandsbarn = behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+            .filter { it.harFeil },
+    ),
 )
 
 fun Sivilstand.tilDto() = SivilstandDto(this.id, this.datoFom, datoTom = this.datoTom, this.sivilstand, this.kilde)
@@ -55,7 +53,7 @@ fun Sivilstand.tilOppdatereBoforholdResponse(virkningstidspunkt: LocalDate) =
     OppdatereBoforholdResponse(
         oppdatertSivilstand = this.tilDto(),
         valideringsfeil =
-            BoforholdValideringsfeil(
-                sivilstand = setOf(this).validerSivilstand(virkningstidspunkt),
-            ),
+        BoforholdValideringsfeil(
+            sivilstand = setOf(this).validerSivilstand(virkningstidspunkt),
+        ),
     )

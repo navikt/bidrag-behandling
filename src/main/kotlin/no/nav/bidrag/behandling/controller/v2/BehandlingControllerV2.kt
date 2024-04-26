@@ -178,7 +178,7 @@ class BehandlingControllerV2(
     ): OppdatereBoforholdResponse {
         log.info { "Oppdatere boforhold for behandling $behandlingsid" }
 
-        request.oppdatereHusstandsbarn?.let {
+        request.oppdatereHusstandsmedlem?.let {
             return boforholdService.oppdatereHusstandsbarnManuelt(behandlingsid, it)
         }
 

@@ -6,9 +6,9 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.repository.HusstandsbarnperiodeRepository
+import no.nav.bidrag.behandling.database.datamodell.hentAlleHusstandsmedlemPerioder
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
@@ -269,21 +269,18 @@ fun OppdatereInntektRequest.valider() {
     }
 }
 
-fun OppdatereHusstandsbarn.validere(
-    behandling: Behandling,
-    husstandsbarnperiodeRepository: HusstandsbarnperiodeRepository,
-) {
-    this.nyttHusstandsbarn?.let {
-        if (this.nyttHusstandsbarn.navn == null &&
-            this.nyttHusstandsbarn.personident == null
+fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
+    this.opprett?.let {
+        if (this.opprett.navn == null &&
+            this.opprett.personident == null
         ) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke opprette husstandsbarn som mangler både navn og personident.",
             )
-        } else if (this.nyttHusstandsbarn.personident != null) {
+        } else if (this.opprett.personident != null) {
             val eksisterendeHusstandsbarn =
-                behandling.husstandsbarn.find { it.ident != null && it.ident == this.nyttHusstandsbarn.personident.verdi }
+                behandling.husstandsbarn.find { it.ident != null && it.ident == this.opprett.personident.verdi }
 
             if (eksisterendeHusstandsbarn != null) {
                 finnesFraFørException(behandling.id!!)
@@ -291,39 +288,39 @@ fun OppdatereHusstandsbarn.validere(
         }
     }
 
-    this.nyHusstandsbarnperiode?.let {
-        val husstandsbarn = behandling.husstandsbarn.find { this.nyHusstandsbarnperiode.idHusstandsbarn == it.id }
+    this.oppdaterPeriode?.let {
+        val husstandsbarn = behandling.husstandsbarn.find { this.oppdaterPeriode.idHusstandsbarn == it.id }
         if (husstandsbarn == null) {
-            husstandsbarnIkkeFunnetException(this.nyHusstandsbarnperiode.idHusstandsbarn, behandling.id!!)
+            husstandsbarnIkkeFunnetException(this.oppdaterPeriode.idHusstandsbarn, behandling.id!!)
         }
     }
 
-    this.sletteHusstandsbarnperiode?.let {
-        val husstandsbarnperiode = husstandsbarnperiodeRepository.findById(it)
-        if (husstandsbarnperiode.isEmpty) {
-            ressursIkkeFunnetException("Fant ikke husstandsbarnsperiode med id $it.")
-        } else if (behandling.id != husstandsbarnperiode.get().husstandsbarn.behandling.id) {
+    this.slettHusstandsmedlem?.let { id ->
+        val husstandsbarnperiode = behandling.hentAlleHusstandsmedlemPerioder().find { it.id == id }
+        if (husstandsbarnperiode == null) {
+            ressursIkkeFunnetException("Fant ikke husstandsbarnsperiode med id $id.")
+        } else if (behandling.id != husstandsbarnperiode.husstandsbarn.behandling.id) {
             ressursIkkeTilknyttetBehandling(
-                "Husstandsbarnperiode $it hører ikke til behandling med id" +
-                    "${behandling.id}.",
+                "Husstandsbarnperiode $id hører ikke til behandling med id" +
+                        "${behandling.id}.",
             )
         }
     }
 
-    this.sletteHusstandsbarn?.let {
-        val husstandsbarn = behandling.husstandsbarn.find { this.sletteHusstandsbarn == it.id }
+    this.slettHusstandsmedlem?.let {
+        val husstandsbarn = behandling.husstandsbarn.find { this.slettHusstandsmedlem == it.id }
         if (husstandsbarn == null) {
-            husstandsbarnIkkeFunnetException(this.sletteHusstandsbarn, behandling.id!!)
+            husstandsbarnIkkeFunnetException(this.slettHusstandsmedlem, behandling.id!!)
         } else if (Kilde.OFFENTLIG == husstandsbarn.kilde) {
             ressursHarFeilKildeException(
                 "Husstandsbarn med id ${husstandsbarn.id} i behandling ${husstandsbarn.behandling.id} " +
-                    "kommer fra offentlige registre, og kan derfor ikke slettes.",
+                        "kommer fra offentlige registre, og kan derfor ikke slettes.",
             )
         }
     }
 
-    if (this.nyttHusstandsbarn == null && this.nyHusstandsbarnperiode == null && this.sletteHusstandsbarnperiode == null &&
-        this.sletteHusstandsbarn == null
+    if (this.opprett == null && this.oppdaterPeriode == null && this.slettPeriode == null &&
+        this.slettHusstandsmedlem == null
     ) {
         requestManglerDataException(behandling.id!!, Ressurstype.BOFORHOLD)
     }
@@ -397,11 +394,11 @@ private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
         val annenOverlappendePeriode =
             sortertePerioder.drop(index + 1).find {
                 it.periode.overlapper(overlappendePeriode.periode) &&
-                    it.rapporteringTyper.any {
-                        overlappendePeriode.rapporteringTyper.contains(
-                            it,
-                        )
-                    }
+                        it.rapporteringTyper.any {
+                            overlappendePeriode.rapporteringTyper.contains(
+                                it,
+                            )
+                        }
             }
 
         val sammenstiltePerioderSomInneholderOverlappende =
@@ -414,54 +411,54 @@ private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
                 sammenstiltePerioder.add(
                     sammenstiltePerioderSomInneholderOverlappende.copy(
                         rapporteringTyper =
-                            (
+                        (
                                 annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper +
-                                    sammenstiltePerioderSomInneholderOverlappende.rapporteringTyper
-                            ).sorted()
-                                .toMutableSet(),
+                                        sammenstiltePerioderSomInneholderOverlappende.rapporteringTyper
+                                ).sorted()
+                            .toMutableSet(),
                         idListe =
-                            (
+                        (
                                 annenOverlappendePeriode.idListe + overlappendePeriode.idListe +
-                                    sammenstiltePerioderSomInneholderOverlappende.idListe
-                            ).sorted().toMutableSet(),
+                                        sammenstiltePerioderSomInneholderOverlappende.idListe
+                                ).sorted().toMutableSet(),
                         inntektstyper =
-                            (
+                        (
                                 annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper +
-                                    sammenstiltePerioderSomInneholderOverlappende.inntektstyper
-                            ).sorted()
-                                .toMutableSet(),
+                                        sammenstiltePerioderSomInneholderOverlappende.inntektstyper
+                                ).sorted()
+                            .toMutableSet(),
                         periode =
-                            Datoperiode(
-                                minOf(
-                                    annenOverlappendePeriode.periode.fom,
-                                    overlappendePeriode.periode.fom,
-                                    sammenstiltePerioderSomInneholderOverlappende.periode.fom,
-                                ),
-                                finnSenesteDato(
-                                    annenOverlappendePeriode.periode.til,
-                                    overlappendePeriode.periode.til,
-                                    sammenstiltePerioderSomInneholderOverlappende.periode.til,
-                                ),
+                        Datoperiode(
+                            minOf(
+                                annenOverlappendePeriode.periode.fom,
+                                overlappendePeriode.periode.fom,
+                                sammenstiltePerioderSomInneholderOverlappende.periode.fom,
                             ),
+                            finnSenesteDato(
+                                annenOverlappendePeriode.periode.til,
+                                overlappendePeriode.periode.til,
+                                sammenstiltePerioderSomInneholderOverlappende.periode.til,
+                            ),
+                        ),
                     ),
                 )
             } else {
                 sammenstiltePerioder.add(
                     annenOverlappendePeriode.copy(
                         periode =
-                            Datoperiode(
-                                minOf(annenOverlappendePeriode.periode.fom, overlappendePeriode.periode.fom),
-                                finnSenesteDato(annenOverlappendePeriode.periode.til, overlappendePeriode.periode.til),
-                            ),
+                        Datoperiode(
+                            minOf(annenOverlappendePeriode.periode.fom, overlappendePeriode.periode.fom),
+                            finnSenesteDato(annenOverlappendePeriode.periode.til, overlappendePeriode.periode.til),
+                        ),
                         rapporteringTyper =
-                            (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted()
-                                .toMutableSet(),
+                        (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted()
+                            .toMutableSet(),
                         idListe =
-                            (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted()
-                                .toMutableSet(),
+                        (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted()
+                            .toMutableSet(),
                         inntektstyper =
-                            (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted()
-                                .toMutableSet(),
+                        (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted()
+                            .toMutableSet(),
                     ),
                 )
             }

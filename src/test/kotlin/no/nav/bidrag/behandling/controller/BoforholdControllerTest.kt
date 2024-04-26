@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.NyHusstandsbarnperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.PersonaliaHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -74,10 +74,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     husstandsBarn,
                     emptySet(),
                     notat =
-                        OppdaterNotat(
-                            "med i vedtak",
-                            "kun i notat",
-                        ),
+                    OppdaterNotat(
+                        "med i vedtak",
+                        "kun i notat",
+                    ),
                 )
             val boforholdResponse =
                 httpHeaderTestRestTemplate.exchange(
@@ -105,16 +105,16 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
             val request =
                 OppdatereBoforholdRequestV2(
-                    oppdatereHusstandsbarn =
-                        OppdatereHusstandsbarn(
-                            nyHusstandsbarnperiode =
-                                NyHusstandsbarnperiode(
-                                    idHusstandsbarn = eksisterendeHusstandsbarn.id!!,
-                                    bostatus = Bostatuskode.MED_FORELDER,
-                                    fraOgMed = sistePeriode.datoFom!!.plusMonths(2),
-                                    tilOgMed = null,
-                                ),
+                    oppdatereHusstandsmedlem =
+                    OppdatereHusstandsmedlem(
+                        oppdaterPeriode =
+                        NyHusstandsbarnperiode(
+                            idHusstandsbarn = eksisterendeHusstandsbarn.id!!,
+                            bostatus = Bostatuskode.MED_FORELDER,
+                            fraOgMed = sistePeriode.datoFom!!.plusMonths(2),
+                            tilOgMed = null,
                         ),
+                    ),
                 )
 
             // hvis
@@ -139,9 +139,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 oppdatertHusstandsbarn!!.perioder shouldHaveSize 3
                 oppdatertHusstandsbarn.perioder.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
                 oppdatertHusstandsbarn.perioder.maxBy { it.datoFom!! }.datoFom shouldBe
-                    request.oppdatereHusstandsbarn!!.nyHusstandsbarnperiode!!.fraOgMed
+                        request.oppdatereHusstandsmedlem!!.oppdaterPeriode!!.fraOgMed
                 oppdatertHusstandsbarn.perioder.maxBy { it.datoFom!! }.kilde shouldBe
-                    Kilde.MANUELL
+                        Kilde.MANUELL
             }
         }
 
@@ -154,10 +154,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
             val request =
                 OppdatereBoforholdRequestV2(
-                    oppdatereHusstandsbarn =
-                        OppdatereHusstandsbarn(
-                            sletteHusstandsbarnperiode = eksisterendeHusstandsbarn!!.perioder.first { Kilde.MANUELL == it.kilde }.id,
-                        ),
+                    oppdatereHusstandsmedlem =
+                    OppdatereHusstandsmedlem(
+                        slettPeriode = eksisterendeHusstandsbarn!!.perioder.first { Kilde.MANUELL == it.kilde }.id,
+                    ),
                 )
 
             // hvis
@@ -182,7 +182,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 oppdatertHusstandsbarn!!.perioder shouldHaveSize 2
                 oppdatertHusstandsbarn.perioder.find { Kilde.MANUELL == it.kilde } shouldBe null
                 oppdatertHusstandsbarn.perioder.maxBy { it.datoFom!! }.kilde shouldBe
-                    Kilde.OFFENTLIG
+                        Kilde.OFFENTLIG
             }
         }
 
@@ -193,15 +193,15 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
             val request =
                 OppdatereBoforholdRequestV2(
-                    oppdatereHusstandsbarn =
-                        OppdatereHusstandsbarn(
-                            nyttHusstandsbarn =
-                                PersonaliaHusstandsbarn(
-                                    personident = Personident("1234"),
-                                    fødselsdato = LocalDate.now().minusMonths(156),
-                                    navn = "Per Spelemann",
-                                ),
+                    oppdatereHusstandsmedlem =
+                    OppdatereHusstandsmedlem(
+                        opprett =
+                        PersonaliaHusstandsbarn(
+                            personident = Personident("1234"),
+                            fødselsdato = LocalDate.now().minusMonths(156),
+                            navn = "Per Spelemann",
                         ),
+                    ),
                 )
 
             // hvis
@@ -224,8 +224,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
                 oppdatertHusstandsbarn!!.kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsbarn.ident shouldBe
-                    request.oppdatereHusstandsbarn!!.nyttHusstandsbarn!!.personident!!.verdi
-                oppdatertHusstandsbarn.navn shouldBe request.oppdatereHusstandsbarn!!.nyttHusstandsbarn!!.navn
+                        request.oppdatereHusstandsmedlem!!.opprett!!.personident!!.verdi
+                oppdatertHusstandsbarn.navn shouldBe request.oppdatereHusstandsmedlem!!.opprett!!.navn
                 oppdatertHusstandsbarn.perioder shouldBe emptySet()
             }
 
@@ -233,7 +233,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 it.size shouldBe 3
                 it.find { nyttBarn ->
                     nyttBarn.ident ==
-                        request.oppdatereHusstandsbarn!!.nyttHusstandsbarn!!.personident!!.verdi
+                            request.oppdatereHusstandsmedlem!!.opprett!!.personident!!.verdi
                 } shouldNotBe null
             }
         }
@@ -249,10 +249,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
             val request =
                 OppdatereBoforholdRequestV2(
-                    oppdatereHusstandsbarn =
-                        OppdatereHusstandsbarn(
-                            sletteHusstandsbarn = behandling.husstandsbarn.first { Kilde.MANUELL == it.kilde }.id,
-                        ),
+                    oppdatereHusstandsmedlem =
+                    OppdatereHusstandsmedlem(
+                        slettHusstandsmedlem = behandling.husstandsbarn.first { Kilde.MANUELL == it.kilde }.id,
+                    ),
                 )
 
             // hvis
@@ -274,13 +274,13 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
             assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
                 oppdatertHusstandsbarn!!.kilde shouldBe Kilde.MANUELL
-                oppdatertHusstandsbarn.id shouldBe request.oppdatereHusstandsbarn!!.sletteHusstandsbarn
+                oppdatertHusstandsbarn.id shouldBe request.oppdatereHusstandsmedlem!!.slettHusstandsmedlem
             }
 
             assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsbarn) {
                 it.size shouldBe 1
                 it.find { slettetBarn ->
-                    slettetBarn.id == request.oppdatereHusstandsbarn!!.sletteHusstandsbarn
+                    slettetBarn.id == request.oppdatereHusstandsmedlem!!.slettHusstandsmedlem
                 } shouldBe null
             }
         }
