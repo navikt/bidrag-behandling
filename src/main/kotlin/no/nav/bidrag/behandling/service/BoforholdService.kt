@@ -136,16 +136,13 @@ class BoforholdService(
         }
 
         oppdatereHusstandsmedlem.opprett?.let { personalia ->
-            val husstandsbarn =
-                husstandsbarnRepository.save(
-                    Husstandsbarn(
-                        behandling,
-                        Kilde.MANUELL,
-                        ident = personalia.personident?.verdi,
-                        fødselsdato = personalia.fødselsdato,
-                        navn = personalia.navn,
-                    ),
-                )
+            val husstandsbarn = Husstandsbarn(
+                behandling,
+                Kilde.MANUELL,
+                ident = personalia.personident?.verdi,
+                fødselsdato = personalia.fødselsdato,
+                navn = personalia.navn,
+            )
             husstandsbarn.perioder.add(
                 Husstandsbarnperiode(
                     husstandsbarn = husstandsbarn,
@@ -157,7 +154,7 @@ class BoforholdService(
             )
             behandling.husstandsbarn.add(husstandsbarn)
             log.info { "Nytt husstandsmedlem (id ${husstandsbarn.id}) ble manuelt lagt til behandling $behandlingsid." }
-            return husstandsbarn.tilOppdatereBoforholdResponse(behandling)
+            return husstandsbarnRepository.save(husstandsbarn).tilOppdatereBoforholdResponse(behandling)
         }
 
         oppdatereHusstandsmedlem.slettPeriode?.let { idHusstandsbarnperiode ->
