@@ -245,7 +245,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/" + behandling.id,
                 HttpMethod.DELETE,
                 null,
-                Unit::class.java,
+                String::class.java,
             )
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, behandlingRes.statusCode)
