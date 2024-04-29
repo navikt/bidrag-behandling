@@ -283,6 +283,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             stubUtils.stubHenteGrunnlagOk()
             stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
             stubKodeverkProvider()
+            kjøreStubber(actualBehandling)
 
             val opprettetBehandling =
                 behandlingService.opprettBehandling(
@@ -332,6 +333,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val søknadsid = 123213L
             val actualBehandling = behandlingRepository.save(prepareBehandling(søknadsid))
 
+            kjøreStubber(actualBehandling)
             val opprettetBehandling =
                 behandlingService.opprettBehandling(
                     OpprettBehandlingRequest(
@@ -410,6 +412,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         fun `legge til flere roller`() {
             val b = oppretteBehandling()
+            kjøreStubber(b)
 
             val response =
                 behandlingService.oppdaterRoller(
@@ -434,6 +437,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Test
         fun `skal oppdatere roller og slette behandling hvis alle barn er slettet`() {
             val b = oppretteBehandling()
+            kjøreStubber(b)
 
             val response =
                 behandlingService.oppdaterRoller(
@@ -462,6 +466,8 @@ class BehandlingServiceTest : TestContainerRunner() {
             val identOriginaltMedISaken = "1111"
             val identOriginaltIkkeMedISaken = "111123"
             val behandling = oppretteBehandling()
+            kjøreStubber(behandling)
+
             behandling.roller =
                 mutableSetOf(
                     Rolle(
@@ -542,6 +548,8 @@ class BehandlingServiceTest : TestContainerRunner() {
             // gitt
             val identOriginaltMedISaken = "1111"
             val behandling = oppretteBehandling()
+            kjøreStubber(behandling)
+
             behandling.vedtaksid = 12
 
             behandlingRepository.save(behandling)
@@ -1073,5 +1081,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         stubUtils.stubKodeverkNaeringsinntektsbeskrivelser()
         stubUtils.stubKodeverkYtelsesbeskrivelser()
         stubUtils.stubKodeverkPensjonsbeskrivelser()
+        stubUtils.stubTilgangskontrollSak()
+        stubUtils.stubTilgangskontrollPerson()
     }
 }

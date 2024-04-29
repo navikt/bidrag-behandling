@@ -81,7 +81,7 @@ data class OverlappendePeriode(
 
 data class BoforholdPeriodeseringsfeil(
     @JsonIgnore
-    val husstandsbarn: Husstandsbarn?,
+    val husstandsbarn: Husstandsbarn,
     val hullIPerioder: List<Datoperiode>,
     val overlappendePerioder: List<HusstandsbarnOverlappendePeriode>,
     @Schema(description = "Er sann hvis husstandsbarn har en periode som starter senere enn starten av dagens måned.")
@@ -102,21 +102,21 @@ data class BoforholdPeriodeseringsfeil(
                 fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
     val barn
         get() =
-            husstandsbarn?.let {
-                HusstandsbarnPeriodiseringsfeilDto(
-                    hentPersonVisningsnavn(husstandsbarn.ident) ?: husstandsbarn.navn,
-                    husstandsbarn.ident,
-                    husstandsbarn.fødselsdato,
-                    husstandsbarn.id ?: -1,
-                )
-            }
+            HusstandsbarnPeriodiseringsfeilDto(
+                hentPersonVisningsnavn(husstandsbarn.ident) ?: husstandsbarn.navn,
+                husstandsbarn.ident,
+                husstandsbarn.fødselsdato,
+                husstandsbarn.id ?: -1,
+            )
 
     data class HusstandsbarnPeriodiseringsfeilDto(
         val navn: String?,
         val ident: String?,
         val fødselsdato: LocalDate,
         @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil")
-        val tekniskId: Long,
+        val husstandsbarnId: Long,
+        @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil", deprecated = true)
+        val tekniskId: Long = husstandsbarnId,
     )
 }
 

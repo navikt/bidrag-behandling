@@ -300,9 +300,17 @@ class BoforholdService(
         ).tilHusstandsbarn(behandling, this)
     }
 
-    private fun Husstandsbarn.oppdaterTilOriginalePerioder() {
-        hentSisteBearbeidetBoforhold()
-            ?: oppdateringAvBoforholdFeilet("Fant ikke originale bearbeidet perioder for husstandsbarn $id i behandling ${behandling.id}")
+    private fun Husstandsbarn.oppdaterTilOriginalePerioder(): Set<Husstandsbarn> {
+        return hentSisteBearbeidetBoforhold() ?: emptySet()
+        // TODO: En bug med kilde fører til at offentlige husstandsmedlemmer får kilde MANUELL. Venter derfor med denne sjekken
+//        return if (kilde == Kilde.OFFENTLIG) {
+//            hentSisteBearbeidetBoforhold()
+//                ?: oppdateringAvBoforholdFeilet(
+//                    "Fant ikke originale bearbeidet perioder for husstandsbarn $id i behandling ${behandling.id}",
+//                )
+//        } else {
+//            emptySet()
+//        }
     }
 
     private fun Husstandsbarn.oppdaterTilForrigeLagredePerioder() {
