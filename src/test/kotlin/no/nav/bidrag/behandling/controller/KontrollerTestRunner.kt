@@ -18,6 +18,7 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
+import stubPersonConsumer
 
 abstract class KontrollerTestRunner : CommonTestRunner() {
     companion object {
@@ -79,6 +80,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         mockkObject(SaksbehandlernavnProvider)
         every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"
         stubSjablonProvider()
+        stubPersonConsumer()
         stubUtils.stubUnleash()
         stubUtils.stubHentSaksbehandler()
         stubUtils.stubOpprettForsendelse()
