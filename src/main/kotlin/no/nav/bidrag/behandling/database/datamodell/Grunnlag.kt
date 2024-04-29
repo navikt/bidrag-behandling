@@ -55,9 +55,9 @@ open class Grunnlag(
     val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
 }
 
-fun List<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
+fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
 
-fun List<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+fun List<Grunnlag>.hentAlleAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
 
 fun List<Grunnlag>.hentSisteIkkeAktiv() =
     hentAlleIkkeAktiv().groupBy { it.identifikator }
