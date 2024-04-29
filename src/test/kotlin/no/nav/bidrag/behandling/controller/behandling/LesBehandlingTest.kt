@@ -48,36 +48,38 @@ class LesBehandlingTest : BehandlingControllerTest() {
             søknadsid shouldBe 101
             behandlerenhet shouldBe "4806"
             roller shouldHaveSize 3
-
-            assertSoftly(virkningstidspunkt) {
-                virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
-                årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-                notat.kunINotat shouldBe "Notat virkningstidspunkt"
-                notat.medIVedtaket shouldBe "Notat virkningstidspunkt med i vedtak"
-            }
-
-            assertSoftly(inntekter) {
-                årsinntekter shouldHaveSize 11
-                årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
-                    .shouldBeEmpty()
-                årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
-                    .shouldBeEmpty()
-                månedsinntekter shouldHaveSize 25
-                notat.kunINotat shouldBe "Notat inntekt"
-                notat.medIVedtaket shouldBe "Notat inntekt med i vedtak"
-            }
-            assertSoftly(boforhold) {
-                husstandsbarn shouldHaveSize 6
-                sivilstand shouldHaveSize 2
-                notat.kunINotat shouldBe "Notat boforhold"
-                notat.medIVedtaket shouldBe "Notat boforhold med i vedtak"
-            }
-
-            aktiveGrunnlagsdata shouldNotBe null
-            aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
-            aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 5
-            aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 2
         }
+
+        assertSoftly(behandling.virkningstidspunkt) {
+            virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
+            årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+            notat.kunINotat shouldBe "Notat virkningstidspunkt"
+            notat.medIVedtaket shouldBe "Notat virkningstidspunkt med i vedtak"
+        }
+
+        assertSoftly(behandling.inntekter) {
+            årsinntekter shouldHaveSize 11
+            årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
+                .shouldBeEmpty()
+            årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
+                .shouldBeEmpty()
+            månedsinntekter shouldHaveSize 25
+            notat.kunINotat shouldBe "Notat inntekt"
+            notat.medIVedtaket shouldBe "Notat inntekt med i vedtak"
+        }
+
+        assertSoftly(behandling.boforhold) {
+            husstandsbarn shouldHaveSize 6
+            sivilstand shouldHaveSize 2
+            notat.kunINotat shouldBe "Notat boforhold"
+            notat.medIVedtaket shouldBe "Notat boforhold med i vedtak"
+        }
+
+        val aktiveGrunnlagsdata = behandling.aktiveGrunnlagsdata
+        aktiveGrunnlagsdata shouldNotBe null
+        aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
+        aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 5
+        aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 2
     }
 
     @Test
