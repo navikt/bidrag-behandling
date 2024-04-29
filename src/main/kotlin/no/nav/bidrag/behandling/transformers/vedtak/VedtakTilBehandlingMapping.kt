@@ -12,10 +12,12 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntekt
 import no.nav.bidrag.behandling.vedtakmappingFeilet
+import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -223,7 +225,8 @@ private fun List<GrunnlagDto>.mapInntekter(
                     if (lesemodus) i.toLong() else null,
                 )
             }.toMutableSet()
-    val erForskuddOmgjøring = behandling.soknadFra == SøktAvType.NAV_BIDRAG && behandling.vedtakstype == Vedtakstype.ENDRING
+    val erForskuddOmgjøring =
+        behandling.soknadFra == SøktAvType.NAV_BIDRAG && behandling.vedtakstype == Vedtakstype.ENDRING
     if (!lesemodus && !erForskuddOmgjøring) {
         inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }?.let { originalInntekt ->
             originalInntekt.copy(
@@ -275,15 +278,33 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 innhentetTidspunkt(Grunnlagstype.INNHENTET_SIVILSTAND),
                 lesemodus,
             )
+            // TODO: Legg til beregnet sivilstand
         },
     hentInnhentetHusstandsmedlem().groupBy { it.partPersonId }
-        .map { (gjelderIdent, grunnlag) ->
-            behandling.opprettGrunnlag(
-                Grunnlagsdatatype.BOFORHOLD,
-                grunnlag,
-                gjelderIdent!!,
-                innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
-                lesemodus,
+        .flatMap { (gjelderIdent, grunnlag) ->
+
+            val boforholdPeriodisert =
+                BoforholdApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    grunnlag.tilBoforholdRequest(),
+                )
+            listOf(
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.BOFORHOLD,
+                    grunnlag,
+                    gjelderIdent!!,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                    lesemodus,
+                ),
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.BOFORHOLD,
+                    boforholdPeriodisert,
+                    gjelderIdent!!,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                    lesemodus,
+                    true,
+                    gjelder = grunnlag.firstOrNull()?.relatertPersonPersonId,
+                ),
             )
         },
 ).flatten()
@@ -369,10 +390,11 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
 fun Behandling.opprettGrunnlag(
     type: Grunnlagsdatatype,
     grunnlag: Any,
-    gjelderIdent: String,
+    rolleIdent: String,
     innhentetTidspunkt: LocalDateTime,
     lesemodus: Boolean,
     erBearbeidet: Boolean = false,
+    gjelder: String? = null,
 ) = Grunnlag(
     behandling = this,
     id = if (lesemodus) 1 else null,
@@ -380,8 +402,9 @@ fun Behandling.opprettGrunnlag(
     data = commonObjectmapper.writeValueAsString(grunnlag),
     type = type,
     erBearbeidet = erBearbeidet,
+    gjelder = gjelder,
     aktiv = innhentetTidspunkt,
-    rolle = roller.find { it.ident == gjelderIdent }!!,
+    rolle = roller.find { it.ident == rolleIdent }!!,
 )
 
 private fun VedtakDto.notatMedType(

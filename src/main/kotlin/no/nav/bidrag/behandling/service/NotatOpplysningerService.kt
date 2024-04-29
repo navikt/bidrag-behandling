@@ -120,6 +120,10 @@ class NotatOpplysningerService(
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
+        return hentNotatOpplysningerForBehandling(behandling)
+    }
+
+    fun hentNotatOpplysningerForBehandling(behandling: Behandling): NotatDto {
         val opplysningerBoforhold =
             behandling.grunnlagListe.hentSisteAktiv()
                 .hentAlleBearbeidetBoforhold(
@@ -259,7 +263,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         søktAv = soknadFra,
         avslag = avslag,
         årsak = årsak,
-        mottattDato = YearMonth.from(mottattdato),
+        mottattDato = mottattdato,
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         notat = tilNotatVirkningstidspunkt(),

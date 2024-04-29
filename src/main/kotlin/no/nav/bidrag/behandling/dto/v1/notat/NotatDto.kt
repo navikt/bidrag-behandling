@@ -23,7 +23,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
-import java.util.Locale
+import java.util.*
 
 data class NotatDto(
     val saksnummer: String,
@@ -40,8 +40,8 @@ data class Virkningstidspunkt(
     val vedtakstype: Vedtakstype?,
     val søktAv: SøktAvType?,
     @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "yyyy-MM")
-    val mottattDato: YearMonth?,
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val mottattDato: LocalDate?,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM")
     val søktFraDato: YearMonth?,
