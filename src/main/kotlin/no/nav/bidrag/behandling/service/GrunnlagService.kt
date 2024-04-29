@@ -325,7 +325,11 @@ class GrunnlagService(
                     behandling.husstandsbarn,
                     behandling.bidragsmottaker!!,
                 ),
-            sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato),
+            sivilstand =
+                nyinnhentetGrunnlag.hentEndringerSivilstand(
+                    aktiveGrunnlag,
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                ),
         )
     }
 
