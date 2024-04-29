@@ -55,7 +55,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.Year
 import java.time.YearMonth
 
 @RunWith(Enclosed::class)
@@ -105,7 +104,6 @@ class InntektServiceTest : TestContainerRunner() {
                                         InntektPost(
                                             kode = "samletLoennsinntektUtenTrygdeavgiftspliktOgMedTrekkplikt",
                                             beløp = BigDecimal(500000),
-                                            visningsnavn = "Lønnsinntekt med trygdeavgiftsplikt og med trekkplikt",
                                         ),
                                     ),
                                 periode =
@@ -114,9 +112,6 @@ class InntektServiceTest : TestContainerRunner() {
                                         YearMonth.now().withMonth(1).atDay(1),
                                     ),
                                 sumInntekt = BigDecimal(500000),
-                                visningsnavn = "Sigrun ligningsinntekt (LIGS) ${
-                                    Year.now().minusYears(1)
-                                }",
                             ),
                         ),
                 )

@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -130,7 +131,6 @@ fun Set<InntektspostDtoV2>.tilInntektspostDto() =
     this.map {
         InntektPost(
             kode = it.kode,
-            visningsnavn = it.visningsnavn,
             beløp = it.beløp ?: BigDecimal.ZERO,
         )
     }.toSet()
@@ -233,7 +233,7 @@ fun Set<InntektPost>.tilInntektspostDtoV2(inntektstype: Inntektstype) =
         InntektspostDtoV2(
             kode = it.kode,
             beløp = it.beløp,
-            visningsnavn = it.visningsnavn,
+            visningsnavn = finnVisningsnavn(it.kode),
             inntektstype = inntektstype,
         )
     }
