@@ -450,15 +450,15 @@ class StubUtils {
 
         val respons =
             if (tomRespons && responsobjekt == null) {
-                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBody(tilJson(hentGrunnlagDto))
             } else if (!tomRespons && responsobjekt != null) {
-                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBody(tilJson(responsobjekt))
             } else {
-                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBodyFile(navnResponsfil)
             }
