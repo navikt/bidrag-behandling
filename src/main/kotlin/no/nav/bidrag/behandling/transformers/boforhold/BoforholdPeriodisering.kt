@@ -97,12 +97,13 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
         if (originalHusstandsbarn != null && it.key != originalHusstandsbarn.ident) {
             return@map originalHusstandsbarn
         }
+        val fødselsdatoFraRespons = it.value.first().fødselsdato
         val husstandsbarn =
             originalHusstandsbarn ?: Husstandsbarn(
                 behandling = behandling,
                 kilde = Kilde.OFFENTLIG,
                 ident = it.key,
-                fødselsdato = finnFødselsdato(it.key, null)!!,
+                fødselsdato = finnFødselsdato(it.key, fødselsdatoFraRespons) ?: fødselsdatoFraRespons,
             )
         husstandsbarn.perioder.clear()
         husstandsbarn.perioder.addAll(

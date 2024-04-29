@@ -94,5 +94,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubKodeverkYtelsesbeskrivelser()
         stubUtils.stubKodeverkPensjonsbeskrivelser()
         stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
+        stubUtils.stubTilgangskontrollSak()
+        stubUtils.stubTilgangskontrollPerson()
     }
 }

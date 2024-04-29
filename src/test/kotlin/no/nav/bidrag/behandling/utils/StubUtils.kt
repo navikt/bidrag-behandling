@@ -132,6 +132,32 @@ class StubUtils {
         )
     }
 
+    fun stubTilgangskontrollSak(
+        result: Boolean = true,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/sak")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(result.toString()),
+            ),
+        )
+    }
+
+    fun stubTilgangskontrollPerson(
+        result: Boolean = true,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/person")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(result.toString()),
+            ),
+        )
+    }
+
     fun stubOpprettForsendelse(
         forsendelseId: String = "12312321",
         status: HttpStatus = HttpStatus.OK,

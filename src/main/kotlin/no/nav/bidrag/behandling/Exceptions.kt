@@ -140,6 +140,8 @@ fun vedtakmappingFeilet(melding: String): Nothing =
         melding,
     )
 
+fun ingenTilgang(message: String): Nothing = throw HttpClientErrorException(HttpStatus.FORBIDDEN, message)
+
 enum class Ressurstype {
     BOFORHOLD,
     INNTEKT,

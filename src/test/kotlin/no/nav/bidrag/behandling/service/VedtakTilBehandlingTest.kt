@@ -64,6 +64,9 @@ class VedtakTilBehandlingTest {
     lateinit var notatOpplysningerService: NotatOpplysningerService
 
     @MockkBean
+    lateinit var tilgangskontrollService: TilgangskontrollService
+
+    @MockkBean
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
@@ -85,6 +88,7 @@ class VedtakTilBehandlingTest {
                 grunnlagService,
                 notatOpplysningerService,
                 beregningService,
+                tilgangskontrollService,
                 vedtakConsumer,
                 sakConsumer,
                 unleash,
@@ -96,6 +100,8 @@ class VedtakTilBehandlingTest {
             )
         } returns oppretteBehandling()
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
+        every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
+        every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { notatOpplysningerService.opprettNotat(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()
