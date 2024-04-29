@@ -178,18 +178,15 @@ class BehandlingControllerV2(
     fun oppdatereVirkningstidspunktV2(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdaterVirkningstidspunkt,
-    ): ResponseEntity<BehandlingDtoV2> {
+    ): BehandlingDtoV2 {
         log.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid med forespørsel $request" }
 
         val behandling = behandlingService.oppdaterVirkningstidspunkt(behandlingsid, request)
 
-        return ResponseEntity(
-            behandling.tilBehandlingDtoV2(
-                behandling.grunnlagListe.hentSisteAktiv(),
-                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
-            ),
-            HttpStatus.OK,
+        return behandling.tilBehandlingDtoV2(
+            behandling.grunnlagListe.hentSisteAktiv(),
+            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
         )
     }
 
