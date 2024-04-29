@@ -102,7 +102,7 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
                 behandling = behandling,
                 kilde = Kilde.OFFENTLIG,
                 ident = it.key,
-                fødselsdato = finnFødselsdato(it.key!!, null)!!,
+                fødselsdato = finnFødselsdato(it.key, null)!!,
             )
         husstandsbarn.perioder.clear()
         husstandsbarn.perioder.addAll(
