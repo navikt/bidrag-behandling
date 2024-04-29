@@ -7,6 +7,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import jakarta.persistence.EntityManager
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
@@ -18,8 +19,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.opprettHentGrunnlagDto
 import no.nav.bidrag.behandling.service.tilSummerInntekt
+import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnlagForHusstandsbarn
+import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
+import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarnMedOffentligePerioder
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagspostDto
@@ -71,6 +77,72 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         assertNotNull(oppdatertBehandling)
         oppdatertBehandling.get().virkningstidspunkt shouldBe LocalDate.parse("2024-03-02")
+    }
+
+    @Test
+    fun `skal oppdatere virkningstidspunkt og rekalkulere boforhold periode`() {
+        // gitt
+        val behandling = testdataManager.opprettBehandling(true)
+        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.grunnlag.addAll(
+            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
+                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            ),
+        )
+        behandling.husstandsbarn.clear()
+        behandling.husstandsbarn.addAll(
+            setOf(
+                opprettHusstandsbarn(behandling, testdataBarn1).let {
+                    it.perioder =
+                        mutableSetOf(
+                            Husstandsbarnperiode(
+                                datoFom = LocalDate.parse("2023-01-01"),
+                                datoTom = LocalDate.parse("2023-05-31"),
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                kilde = Kilde.OFFENTLIG,
+                                husstandsbarn = it,
+                            ),
+                            Husstandsbarnperiode(
+                                datoFom = LocalDate.parse("2023-06-01"),
+                                datoTom = null,
+                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                kilde = Kilde.OFFENTLIG,
+                                husstandsbarn = it,
+                            ),
+                        )
+                    it
+                },
+            ),
+        )
+
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+
+        val nyVirkningstidspunkt = LocalDate.parse("2022-01-01")
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
+                HttpMethod.PUT,
+                HttpEntity(
+                    OppdaterVirkningstidspunkt(
+                        virkningstidspunkt = nyVirkningstidspunkt,
+                    ),
+                ),
+                BehandlingDtoV2::class.java,
+            )
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        val responseBody = behandlingRes.body!!
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyVirkningstidspunkt
+
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+        oppdatertBehandling.get().virkningstidspunkt shouldBe nyVirkningstidspunkt
+        assertSoftly(oppdatertBehandling.get().husstandsbarn.first()) {
+            perioder shouldHaveSize 3
+            perioder.minByOrNull { it.datoFom!! }!!.datoFom shouldBe nyVirkningstidspunkt
+            perioder.maxByOrNull { it.datoFom!! }!!.datoFom shouldBe LocalDate.parse("2023-06-01")
+        }
     }
 
     @Test
