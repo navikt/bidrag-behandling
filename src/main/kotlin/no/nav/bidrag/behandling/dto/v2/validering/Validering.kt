@@ -102,12 +102,14 @@ data class BoforholdPeriodeseringsfeil(
                 fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
     val barn
         get(): HusstandsbarnPeriodiseringsfeilDto =
-            HusstandsbarnPeriodiseringsfeilDto(
-                hentPersonVisningsnavn(husstandsbarn!!.ident) ?: husstandsbarn.navn,
-                husstandsbarn.ident,
-                husstandsbarn.fødselsdato,
-                husstandsbarn.id ?: -1,
-            )
+            husstandsbarn?.let {
+                HusstandsbarnPeriodiseringsfeilDto(
+                    hentPersonVisningsnavn(husstandsbarn.ident) ?: husstandsbarn.navn,
+                    husstandsbarn.ident,
+                    husstandsbarn.fødselsdato,
+                    husstandsbarn.id ?: -1,
+                )
+            } ?: HusstandsbarnPeriodiseringsfeilDto("", "", LocalDate.now(), -1)
 
     data class HusstandsbarnPeriodiseringsfeilDto(
         val navn: String?,
