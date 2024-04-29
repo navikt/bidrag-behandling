@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
@@ -52,6 +53,7 @@ import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -145,14 +147,15 @@ class GrunnlagService(
 
             grunnlagRequestobjekter.forEach {
                 feilrapporteringer += henteOglagreGrunnlag(behandling, it)
+                entityManager.flush()
             }
 
             behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
             if (feilrapporteringer.isNotEmpty()) {
                 log.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
-                        "Innhentingen ble derfor ikke gjort for følgende grunnlagstyper: " +
-                        "${feilrapporteringer.map { it.key }}"
+                            "Innhentingen ble derfor ikke gjort for følgende grunnlagstyper: " +
+                            "${feilrapporteringer.map { it.key }}"
                 }
             }
         } else {
@@ -160,7 +163,7 @@ class GrunnlagService(
 
             log.info {
                 "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
-                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
+                        "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
     }
@@ -193,11 +196,11 @@ class GrunnlagService(
         if (!harIkkeAktivtGrunnlag) {
             log.warn {
                 "Fant ingen grunnlag med type ${request.grunnlagstype} å aktivere for i behandling ${behandling.id} " +
-                    " for oppgitt person."
+                        " for oppgitt person."
             }
             ressursIkkeFunnetException(
                 "Fant ikke grunnlag av tye ${request.grunnlagstype} å aktivere i behandling ${behandling.id} " +
-                    "for oppgitt personident.",
+                        "for oppgitt personident.",
             )
         }
 
@@ -228,7 +231,7 @@ class GrunnlagService(
         } else {
             log.error {
                 "Grunnlagstype ${request.grunnlagstype} ikke støttet ved aktivering av grunnlag. Aktivering feilet " +
-                    "for behandling ${behandling.id}  "
+                        "for behandling ${behandling.id}  "
             }
             aktiveringAvGrunnlagstypeIkkeStøttetException(behandling.id!!)
         }
@@ -254,55 +257,55 @@ class GrunnlagService(
         val aktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteAktiv()
         return IkkeAktiveGrunnlagsdata(
             inntekter =
-                IkkeAktiveInntekter(
-                    årsinntekter =
-                        roller.flatMap {
-                            nyinnhentetGrunnlag.hentEndringerInntekter(
-                                it,
-                                inntekter,
-                                Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-                            )
-                        }.toSet(),
-                    småbarnstillegg =
-                        roller.flatMap {
-                            nyinnhentetGrunnlag.hentEndringerInntekter(
-                                it,
-                                inntekter,
-                                Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                            )
-                        }.toSet(),
-                    utvidetBarnetrygd =
-                        roller.flatMap {
-                            nyinnhentetGrunnlag.hentEndringerInntekter(
-                                it,
-                                inntekter,
-                                Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                            )
-                        }.toSet(),
-                    kontantstøtte =
-                        roller.flatMap {
-                            nyinnhentetGrunnlag.hentEndringerInntekter(
-                                it,
-                                inntekter,
-                                Grunnlagsdatatype.KONTANTSTØTTE,
-                            )
-                        }.toSet(),
-                    barnetillegg =
-                        roller.flatMap {
-                            nyinnhentetGrunnlag.hentEndringerInntekter(
-                                it,
-                                inntekter,
-                                Grunnlagsdatatype.BARNETILLEGG,
-                            )
-                        }.toSet(),
-                ),
+            IkkeAktiveInntekter(
+                årsinntekter =
+                roller.flatMap {
+                    nyinnhentetGrunnlag.hentEndringerInntekter(
+                        it,
+                        inntekter,
+                        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                    )
+                }.toSet(),
+                småbarnstillegg =
+                roller.flatMap {
+                    nyinnhentetGrunnlag.hentEndringerInntekter(
+                        it,
+                        inntekter,
+                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    )
+                }.toSet(),
+                utvidetBarnetrygd =
+                roller.flatMap {
+                    nyinnhentetGrunnlag.hentEndringerInntekter(
+                        it,
+                        inntekter,
+                        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                    )
+                }.toSet(),
+                kontantstøtte =
+                roller.flatMap {
+                    nyinnhentetGrunnlag.hentEndringerInntekter(
+                        it,
+                        inntekter,
+                        Grunnlagsdatatype.KONTANTSTØTTE,
+                    )
+                }.toSet(),
+                barnetillegg =
+                roller.flatMap {
+                    nyinnhentetGrunnlag.hentEndringerInntekter(
+                        it,
+                        inntekter,
+                        Grunnlagsdatatype.BARNETILLEGG,
+                    )
+                }.toSet(),
+            ),
             husstandsbarn =
-                nyinnhentetGrunnlag.hentEndringerBoforhold(
-                    aktiveGrunnlag,
-                    behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.husstandsbarn,
-                    behandling.bidragsmottaker!!,
-                ),
+            nyinnhentetGrunnlag.hentEndringerBoforhold(
+                aktiveGrunnlag,
+                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.husstandsbarn,
+                behandling.bidragsmottaker!!,
+            ),
             sivilstand = nyinnhentetGrunnlag.hentEndringerSivilstand(aktiveGrunnlag),
         )
     }
@@ -334,7 +337,6 @@ class GrunnlagService(
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val ikkeAktivGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
-
         val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
             ikkeAktivGrunnlag.filter { gjelderHusstandsbarn.verdi == it.gjelder }.filter { grunnlagstype == it.type }
                 .filter { it.erBearbeidet }.maxByOrNull { it.innhentet }
@@ -346,9 +348,47 @@ class GrunnlagService(
         )
 
         nyesteIkkeAktiverteBoforholdForHusstandsmedlem.aktiv = aktiveringstidspunkt
+        aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
 
         entityManager.merge(behandling)
         entityManager.flush()
+    }
+
+    private fun aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(
+        behandling: Behandling
+    ) {
+        val bmsNyesteIkkeBearbeidaBoforholdsgrunnlag = behandling.henteNyesteGrunnlag(
+            Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
+            behandling.bidragsmottaker!!
+        )
+
+        bmsNyesteIkkeBearbeidaBoforholdsgrunnlag?.let {
+            if (bmsNyesteIkkeBearbeidaBoforholdsgrunnlag.aktiv == null
+                && erGrunnlagAktivertForAlleHusstandsmedlemmene(it, behandling)
+            ) {
+                bmsNyesteIkkeBearbeidaBoforholdsgrunnlag.aktiv = LocalDateTime.now()
+            }
+        }
+    }
+
+    private fun erGrunnlagAktivertForAlleHusstandsmedlemmene(
+        bmsNyesteIkkeBearbeidaBoforholdsgrunnlag: Grunnlag,
+        behandling: Behandling
+    ): Boolean {
+        jsonListeTilObjekt<RelatertPersonGrunnlagDto>(bmsNyesteIkkeBearbeidaBoforholdsgrunnlag.data)
+            .filter { it.relatertPersonPersonId != null }.groupBy {
+                it.relatertPersonPersonId
+            }.forEach {
+                val nyesteGrunnlagForHusstandsmedlem = behandling.henteNyesteGrunnlag(
+                    Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                    behandling.bidragsmottaker!!,
+                    Personident(it.key!!)
+                )
+                if (nyesteGrunnlagForHusstandsmedlem?.aktiv == null) {
+                    return false
+                }
+            }
+        return true
     }
 
     private fun List<Grunnlag>.oppdaterStatusTilAktiv(aktiveringstidspunkt: LocalDateTime) {
@@ -425,8 +465,8 @@ class GrunnlagService(
         } else {
             log.warn {
                 "Innhenting av ${Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER} for rolle ${rolleInhentetFor.rolletype} " +
-                    "i behandling ${behandling.id} feilet for type ${feilSkattepliktig.grunnlagstype} " +
-                    "med begrunnelse ${feilSkattepliktig.feilmelding}. Lagrer ikke grunnlag"
+                        "i behandling ${behandling.id} feilet for type ${feilSkattepliktig.grunnlagstype} " +
+                        "med begrunnelse ${feilSkattepliktig.feilmelding}. Lagrer ikke grunnlag"
             }
         }
 
@@ -484,6 +524,7 @@ class GrunnlagService(
                 behandling.bidragsmottaker!!,
             )
 
+        // lagre bearbeidet grunnlag per husstandsmedlem i grunnlagstabellen
         boforholdPeriodisert.filter { it.relatertPersonPersonId != null }.groupBy { it.relatertPersonPersonId }
             .forEach {
                 lagreGrunnlagHvisEndret<BoforholdResponse>(
@@ -491,7 +532,6 @@ class GrunnlagService(
                     innhentetForRolle = behandling.bidragsmottaker!!,
                     grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
                     innhentetGrunnlag = it.value.toSet(),
-                    hentetTidspunkt = innhentetGrunnlag.hentetTidspunkt,
                     gjelderPerson = Personident(it.key!!),
                 )
             }
@@ -503,6 +543,7 @@ class GrunnlagService(
                 behandling.bidragsmottaker!!,
             )
 
+        // oppdatere husstandsbarn og husstandsbarnperiode-tabellene hvis førstegangslagring
         if (bmsNyesteBearbeidaBoforholdFørLagring.isEmpty() && bmsNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
@@ -510,8 +551,8 @@ class GrunnlagService(
 
     private fun innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag: HentGrunnlagDto): Boolean =
         innhentetGrunnlag.ainntektListe.size > 0 || innhentetGrunnlag.skattegrunnlagListe.size > 0 ||
-            innhentetGrunnlag.barnetilleggListe.size > 0 || innhentetGrunnlag.kontantstøtteListe.size > 0 ||
-            innhentetGrunnlag.småbarnstilleggListe.size > 0 || innhentetGrunnlag.utvidetBarnetrygdListe.size > 0
+                innhentetGrunnlag.barnetilleggListe.size > 0 || innhentetGrunnlag.kontantstøtteListe.size > 0 ||
+                innhentetGrunnlag.småbarnstilleggListe.size > 0 || innhentetGrunnlag.utvidetBarnetrygdListe.size > 0
 
     private fun sammenstilleOgLagreInntekter(
         behandling: Behandling,
@@ -536,8 +577,8 @@ class GrunnlagService(
             if (feilrapportering != null) {
                 log.warn {
                     "Feil ved innhenting av grunnlagstype $type for rolle ${rolleInhentetFor.rolletype} " +
-                        "i behandling ${behandling.id}. Lagrer ikke sammenstilte inntekter. Feilmelding: " +
-                        feilrapportering.feilmelding
+                            "i behandling ${behandling.id}. Lagrer ikke sammenstilte inntekter. Feilmelding: " +
+                            feilrapportering.feilmelding
                 }
                 return@forEach
             }
@@ -561,7 +602,7 @@ class GrunnlagService(
             } else {
                 log.error {
                     "Grunnlagsdatatype $type skal ikke lagres som inntektsgrunnlag i behandling " +
-                        rolleInhentetFor.behandling.id!!
+                            rolleInhentetFor.behandling.id!!
                 }
                 lagringAvGrunnlagFeiletException(rolleInhentetFor.behandling.id!!)
             }
@@ -586,8 +627,8 @@ class GrunnlagService(
         if (!inneholderEndringerSomMåBekreftes) {
             log.info {
                 "Ikke aktive grunnlag med type $type for rolle ${rolleInhentetFor.rolletype}" +
-                    " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. " +
-                    "Automatisk aktiverer ny innhentet grunnlag."
+                        " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. " +
+                        "Automatisk aktiverer ny innhentet grunnlag."
             }
             ikkeAktiveGrunnlag.hentGrunnlagForType(type, rolleInhentetFor.ident!!)
                 .oppdaterStatusTilAktiv(LocalDateTime.now())
@@ -609,8 +650,8 @@ class GrunnlagService(
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                        sammenstilteInntekter.summertÅrsinntektListe
-                            .filter { summertAinntektstyper.contains(it.inntektRapportering) } +
+                    sammenstilteInntekter.summertÅrsinntektListe
+                        .filter { summertAinntektstyper.contains(it.inntektRapportering) } +
                             sammenstilteInntekter.summertÅrsinntektListe.filter {
                                 summertSkattegrunnlagstyper.contains(it.inntektRapportering)
                             },
@@ -620,32 +661,32 @@ class GrunnlagService(
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                        sammenstilteInntekter.summertÅrsinntektListe
-                            .filter { BARNETILLEGG == it.inntektRapportering },
+                    sammenstilteInntekter.summertÅrsinntektListe
+                        .filter { BARNETILLEGG == it.inntektRapportering },
                 )
 
             Grunnlagsdatatype.KONTANTSTØTTE ->
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                        sammenstilteInntekter.summertÅrsinntektListe
-                            .filter { KONTANTSTØTTE == it.inntektRapportering },
+                    sammenstilteInntekter.summertÅrsinntektListe
+                        .filter { KONTANTSTØTTE == it.inntektRapportering },
                 )
 
             Grunnlagsdatatype.SMÅBARNSTILLEGG ->
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                        sammenstilteInntekter.summertÅrsinntektListe
-                            .filter { SMÅBARNSTILLEGG == it.inntektRapportering },
+                    sammenstilteInntekter.summertÅrsinntektListe
+                        .filter { SMÅBARNSTILLEGG == it.inntektRapportering },
                 )
 
             Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
-                        sammenstilteInntekter.summertÅrsinntektListe
-                            .filter { UTVIDET_BARNETRYGD == it.inntektRapportering },
+                    sammenstilteInntekter.summertÅrsinntektListe
+                        .filter { UTVIDET_BARNETRYGD == it.inntektRapportering },
                 )
 
             // Ikke-tilgjengelig kode
@@ -686,18 +727,7 @@ class GrunnlagService(
     ): Set<T> =
         behandling.grunnlag.hentSisteAktiv().find {
             it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id &&
-                grunnlagstype.erBearbeidet == it.erBearbeidet
-        }?.let { commonObjectmapper.readValue<Set<T>>(it.data) }?.toSet() ?: emptySet()
-
-    private inline fun <reified T> sistAktiverteGrunnlag(
-        behandling: Behandling,
-        grunnlagstype: Grunnlagstype,
-        rolleInnhentetFor: Rolle,
-        gjelderPerson: Personident?,
-    ): Set<T> =
-        behandling.grunnlag.hentSisteAktiv().find {
-            it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id && it.gjelder == gjelderPerson?.verdi &&
-                grunnlagstype.erBearbeidet == it.erBearbeidet
+                    grunnlagstype.erBearbeidet == it.erBearbeidet
         }?.let { commonObjectmapper.readValue<Set<T>>(it.data) }?.toSet() ?: emptySet()
 
     private inline fun <reified T> lagreGrunnlagHvisEndret(
@@ -705,45 +735,101 @@ class GrunnlagService(
         innhentetForRolle: Rolle,
         grunnlagstype: Grunnlagstype,
         innhentetGrunnlag: Set<T>,
-        hentetTidspunkt: LocalDateTime,
         aktiveringstidspunkt: LocalDateTime? = null,
         gjelderPerson: Personident? = null,
     ) {
+
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
             behandling.hentSisteInnhentetGrunnlagSet(
                 grunnlagstype,
                 innhentetForRolle,
                 gjelderPerson,
             )
-        // TODO: Konsolidere
-        // val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> = sistAktiverteGrunnlag(behandling, grunnlagstype,
-        // innhentetForRolle, gjelderPerson)
 
+        val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, innhentetForRolle, gjelderPerson)
         val erFørstegangsinnhenting = sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
-
-        val erGrunnlagEndret =
-            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
+        val erGrunnlagEndret = sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
                 innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
 
-        if (erFørstegangsinnhenting || erGrunnlagEndret) {
+        if (erFørstegangsinnhenting || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
                 grunnlagstype = grunnlagstype,
-                innhentet = hentetTidspunkt,
-                aktiv =
-                    if (sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()) {
-                        LocalDateTime.now()
-                    } else {
-                        aktiveringstidspunkt
-                    },
+                innhentet = LocalDateTime.now(),
+                aktiv = if (nyesteGrunnlag?.aktiv != null) {
+                    aktiveringstidspunkt
+                } else {
+                    LocalDateTime.now()
+                },
                 idTilRolleInnhentetFor = innhentetForRolle.id!!,
                 gjelder = gjelderPerson,
             )
+            if (grunnlagstype.erBearbeidet) {
+                aktivereSisteInnhentedeRådata(grunnlagstype.type, innhentetForRolle, behandling)
+            }
+        } else if (erGrunnlagEndret) {
+            val grunnlagSomSkalOppdateres =
+                behandling.henteUaktiverteGrunnlag(grunnlagstype, innhentetForRolle).maxBy { it.innhentet }
+            grunnlagSomSkalOppdateres.data = tilJson(innhentetGrunnlag)
+            grunnlagSomSkalOppdateres.innhentet = LocalDateTime.now()
+            grunnlagSomSkalOppdateres.aktiv = aktiveringstidspunkt
+            behandling.henteUaktiverteGrunnlag(grunnlagstype, innhentetForRolle).forEach {
+                if (it.id != grunnlagSomSkalOppdateres.id) {
+                    behandling.grunnlag.remove(it)
+                }
+            }
         } else {
             log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandling." }
         }
     }
+
+    private fun aktivereSisteInnhentedeRådata(
+        grunnlagsdatatype: Grunnlagsdatatype, innhentetForRolle: Rolle, behandling: Behandling
+    ) {
+        val sisteInnhentedeIkkeBearbeidaGrunnlag =
+            behandling.grunnlag.filter { grunnlagsdatatype == it.type && !it.erBearbeidet }
+                .filter { innhentetForRolle == it.rolle }
+                .maxByOrNull { it.innhentet }
+
+        if (sisteInnhentedeIkkeBearbeidaGrunnlag?.aktiv == null) {
+            when (grunnlagsdatatype) {
+                Grunnlagsdatatype.BOFORHOLD -> {
+                    if (grunnlagErAktivertForAlleHusstandsmedlemmer(
+                            behandling,
+                            sisteInnhentedeIkkeBearbeidaGrunnlag,
+                            innhentetForRolle
+                        )
+                    ) {
+                        sisteInnhentedeIkkeBearbeidaGrunnlag?.aktiv = LocalDateTime.now()
+                    }
+                }
+
+                else -> sisteInnhentedeIkkeBearbeidaGrunnlag?.aktiv = LocalDateTime.now()
+            }
+        }
+    }
+
+    private fun grunnlagErAktivertForAlleHusstandsmedlemmer(
+        behandling: Behandling, sisteInnhentedeIkkeBearbeidaGrunnlag: Grunnlag?,
+        innhentetForRolle: Rolle
+    ): Boolean {
+        val nyesteRådata =
+            jsonTilObjekt<List<RelatertPersonGrunnlagDto>>(sisteInnhentedeIkkeBearbeidaGrunnlag!!.data)
+        nyesteRådata.mapNotNull { it.relatertPersonPersonId }.forEach {
+            val nyesteBearbeidaDataForHusstandsmedlem = behandling.henteNyesteGrunnlag(
+                Grunnlagstype(
+                    Grunnlagsdatatype.BOFORHOLD, true
+                ), innhentetForRolle, Personident(it)
+            )
+
+            if (nyesteBearbeidaDataForHusstandsmedlem?.aktiv == null) {
+                return false
+            }
+        }
+        return true
+    }
+
 
     private inline fun <reified T> lagreGrunnlagHvisEndret(
         behandling: Behandling,
@@ -753,45 +839,37 @@ class GrunnlagService(
         hentetTidspunkt: LocalDateTime,
         aktiveringstidspunkt: LocalDateTime? = null,
     ) {
-// TODO: Konsolidere
-//        val sistInnhentedeGrunnlagAvType: T? =
-//            behandling.grunnlag.hentSisteAktiv().find {
-//                it.rolle.id == rolle.id && it.type == grunnlagstype.type.getOrMigrate() &&
-//                        it.erBearbeidet == grunnlagstype.erBearbeidet
-//            }?.let { commonObjectmapper.readValue<T>(it.data) }
-
         val sistInnhentedeGrunnlagAvType: T? = behandling.hentSisteInnhentetGrunnlag(grunnlagstype, rolle)
+        val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, rolle)
 
         val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         val erFørstegangsinnhentingAvInntekter =
             sistInnhentedeGrunnlagAvType == null && (
-                inneholderInntekter(innhentetGrunnlag) ||
-                    erAvTypeBearbeidetSivilstand
-            )
+                    inneholderInntekter(innhentetGrunnlag) ||
+                            erAvTypeBearbeidetSivilstand
+                    )
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
-        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet) {
+
+        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
                 grunnlagstype = grunnlagstype,
                 innhentet = hentetTidspunkt,
-                // Summerte månedsinntekter settes alltid til aktiv
-                aktiv =
-                    if (sistInnhentedeGrunnlagAvType == null ||
-                        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == grunnlagstype.type.getOrMigrate()
-                    ) {
-                        LocalDateTime.now()
-                    } else {
-                        aktiveringstidspunkt
-                    },
+                aktiv = if (nyesteGrunnlag?.aktiv != null) {
+                    aktiveringstidspunkt
+                } else {
+                    LocalDateTime.now()
+                },
                 idTilRolleInnhentetFor = rolle.id!!,
             )
-
+            if (grunnlagstype.erBearbeidet) {
+                aktivereSisteInnhentedeRådata(grunnlagstype.type, rolle, behandling)
+            }
             // Oppdatere inntektstabell med sammenstilte offentlige inntekter
-            if (inntekterOgYtelser.contains(
-                    grunnlagstype.type.getOrMigrate(),
-                ) && grunnlagstype.erBearbeidet && sistInnhentedeGrunnlagAvType == null
+            if (nyesteGrunnlag == null && inntekterOgYtelser.contains(grunnlagstype.type.getOrMigrate())
+                && grunnlagstype.erBearbeidet
             ) {
                 @Suppress("UNCHECKED_CAST")
                 inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
@@ -799,12 +877,31 @@ class GrunnlagService(
                     Personident(rolle.ident!!),
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
                 )
-            } else if (erAvTypeBearbeidetSivilstand && sistInnhentedeGrunnlagAvType == null) {
+            } else if (nyesteGrunnlag == null && erAvTypeBearbeidetSivilstand) {
                 boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(
                     behandling,
                     Personident(rolle.ident!!),
                     innhentetGrunnlag as SivilstandBeregnet,
                 )
+            }
+        } else if (erGrunnlagEndretSidenSistInnhentet) {
+            val grunnlagSomSkalOppdateres =
+                behandling.henteUaktiverteGrunnlag(grunnlagstype, rolle).maxByOrNull { it.innhentet }
+            grunnlagSomSkalOppdateres?.data = tilJson(innhentetGrunnlag)
+            grunnlagSomSkalOppdateres?.innhentet = hentetTidspunkt
+            // Summerte månedsinntekter settes alltid til aktiv
+            grunnlagSomSkalOppdateres?.aktiv =
+                if (Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == grunnlagstype.type.getOrMigrate()
+                ) {
+                    LocalDateTime.now()
+                } else {
+                    aktiveringstidspunkt
+                }
+
+            behandling.henteUaktiverteGrunnlag(grunnlagstype, rolle).forEach {
+                if (it.id != grunnlagSomSkalOppdateres?.id) {
+                    behandling.grunnlag.remove(it)
+                }
             }
         } else {
             log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id ${behandling.id!!}." }
@@ -819,6 +916,32 @@ class GrunnlagService(
         }
     }
 
+    private fun Behandling.henteUaktiverteGrunnlag(
+        grunnlagstype: Grunnlagstype,
+        rolle: Rolle,
+    ): Set<Grunnlag> =
+        grunnlag.hentAlleIkkeAktiv().filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+        }.toSet()
+
+    private fun Behandling.henteNyesteGrunnlag(
+        grunnlagstype: Grunnlagstype,
+        rolle: Rolle,
+        gjelder: Personident?,
+    ): Grunnlag? =
+        grunnlag.filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+                    && it.gjelder == gjelder?.verdi
+        }.toSet().maxByOrNull { it.innhentet }
+
+    private fun Behandling.henteNyesteGrunnlag(
+        grunnlagstype: Grunnlagstype,
+        rolle: Rolle,
+    ): Grunnlag? =
+        grunnlag.filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+        }.toSet().maxByOrNull { it.innhentet }
+
     private inline fun <reified T> Behandling.hentSisteInnhentetGrunnlagSet(
         grunnlagstype: Grunnlagstype,
         rolle: Rolle,
@@ -826,8 +949,8 @@ class GrunnlagService(
     ): Set<T> =
         grunnlag.hentSisteAktiv().find {
             it.type == grunnlagstype.type &&
-                it.rolle.id == rolle.id && it.gjelder == gjelderPerson?.verdi &&
-                grunnlagstype.erBearbeidet == it.erBearbeidet
+                    it.rolle.id == rolle.id && it.gjelder == gjelderPerson?.verdi &&
+                    grunnlagstype.erBearbeidet == it.erBearbeidet
         }?.let { commonObjectmapper.readValue<Set<T>>(it.data) }?.toSet() ?: emptySet()
 
     private inline fun <reified T> Behandling.hentSisteInnhentetGrunnlag(
@@ -835,7 +958,8 @@ class GrunnlagService(
         rolle: Rolle,
     ): T? =
         grunnlag.hentSisteAktiv().find {
-            it.rolle.id == rolle.id && it.type == grunnlagstype.type.getOrMigrate() && it.erBearbeidet == grunnlagstype.erBearbeidet
+            it.rolle.id == rolle.id && it.type == grunnlagstype.type.getOrMigrate() &&
+                    it.erBearbeidet == grunnlagstype.erBearbeidet
         }?.let { commonObjectmapper.readValue<T>(it.data) }
 
     private fun lagreGrunnlagHvisEndret(
@@ -862,7 +986,7 @@ class GrunnlagService(
                 else -> {
                     log.warn {
                         "Forsøkte å lagre grunnlag for rolle ${rolleInhentetFor.rolletype} i behandling " +
-                            "${behandling.id}"
+                                "${behandling.id}"
                     }
                     lagringAvGrunnlagFeiletException(behandling.id!!)
                 }
@@ -874,8 +998,8 @@ class GrunnlagService(
             } else {
                 log.warn {
                     "Innhenting av $it for rolle ${rolleInhentetFor.rolletype} " + "i behandling ${behandling.id} " +
-                        "feilet for type ${feilrapportering.grunnlagstype} med begrunnelse " +
-                        "${feilrapportering.feilmelding}. Lagrer ikke grunnlag"
+                            "feilet for type ${feilrapportering.grunnlagstype} med begrunnelse " +
+                            "${feilrapportering.feilmelding}. Lagrer ikke grunnlag"
                 }
             }
         }
@@ -967,7 +1091,6 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.arbeidsforholdListe.toSet(),
-                    innhentetGrunnlag.hentetTidspunkt,
                 )
             }
 
@@ -979,7 +1102,6 @@ class GrunnlagService(
                     innhentetGrunnlag.barnetilleggListe.filter {
                         harBarnRolleIBehandling(it.barnPersonId, behandling)
                     }.toSet(),
-                    innhentetGrunnlag.hentetTidspunkt,
                 )
             }
 
@@ -989,7 +1111,6 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.barnetilsynListe.toSet(),
-                    innhentetGrunnlag.hentetTidspunkt,
                 )
             }
 
@@ -1001,7 +1122,6 @@ class GrunnlagService(
                     innhentetGrunnlag.kontantstøtteListe.filter {
                         harBarnRolleIBehandling(it.barnPersonId, behandling)
                     }.toSet(),
-                    innhentetGrunnlag.hentetTidspunkt,
                 )
             }
 
@@ -1011,7 +1131,6 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
-                    innhentetGrunnlag.hentetTidspunkt,
                 )
             }
 
@@ -1021,7 +1140,6 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.sivilstandListe.toSet(),
-                    innhentetGrunnlag.hentetTidspunkt,
                 )
             }
 
@@ -1031,7 +1149,6 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.småbarnstilleggListe.toSet(),
-                    innhentetGrunnlag.hentetTidspunkt,
                 )
             }
 
@@ -1041,14 +1158,13 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
-                    innhentetGrunnlag.hentetTidspunkt,
                 )
             }
 
             else -> {
                 log.warn {
                     "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
-                        "i behandling ${behandling.id}"
+                            "i behandling ${behandling.id}"
                 }
                 lagringAvGrunnlagFeiletException(behandling.id!!)
             }
