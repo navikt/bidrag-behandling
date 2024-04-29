@@ -701,6 +701,36 @@ fun tilAinntektspostDto(
     virksomhetId = "995277670",
 )
 
+fun opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(husstandsbarnSet: Set<Husstandsbarn>): List<Grunnlag> {
+    return husstandsbarnSet.groupBy { it.ident }.map { (ident, husstandsbarn) ->
+        val behandling = husstandsbarn.first().behandling!!
+        Grunnlag(
+            behandling = behandling,
+            type = Grunnlagsdatatype.BOFORHOLD,
+            erBearbeidet = true,
+            gjelder = ident,
+            aktiv = LocalDateTime.now(),
+            rolle = behandling.bidragsmottaker!!,
+            innhentet = LocalDateTime.now(),
+            data =
+                commonObjectmapper.writeValueAsString(
+                    husstandsbarn.flatMap { hb ->
+                        hb.perioder.map {
+                            BoforholdResponse(
+                                relatertPersonPersonId = hb.ident,
+                                periodeFom = it.datoFom!!,
+                                periodeTom = it.datoTom,
+                                kilde = it.kilde,
+                                bostatus = it.bostatus,
+                                fødselsdato = hb.fødselsdato,
+                            )
+                        }
+                    },
+                ),
+        )
+    }
+}
+
 fun opprettBoforholdBearbeidetGrunnlag(behandling: Behandling): List<Grunnlag> {
     return behandling.husstandsbarn.groupBy { it.ident }.map { (ident, husstandsbarn) ->
         Grunnlag(
@@ -728,4 +758,49 @@ fun opprettBoforholdBearbeidetGrunnlag(behandling: Behandling): List<Grunnlag> {
                 ),
         )
     }
+}
+
+fun opprettHusstandsbarnMedOffentligePerioder(behandling: Behandling): Set<Husstandsbarn> {
+    return setOf(
+        opprettHusstandsbarn(behandling, testdataBarn1).let {
+            it.perioder =
+                mutableSetOf(
+                    Husstandsbarnperiode(
+                        datoFom = LocalDate.parse("2023-01-01"),
+                        datoTom = LocalDate.parse("2023-05-31"),
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        husstandsbarn = it,
+                    ),
+                    Husstandsbarnperiode(
+                        datoFom = LocalDate.parse("2023-06-01"),
+                        datoTom = null,
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        husstandsbarn = it,
+                    ),
+                )
+            it
+        },
+        opprettHusstandsbarn(behandling, testdataBarn2).let {
+            it.perioder =
+                mutableSetOf(
+                    Husstandsbarnperiode(
+                        datoFom = LocalDate.parse("2023-01-01"),
+                        datoTom = LocalDate.parse("2023-10-31"),
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        husstandsbarn = it,
+                    ),
+                    Husstandsbarnperiode(
+                        datoFom = LocalDate.parse("2023-11-01"),
+                        datoTom = null,
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        husstandsbarn = it,
+                    ),
+                )
+            it
+        },
+    )
 }

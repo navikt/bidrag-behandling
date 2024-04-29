@@ -9,6 +9,7 @@ import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
@@ -16,6 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -27,6 +29,7 @@ import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -148,6 +151,48 @@ class BehandlingControllerV2(
         return inntektService.oppdatereInntektManuelt(behandlingsid, request)
     }
 
+    @PutMapping("/behandling/{behandlingsid}/virkningstidspunkt")
+    @Operation(
+        description = "Oppdatere virkningstidspunkt for behandling. Returnerer oppdatert virkningstidspunkt",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+            ApiResponse(responseCode = "400", description = "Feil opplysninger oppgitt"),
+            ApiResponse(
+                responseCode = "401",
+                description = "Sikkerhetstoken mangler, er utløpt, eller av andre årsaker ugyldig",
+            ),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+            ApiResponse(
+                responseCode = "500",
+                description = "Serverfeil",
+            ),
+            ApiResponse(responseCode = "503", description = "Tjeneste utilgjengelig"),
+        ],
+    )
+    fun oppdatereVirkningstidspunktV2(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdaterVirkningstidspunkt,
+    ): ResponseEntity<BehandlingDtoV2> {
+        log.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid" }
+        secureLogger.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid med forespørsel $request" }
+
+        val behandling = behandlingService.oppdaterVirkningstidspunkt(behandlingsid, request)
+
+        return ResponseEntity(
+            behandling.tilBehandlingDtoV2(
+                behandling.grunnlagListe.hentSisteAktiv(),
+                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
+            ),
+            HttpStatus.OK,
+        )
+    }
+
     @PutMapping("/behandling/{behandlingsid}/boforhold")
     @Operation(
         description = "Oppdatere boforhold for behandling. Returnerer boforhold som ble endret, opprettet, eller slettet.",
@@ -176,7 +221,8 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdatereBoforholdRequestV2,
     ): OppdatereBoforholdResponse {
-        log.info { "Oppdatere boforhold for behandling $behandlingsid" }
+        log.info { "Oppdaterer boforhold for behandling $behandlingsid" }
+        secureLogger.info { "Oppdaterer boforhold for behandling $behandlingsid med forespørsel $request" }
 
         request.oppdatereHusstandsmedlem?.let {
             return boforholdService.oppdatereHusstandsbarnManuelt(behandlingsid, it)
@@ -210,6 +256,24 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
     ): BehandlingDtoV2 {
         return behandlingService.henteBehandling(behandlingsid)
+    }
+
+    @Suppress("unused")
+    @GetMapping("/behandling/boforhold/{behandlingsid}")
+    @Operation(
+        description = "Hente en behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Hentet behandling"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+        ],
+    )
+    fun henteBoforhold(
+        @PathVariable behandlingsid: Long,
+    ): BoforholdDtoV2 {
+        return behandlingService.henteBehandling(behandlingsid).boforhold
     }
 
     @Suppress("unused")

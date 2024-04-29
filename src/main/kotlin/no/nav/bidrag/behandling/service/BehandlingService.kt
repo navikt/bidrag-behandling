@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -49,6 +50,7 @@ private val log = KotlinLogging.logger {}
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
     private val forsendelseService: ForsendelseService,
+    private val boforholdService: BoforholdService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
     private val entityManager: EntityManager,
@@ -173,6 +175,32 @@ class BehandlingService(
                     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
                     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
                 )
+            }
+    }
+
+    @Transactional
+    fun oppdaterVirkningstidspunkt(
+        behandlingsid: Long,
+        request: OppdaterVirkningstidspunkt,
+    ): Behandling {
+        return behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+                log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
+                request.valider(it)
+                val erVirkningstidspunktEndret = request.virkningstidspunkt != it.virkningstidspunkt
+                it.årsak = request.årsak
+                it.avslag = request.avslag
+                it.virkningstidspunkt = request.virkningstidspunkt
+                it.virkningstidspunktbegrunnelseKunINotat =
+                    request.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
+                it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
+                    request.notat?.medIVedtaket
+                        ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
+                if (erVirkningstidspunktEndret) {
+                    log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt" }
+                    boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid)
+                }
+                it
             }
     }
 

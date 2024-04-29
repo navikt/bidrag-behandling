@@ -26,29 +26,34 @@ data class OppdatereBoforholdResponse(
 )
 
 data class OppdatereHusstandsmedlem(
-    val opprett: PersonaliaHusstandsbarn? = null,
-    val oppdaterPeriode: NyHusstandsbarnperiode? = null,
+    @Schema(description = "Informasjon om husstandsmedlem som skal opprettes")
+    val opprettHusstandsmedlem: OpprettHusstandsstandsmedlem? = null,
+    val oppdaterPeriode: OppdaterHusstandsmedlemPeriode? = null,
     @Schema(type = "Long", description = "Id til perioden som skal slettes")
     val slettPeriode: Long? = null,
     @Schema(type = "Long", description = "Id til husstandsmedlemmet som skal slettes")
     val slettHusstandsmedlem: Long? = null,
-    @Schema(type = "Long", description = "Id til husstandsmedlemmet perioden skal resettes for")
+    @Schema(
+        type = "Long",
+        description = """Id til husstandsmedlemmet perioden skal resettes for. 
+        |Dette vil resette til opprinnelig perioder hentet fra offentlige registre""",
+    )
     val tilbakestillPerioderForHusstandsmedlem: Long? = null,
     @Schema(type = "Long", description = "Id til husstandsmedlemmet siste steg skal angres for")
     val angreSisteStegForHusstandsmedlem: Long? = null,
 )
 
-data class NyHusstandsbarnperiode(
+data class OppdaterHusstandsmedlemPeriode(
     @Schema(type = "Long", description = "Id til husstandsbarnet perioden skal gjelde for")
     val idHusstandsbarn: Long,
     @Schema(type = "Long", description = "Id til perioden som skal oppdateres")
     val idPeriode: Long? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val fraOgMed: LocalDate?,
+    val datoFom: LocalDate?,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val tilOgMed: LocalDate?,
+    val datoTom: LocalDate?,
     @Schema(required = true)
     val bostatus: Bostatuskode,
 )
@@ -60,7 +65,7 @@ data class Husstandsbarnperiode(
     val bostatus: Bostatuskode,
 )
 
-data class PersonaliaHusstandsbarn(
+data class OpprettHusstandsstandsmedlem(
     val personident: Personident? = null,
     val fødselsdato: LocalDate,
     val navn: String? = null,

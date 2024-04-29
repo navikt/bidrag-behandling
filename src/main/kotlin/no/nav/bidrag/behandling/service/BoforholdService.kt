@@ -11,13 +11,11 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
-import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
-import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsbarnRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
@@ -35,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
@@ -116,6 +115,21 @@ class BoforholdService(
     }
 
     @Transactional
+    fun rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid: Long) {
+        val behandling =
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+        val oppdaterHusstandsmedlemmer =
+            behandling.husstandsbarn.map { husstandsbarn ->
+                husstandsbarn.lagreEksisterendePerioder()
+                husstandsbarn.oppdaterPerioder()
+                husstandsbarnRepository.save(husstandsbarn)
+            }
+        behandling.husstandsbarn.clear()
+        behandling.husstandsbarn.addAll(oppdaterHusstandsmedlemmer)
+    }
+
+    @Transactional
     fun oppdatereHusstandsbarnManuelt(
         behandlingsid: Long,
         oppdatereHusstandsmedlem: OppdatereHusstandsmedlem,
@@ -130,12 +144,12 @@ class BoforholdService(
             val husstandsbarnSomSkalSlettes = behandling.husstandsbarn.find { idHusstandsbarn == it.id }
             if (Kilde.MANUELL == husstandsbarnSomSkalSlettes?.kilde) {
                 behandling.husstandsbarn.remove(husstandsbarnSomSkalSlettes)
-                log.info { "Slettet husstandsbarn med id $idHusstandsbarn fra behandling $behandlingsid." }
+                logEndring(behandling, oppdatereHusstandsmedlem, husstandsbarnSomSkalSlettes)
                 return husstandsbarnSomSkalSlettes.tilOppdatereBoforholdResponse(behandling)
             }
         }
 
-        oppdatereHusstandsmedlem.opprett?.let { personalia ->
+        oppdatereHusstandsmedlem.opprettHusstandsmedlem?.let { personalia ->
             val husstandsbarn =
                 Husstandsbarn(
                     behandling,
@@ -154,7 +168,7 @@ class BoforholdService(
                 ),
             )
             behandling.husstandsbarn.add(husstandsbarn)
-            log.info { "Nytt husstandsmedlem (id ${husstandsbarn.id}) ble manuelt lagt til behandling $behandlingsid." }
+            logEndring(behandling, oppdatereHusstandsmedlem, husstandsbarn)
             return husstandsbarnRepository.save(husstandsbarn).tilOppdatereBoforholdResponse(behandling)
         }
 
@@ -165,7 +179,7 @@ class BoforholdService(
             husstandsbarn.lagreEksisterendePerioder()
             husstandsbarn.oppdaterPerioder(slettHusstandsbarnperiode = idHusstandsbarnperiode)
 
-            log.info { "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling $behandlingsid." }
+            logEndring(behandling, oppdatereHusstandsmedlem, husstandsbarn)
             return husstandsbarnRepository.save(husstandsbarn).tilOppdatereBoforholdResponse(behandling)
         }
 
@@ -186,17 +200,13 @@ class BoforholdService(
                     Husstandsbarnperiode(
                         husstandsbarn = eksisterendeHusstandsbarn,
                         bostatus = bostatusperiode.bostatus,
-                        datoFom = bostatusperiode.fraOgMed,
-                        datoTom = bostatusperiode.tilOgMed,
+                        datoFom = bostatusperiode.datoFom,
+                        datoTom = bostatusperiode.datoTom,
                         kilde = Kilde.MANUELL,
                     ),
             )
 
-            log.info {
-                "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
-                    "$behandlingsid."
-            }
-
+            logEndring(behandling, oppdatereHusstandsmedlem, eksisterendeHusstandsbarn)
             return husstandsbarnRepository.save(eksisterendeHusstandsbarn).tilOppdatereBoforholdResponse(behandling)
         }
 
@@ -206,6 +216,7 @@ class BoforholdService(
                     ?: oppdateringAvBoforholdFeiletException(behandlingsid)
             husstandsmedlem.lagreEksisterendePerioder()
             husstandsmedlem.oppdaterTilOriginalePerioder()
+            logEndring(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
             return husstandsbarnRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
 
@@ -214,9 +225,65 @@ class BoforholdService(
                 behandling.husstandsbarn.find { it.id == husstandsmedlemId }
                     ?: oppdateringAvBoforholdFeiletException(behandlingsid)
             husstandsmedlem.oppdaterTilForrigeLagredePerioder()
+            logEndring(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
             return husstandsbarnRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
         oppdateringAvBoforholdFeiletException(behandlingsid)
+    }
+
+    private fun logEndring(
+        behandling: Behandling,
+        oppdatereHusstandsmedlem: OppdatereHusstandsmedlem,
+        husstandsbarn: Husstandsbarn,
+    ) {
+        val perioderDetaljer =
+            husstandsbarn.perioder.map {
+                "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
+                    "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
+            }.joinToString(", ", prefix = "[", postfix = "]")
+        oppdatereHusstandsmedlem.angreSisteStegForHusstandsmedlem?.let {
+            log.info { "Angret siste steg for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." }
+            secureLogger.info {
+                "Angret siste steg for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}. " +
+                    "Perioder = $perioderDetaljer"
+            }
+        }
+        oppdatereHusstandsmedlem.tilbakestillPerioderForHusstandsmedlem?.let {
+            log.info { "Tilbakestilte perioder for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." }
+            secureLogger.info {
+                "Tilbakestilte perioder for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." +
+                    "Perioder = $perioderDetaljer"
+            }
+        }
+        oppdatereHusstandsmedlem.opprettHusstandsmedlem?.let { personalia ->
+            log.info { "Nytt husstandsmedlem (id ${husstandsbarn.id}) ble manuelt lagt til behandling ${behandling.id}." }
+        }
+        oppdatereHusstandsmedlem.slettPeriode?.let { idHusstandsbarnperiode ->
+            log.info { "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling ${behandling.id}." }
+            secureLogger.info {
+                "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling ${behandling.id}." +
+                    "Perioder = $perioderDetaljer"
+            }
+        }
+        oppdatereHusstandsmedlem.oppdaterPeriode?.let { bostatusperiode ->
+            val detaljer =
+                "datoFom: ${bostatusperiode.datoFom}, datoTom: ${bostatusperiode.datoTom}, " +
+                    "bostatus: ${bostatusperiode.bostatus}"
+            if (bostatusperiode.idPeriode != null) {
+                log.info {
+                    "Oppdaterte periode ${bostatusperiode.idPeriode} for husstandsbarn ${bostatusperiode.idHusstandsbarn} til $detaljer " +
+                        " i behandling ${behandling.id}"
+                }
+            } else {
+                log.info {
+                    "Ny periode $detaljer ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling med " +
+                        "${behandling.id}."
+                }
+            }
+        }
+        oppdatereHusstandsmedlem.slettHusstandsmedlem?.let { idHusstandsbarn ->
+            log.info { "Slettet husstandsbarn med id $idHusstandsbarn fra behandling ${behandling.id}." }
+        }
     }
 
     private fun Husstandsbarn.oppdaterPerioder(
@@ -234,9 +301,7 @@ class BoforholdService(
     }
 
     private fun Husstandsbarn.oppdaterTilOriginalePerioder() {
-        behandling.grunnlagListe.hentSisteAktiv()
-            .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == ident }
-            .konverterData<List<BoforholdResponse>>()?.tilHusstandsbarn(behandling, this)
+        hentSisteBearbeidetBoforhold()
             ?: oppdateringAvBoforholdFeilet("Fant ikke originale bearbeidet perioder for husstandsbarn $id i behandling ${behandling.id}")
     }
 

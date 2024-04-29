@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.SivilstandOverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.behandling.finnesFraFørException
 import no.nav.bidrag.behandling.husstandsbarnIkkeFunnetException
+import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.ressursHarFeilKildeException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
@@ -270,17 +271,17 @@ fun OppdatereInntektRequest.valider() {
 }
 
 fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
-    this.opprett?.let {
-        if (this.opprett.navn == null &&
-            this.opprett.personident == null
+    this.opprettHusstandsmedlem?.let {
+        if (this.opprettHusstandsmedlem.navn == null &&
+            this.opprettHusstandsmedlem.personident == null
         ) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke opprette husstandsbarn som mangler både navn og personident.",
             )
-        } else if (this.opprett.personident != null) {
+        } else if (this.opprettHusstandsmedlem.personident != null) {
             val eksisterendeHusstandsbarn =
-                behandling.husstandsbarn.find { it.ident != null && it.ident == this.opprett.personident.verdi }
+                behandling.husstandsbarn.find { it.ident != null && it.ident == this.opprettHusstandsmedlem.personident.verdi }
 
             if (eksisterendeHusstandsbarn != null) {
                 finnesFraFørException(behandling.id!!)
@@ -319,7 +320,21 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
         }
     }
 
-    if (this.opprett == null && this.oppdaterPeriode == null && this.slettPeriode == null &&
+    this.tilbakestillPerioderForHusstandsmedlem?.let {
+        val husstandsmedlem = behandling.husstandsbarn.find { this.tilbakestillPerioderForHusstandsmedlem == it.id }
+        if (husstandsmedlem?.kilde == Kilde.MANUELL) {
+            oppdateringAvBoforholdFeilet("Kan ikke tilbakestille manuell lagt inn husstandsmedlem til offentlige perioder")
+        }
+    }
+
+    this.angreSisteStegForHusstandsmedlem?.let {
+        val husstandsmedlem = behandling.husstandsbarn.find { this.angreSisteStegForHusstandsmedlem == it.id }
+        if (husstandsmedlem?.forrigePerioder.isNullOrEmpty()) {
+            oppdateringAvBoforholdFeilet("Kan ikke angre siste steg for husstandsmedlem. Det mangler informasjon om siste steg")
+        }
+    }
+
+    if (this.opprettHusstandsmedlem == null && this.oppdaterPeriode == null && this.slettPeriode == null &&
         this.slettHusstandsmedlem == null && this.angreSisteStegForHusstandsmedlem == null &&
         this.tilbakestillPerioderForHusstandsmedlem == null
     ) {

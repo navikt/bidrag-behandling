@@ -69,7 +69,11 @@ class NotatOpplysningerService(
     private val bidragDokumentProduksjonConsumer: BidragDokumentProduksjonConsumer,
     private val bidragDokumentConsumer: BidragDokumentConsumer,
 ) {
-    @Retryable(value = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0))
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
     @Transactional
     fun opprettNotat(behandlingId: Long) {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
@@ -309,7 +313,12 @@ private fun Rolle.tilNotatRolle() =
 
 private fun Inntekt.tilNotatInntektDto() =
     NotatInntektDto(
-        beløp = maxOf(belop.nærmesteHeltall, BigDecimal.ZERO), // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
+        beløp =
+            maxOf(
+                belop.nærmesteHeltall,
+                BigDecimal.ZERO,
+            ),
+        // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         periode = periode,
         opprinneligPeriode = opprinneligPeriode,
         type = type,
@@ -361,7 +370,8 @@ private fun Behandling.hentInntekterForIdent(
         },
     småbarnstillegg =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedBy { it.datoFom }
+            inntekter
+                .sortedBy { it.datoFom }
                 .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
                 .sorterEtterDato()
                 .map {
@@ -372,7 +382,8 @@ private fun Behandling.hentInntekterForIdent(
         },
     kontantstøtte =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+            inntekter
+                .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
                 .sorterEtterDatoOgBarn()
                 .map {
                     it.tilNotatInntektDto()
@@ -382,8 +393,9 @@ private fun Behandling.hentInntekterForIdent(
         },
     utvidetBarnetrygd =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedBy { it.datoFom }
+            inntekter
                 .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+                .sorterEtterDato()
                 .map {
                     it.tilNotatInntektDto()
                 }

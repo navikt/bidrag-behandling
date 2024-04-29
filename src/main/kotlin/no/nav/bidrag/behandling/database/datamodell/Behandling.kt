@@ -144,7 +144,7 @@ open class Behandling(
 
 fun Behandling.hentAlleHusstandsmedlemPerioder() = husstandsbarn.flatMap { it.perioder }
 
-fun Behandling.finnHusstandsbarnperiode(id: Long) = hentAlleHusstandsmedlemPerioder().find { it.id == id }
+fun Behandling.finnHusstandsbarnperiode(id: Long?) = hentAlleHusstandsmedlemPerioder().find { it.id == id }
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 

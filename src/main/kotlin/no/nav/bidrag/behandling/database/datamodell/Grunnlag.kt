@@ -15,6 +15,8 @@ import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
@@ -53,9 +55,9 @@ open class Grunnlag(
     val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
 }
 
-fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
+fun List<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
 
-fun List<Grunnlag>.hentAlleAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+fun List<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
 
 fun List<Grunnlag>.hentSisteIkkeAktiv() =
     hentAlleIkkeAktiv().groupBy { it.identifikator }
@@ -68,6 +70,16 @@ fun List<Grunnlag>.hentSisteAktiv() =
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
+
+fun List<Grunnlag>.hentSisteBearbeidetBoforholdForHusstandsmedlem(husstandsmedlem: Husstandsbarn) =
+    hentSisteAktiv()
+        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == husstandsmedlem.ident }
+        .konverterData<List<BoforholdResponse>>()?.tilHusstandsbarn(husstandsmedlem.behandling, husstandsmedlem)
+
+fun Husstandsbarn.hentSisteBearbeidetBoforhold() =
+    behandling.grunnlagListe.hentSisteAktiv()
+        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
+        .konverterData<List<BoforholdResponse>>()?.tilHusstandsbarn(behandling, this)
 
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,

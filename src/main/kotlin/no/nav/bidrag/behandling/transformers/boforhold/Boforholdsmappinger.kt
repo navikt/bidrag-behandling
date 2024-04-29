@@ -30,7 +30,7 @@ fun Husstandsbarn.tilDto() =
         this.id,
         this.kilde,
         !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
-        this.perioder.tilDto(),
+        this.perioder.sortedBy { it.datoFom }.toSet().tilDto(),
         this.ident,
         this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato,
