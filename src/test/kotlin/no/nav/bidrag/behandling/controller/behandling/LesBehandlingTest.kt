@@ -75,7 +75,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
 
             aktiveGrunnlagsdata shouldNotBe null
             aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
-            aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 0
+            aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 5
             aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 2
         }
     }
