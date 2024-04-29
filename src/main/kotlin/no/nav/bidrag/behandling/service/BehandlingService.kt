@@ -35,6 +35,7 @@ import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.apache.commons.lang3.Validate
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -96,6 +97,8 @@ class BehandlingService(
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
+                virkningstidspunkt = opprettBehandling.søktFomDato,
+                årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,

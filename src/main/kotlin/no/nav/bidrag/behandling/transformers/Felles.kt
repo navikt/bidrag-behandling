@@ -13,6 +13,17 @@ val ainntekt12Og3Måneder =
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
         Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
     )
+val årsinntekterYtelser =
+    listOf(
+        Inntektsrapportering.OVERGANGSSTØNAD,
+        Inntektsrapportering.INTRODUKSJONSSTØNAD,
+        Inntektsrapportering.KVALIFISERINGSSTØNAD,
+        Inntektsrapportering.SYKEPENGER,
+        Inntektsrapportering.FORELDREPENGER,
+        Inntektsrapportering.DAGPENGER,
+        Inntektsrapportering.AAP,
+        Inntektsrapportering.PENSJON,
+    )
 val inntekstrapporteringerSomKreverGjelderBarn =
     listOf(Inntektsrapportering.BARNETILLEGG, Inntektsrapportering.KONTANTSTØTTE, Inntektsrapportering.BARNETILSYN)
 val eksplisitteYtelser =
@@ -40,14 +51,11 @@ fun <T : Comparable<T>> minOfNullable(
     }
 }
 
-fun finnCutoffHusstandsmedlemDatoFom(
+fun finnCutoffDatoFom(
     virkningstidspunkt: LocalDate,
-    fødselsdato: LocalDate,
-) = if (virkningstidspunkt.isAfter(LocalDate.now())) {
+    fødselsdato: LocalDate? = null,
+) = if (virkningstidspunkt.isAfter(LocalDate.now()) && fødselsdato != null) {
     maxOf(virkningstidspunkt.withDayOfMonth(1), fødselsdato)
 } else {
     virkningstidspunkt
 }
-
-fun finnCutoffSivilstandDatoFom(virkningstidspunkt: LocalDate) =
-    minOf(LocalDate.now().withDayOfMonth(1), virkningstidspunkt.withDayOfMonth(1))

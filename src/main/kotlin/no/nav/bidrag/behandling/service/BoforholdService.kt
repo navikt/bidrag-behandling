@@ -110,7 +110,7 @@ class BoforholdService(
         oppdatereHusstandsbarn: OppdatereHusstandsbarn,
     ): OppdatereBoforholdResponse {
         val behandling =
-            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereHusstandsbarn.validere(behandling, husstandsbarnperiodeRepository)
 

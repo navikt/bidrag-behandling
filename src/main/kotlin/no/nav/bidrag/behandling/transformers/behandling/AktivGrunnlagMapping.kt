@@ -23,6 +23,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -88,16 +89,26 @@ fun List<Grunnlag>.hentEndringerBoforhold(
     husstandsbarn: Set<Husstandsbarn>,
     rolle: Rolle,
 ): Set<HusstandsbarnGrunnlagDto> {
-    val aktivBoforholdData = aktiveGrunnlag.hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle)
+    val aktivBoforholdData = aktiveGrunnlag.hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
     // Hent første for å finne innhentet tidspunkt
     val nyBoforholdGrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val nyBoforholdData = hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle)
-    return nyBoforholdData.groupBy { it.relatertPersonPersonId }.map { (barnId, oppdaterGrunnlag) ->
-        val aktivGrunnlag = aktivBoforholdData.filter { it.relatertPersonPersonId == barnId }
-        if (aktivGrunnlag.erLik(oppdaterGrunnlag, virkniningstidspunkt)) return@map null
-        oppdaterGrunnlag.tilHusstandsbarnGrunnlagDto(barnId, nyBoforholdGrunnlag!!.innhentet)
-    }.filterNotNull().toSet()
+    val nyBoforholdData = hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
+    return nyBoforholdData.finnEndringerBoforhold(
+        virkniningstidspunkt,
+        aktivBoforholdData,
+        nyBoforholdGrunnlag?.innhentet ?: LocalDateTime.now(),
+    )
 }
+
+fun Set<BoforholdResponse>.finnEndringerBoforhold(
+    virkniningstidspunkt: LocalDate,
+    aktivBoforholdData: Set<BoforholdResponse>,
+    innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
+) = groupBy { it.relatertPersonPersonId }.map { (barnId, oppdaterGrunnlag) ->
+    val aktivGrunnlag = aktivBoforholdData.filter { it.relatertPersonPersonId == barnId }
+    if (aktivGrunnlag.erLik(oppdaterGrunnlag, virkniningstidspunkt)) return@map null
+    oppdaterGrunnlag.tilHusstandsbarnGrunnlagDto(barnId, innhentetTidspunkt)
+}.filterNotNull().toSet()
 
 private fun List<BoforholdResponse>.tilHusstandsbarnGrunnlagDto(
     barnId: String?,
@@ -114,13 +125,20 @@ private fun List<BoforholdResponse>.tilHusstandsbarnGrunnlagDto(
     innhentetTidspunkt,
 )
 
-fun List<Grunnlag>.hentEndringerSivilstand(aktiveGrunnlag: List<Grunnlag>): SivilstandIkkeAktivGrunnlagDto? {
+fun List<Grunnlag>.hentEndringerSivilstand(
+    aktiveGrunnlag: List<Grunnlag>,
+    virkniningstidspunkt: LocalDate,
+): SivilstandIkkeAktivGrunnlagDto? {
     return try {
         val aktivSivilstandGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
-        val aktivSivilstandData = aktivSivilstandGrunnlag.konverterData<SivilstandBeregnet>()
         val nySivilstandGrunnlagBearbeidet = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nySivilstandGrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
-        val nySivilstandData = nySivilstandGrunnlagBearbeidet.konverterData<SivilstandBeregnet>()
+        val aktivSivilstandData =
+            aktivSivilstandGrunnlag.konverterData<SivilstandBeregnet>()
+                ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkniningstidspunkt)
+        val nySivilstandData =
+            nySivilstandGrunnlagBearbeidet.konverterData<SivilstandBeregnet>()
+                ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkniningstidspunkt)
         if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
             return SivilstandIkkeAktivGrunnlagDto(
                 sivilstand =
@@ -135,7 +153,10 @@ fun List<Grunnlag>.hentEndringerSivilstand(aktiveGrunnlag: List<Grunnlag>): Sivi
                     },
                 status = nySivilstandData.status,
                 innhentetTidspunkt = nySivilstandGrunnlagBearbeidet!!.innhentet,
-                grunnlag = nySivilstandGrunnlag?.konverterData<Set<SivilstandGrunnlagDto>>() ?: emptySet(),
+                grunnlag =
+                    nySivilstandGrunnlag?.konverterData<List<SivilstandGrunnlagDto>>()
+                        ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(virkniningstidspunkt)
+                        ?.toSet() ?: emptySet(),
             )
         }
         return null
@@ -151,6 +172,20 @@ fun SivilstandBeregnet.erLik(other: SivilstandBeregnet): Boolean {
     if (sivilstandListe.size != other.sivilstandListe.size) return false
     sivilstandListe.sortedBy { it.periodeFom }.forEachIndexed { index, sivilstand ->
         val otherSivilstand = other.sivilstandListe[index]
+        if (otherSivilstand.periodeFom == sivilstand.periodeFom &&
+            otherSivilstand.periodeTom == sivilstand.periodeTom &&
+            otherSivilstand.sivilstandskode == sivilstand.sivilstandskode
+        ) {
+            return true
+        }
+    }
+    return false
+}
+
+fun List<Sivilstand>.erLik(other: List<Sivilstand>): Boolean {
+    if (size != other.size) return false
+    sortedBy { it.periodeFom }.forEachIndexed { index, sivilstand ->
+        val otherSivilstand = other[index]
         if (otherSivilstand.periodeFom == sivilstand.periodeFom &&
             otherSivilstand.periodeTom == sivilstand.periodeTom &&
             otherSivilstand.sivilstandskode == sivilstand.sivilstandskode

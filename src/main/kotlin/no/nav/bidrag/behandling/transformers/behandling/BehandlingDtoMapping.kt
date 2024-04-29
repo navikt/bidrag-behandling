@@ -24,8 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.tilDto
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
-import no.nav.bidrag.behandling.transformers.finnCutoffHusstandsmedlemDatoFom
-import no.nav.bidrag.behandling.transformers.finnCutoffSivilstandDatoFom
+import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
@@ -46,6 +45,8 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.sivilstand.dto.Sivilstand
+import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
@@ -107,7 +108,7 @@ fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     if (this == null) return null
     val grunnlag =
         konverterData<List<SivilstandGrunnlagDto>>()
-            ?.filtrerSivilstandPerioderEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
+            ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
     return this?.let {
         SivilstandAktivGrunnlagDto(
             grunnlag = grunnlag?.toSet() ?: emptySet(),
@@ -356,19 +357,12 @@ fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
         val barn =
             husstandsbarnListe.find { it.ident == barnId }
                 ?: return@flatMap perioder
-        val cutoffPeriodeFom = finnCutoffHusstandsmedlemDatoFom(virkningstidspunkt, barn.fødselsdato)
-
-        val perioderSorted = perioder.sortedBy { it.periodeFom }
         val perioderFiltrert =
-            perioderSorted.filterIndexed { index, periode ->
-                val erEtterVirkningstidspunkt = periode.periodeFom >= cutoffPeriodeFom
-                if (!erEtterVirkningstidspunkt) {
-                    val nestePeriode = perioderSorted.drop(index + 1).firstOrNull()
-                    nestePeriode?.periodeFom == null || nestePeriode.periodeFom > cutoffPeriodeFom
-                } else {
-                    true
-                }
-            }
+            perioder.slice(
+                perioder.map { it.periodeFom }
+                    .hentIndekserEtterVirkningstidspunkt(virkningstidspunkt, barn.fødselsdato),
+            )
+        val cutoffPeriodeFom = finnCutoffDatoFom(virkningstidspunkt, barn.fødselsdato)
         perioderFiltrert.map { periode ->
             periode.takeIf { it == perioderFiltrert.first() }
                 ?.copy(periodeFom = maxOf(periode.periodeFom, cutoffPeriodeFom)) ?: periode
@@ -376,25 +370,46 @@ fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
     }
 }
 
-fun List<SivilstandGrunnlagDto>.filtrerSivilstandPerioderEtterVirkningstidspunkt(
+fun List<SivilstandGrunnlagDto>.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(
     virkningstidspunkt: LocalDate,
 ): List<SivilstandGrunnlagDto> {
-    val kanIkkeVæreSenereEnnDato = finnCutoffSivilstandDatoFom(virkningstidspunkt)
-    val sivilstandSortert = sortedBy { it.gyldigFom }
+    return slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt)).sortedBy { it.gyldigFom }
+}
 
-    return sivilstandSortert.filterIndexed { index, periode ->
-        if (periode.gyldigFom == null) {
-            true
-        } else {
-            val erEtterVirkningstidspunkt = periode.gyldigFom!! >= kanIkkeVæreSenereEnnDato
+fun List<LocalDate?>.hentIndekserEtterVirkningstidspunkt(
+    virkningstidspunkt: LocalDate,
+    fødselsdato: LocalDate? = null,
+): List<Int> {
+    val kanIkkeVæreSenereEnnDato = finnCutoffDatoFom(virkningstidspunkt, fødselsdato)
+    val datoerSortert = sortedBy { it }
+
+    return datoerSortert.mapIndexedNotNull { index, dato ->
+        index.takeIf {
+            if (dato == null) return@takeIf true
+            val erEtterVirkningstidspunkt = dato >= kanIkkeVæreSenereEnnDato
             if (!erEtterVirkningstidspunkt) {
-                val nestePeriode = sivilstandSortert.drop(index + 1).firstOrNull()
-                nestePeriode?.gyldigFom == null || nestePeriode.gyldigFom!! > kanIkkeVæreSenereEnnDato
+                val nesteDato = datoerSortert.drop(index + 1).firstOrNull()
+                nesteDato == null || nesteDato > kanIkkeVæreSenereEnnDato
             } else {
                 true
             }
         }
     }
+}
+
+fun SivilstandBeregnet.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkningstidspunkt: LocalDate): SivilstandBeregnet {
+    return copy(
+        sivilstandListe =
+            sivilstandListe.slice(
+                sivilstandListe.map {
+                    it.periodeFom
+                }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt),
+            ).sortedBy { it.periodeFom },
+    )
+}
+
+fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkningstidspunkt: LocalDate): List<Sivilstand> {
+    return slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt)).sortedBy { it.periodeFom }
 }
 
 fun List<Grunnlag>.hentAlleBearbeidetBoforhold(

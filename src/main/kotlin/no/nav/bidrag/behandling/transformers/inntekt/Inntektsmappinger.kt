@@ -223,7 +223,11 @@ fun Inntektspost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstyp
 fun InntektPost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype) =
     InntektspostEndringDto(
         kode,
+<<<<<<< HEAD
         finnVisningsnavn(kode),
+=======
+        "",
+>>>>>>> main
         inntekstype,
         beløp.nærmesteHeltall,
         endringstype,
@@ -232,7 +236,11 @@ fun InntektPost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype
 fun InntektPost.toInntektpost() =
     InntektspostDtoV2(
         kode,
+<<<<<<< HEAD
         finnVisningsnavn(kode),
+=======
+        "",
+>>>>>>> main
         inntekstype,
         beløp.nærmesteHeltall,
     )
@@ -275,9 +283,14 @@ fun opprettTransformerInntekterRequest(
 ) = TransformerInntekterRequest(
     ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
     vedtakstidspunktOpprinneligeVedtak =
+<<<<<<< HEAD
         behandling.opprinneligVedtakstidspunkt?.let {
             listOf(behandling.opprinneligVedtakstidspunkt!!.toLocalDate())
         } ?: emptyList(),
+=======
+        behandling.opprinneligVedtakstidspunkt?.toLocalDate()?.let { listOf(it) }
+            ?: emptyList(),
+>>>>>>> main
     ainntektsposter =
         innhentetGrunnlag.ainntektListe.flatMap {
             it.ainntektspostListe.tilAinntektsposter(

@@ -318,6 +318,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingService.hentBehandlingById(opprettetBehandling.id)
 
             opprettetBehandlingAfter.stonadstype shouldBe Stønadstype.FORSKUDD
+            opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
+            opprettetBehandlingAfter.årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             opprettetBehandlingAfter.roller shouldHaveSize 2
             opprettetBehandlingAfter.soknadsid shouldBe søknadsid
             opprettetBehandlingAfter.saksnummer shouldBe "12312"
