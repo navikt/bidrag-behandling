@@ -68,7 +68,9 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -76,6 +78,7 @@ import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @RunWith(Enclosed::class)
@@ -1822,6 +1825,54 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 sb.filter { it.aktiv != null } shouldHaveSize 3
                 sb.filter { it.erBearbeidet } shouldHaveSize 2
             }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal gi 404-svar hvis ingen grunnlag å aktivere`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
+            Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
+                .thenReturn(testdataBarn1.tilPersonDto())
+
+            assertSoftly(behandling.husstandsbarn) {
+                it.size shouldBe 2
+            }
+
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling = behandling,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                aktiv = LocalDateTime.now(),
+                gjelderIdent = testdataHusstandsmedlem1.ident,
+                grunnlagsdata =
+                setOf(
+                    BoforholdResponse(
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                        fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                        kilde = Kilde.OFFENTLIG,
+                        periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                        periodeTom = null,
+                    ),
+                ),
+            )
+
+            entityManager.flush()
+            entityManager.refresh(behandling)
+
+            val aktivereGrunnlagRequest =
+                AktivereGrunnlagRequestV2(
+                    Personident(testdataHusstandsmedlem1.ident),
+                    Grunnlagsdatatype.BOFORHOLD,
+                )
+
+            // hvis
+            val respons = assertFailsWith<HttpClientErrorException> {grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)}
+
+            // så
+            respons.statusCode shouldBe HttpStatus.NOT_FOUND
         }
     }
 
