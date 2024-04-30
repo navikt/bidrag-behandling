@@ -147,10 +147,10 @@ class GrunnlagService(
 
             grunnlagRequestobjekter.forEach {
                 feilrapporteringer += henteOglagreGrunnlag(behandling, it)
-                entityManager.flush()
             }
 
             behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
+
             if (feilrapporteringer.isNotEmpty()) {
                 log.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
@@ -787,9 +787,11 @@ class GrunnlagService(
             grunnlagSomSkalOppdateres.data = tilJson(innhentetGrunnlag)
             grunnlagSomSkalOppdateres.innhentet = LocalDateTime.now()
             grunnlagSomSkalOppdateres.aktiv = aktiveringstidspunkt
+
             behandling.henteUaktiverteGrunnlag(grunnlagstype, innhentetForRolle).forEach {
                 if (it.id != grunnlagSomSkalOppdateres.id) {
                     behandling.grunnlag.remove(it)
+                    grunnlagRepository.deleteById(it.id!!)
                 }
             }
         } else {
@@ -920,10 +922,10 @@ class GrunnlagService(
                 } else {
                     aktiveringstidspunkt
                 }
-
             behandling.henteUaktiverteGrunnlag(grunnlagstype, rolle).forEach {
                 if (it.id != grunnlagSomSkalOppdateres?.id) {
                     behandling.grunnlag.remove(it)
+                    grunnlagRepository.deleteById(it.id!!)
                 }
             }
         } else {
