@@ -148,14 +148,18 @@ class StubUtils {
     fun stubTilgangskontrollPerson(
         result: Boolean = true,
         status: HttpStatus = HttpStatus.OK,
+        personIdent: String? = null,
     ) {
-        WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/person")).willReturn(
-                aClosedJsonResponse()
-                    .withStatus(status.value())
-                    .withBody(result.toString()),
-            ),
+        val stub = WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/person"))
+        if (!personIdent.isNullOrEmpty()) {
+            stub.withRequestBody(ContainsPattern(personIdent))
+        }
+        stub.willReturn(
+            aClosedJsonResponse()
+                .withStatus(status.value())
+                .withBody(result.toString()),
         )
+        WireMock.stubFor(stub)
     }
 
     fun stubOpprettForsendelse(

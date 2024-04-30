@@ -59,6 +59,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -87,6 +88,12 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     @PersistenceContext
     lateinit var entityManager: EntityManager
+
+    @BeforeEach
+    fun initMock() {
+        stubUtils.stubTilgangskontrollSak()
+        stubUtils.stubTilgangskontrollPerson()
+    }
 
     @AfterEach
     fun resette() {

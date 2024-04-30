@@ -28,7 +28,6 @@ class BidragTilgangskontrollConsumer(
         UriComponentsBuilder.fromUri(url)
             .path(path ?: "").build().toUri()
 
-    // TODO: Bruk dette for å sjekke om saksbehandler har tilgang til behandling (sak)
     @Retryable(
         value = [Exception::class],
         maxAttempts = 3,
@@ -47,7 +46,6 @@ class BidragTilgangskontrollConsumer(
         }
     }
 
-    // TODO: Bruk dette for å sjekke om saksbehandler har tilgang til behandling (person)
     @Retryable(
         value = [Exception::class],
         maxAttempts = 3,
