@@ -188,18 +188,16 @@ class BehandlingService(
         return behandlingRepository.findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
+                secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
                 request.valider(it)
                 val erVirkningstidspunktEndret = request.virkningstidspunkt != it.virkningstidspunkt
-//                it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
-//                it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
-//                it.virkningstidspunkt = request.virkningstidspunkt ?: it.virkningstidspunkt
-                it.årsak = request.årsak
-                it.avslag = request.avslag
-                it.virkningstidspunkt = request.virkningstidspunkt
+                it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
+                it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
+                it.virkningstidspunkt = request.virkningstidspunkt ?: it.virkningstidspunkt
                 it.virkningstidspunktbegrunnelseKunINotat =
                     request.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
                 if (erVirkningstidspunktEndret) {
-                    log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt" }
+                    log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling $behandlingsid" }
                     boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid)
                 }
                 it

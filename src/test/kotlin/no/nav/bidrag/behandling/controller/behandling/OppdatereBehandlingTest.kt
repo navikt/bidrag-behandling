@@ -23,9 +23,11 @@ import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnla
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarnMedOffentligePerioder
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagspostDto
@@ -77,6 +79,166 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         assertNotNull(oppdatertBehandling)
         oppdatertBehandling.get().virkningstidspunkt shouldBe LocalDate.parse("2024-03-02")
+    }
+
+    @Test
+    fun `skal oppdatere årsak`() {
+        // gitt
+        val behandling = testdataManager.opprettBehandling(true)
+        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.avslag = Resultatkode.AVSLAG_OVER_18_ÅR
+        behandling.årsak = null
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val nyVirkningstidspunkt = LocalDate.parse("2022-01-01")
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
+                HttpMethod.PUT,
+                HttpEntity(
+                    OppdaterVirkningstidspunkt(
+                        årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
+                        virkningstidspunkt = nyVirkningstidspunkt,
+                    ),
+                ),
+                BehandlingDtoV2::class.java,
+            )
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        val responseBody = behandlingRes.body!!
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyVirkningstidspunkt
+        responseBody.virkningstidspunkt.årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+        responseBody.virkningstidspunkt.avslag shouldBe null
+
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+        assertNotNull(oppdatertBehandling)
+        assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
+            virkningstidspunkt shouldBe nyVirkningstidspunkt
+            avslag shouldBe null
+            årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+        }
+    }
+
+    @Test
+    fun `skal oppdatere avslag`() {
+        // gitt
+        val behandling = testdataManager.opprettBehandling(true)
+        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.avslag = null
+        behandling.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val nyVirkningstidspunkt = LocalDate.parse("2022-01-01")
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
+                HttpMethod.PUT,
+                HttpEntity(
+                    OppdaterVirkningstidspunkt(
+                        avslag = Resultatkode.AVSLAG,
+                        virkningstidspunkt = nyVirkningstidspunkt,
+                    ),
+                ),
+                BehandlingDtoV2::class.java,
+            )
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        val responseBody = behandlingRes.body!!
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyVirkningstidspunkt
+        responseBody.virkningstidspunkt.årsak shouldBe null
+        responseBody.virkningstidspunkt.avslag shouldBe Resultatkode.AVSLAG
+
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+        assertNotNull(oppdatertBehandling)
+        assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
+            virkningstidspunkt shouldBe nyVirkningstidspunkt
+            avslag shouldBe Resultatkode.AVSLAG
+            årsak shouldBe null
+        }
+    }
+
+    @Test
+    fun `skal ikke kunne sette virkningstidspunkt til tom verdi`() {
+        // gitt
+        val behandling = testdataManager.opprettBehandling(true)
+        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.avslag = null
+        behandling.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
+                HttpMethod.PUT,
+                HttpEntity(
+                    OppdaterVirkningstidspunkt(
+                        virkningstidspunkt = null,
+                        årsak = null,
+                        avslag = null,
+                    ),
+                ),
+                BehandlingDtoV2::class.java,
+            )
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        val responseBody = behandlingRes.body!!
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
+        responseBody.virkningstidspunkt.årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+        responseBody.virkningstidspunkt.avslag shouldBe null
+
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+        assertNotNull(oppdatertBehandling)
+        assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
+            virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
+            årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+            avslag shouldBe null
+        }
+    }
+
+    @Test
+    fun `skal ikke kunne sette avslag til tom verdi`() {
+        // gitt
+        val behandling = testdataManager.opprettBehandling(true)
+        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.avslag = Resultatkode.AVSLAG
+        behandling.årsak = null
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
+                HttpMethod.PUT,
+                HttpEntity(
+                    OppdaterVirkningstidspunkt(
+                        virkningstidspunkt = null,
+                        årsak = null,
+                        avslag = null,
+                    ),
+                ),
+                BehandlingDtoV2::class.java,
+            )
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        val responseBody = behandlingRes.body!!
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
+        responseBody.virkningstidspunkt.årsak shouldBe null
+        responseBody.virkningstidspunkt.avslag shouldBe Resultatkode.AVSLAG
+
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+        assertNotNull(oppdatertBehandling)
+        assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
+            virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
+            årsak shouldBe null
+            avslag shouldBe Resultatkode.AVSLAG
+        }
     }
 
     @Test
