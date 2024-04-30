@@ -223,7 +223,7 @@ fun Inntektspost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstyp
 fun InntektPost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype) =
     InntektspostEndringDto(
         kode,
-        "",
+        finnVisningsnavn(kode),
         inntekstype,
         beløp.nærmesteHeltall,
         endringstype,
@@ -232,7 +232,7 @@ fun InntektPost.tilInntektspostEndring(endringstype: GrunnlagInntektEndringstype
 fun InntektPost.toInntektpost() =
     InntektspostDtoV2(
         kode,
-        "",
+        finnVisningsnavn(kode),
         inntekstype,
         beløp.nærmesteHeltall,
     )
