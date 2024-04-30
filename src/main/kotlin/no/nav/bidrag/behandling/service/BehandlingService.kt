@@ -49,6 +49,8 @@ private val log = KotlinLogging.logger {}
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
     private val forsendelseService: ForsendelseService,
+    private val boforholdService: BoforholdService,
+    private val tilgangskontrollService: TilgangskontrollService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
     private val entityManager: EntityManager,
@@ -74,6 +76,7 @@ class BehandlingService(
         }
 
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
+        tilgangskontrollService.sjekkTilgangSak(opprettBehandling.saksnummer)
         behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
             log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
             return OpprettBehandlingResponse(it.id!!)
@@ -252,6 +255,7 @@ class BehandlingService(
 
     fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {
         val behandling = hentBehandlingById(behandlingsid)
+        tilgangskontrollService.sjekkTilgangBehandling(behandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
@@ -277,6 +281,7 @@ class BehandlingService(
         oppdaterRollerListe: List<OpprettRolleDto>,
     ): OppdaterRollerResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        tilgangskontrollService.sjekkTilgangBehandling(behandling)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
