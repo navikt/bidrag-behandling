@@ -47,6 +47,8 @@ class VedtakHendelseTest : TestContainerRunner() {
         stubUtils.stubSlettForsendelse()
         stubUtils.stubOpprettNotat()
         stubUtils.stubOpprettJournalpost("12333")
+        stubUtils.stubTilgangskontrollSak()
+        stubUtils.stubTilgangskontrollPerson()
     }
 
     @Test

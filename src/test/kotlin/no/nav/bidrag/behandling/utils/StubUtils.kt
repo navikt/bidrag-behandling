@@ -132,6 +132,36 @@ class StubUtils {
         )
     }
 
+    fun stubTilgangskontrollSak(
+        result: Boolean = true,
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/sak")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(result.toString()),
+            ),
+        )
+    }
+
+    fun stubTilgangskontrollPerson(
+        result: Boolean = true,
+        status: HttpStatus = HttpStatus.OK,
+        personIdent: String? = null,
+    ) {
+        val stub = WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/person"))
+        if (!personIdent.isNullOrEmpty()) {
+            stub.withRequestBody(ContainsPattern(personIdent))
+        }
+        stub.willReturn(
+            aClosedJsonResponse()
+                .withStatus(status.value())
+                .withBody(result.toString()),
+        )
+        WireMock.stubFor(stub)
+    }
+
     fun stubOpprettForsendelse(
         forsendelseId: String = "12312321",
         status: HttpStatus = HttpStatus.OK,
@@ -450,15 +480,15 @@ class StubUtils {
 
         val respons =
             if (tomRespons && responsobjekt == null) {
-                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBody(tilJson(hentGrunnlagDto))
             } else if (!tomRespons && responsobjekt != null) {
-                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBody(tilJson(responsobjekt))
             } else {
-                aResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBodyFile(navnResponsfil)
             }
