@@ -76,23 +76,23 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> {
                 ?: manglerPersonGrunnlag(barnIdent.verdi)
         ResultatBeregningBarnDto(
             barn =
-            ResultatRolle(
-                barn.ident,
-                barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
-                barn.fødselsdato,
-            ),
+                ResultatRolle(
+                    barn.ident,
+                    barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
+                    barn.fødselsdato,
+                ),
             perioder =
-            stønadsendring.periodeListe.map {
-                ResultatBeregningBarnDto.ResultatPeriodeDto(
-                    periode = it.periode,
-                    resultatKode = Resultatkode.fraKode(it.resultatkode)!!,
-                    regel = "",
-                    beløp = it.beløp ?: BigDecimal.ZERO,
-                    sivilstand = grunnlagListe.finnSivilstandForPeriode(it.grunnlagReferanseListe),
-                    inntekt = grunnlagListe.finnTotalInntekt(it.grunnlagReferanseListe),
-                    antallBarnIHusstanden = grunnlagListe.finnAntallBarnIHusstanden(it.grunnlagReferanseListe),
-                )
-            },
+                stønadsendring.periodeListe.map {
+                    ResultatBeregningBarnDto.ResultatPeriodeDto(
+                        periode = it.periode,
+                        resultatKode = Resultatkode.fraKode(it.resultatkode)!!,
+                        regel = "",
+                        beløp = it.beløp ?: BigDecimal.ZERO,
+                        sivilstand = grunnlagListe.finnSivilstandForPeriode(it.grunnlagReferanseListe),
+                        inntekt = grunnlagListe.finnTotalInntekt(it.grunnlagReferanseListe),
+                        antallBarnIHusstanden = grunnlagListe.finnAntallBarnIHusstanden(it.grunnlagReferanseListe),
+                    )
+                },
         )
     }
 }
@@ -128,8 +128,8 @@ fun VedtakDto.tilBehandling(
             vedtakstype = vedtakType ?: type,
             virkningstidspunkt = hentVirkningstidspunkt()?.virkningstidspunkt ?: hentSøknad().søktFraDato,
             opprinneligVirkningstidspunkt =
-            hentVirkningstidspunkt()?.virkningstidspunkt
-                ?: hentSøknad().søktFraDato,
+                hentVirkningstidspunkt()?.virkningstidspunkt
+                    ?: hentSøknad().søktFraDato,
             opprinneligVedtakstidspunkt = opprettetTidspunkt,
             årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
@@ -151,20 +151,20 @@ fun VedtakDto.tilBehandling(
             soknadsid = søknadId ?: this.søknadId!!,
             boforholdsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false),
             boforholdsbegrunnelseIVedtakOgNotat =
-            notatMedType(
-                NotatGrunnlag.NotatType.BOFORHOLD,
-                true,
-            ),
+                notatMedType(
+                    NotatGrunnlag.NotatType.BOFORHOLD,
+                    true,
+                ),
             virkningstidspunktbegrunnelseKunINotat =
-            notatMedType(
-                NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                false,
-            ),
+                notatMedType(
+                    NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                    false,
+                ),
             virkningstidspunktsbegrunnelseIVedtakOgNotat =
-            notatMedType(
-                NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                true,
-            ),
+                notatMedType(
+                    NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                    true,
+                ),
             inntektsbegrunnelseIVedtakOgNotat = notatMedType(NotatGrunnlag.NotatType.INNTEKT, true),
             inntektsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.INNTEKT, false),
         )
@@ -182,12 +182,12 @@ private fun List<GrunnlagDto>.mapGrunnlag(
     lesemodus: Boolean,
 ): MutableSet<Grunnlag> =
     (
-            hentGrunnlagIkkeInntekt(behandling, lesemodus) +
-                    hentGrunnlagInntekt(
-                        behandling,
-                        lesemodus,
-                    ) + hentInnntekterBearbeidet(behandling, lesemodus)
-            ).toMutableSet()
+        hentGrunnlagIkkeInntekt(behandling, lesemodus) +
+            hentGrunnlagInntekt(
+                behandling,
+                lesemodus,
+            ) + hentInnntekterBearbeidet(behandling, lesemodus)
+    ).toMutableSet()
 
 private fun List<GrunnlagDto>.mapRoller(
     behandling: Behandling,
@@ -295,20 +295,21 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                     innhentetForIdent!!,
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
                     lesemodus,
-                )
-            ) + boforholdPeriodisert.filter { it.relatertPersonPersonId != null }
-                .groupBy { it.relatertPersonPersonId }
-                .map {
-                    behandling.opprettGrunnlag(
-                        Grunnlagsdatatype.BOFORHOLD,
-                        it.value,
-                        grunnlag.firstOrNull()?.partPersonId!!,
-                        innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
-                        lesemodus,
-                        true,
-                        gjelder = it.key!!,
-                    )
-                }
+                ),
+            ) +
+                boforholdPeriodisert.filter { it.relatertPersonPersonId != null }
+                    .groupBy { it.relatertPersonPersonId }
+                    .map {
+                        behandling.opprettGrunnlag(
+                            Grunnlagsdatatype.BOFORHOLD,
+                            it.value,
+                            grunnlag.firstOrNull()?.partPersonId!!,
+                            innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                            lesemodus,
+                            true,
+                            gjelder = it.key!!,
+                        )
+                    }
         },
 ).flatten()
 
@@ -524,19 +525,19 @@ private fun BaseGrunnlag.tilInntekt(
             datoFom = datoFom,
             datoTom = datoTom,
             opprinneligFom =
-            if (!inntektPeriode.manueltRegistrert) {
-                opprinneligFom
-                    ?: datoFom
-            } else {
-                null
-            },
+                if (!inntektPeriode.manueltRegistrert) {
+                    opprinneligFom
+                        ?: datoFom
+                } else {
+                    null
+                },
             opprinneligTom =
-            if (!inntektPeriode.manueltRegistrert) {
-                opprinneligTom
-                    ?: datoTom
-            } else {
-                null
-            },
+                if (!inntektPeriode.manueltRegistrert) {
+                    opprinneligTom
+                        ?: datoTom
+                } else {
+                    null
+                },
             ident = gjelder.personIdent!!,
             kilde = if (inntektPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
             behandling = behandling,
@@ -563,16 +564,16 @@ private fun GrunnlagDto.tilRolle(
     behandling,
     id = id,
     rolletype =
-    when (type) {
-        Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
-        Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-        Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-        Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-        else ->
-            vedtakmappingFeilet(
-                "Ukjent rolletype $type",
-            )
-    },
+        when (type) {
+            Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
+            Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+            Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+            Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+            else ->
+                vedtakmappingFeilet(
+                    "Ukjent rolletype $type",
+                )
+        },
     ident = personIdent,
     foedselsdato = personObjekt.fødselsdato,
 )

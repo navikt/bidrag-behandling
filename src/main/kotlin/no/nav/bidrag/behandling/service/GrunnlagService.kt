@@ -611,11 +611,11 @@ class GrunnlagService(
                 lagringAvGrunnlagFeiletException(rolleInhentetFor.behandling.id!!)
             }
 
-            aktiverGrunnlagForInntekterHvisIngenEndringSomMåBekreftes(behandling, type, rolleInhentetFor)
+            aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, type, rolleInhentetFor)
         }
     }
 
-    private fun aktiverGrunnlagForInntekterHvisIngenEndringSomMåBekreftes(
+    private fun aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(
         behandling: Behandling,
         type: Grunnlagsdatatype,
         rolleInhentetFor: Rolle,
@@ -868,8 +868,11 @@ class GrunnlagService(
                 data = tilJson(innhentetGrunnlag),
                 grunnlagstype = grunnlagstype,
                 innhentet = hentetTidspunkt,
+                // Summerte månedsinntekter settes alltid til aktiv
                 aktiv =
-                    if (nyesteGrunnlag?.aktiv != null) {
+                    if (nyesteGrunnlag?.aktiv != null &&
+                        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER != grunnlagstype.type.getOrMigrate()
+                    ) {
                         aktiveringstidspunkt
                     } else {
                         LocalDateTime.now()

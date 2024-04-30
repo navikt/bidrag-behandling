@@ -222,6 +222,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
     type: Grunnlagsdatatype,
 ): Set<IkkeAktivInntektDto> {
     val inntekterRolle = inntekter.filter { it.ident == rolle.ident }
+
     val oppdatertGrunnlag = hentBearbeidetInntekterForType(type, rolle.ident!!)
     val innhentetTidspunkt = find { it.type == type && it.erBearbeidet }?.innhentet ?: LocalDateTime.now()
     val oppdaterteEllerNyInntekter =
