@@ -1847,16 +1847,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 aktiv = LocalDateTime.now(),
                 gjelderIdent = testdataHusstandsmedlem1.ident,
                 grunnlagsdata =
-                setOf(
-                    BoforholdResponse(
-                        bostatus = Bostatuskode.MED_FORELDER,
-                        relatertPersonPersonId = testdataHusstandsmedlem1.ident,
-                        fødselsdato = testdataHusstandsmedlem1.fødselsdato,
-                        kilde = Kilde.OFFENTLIG,
-                        periodeFom = testdataHusstandsmedlem1.fødselsdato,
-                        periodeTom = null,
+                    setOf(
+                        BoforholdResponse(
+                            bostatus = Bostatuskode.MED_FORELDER,
+                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                            kilde = Kilde.OFFENTLIG,
+                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                            periodeTom = null,
+                        ),
                     ),
-                ),
             )
 
             entityManager.flush()
@@ -1869,7 +1869,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            val respons = assertFailsWith<HttpClientErrorException> {grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)}
+            val respons =
+                assertFailsWith<HttpClientErrorException> { grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest) }
 
             // så
             respons.statusCode shouldBe HttpStatus.NOT_FOUND
