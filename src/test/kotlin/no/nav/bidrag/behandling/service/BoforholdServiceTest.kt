@@ -173,7 +173,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            boforholdService.oppdatereAutomatiskInnhentaBoforhold(behandling, periodisertBoforhold, true)
+            boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                behandling,
+                periodisertBoforhold,
+                true,
+            )
 
             // så
             entityManager.refresh(behandling)
@@ -254,7 +258,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            boforholdService.oppdatereAutomatiskInnhentaBoforhold(behandling, periodisertBoforhold, false)
+            boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                behandling,
+                periodisertBoforhold,
+                false,
+            )
 
             // så
             entityManager.refresh(behandling)

@@ -79,7 +79,7 @@ fun List<Grunnlag>.hentSisteBearbeidetBoforholdForHusstandsmedlem(husstandsmedle
 fun Husstandsbarn.hentSisteBearbeidetBoforhold() =
     behandling.grunnlagListe.hentSisteAktiv()
         .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
-        .konverterData<List<BoforholdResponse>>()?.tilHusstandsbarn(behandling, this)
+        .konverterData<List<BoforholdResponse>>()
 
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,

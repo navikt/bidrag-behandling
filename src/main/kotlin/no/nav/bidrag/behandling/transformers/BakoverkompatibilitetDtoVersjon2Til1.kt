@@ -282,7 +282,7 @@ fun Set<HusstandsbarnDtoV2>.toDomain(behandling: Behandling) =
         val barn =
             Husstandsbarn(
                 behandling,
-                Kilde.MANUELL,
+                it.kilde,
                 it.id,
                 it.ident,
                 it.navn,

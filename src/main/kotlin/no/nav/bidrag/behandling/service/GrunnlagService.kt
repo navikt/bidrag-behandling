@@ -368,14 +368,10 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime,
         overskriveManuelleOpplysninger: Boolean,
     ) {
-        val ikkeAktivGrunnlag = behandling.grunnlag.toList().hentAlleIkkeAktiv()
-
         val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
-            ikkeAktivGrunnlag
-                .filter { gjelderHusstandsbarn.verdi == it.gjelder }
-                .filter { grunnlagstype == it.type }
-                .filter { it.erBearbeidet }
-                .maxByOrNull { it.innhentet }
+            behandling.grunnlag.toList().hentSisteIkkeAktiv()
+                .filter { gjelderHusstandsbarn.verdi == it.gjelder && grunnlagstype == it.type }
+                .firstOrNull { it.erBearbeidet }
 
         boforholdService.oppdatereAutomatiskInnhentaBoforhold(
             behandling,
@@ -771,12 +767,18 @@ class GrunnlagService(
             val aktivGrunnlagFiltrert =
                 (aktivGrunnlag as Set<BoforholdResponse>)
                     .toList()
-                    .filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
+                    .filtrerPerioderEtterVirkningstidspunkt(
+                        behandling.husstandsbarn,
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                    )
                     .toSet()
             val nyGrunnlagFiltrert =
                 (nyGrunnlag as Set<BoforholdResponse>)
                     .toList()
-                    .filtrerPerioderEtterVirkningstidspunkt(behandling.husstandsbarn, behandling.virkningstidspunktEllerSøktFomDato)
+                    .filtrerPerioderEtterVirkningstidspunkt(
+                        behandling.husstandsbarn,
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                    )
                     .toSet()
             aktivGrunnlagFiltrert
                 .finnEndringerBoforhold(behandling.virkningstidspunktEllerSøktFomDato, nyGrunnlagFiltrert)

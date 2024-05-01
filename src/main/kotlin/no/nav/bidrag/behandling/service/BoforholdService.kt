@@ -5,7 +5,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
@@ -49,7 +48,6 @@ private val log = KotlinLogging.logger {}
 @Service
 class BoforholdService(
     private val behandlingRepository: BehandlingRepository,
-    private val bidragPersonConsumer: BidragPersonConsumer,
     private val husstandsbarnRepository: HusstandsbarnRepository,
     private val entityManager: EntityManager,
 ) {
@@ -292,7 +290,7 @@ class BoforholdService(
     ) {
         val manuellePerioder =
             (perioder.filter { it.kilde == Kilde.MANUELL && it.id != slettHusstandsbarnperiode } + nyHusstandsbarnperiode).filterNotNull()
-        oppdaterTilOriginalePerioder()
+        this.oppdaterTilOriginalePerioder()
         val perioderTilPeriodsering = (perioder + manuellePerioder).tilBoforholdRequest(this)
         BoforholdApi.beregnV2(
             behandling.virkningstidspunktEllerSøktFomDato,
@@ -300,8 +298,8 @@ class BoforholdService(
         ).tilHusstandsbarn(behandling, this)
     }
 
-    private fun Husstandsbarn.oppdaterTilOriginalePerioder(): Set<Husstandsbarn> {
-        return hentSisteBearbeidetBoforhold() ?: emptySet()
+    private fun Husstandsbarn.oppdaterTilOriginalePerioder() {
+        hentSisteBearbeidetBoforhold()?.tilHusstandsbarn(behandling, this)
         // TODO: En bug med kilde fører til at offentlige husstandsmedlemmer får kilde MANUELL. Venter derfor med denne sjekken
 //        return if (kilde == Kilde.OFFENTLIG) {
 //            hentSisteBearbeidetBoforhold()

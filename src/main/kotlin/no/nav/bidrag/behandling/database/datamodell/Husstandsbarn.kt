@@ -39,4 +39,9 @@ open class Husstandsbarn(
     @Column(name = "forrige_perioder", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var forrigePerioder: String? = null,
-)
+) {
+    override fun toString(): String {
+        return "Husstandsbarn(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, perioder(size)=${perioder.size}, " +
+            "forrigePerioder=${forrigePerioder?.substring(0, 10)}...)"
+    }
+}

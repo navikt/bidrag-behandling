@@ -29,4 +29,8 @@ open class Husstandsbarnperiode(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
-)
+) {
+    override fun toString(): String {
+        return "Husstandsbarnperiode(id=$id, datoFom=$datoFom, datoTom=$datoTom, bostatus=$bostatus, kilde=$kilde)"
+    }
+}
