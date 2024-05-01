@@ -387,7 +387,7 @@ class GrunnlagService(
         behandling: Behandling,
     ): Boolean {
         jsonListeTilObjekt<RelatertPersonGrunnlagDto>(bmsNyesteIkkeBearbeidaBoforholdsgrunnlag.data)
-            .filter { it.relatertPersonPersonId != null && it.erBarnAvBmBp}.groupBy {
+            .filter { it.relatertPersonPersonId != null && it.erBarnAvBmBp }.groupBy {
                 it.relatertPersonPersonId
             }.forEach {
                 val nyesteGrunnlagForHusstandsmedlem =
