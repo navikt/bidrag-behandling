@@ -226,7 +226,7 @@ class BoforholdService(
             logEndring(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
             return husstandsbarnRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
-        oppdateringAvBoforholdFeiletException(behandlingsid)
+        oppdateringAvBoforholdFeilet("Oppdatering av boforhold feilet. Mangler informasjon om hva som skal oppdateres i forespørselen")
     }
 
     private fun logEndring(
@@ -299,16 +299,12 @@ class BoforholdService(
     }
 
     private fun Husstandsbarn.oppdaterTilOriginalePerioder() {
-        hentSisteBearbeidetBoforhold()?.tilHusstandsbarn(behandling, this)
-        // TODO: En bug med kilde fører til at offentlige husstandsmedlemmer får kilde MANUELL. Venter derfor med denne sjekken
-//        return if (kilde == Kilde.OFFENTLIG) {
-//            hentSisteBearbeidetBoforhold()
-//                ?: oppdateringAvBoforholdFeilet(
-//                    "Fant ikke originale bearbeidet perioder for husstandsbarn $id i behandling ${behandling.id}",
-//                )
-//        } else {
-//            emptySet()
-//        }
+        if (kilde == Kilde.OFFENTLIG) {
+            hentSisteBearbeidetBoforhold()?.tilHusstandsbarn(behandling, this)
+                ?: oppdateringAvBoforholdFeilet(
+                    "Fant ikke originale bearbeidet perioder for husstandsbarn $id i behandling ${behandling.id}",
+                )
+        }
     }
 
     private fun Husstandsbarn.oppdaterTilForrigeLagredePerioder() {

@@ -333,13 +333,6 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
             oppdateringAvBoforholdFeilet("Kan ikke angre siste steg for husstandsmedlem. Det mangler informasjon om siste steg")
         }
     }
-
-    if (this.opprettHusstandsmedlem == null && this.oppdaterPeriode == null && this.slettPeriode == null &&
-        this.slettHusstandsmedlem == null && this.angreSisteStegForHusstandsmedlem == null &&
-        this.tilbakestillPerioderForHusstandsmedlem == null
-    ) {
-        requestManglerDataException(behandling.id!!, Ressurstype.BOFORHOLD)
-    }
 }
 
 fun OppdatereSivilstand.validere(behandling: Behandling) {
