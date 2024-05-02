@@ -15,7 +15,6 @@ import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
-import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
@@ -71,13 +70,8 @@ fun Set<Grunnlag>.hentSisteAktiv() =
         .values
         .filterNotNull()
 
-fun List<Grunnlag>.hentSisteBearbeidetBoforholdForHusstandsmedlem(husstandsmedlem: Husstandsbarn) =
-    hentSisteAktiv()
-        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == husstandsmedlem.ident }
-        .konverterData<List<BoforholdResponse>>()?.tilHusstandsbarn(husstandsmedlem.behandling, husstandsmedlem)
-
 fun Husstandsbarn.hentSisteBearbeidetBoforhold() =
-    behandling.grunnlagListe.hentSisteAktiv()
+    behandling.grunnlag.hentSisteAktiv()
         .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
         .konverterData<List<BoforholdResponse>>()
 

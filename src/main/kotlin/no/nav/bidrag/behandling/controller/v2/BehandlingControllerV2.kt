@@ -185,7 +185,7 @@ class BehandlingControllerV2(
         val behandling = behandlingService.oppdaterVirkningstidspunkt(behandlingsid, request)
 
         return behandling.tilBehandlingDtoV2(
-            behandling.grunnlagListe.hentSisteAktiv(),
+            behandling.grunnlag.hentSisteAktiv(),
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
         )
     }
