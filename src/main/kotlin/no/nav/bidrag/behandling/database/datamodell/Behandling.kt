@@ -67,7 +67,8 @@ open class Behandling(
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
     open var opprinneligVirkningstidspunkt: LocalDate? = null,
-    open var opprinneligVedtakstidspunkt: LocalDateTime? = null,
+    @Suppress("JpaAttributeTypeInspection")
+    open var opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     open var vedtakstidspunkt: LocalDateTime? = null,
     open var slettetTidspunkt: LocalDateTime? = null,
     open var opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),

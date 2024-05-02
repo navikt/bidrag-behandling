@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
+import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektspostEndring
@@ -89,7 +90,8 @@ fun List<Grunnlag>.hentEndringerBoforhold(
     husstandsbarn: Set<Husstandsbarn>,
     rolle: Rolle,
 ): Set<HusstandsbarnGrunnlagDto> {
-    val aktivBoforholdData = aktiveGrunnlag.hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
+    val aktivBoforholdData =
+        aktiveGrunnlag.hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
     // Hent første for å finne innhentet tidspunkt
     val nyBoforholdGrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
     val nyBoforholdData = hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
@@ -288,6 +290,8 @@ fun Inntekt.erLik(grunnlag: SummertÅrsinntekt): Boolean {
         opprinneligPeriode!! == grunnlag.periode
     } else if (ainntekt12Og3Måneder.contains(type)) {
         grunnlag.inntektRapportering == type
+    } else if (ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(type)) {
+        grunnlag.inntektRapportering == type && opprinneligPeriode!! == grunnlag.periode
     } else {
         opprinneligPeriode!! == grunnlag.periode
     }

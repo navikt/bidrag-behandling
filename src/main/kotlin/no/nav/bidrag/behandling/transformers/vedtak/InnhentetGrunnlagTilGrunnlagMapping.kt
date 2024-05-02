@@ -350,7 +350,9 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                 type,
                 SummerteInntekter(
                     versjon = årsinntekter.versjon(inntektsrapportering),
-                    inntekter = årsinntekter.filter { it.inntekt.inntektRapportering == inntektsrapportering },
+                    inntekter =
+                        årsinntekter.filter { it.inntekt.inntektRapportering == inntektsrapportering }
+                            .map { it.inntekt },
                 ),
                 rolleIdent = gjelder.personIdent!!,
                 erBearbeidet = true,
