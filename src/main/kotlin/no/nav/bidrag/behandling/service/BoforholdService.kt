@@ -88,7 +88,7 @@ class BoforholdService(
         if (overskriveManuelleOpplysninger) {
             sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
                 behandling,
-                bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting
+                bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
             )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
@@ -99,7 +99,7 @@ class BoforholdService(
         } else {
             endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
                 behandling,
-                bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting
+                bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
             )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
@@ -288,7 +288,7 @@ class BoforholdService(
         entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                    "forbindelse med førstegangsoppdatering av boforhold."
+                "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 
@@ -405,7 +405,8 @@ class BoforholdService(
     ) {
         behandling.husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.forEach { eksisterendeHusstandsbarn ->
             if (!bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
-                    .contains(eksisterendeHusstandsbarn.ident)) {
+                    .contains(eksisterendeHusstandsbarn.ident)
+            ) {
                 eksisterendeHusstandsbarn.kilde = Kilde.MANUELL
                 eksisterendeHusstandsbarn.perioder.forEach { periode -> periode.kilde = Kilde.MANUELL }
             }

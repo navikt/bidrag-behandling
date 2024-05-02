@@ -1640,21 +1640,22 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                 aktiv = null,
                 grunnlagsdata =
-                setOf(
-                    RelatertPersonGrunnlagDto(
-                        relatertPersonPersonId = testdataHusstandsmedlem1.ident,
-                        fødselsdato = testdataHusstandsmedlem1.fødselsdato,
-                        erBarnAvBmBp = true,
-                        navn = null,
-                        partPersonId = behandling.bidragsmottaker!!.ident!!,
-                        borISammeHusstandDtoListe = listOf(
-                            BorISammeHusstandDto(
-                                testdataHusstandsmedlem1.fødselsdato,
-                                periodeTil = null,
-                            )
-                        )
+                    setOf(
+                        RelatertPersonGrunnlagDto(
+                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                            erBarnAvBmBp = true,
+                            navn = null,
+                            partPersonId = behandling.bidragsmottaker!!.ident!!,
+                            borISammeHusstandDtoListe =
+                                listOf(
+                                    BorISammeHusstandDto(
+                                        testdataHusstandsmedlem1.fødselsdato,
+                                        periodeTil = null,
+                                    ),
+                                ),
+                        ),
                     ),
-                ),
             )
 
             testdataManager.oppretteOgLagreGrunnlag(
