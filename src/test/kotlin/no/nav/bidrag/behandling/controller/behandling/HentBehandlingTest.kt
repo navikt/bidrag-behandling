@@ -101,6 +101,43 @@ class HentBehandlingTest : BehandlingControllerTest() {
         }
     }
 
+    @Test
+    fun `skal ikke hente behandling hvis ingen tilgang til sak`() {
+        val behandling = testdataManager.lagreBehandling(opprettBehandling())
+
+        stubUtils.stubTilgangskontrollSak(false)
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/" + behandling.id,
+                HttpMethod.GET,
+                null,
+                Void::class.java,
+            )
+
+        Assertions.assertEquals(HttpStatus.FORBIDDEN, behandlingRes.statusCode)
+    }
+
+    @Test
+    fun `skal ikke hente behandling hvis ingen tilgang til rolle`() {
+        val behandling = testdataManager.lagreBehandling(opprettBehandling())
+
+        stubUtils.stubTilgangskontrollSak(true)
+        behandling.roller.forEachIndexed { index, rolle ->
+            stubUtils.stubTilgangskontrollPerson(index == 0, personIdent = rolle.ident)
+        }
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/" + behandling.id,
+                HttpMethod.GET,
+                null,
+                Void::class.java,
+            )
+
+        Assertions.assertEquals(HttpStatus.FORBIDDEN, behandlingRes.statusCode)
+    }
+
     private fun opprettBehandling(): Behandling {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"

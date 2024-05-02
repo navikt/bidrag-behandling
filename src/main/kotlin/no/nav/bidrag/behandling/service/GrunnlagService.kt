@@ -186,12 +186,19 @@ class GrunnlagService(
         val rolleGrunnlagetErLagretPå =
             when (request.grunnlagstype) {
                 Grunnlagsdatatype.BOFORHOLD -> behandling.bidragsmottaker
+                Grunnlagsdatatype.KONTANTSTØTTE -> behandling.bidragsmottaker
+                Grunnlagsdatatype.BARNETILLEGG -> behandling.bidragsmottaker
                 else -> rolleGrunnlagErInnhentetFor
             }
 
         val harIkkeAktivtGrunnlag =
+<<<<<<< HEAD
             behandling.grunnlag.filter { rolleGrunnlagetErLagretPå!!.ident == it.rolle.ident }
                 .filter { request.grunnlagstype == it.type }.any { it.aktiv == null }
+=======
+            behandling.grunnlagListe.hentSisteIkkeAktiv()
+                .any { it.type == request.grunnlagstype && it.rolle.ident == rolleGrunnlagetErLagretPå?.ident }
+>>>>>>> main
 
         if (!harIkkeAktivtGrunnlag) {
             log.warn {
@@ -199,8 +206,13 @@ class GrunnlagService(
                     " for oppgitt person."
             }
             ressursIkkeFunnetException(
+<<<<<<< HEAD
                 "Fant ikke grunnlag av tye ${request.grunnlagstype} å aktivere i behandling ${behandling.id} " +
                     "for oppgitt personident.",
+=======
+                "Fant ikke grunnlag av type ${request.grunnlagstype} å aktivere " +
+                    "i behandling ${behandling.id} for oppgitt personident.",
+>>>>>>> main
             )
         }
 
@@ -210,7 +222,7 @@ class GrunnlagService(
             aktivereYtelserOgInntekter(
                 behandling,
                 request.grunnlagstype,
-                rolleGrunnlagErInnhentetFor!!,
+                rolleGrunnlagetErLagretPå!!,
                 aktiveringstidspunkt,
             )
         } else if (Grunnlagsdatatype.BOFORHOLD == request.grunnlagstype) {

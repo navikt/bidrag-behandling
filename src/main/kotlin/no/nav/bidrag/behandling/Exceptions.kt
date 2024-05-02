@@ -49,6 +49,18 @@ fun oppdateringAvBoforholdFeiletException(behandlingsid: Long): Nothing =
         "Oppdatering av boforhold feilet for behandling $behandlingsid",
     )
 
+fun oppdateringAvBoforholdFeilet(melding: String): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        melding,
+    )
+
+fun manglerForrigePeriode(behandlingsid: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Angre siste endringer av boforhold feilet for behandling $behandlingsid. Mangler forrige periode",
+    )
+
 fun requestManglerDataException(
     behandlingsid: Long,
     ressurstype: Ressurstype,
@@ -127,6 +139,8 @@ fun vedtakmappingFeilet(melding: String): Nothing =
         HttpStatus.BAD_REQUEST,
         melding,
     )
+
+fun ingenTilgang(message: String): Nothing = throw HttpClientErrorException(HttpStatus.FORBIDDEN, message)
 
 enum class Ressurstype {
     BOFORHOLD,

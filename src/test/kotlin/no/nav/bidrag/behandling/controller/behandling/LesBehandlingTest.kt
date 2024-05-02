@@ -95,4 +95,21 @@ class LesBehandlingTest : BehandlingControllerTest() {
 
         behandlingRes.statusCode shouldBe HttpStatus.NOT_FOUND
     }
+
+    @Test
+    fun `skal ikke hente vedtak hvis ingen tilgang til sak`() {
+        stubUtils.stubHenteVedtak()
+
+        stubUtils.stubTilgangskontrollSak(false)
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/vedtak/1",
+                HttpMethod.GET,
+                null,
+                Void::class.java,
+            )
+
+        Assertions.assertEquals(HttpStatus.FORBIDDEN, behandlingRes.statusCode)
+    }
 }
