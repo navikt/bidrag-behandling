@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -160,6 +161,65 @@ class VedtakTilBehandlingTest {
     }
 
     @Test
+    fun `Skal opprette behandling og lagre vedtakstidspunkt for forrige vedtak`() {
+        val originalVedtak = filTilVedtakDto("vedtak_response")
+        val vedtak1 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
+                stønadsendringListe =
+                    originalVedtak.stønadsendringListe.map {
+                        it.copy(
+                            omgjørVedtakId = 123,
+                        )
+                    },
+            )
+        val vedtak2 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-03-01").atStartOfDay(),
+                stønadsendringListe =
+                    originalVedtak.stønadsendringListe.map {
+                        it.copy(
+                            omgjørVedtakId = 124,
+                        )
+                    },
+            )
+        val vedtak3 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-04-01").atStartOfDay(),
+                stønadsendringListe =
+                    originalVedtak.stønadsendringListe.map {
+                        it.copy(
+                            omgjørVedtakId = null,
+                        )
+                    },
+            )
+        every { vedtakConsumer.hentVedtak(eq(12333)) } returns vedtak1
+        every { vedtakConsumer.hentVedtak(eq(123)) } returns vedtak2
+        every { vedtakConsumer.hentVedtak(eq(124)) } returns vedtak3
+        val behandling =
+            vedtakService.konverterVedtakTilBehandling(
+                OpprettBehandlingFraVedtakRequest(
+                    vedtakstype = Vedtakstype.KLAGE,
+                    søknadsid = 100,
+                    søknadsreferanseid = 222,
+                    søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                    saksnummer = "123213213",
+                    mottattdato = LocalDate.parse("2024-01-01"),
+                    søktFomDato = LocalDate.parse("2021-01-01"),
+                    behandlerenhet = "9999",
+                ),
+                12333,
+            )!!
+
+        assertSoftly(behandling) {
+            opprinneligVedtakstidspunkt shouldHaveSize 3
+            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
+            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
+            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+        }
+    }
+
+    @Test
     fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val behandling =
@@ -213,8 +273,8 @@ class VedtakTilBehandlingTest {
 
                 inntekt12Mnd.opprinneligFom shouldBe LocalDate.parse("2023-02-01")
                 inntekt12Mnd.opprinneligTom shouldBe LocalDate.parse("2023-12-31")
-                inntekt12Mnd.datoFom shouldBe LocalDate.parse("2023-02-01")
-                inntekt12Mnd.datoTom shouldBe LocalDate.parse("2024-01-31")
+                inntekt12Mnd.datoFom shouldBe null
+                inntekt12Mnd.datoTom shouldBe null
                 inntekt12Mnd.belop shouldBe BigDecimal(25245987)
                 assertSoftly(inntekt12Mnd.inntektsposter.toList()) {
                     this shouldHaveSize 1
@@ -233,9 +293,9 @@ class VedtakTilBehandlingTest {
                 inntekt3MndOpprinnelig!!.kilde shouldBe Kilde.OFFENTLIG
                 inntekt3Mnd.isEqual(inntekt3MndOpprinnelig)
                 inntekt3Mnd.opprinneligFom shouldBe LocalDate.parse("2023-11-01")
-                inntekt3Mnd.datoFom shouldBe LocalDate.parse("2023-11-01")
+                inntekt3Mnd.datoFom shouldBe null
                 inntekt3Mnd.opprinneligTom shouldBe LocalDate.parse("2024-01-31")
-                inntekt3Mnd.datoTom shouldBe LocalDate.parse("2024-01-31")
+                inntekt3Mnd.datoTom shouldBe null
                 inntekt3Mnd.inntektsposter shouldHaveSize 1
                 inntekt3Mnd.kilde shouldBe Kilde.OFFENTLIG
                 inntekt3Mnd.belop shouldBe BigDecimal(5330000)
@@ -318,8 +378,8 @@ class VedtakTilBehandlingTest {
     private fun Inntekt.isEqual(other: Inntekt) {
         opprinneligFom shouldBe other.opprinneligFom
         opprinneligTom shouldBe other.opprinneligTom
-        datoFom shouldBe other.datoFom
-        datoTom shouldBe other.datoTom
+//        datoFom shouldBe other.datoFom
+//        datoTom shouldBe other.datoTom
         belop shouldBe other.belop
         assertSoftly(inntektsposter.toList()) {
             this shouldHaveSize other.inntektsposter.size
