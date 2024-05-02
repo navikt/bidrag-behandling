@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
+import no.nav.bidrag.behandling.transformers.boforhold.tilPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandGrunnlagDto
 import no.nav.bidrag.behandling.transformers.validere
@@ -212,7 +213,7 @@ class BoforholdService(
                 behandling.husstandsbarn.find { it.id == husstandsmedlemId }
                     ?: oppdateringAvBoforholdFeiletException(behandlingsid)
             husstandsmedlem.lagreEksisterendePerioder()
-            husstandsmedlem.oppdaterTilOriginalePerioder()
+            husstandsmedlem.resetTilOffentligePerioder()
             logEndring(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
             return husstandsbarnRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
@@ -225,7 +226,7 @@ class BoforholdService(
             logEndring(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
             return husstandsbarnRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
-        oppdateringAvBoforholdFeilet("Oppdatering av boforhold feilet. Mangler informasjon om hva som skal oppdateres i forespørselen")
+        oppdateringAvBoforholdFeilet("Oppdatering av boforhold feilet. Forespørsel mangler informasjon om hva som skal oppdateres")
     }
 
     private fun logEndring(
@@ -289,21 +290,33 @@ class BoforholdService(
     ) {
         val manuellePerioder =
             (perioder.filter { it.kilde == Kilde.MANUELL && it.id != slettHusstandsbarnperiode } + nyHusstandsbarnperiode).filterNotNull()
-        this.oppdaterTilOriginalePerioder()
+        // Boforhold beregning V2 forventer originale offfentlige perioder som input sammen med manuelle perioder.
+        // Resetter derfor til offentlige perioder før de settes sammen med manuelle perioder
+        this.resetTilOffentligePerioder()
         val perioderTilPeriodsering = (perioder + manuellePerioder).tilBoforholdRequest(this)
-        BoforholdApi.beregnV2(
-            behandling.virkningstidspunktEllerSøktFomDato,
-            listOf(perioderTilPeriodsering),
-        ).tilHusstandsbarn(behandling, this)
+        this.overskrivMedBearbeidetPerioder(
+            BoforholdApi.beregnV2(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                listOf(perioderTilPeriodsering),
+            ),
+        )
     }
 
-    private fun Husstandsbarn.oppdaterTilOriginalePerioder() {
-        if (kilde == Kilde.OFFENTLIG) {
-            hentSisteBearbeidetBoforhold()?.tilHusstandsbarn(behandling, this)
-                ?: oppdateringAvBoforholdFeilet(
-                    "Fant ikke originale bearbeidet perioder for husstandsbarn $id i behandling ${behandling.id}",
-                )
-        }
+    private fun Husstandsbarn.resetTilOffentligePerioder() {
+        hentSisteBearbeidetBoforhold()?.let { overskrivMedBearbeidetPerioder(it) }
+            ?: run {
+                this.perioder.clear()
+                if (kilde == Kilde.OFFENTLIG) {
+                    log.warn {
+                        "Fant ikke originale bearbeidet perioder for offentlig husstandsmedlem $id i behandling ${behandling.id}"
+                    }
+                }
+            }
+    }
+
+    private fun Husstandsbarn.overskrivMedBearbeidetPerioder(nyePerioder: List<BoforholdResponse>) {
+        perioder.clear()
+        perioder.addAll(nyePerioder.tilPerioder(this))
     }
 
     private fun Husstandsbarn.oppdaterTilForrigeLagredePerioder() {

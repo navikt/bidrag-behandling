@@ -61,14 +61,14 @@ class DefaultExceptionHandler {
     @ExceptionHandler(HttpStatusCodeException::class)
     fun handleHttpClientErrorException(exception: HttpStatusCodeException): ResponseEntity<*> {
         val feilmelding = getErrorMessage(exception)
+        val payloadFeilmelding =
+            exception.responseBodyAsString.isEmpty().ifTrue { exception.message }
+                ?: exception.responseBodyAsString
         LOGGER.warn(feilmelding, exception)
-        secureLogger.warn(exception) { feilmelding }
+        secureLogger.warn(exception) { "Feilmelding: $feilmelding. Innhold: $payloadFeilmelding" }
         return ResponseEntity.status(exception.statusCode)
             .header(HttpHeaders.WARNING, feilmelding)
-            .body(
-                exception.responseBodyAsString.isEmpty().ifTrue { exception.message }
-                    ?: exception.responseBodyAsString,
-            )
+            .body(payloadFeilmelding)
     }
 
     @ResponseBody

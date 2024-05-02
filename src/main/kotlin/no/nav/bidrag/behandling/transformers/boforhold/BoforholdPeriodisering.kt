@@ -71,17 +71,27 @@ fun List<BorISammeHusstandDto>.tilBostatus(
     )
 }
 
-fun List<BoforholdResponse>.tilHusstandsbarn(
-    behandling: Behandling,
-    originalHusstandsbarn: Husstandsbarn? = null,
-): Set<Husstandsbarn> {
+fun List<BoforholdResponse>.tilPerioder(husstandsbarn: Husstandsbarn) =
+    this.find { it.relatertPersonPersonId == husstandsbarn.ident }?.let {
+        map { boforhold ->
+            boforhold.tilPeriode(husstandsbarn)
+        }.toMutableSet()
+    } ?: emptySet()
+
+fun BoforholdResponse.tilPeriode(husstandsbarn: Husstandsbarn) =
+    Husstandsbarnperiode(
+        bostatus = bostatus,
+        datoFom = periodeFom,
+        datoTom = periodeTom,
+        kilde = kilde,
+        husstandsbarn = husstandsbarn,
+    )
+
+fun List<BoforholdResponse>.tilHusstandsbarn(behandling: Behandling): Set<Husstandsbarn> {
     return this.groupBy { it.relatertPersonPersonId }.map {
-        if (originalHusstandsbarn != null && it.key != originalHusstandsbarn.ident) {
-            return@map originalHusstandsbarn
-        }
         val fødselsdatoFraRespons = it.value.first().fødselsdato
         val husstandsbarn =
-            originalHusstandsbarn ?: Husstandsbarn(
+            Husstandsbarn(
                 behandling = behandling,
                 kilde = Kilde.OFFENTLIG,
                 ident = it.key,
@@ -90,13 +100,7 @@ fun List<BoforholdResponse>.tilHusstandsbarn(
         husstandsbarn.perioder.clear()
         husstandsbarn.perioder.addAll(
             it.value.map { boforhold ->
-                Husstandsbarnperiode(
-                    bostatus = boforhold.bostatus,
-                    datoFom = boforhold.periodeFom,
-                    datoTom = boforhold.periodeTom,
-                    kilde = boforhold.kilde,
-                    husstandsbarn = husstandsbarn,
-                )
+                boforhold.tilPeriode(husstandsbarn)
             }.toMutableSet(),
         )
         husstandsbarn
