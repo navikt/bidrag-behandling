@@ -80,6 +80,11 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     fun `skal oppdatere årsak`() {
         // gitt
         val behandling = testdataManager.opprettBehandling(true)
+        behandling.grunnlag.addAll(
+            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
+                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            ),
+        )
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.avslag = Resultatkode.AVSLAG_OVER_18_ÅR
         behandling.årsak = null
@@ -120,6 +125,11 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     fun `skal oppdatere avslag`() {
         // gitt
         val behandling = testdataManager.opprettBehandling(true)
+        behandling.grunnlag.addAll(
+            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
+                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            ),
+        )
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.avslag = null
         behandling.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
@@ -160,6 +170,11 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     fun `skal ikke kunne sette virkningstidspunkt til tom verdi`() {
         // gitt
         val behandling = testdataManager.opprettBehandling(true)
+        behandling.grunnlag.addAll(
+            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
+                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            ),
+        )
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.avslag = null
         behandling.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
@@ -200,6 +215,11 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     fun `skal ikke kunne sette avslag til tom verdi`() {
         // gitt
         val behandling = testdataManager.opprettBehandling(true)
+        behandling.grunnlag.addAll(
+            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
+                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            ),
+        )
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.avslag = Resultatkode.AVSLAG
         behandling.årsak = null
