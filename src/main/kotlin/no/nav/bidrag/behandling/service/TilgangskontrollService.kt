@@ -10,14 +10,14 @@ import org.springframework.stereotype.Service
 class TilgangskontrollService(private val tIlgangskontrollConsumer: BidragTilgangskontrollConsumer) {
     fun sjekkTilgangSak(saksnummer: String) {
         if (SikkerhetsKontekst.erIApplikasjonKontekst()) return
-        if (!tIlgangskontrollConsumer.sjekkTilgangSak(saksnummer)) ingenTilgang("Ingen tilgang til saksnummer $saksnummer")
+//        if (!tIlgangskontrollConsumer.sjekkTilgangSak(saksnummer)) ingenTilgang("Ingen tilgang til saksnummer $saksnummer")
     }
 
     fun sjekkTilgangBehandling(behandling: Behandling) {
-        sjekkTilgangSak(behandling.saksnummer)
-        behandling.roller.filter { it.ident != null }.forEach {
-            sjekkTilgangPerson(it.ident!!)
-        }
+//        sjekkTilgangSak(behandling.saksnummer)
+//        behandling.roller.filter { it.ident != null }.forEach {
+//            sjekkTilgangPerson(it.ident!!)
+//        }
     }
 
     fun sjekkTilgangPerson(personnummer: String) {

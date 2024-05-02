@@ -59,3 +59,5 @@ fun finnCutoffDatoFom(
 } else {
     virkningstidspunkt
 }
+
+fun LocalDate.erOverEllerLik18År() = plusYears(18).isBefore(LocalDate.now()) || plusYears(18).isEqual(LocalDate.now())

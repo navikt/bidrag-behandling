@@ -156,16 +156,18 @@ class BoforholdService(
                     fødselsdato = personalia.fødselsdato,
                     navn = personalia.navn,
                 )
-            husstandsbarn.perioder.add(
-                Husstandsbarnperiode(
-                    husstandsbarn = husstandsbarn,
-                    bostatus = Bostatuskode.MED_FORELDER,
-                    datoFom = behandling.virkningstidspunktEllerSøktFomDato,
-                    datoTom = null,
-                    kilde = Kilde.MANUELL,
-                ),
+            husstandsbarn.oppdaterPerioder(
+                nyHusstandsbarnperiode =
+                    Husstandsbarnperiode(
+                        husstandsbarn = husstandsbarn,
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        datoFom = behandling.virkningstidspunktEllerSøktFomDato,
+                        datoTom = null,
+                        kilde = Kilde.MANUELL,
+                    ),
             )
             behandling.husstandsbarn.add(husstandsbarn)
+
             logEndring(behandling, oppdatereHusstandsmedlem, husstandsbarn)
             return husstandsbarnRepository.save(husstandsbarn).tilOppdatereBoforholdResponse(behandling)
         }

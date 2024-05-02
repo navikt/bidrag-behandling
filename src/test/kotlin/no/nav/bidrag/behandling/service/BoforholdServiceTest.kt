@@ -7,12 +7,14 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeEmpty
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdaterHusstandsmedlemPeriode
@@ -42,13 +44,16 @@ import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 import kotlin.test.assertFailsWith
 
 @RunWith(Enclosed::class)
@@ -508,6 +513,48 @@ class BoforholdServiceTest : TestContainerRunner() {
         }
 
         @Test
+        open fun `skal ikke slette periode hvis det er bare en igjen`() {
+            // gitt
+            var behandling = opprettBehandlingForBoforholdTest()
+
+            val fødselsdato = LocalDate.now().minusYears(5)
+            val ident = "213123"
+            val husstandsbarn =
+                Husstandsbarn(
+                    behandling = behandling,
+                    kilde = Kilde.MANUELL,
+                    perioder = mutableSetOf(),
+                    ident = ident,
+                    fødselsdato = fødselsdato,
+                )
+            husstandsbarn.perioder.add(
+                Husstandsbarnperiode(
+                    husstandsbarn = husstandsbarn,
+                    datoFom = LocalDate.parse("2020-01-01"),
+                    datoTom = null,
+                    kilde = Kilde.MANUELL,
+                    bostatus = Bostatuskode.MED_FORELDER,
+                ),
+            )
+            behandling.husstandsbarn.add(husstandsbarn)
+            behandling = testdataManager.lagreBehandling(behandling)
+            val husstandsmedlemPersisted = behandling.husstandsbarn.find { it.ident == ident }
+
+            val exception =
+                assertThrows<HttpClientErrorException> {
+                    boforholdService.oppdatereHusstandsbarnManuelt(
+                        behandling.id!!,
+                        OppdatereHusstandsmedlem(
+                            slettPeriode = husstandsmedlemPersisted!!.perioder.first().id,
+                        ),
+                    )
+                }
+
+            exception.message shouldContain "Kan ikke slette alle perioder fra husstandsmedlem"
+            exception.statusCode shouldBe HttpStatus.BAD_REQUEST
+        }
+
+        @Test
         @Transactional
         open fun `skal angre forrige endring`() {
             // gitt
@@ -594,6 +641,81 @@ class BoforholdServiceTest : TestContainerRunner() {
                 periode.datoTom shouldBe null
                 periode.bostatus shouldBe Bostatuskode.MED_FORELDER
             }
+        }
+
+        @Test
+        @Transactional
+        @Disabled("Magnus skal fikse Boforhold api slik at oppføreselen blir riktig")
+        open fun `skal opprette husstandsmedlem over 18`() {
+            // gitt
+            val behandling = opprettBehandlingForBoforholdTest()
+
+            behandling.husstandsbarn.shouldHaveSize(1)
+            val fødselsdato = LocalDate.now().minusYears(17).minusMonths(7)
+            boforholdService.oppdatereHusstandsbarnManuelt(
+                behandling.id!!,
+                OppdatereHusstandsmedlem(
+                    opprettHusstandsmedlem =
+                        OpprettHusstandsstandsmedlem(
+                            personident = Personident("213123"),
+                            fødselsdato = fødselsdato,
+                            navn = "Navn Navnesen",
+                        ),
+                ),
+            )
+
+            assertSoftly(behandling.husstandsbarn.find { it.ident == "213123" }!!) {
+                it.perioder.shouldHaveSize(2)
+                it.navn shouldBe "Navn Navnesen"
+                it.fødselsdato shouldBe fødselsdato
+                val periode = it.perioder.first()
+                periode.kilde shouldBe Kilde.MANUELL
+                periode.datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
+                periode.datoTom shouldBe YearMonth.now().minusYears(18).atEndOfMonth()
+                periode.bostatus shouldBe Bostatuskode.MED_FORELDER
+
+                val periode2 = it.perioder.toList()[1]
+                periode2.kilde shouldBe Kilde.MANUELL
+                periode2.datoFom shouldBe LocalDate.now().minusYears(18).plusMonths(1).withDayOfMonth(1)
+                periode2.datoTom shouldBe null
+                periode2.bostatus shouldBe Bostatuskode.REGNES_IKKE_SOM_BARN
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke opprette husstandsmedlem som finnes fra før med samme ident`() {
+            // gitt
+            val behandling = opprettBehandlingForBoforholdTest()
+            val fødselsdato = LocalDate.now().minusYears(5)
+
+            val ident = "213123"
+            behandling.husstandsbarn.add(
+                Husstandsbarn(
+                    behandling = behandling,
+                    kilde = Kilde.MANUELL,
+                    perioder = mutableSetOf(),
+                    ident = ident,
+                    fødselsdato = fødselsdato,
+                ),
+            )
+            val exception =
+                assertThrows<HttpClientErrorException> {
+                    boforholdService.oppdatereHusstandsbarnManuelt(
+                        behandling.id!!,
+                        OppdatereHusstandsmedlem(
+                            opprettHusstandsmedlem =
+                                OpprettHusstandsstandsmedlem(
+                                    personident = Personident(ident),
+                                    fødselsdato = fødselsdato,
+                                    navn = "Navn Navnesen",
+                                ),
+                        ),
+                    )
+                }
+
+            exception.message shouldContain "Forsøk på å oppdatere behandling ${behandling.id} feilet pga duplikate data."
+            exception.statusCode shouldBe HttpStatus.CONFLICT
         }
 
         @Test

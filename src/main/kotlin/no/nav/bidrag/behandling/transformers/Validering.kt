@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleHusstandsmedlemPerioder
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
@@ -294,12 +295,27 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
         if (husstandsbarn == null) {
             husstandsbarnIkkeFunnetException(this.oppdaterPeriode.idHusstandsbarn, behandling.id!!)
         }
+        if (it.idPeriode != null) {
+            val husstandsperiode = behandling.finnHusstandsbarnperiode(it.idPeriode)
+            if (husstandsperiode == null) {
+                ressursIkkeFunnetException("Fant ikke husstandsbarnsperiode med id ${it.idPeriode}.")
+            } else if (husstandsbarn.id != husstandsperiode.husstandsbarn.id) {
+                ressursIkkeTilknyttetBehandling(
+                    "Husstandsbarnperiode ${it.idPeriode} hører ikke til husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}.",
+                )
+            }
+        }
     }
 
     this.slettPeriode?.let { id ->
         val husstandsbarnperiode = behandling.hentAlleHusstandsmedlemPerioder().find { it.id == id }
         if (husstandsbarnperiode == null) {
             ressursIkkeFunnetException("Fant ikke husstandsbarnsperiode med id $id.")
+        } else if (husstandsbarnperiode.husstandsbarn.perioder.none { it.id != id }) {
+            ressursIkkeTilknyttetBehandling(
+                "Kan ikke slette alle perioder " +
+                    "fra husstandsmedlem ${husstandsbarnperiode.husstandsbarn.id} i behandling ${behandling.id}.",
+            )
         } else if (behandling.id != husstandsbarnperiode.husstandsbarn.behandling.id) {
             ressursIkkeTilknyttetBehandling(
                 "Husstandsbarnperiode $id hører ikke til behandling med id" +
@@ -309,28 +325,47 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
     }
 
     this.slettHusstandsmedlem?.let {
-        val husstandsbarn = behandling.husstandsbarn.find { this.slettHusstandsmedlem == it.id }
-        if (husstandsbarn == null) {
+        val husstandsmedlem = behandling.husstandsbarn.find { this.slettHusstandsmedlem == it.id }
+        if (husstandsmedlem == null) {
             husstandsbarnIkkeFunnetException(this.slettHusstandsmedlem, behandling.id!!)
-        } else if (Kilde.OFFENTLIG == husstandsbarn.kilde) {
+        } else if (Kilde.OFFENTLIG == husstandsmedlem.kilde) {
             ressursHarFeilKildeException(
-                "Husstandsbarn med id ${husstandsbarn.id} i behandling ${husstandsbarn.behandling.id} " +
+                "Husstandsmedlem med id ${husstandsmedlem.id} i behandling ${husstandsmedlem.behandling.id} " +
                     "kommer fra offentlige registre, og kan derfor ikke slettes.",
+            )
+        } else if (behandling.id != husstandsmedlem.behandling.id) {
+            ressursIkkeTilknyttetBehandling(
+                "Husstandsmedlem $it hører ikke til behandling med id" +
+                    "${behandling.id}.",
             )
         }
     }
 
     this.tilbakestillPerioderForHusstandsmedlem?.let {
         val husstandsmedlem = behandling.husstandsbarn.find { this.tilbakestillPerioderForHusstandsmedlem == it.id }
-        if (husstandsmedlem?.kilde == Kilde.MANUELL) {
+        if (husstandsmedlem == null) {
+            husstandsbarnIkkeFunnetException(it, behandling.id!!)
+        } else if (husstandsmedlem.kilde == Kilde.MANUELL) {
             oppdateringAvBoforholdFeilet("Kan ikke tilbakestille manuell lagt inn husstandsmedlem til offentlige perioder")
+        } else if (behandling.id != husstandsmedlem.behandling.id) {
+            ressursIkkeTilknyttetBehandling(
+                "Husstandsmedlem $it hører ikke til behandling med id" +
+                    "${behandling.id}.",
+            )
         }
     }
 
     this.angreSisteStegForHusstandsmedlem?.let {
         val husstandsmedlem = behandling.husstandsbarn.find { this.angreSisteStegForHusstandsmedlem == it.id }
-        if (husstandsmedlem?.forrigePerioder.isNullOrEmpty()) {
+        if (husstandsmedlem == null) {
+            husstandsbarnIkkeFunnetException(it, behandling.id!!)
+        } else if (husstandsmedlem.forrigePerioder.isNullOrEmpty()) {
             oppdateringAvBoforholdFeilet("Kan ikke angre siste steg for husstandsmedlem. Det mangler informasjon om siste steg")
+        } else if (behandling.id != husstandsmedlem.behandling.id) {
+            ressursIkkeTilknyttetBehandling(
+                "Husstandsmedlem $it hører ikke til behandling med id" +
+                    "${behandling.id}.",
+            )
         }
     }
 }
