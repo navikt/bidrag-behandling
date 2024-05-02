@@ -1636,6 +1636,30 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling = behandling,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
+                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                aktiv = null,
+                grunnlagsdata =
+                    setOf(
+                        RelatertPersonGrunnlagDto(
+                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                            erBarnAvBmBp = true,
+                            navn = null,
+                            partPersonId = behandling.bidragsmottaker!!.ident!!,
+                            borISammeHusstandDtoListe =
+                                listOf(
+                                    BorISammeHusstandDto(
+                                        testdataHusstandsmedlem1.fødselsdato,
+                                        periodeTil = null,
+                                    ),
+                                ),
+                        ),
+                    ),
+            )
+
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling = behandling,
                 grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
                 innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                 aktiv = null,
@@ -1670,11 +1694,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             assertSoftly(behandling.grunnlag) { g ->
                 g.isNotEmpty()
-                g.size shouldBe 1
-                g.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.size shouldBe 1
+                g.size shouldBe 2
+                g.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.size shouldBe 2
                 g.filter { it.erBearbeidet }.size shouldBe 1
                 g.find { it.aktiv == null } shouldBe null
-                g.filter { LocalDate.now() == it.aktiv!!.toLocalDate() }.size shouldBe 1
+                g.filter { LocalDate.now() == it.aktiv!!.toLocalDate() }.size shouldBe 2
             }
 
             assertSoftly(behandling.husstandsbarn) {
@@ -1812,6 +1836,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
             }
 
+            assertSoftly(behandling.husstandsbarn) { hb ->
+                hb shouldHaveSize 2
+                hb.filter { Kilde.OFFENTLIG == it.kilde }
+            }
+
             // hvis
             grunnlagService.aktivereGrunnlag(
                 behandling,
@@ -1820,10 +1849,15 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
-            assertSoftly(boforhold) { sb ->
-                sb.size shouldBe 3
-                sb.filter { it.aktiv != null } shouldHaveSize 3
-                sb.filter { it.erBearbeidet } shouldHaveSize 2
+            assertSoftly(boforhold) { b ->
+                b.size shouldBe 3
+                b.filter { it.aktiv != null } shouldHaveSize 3
+                b.filter { it.erBearbeidet } shouldHaveSize 2
+            }
+
+            assertSoftly(behandling.husstandsbarn) { hb ->
+                hb shouldHaveSize 2
+                hb.filter { Kilde.OFFENTLIG == it.kilde }
             }
         }
 
