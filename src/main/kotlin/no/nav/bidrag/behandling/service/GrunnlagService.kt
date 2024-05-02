@@ -505,13 +505,19 @@ class GrunnlagService(
             sammenstilleOgLagreInntekter(behandling, innhentetGrunnlag, rolleInhentetFor, feilrapporteringer)
         }
 
+        val innhentingAvBoforholdFeilet =
+            feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
+
         // Oppdatere barn_i_husstand og tilhørende periode-tabell med periodisert boforhold
-        if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty()) {
+        if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty() && !innhentingAvBoforholdFeilet) {
             periodisereOgLagreBoforhold(behandling, innhentetGrunnlag)
         }
 
+        val innhentingAvSivilstandFeilet =
+            feilrapporteringer.filter { Grunnlagsdatatype.SIVILSTAND == it.key }.isNotEmpty()
+
         // Oppdatere sivilstandstabell med periodisert sivilstand
-        if (innhentetGrunnlag.sivilstandListe.isNotEmpty()) {
+        if (innhentetGrunnlag.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
             periodisereOgLagreSivilstand(behandling, innhentetGrunnlag)
         }
 
