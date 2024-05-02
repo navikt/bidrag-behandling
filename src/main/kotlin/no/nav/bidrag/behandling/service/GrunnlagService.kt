@@ -344,10 +344,19 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime,
         overskriveManuelleOpplysninger: Boolean,
     ) {
+//        val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
+//            behandling.grunnlag.hentSisteIkkeAktiv()
+//                .filter { gjelderHusstandsbarn.verdi == it.gjelder && grunnlagstype == it.type }
+//                .firstOrNull { it.erBearbeidet }
         val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
-            behandling.grunnlag.hentSisteIkkeAktiv()
-                .filter { gjelderHusstandsbarn.verdi == it.gjelder && grunnlagstype == it.type }
-                .firstOrNull { it.erBearbeidet }
+            ikkeAktivGrunnlag.filter { gjelderHusstandsbarn.verdi == it.gjelder }.filter { grunnlagstype == it.type }
+                .filter { it.erBearbeidet }.maxByOrNull { it.innhentet }
+        val bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting =
+            behandling
+                .henteNyesteGrunnlag(Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false), behandling.bidragsmottaker!!)
+                ?.data?.let { jsonListeTilObjekt<RelatertPersonGrunnlagDto>(it) }
+                ?.filter { it.erBarnAvBmBp && it.relatertPersonPersonId != null }
+                ?.groupBy { it.relatertPersonPersonId!! }?.map { Personident(it.key) }?.toSet()
 
         if (nyesteIkkeAktiverteBoforholdForHusstandsmedlem == null) {
             throw HttpClientErrorException(
@@ -357,9 +366,19 @@ class GrunnlagService(
             )
         }
 
+        // TOOD: Vurdere å trigge ny grunnlagsinnhenting
+        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.isNullOrEmpty()) {
+            log.error { "Fant ingen husstandsmedlemmer i nyeste boforholdsgrunnlag for BM i behandling ${behandling.id}" }
+            throw HttpClientErrorException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Fant ingen husstandsmedlemmer i nyeste boforholdsgrunnlag for BM i behandling ${behandling.id}",
+            )
+        }
+
         boforholdService.oppdatereAutomatiskInnhentaBoforhold(
             behandling,
-            jsonTilObjekt<List<BoforholdResponse>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem!!.data),
+            jsonTilObjekt<List<BoforholdResponse>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem.data),
+            bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
             overskriveManuelleOpplysninger,
         )
 
@@ -491,13 +510,19 @@ class GrunnlagService(
             sammenstilleOgLagreInntekter(behandling, innhentetGrunnlag, rolleInhentetFor, feilrapporteringer)
         }
 
+        val innhentingAvBoforholdFeilet =
+            feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
+
         // Oppdatere barn_i_husstand og tilhørende periode-tabell med periodisert boforhold
-        if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty()) {
+        if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty() && !innhentingAvBoforholdFeilet) {
             periodisereOgLagreBoforhold(behandling, innhentetGrunnlag)
         }
 
+        val innhentingAvSivilstandFeilet =
+            feilrapporteringer.filter { Grunnlagsdatatype.SIVILSTAND == it.key }.isNotEmpty()
+
         // Oppdatere sivilstandstabell med periodisert sivilstand
-        if (innhentetGrunnlag.sivilstandListe.isNotEmpty()) {
+        if (innhentetGrunnlag.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
             periodisereOgLagreSivilstand(behandling, innhentetGrunnlag)
         }
 
@@ -1008,10 +1033,10 @@ class GrunnlagService(
 
     private fun Behandling.henteNyesteGrunnlag(
         grunnlagstype: Grunnlagstype,
-        rolle: Rolle,
+        rolleInnhentetFor: Rolle,
     ): Grunnlag? =
         grunnlag.filter {
-            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+            it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id && grunnlagstype.erBearbeidet == it.erBearbeidet
         }.toSet().maxByOrNull { it.innhentet }
 
     private inline fun <reified T> Behandling.hentSisteInnhentetGrunnlagSet(
