@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
@@ -68,6 +69,11 @@ fun Set<Grunnlag>.hentSisteAktiv() =
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
+
+fun Husstandsbarn.hentSisteBearbeidetBoforhold() =
+    behandling.grunnlag.hentSisteAktiv()
+        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
+        .konverterData<List<BoforholdResponse>>()
 
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,

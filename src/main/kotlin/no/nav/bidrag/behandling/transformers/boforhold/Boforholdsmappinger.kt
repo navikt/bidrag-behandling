@@ -10,8 +10,8 @@ import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerSivilstand
-import no.nav.bidrag.behandling.transformers.validereBoforhold
 import java.time.LocalDate
 
 fun Set<Husstandsbarnperiode>.tilDto() =
@@ -30,24 +30,22 @@ fun Husstandsbarn.tilDto() =
         this.id,
         this.kilde,
         !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
-        this.perioder.tilDto(),
+        this.perioder.sortedBy { it.datoFom }.toSet().tilDto(),
         this.ident,
         this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato,
     )
 
-fun Husstandsbarn.tilOppdatereBoforholdResponse(
-    behandling: Behandling,
-    validerePerioder: Boolean = true,
-) = OppdatereBoforholdResponse(
-    oppdatertHusstandsbarn = this.tilDto(),
-    valideringsfeil =
-        BoforholdValideringsfeil(
-            husstandsbarn =
-                this.validereBoforhold(behandling.virkningstidspunktEllerSøktFomDato, mutableListOf(), validerePerioder)
-                    .filter { it.harFeil },
-        ),
-)
+fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
+    OppdatereBoforholdResponse(
+        oppdatertHusstandsbarn = this.tilDto(),
+        valideringsfeil =
+            BoforholdValideringsfeil(
+                husstandsbarn =
+                    behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                        .filter { it.harFeil },
+            ),
+    )
 
 fun Sivilstand.tilDto() = SivilstandDto(this.id, this.datoFom, datoTom = this.datoTom, this.sivilstand, this.kilde)
 
