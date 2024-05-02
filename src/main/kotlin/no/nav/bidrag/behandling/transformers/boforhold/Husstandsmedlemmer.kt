@@ -12,6 +12,8 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 
+fun Set<RelatertPersonGrunnlagDto>.tilBoforholdRequest() = this.toList().tilBoforholdRequest()
+
 fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
     this.map {
         BoforholdRequest(

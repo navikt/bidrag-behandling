@@ -30,12 +30,13 @@ open class Grunnlag(
     open val erBearbeidet: Boolean = false,
     @Column(name = "data", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
-    open val data: String,
-    open val innhentet: LocalDateTime,
+    open var data: String,
+    open var innhentet: LocalDateTime,
     open var aktiv: LocalDateTime? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
     open val rolle: Rolle,
+    open val gjelder: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
@@ -43,23 +44,30 @@ open class Grunnlag(
     override fun toString(): String {
         return try {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
-                "id=$id, behandling=${behandling.id}, innhentet=$innhentet)"
+                "id=$id, behandling=${behandling.id}, innhentet=$innhentet, gjelder=$gjelder)"
         } catch (e: Exception) {
-            "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet)"
+            "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
     }
+
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
 }
 
-fun List<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
+fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
 
-fun List<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+fun Set<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
 
-fun List<Grunnlag>.harInntekterForTypeSomIkkeErBearbeidet(
-    type: Grunnlagsdatatype,
-    ident: String,
-) = any {
-    it.type == type && !it.erBearbeidet && it.rolle.ident == ident
-}
+fun Set<Grunnlag>.hentSisteIkkeAktiv() =
+    hentAlleIkkeAktiv().groupBy { it.identifikator }
+        .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
+        .values
+        .filterNotNull()
+
+fun Set<Grunnlag>.hentSisteAktiv() =
+    hentAlleAktiv().groupBy { it.identifikator }
+        .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
+        .values
+        .filterNotNull()
 
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,
@@ -76,12 +84,6 @@ fun List<Grunnlag>.hentBearbeidetInntekterForType(
 }.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
 
 inline fun <reified T> Grunnlag?.konverterData(): T? {
-    return this?.data?.let {
-        objectmapper.readValue(it)
-    }
-}
-
-inline fun <reified T> Grunnlag?.konverterData2(): Set<T>? {
     return this?.data?.let {
         objectmapper.readValue(it)
     }

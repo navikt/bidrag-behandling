@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -122,7 +123,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            boforholdService.oppdatereAutomatiskInnhentaBoforhold(behandling, periodisertBoforhold, true)
+            boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                behandling,
+                periodisertBoforhold,
+                grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                true,
+            )
 
             // så
             entityManager.refresh(behandling)
@@ -205,7 +211,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            boforholdService.oppdatereAutomatiskInnhentaBoforhold(behandling, periodisertBoforhold, false)
+            boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                behandling,
+                periodisertBoforhold,
+                grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                false,
+            )
 
             // så
             entityManager.refresh(behandling)
@@ -233,6 +244,157 @@ class BoforholdServiceTest : TestContainerRunner() {
                 barn2.perioder.last().datoFom shouldBe LocalDate.of(2023, 6, 1)
                 barn2.perioder.last().datoTom shouldBe null
                 barn2.perioder.last().bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal endre kilde til manuell for offentlig husstandsbarn som ikke finnes i nyeste grunnlag`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling()
+            behandling.virkningstidspunkt = testdataBarn1.fødselsdato
+            behandling.husstandsbarn.forEach {
+                it.perioder.forEach {
+                    it.kilde = Kilde.MANUELL
+                }
+            }
+
+            assertSoftly(behandling.husstandsbarn) { hb ->
+                hb shouldHaveSize 2
+                hb.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+            }
+
+            stubbeHentingAvPersoninfoForTestpersoner()
+
+            val grunnlagBoforhold =
+                listOf(
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = behandling.bidragsmottaker!!.ident!!,
+                        relatertPersonPersonId = testdataBarn1.ident,
+                        fødselsdato = testdataBarn1.fødselsdato,
+                        erBarnAvBmBp = true,
+                        navn = testdataBarn1.navn,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
+                            ),
+                    ),
+                )
+
+            val periodisertBoforhold =
+                BoforholdApi.beregnV2(
+                    minOf(testdataBarn1.fødselsdato),
+                    grunnlagBoforhold.tilBoforholdRequest(),
+                )
+
+            // hvis
+            boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                behandling,
+                periodisertBoforhold,
+                grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                false,
+            )
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly(behandling.husstandsbarn) { husstandsbarn ->
+                husstandsbarn.size shouldBe 2
+            }
+
+            assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
+                barn1 shouldNotBe null
+                barn1!!.kilde shouldBe Kilde.OFFENTLIG
+                barn1.perioder.size shouldBe 4
+                barn1.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 3
+                barn1.perioder.last().kilde shouldBe Kilde.MANUELL
+                barn1.perioder.last().datoFom shouldBe LocalDate.of(2023, 6, 1)
+                barn1.perioder.last().datoTom shouldBe null
+                barn1.perioder.last().bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
+            }
+
+            assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }) { barn2 ->
+                barn2 shouldNotBe null
+                barn2!!.kilde shouldBe Kilde.MANUELL
+                barn2.perioder.size shouldBe 3
+                barn2.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 3
+                barn2.perioder.last().kilde shouldBe Kilde.MANUELL
+                barn2.perioder.last().datoFom shouldBe LocalDate.of(2023, 6, 1)
+                barn2.perioder.last().datoTom shouldBe null
+                barn2.perioder.last().bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal slette offentlige husstandsbarn som ikke finnes i nyeste grunnlag hvis overskriving er valgt`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling()
+            behandling.virkningstidspunkt = testdataBarn1.fødselsdato
+            behandling.husstandsbarn.forEach {
+                it.perioder.forEach {
+                    it.kilde = Kilde.MANUELL
+                }
+            }
+
+            assertSoftly(behandling.husstandsbarn) { hb ->
+                hb shouldHaveSize 2
+                hb.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+            }
+
+            stubbeHentingAvPersoninfoForTestpersoner()
+
+            val grunnlagBoforhold =
+                listOf(
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = behandling.bidragsmottaker!!.ident!!,
+                        relatertPersonPersonId = testdataBarn1.ident,
+                        fødselsdato = testdataBarn1.fødselsdato,
+                        erBarnAvBmBp = true,
+                        navn = testdataBarn1.navn,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
+                            ),
+                    ),
+                )
+
+            val periodisertBoforhold =
+                BoforholdApi.beregnV2(
+                    minOf(testdataBarn1.fødselsdato),
+                    grunnlagBoforhold.tilBoforholdRequest(),
+                )
+
+            // hvis
+            boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                behandling,
+                periodisertBoforhold,
+                grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                true,
+            )
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly(behandling.husstandsbarn) { husstandsbarn ->
+                husstandsbarn.size shouldBe 1
+            }
+
+            assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
+                barn1 shouldNotBe null
+                barn1!!.kilde shouldBe Kilde.OFFENTLIG
+                barn1.perioder.size shouldBe 1
+                barn1.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 0
+                barn1.perioder.last().kilde shouldBe Kilde.OFFENTLIG
+                barn1.perioder.last().datoFom shouldBe testdataBarn1.fødselsdato
+                barn1.perioder.last().datoTom shouldBe null
+                barn1.perioder.last().bostatus shouldBe Bostatuskode.MED_FORELDER
             }
         }
 
@@ -270,7 +432,6 @@ class BoforholdServiceTest : TestContainerRunner() {
             // hvis
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
                 behandling,
-                Personident(behandling.bidragsmottaker!!.ident!!),
                 periodisertBoforhold,
             )
 
@@ -339,7 +500,6 @@ class BoforholdServiceTest : TestContainerRunner() {
             // hvis
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
                 behandling,
-                Personident(behandling.bidragsmottaker!!.ident!!),
                 periodisertBoforhold,
             )
 

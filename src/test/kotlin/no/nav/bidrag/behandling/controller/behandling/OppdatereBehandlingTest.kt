@@ -6,7 +6,6 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
-import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
@@ -25,7 +24,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagspostDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
@@ -38,9 +36,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class OppdatereBehandlingTest : BehandlingControllerTest() {
-    @Autowired
-    lateinit var entityManager: EntityManager
-
     @Test
     fun `skal oppdatere behandling for API v2`() {
         // gitt
@@ -245,7 +240,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/" + behandling.id,
                 HttpMethod.DELETE,
                 null,
-                Unit::class.java,
+                String::class.java,
             )
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, behandlingRes.statusCode)

@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.dto.v1.notat.Arbeidsforhold
 import no.nav.bidrag.behandling.dto.v1.notat.Boforhold
@@ -27,10 +28,12 @@ import no.nav.bidrag.behandling.dto.v1.notat.SivilstandNotat
 import no.nav.bidrag.behandling.dto.v1.notat.Vedtak
 import no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidetBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
+import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
@@ -53,6 +56,7 @@ import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -61,12 +65,15 @@ private val log = KotlinLogging.logger {}
 @Service
 class NotatOpplysningerService(
     private val behandlingService: BehandlingService,
-    private val grunnlagService: GrunnlagService,
     private val beregningService: BeregningService,
     private val bidragDokumentProduksjonConsumer: BidragDokumentProduksjonConsumer,
     private val bidragDokumentConsumer: BidragDokumentConsumer,
 ) {
-    @Retryable(value = [Exception::class], maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0))
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
     @Transactional
     fun opprettNotat(behandlingId: Long) {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
@@ -113,30 +120,30 @@ class NotatOpplysningerService(
     fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
+        return hentNotatOpplysningerForBehandling(behandling)
+    }
+
+    fun hentNotatOpplysningerForBehandling(behandling: Behandling): NotatDto {
         val opplysningerBoforhold =
-            grunnlagService.hentSistInnhentet(
-                behandlingId,
-                behandling.bidragsmottaker!!.id!!,
-                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-            )
-                ?.konverterData<List<BoforholdResponse>>() ?: emptyList()
+            behandling.grunnlag.hentSisteAktiv()
+                .hentAlleBearbeidetBoforhold(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.husstandsbarn,
+                    behandling.bidragsmottaker,
+                )
+
         val opplysningerSivilstand =
-            grunnlagService.hentSistInnhentet(
-                behandlingId,
-                behandling.bidragsmottaker!!.id!!,
-                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
-            )
-                ?.konverterData<List<SivilstandGrunnlagDto>>() ?: emptyList()
+            behandling.grunnlag.hentSisteAktiv()
+                .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
+                ?.konverterData<List<SivilstandGrunnlagDto>>()
+                ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
+                ?: emptyList()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
-            behandling.roller.filter { it.ident != null }.flatMap { r ->
-                grunnlagService.hentSistInnhentet(
-                    behandlingId,
-                    r.id!!,
-                    Grunnlagstype(Grunnlagsdatatype.ARBEIDSFORHOLD, false),
-                )
-                    .konverterData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
-            }
+            behandling.grunnlag.hentSisteAktiv()
+                .filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.flatMap { r ->
+                    r.konverterData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
+                }
 
         return NotatDto(
             saksnummer = behandling.saksnummer,
@@ -256,7 +263,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         søktAv = soknadFra,
         avslag = avslag,
         årsak = årsak,
-        mottattDato = YearMonth.from(mottattdato),
+        mottattDato = mottattdato,
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         notat = tilNotatVirkningstidspunkt(),
@@ -310,7 +317,12 @@ private fun Rolle.tilNotatRolle() =
 
 private fun Inntekt.tilNotatInntektDto() =
     NotatInntektDto(
-        beløp = belop,
+        beløp =
+            maxOf(
+                belop.nærmesteHeltall,
+                BigDecimal.ZERO,
+            ),
+        // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         periode = periode,
         opprinneligPeriode = opprinneligPeriode,
         type = type,
@@ -325,7 +337,7 @@ private fun Inntekt.tilNotatInntektDto() =
                 NotatInntektspostDto(
                     it.kode,
                     it.inntektstype,
-                    it.beløp,
+                    it.beløp.nærmesteHeltall,
                 )
             },
     )
@@ -344,7 +356,7 @@ private fun Behandling.hentInntekterForIdent(
             )
         },
     årsinntekter =
-        inntekter.årsinntekterSortert(false)
+        inntekter.årsinntekterSortert(sorterTaMed = false, eksluderYtelserUtenforVirkningstidspunkt = true)
             .filter { it.ident == ident }
             .map {
                 it.tilNotatInntektDto()
@@ -362,7 +374,8 @@ private fun Behandling.hentInntekterForIdent(
         },
     småbarnstillegg =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedBy { it.datoFom }
+            inntekter
+                .sortedBy { it.datoFom }
                 .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
                 .sorterEtterDato()
                 .map {
@@ -373,7 +386,8 @@ private fun Behandling.hentInntekterForIdent(
         },
     kontantstøtte =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+            inntekter
+                .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
                 .sorterEtterDatoOgBarn()
                 .map {
                     it.tilNotatInntektDto()
@@ -383,8 +397,9 @@ private fun Behandling.hentInntekterForIdent(
         },
     utvidetBarnetrygd =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter.sortedBy { it.datoFom }
+            inntekter
                 .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+                .sorterEtterDato()
                 .map {
                     it.tilNotatInntektDto()
                 }

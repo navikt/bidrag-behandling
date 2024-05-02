@@ -28,7 +28,6 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
-import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandGrunnlagDto
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
@@ -72,7 +71,6 @@ class BoforholdService(
     @Transactional
     fun lagreFørstegangsinnhentingAvPeriodisertBoforhold(
         behandling: Behandling,
-        personident: Personident,
         periodisertBoforhold: List<BoforholdResponse>,
     ) {
         behandling.husstandsbarn.filter { (Kilde.OFFENTLIG == it.kilde) }.forEach {
@@ -87,13 +85,17 @@ class BoforholdService(
     fun oppdatereAutomatiskInnhentaBoforhold(
         behandling: Behandling,
         periodisertBoforhold: List<BoforholdResponse>,
+        bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val nyeHusstandsbarnMedPerioder = periodisertBoforhold.tilHusstandsbarn(behandling, bidragPersonConsumer)
         // Ved overskriving bevares manuelle barn, men dersom manuelt barn med personident også finnes i grunnlag,
         // erstattes dette med offentlige opplysninger. Manuelle perioder til offisielle barn slettes.
         if (overskriveManuelleOpplysninger) {
-            sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(behandling, nyeHusstandsbarnMedPerioder)
+            sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
+                behandling,
+                bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
+            )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
                 nyeHusstandsbarnMedPerioder,
@@ -101,7 +103,10 @@ class BoforholdService(
             )
             leggeTilNyeEllerOppdatereEksisterendeOffentligeHusstandsbarn(behandling, nyeHusstandsbarnMedPerioder, true)
         } else {
-            endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(behandling, nyeHusstandsbarnMedPerioder)
+            endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
+                behandling,
+                bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
+            )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
                 nyeHusstandsbarnMedPerioder,
@@ -118,7 +123,8 @@ class BoforholdService(
         oppdatereHusstandsbarn: OppdatereHusstandsbarn,
     ): OppdatereBoforholdResponse {
         val behandling =
-            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereHusstandsbarn.validere(behandling, husstandsbarnperiodeRepository)
 
@@ -200,8 +206,7 @@ class BoforholdService(
                 eksisterendeHusstandsbarn.perioder.add(it)
             }
             log.info {
-                "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " +
-                        "$behandlingsid."
+                "Ny periode ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling " + "$behandlingsid."
             }
 
             return eksisterendeHusstandsbarn.tilOppdatereBoforholdResponse(behandling)
@@ -265,14 +270,18 @@ class BoforholdService(
             val periodeSomSkalSlettes = behandling.sivilstand.find { idSivilstandsperiode == it.id }
             behandling.sivilstand.remove(periodeSomSkalSlettes)
 
-           val nyesteAktiveSivilstandsgrunnlag =  grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
-                behandling.id!!,Grunnlagsdatatype.SIVILSTAND, false, behandling.bidragsmottaker!!)
+            //TODO: Fikse etter  merge
+       //    val nyesteAktiveSivilstandsgrunnlag =  grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
+         //       behandling.id!!,Grunnlagsdatatype.SIVILSTAND, false, behandling.bidragsmottaker!!)
 
-            nyesteAktiveSivilstandsgrunnlag
+            val nyesteAktiveSivilstandsgrunnlag =behandling.grunnlag.first()
+
+            val data = jsonTilObjekt <List<SivilstandGrunnlagDto>>(nyesteAktiveSivilstandsgrunnlag.data)
+
             val periodisertSivilstand =
                 SivilstandApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    jsonTilObjekt <List<SivilstandGrunnlagDto>>(nyesteAktiveSivilstandsgrunnlag!!.data),
+                   data.toSet().tilSivilstandRequest(),
                 )
 
             log.info { "Slettet sivilstand med id $idSivilstandsperiode fra behandling $behandlingsid." }
@@ -283,7 +292,7 @@ class BoforholdService(
             )
         }
 
-        oppdatereSivilstand.leggeTilSivilstandsperiode?.let {
+        oppdatereSivilstand.nyEllerEndretSivilstandsperiode?.let {
             val sivilstand = Sivilstand(behandling, it.fraOgMed, it.tilOgMed, it.sivilstand, Kilde.MANUELL)
             behandling.sivilstand.add(sivilstand)
             entityManager.flush()
@@ -317,7 +326,7 @@ class BoforholdService(
 
     private fun sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
-        nyttPeriodisertBoforhold: Set<Husstandsbarn>,
+        bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
     ) {
         var husstandsbarnSomSkalSlettes: Set<Husstandsbarn> = emptySet()
 
@@ -325,7 +334,8 @@ class BoforholdService(
             .forEach { eksisterendeHusstandsbarn ->
 
                 val eksisterendeHusstandsbarnOppdateres =
-                    nyttPeriodisertBoforhold.map { it.ident }.contains(eksisterendeHusstandsbarn.ident)
+                    bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
+                        .contains(eksisterendeHusstandsbarn.ident)
 
                 if (!eksisterendeHusstandsbarnOppdateres) {
                     eksisterendeHusstandsbarn.perioder.clear()
@@ -388,8 +398,7 @@ class BoforholdService(
     ) {
         val manuelleBarnMedIdent =
             behandling.husstandsbarn.filter { Kilde.MANUELL == it.kilde }.filter { it.ident != null }
-        val identerOffisielleBarn =
-            nyttPeriodisertBoforhold.mapNotNull { it.ident }.toSet()
+        val identerOffisielleBarn = nyttPeriodisertBoforhold.mapNotNull { it.ident }.toSet()
 
         manuelleBarnMedIdent.forEach { manueltBarn ->
             if (identerOffisielleBarn.contains(manueltBarn.ident)) {
@@ -424,10 +433,12 @@ class BoforholdService(
 
     private fun endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
-        nyttPeriodisertBoforhold: Set<Husstandsbarn>,
+        bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
     ) {
         behandling.husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.forEach { eksisterendeHusstandsbarn ->
-            if (!nyttPeriodisertBoforhold.map { it.ident }.contains(eksisterendeHusstandsbarn.ident)) {
+            if (!bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
+                    .contains(eksisterendeHusstandsbarn.ident)
+            ) {
                 eksisterendeHusstandsbarn.kilde = Kilde.MANUELL
                 eksisterendeHusstandsbarn.perioder.forEach { periode -> periode.kilde = Kilde.MANUELL }
             }

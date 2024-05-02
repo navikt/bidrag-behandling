@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
@@ -34,6 +35,7 @@ import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.apache.commons.lang3.Validate
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -47,6 +49,8 @@ private val log = KotlinLogging.logger {}
 class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
     private val forsendelseService: ForsendelseService,
+    private val boforholdService: BoforholdService,
+    private val tilgangskontrollService: TilgangskontrollService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
     private val entityManager: EntityManager,
@@ -72,6 +76,7 @@ class BehandlingService(
         }
 
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
+        tilgangskontrollService.sjekkTilgangSak(opprettBehandling.saksnummer)
         behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
             log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
             return OpprettBehandlingResponse(it.id!!)
@@ -95,6 +100,8 @@ class BehandlingService(
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
+                virkningstidspunkt = opprettBehandling.søktFomDato,
+                årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
@@ -152,32 +159,32 @@ class BehandlingService(
         behandlingsid: Long,
         request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 {
-        behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
-            log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
-            secureLogger.info {
-                "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
-                    "for person ${request.personident}"
+        behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+                log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
+                secureLogger.info {
+                    "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
+                        "for person ${request.personident}"
+                }
+                grunnlagService.aktivereGrunnlag(it, request)
+                val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.toSet().hentSisteAktiv()
+                val ikkeAktiverteEndringerIGrunnlagsdata =
+                    grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
+                return AktivereGrunnlagResponseV2(
+                    boforhold = it.tilBoforholdV2(),
+                    inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
+                    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+                    ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
+                )
             }
-            grunnlagService.aktivereGrunnlag(it, request)
-            val gjeldendeAktiveGrunnlagsdata =
-                grunnlagService.henteGjeldendeAktiveGrunnlagsdata(it)
-            val ikkeAktiverteEndringerIGrunnlagsdata =
-                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
-            return AktivereGrunnlagResponseV2(
-                boforhold = it.tilBoforholdV2(),
-                inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
-                aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
-                ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
-            )
-        }
     }
 
     @Transactional
     fun oppdaterBehandling(
         behandlingsid: Long,
         request: OppdaterBehandlingRequestV2,
-    ) {
-        behandlingRepository.findBehandlingById(behandlingsid)
+    ): Behandling {
+        return behandlingRepository.findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
                 it.validerKanOppdatere()
                 log.info { "Oppdatere behandling $behandlingsid" }
@@ -248,15 +255,15 @@ class BehandlingService(
 
     fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {
         val behandling = hentBehandlingById(behandlingsid)
+        tilgangskontrollService.sjekkTilgangBehandling(behandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
-        val gjeldendeAktiveGrunnlagsdata =
-            grunnlagService.henteGjeldendeAktiveGrunnlagsdata(behandling)
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
+
         return behandling.tilBehandlingDtoV2(
-            gjeldendeAktiveGrunnlagsdata,
+            behandling.grunnlagListe.toSet().hentSisteAktiv(),
             grunnlagsdataEndretEtterAktivering,
         )
     }
@@ -265,6 +272,7 @@ class BehandlingService(
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
+        tilgangskontrollService.sjekkTilgangBehandling(behandling)
         if (behandling.deleted) behandlingNotFoundException(behandlingId)
         return behandling
     }
@@ -275,6 +283,7 @@ class BehandlingService(
         oppdaterRollerListe: List<OpprettRolleDto>,
     ): OppdaterRollerResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        tilgangskontrollService.sjekkTilgangBehandling(behandling)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,

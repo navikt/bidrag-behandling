@@ -41,6 +41,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringR
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -55,6 +56,7 @@ class VedtakService(
     private val grunnlagService: GrunnlagService,
     private val notatOpplysningerService: NotatOpplysningerService,
     private val beregningService: BeregningService,
+    private val tilgangskontrollService: TilgangskontrollService,
     private val vedtakConsumer: BidragVedtakConsumer,
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
@@ -62,6 +64,7 @@ class VedtakService(
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
         LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
         val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+        tilgangskontrollService.sjekkTilgangSak(vedtak.saksnummer!!)
         secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
         return vedtak.tilBehandling(vedtakId, lesemodus = true)
     }
@@ -74,6 +77,7 @@ class VedtakService(
         val konvertertBehandling =
             konverterVedtakTilBehandling(request, refVedtaksid)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
+        tilgangskontrollService.sjekkTilgangSak(konvertertBehandling.saksnummer)
         val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
@@ -276,7 +280,10 @@ class VedtakService(
             erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
                 virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
         if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
-            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Virkningstidspunkt ikke være senere enn opprinnelig virkningstidspunkt")
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Virkningstidspunkt ikke være senere enn opprinnelig virkningstidspunkt",
+            )
         }
 
         if (saksnummer.isEmpty()) {

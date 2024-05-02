@@ -21,15 +21,21 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.testdata.tilTransformerInntekterRequest
+import no.nav.bidrag.boforhold.BoforholdApi
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -62,7 +68,9 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -70,6 +78,7 @@ import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @RunWith(Enclosed::class)
@@ -92,7 +101,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 21
+    val totaltAntallGrunnlag = 22
 
     @BeforeEach
     fun setup() {
@@ -434,7 +443,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Transactional
         @Test
-        open fun `skal lage ikke aktiv grunnlag hvis beregnet inntekt ikke er lik lagret grunnlag`() {
+        open fun `skal lagre ikke aktiv grunnlag hvis beregnet inntekt ikke er lik lagret grunnlag`() {
             // gitt
             val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
             val behandling = testdataManager.opprettBehandling(false)
@@ -515,15 +524,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+            entityManager.refresh(behandling)
 
-            assertSoftly {
-                oppdatertBehandling.isPresent shouldBe true
-                val grunnlagListe = oppdatertBehandling.get().grunnlag
-                grunnlagListe.size shouldBe 3
-                grunnlagListe.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 3
-                grunnlagListe.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 1
-                grunnlagListe.filter { !it.erBearbeidet } shouldHaveSize 1
+            assertSoftly(behandling.grunnlag) { g ->
+                g.size shouldBe 3
+                g.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 3
+                g.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 1
+                g.filter { !it.erBearbeidet } shouldHaveSize 1
             }
         }
 
@@ -689,6 +696,208 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        open fun `skal overskrive forrige ikke aktive grunnlag`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BARN ->
+                        stubUtils.stubHenteGrunnlagOk(
+                            rolle = it,
+                            navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                        )
+
+                    else -> throw Exception()
+                }
+            }
+            stubbeHentingAvPersoninfoForTestpersoner()
+
+            val aktivertSmåbarnstillegg =
+                SmåbarnstilleggGrunnlagDto(
+                    beløp = BigDecimal(3400),
+                    manueltBeregnet = false,
+                    periodeFra = YearMonth.now().minusMonths(7).atDay(1),
+                    periodeTil = YearMonth.now().atDay(1),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    data = tilJson(setOf(aktivertSmåbarnstillegg)),
+                    innhentet = LocalDateTime.now().minusDays(1),
+                    aktiv = LocalDateTime.now().minusDays(1),
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                ),
+            )
+
+            val ikkeAktivertSmåbarnstillegg1 =
+                SmåbarnstilleggGrunnlagDto(
+                    beløp = BigDecimal(3700),
+                    manueltBeregnet = false,
+                    periodeFra = YearMonth.now().minusMonths(7).atDay(1),
+                    periodeTil = YearMonth.now().atDay(1),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    data = tilJson(setOf(ikkeAktivertSmåbarnstillegg1)),
+                    innhentet = LocalDateTime.now().minusDays(1),
+                    aktiv = null,
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                ),
+            )
+
+            val ikkeAktivertSmåbarnstillegg2 =
+                SmåbarnstilleggGrunnlagDto(
+                    beløp = BigDecimal(2700),
+                    manueltBeregnet = false,
+                    periodeFra = YearMonth.now().minusMonths(7).atDay(1),
+                    periodeTil = YearMonth.now().atDay(1),
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    data = tilJson(setOf(ikkeAktivertSmåbarnstillegg2)),
+                    innhentet = LocalDateTime.now().minusDays(2),
+                    aktiv = null,
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                ),
+            )
+
+            behandlingRepository.save(behandling)
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlag.size shouldBe 23
+
+            val småbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
+
+            assertSoftly(småbarnstillegg) { sb ->
+                sb.size shouldBe 3
+                sb.filter { it.aktiv != null } shouldHaveSize 3
+                sb.filter { it.erBearbeidet } shouldHaveSize 1
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke aktivere boforholdrådata dersom bearbeida boforhold er ikke er aktivert for samtlige husstandsmedlemmer`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BARN ->
+                        stubUtils.stubHenteGrunnlagOk(
+                            rolle = it,
+                            navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                        )
+
+                    else -> throw Exception()
+                }
+            }
+
+            val grunnlag = opprettAlleAktiveGrunnlagFraFil(behandling, "hente-grunnlagrespons.json")
+
+            entityManager.refresh(behandling)
+
+            val rådataBoforhold = grunnlag.find { !it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD }
+
+            val nyeBorhosperioder =
+                listOf(
+                    BorISammeHusstandDto(
+                        periodeFra = behandling.virkningstidspunktEllerSøktFomDato,
+                        periodeTil = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(7),
+                    ),
+                    BorISammeHusstandDto(
+                        periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(10),
+                        periodeTil = null,
+                    ),
+                )
+
+            val dataBoforhold = jsonListeTilObjekt<RelatertPersonGrunnlagDto>(rådataBoforhold!!.data)
+
+            val endretBoforholdTestbarn1 =
+                dataBoforhold.find { testdataBarn1.ident == it.relatertPersonPersonId }
+                    ?.copy(borISammeHusstandDtoListe = nyeBorhosperioder)
+
+            val endretBoforhold =
+                listOf(
+                    endretBoforholdTestbarn1!!,
+                    dataBoforhold.find { testdataBarn2.ident == it.relatertPersonPersonId }!!,
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.BOFORHOLD,
+                    erBearbeidet = false,
+                    data = tilJson(endretBoforhold.toSet()),
+                    innhentet = LocalDateTime.now().minusDays(1),
+                    aktiv = LocalDateTime.now().minusDays(1),
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                ),
+            )
+
+            val bearbeidaBoforhold =
+                BoforholdApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    endretBoforhold.tilBoforholdRequest(),
+                )
+
+            bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        behandling,
+                        Grunnlagsdatatype.BOFORHOLD,
+                        erBearbeidet = true,
+                        data = tilJson(it.value),
+                        innhentet = LocalDateTime.now().minusDays(1),
+                        aktiv = LocalDateTime.now().minusDays(1),
+                        rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                        gjelder = it.key,
+                    ),
+                )
+            }
+
+            stubbeHentingAvPersoninfoForTestpersoner()
+            behandlingRepository.save(behandling)
+
+            assertSoftly(behandling.grunnlag) { g ->
+                g shouldHaveSize 3
+                g.filter { behandling.bidragsmottaker == it.rolle } shouldHaveSize 3
+                g.filter { it.aktiv != null } shouldHaveSize 3
+                g.filter { it.erBearbeidet } shouldHaveSize 2
+                g.filter { !it.erBearbeidet && it.gjelder == null } shouldHaveSize 1
+                g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
+                g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
+            }
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
+            assertSoftly(boforhold) { sb ->
+                sb.size shouldBe 5
+                sb.filter { it.aktiv != null } shouldHaveSize 3
+                sb.filter { it.erBearbeidet } shouldHaveSize 3
+            }
+        }
+
+        @Test
+        @Transactional
         open fun `skal ikke lagre tomt grunnlag dersom sist lagrede grunnlag var tomt`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
@@ -793,9 +1002,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly(oppdatertBehandling) {
                 it.isPresent shouldBe true
                 it.get().grunnlag.size shouldBe totaltAntallGrunnlag
-                it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }.size shouldBe 2
+                it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }.size shouldBe 3
                 it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
-                    .filter { g -> g.erBearbeidet }.size shouldBe 1
+                    .filter { g -> g.erBearbeidet }.size shouldBe 2
                 it.get().husstandsbarn.size shouldBe 2
             }
 
@@ -1417,6 +1626,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal aktivere grunnlag av type boforhold, og oppdatere husstandsbarntabell`() {
             // gitt
             val behandling = testdataManager.opprettBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
             Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                 .thenReturn(testdataBarn1.tilPersonDto())
 
@@ -1432,18 +1642,37 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagsdata =
                     setOf(
                         RelatertPersonGrunnlagDto(
-                            partPersonId = testdataBM.ident,
-                            relatertPersonPersonId = testdataBarn1.ident,
-                            navn = testdataBarn1.navn,
-                            fødselsdato = testdataBarn1.fødselsdato,
+                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                             erBarnAvBmBp = true,
+                            navn = null,
+                            partPersonId = behandling.bidragsmottaker!!.ident!!,
                             borISammeHusstandDtoListe =
                                 listOf(
                                     BorISammeHusstandDto(
-                                        periodeFra = testdataBarn1.fødselsdato,
+                                        testdataHusstandsmedlem1.fødselsdato,
                                         periodeTil = null,
                                     ),
                                 ),
+                        ),
+                    ),
+            )
+
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling = behandling,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                aktiv = null,
+                gjelderIdent = testdataHusstandsmedlem1.ident,
+                grunnlagsdata =
+                    setOf(
+                        BoforholdResponse(
+                            bostatus = Bostatuskode.MED_FORELDER,
+                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                            kilde = Kilde.OFFENTLIG,
+                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                            periodeTom = null,
                         ),
                     ),
             )
@@ -1453,7 +1682,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             val aktivereGrunnlagRequest =
                 AktivereGrunnlagRequestV2(
-                    Personident(behandling.bidragsmottaker?.ident!!),
+                    Personident(testdataHusstandsmedlem1.ident),
                     Grunnlagsdatatype.BOFORHOLD,
                 )
 
@@ -1475,7 +1704,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly(behandling.husstandsbarn) {
                 it.size shouldBe 1
                 it.first().perioder.size shouldBe 1
-                it.first().perioder.first { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
             }
         }
 
@@ -1537,6 +1765,150 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 it.first().sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
             }
         }
+
+        @Test
+        @Transactional
+        open fun `skal aktivere boforholdrådata dersom bearbeida boforhold er aktivert for samtlige husstandsmedlemmer`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BARN ->
+                        stubUtils.stubHenteGrunnlagOk(
+                            rolle = it,
+                            navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                        )
+
+                    else -> throw Exception()
+                }
+            }
+
+            val grunnlag = opprettAlleAktiveGrunnlagFraFil(behandling, "hente-grunnlagrespons.json")
+
+            entityManager.refresh(behandling)
+
+            val rådataBoforhold = grunnlag.find { !it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD }
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.BOFORHOLD,
+                    erBearbeidet = false,
+                    data = rådataBoforhold!!.data,
+                    innhentet = LocalDateTime.now().minusDays(1),
+                    aktiv = null,
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                ),
+            )
+
+            val bearbeidaBoforhold =
+                BoforholdApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    jsonListeTilObjekt<RelatertPersonGrunnlagDto>(rådataBoforhold.data).tilBoforholdRequest(),
+                )
+
+            bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        behandling,
+                        Grunnlagsdatatype.BOFORHOLD,
+                        erBearbeidet = true,
+                        data = tilJson(it.value),
+                        innhentet = LocalDateTime.now().minusDays(1),
+                        aktiv = if (testdataBarn1.ident == it.key) null else LocalDateTime.now().minusDays(1),
+                        rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                        gjelder = it.key,
+                    ),
+                )
+            }
+
+            stubbeHentingAvPersoninfoForTestpersoner()
+            behandlingRepository.save(behandling)
+
+            assertSoftly(behandling.grunnlag) { g ->
+                g shouldHaveSize 3
+                g.filter { behandling.bidragsmottaker == it.rolle } shouldHaveSize 3
+                g.filter { it.aktiv != null } shouldHaveSize 1
+                g.filter { it.erBearbeidet } shouldHaveSize 2
+                g.filter { !it.erBearbeidet && it.gjelder == null && it.aktiv === null } shouldHaveSize 1
+                g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
+                g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
+            }
+
+            assertSoftly(behandling.husstandsbarn) { hb ->
+                hb shouldHaveSize 2
+                hb.filter { Kilde.OFFENTLIG == it.kilde }
+            }
+
+            // hvis
+            grunnlagService.aktivereGrunnlag(
+                behandling,
+                AktivereGrunnlagRequestV2(Personident(testdataBarn1.ident), Grunnlagsdatatype.BOFORHOLD, false),
+            )
+
+            // så
+            val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
+            assertSoftly(boforhold) { b ->
+                b.size shouldBe 3
+                b.filter { it.aktiv != null } shouldHaveSize 3
+                b.filter { it.erBearbeidet } shouldHaveSize 2
+            }
+
+            assertSoftly(behandling.husstandsbarn) { hb ->
+                hb shouldHaveSize 2
+                hb.filter { Kilde.OFFENTLIG == it.kilde }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal gi 404-svar hvis ingen grunnlag å aktivere`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
+            Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
+                .thenReturn(testdataBarn1.tilPersonDto())
+
+            assertSoftly(behandling.husstandsbarn) {
+                it.size shouldBe 2
+            }
+
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling = behandling,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                aktiv = LocalDateTime.now(),
+                gjelderIdent = testdataHusstandsmedlem1.ident,
+                grunnlagsdata =
+                    setOf(
+                        BoforholdResponse(
+                            bostatus = Bostatuskode.MED_FORELDER,
+                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                            kilde = Kilde.OFFENTLIG,
+                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                            periodeTom = null,
+                        ),
+                    ),
+            )
+
+            entityManager.flush()
+            entityManager.refresh(behandling)
+
+            val aktivereGrunnlagRequest =
+                AktivereGrunnlagRequestV2(
+                    Personident(testdataHusstandsmedlem1.ident),
+                    Grunnlagsdatatype.BOFORHOLD,
+                )
+
+            // hvis
+            val respons =
+                assertFailsWith<HttpClientErrorException> { grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest) }
+
+            // så
+            respons.statusCode shouldBe HttpStatus.NOT_FOUND
+        }
     }
 
     @Nested
@@ -1574,32 +1946,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // så
             assertNotNull(opplysninger)
             assertEquals(opp4.id, opplysninger.id)
-        }
-    }
-
-    @Nested
-    @DisplayName("Teste hentAlleSistInnhentet")
-    open inner class HentAlleSistInnhentet {
-        @Test
-        @Transactional
-        open fun `skal hente nyeste grunnlagsopplysning per type`() {
-            // gitt
-            val behandling = testdataManager.opprettBehandling(true)
-            stubbeHentingAvPersoninfoForTestpersoner()
-            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
-            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
-
-            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
-
-            // hvis
-            val nyesteGrunnlagPerType =
-                grunnlagService.hentAlleSistInnhentet(
-                    behandling.id!!,
-                    behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                )
-
-            // så
-            validereGrunnlagBm(nyesteGrunnlagPerType)
         }
     }
 
@@ -1701,9 +2047,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     private fun validereGrunnlagBm(grunnlag: List<Grunnlag>) {
         assertSoftly {
-            grunnlag.size shouldBe 13
+            grunnlag.size shouldBe 14
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
-            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 2
+            grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 3
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SIVILSTAND }.size shouldBe 2
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BARNETILLEGG }.size shouldBe 0
@@ -1733,6 +2079,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             .thenReturn(testdataBarn1.tilPersonDto())
         Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn2.ident))
             .thenReturn(testdataBarn2.tilPersonDto())
+        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataHusstandsmedlem1.ident))
+            .thenReturn(testdataHusstandsmedlem1.tilPersonDto())
     }
 }
 

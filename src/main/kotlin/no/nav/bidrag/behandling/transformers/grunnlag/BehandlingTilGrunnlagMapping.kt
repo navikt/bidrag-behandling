@@ -77,7 +77,7 @@ fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<G
 }
 
 fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
-    val sortertGrunnlagsListe = grunnlagListe.hentAlleAktiv()
+    val sortertGrunnlagsListe = grunnlag.hentAlleAktiv()
     val sortertGrunnlagsListeBearbeidet = sortertGrunnlagsListe.filter { it.erBearbeidet }
     val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
     val innhentetArbeidsforhold = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetArbeidsforhold(personobjekter)
@@ -203,7 +203,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
     referanse = tilGrunnlagreferanse(gjelder),
     // Liste med referanser fra bidrag-inntekt
     grunnlagsreferanseListe =
-        grunnlagListe.hentGrunnlagsreferanserForInntekt(
+        grunnlagListe.toSet().hentGrunnlagsreferanserForInntekt(
             gjelder.personIdent!!,
             this,
         ),
@@ -295,7 +295,8 @@ private fun opprettGrunnlagForBostatusperioder(
 
 private fun Inntekt.tilGrunnlagreferanse(gjelder: GrunnlagDto) =
     if (!gjelderBarn.isNullOrEmpty()) {
-        "inntekt_${type}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
+        val innektsposterType = inntektsposter.mapNotNull { it.inntektstype }.distinct().joinToString("", prefix = "_")
+        "inntekt_${type}${innektsposterType}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
     } else {
         "inntekt_${type}_${gjelder.referanse}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
     }

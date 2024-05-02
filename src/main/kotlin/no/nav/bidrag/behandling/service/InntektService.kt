@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.tilInntektrapporteringYtelse
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
@@ -125,6 +126,11 @@ class InntektService(
             inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
             beregnetInntekter = behandling.hentBeregnetInntekter(),
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
+            notat =
+                BehandlingNotatDto(
+                    medIVedtaket = behandling.inntektsbegrunnelseIVedtakOgNotat,
+                    kunINotat = behandling.inntektsbegrunnelseKunINotat,
+                ),
         )
     }
 

@@ -1,8 +1,9 @@
 package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
 interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
@@ -13,17 +14,7 @@ interface GrunnlagRepository : CrudRepository<Grunnlag, Long> {
         erBearbeidet: Boolean,
     ): Grunnlag?
 
-    fun findByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-        behandlingsid: Long,
-        rolleid: Long,
-        grunnlagsdatatype: Grunnlagsdatatype,
-        erBearbeidet: Boolean,
-    ): List<Grunnlag>
-
-    fun findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
-        behandlingId: Long,
-        grunnlagsdatatype: Grunnlagsdatatype,
-        erBearbeidet: Boolean,
-        rolle: Rolle,
-    ): Grunnlag?
+    @Modifying
+    @Query("delete from grunnlag where id = :id")
+    override fun deleteById(id: Long)
 }

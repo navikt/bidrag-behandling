@@ -84,12 +84,6 @@ fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<Summe
     }.associate { it.first!! to it.second }
 }
 
-fun List<GrunnlagDto>.hentVersjonBeregnetInntekt(ident: String) =
-    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT).find {
-        val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
-        gjelder.personIdent == ident
-    }?.innholdTilObjekt<BeregnetInntekt>()?.versjon ?: ""
-
 fun List<GrunnlagDto>.hentInnhentetHusstandsmedlem(): List<RelatertPersonGrunnlagDto> =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM)
         .map {
@@ -358,7 +352,7 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                     versjon = årsinntekter.versjon(inntektsrapportering),
                     inntekter = årsinntekter.filter { it.inntekt.inntektRapportering == inntektsrapportering },
                 ),
-                gjelderIdent = gjelder.personIdent!!,
+                rolleIdent = gjelder.personIdent!!,
                 erBearbeidet = true,
                 innhentetTidspunkt = innhentetTidspunkt,
                 lesemodus = lesemodus,
@@ -397,7 +391,7 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                         versjon = årsinntekter.versjon(Inntektsrapportering.AINNTEKT_BEREGNET_3MND),
                         inntekter = inntekter.skattegrunnlagListe + inntekter.ainntektListe,
                     ),
-                    gjelderIdent = gjelder.personIdent!!,
+                    rolleIdent = gjelder.personIdent!!,
                     erBearbeidet = true,
                     innhentetTidspunkt = innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
                     lesemodus = lesemodus,

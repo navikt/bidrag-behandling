@@ -150,7 +150,7 @@ fun List<Grunnlag>.hentVersjonForInntekt(inntekt: Inntekt): String {
         ?: vedtakmappingFeilet("Mangler versjon for beregnet inntekt ${inntekt.type}")
 }
 
-fun List<Grunnlag>.hentGrunnlagsreferanserForInntekt(
+fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
     gjelderIdent: String,
     inntekt: Inntekt,
 ): List<Grunnlagsreferanse> {

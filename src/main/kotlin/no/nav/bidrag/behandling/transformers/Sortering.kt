@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import java.time.YearMonth
 
 val årsinntekterPrioriteringsliste =
     listOf(
@@ -24,22 +25,43 @@ val årsinntekterPrioriteringsliste =
         Inntektsrapportering.LIGNINGSINNTEKT,
     )
 
-fun Set<Inntekt>.årsinntekterSortert(inkluderTaMed: Boolean = true) =
-    this.filter { !eksplisitteYtelser.contains(it.type) }
-        .sortedWith(
-            compareBy<Inntekt> {
-                it.taMed && inkluderTaMed
-            }
-                .thenBy {
-                    val index =
-                        årsinntekterPrioriteringsliste.indexOf(
-                            it.type,
-                        )
-                    if (index == -1 || it.taMed && inkluderTaMed) 1000 else index
-                }.thenBy {
-                    if (it.taMed && inkluderTaMed) it.datoFom else it.opprinneligFom
-                },
-        )
+fun Set<Inntekt>.årsinntekterSortert(
+    sorterTaMed: Boolean = true,
+    eksluderYtelserUtenforVirkningstidspunkt: Boolean = false,
+) = this.filter { !eksplisitteYtelser.contains(it.type) }
+    .filter {
+        if (eksluderYtelserUtenforVirkningstidspunkt && årsinntekterYtelser.contains(it.type)) {
+            it.opprinneligPeriode
+                ?.inneholder(YearMonth.from(it.behandling?.virkningstidspunktEllerSøktFomDato)) ?: true
+        } else {
+            true
+        }
+    }
+    .sortedWith(
+        compareBy<Inntekt> {
+            it.taMed && sorterTaMed
+        }
+            .thenBy {
+                val index =
+                    årsinntekterPrioriteringsliste.indexOf(
+                        it.type,
+                    )
+                if (index == -1 || it.taMed && sorterTaMed) 1000 else index
+            }.thenBy {
+                val index =
+                    årsinntekterPrioriteringsliste.indexOf(
+                        it.type,
+                    )
+                if (it.taMed && sorterTaMed) {
+                    (
+                        it.datoFom?.toEpochDay()
+                            ?: 1
+                    ) + index
+                } else {
+                    it.opprinneligFom
+                }
+            },
+    )
 
 fun Husstandsbarn.erSøknadsbarn() = this.behandling.søknadsbarn.map { it.ident }.contains(this.ident)
 
