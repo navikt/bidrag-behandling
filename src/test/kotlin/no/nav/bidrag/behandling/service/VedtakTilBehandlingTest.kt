@@ -369,8 +369,8 @@ class VedtakTilBehandlingTest {
                 it[0].belop shouldBe BigDecimal(5000)
                 it[0].gjelderBarn shouldBe testdataBarn2.ident
                 it[0].taMed shouldBe false
-                it[0].datoFom shouldBe LocalDate.parse("2024-01-01")
-                it[0].datoTom shouldBe LocalDate.parse("2024-01-31")
+                it[0].datoFom shouldBe null
+                it[0].datoTom shouldBe null
                 it[0].inntektsposter shouldHaveSize 0
                 it[0].kilde shouldBe Kilde.MANUELL
             }

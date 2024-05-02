@@ -292,7 +292,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             // TODO: Legg til beregnet sivilstand
         },
     hentInnhentetHusstandsmedlem().groupBy { it.partPersonId }
-        .flatMap { (gjelderIdent, grunnlag) ->
+        .flatMap { (innhentetForIdent, grunnlag) ->
 
             val boforholdPeriodisert =
                 BoforholdApi.beregnV2(
@@ -303,20 +303,24 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 behandling.opprettGrunnlag(
                     Grunnlagsdatatype.BOFORHOLD,
                     grunnlag,
-                    gjelderIdent!!,
+                    innhentetForIdent!!,
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
                     lesemodus,
                 ),
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.BOFORHOLD,
-                    boforholdPeriodisert,
-                    gjelderIdent!!,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
-                    lesemodus,
-                    true,
-                    gjelder = grunnlag.firstOrNull()?.relatertPersonPersonId,
-                ),
-            )
+            ) +
+                boforholdPeriodisert.filter { it.relatertPersonPersonId != null }
+                    .groupBy { it.relatertPersonPersonId }
+                    .map {
+                        behandling.opprettGrunnlag(
+                            Grunnlagsdatatype.BOFORHOLD,
+                            it.value,
+                            grunnlag.firstOrNull()?.partPersonId!!,
+                            innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                            lesemodus,
+                            true,
+                            gjelder = it.key!!,
+                        )
+                    }
         },
 ).flatten()
 

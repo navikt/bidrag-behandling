@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
@@ -18,6 +19,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.test.assertNotNull
 
 @Suppress("NonAsciiCharacters")
@@ -69,6 +71,8 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 15
             grunnlag shouldHaveSize 38
+            opprinneligVedtakstidspunkt shouldHaveSize 1
+            opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
             refVedtaksid shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(11)
             sivilstand shouldHaveSize 2
