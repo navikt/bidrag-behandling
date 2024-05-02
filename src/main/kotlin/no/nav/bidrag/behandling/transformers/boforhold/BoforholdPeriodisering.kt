@@ -17,6 +17,8 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 
+fun Set<RelatertPersonGrunnlagDto>.tilBoforholdRequest() = this.toList().tilBoforholdRequest()
+
 fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
     this.map {
         BoforholdRequest(
@@ -28,26 +30,6 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
             erBarnAvBmBp = it.erBarnAvBmBp,
             fødselsdato = it.fødselsdato!!,
             relatertPersonPersonId = it.relatertPersonPersonId,
-        )
-    }
-
-fun BoforholdResponse.tilBostatus() =
-    Bostatus(
-        bostatus = this.bostatus,
-        kilde = this.kilde,
-        periodeFom = this.periodeFom,
-        periodeTom = this.periodeTom,
-    )
-
-fun List<BoforholdResponse>.konvertereTilBoforholdRequest() =
-    this.groupBy { it.relatertPersonPersonId }.map {
-        BoforholdRequest(
-            bostatusListe = it.value.map { it.tilBostatus() },
-            // TODO: Alltid sant for forskudd, men oppdatere med nytt felt fra BoforholdResponse når dette
-            //  gjøres tilgjengelig
-            erBarnAvBmBp = true,
-            fødselsdato = it.value.first().fødselsdato,
-            relatertPersonPersonId = it.key,
         )
     }
 

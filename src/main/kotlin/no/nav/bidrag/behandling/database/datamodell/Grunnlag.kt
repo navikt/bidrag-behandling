@@ -30,8 +30,8 @@ open class Grunnlag(
     open val erBearbeidet: Boolean = false,
     @Column(name = "data", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
-    open val data: String,
-    open val innhentet: LocalDateTime,
+    open var data: String,
+    open var innhentet: LocalDateTime,
     open var aktiv: LocalDateTime? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
@@ -53,17 +53,17 @@ open class Grunnlag(
     val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
 }
 
-fun List<Grunnlag>.hentAlleIkkeAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
+fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
 
-fun List<Grunnlag>.hentAlleAktiv() = filter { it.innhentet != null }.sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
+fun Set<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
 
-fun List<Grunnlag>.hentSisteIkkeAktiv() =
+fun Set<Grunnlag>.hentSisteIkkeAktiv() =
     hentAlleIkkeAktiv().groupBy { it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
 
-fun List<Grunnlag>.hentSisteAktiv() =
+fun Set<Grunnlag>.hentSisteAktiv() =
     hentAlleAktiv().groupBy { it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values

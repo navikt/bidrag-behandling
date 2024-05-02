@@ -7,7 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
@@ -77,7 +77,7 @@ fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<G
 }
 
 fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
-    val sortertGrunnlagsListe = grunnlagListe.hentSisteAktiv()
+    val sortertGrunnlagsListe = grunnlag.hentAlleAktiv()
     val sortertGrunnlagsListeBearbeidet = sortertGrunnlagsListe.filter { it.erBearbeidet }
     val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
     val innhentetArbeidsforhold = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetArbeidsforhold(personobjekter)
@@ -203,7 +203,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
     referanse = tilGrunnlagreferanse(gjelder),
     // Liste med referanser fra bidrag-inntekt
     grunnlagsreferanseListe =
-        grunnlagListe.hentGrunnlagsreferanserForInntekt(
+        grunnlagListe.toSet().hentGrunnlagsreferanserForInntekt(
             gjelder.personIdent!!,
             this,
         ),

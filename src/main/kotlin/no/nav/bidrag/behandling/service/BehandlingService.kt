@@ -167,7 +167,7 @@ class BehandlingService(
                         "for person ${request.personident}"
                 }
                 grunnlagService.aktivereGrunnlag(it, request)
-                val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.hentSisteAktiv()
+                val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.toSet().hentSisteAktiv()
                 val ikkeAktiverteEndringerIGrunnlagsdata =
                     grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
                 return AktivereGrunnlagResponseV2(
@@ -261,8 +261,9 @@ class BehandlingService(
 
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
+
         return behandling.tilBehandlingDtoV2(
-            behandling.grunnlagListe.hentSisteAktiv(),
+            behandling.grunnlagListe.toSet().hentSisteAktiv(),
             grunnlagsdataEndretEtterAktivering,
         )
     }
