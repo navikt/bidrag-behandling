@@ -5,7 +5,6 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -182,7 +181,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             boforholdService.oppdatereAutomatiskInnhentaBoforhold(
                 behandling,
                 periodisertBoforhold,
-               grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                 true,
             )
 
@@ -268,7 +267,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             boforholdService.oppdatereAutomatiskInnhentaBoforhold(
                 behandling,
                 periodisertBoforhold,
-               grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                 false,
             )
 
