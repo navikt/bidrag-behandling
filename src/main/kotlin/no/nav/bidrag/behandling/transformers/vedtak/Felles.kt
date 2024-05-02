@@ -17,7 +17,7 @@ import no.nav.bidrag.transport.sak.RolleDto
 val grunnlagstyperSomIkkeTrengerÅBekreftes =
     listOf(Grunnlagsdatatype.SIVILSTAND, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.ARBEIDSFORHOLD)
 
-fun List<Grunnlag>.hentAlleSomMåBekreftes() = hentAlleIkkeAktiv().filter { !grunnlagstyperSomIkkeTrengerÅBekreftes.contains(it.type) }
+fun Set<Grunnlag>.hentAlleSomMåBekreftes() = hentAlleIkkeAktiv().filter { !grunnlagstyperSomIkkeTrengerÅBekreftes.contains(it.type) }
 
 val skyldnerNav = Personident("NAV")
 val inntektsrapporteringSomKreverSøknadsbarn =

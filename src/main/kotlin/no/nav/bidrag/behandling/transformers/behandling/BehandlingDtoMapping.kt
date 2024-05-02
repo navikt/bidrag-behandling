@@ -117,26 +117,22 @@ fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     }
 }
 
-fun Grunnlag?.toHusstandsbarn(): Set<HusstandsbarnGrunnlagDto> {
-    if (this == null) return emptySet()
-    return konverterData<List<BoforholdResponse>>()?.groupBy { it.relatertPersonPersonId }?.map { (barnId, grunnlag) ->
+fun List<Grunnlag>.tilHusstandsbarn() =
+    this.map {
         HusstandsbarnGrunnlagDto(
-            innhentetTidspunkt = this.innhentet,
-            ident = barnId,
+            innhentetTidspunkt = it.innhentet,
+            ident = it.gjelder,
             perioder =
-                grunnlag.filtrerPerioderEtterVirkningstidspunkt(
-                    behandling.husstandsbarn,
-                    behandling.virkningstidspunktEllerSøktFomDato,
-                ).map {
+                it.konverterData<List<BoforholdResponse>>()?.map {
+                        boforholdrespons ->
                     HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
-                        it.periodeFom,
-                        it.periodeTom,
-                        it.bostatus,
+                        boforholdrespons.periodeFom,
+                        boforholdrespons.periodeTom,
+                        boforholdrespons.bostatus,
                     )
-                }.toSet(),
+                }?.toSet() ?: emptySet(),
         )
-    }?.toSet() ?: emptySet()
-}
+    }.toSet()
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
@@ -201,7 +197,7 @@ fun List<Grunnlag>.tilAktivGrunnlagsdata() =
             find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konverterData<Set<ArbeidsforholdGrunnlagDto>>()
                 ?: emptySet(),
         husstandsbarn =
-            find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.toHusstandsbarn(),
+            filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsbarn(),
         sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )

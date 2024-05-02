@@ -124,7 +124,7 @@
   "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
   "husstandsmedlemmerOgEgneBarnListe": [
     {
-      "partPersonId": "81020212345",
+      "partPersonId": "313213213",
       "relatertPersonPersonId": "1344124",
       "navn": "Småstein Nilsen",
       "fødselsdato": "2020-01-24",
@@ -136,7 +136,7 @@
       ]
     },
     {
-      "partPersonId": "82020212345",
+      "partPersonId": "313213213",
       "relatertPersonPersonId": "54545454545",
       "navn": "Brostein Nilsen",
       "fødselsdato": "2022-01-24",

@@ -326,7 +326,6 @@ class BoforholdServiceTest : TestContainerRunner() {
             // hvis
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
                 behandling,
-                Personident(behandling.bidragsmottaker!!.ident!!),
                 periodisertBoforhold,
             )
 
@@ -395,7 +394,6 @@ class BoforholdServiceTest : TestContainerRunner() {
             // hvis
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
                 behandling,
-                Personident(behandling.bidragsmottaker!!.ident!!),
                 periodisertBoforhold,
             )
 

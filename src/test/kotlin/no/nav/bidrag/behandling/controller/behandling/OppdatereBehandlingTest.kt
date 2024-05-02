@@ -33,7 +33,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagspostDto
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
@@ -46,9 +45,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class OppdatereBehandlingTest : BehandlingControllerTest() {
-    @Autowired
-    lateinit var entityManager: EntityManager
-
     @Test
     fun `skal oppdatere behandling for API v2`() {
         // gitt

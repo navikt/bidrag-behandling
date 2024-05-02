@@ -72,7 +72,6 @@ class BoforholdService(
     @Transactional
     fun lagreFørstegangsinnhentingAvPeriodisertBoforhold(
         behandling: Behandling,
-        personident: Personident,
         periodisertBoforhold: List<BoforholdResponse>,
     ) {
         behandling.husstandsbarn.filter { (Kilde.OFFENTLIG == it.kilde) }.forEach {
@@ -354,8 +353,7 @@ class BoforholdService(
         val sivilstand = periodisertSivilstand.tilSivilstand(behandling)
 
         behandling.sivilstand.removeAll(
-            behandling.sivilstand.asSequence().filter { s -> Kilde.OFFENTLIG == s.kilde }
-                .toSet(),
+            behandling.sivilstand.asSequence().filter { s -> Kilde.OFFENTLIG == s.kilde }.toSet(),
         )
         behandling.sivilstand.addAll(sivilstand)
         log.info { "Sivilstand fra offentlige kilder ble oppdatert for behandling ${behandling.id}" }
@@ -493,8 +491,7 @@ class BoforholdService(
     ) {
         val manuelleBarnMedIdent =
             behandling.husstandsbarn.filter { Kilde.MANUELL == it.kilde }.filter { it.ident != null }
-        val identerOffisielleBarn =
-            nyttPeriodisertBoforhold.mapNotNull { it.ident }.toSet()
+        val identerOffisielleBarn = nyttPeriodisertBoforhold.mapNotNull { it.ident }.toSet()
 
         manuelleBarnMedIdent.forEach { manueltBarn ->
             if (identerOffisielleBarn.contains(manueltBarn.ident)) {

@@ -125,7 +125,7 @@ class NotatOpplysningerService(
 
     fun hentNotatOpplysningerForBehandling(behandling: Behandling): NotatDto {
         val opplysningerBoforhold =
-            behandling.grunnlagListe.hentSisteAktiv()
+            behandling.grunnlag.hentSisteAktiv()
                 .hentAlleBearbeidetBoforhold(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsbarn,
@@ -133,14 +133,14 @@ class NotatOpplysningerService(
                 )
 
         val opplysningerSivilstand =
-            behandling.grunnlagListe.hentSisteAktiv()
+            behandling.grunnlag.hentSisteAktiv()
                 .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
                 ?.konverterData<List<SivilstandGrunnlagDto>>()
                 ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
                 ?: emptyList()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
-            behandling.grunnlagListe.hentSisteAktiv()
+            behandling.grunnlag.hentSisteAktiv()
                 .filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.flatMap { r ->
                     r.konverterData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
                 }
