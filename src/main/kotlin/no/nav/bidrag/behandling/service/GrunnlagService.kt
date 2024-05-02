@@ -344,14 +344,10 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime,
         overskriveManuelleOpplysninger: Boolean,
     ) {
-//        val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
-//            behandling.grunnlag.toList().hentSisteIkkeAktiv()
-//                .filter { gjelderHusstandsbarn.verdi == it.gjelder && grunnlagstype == it.type }
-//                .firstOrNull { it.erBearbeidet }
-        val ikkeAktivGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
-            ikkeAktivGrunnlag.filter { gjelderHusstandsbarn.verdi == it.gjelder }.filter { grunnlagstype == it.type }
-                .filter { it.erBearbeidet }.maxByOrNull { it.innhentet }
+            behandling.grunnlag.hentSisteIkkeAktiv()
+                .filter { gjelderHusstandsbarn.verdi == it.gjelder && grunnlagstype == it.type }
+                .firstOrNull { it.erBearbeidet }
 
         if (nyesteIkkeAktiverteBoforholdForHusstandsmedlem == null) {
             throw HttpClientErrorException(
@@ -814,6 +810,7 @@ class GrunnlagService(
         }
     }
 
+    // TODO: Ikke fjern dette. Skal brukes ved sjekk for endringer
     private fun <T> erBoforholdEllerSivilstandGrunnlagEndret(
         grunnlagstype: Grunnlagstype,
         aktivGrunnlag: Set<T>,
