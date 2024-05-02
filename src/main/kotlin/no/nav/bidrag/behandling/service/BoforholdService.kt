@@ -79,13 +79,17 @@ class BoforholdService(
     fun oppdatereAutomatiskInnhentaBoforhold(
         behandling: Behandling,
         periodisertBoforhold: List<BoforholdResponse>,
+        bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val nyeHusstandsbarnMedPerioder = periodisertBoforhold.tilHusstandsbarn(behandling, bidragPersonConsumer)
         // Ved overskriving bevares manuelle barn, men dersom manuelt barn med personident også finnes i grunnlag,
         // erstattes dette med offentlige opplysninger. Manuelle perioder til offisielle barn slettes.
         if (overskriveManuelleOpplysninger) {
-            sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(behandling, nyeHusstandsbarnMedPerioder)
+            sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
+                behandling,
+                bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting
+            )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
                 nyeHusstandsbarnMedPerioder,
@@ -93,7 +97,10 @@ class BoforholdService(
             )
             leggeTilNyeEllerOppdatereEksisterendeOffentligeHusstandsbarn(behandling, nyeHusstandsbarnMedPerioder, true)
         } else {
-            endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(behandling, nyeHusstandsbarnMedPerioder)
+            endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
+                behandling,
+                bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting
+            )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
                 nyeHusstandsbarnMedPerioder,
@@ -110,7 +117,8 @@ class BoforholdService(
         oppdatereHusstandsbarn: OppdatereHusstandsbarn,
     ): OppdatereBoforholdResponse {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereHusstandsbarn.validere(behandling, husstandsbarnperiodeRepository)
 
@@ -280,13 +288,13 @@ class BoforholdService(
         entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                "forbindelse med førstegangsoppdatering av boforhold."
+                    "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 
     private fun sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
-        nyttPeriodisertBoforhold: Set<Husstandsbarn>,
+        bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
     ) {
         var husstandsbarnSomSkalSlettes: Set<Husstandsbarn> = emptySet()
 
@@ -294,7 +302,8 @@ class BoforholdService(
             .forEach { eksisterendeHusstandsbarn ->
 
                 val eksisterendeHusstandsbarnOppdateres =
-                    nyttPeriodisertBoforhold.map { it.ident }.contains(eksisterendeHusstandsbarn.ident)
+                    bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
+                        .contains(eksisterendeHusstandsbarn.ident)
 
                 if (!eksisterendeHusstandsbarnOppdateres) {
                     eksisterendeHusstandsbarn.perioder.clear()
@@ -392,10 +401,11 @@ class BoforholdService(
 
     private fun endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
-        nyttPeriodisertBoforhold: Set<Husstandsbarn>,
+        bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
     ) {
         behandling.husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.forEach { eksisterendeHusstandsbarn ->
-            if (!nyttPeriodisertBoforhold.map { it.ident }.contains(eksisterendeHusstandsbarn.ident)) {
+            if (!bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
+                    .contains(eksisterendeHusstandsbarn.ident)) {
                 eksisterendeHusstandsbarn.kilde = Kilde.MANUELL
                 eksisterendeHusstandsbarn.perioder.forEach { periode -> periode.kilde = Kilde.MANUELL }
             }
