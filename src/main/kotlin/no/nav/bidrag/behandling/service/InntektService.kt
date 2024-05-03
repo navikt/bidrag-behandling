@@ -174,8 +174,6 @@ class InntektService(
 
         oppdatereInntektRequest.oppdatereNotat?.let {
             behandling.inntektsbegrunnelseKunINotat = it.kunINotat ?: behandling.inntektsbegrunnelseKunINotat
-            behandling.inntektsbegrunnelseIVedtakOgNotat =
-                it.medIVedtaket ?: behandling.inntektsbegrunnelseIVedtakOgNotat
         }
 
         return null

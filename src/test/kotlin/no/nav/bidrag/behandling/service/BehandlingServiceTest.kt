@@ -587,7 +587,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling = prepareBehandling()
 
             val notat = "New Notat"
-            val medIVedtak = "med i vedtak"
 
             val createdBehandling = behandlingRepository.save(behandling)
 
@@ -604,7 +603,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                             notat =
                                 OppdaterNotat(
                                     notat,
-                                    medIVedtak,
                                 ),
                         ),
                 ),
@@ -614,10 +612,6 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL, updatedBehandling.årsak)
             assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
-            assertEquals(
-                medIVedtak,
-                updatedBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
-            )
         }
 
         @Test
@@ -631,7 +625,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                                 notat =
                                     OppdaterNotat(
                                         "New Notat",
-                                        "Med i Vedtak",
                                     ),
                             ),
                     ),
@@ -645,7 +638,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling = prepareBehandling()
 
             val notat = "New Notat"
-            val medIVedtak = "med i vedtak"
 
             val createdBehandling = behandlingRepository.save(behandling)
 
@@ -687,7 +679,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                             notat =
                                 OppdaterNotat(
                                     kunINotat = notat,
-                                    medIVedtaket = medIVedtak,
                                 ),
                         ),
                 ),
@@ -698,7 +689,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertEquals(1, updatedBehandling.husstandsbarn.size)
             assertEquals(1, updatedBehandling.sivilstand.size)
             assertEquals(notat, updatedBehandling.boforholdsbegrunnelseKunINotat)
-            assertEquals(medIVedtak, updatedBehandling.boforholdsbegrunnelseIVedtakOgNotat)
         }
 
         @Test
@@ -706,7 +696,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling = prepareBehandling()
 
             val notat = "New Notat"
-            val medIVedtak = "med i vedtak"
 
             val createdBehandling = behandlingRepository.save(behandling)
 
@@ -721,7 +710,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                             notat =
                                 OppdaterNotat(
                                     notat,
-                                    medIVedtak,
                                 ),
                         ),
                     inntekter =
@@ -729,7 +717,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                             notat =
                                 OppdaterNotat(
                                     notat,
-                                    medIVedtak,
                                 ),
                         ),
                     boforhold =
@@ -737,7 +724,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                             notat =
                                 OppdaterNotat(
                                     notat,
-                                    medIVedtak,
                                 ),
                         ),
                 ),
@@ -747,10 +733,6 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertEquals(3, oppdatertBehandling.roller.size)
             assertEquals(notat, oppdatertBehandling.virkningstidspunktbegrunnelseKunINotat)
-            assertEquals(
-                medIVedtak,
-                oppdatertBehandling.virkningstidspunktsbegrunnelseIVedtakOgNotat,
-            )
         }
 
         @Test
@@ -825,7 +807,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                             notat =
                                 OppdaterNotat(
                                     "Kun i Notat",
-                                    "Med i Vedtaket",
                                 ),
                         ),
                 ),
@@ -862,7 +843,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                                     notat =
                                         OppdaterNotat(
                                             "Kun i Notat",
-                                            "Med i Vedtaket",
                                         ),
                                 ),
                         ),
@@ -899,7 +879,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                                 ),
                             notat =
                                 OppdaterNotat(
-                                    "not null",
                                     "not null",
                                 ),
                         ),

@@ -63,8 +63,6 @@ class BoforholdService(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         behandling.inntektsbegrunnelseKunINotat = request.kunINotat ?: behandling.inntektsbegrunnelseKunINotat
-        behandling.inntektsbegrunnelseIVedtakOgNotat =
-            request.medIVedtaket ?: behandling.inntektsbegrunnelseIVedtakOgNotat
 
         return OppdatereBoforholdResponse(
             oppdatertNotat = request,
