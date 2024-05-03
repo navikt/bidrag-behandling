@@ -46,6 +46,9 @@ fun Behandling.validerKanOppdatere() {
 
 fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
+    if (avslag != null && årsak != null) {
+        feilliste.add("Kan ikke sette både avslag og årsak samtidig")
+    }
     if (behandling.opprinneligVirkningstidspunkt != null &&
         avslag == null &&
         virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
@@ -56,7 +59,7 @@ fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Ugyldig data ved oppdatering av behandling: ${feilliste.joinToString(", ")}",
+            "Ugyldig data ved oppdatering av virkningstidspunkt: ${feilliste.joinToString(", ")}",
         )
     }
 }
