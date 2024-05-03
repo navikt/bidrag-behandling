@@ -71,9 +71,14 @@ class BehandlingService(
     }
 
     fun opprettBehandling(behandling: Behandling): Behandling =
-        behandlingRepository.save(behandling).let {
-            opprettForsendelseForBehandling(it)
-            it
+        behandlingRepository.findFirstBySoknadsid(behandling.soknadsid)?.let {
+            log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${behandling.soknadsid}. Oppretter ikke ny behandling" }
+            return it
+        } ?: run {
+            behandlingRepository.save(behandling).let {
+                opprettForsendelseForBehandling(it)
+                it
+            }
         }
 
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
@@ -228,9 +233,6 @@ class BehandlingService(
                     it.virkningstidspunkt = vt.virkningstidspunkt
                     it.virkningstidspunktbegrunnelseKunINotat =
                         vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
-                    it.virkningstidspunktsbegrunnelseIVedtakOgNotat =
-                        vt.notat?.medIVedtaket
-                            ?: it.virkningstidspunktsbegrunnelseIVedtakOgNotat
                 }
                 // TODO: Fjerne når boforhold v2-migrering er fullført
                 request.inntekter?.let { inntekter ->
@@ -239,8 +241,6 @@ class BehandlingService(
                     entityManager.refresh(it)
                     it.inntektsbegrunnelseKunINotat =
                         inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
-                    it.inntektsbegrunnelseIVedtakOgNotat =
-                        inntekter.notat?.medIVedtaket ?: it.inntektsbegrunnelseIVedtakOgNotat
                 }
                 // TODO: Fjerne når boforhold v2-migrering er fullført
                 request.boforhold?.let { bf ->
@@ -256,8 +256,6 @@ class BehandlingService(
                     entityManager.merge(it)
                     it.boforholdsbegrunnelseKunINotat =
                         bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
-                    it.boforholdsbegrunnelseIVedtakOgNotat =
-                        bf.notat?.medIVedtaket ?: it.boforholdsbegrunnelseIVedtakOgNotat
                 }
                 it
             }

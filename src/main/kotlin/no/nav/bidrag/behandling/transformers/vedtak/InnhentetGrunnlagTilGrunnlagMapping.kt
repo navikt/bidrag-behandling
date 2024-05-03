@@ -403,7 +403,8 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
         .toMutableSet()
 }
 
-fun List<SummerteInntekt>.versjon(type: Inntektsrapportering) = find { it.inntekt.inntektRapportering == type }?.versjon ?: ""
+fun List<SummerteInntekt>.versjon(type: Inntektsrapportering) =
+    find { it.inntekt.inntektRapportering == type }?.versjon ?: find { it.versjon.isNotEmpty() }?.versjon ?: ""
 
 private fun BaseGrunnlag.tilInntektBearbeidet(grunnlagsListe: List<GrunnlagDto>): SummerteInntekt {
     val inntektPeriode = innholdTilObjekt<InntektsrapporteringPeriode>()

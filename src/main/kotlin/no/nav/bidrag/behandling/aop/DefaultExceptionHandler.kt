@@ -83,10 +83,10 @@ class DefaultExceptionHandler {
     @ResponseBody
     @ExceptionHandler(Exception::class)
     fun handleOtherExceptions(exception: Exception): ResponseEntity<*> {
-        LOGGER.warn(exception.message, exception)
+        LOGGER.error("Det skjedde en ukjent feil: ${exception.message}", exception)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .header(HttpHeaders.WARNING, exception.message)
-            .body(exception.stackTraceToString())
+            .body(exception.message ?: "Ukjent feil")
     }
 
     private fun getErrorMessage(exception: HttpStatusCodeException): String {

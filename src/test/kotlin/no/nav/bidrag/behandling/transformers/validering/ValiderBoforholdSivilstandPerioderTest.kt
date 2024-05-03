@@ -481,6 +481,31 @@ class ValiderBoforholdSivilstandPerioderTest {
         }
 
         @Test
+        fun `skal validere sivilstand hvis har status UKJENT`() {
+            val sivilstandListe =
+                opprettSivilstand(
+                    listOf(
+                        Datoperiode(
+                            YearMonth.parse("2022-01").atDay(1),
+                            null,
+                        ) to Sivilstandskode.UKJENT,
+                    ),
+                )
+
+            val result = sivilstandListe.validerSivilstand(LocalDate.parse("2022-01-01"))
+
+            assertSoftly(result) {
+                overlappendePerioder shouldHaveSize 0
+                hullIPerioder shouldHaveSize 0
+                ingenLøpendePeriode shouldBe false
+                fremtidigPeriode shouldBe false
+                manglerPerioder shouldBe false
+                ugyldigStatus shouldBe true
+                harFeil shouldBe true
+            }
+        }
+
+        @Test
         fun `skal validere sivilstand hvis periodene overlapper`() {
             val sivilstandListe =
                 opprettSivilstand(
