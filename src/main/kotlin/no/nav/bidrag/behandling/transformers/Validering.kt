@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
@@ -112,6 +113,7 @@ fun Set<Sivilstand>.validerSivilstand(virkningstidspunkt: LocalDate): Sivilstand
         fremtidigPeriode = any { it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) },
         manglerPerioder = isEmpty(),
         overlappendePerioder = finnSivilstandOverlappendePerioder(),
+        ugyldigStatus = any { it.sivilstand == Sivilstandskode.UKJENT },
     )
 }
 

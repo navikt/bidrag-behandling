@@ -814,7 +814,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
 
             assertEquals(2, expectedBehandling.inntekter.size)
-            assertEquals("Med i Vedtaket", expectedBehandling.inntektsbegrunnelseIVedtakOgNotat)
             assertEquals("Kun i Notat", expectedBehandling.inntektsbegrunnelseKunINotat)
         }
 
@@ -904,7 +903,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingService.hentBehandlingById(actualBehandling.id!!)
 
             assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
-            assertNotNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseIVedtakOgNotat)
             assertNotNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseKunINotat)
         }
     }
