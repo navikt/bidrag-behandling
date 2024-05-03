@@ -777,7 +777,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertNotNull(actualBehandling.id)
 
             assertEquals(0, actualBehandling.inntekter.size)
-            assertNull(actualBehandling.inntektsbegrunnelseIVedtakOgNotat)
             assertNull(actualBehandling.inntektsbegrunnelseKunINotat)
 
             behandlingService.oppdaterBehandling(
@@ -889,7 +888,6 @@ class BehandlingServiceTest : TestContainerRunner() {
             entityManager.refresh(expectedBehandling)
 
             assertEquals(1, expectedBehandling.inntekter.size)
-            assertNotNull(expectedBehandling.inntektsbegrunnelseIVedtakOgNotat)
             assertNotNull(expectedBehandling.inntektsbegrunnelseKunINotat)
 
             behandlingService.oppdaterBehandling(

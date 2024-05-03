@@ -302,12 +302,22 @@ class BoforholdService(
         nyHusstandsbarnperiode: Husstandsbarnperiode? = null,
         slettHusstandsbarnperiode: Long? = null,
     ) {
+        val virkningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+        val kanIkkeVæreSenereEnnDato =
+            if (virkningstidspunkt.isAfter(LocalDate.now())) {
+                maxOf(this.fødselsdato, virkningstidspunkt.withDayOfMonth(1))
+            } else {
+                LocalDate.now().withDayOfMonth(1)
+            }
         val manuellePerioder =
             (perioder.filter { it.kilde == Kilde.MANUELL && it.id != slettHusstandsbarnperiode } + nyHusstandsbarnperiode).filterNotNull()
         // Boforhold beregning V2 forventer originale offfentlige perioder som input sammen med manuelle perioder.
         // Resetter derfor til offentlige perioder før de settes sammen med manuelle perioder
         this.resetTilOffentligePerioder()
-        val perioderTilPeriodsering = (perioder + manuellePerioder).tilBoforholdRequest(this)
+        val perioderTilPeriodsering =
+            (perioder + manuellePerioder).filter {
+                it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
+            }.toSet().tilBoforholdRequest(this)
         this.overskrivMedBearbeidetPerioder(
             BoforholdApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
