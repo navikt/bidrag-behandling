@@ -123,8 +123,7 @@ fun List<Grunnlag>.tilHusstandsbarn() =
             innhentetTidspunkt = it.innhentet,
             ident = it.gjelder,
             perioder =
-                it.konverterData<List<BoforholdResponse>>()?.map {
-                        boforholdrespons ->
+                it.konverterData<List<BoforholdResponse>>()?.map { boforholdrespons ->
                     HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
                         boforholdrespons.periodeFom,
                         boforholdrespons.periodeTom,
