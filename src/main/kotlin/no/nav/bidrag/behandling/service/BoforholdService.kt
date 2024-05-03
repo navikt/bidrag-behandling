@@ -13,13 +13,12 @@ import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsbarnperiodeRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusRequest
@@ -27,7 +26,6 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
-import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
@@ -36,6 +34,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
@@ -228,7 +227,7 @@ class BoforholdService(
     @Transactional
     fun oppdatereAutomatiskInnhentaSivilstand(
         behandling: Behandling,
-        nyttGrunnlag: List<SivilstandBeregnV2Dto>,
+        periodisertSivilstand: Set<SivilstandBeregnV2Dto>,
         overskriveManuelleOpplysninger: Boolean,
     ) {
         when (overskriveManuelleOpplysninger) {
@@ -238,7 +237,7 @@ class BoforholdService(
                 behandling.sivilstand.removeAll(
                     behandling.sivilstand.asSequence().filter { s -> Kilde.OFFENTLIG == s.kilde }.toSet(),
                 )
-                behandling.sivilstand.addAll(nyttGrunnlag.tilSivilstand(behandling))
+                behandling.sivilstand.addAll(periodisertSivilstand.tilSivilstand(behandling))
             }
 
             false -> {
@@ -246,7 +245,7 @@ class BoforholdService(
                         "- overskriver ikke manuelle opplysninger" }
                 val opprinneligSivilstand = behandling.sivilstand
 
-                SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, nyttGrunnlag.tilSivilstandRequest(
+                SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, periodisertSivilstand.tilSivilstandRequest(
                     opprinneligSivilstand
                 ) )
 
@@ -276,12 +275,12 @@ class BoforholdService(
 
             val nyesteAktiveSivilstandsgrunnlag =behandling.grunnlag.first()
 
-            val data = jsonTilObjekt <List<SivilstandGrunnlagDto>>(nyesteAktiveSivilstandsgrunnlag.data)
+            val data = jsonListeTilObjekt <SivilstandGrunnlagDto>(nyesteAktiveSivilstandsgrunnlag.data)
 
             val periodisertSivilstand =
                 SivilstandApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                   data.toSet().tilSivilstandRequest(),
+                    data.tilSivilstandRequest(),
                 )
 
             log.info { "Slettet sivilstand med id $idSivilstandsperiode fra behandling $behandlingsid." }

@@ -336,10 +336,10 @@ fun OppdatereSivilstand.validere(behandling: Behandling) {
         }
     }
 
-    this.leggeTilSivilstandsperiode.let {
+    this.nyEllerEndretSivilstandsperiode.let {
     }
 
-    if (this.sletteSivilstandsperiode == null && this.leggeTilSivilstandsperiode == null) {
+    if (this.sletteSivilstandsperiode == null && this.nyEllerEndretSivilstandsperiode == null) {
         requestManglerDataException(behandling.id!!, Ressurstype.SIVILSTAND)
     }
 }

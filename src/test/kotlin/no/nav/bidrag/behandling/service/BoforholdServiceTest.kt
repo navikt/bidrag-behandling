@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsbarn
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -593,7 +594,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             stubbeHentingAvPersoninfoForTestpersoner()
             val separeringstidspunkt = LocalDateTime.now().minusMonths(125)
             val grunnlagSivilstand =
-                listOf(
+                setOf(
                     SivilstandGrunnlagDto(
                         personId = behandling.bidragsmottaker!!.ident!!,
                         type = SivilstandskodePDL.SKILT,
@@ -624,13 +625,13 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             val periodisertSivilstand =
-                SivilstandApi.beregnV1(
+                SivilstandApi.beregnV2(
                     minOf(behandling.virkningstidspunktEllerSøktFomDato),
-                    grunnlagSivilstand,
+                    grunnlagSivilstand.tilSivilstandRequest(),
                 )
 
             // hvis
-            boforholdService.oppdatereAutomatiskInnhentaSivilstand(behandling, periodisertSivilstand, false)
+            boforholdService.oppdatereAutomatiskInnhentaSivilstand(behandling, periodisertSivilstand.toSet(), false)
 
             // så
             entityManager.refresh(behandling)
@@ -718,7 +719,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             boforholdService.oppdatereSivilstandManuelt(
                 behandling.id!!,
                 OppdatereSivilstand(
-                    leggeTilSivilstandsperiode =
+                    nyEllerEndretSivilstandsperiode =
                         Sivilstandsperiode(
                             LocalDate.now().minusMonths(7),
                             null,

@@ -128,16 +128,6 @@ data class SivilstandIkkeAktivGrunnlagDto(
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )
 
-data class SivilstandGrunnlagDto(
-    @Schema(type = "string", format = "date", example = "2025-01-25")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoFom: LocalDate?,
-    @Schema(type = "string", format = "date", example = "2025-01-25")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoTom: LocalDate?,
-    val sivilstand: Sivilstandskode,
-)
-
 data class HusstandsbarnGrunnlagDto(
     val perioder: Set<HusstandsbarnGrunnlagPeriodeDto>,
     val ident: String? = null,

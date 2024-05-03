@@ -59,7 +59,7 @@ data class PersonaliaHusstandsbarn(
 )
 
 data class OppdatereSivilstand(
-    val leggeTilSivilstandsperiode: Sivilstandsperiode? = null,
+    val nyEllerEndretSivilstandsperiode: Sivilstandsperiode? = null,
     val sletteSivilstandsperiode: Long? = null,
 )
 
