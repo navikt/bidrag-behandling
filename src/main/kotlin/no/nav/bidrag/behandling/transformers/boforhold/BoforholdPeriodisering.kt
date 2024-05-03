@@ -76,15 +76,7 @@ fun List<BoforholdResponse>.tilPerioder(husstandsbarn: Husstandsbarn) =
         map { boforhold ->
             boforhold.tilPeriode(husstandsbarn)
         }.toMutableSet()
-    } ?: setOf(
-        Husstandsbarnperiode(
-            husstandsbarn = husstandsbarn,
-            datoFom = maxOf(husstandsbarn.behandling.virkningstidspunktEllerSøktFomDato, husstandsbarn.fødselsdato),
-            datoTom = null,
-            bostatus = Bostatuskode.IKKE_MED_FORELDER,
-            kilde = Kilde.OFFENTLIG,
-        ),
-    )
+    } ?: setOf()
 
 fun BoforholdResponse.tilPeriode(husstandsbarn: Husstandsbarn) =
     Husstandsbarnperiode(
