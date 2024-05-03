@@ -20,15 +20,16 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
+import no.nav.bidrag.behandling.transformers.boforhold.overskrivMedBearbeidetPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
-import no.nav.bidrag.behandling.transformers.boforhold.tilPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandGrunnlagDto
+import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
@@ -58,7 +59,8 @@ class BoforholdService(
         request: OppdaterNotat,
     ): OppdatereBoforholdResponse {
         val behandling =
-            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         behandling.inntektsbegrunnelseKunINotat = request.kunINotat ?: behandling.inntektsbegrunnelseKunINotat
         behandling.inntektsbegrunnelseIVedtakOgNotat =
@@ -66,7 +68,12 @@ class BoforholdService(
 
         return OppdatereBoforholdResponse(
             oppdatertNotat = request,
-            valideringsfeil = BoforholdValideringsfeil(husstandsbarn = emptyList()),
+            valideringsfeil =
+                BoforholdValideringsfeil(
+                    husstandsbarn =
+                        behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                            .filter { it.harFeil },
+                ),
         )
     }
 
@@ -283,7 +290,7 @@ class BoforholdService(
                 }
             } else {
                 log.info {
-                    "Ny periode $detaljer ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling med " +
+                    "Ny periode $detaljer ble lagt til husstandsmedlem ${bostatusperiode.idHusstandsbarn} i behandling med " +
                         "${behandling.id}."
                 }
             }
@@ -316,17 +323,22 @@ class BoforholdService(
             ?: run {
                 this.perioder.clear()
                 if (kilde == Kilde.OFFENTLIG) {
+                    this.perioder.add(opprettDefaultPeriodeForOffentligHusstandsmedlem())
                     log.warn {
-                        "Fant ikke originale bearbeidet perioder for offentlig husstandsmedlem $id i behandling ${behandling.id}"
+                        "Fant ikke originale bearbeidet perioder for offentlig husstandsmedlem $id i behandling ${behandling.id}. Lagt til initiell periode "
                     }
                 }
             }
     }
 
-    private fun Husstandsbarn.overskrivMedBearbeidetPerioder(nyePerioder: List<BoforholdResponse>) {
-        perioder.clear()
-        perioder.addAll(nyePerioder.tilPerioder(this))
-    }
+    private fun Husstandsbarn.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
+        Husstandsbarnperiode(
+            husstandsbarn = this,
+            datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato),
+            datoTom = null,
+            bostatus = Bostatuskode.IKKE_MED_FORELDER,
+            kilde = Kilde.OFFENTLIG,
+        )
 
     private fun Husstandsbarn.oppdaterTilForrigeLagredePerioder() {
         val lagredePerioder = commonObjectmapper.writeValueAsString(perioder)

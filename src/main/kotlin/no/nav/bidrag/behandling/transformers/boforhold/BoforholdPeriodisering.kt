@@ -76,7 +76,15 @@ fun List<BoforholdResponse>.tilPerioder(husstandsbarn: Husstandsbarn) =
         map { boforhold ->
             boforhold.tilPeriode(husstandsbarn)
         }.toMutableSet()
-    } ?: emptySet()
+    } ?: setOf(
+        Husstandsbarnperiode(
+            husstandsbarn = husstandsbarn,
+            datoFom = maxOf(husstandsbarn.behandling.virkningstidspunktEllerSøktFomDato, husstandsbarn.fødselsdato),
+            datoTom = null,
+            bostatus = Bostatuskode.IKKE_MED_FORELDER,
+            kilde = Kilde.OFFENTLIG,
+        ),
+    )
 
 fun BoforholdResponse.tilPeriode(husstandsbarn: Husstandsbarn) =
     Husstandsbarnperiode(
@@ -97,15 +105,27 @@ fun List<BoforholdResponse>.tilHusstandsbarn(behandling: Behandling): Set<Hussta
                 ident = it.key,
                 fødselsdato = finnFødselsdato(it.key, fødselsdatoFraRespons) ?: fødselsdatoFraRespons,
             )
-        husstandsbarn.perioder.clear()
-        husstandsbarn.perioder.addAll(
-            it.value.map { boforhold ->
-                boforhold.tilPeriode(husstandsbarn)
-            }.toMutableSet(),
-        )
+        husstandsbarn.overskrivMedBearbeidetPerioder(it.value)
         husstandsbarn
     }.toSet()
 }
+
+fun Husstandsbarn.overskrivMedBearbeidetPerioder(nyePerioder: List<BoforholdResponse>) {
+    perioder.clear()
+    perioder.addAll(nyePerioder.tilPerioder(this))
+    if (perioder.isEmpty()) {
+        perioder.add(opprettDefaultPeriodeForOffentligHusstandsmedlem())
+    }
+}
+
+fun Husstandsbarn.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
+    Husstandsbarnperiode(
+        husstandsbarn = this,
+        datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato),
+        datoTom = null,
+        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+        kilde = Kilde.OFFENTLIG,
+    )
 
 fun List<no.nav.bidrag.sivilstand.response.SivilstandV1>.tilSivilstand(behandling: Behandling): List<Sivilstand> =
     this.map {
