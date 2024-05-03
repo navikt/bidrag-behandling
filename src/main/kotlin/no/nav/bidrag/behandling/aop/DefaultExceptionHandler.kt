@@ -80,6 +80,15 @@ class DefaultExceptionHandler {
         return response.build<Any>()
     }
 
+    @ResponseBody
+    @ExceptionHandler(Exception::class)
+    fun handleOtherExceptions(exception: Exception): ResponseEntity<*> {
+        LOGGER.warn(exception.message, exception)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .header(HttpHeaders.WARNING, exception.message)
+            .body(exception.stackTraceToString())
+    }
+
     private fun getErrorMessage(exception: HttpStatusCodeException): String {
         val errorMessage = StringBuilder()
 

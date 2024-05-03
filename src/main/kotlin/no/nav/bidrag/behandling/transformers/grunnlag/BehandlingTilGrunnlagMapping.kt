@@ -200,7 +200,7 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
     grunnlagListe: List<Grunnlag> = emptyList(),
 ) = GrunnlagDto(
     type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
-    referanse = tilGrunnlagreferanse(gjelder),
+    referanse = tilGrunnlagreferanse(gjelder, søknadsbarn),
     // Liste med referanser fra bidrag-inntekt
     grunnlagsreferanseListe =
         grunnlagListe.toSet().hentGrunnlagsreferanserForInntekt(
@@ -293,13 +293,20 @@ private fun opprettGrunnlagForBostatusperioder(
         )
     }.toSet()
 
-private fun Inntekt.tilGrunnlagreferanse(gjelder: GrunnlagDto) =
-    if (!gjelderBarn.isNullOrEmpty()) {
+private fun Inntekt.tilGrunnlagreferanse(
+    gjelder: GrunnlagDto,
+    søknadsbarn: GrunnlagDto? = null,
+): String {
+    val datoFomReferanse = (opprinneligFom ?: datoFom).toCompactString()
+    val datoTomReferanse = (opprinneligTom ?: datoTom)?.let { "_${it.toCompactString()}" } ?: ""
+    return if (!gjelderBarn.isNullOrEmpty()) {
         val innektsposterType = inntektsposter.mapNotNull { it.inntektstype }.distinct().joinToString("", prefix = "_")
-        "inntekt_${type}${innektsposterType}_${gjelder.referanse}_ba_${gjelderBarn}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
+        val barnReferanse = søknadsbarn?.referanse ?: gjelderBarn.hashCode()
+        "inntekt_${type}${innektsposterType}_${gjelder.referanse}_ba_${barnReferanse}_${datoFomReferanse}${datoTomReferanse}_$id"
     } else {
-        "inntekt_${type}_${gjelder.referanse}_${datoFomEllerOpprinneligFom.toCompactString()}${datoTomEllerOpprinneligFom?.let { "_${it.toCompactString()}" } ?: ""}"
+        "inntekt_${type}_${gjelder.referanse}_${datoFomReferanse}${datoTomReferanse}_$id"
     }
+}
 
 fun Person.valider(rolle: Rolletype? = null): Person {
     if ((ident == null || ident!!.verdi.isEmpty()) && navn.isNullOrEmpty()) {

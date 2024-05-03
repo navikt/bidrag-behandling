@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
@@ -107,6 +108,7 @@ fun VedtakDto.tilBehandling(
     søknadRefId: Long? = null,
     søknadId: Long? = null,
     enhet: String? = null,
+    opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
 ): Behandling {
     val opprettetAv =
         if (lesemodus) {
@@ -130,7 +132,7 @@ fun VedtakDto.tilBehandling(
             opprinneligVirkningstidspunkt =
                 hentVirkningstidspunkt()?.virkningstidspunkt
                     ?: hentSøknad().søktFraDato,
-            opprinneligVedtakstidspunkt = opprettetTidspunkt,
+            opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
             årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
@@ -234,6 +236,8 @@ private fun List<GrunnlagDto>.mapInntekter(
             ).run {
                 inntekter.add(this)
                 originalInntekt.taMed = false
+                originalInntekt.datoFom = null
+                originalInntekt.datoTom = null
             }
         }
 
@@ -243,10 +247,17 @@ private fun List<GrunnlagDto>.mapInntekter(
             ).run {
                 inntekter.add(this)
                 originalInntekt.taMed = false
+                originalInntekt.datoFom = null
+                originalInntekt.datoTom = null
             }
         }
     }
-    return inntekter
+    val inntekterBeregnet =
+        inntekter.filter { ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
+            .sortedByDescending { it.taMed }
+            .distinctBy { listOfNotNull(it.opprinneligFom, it.opprinneligTom, it.type, it.gjelderBarn, it.ident) }
+    val andreInntekter = inntekter.filter { !ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
+    return (andreInntekter + inntekterBeregnet).toMutableSet()
 }
 
 fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
@@ -511,8 +522,8 @@ private fun BaseGrunnlag.tilInntekt(
             "Mangler barn for inntekt ${inntektPeriode.inntektsrapportering} med referanse $referanse i grunnlagslisten",
         )
     }
-    val datoFom = inntektPeriode.periode.fom.atDay(1)
-    val datoTom = inntektPeriode.periode.til?.atDay(1)?.minusDays(1)
+    val datoFom = if (inntektPeriode.valgt) inntektPeriode.periode.fom.atDay(1) else null
+    val datoTom = if (inntektPeriode.valgt) inntektPeriode.periode.til?.atDay(1)?.minusDays(1) else null
     val opprinneligFom = inntektPeriode.opprinneligPeriode?.fom?.atDay(1)
     val opprinneligTom = inntektPeriode.opprinneligPeriode?.til?.atDay(1)?.minusDays(1)
     val inntektBO =

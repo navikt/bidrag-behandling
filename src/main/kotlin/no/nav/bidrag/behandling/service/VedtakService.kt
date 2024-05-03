@@ -69,6 +69,19 @@ class VedtakService(
         return vedtak.tilBehandling(vedtakId, lesemodus = true)
     }
 
+    private fun hentOpprinneligVedtakstidspunkt(vedtak: VedtakDto): Set<LocalDateTime> {
+        val vedtaksiderStønadsendring = vedtak.stønadsendringListe.mapNotNull { it.omgjørVedtakId }
+        val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
+        val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
+        if (refererTilVedtakId.isNotEmpty()) {
+            return refererTilVedtakId.flatMap { vedtaksid ->
+                val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid.toLong())!!
+                hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
+            }.toSet() + setOf(vedtak.vedtakstidspunkt)
+        }
+        return setOf(vedtak.vedtakstidspunkt)
+    }
+
     @Transactional
     fun opprettBehandlingFraVedtak(
         request: OpprettBehandlingFraVedtakRequest,
@@ -112,6 +125,7 @@ class VedtakService(
             enhet = request.behandlerenhet,
             søknadId = request.søknadsid,
             lesemodus = false,
+            opprinneligVedtakstidspunkt = hentOpprinneligVedtakstidspunkt(vedtak).toSet(),
         )
     }
 
