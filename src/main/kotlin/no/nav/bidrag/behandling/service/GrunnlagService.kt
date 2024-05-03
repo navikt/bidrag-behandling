@@ -29,6 +29,8 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.behandling.filtrerPerioderEtterVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.finnEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
@@ -343,10 +345,11 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime,
         overskriveManuelleOpplysninger: Boolean,
     ) {
-        val ikkeAktivGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
-            ikkeAktivGrunnlag.filter { gjelderHusstandsbarn.verdi == it.gjelder }.filter { grunnlagstype == it.type }
-                .filter { it.erBearbeidet }.maxByOrNull { it.innhentet }
+            behandling.grunnlag.hentSisteIkkeAktiv()
+                .filter { gjelderHusstandsbarn.verdi == it.gjelder && grunnlagstype == it.type }
+                .firstOrNull { it.erBearbeidet }
+
         val bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting =
             behandling
                 .henteNyesteGrunnlag(Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false), behandling.bidragsmottaker!!)
@@ -781,9 +784,18 @@ class GrunnlagService(
 
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, innhentetForRolle, gjelderPerson)
         val erFørstegangsinnhenting = sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
+
+        // TODO: Erstatte med erBoforholdEllerSivilstandGrunnlagEndret-sjekk når Sivilstand V2 er klar
         val erGrunnlagEndret =
-            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
-                    innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
+            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() && innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
+        //        val erGrunnlagEndret =
+//            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
+//                    erBoforholdEllerSivilstandGrunnlagEndret(
+//                        grunnlagstype,
+//                        innhentetGrunnlag,
+//                        sistInnhentedeGrunnlagAvTypeForRolle,
+//                        behandling,
+//                    )
 
         if (erFørstegangsinnhenting || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
             opprett(
@@ -818,6 +830,42 @@ class GrunnlagService(
             }
         } else {
             log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandling." }
+        }
+    }
+
+    // TODO: Ikke fjern dette. Skal brukes ved sjekk for endringer
+    private fun <T> erBoforholdEllerSivilstandGrunnlagEndret(
+        grunnlagstype: Grunnlagstype,
+        aktivGrunnlag: Set<T>,
+        nyGrunnlag: Set<T>,
+        behandling: Behandling,
+    ): Boolean {
+        if (!grunnlagstype.erBearbeidet) return aktivGrunnlag.toSet() != nyGrunnlag.toSet()
+        return if (grunnlagstype.type == Grunnlagsdatatype.BOFORHOLD) {
+            val aktivGrunnlagFiltrert =
+                (aktivGrunnlag as Set<BoforholdResponse>)
+                    .toList()
+                    .filtrerPerioderEtterVirkningstidspunkt(
+                        behandling.husstandsbarn,
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                    )
+                    .toSet()
+            val nyGrunnlagFiltrert =
+                (nyGrunnlag as Set<BoforholdResponse>)
+                    .toList()
+                    .filtrerPerioderEtterVirkningstidspunkt(
+                        behandling.husstandsbarn,
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                    )
+                    .toSet()
+            aktivGrunnlagFiltrert
+                .finnEndringerBoforhold(behandling.virkningstidspunktEllerSøktFomDato, nyGrunnlagFiltrert)
+                .isNotEmpty()
+        } else if (grunnlagstype.type == Grunnlagsdatatype.SIVILSTAND) {
+            aktivGrunnlag.toSet() != nyGrunnlag.toSet()
+            // TODO
+        } else {
+            aktivGrunnlag.toSet() != nyGrunnlag.toSet()
         }
     }
 

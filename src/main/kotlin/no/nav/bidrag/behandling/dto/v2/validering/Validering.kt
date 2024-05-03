@@ -101,7 +101,7 @@ data class BoforholdPeriodeseringsfeil(
             hullIPerioder.isNotEmpty() || overlappendePerioder.isNotEmpty() ||
                 fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
     val barn
-        get() =
+        get(): HusstandsbarnPeriodiseringsfeilDto =
             husstandsbarn?.let {
                 HusstandsbarnPeriodiseringsfeilDto(
                     hentPersonVisningsnavn(husstandsbarn.ident) ?: husstandsbarn.navn,
@@ -109,14 +109,16 @@ data class BoforholdPeriodeseringsfeil(
                     husstandsbarn.fødselsdato,
                     husstandsbarn.id ?: -1,
                 )
-            }
+            } ?: HusstandsbarnPeriodiseringsfeilDto("", "", LocalDate.now(), -1)
 
     data class HusstandsbarnPeriodiseringsfeilDto(
         val navn: String?,
         val ident: String?,
         val fødselsdato: LocalDate,
         @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil")
-        val tekniskId: Long,
+        val husstandsbarnId: Long,
+        @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil", deprecated = true)
+        val tekniskId: Long = husstandsbarnId,
     )
 }
 

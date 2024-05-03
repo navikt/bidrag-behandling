@@ -84,5 +84,6 @@ data class OppdatereInntekterRequest(
 
 data class OppdaterNotat(
     val kunINotat: String? = null,
+    @Deprecated("Brukes ikke lenger. Er bare kun i notat som brukes")
     val medIVedtaket: String? = null,
 )

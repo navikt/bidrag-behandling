@@ -1,9 +1,9 @@
 package no.nav.bidrag.behandling.transformers.boforhold
 
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.boforhold.dto.BoforholdRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -18,10 +18,10 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
     this.map {
         BoforholdRequest(
             bostatusListe =
-                it.borISammeHusstandDtoListe.tilBostatus(
-                    Bostatuskode.MED_FORELDER,
-                    Kilde.OFFENTLIG,
-                ),
+            it.borISammeHusstandDtoListe.tilBostatus(
+                Bostatuskode.MED_FORELDER,
+                Kilde.OFFENTLIG,
+            ),
             erBarnAvBmBp = it.erBarnAvBmBp,
             fødselsdato = it.fødselsdato!!,
             relatertPersonPersonId = it.relatertPersonPersonId,
@@ -66,28 +66,38 @@ fun List<BorISammeHusstandDto>.tilBostatus(
     )
 }
 
-fun List<BoforholdResponse>.tilHusstandsbarn(
-    behandling: Behandling,
-    bidragPersonConsumer: BidragPersonConsumer,
-): Set<Husstandsbarn> {
+fun List<BoforholdResponse>.tilPerioder(husstandsbarn: Husstandsbarn) =
+    this.find { it.relatertPersonPersonId == husstandsbarn.ident }?.let {
+        map { boforhold ->
+            boforhold.tilPeriode(husstandsbarn)
+        }.toMutableSet()
+    } ?: emptySet()
+
+fun BoforholdResponse.tilPeriode(husstandsbarn: Husstandsbarn) =
+    Husstandsbarnperiode(
+        bostatus = bostatus,
+        datoFom = periodeFom,
+        datoTom = periodeTom,
+        kilde = kilde,
+        husstandsbarn = husstandsbarn,
+    )
+
+fun List<BoforholdResponse>.tilHusstandsbarn(behandling: Behandling): Set<Husstandsbarn> {
     return this.groupBy { it.relatertPersonPersonId }.map {
+        val fødselsdatoFraRespons = it.value.first().fødselsdato
         val husstandsbarn =
             Husstandsbarn(
                 behandling = behandling,
                 kilde = Kilde.OFFENTLIG,
                 ident = it.key,
-                fødselsdato = bidragPersonConsumer.hentPerson(it.key!!).fødselsdato!!,
+                fødselsdato = finnFødselsdato(it.key, fødselsdatoFraRespons) ?: fødselsdatoFraRespons,
             )
-        husstandsbarn.perioder =
+        husstandsbarn.perioder.clear()
+        husstandsbarn.perioder.addAll(
             it.value.map { boforhold ->
-                Husstandsbarnperiode(
-                    bostatus = boforhold.bostatus,
-                    datoFom = boforhold.periodeFom,
-                    datoTom = boforhold.periodeTom,
-                    kilde = boforhold.kilde,
-                    husstandsbarn = husstandsbarn,
-                )
-            }.toMutableSet()
+                boforhold.tilPeriode(husstandsbarn)
+            }.toMutableSet(),
+        )
         husstandsbarn
     }.toSet()
 }

@@ -92,7 +92,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         id = -1,
         taMed = false,
         rapporteringstype = Inntektsrapportering.AINNTEKT,
-        beløp = sumInntekt.nærmesteHeltall,
+        beløp = sumInntekt,
         ident = Personident(gjelder),
         kilde = Kilde.OFFENTLIG,
         inntektsposter =
@@ -101,7 +101,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
                     kode = it.kode,
                     visningsnavn = finnVisningsnavn(it.kode),
                     inntektstype = it.inntekstype,
-                    beløp = it.beløp.nærmesteHeltall,
+                    beløp = it.beløp,
                 )
             }.toSet(),
         inntektstyper = emptySet(),
@@ -275,8 +275,7 @@ fun opprettTransformerInntekterRequest(
 ) = TransformerInntekterRequest(
     ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
     vedtakstidspunktOpprinneligeVedtak =
-        behandling.opprinneligVedtakstidspunkt?.toLocalDate()?.let { listOf(it) }
-            ?: emptyList(),
+        behandling.opprinneligVedtakstidspunkt.map { it.toLocalDate() },
     ainntektsposter =
         innhentetGrunnlag.ainntektListe.flatMap {
             it.ainntektspostListe.tilAinntektsposter(

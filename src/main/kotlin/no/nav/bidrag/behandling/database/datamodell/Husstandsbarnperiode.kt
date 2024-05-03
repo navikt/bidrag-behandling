@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -14,6 +15,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.time.LocalDate
 
 @Entity
+@JsonIgnoreProperties(value = ["husstandsbarn", "id"])
 open class Husstandsbarnperiode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "husstandsbarn_id", nullable = false)
@@ -26,5 +28,9 @@ open class Husstandsbarnperiode(
     open var kilde: Kilde,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
-)
+    open var id: Long? = null,
+) {
+    override fun toString(): String {
+        return "Husstandsbarnperiode(id=$id, datoFom=$datoFom, datoTom=$datoTom, bostatus=$bostatus, kilde=$kilde)"
+    }
+}

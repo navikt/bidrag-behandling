@@ -61,14 +61,14 @@ class DefaultExceptionHandler {
     @ExceptionHandler(HttpStatusCodeException::class)
     fun handleHttpClientErrorException(exception: HttpStatusCodeException): ResponseEntity<*> {
         val feilmelding = getErrorMessage(exception)
+        val payloadFeilmelding =
+            exception.responseBodyAsString.isEmpty().ifTrue { exception.message }
+                ?: exception.responseBodyAsString
         LOGGER.warn(feilmelding, exception)
-        secureLogger.warn(exception) { feilmelding }
+        secureLogger.warn(exception) { "Feilmelding: $feilmelding. Innhold: $payloadFeilmelding" }
         return ResponseEntity.status(exception.statusCode)
             .header(HttpHeaders.WARNING, feilmelding)
-            .body(
-                exception.responseBodyAsString.isEmpty().ifTrue { exception.message }
-                    ?: exception.responseBodyAsString,
-            )
+            .body(payloadFeilmelding)
     }
 
     @ResponseBody
@@ -78,6 +78,15 @@ class DefaultExceptionHandler {
         val response = ResponseEntity.status(exception.statusCode)
         exception.feilmeldinger.forEach { response.header(HttpHeaders.WARNING, it) }
         return response.build<Any>()
+    }
+
+    @ResponseBody
+    @ExceptionHandler(Exception::class)
+    fun handleOtherExceptions(exception: Exception): ResponseEntity<*> {
+        LOGGER.warn(exception.message, exception)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .header(HttpHeaders.WARNING, exception.message)
+            .body(exception.stackTraceToString())
     }
 
     private fun getErrorMessage(exception: HttpStatusCodeException): String {

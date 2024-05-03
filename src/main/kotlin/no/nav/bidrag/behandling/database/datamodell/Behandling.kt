@@ -67,7 +67,8 @@ open class Behandling(
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
     open var opprinneligVirkningstidspunkt: LocalDate? = null,
-    open var opprinneligVedtakstidspunkt: LocalDateTime? = null,
+    @Suppress("JpaAttributeTypeInspection")
+    open var opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     open var vedtakstidspunkt: LocalDateTime? = null,
     open var slettetTidspunkt: LocalDateTime? = null,
     open var opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
@@ -142,6 +143,10 @@ open class Behandling(
     val erKlageEllerOmgjøring get() = refVedtaksid != null
 }
 
+fun Behandling.hentAlleHusstandsmedlemPerioder() = husstandsbarn.flatMap { it.perioder }
+
+fun Behandling.finnHusstandsbarnperiode(id: Long?) = hentAlleHusstandsmedlemPerioder().find { it.id == id }
+
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
 fun Behandling.validerForBeregning() {
@@ -162,7 +167,7 @@ fun Behandling.validerForBeregning() {
                 husstandsbarn.validerBoforhold(
                     virkningstidspunktEllerSøktFomDato,
                 ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
-            val måBekrefteOpplysninger = grunnlagListe.toSet().hentAlleSomMåBekreftes().map { it.type }.toSet()
+            val måBekrefteOpplysninger = grunnlag.hentAlleSomMåBekreftes().map { it.type }.toSet()
             val harFeil =
                 inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null ||
                     virkningstidspunktFeil != null || måBekrefteOpplysninger.isNotEmpty()
