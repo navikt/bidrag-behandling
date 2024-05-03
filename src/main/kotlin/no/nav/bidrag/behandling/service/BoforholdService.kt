@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.behandlingNotFoundException
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
@@ -12,12 +13,8 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-<<<<<<< HEAD
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.database.repository.HusstandsbarnperiodeRepository
-=======
 import no.nav.bidrag.behandling.database.repository.HusstandsbarnRepository
->>>>>>> main
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
@@ -45,30 +42,20 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
-<<<<<<< HEAD
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
-=======
 import no.nav.bidrag.transport.felles.commonObjectmapper
-import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+
 import java.time.LocalDate
->>>>>>> main
 
 private val log = KotlinLogging.logger {}
 
 @Service
 class BoforholdService(
     private val behandlingRepository: BehandlingRepository,
-<<<<<<< HEAD
-    private val bidragPersonConsumer: BidragPersonConsumer,
-    private val grunnlagRepository: GrunnlagRepository,
-    private val husstandsbarnperiodeRepository: HusstandsbarnperiodeRepository,
-=======
     private val husstandsbarnRepository: HusstandsbarnRepository,
->>>>>>> main
     private val entityManager: EntityManager,
 ) {
     @Transactional
