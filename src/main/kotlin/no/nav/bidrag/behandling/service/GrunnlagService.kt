@@ -241,6 +241,19 @@ class GrunnlagService(
         }
     }
 
+    @Transactional
+    fun aktivereBearbeidaBoforholdEtterEndraVirkningsdato(behandling: Behandling) {
+        val ikkeAktiverteBearbeidaBoforhold =
+            behandling.henteUaktiverteGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                behandling.bidragsmottaker!!,
+            )
+
+        ikkeAktiverteBearbeidaBoforhold.forEach {
+            it.aktiv = LocalDateTime.now()
+        }
+    }
+
     fun hentSistInnhentet(
         behandlingsid: Long,
         rolleid: Long,
@@ -800,7 +813,6 @@ class GrunnlagService(
 //                        behandling,
 //                    )
 
-        val alleBoforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
         if (erFørstegangsinnhenting || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
             opprett(
                 behandling = behandling,

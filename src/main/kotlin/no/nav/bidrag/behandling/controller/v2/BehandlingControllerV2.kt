@@ -9,7 +9,7 @@ import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
@@ -178,15 +178,13 @@ class BehandlingControllerV2(
     )
     fun oppdatereVirkningstidspunktV2(
         @PathVariable behandlingsid: Long,
-        @Valid @RequestBody(required = true) request: OppdaterVirkningstidspunkt,
+        @Valid @RequestBody(required = true) request: OppdatereVirkningstidspunkt,
     ): BehandlingDtoV2 {
         log.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid med forespørsel $request" }
 
-        val behandling = behandlingService.oppdaterVirkningstidspunkt(behandlingsid, request)
+        val behandling = behandlingService.oppdatereVirkningstidspunkt(behandlingsid, request)
 
-        // Bearbeida boforhold per husstandsmedlem vil påvirkes av endringer i virkningsdato
-        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         return behandling.tilBehandlingDtoV2(
             behandling.grunnlag.hentSisteAktiv(),
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),

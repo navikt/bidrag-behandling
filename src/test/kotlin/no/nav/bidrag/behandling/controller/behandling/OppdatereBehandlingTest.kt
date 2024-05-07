@@ -9,7 +9,7 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
@@ -57,7 +57,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 HttpEntity(
                     OppdaterBehandlingRequestV2(
                         virkningstidspunkt =
-                            OppdaterVirkningstidspunkt(
+                            OppdatereVirkningstidspunkt(
                                 virkningstidspunkt = LocalDate.parse("2024-03-02"),
                             ),
                     ),
@@ -98,7 +98,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
                 HttpMethod.PUT,
                 HttpEntity(
-                    OppdaterVirkningstidspunkt(
+                    OppdatereVirkningstidspunkt(
                         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
                         virkningstidspunkt = nyVirkningstidspunkt,
                     ),
@@ -144,7 +144,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
                 HttpMethod.PUT,
                 HttpEntity(
-                    OppdaterVirkningstidspunkt(
+                    OppdatereVirkningstidspunkt(
                         avslag = Resultatkode.AVSLAG,
                         virkningstidspunkt = nyVirkningstidspunkt,
                     ),
@@ -189,7 +189,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
                 HttpMethod.PUT,
                 HttpEntity(
-                    OppdaterVirkningstidspunkt(
+                    OppdatereVirkningstidspunkt(
                         virkningstidspunkt = null,
                         årsak = null,
                         avslag = null,
@@ -235,7 +235,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
                 HttpMethod.PUT,
                 HttpEntity(
-                    OppdaterVirkningstidspunkt(
+                    OppdatereVirkningstidspunkt(
                         virkningstidspunkt = null,
                         årsak = null,
                         avslag = null,
@@ -299,31 +299,30 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         testdataManager.lagreBehandlingNewTransaction(behandling)
 
-        val nyVirkningstidspunkt = LocalDate.parse("2022-01-01")
+        val nyttVirkningstidspunkt = LocalDate.parse("2022-01-01")
         // hvis
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
                 HttpMethod.PUT,
                 HttpEntity(
-                    OppdaterVirkningstidspunkt(
-                        virkningstidspunkt = nyVirkningstidspunkt,
+                    OppdatereVirkningstidspunkt(
+                        virkningstidspunkt = nyttVirkningstidspunkt,
                     ),
                 ),
                 BehandlingDtoV2::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyVirkningstidspunkt
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyttVirkningstidspunkt
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
-        oppdatertBehandling.get().virkningstidspunkt shouldBe nyVirkningstidspunkt
+        oppdatertBehandling.get().virkningstidspunkt shouldBe nyttVirkningstidspunkt
         assertSoftly(oppdatertBehandling.get().husstandsbarn.first()) {
-            perioder shouldHaveSize 3
-            perioder.minByOrNull { it.datoFom!! }!!.datoFom shouldBe nyVirkningstidspunkt
-            perioder.maxByOrNull { it.datoFom!! }!!.datoFom shouldBe LocalDate.parse("2023-06-01")
+            perioder shouldHaveSize 1
+            perioder.minByOrNull { it.datoFom!! }!!.datoFom shouldBe nyttVirkningstidspunkt
         }
     }
 
