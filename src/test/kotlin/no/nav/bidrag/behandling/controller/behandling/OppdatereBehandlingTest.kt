@@ -79,6 +79,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere årsak`() {
         // gitt
+        stubUtils.stubHenteGrunnlagOk()
         val behandling = testdataManager.opprettBehandling(true)
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
@@ -124,6 +125,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere avslag`() {
         // gitt
+        stubUtils.stubHenteGrunnlagOk()
         val behandling = testdataManager.opprettBehandling(true)
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
@@ -169,6 +171,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal ikke kunne sette virkningstidspunkt til tom verdi`() {
         // gitt
+        stubUtils.stubHenteGrunnlagOk()
         val behandling = testdataManager.opprettBehandling(true)
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
@@ -214,6 +217,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal ikke kunne sette avslag til tom verdi`() {
         // gitt
+        stubUtils.stubHenteGrunnlagOk()
         val behandling = testdataManager.opprettBehandling(true)
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
@@ -259,6 +263,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere virkningstidspunkt og rekalkulere boforhold periode`() {
         // gitt
+        stubUtils.stubHenteGrunnlagOk()
         val behandling = testdataManager.opprettBehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
