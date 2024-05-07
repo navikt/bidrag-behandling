@@ -78,7 +78,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
         val aktiveGrunnlagsdata = behandling.aktiveGrunnlagsdata
         aktiveGrunnlagsdata shouldNotBe null
         aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
-        aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 5
+        aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 4
         aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 2
     }
 

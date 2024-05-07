@@ -167,31 +167,31 @@ class VedtakTilBehandlingTest {
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = 123,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = 123,
+                    )
+                },
             )
         val vedtak2 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-03-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = 124,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = 124,
+                    )
+                },
             )
         val vedtak3 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-04-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = null,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = null,
+                    )
+                },
             )
         every { vedtakConsumer.hentVedtak(eq(12333)) } returns vedtak1
         every { vedtakConsumer.hentVedtak(eq(123)) } returns vedtak2
@@ -226,31 +226,31 @@ class VedtakTilBehandlingTest {
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = 123,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = 123,
+                    )
+                },
             )
         val vedtak2 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-03-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = 124,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = 124,
+                    )
+                },
             )
         val vedtak3 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-04-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = null,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = null,
+                    )
+                },
             )
         every { vedtakConsumer.hentVedtak(eq(12333)) } returns vedtak1
         every { vedtakConsumer.hentVedtak(eq(123)) } returns vedtak2
@@ -318,121 +318,122 @@ class VedtakTilBehandlingTest {
             refVedtaksid shouldBe 12333
 
             validerRoller()
-            assertSoftly(inntekter) {
-                this shouldHaveSize 15
-                val inntekt12Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
-                val inntekt12MndOpprinnelig =
-                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
-                inntekt12Mnd shouldNotBe null
-                inntekt12Mnd!!.taMed shouldBe false
-                inntekt12Mnd!!.kilde shouldBe Kilde.OFFENTLIG
+        }
 
-                inntekt12MndOpprinnelig shouldNotBe null
-                inntekt12MndOpprinnelig!!.taMed shouldBe true
-                inntekt12MndOpprinnelig.kilde shouldBe Kilde.OFFENTLIG
-                inntekt12Mnd.isEqual(inntekt12MndOpprinnelig)
+        assertSoftly(behandling.inntekter) {
+            this shouldHaveSize 15
+            val inntekt12Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
+            val inntekt12MndOpprinnelig =
+                find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
+            inntekt12Mnd shouldNotBe null
+            inntekt12Mnd!!.taMed shouldBe false
+            inntekt12Mnd!!.kilde shouldBe Kilde.OFFENTLIG
 
-                inntekt12Mnd.opprinneligFom shouldBe LocalDate.parse("2023-02-01")
-                inntekt12Mnd.opprinneligTom shouldBe LocalDate.parse("2023-12-31")
-                inntekt12Mnd.datoFom shouldBe null
-                inntekt12Mnd.datoTom shouldBe null
-                inntekt12Mnd.belop shouldBe BigDecimal(25245987)
-                assertSoftly(inntekt12Mnd.inntektsposter.toList()) {
-                    this shouldHaveSize 1
-                    this[0].beløp shouldBe BigDecimal(25245987)
-                    this[0].kode shouldBe "fastloenn"
-                    this[0].inntektstype shouldBe Inntektstype.AAP
-                }
+            inntekt12MndOpprinnelig shouldNotBe null
+            inntekt12MndOpprinnelig!!.taMed shouldBe true
+            inntekt12MndOpprinnelig.kilde shouldBe Kilde.OFFENTLIG
+            inntekt12Mnd.isEqual(inntekt12MndOpprinnelig)
 
-                val inntekt3Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }
-                val inntekt3MndOpprinnelig =
-                    find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
-                inntekt3Mnd shouldNotBe null
-                inntekt3MndOpprinnelig shouldNotBe null
-                inntekt3Mnd!!.taMed shouldBe false
-                inntekt3MndOpprinnelig!!.taMed shouldBe true
-                inntekt3MndOpprinnelig!!.kilde shouldBe Kilde.OFFENTLIG
-                inntekt3Mnd.isEqual(inntekt3MndOpprinnelig)
-                inntekt3Mnd.opprinneligFom shouldBe LocalDate.parse("2023-11-01")
-                inntekt3Mnd.datoFom shouldBe null
-                inntekt3Mnd.opprinneligTom shouldBe LocalDate.parse("2024-01-31")
-                inntekt3Mnd.datoTom shouldBe null
-                inntekt3Mnd.inntektsposter shouldHaveSize 1
-                inntekt3Mnd.kilde shouldBe Kilde.OFFENTLIG
-                inntekt3Mnd.belop shouldBe BigDecimal(5330000)
-                inntekt3Mnd.ident shouldBe testdataBM.ident
-                assertSoftly(inntekt3Mnd.inntektsposter.toList()) {
-                    this shouldHaveSize 1
-                    this[0].beløp shouldBe BigDecimal(5330000)
-                    this[0].kode shouldBe "fastloenn"
-                    this[0].inntektstype shouldBe Inntektstype.AAP
-                }
-
-                val saksbehandlersBeregnetInntekt =
-                    find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }
-                saksbehandlersBeregnetInntekt shouldNotBe null
-                saksbehandlersBeregnetInntekt!!.belop shouldBe BigDecimal(300000)
-                saksbehandlersBeregnetInntekt.kilde shouldBe Kilde.MANUELL
-                saksbehandlersBeregnetInntekt.opprinneligFom shouldBe null
-                saksbehandlersBeregnetInntekt.datoFom shouldBe LocalDate.parse("2023-01-01")
-                saksbehandlersBeregnetInntekt.opprinneligTom shouldBe null
-                saksbehandlersBeregnetInntekt.datoTom shouldBe LocalDate.parse("2024-05-31")
-                saksbehandlersBeregnetInntekt.taMed shouldBe true
-                saksbehandlersBeregnetInntekt.ident shouldBe testdataBM.ident
-
-                val barnetillegg = find { it.type == Inntektsrapportering.BARNETILLEGG }
-                barnetillegg!!.gjelderBarn shouldBe testdataBarn2.ident
-                barnetillegg.ident shouldBe testdataBM.ident
-                barnetillegg.kilde shouldBe Kilde.MANUELL
+            inntekt12Mnd.opprinneligFom shouldBe LocalDate.parse("2023-02-01")
+            inntekt12Mnd.opprinneligTom shouldBe LocalDate.parse("2023-12-31")
+            inntekt12Mnd.datoFom shouldBe null
+            inntekt12Mnd.datoTom shouldBe null
+            inntekt12Mnd.belop shouldBe BigDecimal(25245987)
+            assertSoftly(inntekt12Mnd.inntektsposter.toList()) {
+                this shouldHaveSize 1
+                this[0].beløp shouldBe BigDecimal(25245987)
+                this[0].kode shouldBe "fastloenn"
+                this[0].inntektstype shouldBe Inntektstype.AAP
             }
 
-            assertSoftly(grunnlag) {
-                this shouldHaveSize 23
-                filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
-                    12,
-                )
-                filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BARN }.shouldHaveSize(1)
-                filter { !it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
-                    9,
-                )
-                filter { !it.erBearbeidet && it.rolle.rolletype == Rolletype.BARN }.shouldHaveSize(1)
+            val inntekt3Mnd = find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }
+            val inntekt3MndOpprinnelig =
+                find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
+            inntekt3Mnd shouldNotBe null
+            inntekt3MndOpprinnelig shouldNotBe null
+            inntekt3Mnd!!.taMed shouldBe false
+            inntekt3MndOpprinnelig!!.taMed shouldBe true
+            inntekt3MndOpprinnelig!!.kilde shouldBe Kilde.OFFENTLIG
+            inntekt3Mnd.isEqual(inntekt3MndOpprinnelig)
+            inntekt3Mnd.opprinneligFom shouldBe LocalDate.parse("2023-11-01")
+            inntekt3Mnd.datoFom shouldBe null
+            inntekt3Mnd.opprinneligTom shouldBe LocalDate.parse("2024-01-31")
+            inntekt3Mnd.datoTom shouldBe null
+            inntekt3Mnd.inntektsposter shouldHaveSize 1
+            inntekt3Mnd.kilde shouldBe Kilde.OFFENTLIG
+            inntekt3Mnd.belop shouldBe BigDecimal(5330000)
+            inntekt3Mnd.ident shouldBe testdataBM.ident
+            assertSoftly(inntekt3Mnd.inntektsposter.toList()) {
+                this shouldHaveSize 1
+                this[0].beløp shouldBe BigDecimal(5330000)
+                this[0].kode shouldBe "fastloenn"
+                this[0].inntektstype shouldBe Inntektstype.AAP
             }
-            assertSoftly(sivilstand.toList()) {
-                this shouldHaveSize 2
-                this[0].sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
-                this[0].kilde shouldBe Kilde.OFFENTLIG
-                this[0].datoFom shouldBe LocalDate.parse("2022-11-01")
-                this[0].datoTom shouldBe LocalDate.parse("2023-06-30")
 
-                this[1].sivilstand shouldBe Sivilstandskode.GIFT_SAMBOER
-                this[1].kilde shouldBe Kilde.MANUELL
-                this[1].datoFom shouldBe LocalDate.parse("2023-07-01")
-                this[1].datoTom shouldBe null
+            val saksbehandlersBeregnetInntekt =
+                find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }
+            saksbehandlersBeregnetInntekt shouldNotBe null
+            saksbehandlersBeregnetInntekt!!.belop shouldBe BigDecimal(300000)
+            saksbehandlersBeregnetInntekt.kilde shouldBe Kilde.MANUELL
+            saksbehandlersBeregnetInntekt.opprinneligFom shouldBe null
+            saksbehandlersBeregnetInntekt.datoFom shouldBe LocalDate.parse("2023-01-01")
+            saksbehandlersBeregnetInntekt.opprinneligTom shouldBe null
+            saksbehandlersBeregnetInntekt.datoTom shouldBe LocalDate.parse("2024-05-31")
+            saksbehandlersBeregnetInntekt.taMed shouldBe true
+            saksbehandlersBeregnetInntekt.ident shouldBe testdataBM.ident
+
+            val barnetillegg = find { it.type == Inntektsrapportering.BARNETILLEGG }
+            barnetillegg!!.gjelderBarn shouldBe testdataBarn2.ident
+            barnetillegg.ident shouldBe testdataBM.ident
+            barnetillegg.kilde shouldBe Kilde.MANUELL
+        }
+
+        assertSoftly(behandling.grunnlag) {
+            this shouldHaveSize 22
+            filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
+                11,
+            )
+            filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BARN }.shouldHaveSize(1)
+            filter { !it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
+                9,
+            )
+            filter { !it.erBearbeidet && it.rolle.rolletype == Rolletype.BARN }.shouldHaveSize(1)
+        }
+        assertSoftly(behandling.sivilstand.toList()) {
+            this shouldHaveSize 2
+            this[0].sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
+            this[0].kilde shouldBe Kilde.OFFENTLIG
+            this[0].datoFom shouldBe LocalDate.parse("2022-11-01")
+            this[0].datoTom shouldBe LocalDate.parse("2023-06-30")
+
+            this[1].sivilstand shouldBe Sivilstandskode.GIFT_SAMBOER
+            this[1].kilde shouldBe Kilde.MANUELL
+            this[1].datoFom shouldBe LocalDate.parse("2023-07-01")
+            this[1].datoTom shouldBe null
+        }
+
+        assertSoftly(behandling.husstandsbarn.toList()) {
+            this shouldHaveSize 6
+            assertSoftly(filter { Kilde.OFFENTLIG == it.kilde }) {
+                this shouldHaveSize 5
+                this[0].ident shouldBe testdataBarn1.ident
+                this[0].navn shouldBe null
+                this[0].perioder shouldHaveSize 1
+                this[1].ident shouldBe testdataHusstandsmedlem1.ident
+                this[1].navn shouldBe null
+                this[1].perioder shouldHaveSize 1
+                this[2].ident shouldBe "30431750216"
+                this[2].navn shouldBe null
+                this[2].perioder shouldHaveSize 1
+                this[3].ident shouldBe testdataBarn2.ident
+                this[3].navn shouldBe null
+                this[3].perioder shouldHaveSize 2
             }
 
-            assertSoftly(husstandsbarn.toList()) {
-                this shouldHaveSize 6
-                assertSoftly(filter { Kilde.OFFENTLIG == it.kilde }) {
-                    this shouldHaveSize 5
-                    this[0].ident shouldBe testdataBarn1.ident
-                    this[0].navn shouldBe null
-                    this[0].perioder shouldHaveSize 1
-                    this[1].ident shouldBe testdataHusstandsmedlem1.ident
-                    this[1].navn shouldBe null
-                    this[1].perioder shouldHaveSize 1
-                    this[2].ident shouldBe "30431750216"
-                    this[2].navn shouldBe null
-                    this[2].perioder shouldHaveSize 1
-                    this[3].ident shouldBe testdataBarn2.ident
-                    this[3].navn shouldBe null
-                    this[3].perioder shouldHaveSize 2
-                }
-
-                val husstandsmedlemUtenIdent = find { it.ident == null }
-                husstandsmedlemUtenIdent shouldNotBe null
-                husstandsmedlemUtenIdent!!.navn shouldBe "Per Hansen"
-                husstandsmedlemUtenIdent.fødselsdato shouldBe LocalDate.parse("2024-02-06")
-            }
+            val husstandsmedlemUtenIdent = find { it.ident == null }
+            husstandsmedlemUtenIdent shouldNotBe null
+            husstandsmedlemUtenIdent!!.navn shouldBe "Per Hansen"
+            husstandsmedlemUtenIdent.fødselsdato shouldBe LocalDate.parse("2024-02-06")
         }
     }
 
@@ -627,7 +628,7 @@ class VedtakTilBehandlingTest {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 23
+            size shouldBe 22
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 testdataBarn2.ident,
