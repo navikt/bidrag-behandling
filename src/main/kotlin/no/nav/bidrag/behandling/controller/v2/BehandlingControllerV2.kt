@@ -185,6 +185,8 @@ class BehandlingControllerV2(
 
         val behandling = behandlingService.oppdaterVirkningstidspunkt(behandlingsid, request)
 
+        // Bearbeida boforhold per husstandsmedlem vil påvirkes av endringer i virkningsdato
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         return behandling.tilBehandlingDtoV2(
             behandling.grunnlag.hentSisteAktiv(),
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
