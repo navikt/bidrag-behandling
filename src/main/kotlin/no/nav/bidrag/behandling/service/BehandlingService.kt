@@ -204,7 +204,7 @@ class BehandlingService(
                 if (erVirkningstidspunktEndret) {
                     log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling $behandlingsid" }
                     // Bearbeida boforhold per husstandsmedlem vil påvirkes av endringer i virkningsdato
-                    grunnlagService.oppdatereGrunnlagForBehandling(it)
+                    grunnlagService.oppdatereBearbeidaBoforhold(it)
                     grunnlagService.aktivereBearbeidaBoforholdEtterEndraVirkningsdato(it)
                     entityManager.flush()
                     boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid)

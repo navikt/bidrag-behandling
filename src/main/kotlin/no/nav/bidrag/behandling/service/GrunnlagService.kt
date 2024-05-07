@@ -254,6 +254,20 @@ class GrunnlagService(
         }
     }
 
+    @Transactional
+    fun oppdatereBearbeidaBoforhold(behandling: Behandling) {
+        val sistAktiverteBoforholdsgrunnlag =
+            behandling.hentSisteInnhentetGrunnlagSet<RelatertPersonGrunnlagDto>(
+                Grunnlagstype(
+                    Grunnlagsdatatype.BOFORHOLD,
+                    false,
+                ),
+                behandling.bidragsmottaker!!,
+                null,
+            )
+        periodisereOgLagreBoforhold(behandling, sistAktiverteBoforholdsgrunnlag)
+    }
+
     fun hentSistInnhentet(
         behandlingsid: Long,
         rolleid: Long,
@@ -526,7 +540,7 @@ class GrunnlagService(
 
         // Oppdatere barn_i_husstand og tilhørende periode-tabell med periodisert boforhold
         if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty() && !innhentingAvBoforholdFeilet) {
-            periodisereOgLagreBoforhold(behandling, innhentetGrunnlag)
+            periodisereOgLagreBoforhold(behandling, innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet())
         }
 
         val innhentingAvSivilstandFeilet =
@@ -561,12 +575,12 @@ class GrunnlagService(
 
     private fun periodisereOgLagreBoforhold(
         behandling: Behandling,
-        innhentetGrunnlag: HentGrunnlagDto,
+        husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
     ) {
         val boforholdPeriodisert =
             BoforholdApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.tilBoforholdRequest(),
+                husstandsmedlemmerOgEgneBarn.tilBoforholdRequest(),
             )
 
         val bmsNyesteBearbeidaBoforholdFørLagring =
