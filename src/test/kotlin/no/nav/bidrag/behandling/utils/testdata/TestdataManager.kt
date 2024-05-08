@@ -81,7 +81,7 @@ class TestdataManager(
     }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun <T> oppretteOgLagreGrunnlagNewTransaction(
+    fun <T> oppretteOgLagreGrunnlagINyTransaksjon(
         behandling: Behandling,
         grunnlagstype: Grunnlagstype =
             Grunnlagstype(

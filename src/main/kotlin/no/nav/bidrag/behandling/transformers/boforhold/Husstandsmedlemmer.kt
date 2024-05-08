@@ -18,10 +18,10 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
     this.map {
         BoforholdRequest(
             bostatusListe =
-            it.borISammeHusstandDtoListe.tilBostatus(
-                Bostatuskode.MED_FORELDER,
-                Kilde.OFFENTLIG,
-            ),
+                it.borISammeHusstandDtoListe.tilBostatus(
+                    Bostatuskode.MED_FORELDER,
+                    Kilde.OFFENTLIG,
+                ),
             erBarnAvBmBp = it.erBarnAvBmBp,
             fødselsdato = it.fødselsdato!!,
             relatertPersonPersonId = it.relatertPersonPersonId,

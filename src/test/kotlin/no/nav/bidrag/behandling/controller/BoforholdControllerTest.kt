@@ -45,6 +45,7 @@ import kotlin.test.assertEquals
 class BoforholdControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
+
     @Nested
     open inner class OppdatereBehandling {
         @Test

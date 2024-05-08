@@ -57,6 +57,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
@@ -209,29 +210,23 @@ class GrunnlagService(
             )
         }
 
-        val aktiveringstidspunkt = LocalDateTime.now()
-
         if (inntekterOgYtelser.contains(request.grunnlagstype)) {
             aktivereYtelserOgInntekter(
                 behandling,
                 request.grunnlagstype,
                 rolleGrunnlagetErLagretPå!!,
-                aktiveringstidspunkt,
             )
         } else if (Grunnlagsdatatype.BOFORHOLD == request.grunnlagstype) {
             aktivereBoforhold(
                 behandling,
                 request.grunnlagstype,
                 request.personident,
-                aktiveringstidspunkt,
                 request.overskriveManuelleOpplysninger,
             )
         } else if (Grunnlagsdatatype.SIVILSTAND == request.grunnlagstype) {
-            aktivereSivilstand(
+            boforholdService.oppdatereAutomatiskInnhentaSivilstand(
                 behandling,
-                request.grunnlagstype,
-                aktiveringstidspunkt,
-                request.overskriveManuelleOpplysninger
+                request.overskriveManuelleOpplysninger,
             )
         } else {
             log.error {
@@ -323,7 +318,6 @@ class GrunnlagService(
         behandling: Behandling,
         grunnlagstype: Grunnlagsdatatype,
         rolle: Rolle,
-        aktiveringstidspunkt: LocalDateTime,
     ) {
         val ikkeAktivGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
 
@@ -335,14 +329,13 @@ class GrunnlagService(
             summerteInntekter?.inntekter ?: emptyList(),
             grunnlagstype,
         )
-        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(aktiveringstidspunkt)
+        ikkeAktivGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(LocalDateTime.now())
     }
 
     private fun aktivereBoforhold(
         behandling: Behandling,
         grunnlagstype: Grunnlagsdatatype,
         gjelderHusstandsbarn: Personident,
-        aktiveringstidspunkt: LocalDateTime,
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
@@ -381,7 +374,7 @@ class GrunnlagService(
             overskriveManuelleOpplysninger,
         )
 
-        nyesteIkkeAktiverteBoforholdForHusstandsmedlem.aktiv = aktiveringstidspunkt
+        nyesteIkkeAktiverteBoforholdForHusstandsmedlem.aktiv = LocalDateTime.now()
         aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
 
         entityManager.merge(behandling)
@@ -428,36 +421,6 @@ class GrunnlagService(
     private fun List<Grunnlag>.oppdaterStatusTilAktiv(aktiveringstidspunkt: LocalDateTime) {
         forEach {
             it.aktiv = aktiveringstidspunkt
-        }
-    }
-
-    private fun aktivereSivilstand(
-        behandling: Behandling,
-        grunnlagstype: Grunnlagsdatatype,
-        aktiveringstidspunkt: LocalDateTime,
-        overskriveManuelleOpplysninger: Boolean,
-    ) {
-        val ikkeAktiverteGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
-        val nyesteIkkeAktivertPeriodisertSivilstand =
-            ikkeAktiverteGrunnlag.filter { grunnlagstype == it.type }.filter { it.erBearbeidet }
-                .maxByOrNull { it.innhentet }
-
-        if (nyesteIkkeAktivertPeriodisertSivilstand == null) {
-            throw HttpClientErrorException(
-                HttpStatus.NOT_FOUND,
-                "Fant ingen grunnlag av type $grunnlagstype å aktivere for  behandling $behandling.id",
-            )
-        }
-        val data = jsonListeTilObjekt<SivilstandBeregnV2Dto>(nyesteIkkeAktivertPeriodisertSivilstand.data)
-        boforholdService.oppdatereAutomatiskInnhentaSivilstand(behandling, data, overskriveManuelleOpplysninger)
-        nyesteIkkeAktivertPeriodisertSivilstand.aktiv = aktiveringstidspunkt
-
-        val nyesteSivilstandsgrunnlag =
-            ikkeAktiverteGrunnlag.filter { grunnlagstype == it.type }.filter { !it.erBearbeidet }
-                .maxByOrNull { it.innhentet }
-
-        nyesteSivilstandsgrunnlag?.let { it.aktiv = aktiveringstidspunkt } ?: {
-            log.warn { "Ikke-aktivert sivilstandsgrunnlag manglet ved aktivering i behandling ${behandling.id}." }
         }
     }
 

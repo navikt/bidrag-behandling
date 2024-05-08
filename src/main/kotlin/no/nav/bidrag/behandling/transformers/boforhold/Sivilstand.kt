@@ -2,18 +2,18 @@ package no.nav.bidrag.behandling.transformers.boforhold
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(manuellePerioder: List<SivilstandBeregnV2Dto>? = emptyList()) =
     SivilstandRequest(
         this.toList(),
-        manuellePerioder ?: emptyList()
+        manuellePerioder ?: emptyList(),
     )
 
 /*
@@ -22,11 +22,12 @@ fun Set<Sivilstand>.tilSivilstandRequest(offentligePerioder: List<SivilstandGrun
     SivilstandRequest(offentligePerioder, this.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto())
 */
 
-fun Set<SivilstandBeregnV2Dto>.tilSivilstandRequest(sivilstand: Set<Sivilstand>) =
-    SivilstandRequest(
-        offentligePerioder =this.tilSvilstandGrunnlagDto(sivilstand.first().behandling.bidragsmottaker!!.ident!!),
-        manuellePerioder = sivilstand.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto()
+fun Set<SivilstandBeregnV2Dto>.tilSivilstandRequest(sivilstand: Set<Sivilstand>) : SivilstandRequest {
+    return SivilstandRequest(
+        offentligePerioder = this.tilSvilstandGrunnlagDto(sivilstand.first().behandling.bidragsmottaker!!.ident!!),
+        manuellePerioder = sivilstand.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto(),
     )
+}
 
 fun Set<SivilstandBeregnV2Dto>.tilSvilstandGrunnlagDto(personident: String) =
     this.map {
@@ -47,7 +48,7 @@ fun List<Sivilstand>.tilSivilstandBeregnV2Dto() =
             periodeFom = it.datoFom!!,
             periodeTom = it.datoTom,
             kilde = it.kilde,
-            sivilstandskode = it.sivilstand
+            sivilstandskode = it.sivilstand,
         )
     }
 

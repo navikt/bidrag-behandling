@@ -379,14 +379,14 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     ),
             )
         behandling =
-            testdataManager.oppretteOgLagreGrunnlagNewTransaction(
+            testdataManager.oppretteOgLagreGrunnlagINyTransaksjon(
                 behandling,
                 Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
                 innhentingstidspunkt,
                 grunnlagsdata = SkattepliktigeInntekter(skattegrunnlag = listOf(grunnlagLagret)),
             )
         behandling =
-            testdataManager.oppretteOgLagreGrunnlagNewTransaction(
+            testdataManager.oppretteOgLagreGrunnlagINyTransaksjon(
                 behandling,
                 Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
                 innhentingstidspunkt,

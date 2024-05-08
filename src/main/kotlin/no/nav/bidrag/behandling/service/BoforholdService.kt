@@ -5,25 +5,24 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsbarnRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
-import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusRequest
@@ -32,6 +31,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
@@ -43,12 +43,14 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
-import no.nav.bidrag.transport.felles.commonObjectmapper
-
+import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
+import java.time.LocalDateTime
+import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
 
@@ -171,13 +173,13 @@ class BoforholdService(
                 )
             husstandsbarn.oppdaterPerioder(
                 nyHusstandsbarnperiode =
-                    Husstandsbarnperiode(
-                        husstandsbarn = husstandsbarn,
-                        bostatus = Bostatuskode.MED_FORELDER,
-                        datoFom = behandling.virkningstidspunktEllerSøktFomDato,
-                        datoTom = null,
-                        kilde = Kilde.MANUELL,
-                    ),
+                Husstandsbarnperiode(
+                    husstandsbarn = husstandsbarn,
+                    bostatus = Bostatuskode.MED_FORELDER,
+                    datoFom = behandling.virkningstidspunktEllerSøktFomDato,
+                    datoTom = null,
+                    kilde = Kilde.MANUELL,
+                ),
             )
             behandling.husstandsbarn.add(husstandsbarn)
 
@@ -210,13 +212,13 @@ class BoforholdService(
 
             eksisterendeHusstandsbarn.oppdaterPerioder(
                 nyHusstandsbarnperiode =
-                    Husstandsbarnperiode(
-                        husstandsbarn = eksisterendeHusstandsbarn,
-                        bostatus = bostatusperiode.bostatus,
-                        datoFom = bostatusperiode.datoFom,
-                        datoTom = bostatusperiode.datoTom,
-                        kilde = Kilde.MANUELL,
-                    ),
+                Husstandsbarnperiode(
+                    husstandsbarn = eksisterendeHusstandsbarn,
+                    bostatus = bostatusperiode.bostatus,
+                    datoFom = bostatusperiode.datoFom,
+                    datoTom = bostatusperiode.datoTom,
+                    kilde = Kilde.MANUELL,
+                ),
             )
 
             logEndring(behandling, oppdatereHusstandsmedlem, eksisterendeHusstandsbarn)
@@ -252,20 +254,20 @@ class BoforholdService(
         val perioderDetaljer =
             husstandsbarn.perioder.map {
                 "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
-                    "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
+                        "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
             }.joinToString(", ", prefix = "[", postfix = "]")
         oppdatereHusstandsmedlem.angreSisteStegForHusstandsmedlem?.let {
             log.info { "Angret siste steg for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." }
             secureLogger.info {
                 "Angret siste steg for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}. " +
-                    "Perioder = $perioderDetaljer"
+                        "Perioder = $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.tilbakestillPerioderForHusstandsmedlem?.let {
             log.info { "Tilbakestilte perioder for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." }
             secureLogger.info {
                 "Tilbakestilte perioder for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." +
-                    "Perioder = $perioderDetaljer"
+                        "Perioder = $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.opprettHusstandsmedlem?.let { personalia ->
@@ -275,22 +277,22 @@ class BoforholdService(
             log.info { "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling ${behandling.id}." }
             secureLogger.info {
                 "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling ${behandling.id}." +
-                    "Perioder = $perioderDetaljer"
+                        "Perioder = $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.oppdaterPeriode?.let { bostatusperiode ->
             val detaljer =
                 "datoFom: ${bostatusperiode.datoFom}, datoTom: ${bostatusperiode.datoTom}, " +
-                    "bostatus: ${bostatusperiode.bostatus}"
+                        "bostatus: ${bostatusperiode.bostatus}"
             if (bostatusperiode.idPeriode != null) {
                 log.info {
                     "Oppdaterte periode ${bostatusperiode.idPeriode} for husstandsbarn ${bostatusperiode.idHusstandsbarn} til $detaljer " +
-                        " i behandling ${behandling.id}"
+                            " i behandling ${behandling.id}"
                 }
             } else {
                 log.info {
                     "Ny periode $detaljer ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling med " +
-                        "${behandling.id}."
+                            "${behandling.id}."
                 }
             }
         }
@@ -376,33 +378,49 @@ class BoforholdService(
     @Transactional
     fun oppdatereAutomatiskInnhentaSivilstand(
         behandling: Behandling,
-        periodisertSivilstand: Set<SivilstandBeregnV2Dto>,
         overskriveManuelleOpplysninger: Boolean,
     ) {
-        when (overskriveManuelleOpplysninger) {
+        val ikkeAktiverteGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
+
+        val nyesteIkkeAktivertePeriodisertSivilstand =
+            ikkeAktiverteGrunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.erBearbeidet }
+                .maxByOrNull { it.innhentet }
+
+        val nyesteIkkeAktiverteSivilstand =
+            ikkeAktiverteGrunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { !it.erBearbeidet }
+                .maxByOrNull { it.innhentet }
+
+        if (nyesteIkkeAktivertePeriodisertSivilstand == null || nyesteIkkeAktiverteSivilstand == null) {
+            throw HttpClientErrorException(
+                HttpStatus.NOT_FOUND,
+                "Fant ingen grunnlag av type SIVILSTAND å aktivere for  behandling $behandling.id",
+            )
+        }
+
+        val data = when (overskriveManuelleOpplysninger) {
             true -> {
-                log.info { "Oppdaterer automatisk innhenta sivilstand for behandling ${behandling.id}" +
-                        "- overskriver manuelle opplysninger" }
-                behandling.sivilstand.removeAll(
-                    behandling.sivilstand.asSequence().filter { s -> Kilde.OFFENTLIG == s.kilde }.toSet(),
-                )
-                behandling.sivilstand.addAll(periodisertSivilstand.tilSivilstand(behandling))
+                nyesteIkkeAktivertePeriodisertSivilstand.aktiv = LocalDateTime.now()
+                jsonListeTilObjekt<SivilstandBeregnV2Dto>(nyesteIkkeAktivertePeriodisertSivilstand.data)
             }
-
             false -> {
-                log.info { "Oppdaterer automatisk innhenta sivilstand for behandling ${behandling.id}" +
-                        "- overskriver ikke manuelle opplysninger" }
-                val opprinneligSivilstand = behandling.sivilstand
 
-                SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, periodisertSivilstand.tilSivilstandRequest(
-                    opprinneligSivilstand
-                ) )
-
+                SivilstandApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeAktiverteSivilstand.data).tilSivilstandRequest()
+                ).toSet()
             }
         }
 
-        log.info { "Sivilstand fra offentlige kilder ble oppdatert for behandling ${behandling.id}" }
+        behandling.sivilstand.clear()
+        behandling.sivilstand.addAll(
+            data.tilSivilstand(behandling)
+        )
+
+        nyesteIkkeAktiverteSivilstand.aktiv = LocalDateTime.now()
+        nyesteIkkeAktivertePeriodisertSivilstand.aktiv = LocalDateTime.now()
+        entityManager.flush()
     }
+
 
     @Transactional
     fun oppdatereSivilstandManuelt(
@@ -418,13 +436,13 @@ class BoforholdService(
             val periodeSomSkalSlettes = behandling.sivilstand.find { idSivilstandsperiode == it.id }
             behandling.sivilstand.remove(periodeSomSkalSlettes)
 
-            //TODO: Fikse etter  merge
-       //    val nyesteAktiveSivilstandsgrunnlag =  grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
-         //       behandling.id!!,Grunnlagsdatatype.SIVILSTAND, false, behandling.bidragsmottaker!!)
+            // TODO: Fikse etter  merge
+            //    val nyesteAktiveSivilstandsgrunnlag =  grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
+            //       behandling.id!!,Grunnlagsdatatype.SIVILSTAND, false, behandling.bidragsmottaker!!)
 
-            val nyesteAktiveSivilstandsgrunnlag =behandling.grunnlag.first()
+            val nyesteAktiveSivilstandsgrunnlag = behandling.grunnlag.first()
 
-            val data = jsonListeTilObjekt <SivilstandGrunnlagDto>(nyesteAktiveSivilstandsgrunnlag.data)
+            val data = jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteAktiveSivilstandsgrunnlag.data)
 
             val periodisertSivilstand =
                 SivilstandApi.beregnV2(
