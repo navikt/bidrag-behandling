@@ -580,7 +580,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                husstandsmedlemmerOgEgneBarn.tilBoforholdRequest(),
+                husstandsmedlemmerOgEgneBarn.tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
             )
 
         val bmsNyesteBearbeidaBoforholdFørLagring =
