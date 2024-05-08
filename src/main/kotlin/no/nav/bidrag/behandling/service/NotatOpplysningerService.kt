@@ -29,7 +29,7 @@ import no.nav.bidrag.behandling.dto.v1.notat.Vedtak
 import no.nav.bidrag.behandling.dto.v1.notat.Virkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
-import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidetBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
@@ -126,10 +126,10 @@ class NotatOpplysningerService(
     fun hentNotatOpplysningerForBehandling(behandling: Behandling): NotatDto {
         val opplysningerBoforhold =
             behandling.grunnlag.hentSisteAktiv()
-                .hentAlleBearbeidetBoforhold(
+                .hentAlleBearbeidaBoforhold(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsbarn,
-                    behandling.bidragsmottaker,
+                    behandling.bidragsmottaker!!,
                 )
 
         val opplysningerSivilstand =

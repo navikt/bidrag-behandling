@@ -31,6 +31,8 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.boforhold.BoforholdApi
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -171,10 +173,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 p?.filter { Kilde.MANUELL == it.kilde }?.size shouldBe 1
             }
 
+            val periodeFom = minOf(testdataBarn1.fødselsdato, testdataBarn2.fødselsdato)
             val periodisertBoforhold =
                 BoforholdApi.beregnV2(
-                    minOf(testdataBarn1.fødselsdato, testdataBarn2.fødselsdato),
-                    grunnlagBoforhold.tilBoforholdRequest(),
+                    periodeFom,
+                    grunnlagBoforhold.tilBoforholdRequest(periodeFom),
                 )
 
             // hvis
@@ -257,10 +260,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
+            val periodeFom = minOf(testdataBarn1.fødselsdato, testdataBarn2.fødselsdato)
             val periodisertBoforhold =
                 BoforholdApi.beregnV2(
-                    minOf(testdataBarn1.fødselsdato, testdataBarn2.fødselsdato),
-                    grunnlagBoforhold.tilBoforholdRequest(),
+                    periodeFom,
+                    grunnlagBoforhold.tilBoforholdRequest(periodeFom),
                 )
 
             // hvis
@@ -336,10 +340,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
+            val periodeFom = minOf(testdataBarn1.fødselsdato, testdataBarn2.fødselsdato)
             val periodisertBoforhold =
                 BoforholdApi.beregnV2(
-                    minOf(testdataBarn1.fødselsdato),
-                    grunnlagBoforhold.tilBoforholdRequest(),
+                    periodeFom,
+                    grunnlagBoforhold.tilBoforholdRequest(periodeFom),
                 )
 
             // hvis
@@ -417,10 +422,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
+            val periodeFom = minOf(testdataBarn1.fødselsdato, testdataBarn2.fødselsdato)
             val periodisertBoforhold =
                 BoforholdApi.beregnV2(
-                    minOf(testdataBarn1.fødselsdato),
-                    grunnlagBoforhold.tilBoforholdRequest(),
+                    periodeFom,
+                    grunnlagBoforhold.tilBoforholdRequest(periodeFom),
                 )
 
             // hvis
@@ -477,7 +483,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             val periodisertBoforhold =
-                BoforholdApi.beregnV2(LocalDate.now(), grunnlagBoforhold.tilBoforholdRequest())
+                BoforholdApi.beregnV2(LocalDate.now(), grunnlagBoforhold.tilBoforholdRequest(LocalDate.now()))
 
             behandling.husstandsbarn.size shouldBe 2
 
@@ -547,7 +553,10 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             val periodisertBoforhold =
-                BoforholdApi.beregnV2(testdataBarn2.fødselsdato, grunnlagBoforhold.tilBoforholdRequest())
+                BoforholdApi.beregnV2(
+                    testdataBarn2.fødselsdato,
+                    grunnlagBoforhold.tilBoforholdRequest(testdataBarn2.fødselsdato),
+                )
 
             // hvis
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
@@ -897,6 +906,53 @@ class BoforholdServiceTest : TestContainerRunner() {
                 ),
             )
             behandling.husstandsbarn.shouldHaveSize(1)
+        }
+
+        @Test
+        @Transactional
+        open fun `skal returnere riktig kilde på husstandsbarnperiode`() {
+            // gitt
+            val grunnlagBoforhold =
+                listOf(
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = testdataBM.ident,
+                        relatertPersonPersonId = testdataBarn2.ident,
+                        fødselsdato = testdataBarn2.fødselsdato,
+                        erBarnAvBmBp = true,
+                        navn = testdataBarn2.navn,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn2.fødselsdato,
+                                    periodeTil = null,
+                                ),
+                            ),
+                    ),
+                )
+
+            val boforholdsrequest = grunnlagBoforhold.tilBoforholdRequest(testdataBarn2.fødselsdato)
+            val manuellPeriode =
+                Bostatus(
+                    periodeFom = LocalDate.now().minusMonths(5),
+                    periodeTom = null,
+                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    kilde = Kilde.MANUELL,
+                )
+            val offentligeBostatuser =
+                boforholdsrequest.find { it.relatertPersonPersonId == testdataBarn2.ident }!!.bostatusListe
+            val request =
+                boforholdsrequest.find { it.relatertPersonPersonId == testdataBarn2.ident }!!
+                    .copy(bostatusListe = offentligeBostatuser + manuellPeriode)
+
+            // hvis
+            val periodisertBoforhold = BoforholdApi.beregnV2(testdataBarn2.fødselsdato, listOf(request))
+
+            // så
+            assertSoftly(periodisertBoforhold) { p ->
+                p shouldNotBe emptyList<BoforholdResponse>()
+                // TODO: aktivere når BoforholdApi.beregn2 er oppdatert med riktig håndtering av kilde
+                // p.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
+            }
         }
     }
 
