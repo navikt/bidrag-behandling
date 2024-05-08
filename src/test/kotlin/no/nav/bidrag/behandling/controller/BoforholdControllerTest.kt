@@ -86,7 +86,6 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     notat =
                         OppdaterNotat(
                             "med i vedtak",
-                            "kun i notat",
                         ),
                 )
             val boforholdResponse =

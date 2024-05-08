@@ -99,6 +99,7 @@ class BehandlingControllerV2(
             ApiResponse(responseCode = "503", description = "Tjeneste utilgjengelig"),
         ],
     )
+    @Deprecated("Bruk heller egne endepunkter")
     fun oppdatereBehandlingV2(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdaterBehandlingRequestV2,

@@ -23,13 +23,16 @@ data class OppdaterVirkningstidspunkt(
     @Schema(
         name = "årsak",
         description =
-            "Oppdater årsak. Hvis verdien er satt til null vil årsak bli slettet. " +
-                "Hvis verdien er satt til tom verdi eller ikke er satt vil det ikke bli gjort noe endringer",
+            "Oppdater årsak. Hvis verdien er satt til null så vil det ikke bli gjort noe endringer. " +
+                "Hvis verdien er satt så vil årsak settes til samme verdi fra forespørsel og avslag settes til null",
         enumAsRef = true,
     )
     @JsonSetter(nulls = Nulls.SKIP)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(
+        description =
+            "Oppdater avslag. Hvis verdien er satt til null så vil det ikke bli gjort noe endringer. " +
+                "Hvis verdien er satt så vil avslag settes til samme verdi fra forespørsel og årsak settes til null",
         enumAsRef = true,
     )
     val avslag: Resultatkode? = null,
@@ -38,8 +41,7 @@ data class OppdaterVirkningstidspunkt(
         format = "date",
         example = "2025-01-25",
         description =
-            "Oppdater virkningsdato. Hvis verdien er satt til null vil virkningsdato bli slettet. " +
-                "Hvis verdien er satt til tom verdi eller ikke er satt vil det ikke bli gjort noe endringer",
+            "Oppdater virkningsdato. Hvis verdien er satt til null vil det ikke bli gjort noe endringer",
     )
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonSetter(nulls = Nulls.SKIP)
@@ -84,6 +86,4 @@ data class OppdatereInntekterRequest(
 
 data class OppdaterNotat(
     val kunINotat: String? = null,
-    @Deprecated("Brukes ikke lenger. Er bare kun i notat som brukes")
-    val medIVedtaket: String? = null,
 )

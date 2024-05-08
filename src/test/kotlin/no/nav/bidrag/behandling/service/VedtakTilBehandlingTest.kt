@@ -220,6 +220,67 @@ class VedtakTilBehandlingTest {
     }
 
     @Test
+    fun `Skal opprette behandling fra vedtak som har flere inntekter fra opprinnelig vedtakstidspunkt`() {
+        val originalVedtak = filTilVedtakDto("vedtak_response_klage")
+        val vedtak1 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
+                stønadsendringListe =
+                    originalVedtak.stønadsendringListe.map {
+                        it.copy(
+                            omgjørVedtakId = 123,
+                        )
+                    },
+            )
+        val vedtak2 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-03-01").atStartOfDay(),
+                stønadsendringListe =
+                    originalVedtak.stønadsendringListe.map {
+                        it.copy(
+                            omgjørVedtakId = 124,
+                        )
+                    },
+            )
+        val vedtak3 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-04-01").atStartOfDay(),
+                stønadsendringListe =
+                    originalVedtak.stønadsendringListe.map {
+                        it.copy(
+                            omgjørVedtakId = null,
+                        )
+                    },
+            )
+        every { vedtakConsumer.hentVedtak(eq(12333)) } returns vedtak1
+        every { vedtakConsumer.hentVedtak(eq(123)) } returns vedtak2
+        every { vedtakConsumer.hentVedtak(eq(124)) } returns vedtak3
+        val behandling =
+            vedtakService.konverterVedtakTilBehandling(
+                OpprettBehandlingFraVedtakRequest(
+                    vedtakstype = Vedtakstype.KLAGE,
+                    søknadsid = 100,
+                    søknadsreferanseid = 222,
+                    søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                    saksnummer = "123213213",
+                    mottattdato = LocalDate.parse("2024-01-01"),
+                    søktFomDato = LocalDate.parse("2021-01-01"),
+                    behandlerenhet = "9999",
+                ),
+                12333,
+            )!!
+
+        assertSoftly(behandling) {
+            opprinneligVedtakstidspunkt shouldHaveSize 3
+            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
+            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
+            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+            inntekter.filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT } shouldHaveSize 2
+            inntekter.filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT } shouldHaveSize 2
+        }
+    }
+
+    @Test
     fun `Skal opprette grunnlagsstruktur for en forskudd behandling`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val behandling =

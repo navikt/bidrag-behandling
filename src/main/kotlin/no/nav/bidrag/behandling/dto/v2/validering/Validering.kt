@@ -134,6 +134,8 @@ data class SivilstandPeriodeseringsfeil(
     val fremtidigPeriode: Boolean,
     @Schema(description = """Er sann hvis det mangler sivilstand perioder."""")
     val manglerPerioder: Boolean,
+    @Schema(description = """Er sann hvis en eller flere perioder har status UKJENT."""")
+    val ugyldigStatus: Boolean,
 ) {
     @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
@@ -142,7 +144,7 @@ data class SivilstandPeriodeseringsfeil(
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() || overlappendePerioder.isNotEmpty() ||
-                fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
+                fremtidigPeriode || manglerPerioder || ingenLøpendePeriode || ugyldigStatus
 }
 
 data class SivilstandOverlappendePeriode(
