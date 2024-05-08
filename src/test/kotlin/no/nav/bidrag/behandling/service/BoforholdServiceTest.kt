@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -135,12 +136,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                     RelatertPersonGrunnlagDto(
                         partPersonId = behandling.bidragsmottaker!!.ident!!,
@@ -149,16 +150,16 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn2.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn2.fødselsdato,
-                                periodeTil = periode1Til,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn2.fødselsdato,
+                                    periodeTil = periode1Til,
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = periode2Fra,
+                                    periodeTil = null,
+                                ),
                             ),
-                            BorISammeHusstandDto(
-                                periodeFra = periode2Fra,
-                                periodeTil = null,
-                            ),
-                        ),
                     ),
                 )
 
@@ -232,12 +233,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                     RelatertPersonGrunnlagDto(
                         partPersonId = behandling.bidragsmottaker!!.ident!!,
@@ -246,16 +247,16 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn2.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn2.fødselsdato,
-                                periodeTil = periode1Til,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn2.fødselsdato,
+                                    periodeTil = periode1Til,
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = periode2Fra,
+                                    periodeTil = null,
+                                ),
                             ),
-                            BorISammeHusstandDto(
-                                periodeFra = periode2Fra,
-                                periodeTil = null,
-                            ),
-                        ),
                     ),
                 )
 
@@ -330,12 +331,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                 )
 
@@ -412,12 +413,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                 )
 
@@ -472,12 +473,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = behandling.søknadsbarn.first().navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = behandling.søknadsbarn.first().foedselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = behandling.søknadsbarn.first().foedselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                 )
 
@@ -524,12 +525,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                     RelatertPersonGrunnlagDto(
                         partPersonId = behandling.bidragsmottaker!!.ident!!,
@@ -538,16 +539,16 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn2.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn2.fødselsdato,
-                                periodeTil = periode1Til,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn2.fødselsdato,
+                                    periodeTil = periode1Til,
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = periode2Fra,
+                                    periodeTil = null,
+                                ),
                             ),
-                            BorISammeHusstandDto(
-                                periodeFra = periode2Fra,
-                                periodeTil = null,
-                            ),
-                        ),
                     ),
                 )
 
@@ -728,13 +729,13 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereHusstandsmedlem(
                     oppdaterPeriode =
-                    OppdaterHusstandsmedlemPeriode(
-                        idHusstandsbarn = husstandsbarn.id!!,
-                        idPeriode = periodeSomSkalOppdateres.id,
-                        datoFom = LocalDate.parse("2024-02-01"),
-                        datoTom = null,
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                    ),
+                        OppdaterHusstandsmedlemPeriode(
+                            idHusstandsbarn = husstandsbarn.id!!,
+                            idPeriode = periodeSomSkalOppdateres.id,
+                            datoFom = LocalDate.parse("2024-02-01"),
+                            datoTom = null,
+                            bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        ),
                 ),
             )
 
@@ -784,11 +785,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereHusstandsmedlem(
                     opprettHusstandsmedlem =
-                    OpprettHusstandsstandsmedlem(
-                        personident = Personident("213123"),
-                        fødselsdato = LocalDate.parse("2020-02-01"),
-                        navn = "Navn Navnesen",
-                    ),
+                        OpprettHusstandsstandsmedlem(
+                            personident = Personident("213123"),
+                            fødselsdato = LocalDate.parse("2020-02-01"),
+                            navn = "Navn Navnesen",
+                        ),
                 ),
             )
 
@@ -817,11 +818,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereHusstandsmedlem(
                     opprettHusstandsmedlem =
-                    OpprettHusstandsstandsmedlem(
-                        personident = Personident("213123"),
-                        fødselsdato = fødselsdato,
-                        navn = "Navn Navnesen",
-                    ),
+                        OpprettHusstandsstandsmedlem(
+                            personident = Personident("213123"),
+                            fødselsdato = fødselsdato,
+                            navn = "Navn Navnesen",
+                        ),
                 ),
             )
 
@@ -866,11 +867,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                         behandling.id!!,
                         OppdatereHusstandsmedlem(
                             opprettHusstandsmedlem =
-                            OpprettHusstandsstandsmedlem(
-                                personident = Personident(ident),
-                                fødselsdato = fødselsdato,
-                                navn = "Navn Navnesen",
-                            ),
+                                OpprettHusstandsstandsmedlem(
+                                    personident = Personident(ident),
+                                    fødselsdato = fødselsdato,
+                                    navn = "Navn Navnesen",
+                                ),
                         ),
                     )
                 }
@@ -890,11 +891,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereHusstandsmedlem(
                     opprettHusstandsmedlem =
-                    OpprettHusstandsstandsmedlem(
-                        personident = Personident("213123"),
-                        fødselsdato = LocalDate.parse("2020-02-01"),
-                        navn = "Navn Navnesen",
-                    ),
+                        OpprettHusstandsstandsmedlem(
+                            personident = Personident("213123"),
+                            fødselsdato = LocalDate.parse("2020-02-01"),
+                            navn = "Navn Navnesen",
+                        ),
                 ),
             )
             behandling.husstandsbarn.shouldHaveSize(2)
@@ -910,27 +911,9 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Test
         @Transactional
         open fun `skal returnere riktig kilde på husstandsbarnperiode`() {
-
             // gitt
-            val periode1Til = testdataBarn2.fødselsdato.plusMonths(19)
-            val periode2Fra = testdataBarn2.fødselsdato.plusMonths(44)
-
             val grunnlagBoforhold =
                 listOf(
-                    RelatertPersonGrunnlagDto(
-                        partPersonId = testdataBM.ident,
-                        relatertPersonPersonId = testdataBarn1.ident,
-                        fødselsdato = testdataBarn1.fødselsdato,
-                        erBarnAvBmBp = true,
-                        navn = testdataBarn1.navn,
-                        borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
-                            ),
-                        ),
-                    ),
                     RelatertPersonGrunnlagDto(
                         partPersonId = testdataBM.ident,
                         relatertPersonPersonId = testdataBarn2.ident,
@@ -938,26 +921,38 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn2.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn2.fødselsdato,
-                                periodeTil = periode1Til,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn2.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                            BorISammeHusstandDto(
-                                periodeFra = periode2Fra,
-                                periodeTil = null,
-                            ),
-                        ),
                     ),
                 )
 
             val boforholdsrequest = grunnlagBoforhold.tilBoforholdRequest(testdataBarn2.fødselsdato)
+            val manuellPeriode =
+                Bostatus(
+                    periodeFom = LocalDate.now().minusMonths(5),
+                    periodeTom = null,
+                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    kilde = Kilde.MANUELL,
+                )
+            val offentligeBostatuser =
+                boforholdsrequest.find { it.relatertPersonPersonId == testdataBarn2.ident }!!.bostatusListe
+            val request =
+                boforholdsrequest.find { it.relatertPersonPersonId == testdataBarn2.ident }!!
+                    .copy(bostatusListe = offentligeBostatuser + manuellPeriode)
 
             // hvis
-            val periodisertBoforhold = BoforholdApi.beregnV2(testdataBarn2.fødselsdato, boforholdsrequest)
+            val periodisertBoforhold = BoforholdApi.beregnV2(testdataBarn2.fødselsdato, listOf(request))
 
             // så
-            periodisertBoforhold shouldNotBe emptyList<BoforholdResponse>()
+            assertSoftly(periodisertBoforhold) { p ->
+                p shouldNotBe emptyList<BoforholdResponse>()
+                // TODO: aktivere når BoforholdApi.beregn2 er oppdatert med riktig håndtering av kilde
+                // p.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
+            }
         }
     }
 
@@ -1098,11 +1093,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereSivilstand(
                     leggeTilSivilstandsperiode =
-                    Sivilstandsperiode(
-                        LocalDate.now().minusMonths(7),
-                        null,
-                        Sivilstandskode.GIFT_SAMBOER,
-                    ),
+                        Sivilstandsperiode(
+                            LocalDate.now().minusMonths(7),
+                            null,
+                            Sivilstandskode.GIFT_SAMBOER,
+                        ),
                 ),
             )
 
