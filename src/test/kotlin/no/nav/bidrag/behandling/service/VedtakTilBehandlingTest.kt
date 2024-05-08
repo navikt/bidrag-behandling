@@ -167,31 +167,31 @@ class VedtakTilBehandlingTest {
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = 123,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = 123,
+                    )
+                },
             )
         val vedtak2 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-03-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = 124,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = 124,
+                    )
+                },
             )
         val vedtak3 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-04-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = null,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = null,
+                    )
+                },
             )
         every { vedtakConsumer.hentVedtak(eq(12333)) } returns vedtak1
         every { vedtakConsumer.hentVedtak(eq(123)) } returns vedtak2
@@ -226,31 +226,31 @@ class VedtakTilBehandlingTest {
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = 123,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = 123,
+                    )
+                },
             )
         val vedtak2 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-03-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = 124,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = 124,
+                    )
+                },
             )
         val vedtak3 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-04-01").atStartOfDay(),
                 stønadsendringListe =
-                    originalVedtak.stønadsendringListe.map {
-                        it.copy(
-                            omgjørVedtakId = null,
-                        )
-                    },
+                originalVedtak.stønadsendringListe.map {
+                    it.copy(
+                        omgjørVedtakId = null,
+                    )
+                },
             )
         every { vedtakConsumer.hentVedtak(eq(12333)) } returns vedtak1
         every { vedtakConsumer.hentVedtak(eq(123)) } returns vedtak2
@@ -389,9 +389,9 @@ class VedtakTilBehandlingTest {
         }
 
         assertSoftly(behandling.grunnlag) {
-            this shouldHaveSize 22
+            this shouldHaveSize 23
             filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
-                11,
+                12,
             )
             filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BARN }.shouldHaveSize(1)
             filter { !it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
@@ -589,22 +589,25 @@ class VedtakTilBehandlingTest {
                 it.navn shouldBe null
                 it.deleted shouldBe false
             }
-            val søknadsbarn = roller.filter { it.rolletype == Rolletype.BARN }
-            søknadsbarn shouldHaveSize 2
-            val søknadsbarn1 = søknadsbarn[0]
-            val søknadsbarn2 = søknadsbarn[1]
-            assertSoftly(søknadsbarn1) {
-                it.ident shouldBe testdataBarn1.ident
-                it.foedselsdato shouldBe testdataBarn1.fødselsdato
-                it.navn shouldBe null
-                it.deleted shouldBe false
-            }
-            assertSoftly(søknadsbarn2) {
-                it.ident shouldBe testdataBarn2.ident
-                it.foedselsdato shouldBe testdataBarn2.fødselsdato
-                it.navn shouldBe null
-                it.deleted shouldBe false
-            }
+        }
+
+        val søknadsbarn = roller.filter { it.rolletype == Rolletype.BARN }
+        søknadsbarn shouldHaveSize 2
+        val søknadsbarn1 = søknadsbarn[0]
+        val søknadsbarn2 = søknadsbarn[1]
+
+        assertSoftly(søknadsbarn1) {
+            it.ident shouldBe testdataBarn1.ident
+            it.foedselsdato shouldBe testdataBarn1.fødselsdato
+            it.navn shouldBe null
+            it.deleted shouldBe false
+        }
+
+        assertSoftly(søknadsbarn2) {
+            it.ident shouldBe testdataBarn2.ident
+            it.foedselsdato shouldBe testdataBarn2.fødselsdato
+            it.navn shouldBe null
+            it.deleted shouldBe false
         }
     }
 
@@ -628,7 +631,7 @@ class VedtakTilBehandlingTest {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 22
+            size shouldBe 23
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 testdataBarn2.ident,

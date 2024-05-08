@@ -20,7 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
-import no.nav.bidrag.behandling.transformers.boforhold.overskrivMedBearbeidetPerioder
+import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusRequest
@@ -318,7 +318,7 @@ class BoforholdService(
             (perioder + manuellePerioder).filter {
                 it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
             }.toSet().tilBoforholdRequest(this)
-        this.overskrivMedBearbeidetPerioder(
+        this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 listOf(perioderTilPeriodsering),
@@ -327,7 +327,7 @@ class BoforholdService(
     }
 
     private fun Husstandsbarn.resetTilOffentligePerioder() {
-        hentSisteBearbeidetBoforhold()?.let { overskrivMedBearbeidetPerioder(it) }
+        hentSisteBearbeidetBoforhold()?.let { overskriveMedBearbeidaPerioder(it) }
             ?: run {
                 this.perioder.clear()
                 if (kilde == Kilde.OFFENTLIG) {

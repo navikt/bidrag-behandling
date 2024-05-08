@@ -111,12 +111,12 @@ fun List<BoforholdResponse>.tilHusstandsbarn(behandling: Behandling): Set<Hussta
                 ident = it.key,
                 fødselsdato = finnFødselsdato(it.key, fødselsdatoFraRespons) ?: fødselsdatoFraRespons,
             )
-        husstandsbarn.overskrivMedBearbeidetPerioder(it.value)
+        husstandsbarn.overskriveMedBearbeidaPerioder(it.value)
         husstandsbarn
     }.toSet()
 }
 
-fun Husstandsbarn.overskrivMedBearbeidetPerioder(nyePerioder: List<BoforholdResponse>) {
+fun Husstandsbarn.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResponse>) {
     perioder.clear()
     perioder.addAll(nyePerioder.tilPerioder(this))
     if (perioder.isEmpty()) {
