@@ -10,7 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -186,9 +186,9 @@ class BehandlingService(
     }
 
     @Transactional
-    fun oppdaterVirkningstidspunkt(
+    fun oppdatereVirkningstidspunkt(
         behandlingsid: Long,
-        request: OppdaterVirkningstidspunkt,
+        request: OppdatereVirkningstidspunkt,
     ): Behandling {
         return behandlingRepository.findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
@@ -203,6 +203,10 @@ class BehandlingService(
                     request.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
                 if (erVirkningstidspunktEndret) {
                     log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling $behandlingsid" }
+                    // Bearbeida boforhold per husstandsmedlem vil påvirkes av endringer i virkningsdato
+                    grunnlagService.oppdatereBearbeidaBoforhold(it)
+                    grunnlagService.aktivereBearbeidaBoforholdEtterEndraVirkningsdato(it)
+                    entityManager.flush()
                     boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid)
                 }
                 it

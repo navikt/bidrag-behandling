@@ -853,7 +853,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val bearbeidaBoforhold =
                 BoforholdApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    endretBoforhold.tilBoforholdRequest(),
+                    endretBoforhold.tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
@@ -1805,7 +1805,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val bearbeidaBoforhold =
                 BoforholdApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    jsonListeTilObjekt<RelatertPersonGrunnlagDto>(rådataBoforhold.data).tilBoforholdRequest(),
+                    jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
+                        rådataBoforhold.data,
+                    ).tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
@@ -1904,7 +1906,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // hvis
             val respons =
-                assertFailsWith<HttpClientErrorException> { grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest) }
+                assertFailsWith<HttpClientErrorException> {
+                    grunnlagService.aktivereGrunnlag(
+                        behandling,
+                        aktivereGrunnlagRequest,
+                    )
+                }
 
             // så
             respons.statusCode shouldBe HttpStatus.NOT_FOUND

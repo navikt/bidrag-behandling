@@ -237,6 +237,33 @@ class GrunnlagService(
         }
     }
 
+    @Transactional
+    fun aktivereBearbeidaBoforholdEtterEndraVirkningsdato(behandling: Behandling) {
+        val ikkeAktiverteBearbeidaBoforhold =
+            behandling.henteUaktiverteGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                behandling.bidragsmottaker!!,
+            )
+
+        ikkeAktiverteBearbeidaBoforhold.forEach {
+            it.aktiv = LocalDateTime.now()
+        }
+    }
+
+    @Transactional
+    fun oppdatereBearbeidaBoforhold(behandling: Behandling) {
+        val sistAktiverteBoforholdsgrunnlag =
+            behandling.hentSisteInnhentetGrunnlagSet<RelatertPersonGrunnlagDto>(
+                Grunnlagstype(
+                    Grunnlagsdatatype.BOFORHOLD,
+                    false,
+                ),
+                behandling.bidragsmottaker!!,
+                null,
+            )
+        periodisereOgLagreBoforhold(behandling, sistAktiverteBoforholdsgrunnlag)
+    }
+
     fun hentSistInnhentet(
         behandlingsid: Long,
         rolleid: Long,
@@ -474,7 +501,7 @@ class GrunnlagService(
 
         // Oppdatere barn_i_husstand og tilhørende periode-tabell med periodisert boforhold
         if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty() && !innhentingAvBoforholdFeilet) {
-            periodisereOgLagreBoforhold(behandling, innhentetGrunnlag)
+            periodisereOgLagreBoforhold(behandling, innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet())
         }
 
         val innhentingAvSivilstandFeilet =
@@ -509,12 +536,12 @@ class GrunnlagService(
 
     private fun periodisereOgLagreBoforhold(
         behandling: Behandling,
-        innhentetGrunnlag: HentGrunnlagDto,
+        husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
     ) {
         val boforholdPeriodisert =
             BoforholdApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.tilBoforholdRequest(),
+                husstandsmedlemmerOgEgneBarn.tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
             )
 
         val bmsNyesteBearbeidaBoforholdFørLagring =
@@ -750,8 +777,11 @@ class GrunnlagService(
 
         // TODO: Erstatte med erBoforholdEllerSivilstandGrunnlagEndret-sjekk når Sivilstand V2 er klar
         val erGrunnlagEndret =
-            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() && innhentetGrunnlag != sistInnhentedeGrunnlagAvTypeForRolle
-        //        val erGrunnlagEndret =
+            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() && innhentetGrunnlag !=
+                nyesteGrunnlag?.data?.let {
+                    jsonListeTilObjekt<T>(it)
+                }
+//        val erGrunnlagEndret =
 //            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
 //                    erBoforholdEllerSivilstandGrunnlagEndret(
 //                        grunnlagstype,
@@ -799,36 +829,36 @@ class GrunnlagService(
     // TODO: Ikke fjern dette. Skal brukes ved sjekk for endringer
     private fun <T> erBoforholdEllerSivilstandGrunnlagEndret(
         grunnlagstype: Grunnlagstype,
-        aktivGrunnlag: Set<T>,
-        nyGrunnlag: Set<T>,
+        aktivtGrunnlag: Set<T>,
+        nyttGrunnlag: Set<T>,
         behandling: Behandling,
     ): Boolean {
-        if (!grunnlagstype.erBearbeidet) return aktivGrunnlag.toSet() != nyGrunnlag.toSet()
+        if (!grunnlagstype.erBearbeidet) return aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
         return if (grunnlagstype.type == Grunnlagsdatatype.BOFORHOLD) {
-            val aktivGrunnlagFiltrert =
-                (aktivGrunnlag as Set<BoforholdResponse>)
+            val aktivtGrunnlagFiltrert =
+                (aktivtGrunnlag as Set<BoforholdResponse>)
                     .toList()
                     .filtrerPerioderEtterVirkningstidspunkt(
                         behandling.husstandsbarn,
                         behandling.virkningstidspunktEllerSøktFomDato,
                     )
                     .toSet()
-            val nyGrunnlagFiltrert =
-                (nyGrunnlag as Set<BoforholdResponse>)
+            val nyttGrunnlagFiltrert =
+                (nyttGrunnlag as Set<BoforholdResponse>)
                     .toList()
                     .filtrerPerioderEtterVirkningstidspunkt(
                         behandling.husstandsbarn,
                         behandling.virkningstidspunktEllerSøktFomDato,
                     )
                     .toSet()
-            aktivGrunnlagFiltrert
-                .finnEndringerBoforhold(behandling.virkningstidspunktEllerSøktFomDato, nyGrunnlagFiltrert)
+            aktivtGrunnlagFiltrert
+                .finnEndringerBoforhold(behandling.virkningstidspunktEllerSøktFomDato, nyttGrunnlagFiltrert)
                 .isNotEmpty()
         } else if (grunnlagstype.type == Grunnlagsdatatype.SIVILSTAND) {
-            aktivGrunnlag.toSet() != nyGrunnlag.toSet()
+            aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
             // TODO
         } else {
-            aktivGrunnlag.toSet() != nyGrunnlag.toSet()
+            aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
         }
     }
 

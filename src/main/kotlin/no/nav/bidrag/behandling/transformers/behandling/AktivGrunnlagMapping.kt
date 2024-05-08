@@ -90,15 +90,16 @@ fun List<Grunnlag>.hentEndringerBoforhold(
     husstandsbarn: Set<Husstandsbarn>,
     rolle: Rolle,
 ): Set<HusstandsbarnGrunnlagDto> {
-    val aktivBoforholdData =
-        aktiveGrunnlag.hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
+    val aktiveBoforholdsdata =
+        aktiveGrunnlag.hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
     // Hent første for å finne innhentet tidspunkt
-    val nyBoforholdGrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val nyBoforholdData = hentAlleBearbeidetBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
-    return nyBoforholdData.finnEndringerBoforhold(
+    val nyeBoforholdsgrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
+    val nyeBoforholdsdata = hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
+
+    return nyeBoforholdsdata.finnEndringerBoforhold(
         virkniningstidspunkt,
-        aktivBoforholdData,
-        nyBoforholdGrunnlag?.innhentet ?: LocalDateTime.now(),
+        aktiveBoforholdsdata,
+        nyeBoforholdsgrunnlag?.innhentet ?: LocalDateTime.now(),
     )
 }
 

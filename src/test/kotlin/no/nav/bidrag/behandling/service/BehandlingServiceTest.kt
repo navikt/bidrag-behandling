@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -19,7 +20,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
@@ -30,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
@@ -37,6 +39,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -68,6 +71,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -79,6 +83,9 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     @Autowired
     lateinit var behandlingService: BehandlingService
+
+    @Autowired
+    lateinit var grunnlagService: GrunnlagService
 
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
@@ -597,7 +604,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 createdBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
-                        OppdaterVirkningstidspunkt(
+                        OppdatereVirkningstidspunkt(
                             årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
                             virkningstidspunkt = null,
                             notat =
@@ -621,7 +628,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     1234,
                     OppdaterBehandlingRequestV2(
                         virkningstidspunkt =
-                            OppdaterVirkningstidspunkt(
+                            OppdatereVirkningstidspunkt(
                                 notat =
                                     OppdaterNotat(
                                         "New Notat",
@@ -706,7 +713,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 createdBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
-                        OppdaterVirkningstidspunkt(
+                        OppdatereVirkningstidspunkt(
                             notat =
                                 OppdaterNotat(
                                     notat,
@@ -765,6 +772,45 @@ class BehandlingServiceTest : TestContainerRunner() {
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
             oppdatertBehandling.get().grunnlag.first().aktiv shouldNotBe null
+        }
+    }
+
+    @Nested
+    open inner class OppdatereVirkningstidspunktTest {
+        @Test
+        @Transactional
+        open fun `skal oppdatere virkningstidspunkt og oppdatere boforhold`() {
+            // gitt
+            val behandling = testdataManager.opprettBehandling(false)
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubPersonConsumer()
+
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            val nyVirkningsdato = behandling.virkningstidspunkt!!.minusMonths(1)
+            val request = OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato)
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }) { g ->
+                g shouldHaveSize 3
+                g.filter { it.aktiv != null } shouldHaveSize 3
+                g.filter { !it.erBearbeidet } shouldHaveSize 1
+                jsonListeTilObjekt<BoforholdResponse>(g.first { it.erBearbeidet }.data).first().periodeFom shouldBeEqual
+                    behandling.virkningstidspunkt!!
+            }
+
+            // hvis
+            behandlingService.oppdatereVirkningstidspunkt(behandling.id!!, request)
+
+            // så
+            entityManager.refresh(behandling)
+            val boforholdsgrunnlag = behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }
+            assertSoftly(boforholdsgrunnlag) { g ->
+                g shouldHaveSize 5
+                g.filter { !it.erBearbeidet } shouldHaveSize 1
+                g.filter { it.aktiv != null } shouldHaveSize 5
+                jsonListeTilObjekt<BoforholdResponse>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
+                    .first().periodeFom shouldBeEqual nyVirkningsdato
+            }
         }
     }
 

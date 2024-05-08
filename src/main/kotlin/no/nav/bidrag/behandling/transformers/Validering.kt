@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleHusstandsmedlemPerioder
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -45,7 +45,7 @@ fun Behandling.validerKanOppdatere() {
     }
 }
 
-fun OppdaterVirkningstidspunkt.valider(behandling: Behandling) {
+fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
     if (avslag != null && årsak != null) {
         feilliste.add("Kan ikke sette både avslag og årsak samtidig")

@@ -411,12 +411,12 @@ fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkning
     return slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt)).sortedBy { it.periodeFom }
 }
 
-fun List<Grunnlag>.hentAlleBearbeidetBoforhold(
+fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     virkniningstidspunkt: LocalDate,
     husstandsbarn: Set<Husstandsbarn>,
-    rolle: Rolle?,
+    rolle: Rolle,
 ) = asSequence()
-    .filter { (rolle == null || it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
+    .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
     .mapNotNull { it.konverterData<List<BoforholdResponse>>() }
     .flatten().distinct().toList().filtrerPerioderEtterVirkningstidspunkt(
         husstandsbarn,

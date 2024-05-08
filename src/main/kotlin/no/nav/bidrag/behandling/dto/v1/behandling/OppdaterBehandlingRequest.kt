@@ -14,12 +14,12 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
 
 data class OppdaterBehandlingRequest(
-    val virkningstidspunkt: OppdaterVirkningstidspunkt? = null,
+    val virkningstidspunkt: OppdatereVirkningstidspunkt? = null,
     val boforhold: OppdaterBoforholdRequest? = null,
     val inntekter: OppdatereInntekterRequest? = null,
 )
 
-data class OppdaterVirkningstidspunkt(
+data class OppdatereVirkningstidspunkt(
     @Schema(
         name = "årsak",
         description =

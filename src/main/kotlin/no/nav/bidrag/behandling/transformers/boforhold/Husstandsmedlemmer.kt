@@ -11,17 +11,32 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import java.time.LocalDate
 
-fun Set<RelatertPersonGrunnlagDto>.tilBoforholdRequest() = this.toList().tilBoforholdRequest()
+fun Set<RelatertPersonGrunnlagDto>.tilBoforholdRequest(virkningsdato: LocalDate) =
+    this.toList().tilBoforholdRequest(virkningsdato)
 
-fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest() =
-    this.map {
+fun List<RelatertPersonGrunnlagDto>.tilBoforholdRequest(virkningsdato: LocalDate) =
+    this.filter { it.erBarnAvBmBp }.map {
         BoforholdRequest(
             bostatusListe =
-                it.borISammeHusstandDtoListe.tilBostatus(
-                    Bostatuskode.MED_FORELDER,
-                    Kilde.OFFENTLIG,
-                ),
+            when (it.borISammeHusstandDtoListe.isNotEmpty()) {
+                true ->
+                    it.borISammeHusstandDtoListe.tilBostatus(
+                        Bostatuskode.MED_FORELDER,
+                        Kilde.OFFENTLIG,
+                    )
+
+                false ->
+                    listOf(
+                        Bostatus(
+                            bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                            kilde = Kilde.OFFENTLIG,
+                            periodeFom = maxOf(it.fødselsdato!!, virkningsdato),
+                            periodeTom = null,
+                        ),
+                    )
+            },
             erBarnAvBmBp = it.erBarnAvBmBp,
             fødselsdato = it.fødselsdato!!,
             relatertPersonPersonId = it.relatertPersonPersonId,
