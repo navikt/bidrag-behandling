@@ -756,6 +756,36 @@ class GrunnlagService(
                 grunnlagstype.erBearbeidet == it.erBearbeidet
         }?.let { commonObjectmapper.readValue<Set<T>>(it.data) }?.toSet() ?: emptySet()
 
+    private inline fun <reified T> nyesteGrunnlag(
+        behandling: Behandling,
+        innhentetForRolle: Rolle,
+        grunnlagstype: Grunnlagstype,
+        gjelderPerson: Personident?,
+    ): Set<T> {
+        // TODO: Fjerne håndtering av SivilstandApi versjon 1-data når Sivsilstandsgrunnlag er oppdatert for samtlige behandlinger
+        if (Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype) {
+            try {
+                return behandling.hentSisteInnhentetGrunnlagSet(
+                    grunnlagstype,
+                    innhentetForRolle,
+                    gjelderPerson,
+                )
+            } catch (exception: Exception) {
+                log.warn {
+                    "Exception oppstod ved parsing av nyeste bearbeida sivilstandsgrunnlag:  ${exception.message}. " +
+                        "Dette skyldes mest sannsynlig gamle data."
+                }
+                return emptySet()
+            }
+        }
+
+        return behandling.hentSisteInnhentetGrunnlagSet(
+            grunnlagstype,
+            innhentetForRolle,
+            gjelderPerson,
+        )
+    }
+
     private inline fun <reified T> lagreGrunnlagHvisEndret(
         behandling: Behandling,
         innhentetForRolle: Rolle,
@@ -765,29 +795,18 @@ class GrunnlagService(
         gjelderPerson: Personident? = null,
     ) {
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
-            behandling.hentSisteInnhentetGrunnlagSet(
-                grunnlagstype,
-                innhentetForRolle,
-                gjelderPerson,
-            )
-
+            nyesteGrunnlag(behandling, innhentetForRolle, grunnlagstype, gjelderPerson)
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, innhentetForRolle, gjelderPerson)
         val erFørstegangsinnhenting = sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
 
-        // TODO: Erstatte med erBoforholdEllerSivilstandGrunnlagEndret-sjekk når Sivilstand V2 er klar
         val erGrunnlagEndret =
-            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() && innhentetGrunnlag !=
-                nyesteGrunnlag?.data?.let {
-                    jsonListeTilObjekt<T>(it)
-                }
-//        val erGrunnlagEndret =
-//            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
-//                    erBoforholdEllerSivilstandGrunnlagEndret(
-//                        grunnlagstype,
-//                        innhentetGrunnlag,
-//                        sistInnhentedeGrunnlagAvTypeForRolle,
-//                        behandling,
-//                    )
+            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
+                erGrunnlagEndret(
+                    grunnlagstype = grunnlagstype,
+                    nyttGrunnlag = innhentetGrunnlag,
+                    aktivtGrunnlag = sistInnhentedeGrunnlagAvTypeForRolle,
+                    behandling = behandling,
+                )
 
         if (erFørstegangsinnhenting || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
             opprett(
@@ -825,8 +844,8 @@ class GrunnlagService(
         }
     }
 
-    // TODO: Ikke fjern dette. Skal brukes ved sjekk for endringer
-    private fun <T> erBoforholdEllerSivilstandGrunnlagEndret(
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> erGrunnlagEndret(
         grunnlagstype: Grunnlagstype,
         aktivtGrunnlag: Set<T>,
         nyttGrunnlag: Set<T>,
