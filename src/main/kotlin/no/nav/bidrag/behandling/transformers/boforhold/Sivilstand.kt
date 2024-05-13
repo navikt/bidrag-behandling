@@ -10,24 +10,13 @@ import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
-fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(manuellePerioder: List<SivilstandBeregnV2Dto>? = emptyList()) =
+fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(lagretSivilstand: Set<Sivilstand>? = emptySet()) =
     SivilstandRequest(
         this.toList(),
-        manuellePerioder ?: emptyList(),
+        lagretSivilstand?.let {
+            lagretSivilstand.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto()
+        } ?: emptyList(),
     )
-
-/*
-
-fun Set<Sivilstand>.tilSivilstandRequest(offentligePerioder: List<SivilstandGrunnlagDto> = emptyList()) =
-    SivilstandRequest(offentligePerioder, this.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto())
-*/
-
-fun Set<SivilstandBeregnV2Dto>.tilSivilstandRequest(sivilstand: Set<Sivilstand>) : SivilstandRequest {
-    return SivilstandRequest(
-        offentligePerioder = this.tilSvilstandGrunnlagDto(sivilstand.first().behandling.bidragsmottaker!!.ident!!),
-        manuellePerioder = sivilstand.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto(),
-    )
-}
 
 fun Set<SivilstandBeregnV2Dto>.tilSvilstandGrunnlagDto(personident: String) =
     this.map {
@@ -56,7 +45,7 @@ fun Set<SivilstandBeregnV2Dto>.tilSivilstand(behandling: Behandling): List<Sivil
     this.map {
         Sivilstand(
             behandling = behandling,
-            kilde = Kilde.OFFENTLIG,
+            kilde = it.kilde,
             datoFom = it.periodeFom,
             datoTom = it.periodeTom,
             sivilstand = it.sivilstandskode,

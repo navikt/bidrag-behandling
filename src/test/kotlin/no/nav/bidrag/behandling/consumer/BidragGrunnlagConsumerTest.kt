@@ -30,7 +30,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
     fun `skal hente grunnlag for behandling`() {
         // given
         val personidentBmFraStub = Personident("99057812345")
-        val behandling = testdataManager.opprettBehandling(false)
+        val behandling = testdataManager.oppretteBehandling(false)
         val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
 
         stubUtils.stubHenteGrunnlagOk()
@@ -50,7 +50,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
     @Test
     fun `skal angi riktig periode i requestobjekter for henting av grunnlag`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling(false)
+        val behandling = testdataManager.oppretteBehandling(false)
 
         // hvis
         val grunnlagRequest = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)

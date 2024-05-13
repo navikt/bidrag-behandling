@@ -34,13 +34,13 @@ class TestdataManager(
     }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun opprettBehandlingNewTransacion(inkluderInntekter: Boolean = false): Behandling {
-        return opprettBehandling(inkluderInntekter)
+    fun oppretteBehandlingINyTransaksjon(inkluderInntekter: Boolean = false): Behandling {
+        return oppretteBehandling(inkluderInntekter)
     }
 
     @Transactional
-    fun opprettBehandling(inkluderInntekter: Boolean = false): Behandling {
-        val behandling = oppretteBehandling()
+    fun oppretteBehandling(inkluderInntekter: Boolean = false): Behandling {
+        val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
         behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
         behandling.husstandsbarn =

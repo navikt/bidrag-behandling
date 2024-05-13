@@ -79,7 +79,7 @@ class BoforholdServiceTest : TestContainerRunner() {
     @Nested
     open inner class Husstandsbarnstester {
         private fun opprettBehandlingForBoforholdTest(): Behandling {
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.husstandsbarn.clear()
             behandling.husstandsbarn.addAll(
@@ -125,7 +125,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere automatisk innhenta husstandsbarn og overskrive manuell informasjon`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             stubbeHentingAvPersoninfoForTestpersoner()
             val periode1Til = testdataBarn2.fødselsdato.plusMonths(19)
@@ -140,12 +140,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                     RelatertPersonGrunnlagDto(
                         partPersonId = behandling.bidragsmottaker!!.ident!!,
@@ -154,16 +154,16 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn2.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn2.fødselsdato,
-                                periodeTil = periode1Til,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn2.fødselsdato,
+                                    periodeTil = periode1Til,
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = periode2Fra,
+                                    periodeTil = null,
+                                ),
                             ),
-                            BorISammeHusstandDto(
-                                periodeFra = periode2Fra,
-                                periodeTil = null,
-                            ),
-                        ),
                     ),
                 )
 
@@ -218,7 +218,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         // TODO: Skru på test etter at bidrag-beregn-felles er oppdatert med fiks-versjon
         open fun `skal oppdatere automatisk innhenta husstandsbarn og flette inn manuell informasjon`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             behandling.virkningstidspunkt = testdataBarn1.fødselsdato
             behandling.husstandsbarn.forEach {
                 it.perioder.forEach {
@@ -239,12 +239,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                     RelatertPersonGrunnlagDto(
                         partPersonId = behandling.bidragsmottaker!!.ident!!,
@@ -253,16 +253,16 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn2.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn2.fødselsdato,
-                                periodeTil = periode1Til,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn2.fødselsdato,
+                                    periodeTil = periode1Til,
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = periode2Fra,
+                                    periodeTil = null,
+                                ),
                             ),
-                            BorISammeHusstandDto(
-                                periodeFra = periode2Fra,
-                                periodeTil = null,
-                            ),
-                        ),
                     ),
                 )
 
@@ -313,7 +313,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal endre kilde til manuell for offentlig husstandsbarn som ikke finnes i nyeste grunnlag`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             behandling.virkningstidspunkt = testdataBarn1.fødselsdato
             behandling.husstandsbarn.forEach {
                 it.perioder.forEach {
@@ -337,12 +337,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                 )
 
@@ -395,7 +395,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal slette offentlige husstandsbarn som ikke finnes i nyeste grunnlag hvis overskriving er valgt`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             behandling.virkningstidspunkt = testdataBarn1.fødselsdato
             behandling.husstandsbarn.forEach {
                 it.perioder.forEach {
@@ -419,12 +419,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                 )
 
@@ -466,7 +466,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal erstatte lagrede offentlige husstandsbarn med nye fra grunnlag ved førstegangsinnhenting `() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             stubbeHentingAvPersoninfoForTestpersoner()
 
@@ -479,12 +479,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = behandling.søknadsbarn.first().navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = behandling.søknadsbarn.first().foedselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = behandling.søknadsbarn.first().foedselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                 )
 
@@ -511,7 +511,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre periodisert boforhold basert på førstegangsinnhenting av grunnlag`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             // Fjerner eksisterende barn for å simulere førstegangsinnhenting av grunnlag
             behandling.husstandsbarn.removeAll(behandling.husstandsbarn)
@@ -531,12 +531,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn1.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn1.fødselsdato,
-                                periodeTil = null,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn1.fødselsdato,
+                                    periodeTil = null,
+                                ),
                             ),
-                        ),
                     ),
                     RelatertPersonGrunnlagDto(
                         partPersonId = behandling.bidragsmottaker!!.ident!!,
@@ -545,16 +545,16 @@ class BoforholdServiceTest : TestContainerRunner() {
                         erBarnAvBmBp = true,
                         navn = testdataBarn2.navn,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = testdataBarn2.fødselsdato,
-                                periodeTil = periode1Til,
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = testdataBarn2.fødselsdato,
+                                    periodeTil = periode1Til,
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = periode2Fra,
+                                    periodeTil = null,
+                                ),
                             ),
-                            BorISammeHusstandDto(
-                                periodeFra = periode2Fra,
-                                periodeTil = null,
-                            ),
-                        ),
                     ),
                 )
 
@@ -583,7 +583,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke få slette husstandsbarn med kilde offentlig`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             // hvis, så
             assertFailsWith<HttpClientErrorException> {
@@ -735,13 +735,13 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereHusstandsmedlem(
                     oppdaterPeriode =
-                    OppdaterHusstandsmedlemPeriode(
-                        idHusstandsbarn = husstandsbarn.id!!,
-                        idPeriode = periodeSomSkalOppdateres.id,
-                        datoFom = LocalDate.parse("2024-02-01"),
-                        datoTom = null,
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                    ),
+                        OppdaterHusstandsmedlemPeriode(
+                            idHusstandsbarn = husstandsbarn.id!!,
+                            idPeriode = periodeSomSkalOppdateres.id,
+                            datoFom = LocalDate.parse("2024-02-01"),
+                            datoTom = null,
+                            bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        ),
                 ),
             )
 
@@ -791,11 +791,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereHusstandsmedlem(
                     opprettHusstandsmedlem =
-                    OpprettHusstandsstandsmedlem(
-                        personident = Personident("213123"),
-                        fødselsdato = LocalDate.parse("2020-02-01"),
-                        navn = "Navn Navnesen",
-                    ),
+                        OpprettHusstandsstandsmedlem(
+                            personident = Personident("213123"),
+                            fødselsdato = LocalDate.parse("2020-02-01"),
+                            navn = "Navn Navnesen",
+                        ),
                 ),
             )
 
@@ -824,11 +824,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereHusstandsmedlem(
                     opprettHusstandsmedlem =
-                    OpprettHusstandsstandsmedlem(
-                        personident = Personident("213123"),
-                        fødselsdato = fødselsdato,
-                        navn = "Navn Navnesen",
-                    ),
+                        OpprettHusstandsstandsmedlem(
+                            personident = Personident("213123"),
+                            fødselsdato = fødselsdato,
+                            navn = "Navn Navnesen",
+                        ),
                 ),
             )
 
@@ -873,11 +873,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                         behandling.id!!,
                         OppdatereHusstandsmedlem(
                             opprettHusstandsmedlem =
-                            OpprettHusstandsstandsmedlem(
-                                personident = Personident(ident),
-                                fødselsdato = fødselsdato,
-                                navn = "Navn Navnesen",
-                            ),
+                                OpprettHusstandsstandsmedlem(
+                                    personident = Personident(ident),
+                                    fødselsdato = fødselsdato,
+                                    navn = "Navn Navnesen",
+                                ),
                         ),
                     )
                 }
@@ -897,11 +897,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 behandling.id!!,
                 OppdatereHusstandsmedlem(
                     opprettHusstandsmedlem =
-                    OpprettHusstandsstandsmedlem(
-                        personident = Personident("213123"),
-                        fødselsdato = LocalDate.parse("2020-02-01"),
-                        navn = "Navn Navnesen",
-                    ),
+                        OpprettHusstandsstandsmedlem(
+                            personident = Personident("213123"),
+                            fødselsdato = LocalDate.parse("2020-02-01"),
+                            navn = "Navn Navnesen",
+                        ),
                 ),
             )
             behandling.husstandsbarn.shouldHaveSize(2)
@@ -964,55 +964,55 @@ class BoforholdServiceTest : TestContainerRunner() {
 
     @Nested
     open inner class Sivilstandstester {
-
         @Test
         @Transactional
         open fun `skal oppdatere automatisk innhenta sivilstand uten å slette manuelleperioder`() {
-
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             stubbeHentingAvPersoninfoForTestpersoner()
             val separeringstidspunkt = LocalDateTime.now().minusMonths(125)
-            val grunnlagsdataSivilstand = setOf(
-                SivilstandGrunnlagDto(
-                    personId = behandling.bidragsmottaker!!.ident!!,
-                    type = SivilstandskodePDL.SKILT,
-                    registrert = separeringstidspunkt.plusMonths(24),
-                    gyldigFom = separeringstidspunkt.plusMonths(24).toLocalDate(),
-                    historisk = false,
-                    master = "FREG",
-                    bekreftelsesdato = null,
-                ),
-                SivilstandGrunnlagDto(
-                    personId = behandling.bidragsmottaker!!.ident!!,
-                    type = SivilstandskodePDL.SEPARERT,
-                    registrert = separeringstidspunkt,
-                    gyldigFom = separeringstidspunkt.toLocalDate(),
-                    historisk = true,
-                    master = "FREG",
-                    bekreftelsesdato = null,
-                ),
-                SivilstandGrunnlagDto(
-                    personId = behandling.bidragsmottaker!!.ident!!,
-                    type = SivilstandskodePDL.GIFT,
-                    registrert = separeringstidspunkt.minusMonths(75),
-                    gyldigFom = separeringstidspunkt.minusMonths(75).toLocalDate(),
-                    historisk = true,
-                    master = "FREG",
-                    bekreftelsesdato = null,
-                ),
-            )
+            val grunnlagsdataSivilstand =
+                setOf(
+                    SivilstandGrunnlagDto(
+                        personId = behandling.bidragsmottaker!!.ident!!,
+                        type = SivilstandskodePDL.SKILT,
+                        registrert = separeringstidspunkt.plusMonths(24),
+                        gyldigFom = separeringstidspunkt.plusMonths(24).toLocalDate(),
+                        historisk = false,
+                        master = "FREG",
+                        bekreftelsesdato = null,
+                    ),
+                    SivilstandGrunnlagDto(
+                        personId = behandling.bidragsmottaker!!.ident!!,
+                        type = SivilstandskodePDL.SEPARERT,
+                        registrert = separeringstidspunkt,
+                        gyldigFom = separeringstidspunkt.toLocalDate(),
+                        historisk = true,
+                        master = "FREG",
+                        bekreftelsesdato = null,
+                    ),
+                    SivilstandGrunnlagDto(
+                        personId = behandling.bidragsmottaker!!.ident!!,
+                        type = SivilstandskodePDL.GIFT,
+                        registrert = separeringstidspunkt.minusMonths(75),
+                        gyldigFom = separeringstidspunkt.minusMonths(75).toLocalDate(),
+                        historisk = true,
+                        master = "FREG",
+                        bekreftelsesdato = null,
+                    ),
+                )
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling = behandling,
                 grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
-                grunnlagsdata = grunnlagsdataSivilstand
+                grunnlagsdata = grunnlagsdataSivilstand,
             )
 
-            val periodisertSivilstand = SivilstandApi.beregnV2(
-                minOf(behandling.virkningstidspunktEllerSøktFomDato),
-                grunnlagsdataSivilstand.tilSivilstandRequest()
-            )
+            val periodisertSivilstand =
+                SivilstandApi.beregnV2(
+                    minOf(behandling.virkningstidspunktEllerSøktFomDato),
+                    grunnlagsdataSivilstand.tilSivilstandRequest(),
+                )
 
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling = behandling,
@@ -1022,17 +1022,21 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             behandling.sivilstand.add(
                 Sivilstand(
-                    behandling, datoFom = behandling.virkningstidspunkt, datoTom = null,
-                    Sivilstandskode.BOR_ALENE_MED_BARN, Kilde.MANUELL
-                )
+                    behandling,
+                    datoFom = behandling.virkningstidspunkt?.plusMonths(2),
+                    datoTom = null,
+                    Sivilstandskode.GIFT_SAMBOER,
+                    Kilde.MANUELL,
+                ),
             )
 
             entityManager.flush()
 
             assertSoftly(behandling.sivilstand) { s ->
-                s shouldHaveSize 2
+                s shouldHaveSize 3
                 s.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
             }
+
             // hvis
             boforholdService.oppdatereAutomatiskInnhentaSivilstand(behandling, false)
 
@@ -1040,7 +1044,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             entityManager.refresh(behandling)
 
             assertSoftly(behandling.sivilstand) { s ->
-                s.size shouldBe 1
+                s.size shouldBe 2
                 s.first { Sivilstandskode.BOR_ALENE_MED_BARN == it.sivilstand } shouldNotBe null
                 s.first { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom } shouldNotBe null
                 s.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
@@ -1057,49 +1061,50 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Test
         @Transactional
         open fun `skal oppdatere automatisk innhenta sivilstand uten å ta hensyn til manuelle perioder`() {
-
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             val separeringstidspunkt = LocalDateTime.now().minusMonths(125)
-            val grunnlagsdataSivilstand = setOf(
-                SivilstandGrunnlagDto(
-                    personId = behandling.bidragsmottaker!!.ident!!,
-                    type = SivilstandskodePDL.SKILT,
-                    registrert = separeringstidspunkt.plusMonths(24),
-                    gyldigFom = separeringstidspunkt.plusMonths(24).toLocalDate(),
-                    historisk = false,
-                    master = "FREG",
-                    bekreftelsesdato = null,
-                ),
-                SivilstandGrunnlagDto(
-                    personId = behandling.bidragsmottaker!!.ident!!,
-                    type = SivilstandskodePDL.SEPARERT,
-                    registrert = separeringstidspunkt,
-                    gyldigFom = separeringstidspunkt.toLocalDate(),
-                    historisk = true,
-                    master = "FREG",
-                    bekreftelsesdato = null,
-                ),
-                SivilstandGrunnlagDto(
-                    personId = behandling.bidragsmottaker!!.ident!!,
-                    type = SivilstandskodePDL.GIFT,
-                    registrert = separeringstidspunkt.minusMonths(75),
-                    gyldigFom = separeringstidspunkt.minusMonths(75).toLocalDate(),
-                    historisk = true,
-                    master = "FREG",
-                    bekreftelsesdato = null,
-                ),
-            )
+            val grunnlagsdataSivilstand =
+                setOf(
+                    SivilstandGrunnlagDto(
+                        personId = behandling.bidragsmottaker!!.ident!!,
+                        type = SivilstandskodePDL.SKILT,
+                        registrert = separeringstidspunkt.plusMonths(24),
+                        gyldigFom = separeringstidspunkt.plusMonths(24).toLocalDate(),
+                        historisk = false,
+                        master = "FREG",
+                        bekreftelsesdato = null,
+                    ),
+                    SivilstandGrunnlagDto(
+                        personId = behandling.bidragsmottaker!!.ident!!,
+                        type = SivilstandskodePDL.SEPARERT,
+                        registrert = separeringstidspunkt,
+                        gyldigFom = separeringstidspunkt.toLocalDate(),
+                        historisk = true,
+                        master = "FREG",
+                        bekreftelsesdato = null,
+                    ),
+                    SivilstandGrunnlagDto(
+                        personId = behandling.bidragsmottaker!!.ident!!,
+                        type = SivilstandskodePDL.GIFT,
+                        registrert = separeringstidspunkt.minusMonths(75),
+                        gyldigFom = separeringstidspunkt.minusMonths(75).toLocalDate(),
+                        historisk = true,
+                        master = "FREG",
+                        bekreftelsesdato = null,
+                    ),
+                )
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling = behandling,
                 grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
-                grunnlagsdata = grunnlagsdataSivilstand
+                grunnlagsdata = grunnlagsdataSivilstand,
             )
 
-            val periodisertSivilstand = SivilstandApi.beregnV2(
-                minOf(behandling.virkningstidspunktEllerSøktFomDato),
-                grunnlagsdataSivilstand.tilSivilstandRequest()
-            )
+            val periodisertSivilstand =
+                SivilstandApi.beregnV2(
+                    minOf(behandling.virkningstidspunktEllerSøktFomDato),
+                    grunnlagsdataSivilstand.tilSivilstandRequest(),
+                )
 
             testdataManager.oppretteOgLagreGrunnlag(
                 behandling = behandling,
@@ -1109,9 +1114,12 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             behandling.sivilstand.add(
                 Sivilstand(
-                    behandling, datoFom = behandling.virkningstidspunkt, datoTom = null,
-                    Sivilstandskode.BOR_ALENE_MED_BARN, Kilde.MANUELL
-                )
+                    behandling,
+                    datoFom = behandling.virkningstidspunkt,
+                    datoTom = null,
+                    Sivilstandskode.BOR_ALENE_MED_BARN,
+                    Kilde.MANUELL,
+                ),
             )
 
             entityManager.flush()
@@ -1144,7 +1152,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre periodisert sivilstand basert på førstegangsinnhenting av grunnlag`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             // Fjerner eksisterende barn for å simulere førstegangsinnhenting av grunnlag
             behandling.sivilstand.removeAll(behandling.sivilstand)
@@ -1210,18 +1218,18 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Disabled
         open fun `skal legge til sivilstand manuelt`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             // hvis
             boforholdService.oppdatereSivilstandManuelt(
                 behandling.id!!,
                 OppdatereSivilstand(
                     nyEllerEndretSivilstandsperiode =
-                    Sivilstandsperiode(
-                        LocalDate.now().minusMonths(7),
-                        null,
-                        Sivilstandskode.GIFT_SAMBOER,
-                    ),
+                        Sivilstandsperiode(
+                            LocalDate.now().minusMonths(7),
+                            null,
+                            Sivilstandskode.GIFT_SAMBOER,
+                        ),
                 ),
             )
 
