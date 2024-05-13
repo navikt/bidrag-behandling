@@ -2,8 +2,10 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.YearMonth
 
 val årsinntekterPrioriteringsliste =
@@ -24,11 +26,43 @@ val årsinntekterPrioriteringsliste =
         Inntektsrapportering.KAPITALINNTEKT,
         Inntektsrapportering.LIGNINGSINNTEKT,
     )
+val ligningsinntekter =
+    listOf(
+        Inntektsrapportering.LIGNINGSINNTEKT,
+        Inntektsrapportering.KAPITALINNTEKT,
+        Inntektsrapportering.AINNTEKT,
+    )
+
+fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
+    copy(
+        inntekter =
+            this.inntekter.filter { inntekt ->
+                if (!ligningsinntekter.contains(inntekt.inntektRapportering)) return@filter true
+                val sisteLigningsår =
+                    this.inntekter.sortedBy { it.periode.fom }
+                        .lastOrNull { it.inntektRapportering == inntekt.inntektRapportering }?.periode?.fom?.year
+                        ?: return@filter true
+                ligningsinntekter.contains(
+                    inntekt.inntektRapportering,
+                ) && inntekt.periode.fom.year == sisteLigningsår
+            },
+    )
+
+fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
+    this.filter { inntekt ->
+        if (!ligningsinntekter.contains(inntekt.type) || inntekt.taMed) return@filter true
+        val sisteLigningsår =
+            this.sortedBy { it.opprinneligFom }
+                .lastOrNull { it.type == inntekt.type }?.opprinneligFom?.year
+                ?: return@filter true
+        inntekt.opprinneligFom == null || ligningsinntekter.contains(inntekt.type) && inntekt.opprinneligFom?.year == sisteLigningsår
+    }
 
 fun Set<Inntekt>.årsinntekterSortert(
     sorterTaMed: Boolean = true,
     eksluderYtelserUtenforVirkningstidspunkt: Boolean = false,
 ) = this.filter { !eksplisitteYtelser.contains(it.type) }
+    .filtrerUtHistoriskeInntekter()
     .filter {
         if (eksluderYtelserUtenforVirkningstidspunkt && årsinntekterYtelser.contains(it.type)) {
             it.opprinneligPeriode

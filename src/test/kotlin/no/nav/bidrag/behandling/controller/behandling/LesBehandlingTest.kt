@@ -58,7 +58,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
         }
 
         assertSoftly(behandling.inntekter) {
-            årsinntekter shouldHaveSize 11
+            årsinntekter shouldHaveSize 7
             årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }
                 .shouldBeEmpty()
             årsinntekter.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT }

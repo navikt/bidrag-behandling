@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.filtrerUtHistoriskeInntekter
 import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektspostEndring
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
@@ -224,9 +225,9 @@ fun List<Grunnlag>.hentEndringerInntekter(
     inntekter: Set<Inntekt>,
     type: Grunnlagsdatatype,
 ): Set<IkkeAktivInntektDto> {
-    val inntekterRolle = inntekter.filter { it.ident == rolle.ident }
+    val inntekterRolle = inntekter.filter { it.ident == rolle.ident }.filtrerUtHistoriskeInntekter()
 
-    val oppdatertGrunnlag = hentBearbeidetInntekterForType(type, rolle.ident!!)
+    val oppdatertGrunnlag = hentBearbeidetInntekterForType(type, rolle.ident!!)?.filtrerUtHistoriskeInntekter()
     val innhentetTidspunkt = find { it.type == type && it.erBearbeidet }?.innhentet ?: LocalDateTime.now()
     val oppdaterteEllerNyInntekter =
         oppdatertGrunnlag?.inntekter?.map { grunnlag ->
