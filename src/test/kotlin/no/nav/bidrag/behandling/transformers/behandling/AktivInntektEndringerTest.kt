@@ -152,7 +152,10 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                         beløp = 16000.toBigDecimal(),
                         ident = bmIdent,
                         inntektstyperKode =
-                            listOf("annenArbeidsinntekt" to BigDecimal(6000), "arbeidsavklaringspenger" to BigDecimal(10000)),
+                            listOf(
+                                "annenArbeidsinntekt" to BigDecimal(6000),
+                                "arbeidsavklaringspenger" to BigDecimal(10000),
+                            ),
                     ),
                     opprettInntekt(
                         datoFom = YearMonth.of(2022, 1),
@@ -179,7 +182,10 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                         beløp = 16000.toBigDecimal(),
                         ident = barnIdent,
                         inntektstyperKode =
-                            listOf("annenArbeidsinntekt" to BigDecimal(6000), "arbeidsavklaringspenger" to BigDecimal(10000)),
+                            listOf(
+                                "annenArbeidsinntekt" to BigDecimal(6000),
+                                "arbeidsavklaringspenger" to BigDecimal(10000),
+                            ),
                     ),
                     opprettInntekt(
                         datoFom = YearMonth.of(2022, 1),
@@ -198,7 +204,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(4)
+            resultat.shouldHaveSize(3)
             resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }.shouldHaveSize(0)
 
             val resultatBarn =
@@ -207,7 +213,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultatBarn.shouldHaveSize(5)
+            resultatBarn.shouldHaveSize(4)
         }
 
         @Test
@@ -231,7 +237,10 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                         beløp = 16000.toBigDecimal(),
                         ident = bmIdent,
                         inntektstyperKode =
-                            listOf("annenArbeidsinntekt" to BigDecimal(6000), "arbeidsavklaringspenger" to BigDecimal(10000)),
+                            listOf(
+                                "annenArbeidsinntekt" to BigDecimal(6000),
+                                "arbeidsavklaringspenger" to BigDecimal(10000),
+                            ),
                     ),
                     opprettInntekt(
                         datoFom = YearMonth.of(2022, 1),
@@ -250,7 +259,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(4)
+            resultat.shouldHaveSize(3)
             resultat.none { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldBe true
             resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2023 } shouldBe true
             resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2022 } shouldBe true
@@ -258,7 +267,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND } shouldHaveSize 1
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
-            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 2
+            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 1
         }
 
         @Test
@@ -283,7 +292,10 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                         beløp = 17000.toBigDecimal(),
                         ident = bmIdent,
                         inntektstyperKode =
-                            listOf("annenArbeidsinntekt" to BigDecimal(6000), "arbeidsavklaringspenger" to BigDecimal(11000)),
+                            listOf(
+                                "annenArbeidsinntekt" to BigDecimal(6000),
+                                "arbeidsavklaringspenger" to BigDecimal(11000),
+                            ),
                     ),
                     opprettInntekt(
                         datoFom = YearMonth.of(2022, 1),
@@ -297,11 +309,9 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     opprettInntekt(
                         datoFom = YearMonth.of(2024, 1),
                         datoTom = YearMonth.of(2024, 12),
-                        type = Inntektsrapportering.LIGNINGSINNTEKT,
+                        type = Inntektsrapportering.AINNTEKT,
                         beløp = 5000.toBigDecimal(),
                         ident = bmIdent,
-                        inntektstyperKode =
-                            listOf("arbeidsavklaringspenger" to BigDecimal(5000)),
                     ),
                 )
 
@@ -311,24 +321,18 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(7)
+            resultat.shouldHaveSize(5)
 
             val resultatSlettet = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.SLETTET }
             resultatSlettet shouldHaveSize 1
-            resultatSlettet.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 1
+            resultatSlettet.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
 
             val resultatEndring = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }
-            resultatEndring shouldHaveSize 2
-            resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 2
-            assertSoftly(
-                resultatEndring.find {
-                    it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom == YearMonth.parse("2022-01")
-                }!!,
-            ) {
-                inntektsposterSomErEndret shouldHaveSize 2
-                inntektsposterSomErEndret.find { it.kode == "arbeidsavklaringspenger" }!!.endringstype shouldBe GrunnlagInntektEndringstype.SLETTET
-                inntektsposterSomErEndret.find { it.kode == "annenArbeidsinntekt" }!!.endringstype shouldBe GrunnlagInntektEndringstype.NY
-            }
+            resultatEndring shouldHaveSize 1
+            resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 1
+            resultatEndring.find {
+                it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom == YearMonth.parse("2022-01")
+            } shouldBe null
             assertSoftly(
                 resultatEndring.find {
                     it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom == YearMonth.parse("2023-01")
@@ -340,7 +344,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
             resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 0
 
             val resultatNy = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.NY }
-            resultatNy shouldHaveSize 4
+            resultatNy shouldHaveSize 3
         }
 
         @Test
