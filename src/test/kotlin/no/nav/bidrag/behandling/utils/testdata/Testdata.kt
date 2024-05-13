@@ -54,6 +54,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import kotlin.random.Random
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
@@ -804,3 +805,46 @@ fun opprettHusstandsbarnMedOffentligePerioder(behandling: Behandling): Set<Husst
         },
     )
 }
+
+fun opprettInntekt(
+    datoFom: YearMonth? = null,
+    datoTom: YearMonth? = null,
+    opprinneligFom: YearMonth? = null,
+    opprinneligTom: YearMonth? = null,
+    type: Inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+    inntektstyper: List<Pair<Inntektstype, BigDecimal>> = emptyList(),
+    inntektstyperKode: List<Pair<String, BigDecimal>> = emptyList(),
+    ident: String = "",
+    gjelderBarn: String? = null,
+    taMed: Boolean = true,
+    beløp: BigDecimal = BigDecimal.ONE,
+) = Inntekt(
+    datoTom = datoFom?.atDay(1),
+    datoFom = datoTom?.atEndOfMonth(),
+    opprinneligFom = opprinneligFom?.atDay(1),
+    opprinneligTom = opprinneligTom?.atEndOfMonth(),
+    belop = beløp,
+    ident = ident,
+    gjelderBarn = gjelderBarn,
+    id = Random.nextLong(1000),
+    kilde = Kilde.OFFENTLIG,
+    taMed = taMed,
+    type = type,
+    inntektsposter =
+        (
+            inntektstyper.map {
+                Inntektspost(
+                    beløp = it.second,
+                    inntektstype = it.first,
+                    kode = "",
+                )
+            } +
+                inntektstyperKode.map {
+                    Inntektspost(
+                        beløp = it.second,
+                        inntektstype = null,
+                        kode = it.first,
+                    )
+                }
+        ).toMutableSet(),
+)

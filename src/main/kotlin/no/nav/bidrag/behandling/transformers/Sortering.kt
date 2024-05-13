@@ -30,6 +30,7 @@ val ligningsinntekter =
     listOf(
         Inntektsrapportering.LIGNINGSINNTEKT,
         Inntektsrapportering.KAPITALINNTEKT,
+        Inntektsrapportering.AINNTEKT,
     )
 
 fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
@@ -39,7 +40,7 @@ fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
                 if (!ligningsinntekter.contains(inntekt.inntektRapportering)) return@filter true
                 val sisteLigningsår =
                     this.inntekter.sortedBy { it.periode.fom }
-                        .lastOrNull { ligningsinntekter.contains(it.inntektRapportering) }?.periode?.fom?.year
+                        .lastOrNull { it.inntektRapportering == inntekt.inntektRapportering }?.periode?.fom?.year
                         ?: return@filter true
                 ligningsinntekter.contains(
                     inntekt.inntektRapportering,
@@ -49,10 +50,11 @@ fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
 
 fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
     this.filter { inntekt ->
-        if (!ligningsinntekter.contains(inntekt.type)) return@filter true
+        if (!ligningsinntekter.contains(inntekt.type) || inntekt.taMed) return@filter true
         val sisteLigningsår =
             this.sortedBy { it.opprinneligFom }
-                .lastOrNull { ligningsinntekter.contains(it.type) }?.opprinneligFom?.year ?: return@filter true
+                .lastOrNull { it.type == inntekt.type }?.opprinneligFom?.year
+                ?: return@filter true
         inntekt.opprinneligFom == null || ligningsinntekter.contains(inntekt.type) && inntekt.opprinneligFom?.year == sisteLigningsår
     }
 
