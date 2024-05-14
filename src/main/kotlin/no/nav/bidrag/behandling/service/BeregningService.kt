@@ -31,8 +31,7 @@ class BeregningService(
 ) {
     private val beregnApi = BeregnForskuddApi()
 
-    fun beregneForskudd(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+    fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
         behandling.validerForBeregning()
         return if (behandling.avslag != null) {
             behandling.søknadsbarn.map {
@@ -53,6 +52,11 @@ class BeregningService(
                 }
             }
         }
+    }
+
+    fun beregneForskudd(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        return beregneForskudd(behandling)
     }
 
     private fun Behandling.tilResultatAvslag(barn: Rolle) =

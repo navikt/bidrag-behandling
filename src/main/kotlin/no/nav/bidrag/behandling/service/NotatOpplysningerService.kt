@@ -179,7 +179,7 @@ class NotatOpplysningerService(
     private fun Behandling.hentBeregning(): Vedtak {
         val resultat =
             try {
-                beregningService.beregneForskudd(id!!).tilDto()
+                beregningService.beregneForskudd(this).tilDto()
             } catch (e: Exception) {
                 emptyList()
             }
