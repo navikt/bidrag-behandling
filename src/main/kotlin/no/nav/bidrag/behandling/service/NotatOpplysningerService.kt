@@ -200,6 +200,7 @@ class NotatOpplysningerService(
                                     regel = it.regel,
                                     sivilstand = it.sivilstand,
                                     inntekt = it.inntekt,
+                                    vedtakstype = vedtakstype,
                                     antallBarnIHusstanden = it.antallBarnIHusstanden,
                                 )
                             },
