@@ -529,7 +529,6 @@ class GrunnlagService(
             behandling.bidragsmottaker!!,
             Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
             sivilstandPeriodisert.toSet(),
-            innhentetGrunnlag.hentetTidspunkt,
         )
     }
 
@@ -797,18 +796,17 @@ class GrunnlagService(
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
             nyesteGrunnlag(behandling, innhentetForRolle, grunnlagstype, gjelderPerson)
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, innhentetForRolle, gjelderPerson)
-        val erFørstegangsinnhenting = sistInnhentedeGrunnlagAvTypeForRolle.isEmpty() && innhentetGrunnlag.isNotEmpty()
+        val erFørstegangsinnhenting = nyesteGrunnlag == null
 
         val erGrunnlagEndret =
-            sistInnhentedeGrunnlagAvTypeForRolle.isNotEmpty() &&
-                erGrunnlagEndret(
-                    grunnlagstype = grunnlagstype,
-                    nyttGrunnlag = innhentetGrunnlag,
-                    aktivtGrunnlag = sistInnhentedeGrunnlagAvTypeForRolle,
-                    behandling = behandling,
-                )
+            erGrunnlagEndret(
+                grunnlagstype = grunnlagstype,
+                nyttGrunnlag = innhentetGrunnlag,
+                aktivtGrunnlag = sistInnhentedeGrunnlagAvTypeForRolle,
+                behandling = behandling,
+            )
 
-        if (erFørstegangsinnhenting || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
+        if (erFørstegangsinnhenting && innhentetGrunnlag.isNotEmpty() || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -873,8 +871,10 @@ class GrunnlagService(
                 .finnEndringerBoforhold(behandling.virkningstidspunktEllerSøktFomDato, nyttGrunnlagFiltrert)
                 .isNotEmpty()
         } else if (grunnlagstype.type == Grunnlagsdatatype.SIVILSTAND) {
+            if (aktivtGrunnlag.isEmpty() && behandling.sivilstand.isNotEmpty()) {
+                return true
+            }
             aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
-            // TODO
         } else {
             aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
         }
@@ -1212,12 +1212,9 @@ class GrunnlagService(
             }
 
             Grunnlagsdatatype.BARNETILSYN -> {
-                lagreGrunnlagHvisEndret(
-                    behandling,
-                    rolleInhentetFor,
-                    Grunnlagstype(grunnlagsdatatype, false),
-                    innhentetGrunnlag.barnetilsynListe.toSet(),
-                )
+                if (innhentetGrunnlag.barnetilsynListe.isNotEmpty()) {
+                    log.info { "Barnetilsyn er ikke relevant for forskudd." }
+                }
             }
 
             Grunnlagsdatatype.KONTANTSTØTTE -> {

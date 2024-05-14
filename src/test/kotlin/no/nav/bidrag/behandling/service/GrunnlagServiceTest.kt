@@ -42,6 +42,9 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
+import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.sivilstand.response.SivilstandV1
+import no.nav.bidrag.sivilstand.response.Status
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
@@ -102,7 +105,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 22
+    val totaltAntallGrunnlag = 21
 
     @BeforeEach
     fun setup() {
@@ -780,7 +783,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            behandling.grunnlag.size shouldBe 23
+            behandling.grunnlag.size shouldBe 22
 
             val småbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
 
@@ -933,7 +936,100 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal sette til aktiv dersom ikke tidligere lagret`() {
+        open fun `skal aktivere førstegangsinnhenting av sivilstand`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly(behandling.grunnlag) { g ->
+                g.size shouldBe totaltAntallGrunnlag
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.size shouldBe 2
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.erBearbeidet } shouldHaveSize 1
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.aktiv != null } shouldHaveSize 2
+            }
+
+            assertSoftly(behandling.sivilstand) { s ->
+                s.size shouldBe 2
+                s.filter { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke aktivere førstegangsinnhenting av nytt bearbeida sivilstandsformat`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            val periodisertSivilstand =
+                SivilstandBeregnet(
+                    status = Status.OK,
+                    sivilstandListe =
+                        listOf(
+                            SivilstandV1(
+                                periodeFom = behandling.bidragsmottaker!!.foedselsdato,
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.ENSLIG,
+                            ),
+                            SivilstandV1(
+                                periodeFom = LocalDate.now().minusYears(15),
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                            ),
+                            SivilstandV1(
+                                periodeFom = LocalDate.now().minusYears(10),
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
+                            ),
+                        ),
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.SIVILSTAND,
+                    erBearbeidet = true,
+                    data = tilJson(periodisertSivilstand),
+                    innhentet = LocalDateTime.now().minusYears(5),
+                    aktiv = LocalDateTime.now().minusYears(5),
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                    gjelder = null,
+                ),
+            )
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly(behandling.grunnlag) { g ->
+                g.size shouldBe totaltAntallGrunnlag + 1
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type } shouldHaveSize 3
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.erBearbeidet } shouldHaveSize 2
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }
+                    .filter { it.erBearbeidet && it.aktiv != null } shouldHaveSize 1
+            }
+
+            assertSoftly(behandling.sivilstand) { s ->
+                s.size shouldBe 2
+                s.filter { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal automatisk aktivere førstegangsinnhenting av grunnlag`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false)
             stubbeHentingAvPersoninfoForTestpersoner()
@@ -1997,7 +2093,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             // hvis
@@ -2067,7 +2163,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     private fun validereGrunnlagBm(grunnlag: List<Grunnlag>) {
         assertSoftly {
-            grunnlag.size shouldBe 14
+            grunnlag.size shouldBe 13
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 3
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
@@ -2132,7 +2228,7 @@ fun opprettHentGrunnlagDto() =
 fun oppretteFeilrapporteringer(personident: String): List<FeilrapporteringDto> {
     val feilrapporteringer = mutableListOf<FeilrapporteringDto>()
 
-    GrunnlagRequestType.entries.forEach {
+    GrunnlagRequestType.entries.filter { GrunnlagRequestType.BARNETILSYN != it }.forEach {
         feilrapporteringer +=
             FeilrapporteringDto(
                 feilmelding = "Ouups!",
