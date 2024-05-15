@@ -242,7 +242,7 @@ class GrunnlagService(
     }
 
     @Transactional
-    fun aktivereBearbeidaBoforholdEtterEndraVirkningsdato(behandling: Behandling) {
+    fun aktivereBearbeidaBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val ikkeAktiverteBearbeidaBoforhold =
             behandling.henteUaktiverteGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),

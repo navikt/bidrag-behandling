@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -25,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.tilKontantstøtte
 import no.nav.bidrag.behandling.transformers.inntekt.tilSmåbarnstillegg
 import no.nav.bidrag.behandling.transformers.inntekt.tilUtvidetBarnetrygd
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -1068,6 +1070,51 @@ class InntektServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1
                 oppdatertBehandling.get().inntekter.first().inntektsposter.first().inntektstype shouldBe postAinntekt.inntektstype
             }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere periode på inntekter etter endring i virkningstidspunkt`() {
+            val behandling = testdataManager.opprettBehandling()
+            val virkningstidspunkt = LocalDate.parse("2023-07-01")
+            behandling.inntekter =
+                mutableSetOf(
+                    opprettInntekt(
+                        behandling = behandling,
+                        datoFom = YearMonth.parse("2023-01"),
+                        datoTom = YearMonth.parse("2023-06"),
+                        type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                        kilde = Kilde.MANUELL,
+                    ),
+                    opprettInntekt(
+                        behandling = behandling,
+                        datoFom = YearMonth.parse("2023-08"),
+                        datoTom = YearMonth.parse("2024-07"),
+                        type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                        kilde = Kilde.MANUELL,
+                    ),
+                    opprettInntekt(
+                        behandling = behandling,
+                        datoFom = YearMonth.parse("2023-06"),
+                        datoTom = YearMonth.parse("2024-07"),
+                        type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                        kilde = Kilde.MANUELL,
+                    ),
+                    opprettInntekt(
+                        behandling = behandling,
+                        datoFom = YearMonth.parse("2024-01"),
+                        datoTom = null,
+                        type = Inntektsrapportering.AINNTEKT,
+                    ),
+                )
+
+            behandling.virkningstidspunkt = virkningstidspunkt
+            testdataManager.lagreBehandling(behandling)
+            inntektService.rekalkulerPerioderInntekter(behandling.id!!)
+
+            val inntekter = behandling!!.inntekter.toList()
+            inntekter.filter { it.taMed } shouldHaveSize 1
+            inntekter.filter { it.datoFom != null && it.datoFom!! > virkningstidspunkt } shouldHaveSize 0
         }
     }
 }

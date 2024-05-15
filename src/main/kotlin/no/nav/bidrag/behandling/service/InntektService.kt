@@ -47,6 +47,30 @@ class InntektService(
     private val entityManager: EntityManager,
 ) {
     @Transactional
+    fun rekalkulerPerioderInntekter(behandlingsid: Long) {
+        val behandling =
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+        rekalkulerPerioderInntekter(behandling)
+    }
+
+    @Transactional
+    fun rekalkulerPerioderInntekter(behandling: Behandling) {
+        if (behandling.virkningstidspunkt == null) return
+
+        behandling.inntekter.filter { it.taMed && it.datoFom != null && it.datoFom!! < behandling.virkningstidspunkt }
+            .forEach {
+                if (it.datoTom != null && behandling.virkningstidspunkt!! >= it.datoTom) {
+                    it.taMed = false
+                    it.datoFom = null
+                    it.datoTom = null
+                } else {
+                    it.datoFom = behandling.virkningstidspunkt
+                }
+            }
+    }
+
+    @Transactional
     fun lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
         behandlingsid: Long,
         personident: Personident,
