@@ -58,13 +58,6 @@ data class OppdaterHusstandsmedlemPeriode(
     val bostatus: Bostatuskode,
 )
 
-data class Husstandsbarnperiode(
-    val idHusstandsbarn: Long,
-    val fraOgMed: LocalDate,
-    val tilOgMed: LocalDate?,
-    val bostatus: Bostatuskode,
-)
-
 data class OpprettHusstandsstandsmedlem(
     val personident: Personident? = null,
     val fødselsdato: LocalDate,
@@ -80,4 +73,5 @@ data class Sivilstandsperiode(
     val fraOgMed: LocalDate,
     val tilOgMed: LocalDate? = null,
     val sivilstand: Sivilstandskode,
+    val id: Long? = null,
 )
