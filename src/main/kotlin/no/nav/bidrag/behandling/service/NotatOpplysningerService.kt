@@ -179,7 +179,7 @@ class NotatOpplysningerService(
     private fun Behandling.hentBeregning(): Vedtak {
         val resultat =
             try {
-                beregningService.beregneForskudd(id!!).tilDto()
+                beregningService.beregneForskudd(this).tilDto()
             } catch (e: Exception) {
                 emptyList()
             }
@@ -200,6 +200,7 @@ class NotatOpplysningerService(
                                     regel = it.regel,
                                     sivilstand = it.sivilstand,
                                     inntekt = it.inntekt,
+                                    vedtakstype = vedtakstype,
                                     antallBarnIHusstanden = it.antallBarnIHusstanden,
                                 )
                             },
