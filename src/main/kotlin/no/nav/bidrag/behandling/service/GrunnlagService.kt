@@ -1090,7 +1090,8 @@ class GrunnlagService(
         rolleInnhentetFor: Rolle,
     ): Grunnlag? =
         grunnlag.filter {
-            it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id && grunnlagstype.erBearbeidet == it.erBearbeidet && it.aktiv != null
+            it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                it.aktiv != null
         }.toSet().maxByOrNull { it.innhentet }
 
     private fun Behandling.henteNyesteGrunnlag(
