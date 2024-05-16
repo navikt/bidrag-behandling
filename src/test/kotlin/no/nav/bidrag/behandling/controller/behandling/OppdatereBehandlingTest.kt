@@ -48,7 +48,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere behandling for API v2`() {
         // gitt
-        val b = testdataManager.opprettBehandling(true)
+        val b = testdataManager.oppretteBehandling(true)
 
         // hvis
         val behandlingRes =
@@ -80,7 +80,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere årsak`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling(true)
+        val behandling = testdataManager.oppretteBehandling(true)
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
                 opprettHusstandsbarnMedOffentligePerioder(behandling),
@@ -125,7 +125,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere avslag`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling(true)
+        val behandling = testdataManager.oppretteBehandling(true)
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
                 opprettHusstandsbarnMedOffentligePerioder(behandling),
@@ -170,7 +170,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal ikke kunne sette virkningstidspunkt til tom verdi`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling(true)
+        val behandling = testdataManager.oppretteBehandling(true)
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
                 opprettHusstandsbarnMedOffentligePerioder(behandling),
@@ -215,7 +215,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal ikke kunne sette avslag til tom verdi`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling(true)
+        val behandling = testdataManager.oppretteBehandling(true)
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
                 opprettHusstandsbarnMedOffentligePerioder(behandling),
@@ -442,7 +442,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere virkningstidspunkt og rekalkulere boforhold periode`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling(true)
+        val behandling = testdataManager.oppretteBehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
@@ -509,7 +509,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Transactional
     fun `skal aktivere grunnlag`() {
         // gitt
-        var behandling = testdataManager.opprettBehandlingNewTransacion(false)
+        var behandling = testdataManager.oppretteBehandlingINyTransaksjon(false)
         behandling.inntekter.add(
             Inntekt(
                 Inntektsrapportering.LIGNINGSINNTEKT,
@@ -562,14 +562,14 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     ),
             )
         behandling =
-            testdataManager.oppretteOgLagreGrunnlagNewTransaction(
+            testdataManager.oppretteOgLagreGrunnlagINyTransaksjon(
                 behandling,
                 Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
                 innhentingstidspunkt,
                 grunnlagsdata = SkattepliktigeInntekter(skattegrunnlag = listOf(grunnlagLagret)),
             )
         behandling =
-            testdataManager.oppretteOgLagreGrunnlagNewTransaction(
+            testdataManager.oppretteOgLagreGrunnlagINyTransaksjon(
                 behandling,
                 Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
                 innhentingstidspunkt,
@@ -635,7 +635,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal slette behandling`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling()
+        val behandling = testdataManager.oppretteBehandling()
 
         // hvis
         val behandlingRes =
@@ -667,7 +667,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal ikke slette behandling hvis vedtak er fattet`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling()
+        val behandling = testdataManager.oppretteBehandling()
         behandling.vedtaksid = 1
         behandlingRepository.save(behandling)
 

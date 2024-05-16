@@ -92,7 +92,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre innnhentede inntekter for gyldige inntektsrapporteringstyper`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             val summerteInntekter =
                 SummerteInntekter(
@@ -149,7 +149,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre innnhentede inntekter for BARNETILLEGG`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             val summerteInntekter =
                 SummerteInntekter(
@@ -207,7 +207,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             testdataManager.oppretteOgLagreGrunnlag<SkattepliktigeInntekter>(
@@ -330,7 +330,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
@@ -428,7 +428,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val originaltBarnetilleggsgrunnlag =
@@ -499,7 +499,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val originaltKontantstøttegrunnlag =
@@ -570,7 +570,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val originaltSmåbarnstilleggsgrunnlag =
@@ -639,7 +639,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val originalUtvidetBarnetrygdsgrunnlag =
@@ -709,7 +709,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         open fun `skal oppdatere eksisterende inntekt`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             val kontantstøtte =
                 Inntekt(
@@ -759,7 +759,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         fun `skal slette manuelle inntekter`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             val kontantstøtte =
                 Inntekt(
@@ -798,7 +798,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere periode på offentlige inntekter`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             val ainntekt =
                 Inntekt(
@@ -874,7 +874,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         open fun `skal oppdatere eksisterende manuell inntekt`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             val manuellInntekt =
                 Inntekt(
@@ -931,7 +931,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         open fun `skal slette manuell inntekt`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             val kontantstøtte =
                 Inntekt(
@@ -974,7 +974,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal legge til ny manuell inntekt`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             val oppdatereInntektRequest =
                 OppdatereInntektRequest(
@@ -1005,7 +1005,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         fun `skal oppdatere periode på offentlige inntekter`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             stubUtils.stubKodeverkSkattegrunnlag()
             stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()

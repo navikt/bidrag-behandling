@@ -24,6 +24,7 @@ env:
   TOPIC_VEDTAK: bidrag.vedtak-syntetisk
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt.dev-fss-pub.nais.io/api/v2
   KODEVERK_URL: https://kodeverk-api.nav.no
+  GRUNNLAG_INNHENTE_SIVILSTAND_AUTOMATISK: true
   GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 1
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:

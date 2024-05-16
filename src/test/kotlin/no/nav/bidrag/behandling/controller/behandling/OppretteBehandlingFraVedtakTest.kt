@@ -70,11 +70,11 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         assertSoftly(behandling) {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 15
-            grunnlag shouldHaveSize 38
+            grunnlag shouldHaveSize 36
             opprinneligVedtakstidspunkt shouldHaveSize 1
             opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
             refVedtaksid shouldBe 12333
-            grunnlag.filter { it.aktiv == null }.shouldHaveSize(11)
+            grunnlag.filter { it.aktiv == null }.shouldHaveSize(9)
             sivilstand shouldHaveSize 2
             // TODO: Boforhold grunnlag inneholder sju unike husstandsmedlemmer - fikse stub-vedtaksdata slik at tallene stemmer
             husstandsbarn shouldHaveSize 6

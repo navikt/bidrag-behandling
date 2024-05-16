@@ -781,7 +781,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere virkningstidspunkt og oppdatere boforhold`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
 

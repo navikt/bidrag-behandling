@@ -10,6 +10,7 @@ BIDRAG_SJABLON_URL: http://localhost:${wiremock.server.port}/sjablon
 BIDRAG_VEDTAK_URL: http://localhost:${wiremock.server.port}/vedtak
 BIDRAG_SAK_URL: http://localhost:${wiremock.server.port}/sak
 KODEVERK_URL: http://localhost:${wiremock.server.port}/kodeverk
+GRUNNLAG_INNHENTE_SIVILSTAND_AUTOMATISK: true
 GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 60
 AZURE_OPENID_CONFIG_ISSUER: http://localhost:${mock-oauth2-server.port}/aad
 UNLEASH_SERVER_API_URL: http://localhost:${mock-oauth2-server.port}/unleash

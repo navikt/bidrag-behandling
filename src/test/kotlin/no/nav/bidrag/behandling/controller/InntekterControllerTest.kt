@@ -51,7 +51,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Disabled("Gir Wiremock-problemer på Github")
         open fun `skal hente inntekter for behandling`() {
             // given
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
 
             // when
@@ -81,7 +81,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Test
         fun `skal oppdater inntektstabell med sammenstilte inntekter fra grunnlagsinnhenting`() {
             // given
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
 
             // when
@@ -120,7 +120,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Test
         open fun `skal opprette inntekter`() {
             // given
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             assert(behandling.inntekter.size == 0)
 
@@ -159,7 +159,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Test
         open fun `skal oppdatere eksisterende inntekter`() {
             // given
-            var behandling = testdataManager.opprettBehandling()
+            var behandling = testdataManager.oppretteBehandling()
 
             behandling.inntekter =
                 mutableSetOf(
@@ -214,7 +214,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
         @Test
         fun `skal kun være mulig å slette inntekter med kilde manuell`() {
             // given
-            val behandling = testdataManager.opprettBehandling(true)
+            val behandling = testdataManager.oppretteBehandling(true)
 
             assertSoftly {
                 behandling.inntekter.size shouldBe 3
