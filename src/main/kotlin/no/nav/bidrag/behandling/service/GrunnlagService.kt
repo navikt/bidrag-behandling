@@ -272,7 +272,10 @@ class GrunnlagService(
             behandling.henteNyesteAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
                 behandling.bidragsmottaker!!,
-            )
+            ) ?: run {
+                log.warn { "Fant ingen aktiv boforhold grunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
+                return
+            }
         val boforhold = sisteAktiveGrunnlag.konverterData<List<RelatertPersonGrunnlagDto>>()!!
         val boforholdPeriodisert =
             BoforholdApi.beregnV2(
