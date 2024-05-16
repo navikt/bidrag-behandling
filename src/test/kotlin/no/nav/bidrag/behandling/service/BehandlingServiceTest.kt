@@ -53,6 +53,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
@@ -779,7 +780,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     open inner class OppdatereVirkningstidspunktTest {
         @Test
         @Transactional
-        open fun `skal oppdatere virkningstidspunkt og oppdatere boforhold`() {
+        open fun `skal oppdatere virkningstidspunkt og oppdatere boforhold og sivilstand`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
@@ -802,13 +803,22 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingService.oppdatereVirkningstidspunkt(behandling.id!!, request)
 
             // så
+            entityManager.flush()
             entityManager.refresh(behandling)
             val boforholdsgrunnlag = behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }
             assertSoftly(boforholdsgrunnlag) { g ->
-                g shouldHaveSize 5
+                g shouldHaveSize 3
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
-                g.filter { it.aktiv != null } shouldHaveSize 5
+                g.filter { it.aktiv != null } shouldHaveSize 3
                 jsonListeTilObjekt<BoforholdResponse>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
+                    .first().periodeFom shouldBeEqual nyVirkningsdato
+            }
+            val sivilstandgrunnlag = behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }
+            assertSoftly(sivilstandgrunnlag) { g ->
+                g shouldHaveSize 2
+                g.filter { !it.erBearbeidet } shouldHaveSize 1
+                g.filter { it.aktiv != null } shouldHaveSize 2
+                jsonListeTilObjekt<Sivilstand>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
                     .first().periodeFom shouldBeEqual nyVirkningsdato
             }
         }
