@@ -18,7 +18,6 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.sivilstand.response.Status
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import java.math.BigDecimal
@@ -122,7 +121,6 @@ data class SivilstandAktivGrunnlagDto(
 
 data class SivilstandIkkeAktivGrunnlagDto(
     val sivilstand: List<SivilstandDto> = emptyList(),
-    val status: Status,
     val grunnlag: Set<SivilstandGrunnlagDto> = emptySet(),
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )

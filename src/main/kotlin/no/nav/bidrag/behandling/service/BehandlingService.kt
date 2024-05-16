@@ -213,10 +213,12 @@ class BehandlingService(
         if (erVirkningstidspunktEndret) {
             behandling.virkningstidspunkt = request.virkningstidspunkt ?: behandling.virkningstidspunkt
             log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling ${behandling.id}" }
-            // Bearbeida boforhold per husstandsmedlem vil påvirkes av endringer i virkningsdato
-            grunnlagService.oppdatereBearbeidaBoforhold(behandling)
-            grunnlagService.aktivereBearbeidaBoforholdEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+
+            log.info { "Virkningstidspunkt er endret. Beregner sivilstand perioder på nytt for behandling ${behandling.id}" }
+            grunnlagService.oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling)
+            // TODO: Legg til rekalkulering av sivilstandperioder
 
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)
