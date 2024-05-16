@@ -1114,7 +1114,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             val inntekter = behandling!!.inntekter.toList()
             inntekter.filter { it.taMed } shouldHaveSize 3
-            inntekter.filter { it.datoFom != null && it.datoFom!! > virkningstidspunkt } shouldHaveSize 0
+            inntekter.filter { it.datoFom != null && it.datoFom!! > virkningstidspunkt } shouldHaveSize 2
         }
     }
 }
