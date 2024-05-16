@@ -9,11 +9,13 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.konverterData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -57,6 +59,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
@@ -240,30 +243,62 @@ class GrunnlagService(
     }
 
     @Transactional
-    fun aktivereBearbeidaBoforholdEtterEndraVirkningsdato(behandling: Behandling) {
-        val ikkeAktiverteBearbeidaBoforhold =
-            behandling.henteUaktiverteGrunnlag(
-                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+    fun oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        val sisteAktiveGrunnlag =
+            behandling.henteNyesteAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
                 behandling.bidragsmottaker!!,
+            ) ?: run {
+                log.warn { "Fant ikke en aktiv sivilstand grunnlag. Gjør ingen endring etter oppdatert virkningstidspunkt" }
+                return
+            }
+        val sivilstandBeregnet = sisteAktiveGrunnlag.konverterData<Set<SivilstandGrunnlagDto>>()!!
+        val sivilstandPeriodisert =
+            SivilstandApi.beregnV2(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                sivilstandBeregnet.tilSivilstandRequest(),
             )
-
-        ikkeAktiverteBearbeidaBoforhold.forEach {
-            it.aktiv = LocalDateTime.now()
+        behandling.henteNyesteAktiveGrunnlag(
+            Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+            behandling.bidragsmottaker!!,
+        )?.let {
+            it.data = tilJson(sivilstandPeriodisert)
         }
     }
 
     @Transactional
-    fun oppdatereBearbeidaBoforhold(behandling: Behandling) {
-        val sistAktiverteBoforholdsgrunnlag =
-            behandling.hentSisteInnhentetGrunnlagSet<RelatertPersonGrunnlagDto>(
-                Grunnlagstype(
-                    Grunnlagsdatatype.BOFORHOLD,
-                    false,
-                ),
+    fun oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        val sisteAktiveGrunnlag =
+            behandling.henteNyesteAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
                 behandling.bidragsmottaker!!,
-                null,
+            ) ?: run {
+                log.warn { "Fant ingen aktiv boforhold grunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
+                return
+            }
+        val boforhold = sisteAktiveGrunnlag.konverterData<List<RelatertPersonGrunnlagDto>>()!!
+        val boforholdPeriodisert =
+            BoforholdApi.beregnV2(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                boforhold.tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
             )
-        periodisereOgLagreBoforhold(behandling, sistAktiverteBoforholdsgrunnlag)
+        boforholdPeriodisert.filter { it.relatertPersonPersonId != null }.groupBy { it.relatertPersonPersonId }
+            .forEach { (gjelder, perioder) ->
+                overskrivBearbeidetBoforholdGrunnlag(behandling, gjelder, perioder)
+            }
+    }
+
+    private fun overskrivBearbeidetBoforholdGrunnlag(
+        behandling: Behandling,
+        gjelder: String?,
+        perioder: List<BoforholdResponse>,
+    ) {
+        behandling.henteAktiverteGrunnlag(
+            Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+            behandling.bidragsmottaker!!,
+        ).find { it.gjelder == gjelder }?.let {
+            it.data = tilJson(perioder)
+        }
     }
 
     fun hentSistInnhentet(
@@ -1035,6 +1070,14 @@ class GrunnlagService(
             it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
         }.toSet()
 
+    private fun Behandling.henteAktiverteGrunnlag(
+        grunnlagstype: Grunnlagstype,
+        rolle: Rolle,
+    ): Set<Grunnlag> =
+        grunnlag.hentAlleAktiv().filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+        }.toSet()
+
     private fun Behandling.henteNyesteGrunnlag(
         grunnlagstype: Grunnlagstype,
         rolle: Rolle,
@@ -1043,6 +1086,15 @@ class GrunnlagService(
         grunnlag.filter {
             it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
                 it.gjelder == gjelder?.verdi
+        }.toSet().maxByOrNull { it.innhentet }
+
+    private fun Behandling.henteNyesteAktiveGrunnlag(
+        grunnlagstype: Grunnlagstype,
+        rolleInnhentetFor: Rolle,
+    ): Grunnlag? =
+        grunnlag.filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                it.aktiv != null
         }.toSet().maxByOrNull { it.innhentet }
 
     private fun Behandling.henteNyesteGrunnlag(

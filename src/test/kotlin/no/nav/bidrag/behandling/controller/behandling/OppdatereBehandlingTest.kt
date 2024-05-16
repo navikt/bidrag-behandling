@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.service.tilSummerInntekt
 import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnlagForHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarnMedOffentligePerioder
+import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -254,6 +255,188 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             årsak shouldBe null
             avslag shouldBe Resultatkode.AVSLAG
         }
+    }
+
+    @Test
+    fun `skal oppdatere virkningstidspunkt og oppdatere fra og med dato på inntekter`() {
+        // gitt
+        val behandling = testdataManager.oppretteBehandling(true)
+        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.grunnlag.addAll(
+            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
+                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            ),
+        )
+
+        behandling.inntekter =
+            mutableSetOf(
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-05"),
+                    type = Inntektsrapportering.AINNTEKT,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-06"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-06"),
+                    datoTom = YearMonth.parse("2024-01"),
+                    type = Inntektsrapportering.KAPITALINNTEKT,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-02"),
+                    datoTom = YearMonth.parse("2023-09"),
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-02"),
+                    datoTom = YearMonth.parse("2023-06"),
+                    type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-02"),
+                    datoTom = YearMonth.parse("2024-06"),
+                    type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2024-01"),
+                    datoTom = YearMonth.parse("2024-02"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    behandling = behandling,
+                ),
+            )
+
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+
+        val nyttVirkningstidspunkt = LocalDate.parse("2023-07-01")
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
+                HttpMethod.PUT,
+                HttpEntity(
+                    OppdatereVirkningstidspunkt(
+                        virkningstidspunkt = nyttVirkningstidspunkt,
+                    ),
+                ),
+                BehandlingDtoV2::class.java,
+            )
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        val responseBody = behandlingRes.body!!
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyttVirkningstidspunkt
+
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+        oppdatertBehandling.get().virkningstidspunkt shouldBe nyttVirkningstidspunkt
+        val inntekter = oppdatertBehandling.get().inntekter.toList()
+        inntekter shouldHaveSize 7
+        inntekter.filter { it.datoFom == nyttVirkningstidspunkt } shouldHaveSize 4
+        inntekter.find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }!!
+            .datoFom shouldBe LocalDate.parse("2024-01-01")
+        inntekter.filter { it.type == Inntektsrapportering.AINNTEKT } shouldHaveSize 2
+        inntekter.filter { it.type == Inntektsrapportering.AINNTEKT && !it.taMed && it.datoFom == null && it.datoTom == null } shouldHaveSize 1
+        assertSoftly(inntekter.find { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }!!) {
+            taMed shouldBe false
+            datoFom shouldBe null
+            datoTom shouldBe null
+        }
+    }
+
+    @Test
+    fun `skal oppdatere virkningstidspunkt og ikke oppdatre fra og med dato på inntekter når virkningstidspunkt endres tilbake i tid`() {
+        // gitt
+        val behandling = testdataManager.oppretteBehandling(true)
+        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.grunnlag.addAll(
+            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
+                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            ),
+        )
+
+        behandling.inntekter =
+            mutableSetOf(
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-06"),
+                    datoTom = YearMonth.parse("2024-01"),
+                    type = Inntektsrapportering.KAPITALINNTEKT,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-02"),
+                    datoTom = YearMonth.parse("2023-09"),
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-02"),
+                    datoTom = YearMonth.parse("2023-06"),
+                    type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2023-02"),
+                    datoTom = YearMonth.parse("2024-06"),
+                    type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    datoFom = YearMonth.parse("2024-01"),
+                    datoTom = YearMonth.parse("2024-02"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    behandling = behandling,
+                ),
+            )
+
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+
+        val nyttVirkningstidspunkt = LocalDate.parse("2022-01-01")
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/virkningstidspunkt",
+                HttpMethod.PUT,
+                HttpEntity(
+                    OppdatereVirkningstidspunkt(
+                        virkningstidspunkt = nyttVirkningstidspunkt,
+                    ),
+                ),
+                BehandlingDtoV2::class.java,
+            )
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+        val responseBody = behandlingRes.body!!
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyttVirkningstidspunkt
+
+        // så
+        val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+        oppdatertBehandling.get().virkningstidspunkt shouldBe nyttVirkningstidspunkt
+        val inntekter = oppdatertBehandling.get().inntekter.toList()
+        inntekter shouldHaveSize 6
+        inntekter.find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }!!
+            .datoFom shouldBe LocalDate.parse("2024-01-01")
+        inntekter.find { it.type == Inntektsrapportering.KAPITALINNTEKT }!!
+            .datoFom shouldBe LocalDate.parse("2023-06-01")
+        inntekter.find { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }!!
+            .datoFom shouldBe LocalDate.parse("2023-02-01")
+        inntekter.find { it.type == Inntektsrapportering.AINNTEKT }!!
+            .datoFom shouldBe LocalDate.parse("2023-01-01")
+        inntekter.find { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }!!
+            .datoFom shouldBe LocalDate.parse("2023-02-01")
     }
 
     @Test

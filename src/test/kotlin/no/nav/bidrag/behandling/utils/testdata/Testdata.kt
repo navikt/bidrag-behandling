@@ -817,23 +817,31 @@ fun opprettInntekt(
     ident: String = "",
     gjelderBarn: String? = null,
     taMed: Boolean = true,
+    kilde: Kilde = Kilde.OFFENTLIG,
     beløp: BigDecimal = BigDecimal.ONE,
-) = Inntekt(
-    datoTom = datoFom?.atDay(1),
-    datoFom = datoTom?.atEndOfMonth(),
-    opprinneligFom = opprinneligFom?.atDay(1),
-    opprinneligTom = opprinneligTom?.atEndOfMonth(),
-    belop = beløp,
-    ident = ident,
-    gjelderBarn = gjelderBarn,
-    id = Random.nextLong(1000),
-    kilde = Kilde.OFFENTLIG,
-    taMed = taMed,
-    type = type,
-    inntektsposter =
+    behandling: Behandling = oppretteBehandling(),
+): Inntekt {
+    val inntekt =
+        Inntekt(
+            behandling = behandling,
+            datoFom = datoFom?.atDay(1),
+            datoTom = datoTom?.atEndOfMonth(),
+            opprinneligFom = opprinneligFom?.atDay(1),
+            opprinneligTom = opprinneligTom?.atEndOfMonth(),
+            belop = beløp,
+            ident = ident,
+            gjelderBarn = gjelderBarn,
+            id = Random.nextLong(1000),
+            kilde = kilde,
+            taMed = taMed,
+            type = type,
+        )
+
+    inntekt.inntektsposter =
         (
             inntektstyper.map {
                 Inntektspost(
+                    inntekt = inntekt,
                     beløp = it.second,
                     inntektstype = it.first,
                     kode = "",
@@ -841,10 +849,12 @@ fun opprettInntekt(
             } +
                 inntektstyperKode.map {
                     Inntektspost(
+                        inntekt = inntekt,
                         beløp = it.second,
                         inntektstype = null,
                         kode = it.first,
                     )
                 }
-        ).toMutableSet(),
-)
+        ).toMutableSet()
+    return inntekt
+}

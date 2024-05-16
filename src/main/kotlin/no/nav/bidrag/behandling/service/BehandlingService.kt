@@ -195,22 +195,34 @@ class BehandlingService(
                 log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
                 secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
                 request.valider(it)
-                val erVirkningstidspunktEndret = request.virkningstidspunkt != it.virkningstidspunkt
                 it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
                 it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
-                it.virkningstidspunkt = request.virkningstidspunkt ?: it.virkningstidspunkt
                 it.virkningstidspunktbegrunnelseKunINotat =
                     request.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
-                if (erVirkningstidspunktEndret) {
-                    log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling $behandlingsid" }
-                    // Bearbeida boforhold per husstandsmedlem vil påvirkes av endringer i virkningsdato
-                    grunnlagService.oppdatereBearbeidaBoforhold(it)
-                    grunnlagService.aktivereBearbeidaBoforholdEtterEndraVirkningsdato(it)
-                    entityManager.flush()
-                    boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid)
-                }
+                oppdaterVirkningstidspunkt(request, it)
                 it
             }
+    }
+
+    @Transactional
+    fun oppdaterVirkningstidspunkt(
+        request: OppdatereVirkningstidspunkt,
+        behandling: Behandling,
+    ) {
+        val erVirkningstidspunktEndret = request.virkningstidspunkt != behandling.virkningstidspunkt
+        if (erVirkningstidspunktEndret) {
+            behandling.virkningstidspunkt = request.virkningstidspunkt ?: behandling.virkningstidspunkt
+            log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling ${behandling.id}" }
+            grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
+            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+
+            log.info { "Virkningstidspunkt er endret. Beregner sivilstand perioder på nytt for behandling ${behandling.id}" }
+            grunnlagService.oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling)
+            // TODO: Legg til rekalkulering av sivilstandperioder
+
+            log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
+            inntektService.rekalkulerPerioderInntekter(behandling.id!!)
+        }
     }
 
     @Transactional
@@ -232,11 +244,17 @@ class BehandlingService(
                 request.virkningstidspunkt?.let { vt ->
                     log.info { "Oppdatere informasjon om virkningstidspunkt for behandling $behandlingsid" }
                     vt.valider(it)
+                    val erVirkningstidspunktEndret = vt.virkningstidspunkt != it.virkningstidspunkt
                     it.årsak = vt.årsak
                     it.avslag = vt.avslag
                     it.virkningstidspunkt = vt.virkningstidspunkt
                     it.virkningstidspunktbegrunnelseKunINotat =
                         vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
+
+                    if (erVirkningstidspunktEndret) {
+                        log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter behandling $behandlingsid" }
+                        inntektService.rekalkulerPerioderInntekter(behandlingsid)
+                    }
                 }
                 // TODO: Fjerne når boforhold v2-migrering er fullført
                 request.inntekter?.let { inntekter ->
