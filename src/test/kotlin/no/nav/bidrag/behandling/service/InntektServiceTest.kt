@@ -1075,7 +1075,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         @Transactional
         open fun `skal oppdatere periode på inntekter etter endring i virkningstidspunkt`() {
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             val virkningstidspunkt = LocalDate.parse("2023-07-01")
             behandling.inntekter =
                 mutableSetOf(

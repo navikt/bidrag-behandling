@@ -260,7 +260,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere virkningstidspunkt og oppdatere fra og med dato på inntekter`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling(true)
+        val behandling = testdataManager.oppretteBehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
@@ -354,7 +354,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere virkningstidspunkt og ikke oppdatre fra og med dato på inntekter når virkningstidspunkt endres tilbake i tid`() {
         // gitt
-        val behandling = testdataManager.opprettBehandling(true)
+        val behandling = testdataManager.oppretteBehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
             opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
