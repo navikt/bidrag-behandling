@@ -10,16 +10,19 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsbarnRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
@@ -28,7 +31,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
-import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandGrunnlagDto
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.boforhold.BoforholdApi
@@ -40,10 +43,15 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
+import java.time.LocalDateTime
+import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
 
@@ -288,7 +296,7 @@ class BoforholdService(
                 }
             } else {
                 log.info {
-                    "Ny periode $detaljer ble lagt til husstandsmedlem ${bostatusperiode.idHusstandsbarn} i behandling med " +
+                    "Ny periode $detaljer ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling med " +
                         "${behandling.id}."
                 }
             }
@@ -390,15 +398,49 @@ class BoforholdService(
     @Transactional
     fun oppdatereAutomatiskInnhentaSivilstand(
         behandling: Behandling,
-        periodisertSivilstand: SivilstandBeregnet,
+        overskriveManuelleOpplysninger: Boolean,
     ) {
-        val sivilstand = periodisertSivilstand.tilSivilstand(behandling)
+        val ikkeAktiverteGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
 
-        behandling.sivilstand.removeAll(
-            behandling.sivilstand.asSequence().filter { s -> Kilde.OFFENTLIG == s.kilde }.toSet(),
+        val nyesteIkkeaktivertePeriodiserteSivilstand =
+            ikkeAktiverteGrunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.erBearbeidet }
+                .maxByOrNull { it.innhentet }
+
+        val nyesteIkkeaktiverteSivilstand =
+            ikkeAktiverteGrunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { !it.erBearbeidet }
+                .maxByOrNull { it.innhentet }
+
+        if (nyesteIkkeaktivertePeriodiserteSivilstand == null || nyesteIkkeaktiverteSivilstand == null) {
+            throw HttpClientErrorException(
+                HttpStatus.NOT_FOUND,
+                "Fant ingen grunnlag av type SIVILSTAND å aktivere for  behandling $behandling.id",
+            )
+        }
+
+        val data =
+            when (overskriveManuelleOpplysninger) {
+                true -> {
+                    nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
+                    jsonListeTilObjekt<SivilstandBeregnV2Dto>(nyesteIkkeaktivertePeriodiserteSivilstand.data)
+                }
+                false -> {
+                    SivilstandApi.beregnV2(
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                        jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeaktiverteSivilstand.data).tilSivilstandRequest(
+                            behandling.sivilstand,
+                        ),
+                    ).toSet()
+                }
+            }
+
+        behandling.sivilstand.clear()
+        behandling.sivilstand.addAll(
+            data.tilSivilstand(behandling),
         )
-        behandling.sivilstand.addAll(sivilstand)
-        log.info { "Sivilstand fra offentlige kilder ble oppdatert for behandling ${behandling.id}" }
+
+        nyesteIkkeaktiverteSivilstand.aktiv = LocalDateTime.now()
+        nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
+        entityManager.flush()
     }
 
     @Transactional
@@ -414,10 +456,19 @@ class BoforholdService(
         oppdatereSivilstand.sletteSivilstandsperiode?.let { idSivilstandsperiode ->
             val periodeSomSkalSlettes = behandling.sivilstand.find { idSivilstandsperiode == it.id }
             behandling.sivilstand.remove(periodeSomSkalSlettes)
+
+            // TODO: Fikse etter  merge
+            //    val nyesteAktiveSivilstandsgrunnlag =  grunnlagRepository.findTopByBehandlingIdAndTypeAndErBearbeidetAndRolleOrderByAktivDescIdDesc(
+            //       behandling.id!!,Grunnlagsdatatype.SIVILSTAND, false, behandling.bidragsmottaker!!)
+
+            val nyesteAktiveSivilstandsgrunnlag = behandling.grunnlag.first()
+
+            val data = jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteAktiveSivilstandsgrunnlag.data)
+
             val periodisertSivilstand =
-                SivilstandApi.beregnV1(
+                SivilstandApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.sivilstand.tilSivilstandGrunnlagDto(),
+                    data.tilSivilstandRequest(behandling.sivilstand),
                 )
 
             log.info { "Slettet sivilstand med id $idSivilstandsperiode fra behandling $behandlingsid." }
@@ -428,7 +479,7 @@ class BoforholdService(
             )
         }
 
-        oppdatereSivilstand.leggeTilSivilstandsperiode?.let {
+        oppdatereSivilstand.nyEllerEndretSivilstandsperiode?.let {
             val sivilstand = Sivilstand(behandling, it.fraOgMed, it.tilOgMed, it.sivilstand, Kilde.MANUELL)
             behandling.sivilstand.add(sivilstand)
             entityManager.flush()

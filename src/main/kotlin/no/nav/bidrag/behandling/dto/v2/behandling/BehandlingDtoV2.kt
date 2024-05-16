@@ -12,7 +12,6 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
-import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -126,16 +125,6 @@ data class SivilstandIkkeAktivGrunnlagDto(
     val status: Status,
     val grunnlag: Set<SivilstandGrunnlagDto> = emptySet(),
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
-)
-
-data class SivilstandGrunnlagDto(
-    @Schema(type = "string", format = "date", example = "2025-01-25")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoFom: LocalDate?,
-    @Schema(type = "string", format = "date", example = "2025-01-25")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    val datoTom: LocalDate?,
-    val sivilstand: Sivilstandskode,
 )
 
 data class HusstandsbarnGrunnlagDto(

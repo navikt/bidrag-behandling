@@ -41,6 +41,10 @@ import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
+import no.nav.bidrag.sivilstand.dto.Sivilstand
+import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.sivilstand.response.SivilstandV1
+import no.nav.bidrag.sivilstand.response.Status
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
@@ -101,7 +105,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 22
+    val totaltAntallGrunnlag = 21
 
     @BeforeEach
     fun setup() {
@@ -123,7 +127,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre ytelser`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubbeHentingAvPersoninfoForTestpersoner()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
             behandling.roller.forEach {
@@ -188,7 +192,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre skattegrunnlag`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubbeHentingAvPersoninfoForTestpersoner()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
             behandling.roller.forEach {
@@ -251,7 +255,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         fun `skal ikke oppdatere grunnlag dersom venteperioden etter forrige innhenting ikke er over`() {
             // gitt
             val grunnlagSistInnhentet = LocalDateTime.now().minusMinutes(30)
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             behandling.grunnlagSistInnhentet = grunnlagSistInnhentet
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
 
@@ -273,7 +277,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal ikke lagre ny innhenting av inntekt hvis ingen endringer`() {
             // gitt
             val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val skattegrunnlag =
@@ -357,7 +361,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal automatisk aktivere grunnlag hvis ingen endringer som må bekreftes`() {
             // gitt
             val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val skattegrunnlag =
@@ -446,7 +450,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal lagre ikke aktiv grunnlag hvis beregnet inntekt ikke er lik lagret grunnlag`() {
             // gitt
             val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val skattegrunnlag =
@@ -538,7 +542,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke lagre ny innhenting av småbarnstillegg hvis ingen endringer`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val småbarnstillegg =
@@ -629,7 +633,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre tomt grunnlag uten å sette til aktiv dersom sist lagrede grunnlag ikke var tomt`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubHenteGrunnlagOk(tomRespons = true)
 
             val småbarnstillegg =
@@ -698,7 +702,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal overskrive forrige ikke aktive grunnlag`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             behandling.roller.forEach {
                 when (it.rolletype) {
                     Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
@@ -779,7 +783,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            behandling.grunnlag.size shouldBe 23
+            behandling.grunnlag.size shouldBe 22
 
             val småbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
 
@@ -794,7 +798,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke aktivere boforholdrådata dersom bearbeida boforhold er ikke er aktivert for samtlige husstandsmedlemmer`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             behandling.roller.forEach {
                 when (it.rolletype) {
                     Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
@@ -900,7 +904,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke lagre tomt grunnlag dersom sist lagrede grunnlag var tomt`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubHenteGrunnlagOk(tomRespons = true)
 
             val lagretGrunnlag =
@@ -932,9 +936,102 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal sette til aktiv dersom ikke tidligere lagret`() {
+        open fun `skal aktivere førstegangsinnhenting av sivilstand`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly(behandling.grunnlag) { g ->
+                g.size shouldBe totaltAntallGrunnlag
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.size shouldBe 2
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.erBearbeidet } shouldHaveSize 1
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.aktiv != null } shouldHaveSize 2
+            }
+
+            assertSoftly(behandling.sivilstand) { s ->
+                s.size shouldBe 2
+                s.filter { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke aktivere førstegangsinnhenting av nytt bearbeida sivilstandsformat`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+            val periodisertSivilstand =
+                SivilstandBeregnet(
+                    status = Status.OK,
+                    sivilstandListe =
+                        listOf(
+                            SivilstandV1(
+                                periodeFom = behandling.bidragsmottaker!!.foedselsdato,
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.ENSLIG,
+                            ),
+                            SivilstandV1(
+                                periodeFom = LocalDate.now().minusYears(15),
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                            ),
+                            SivilstandV1(
+                                periodeFom = LocalDate.now().minusYears(10),
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
+                            ),
+                        ),
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.SIVILSTAND,
+                    erBearbeidet = true,
+                    data = tilJson(periodisertSivilstand),
+                    innhentet = LocalDateTime.now().minusYears(5),
+                    aktiv = LocalDateTime.now().minusYears(5),
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                    gjelder = null,
+                ),
+            )
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            entityManager.refresh(behandling)
+
+            assertSoftly(behandling.grunnlag) { g ->
+                g.size shouldBe totaltAntallGrunnlag + 1
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type } shouldHaveSize 3
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.erBearbeidet } shouldHaveSize 2
+                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }
+                    .filter { it.erBearbeidet && it.aktiv != null } shouldHaveSize 1
+            }
+
+            assertSoftly(behandling.sivilstand) { s ->
+                s.size shouldBe 2
+                s.filter { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal automatisk aktivere førstegangsinnhenting av grunnlag`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
             stubbeHentingAvPersoninfoForTestpersoner()
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -983,7 +1080,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre husstandsmedlemmer`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             behandling.husstandsbarn.clear()
             behandling.grunnlag.clear()
@@ -1034,7 +1131,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre sivilstand`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             assertSoftly(behandling.sivilstand) { s ->
                 s.size shouldBe 2
@@ -1056,7 +1153,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             assertSoftly(behandling.sivilstand) { s ->
-                s.size shouldBe 1
+                s.size shouldBe 2
                 s.filter { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
             }
         }
@@ -1065,7 +1162,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre småbarnstillegg`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubbeHentingAvPersoninfoForTestpersoner()
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -1117,7 +1214,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre barnetillegg og kontantstøtte som gjelder barn med rolle i behandling`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             val barnFraHenteGrunnlagresponsJson = "01057812300"
 
@@ -1173,7 +1270,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke lagre barnetillegg eller kontantstøtte som gjelder barn som ikke er del av behandling`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             stubbeHentingAvPersoninfoForTestpersoner()
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
@@ -1216,7 +1313,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre arbeidsforhold`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             stubbeHentingAvPersoninfoForTestpersoner()
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
@@ -1264,7 +1361,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal aktivere grunnlag av type inntekt, og oppdatere inntektstabell`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
             stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
@@ -1379,7 +1476,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal aktivere grunnlag av type barnetillegg, og oppdatere inntektstabell`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
@@ -1442,7 +1539,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal aktivere grunnlag av type kontantstøtte, og oppdatere inntektstabell`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
@@ -1506,7 +1603,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal aktivere grunnlag av type småbarnstillegg, og oppdatere inntektstabell`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
@@ -1566,7 +1663,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal aktivere grunnlag av type utvidet barnetrygd, og oppdatere inntektstabell`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
@@ -1625,7 +1722,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal aktivere grunnlag av type boforhold, og oppdatere husstandsbarntabell`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubbeHentingAvPersoninfoForTestpersoner()
             Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                 .thenReturn(testdataBarn1.tilPersonDto())
@@ -1711,13 +1808,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal aktivere grunnlag av type sivilstand, og oppdatere sivilstandstabell`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandlingINyTransaksjon(false)
 
             assertSoftly(behandling.sivilstand) {
                 it.size shouldBe 2
             }
 
-            testdataManager.oppretteOgLagreGrunnlag(
+            testdataManager.oppretteOgLagreGrunnlagINyTransaksjon(
                 behandling = behandling,
                 grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
                 innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
@@ -1736,8 +1833,22 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     ),
             )
 
-            entityManager.flush()
-            entityManager.refresh(behandling)
+            testdataManager.oppretteOgLagreGrunnlag(
+                behandling = behandling,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                aktiv = null,
+                gjelderIdent = testdataHusstandsmedlem1.ident,
+                grunnlagsdata =
+                    setOf(
+                        Sivilstand(
+                            kilde = Kilde.OFFENTLIG,
+                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                            periodeTom = null,
+                            sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
+                        ),
+                    ),
+            )
 
             val aktivereGrunnlagRequest =
                 AktivereGrunnlagRequestV2(
@@ -1749,8 +1860,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
 
             // så
-            entityManager.refresh(behandling)
-
             assertSoftly(behandling.grunnlag) { g ->
                 g.isNotEmpty()
                 g.size shouldBe 2
@@ -1770,7 +1879,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal aktivere boforholdrådata dersom bearbeida boforhold er aktivert for samtlige husstandsmedlemmer`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             behandling.roller.forEach {
                 when (it.rolletype) {
                     Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
@@ -1867,7 +1976,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal gi 404-svar hvis ingen grunnlag å aktivere`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
             stubbeHentingAvPersoninfoForTestpersoner()
             Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                 .thenReturn(testdataBarn1.tilPersonDto())
@@ -1924,7 +2033,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Test
         fun `skal være bare en rad med aktive opplysninger`() {
             // gitt
-            val b = testdataManager.opprettBehandling(false)
+            val b = testdataManager.oppretteBehandling(false)
 
             val tidspunktInnhentet = LocalDateTime.now()
             val erBearbeidet = true
@@ -1969,7 +2078,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke lagre tomt grunnlag dersom innhenting feiler`() {
             // gitt
-            val behandling = testdataManager.opprettBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false)
 
             behandling.grunnlag shouldBe emptySet()
 
@@ -1984,7 +2093,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             // hvis
@@ -2054,7 +2163,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     private fun validereGrunnlagBm(grunnlag: List<Grunnlag>) {
         assertSoftly {
-            grunnlag.size shouldBe 14
+            grunnlag.size shouldBe 13
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe 3
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
@@ -2119,7 +2228,7 @@ fun opprettHentGrunnlagDto() =
 fun oppretteFeilrapporteringer(personident: String): List<FeilrapporteringDto> {
     val feilrapporteringer = mutableListOf<FeilrapporteringDto>()
 
-    GrunnlagRequestType.entries.forEach {
+    GrunnlagRequestType.entries.filter { GrunnlagRequestType.BARNETILSYN != it }.forEach {
         feilrapporteringer +=
             FeilrapporteringDto(
                 feilmelding = "Ouups!",

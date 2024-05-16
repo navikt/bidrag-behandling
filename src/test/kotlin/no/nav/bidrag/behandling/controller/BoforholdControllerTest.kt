@@ -51,7 +51,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         @Test
         fun `skal lagre boforhold data`() {
             // 1. Create new behandling
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
 
             // 2.1 Prepare husstandsBarn
             val perioder =
@@ -105,7 +105,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     @Nested
     open inner class OppdatereBoforhold {
         private fun opprettBehandling(): Behandling {
-            val behandling = testdataManager.opprettBehandling()
+            val behandling = testdataManager.oppretteBehandling()
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.husstandsbarn.clear()
             behandling.husstandsbarn.addAll(
