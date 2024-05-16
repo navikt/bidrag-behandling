@@ -1113,7 +1113,7 @@ class InntektServiceTest : TestContainerRunner() {
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)
 
             val inntekter = behandling!!.inntekter.toList()
-            inntekter.filter { it.taMed } shouldHaveSize 1
+            inntekter.filter { it.taMed } shouldHaveSize 3
             inntekter.filter { it.datoFom != null && it.datoFom!! > virkningstidspunkt } shouldHaveSize 0
         }
     }
