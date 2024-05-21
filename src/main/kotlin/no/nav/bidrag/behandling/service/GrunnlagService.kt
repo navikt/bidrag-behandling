@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
@@ -92,7 +91,6 @@ class GrunnlagService(
     private val behandlingRepository: BehandlingRepository,
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val boforholdService: BoforholdService,
-    private val entityManager: EntityManager,
     private val grunnlagRepository: GrunnlagRepository,
     private val inntektApi: InntektApi,
     private val inntektService: InntektService,
@@ -161,6 +159,11 @@ class GrunnlagService(
             behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
 
             if (feilrapporteringer.isNotEmpty()) {
+                secureLogger.error {
+                    "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
+                        "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
+                        "${feilrapporteringer.map { "${it.key}: ${it.value}" }}"
+                }
                 log.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlagstyper: " +
@@ -440,9 +443,6 @@ class GrunnlagService(
 
         nyesteIkkeAktiverteBoforholdForHusstandsmedlem.aktiv = LocalDateTime.now()
         aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
-
-        entityManager.merge(behandling)
-        entityManager.flush()
     }
 
     private fun aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling: Behandling) {
