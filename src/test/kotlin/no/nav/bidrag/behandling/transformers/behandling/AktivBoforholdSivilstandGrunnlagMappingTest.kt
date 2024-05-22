@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
-import no.nav.bidrag.boforhold.response.BoforholdBeregnet
+import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -31,15 +31,15 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
@@ -48,8 +48,8 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
             val aktivBoforholdGrunnlagListe2 =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
@@ -80,8 +80,8 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
 
             val boforholdGrunnlagListe =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = null,
@@ -90,8 +90,8 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
             val boforholdGrunnlagListe2 =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
@@ -147,15 +147,15 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
@@ -173,22 +173,22 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
             val boforholdGrunnlagListe =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = YearMonth.of(2023, 12).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
@@ -228,15 +228,15 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2022, 11).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2022, 12).atDay(1),
                         periodeTom = null,
@@ -254,36 +254,36 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
             val boforholdGrunnlagListe =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2021, 11).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2021, 12).atDay(1),
                         periodeTom = YearMonth.of(2022, 5).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2022, 6).atDay(1),
                         periodeTom = YearMonth.of(2022, 11).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2022, 12).atDay(1),
                         periodeTom = null,
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
                 )
-            val nyGrunnlagBoforhold =
+            val nyttGrunnlagBoforhold =
                 Grunnlag(
                     erBearbeidet = true,
                     rolle = behandling.bidragsmottaker!!,
@@ -295,7 +295,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
 
             val resultat =
                 listOf(
-                    nyGrunnlagBoforhold,
+                    nyttGrunnlagBoforhold,
                 ).hentEndringerBoforhold(
                     listOf(aktivGrunnlagBoforhold),
                     LocalDate.parse("2022-12-01"),
@@ -311,15 +311,15 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
                         relatertPersonPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
@@ -328,8 +328,8 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
             val aktivBoforholdGrunnlagListe2 =
                 listOf(
-                    BoforholdBeregnet(
-                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                    BoforholdResponse(
+                        bostatuskode = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,

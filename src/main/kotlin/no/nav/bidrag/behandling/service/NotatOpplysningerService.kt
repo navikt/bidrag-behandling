@@ -291,7 +291,7 @@ private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<Boforhold
                             it.periodeFom,
                             it.periodeTom,
                         ),
-                    status = it.bostatus,
+                    status = it.bostatuskode,
                 )
             },
         opplysningerBruktTilBeregning =

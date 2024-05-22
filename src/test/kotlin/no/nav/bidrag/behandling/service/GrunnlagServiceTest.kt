@@ -21,7 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -855,9 +855,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             )
 
             val bearbeidaBoforhold =
-                BoforholdApi.beregnV2(
+                BoforholdApi.beregnBoforholdBarnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    endretBoforhold.tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                    endretBoforhold.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
@@ -1764,7 +1764,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagsdata =
                     setOf(
                         BoforholdResponse(
-                            bostatus = Bostatuskode.MED_FORELDER,
+                            bostatuskode = Bostatuskode.MED_FORELDER,
                             relatertPersonPersonId = testdataHusstandsmedlem1.ident,
                             fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                             kilde = Kilde.OFFENTLIG,
@@ -1912,11 +1912,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
             )
 
             val bearbeidaBoforhold =
-                BoforholdApi.beregnV2(
+                BoforholdApi.beregnBoforholdBarnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                         rådataBoforhold.data,
-                    ).tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                    ).tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
@@ -1994,7 +1994,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagsdata =
                     setOf(
                         BoforholdResponse(
-                            bostatus = Bostatuskode.MED_FORELDER,
+                            bostatuskode = Bostatuskode.MED_FORELDER,
                             relatertPersonPersonId = testdataHusstandsmedlem1.ident,
                             fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                             kilde = Kilde.OFFENTLIG,
