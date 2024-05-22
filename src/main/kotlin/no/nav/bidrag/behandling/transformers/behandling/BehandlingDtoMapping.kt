@@ -127,7 +127,7 @@ fun List<Grunnlag>.tilHusstandsbarn() =
                     HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
                         boforholdrespons.periodeFom,
                         boforholdrespons.periodeTom,
-                        boforholdrespons.bostatuskode,
+                        boforholdrespons.bostatus,
                     )
                 }?.toSet() ?: emptySet(),
         )

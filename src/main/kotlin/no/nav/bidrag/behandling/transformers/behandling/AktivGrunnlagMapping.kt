@@ -121,7 +121,7 @@ private fun List<BoforholdResponse>.tilHusstandsbarnGrunnlagDto(
         HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
             it.periodeFom,
             it.periodeTom,
-            it.bostatuskode,
+            it.bostatus,
         )
     }.toSet(),
     barnId,
@@ -194,7 +194,7 @@ fun List<BoforholdResponse>.erLik(
     return this.all { boforhold ->
         other.any {
             it.justertDatoFom() == boforhold.justertDatoFom() && it.periodeTom == boforhold.periodeTom &&
-                it.bostatuskode == boforhold.bostatuskode
+                it.bostatus == boforhold.bostatus
         }
     }
 }

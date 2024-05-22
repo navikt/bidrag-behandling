@@ -106,7 +106,7 @@ fun List<BoforholdResponse>.tilPerioder(husstandsbarn: Husstandsbarn) =
 
 fun BoforholdResponse.tilPeriode(husstandsbarn: Husstandsbarn) =
     Husstandsbarnperiode(
-        bostatus = bostatuskode,
+        bostatus = bostatus,
         datoFom = periodeFom,
         datoTom = periodeTom,
         kilde = kilde,

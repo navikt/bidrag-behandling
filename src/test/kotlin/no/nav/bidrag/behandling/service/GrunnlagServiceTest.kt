@@ -1764,7 +1764,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagsdata =
                     setOf(
                         BoforholdResponse(
-                            bostatuskode = Bostatuskode.MED_FORELDER,
+                            bostatus = Bostatuskode.MED_FORELDER,
                             relatertPersonPersonId = testdataHusstandsmedlem1.ident,
                             fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                             kilde = Kilde.OFFENTLIG,
@@ -1988,7 +1988,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagsdata =
                     setOf(
                         BoforholdResponse(
-                            bostatuskode = Bostatuskode.MED_FORELDER,
+                            bostatus = Bostatuskode.MED_FORELDER,
                             relatertPersonPersonId = testdataHusstandsmedlem1.ident,
                             fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                             kilde = Kilde.OFFENTLIG,

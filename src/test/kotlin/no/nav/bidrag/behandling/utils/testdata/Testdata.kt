@@ -722,7 +722,7 @@ fun opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(husstandsbarnSet: Set<Hus
                                 periodeFom = it.datoFom!!,
                                 periodeTom = it.datoTom,
                                 kilde = it.kilde,
-                                bostatuskode = it.bostatus,
+                                bostatus = it.bostatus,
                                 fødselsdato = hb.fødselsdato,
                             )
                         }
@@ -751,7 +751,7 @@ fun opprettBoforholdBearbeidetGrunnlag(behandling: Behandling): List<Grunnlag> {
                                 periodeFom = it.datoFom!!,
                                 periodeTom = it.datoTom,
                                 kilde = it.kilde,
-                                bostatuskode = it.bostatus,
+                                bostatus = it.bostatus,
                                 fødselsdato = hb.fødselsdato,
                             )
                         }
