@@ -1142,9 +1142,6 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // hvis
                 boforholdService.oppdatereAutomatiskInnhentaSivilstand(behandling, true)
 
-                // så
-                entityManager.refresh(behandling)
-
                 assertSoftly(behandling.sivilstand) { s ->
                     s shouldHaveSize 1
                     s.first { Sivilstandskode.BOR_ALENE_MED_BARN == it.sivilstand } shouldNotBe null
@@ -1233,9 +1230,6 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // hvis
                 boforholdService.oppdatereAutomatiskInnhentaSivilstand(behandling, false)
-
-                // så
-                entityManager.refresh(behandling)
 
                 assertSoftly(behandling.sivilstand) { s ->
                     s.size shouldBe 2

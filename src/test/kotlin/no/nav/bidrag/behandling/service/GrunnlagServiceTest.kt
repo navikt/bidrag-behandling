@@ -1774,9 +1774,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     ),
             )
 
-            entityManager.flush()
-            entityManager.refresh(behandling)
-
             val aktivereGrunnlagRequest =
                 AktivereGrunnlagRequestV2(
                     Personident(testdataHusstandsmedlem1.ident),
@@ -1785,9 +1782,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // hvis
             grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
-
-            // så
-            entityManager.refresh(behandling)
 
             assertSoftly(behandling.grunnlag) { g ->
                 g.isNotEmpty()
