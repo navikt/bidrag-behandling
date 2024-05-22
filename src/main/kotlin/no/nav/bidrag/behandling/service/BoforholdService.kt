@@ -96,7 +96,6 @@ class BoforholdService(
         }
 
         behandling.husstandsbarn.addAll(periodisertBoforhold.tilHusstandsbarn(behandling))
-        entityManager.flush()
     }
 
     @Transactional
@@ -400,7 +399,6 @@ class BoforholdService(
     ) {
         behandling.sivilstand.removeAll(behandling.sivilstand.filter { Kilde.OFFENTLIG == it.kilde }.toSet())
         behandling.sivilstand.addAll(periodisertSivilstand.sivilstandListe.tilSivilstand(behandling))
-        entityManager.flush()
     }
 
     @Transactional
@@ -449,7 +447,6 @@ class BoforholdService(
 
         nyesteIkkeaktiverteSivilstand.aktiv = LocalDateTime.now()
         nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
-        entityManager.flush()
     }
 
     @Transactional
@@ -491,7 +488,6 @@ class BoforholdService(
         oppdatereSivilstand.nyEllerEndretSivilstandsperiode?.let {
             val sivilstand = Sivilstand(behandling, it.fraOgMed, it.tilOgMed, it.sivilstand, Kilde.MANUELL)
             behandling.sivilstand.add(sivilstand)
-            entityManager.flush()
             log.info { "Sivilstandsperiode (id ${sivilstand.id}) ble manuelt lagt til behandling $behandlingsid." }
             return sivilstand.tilOppdatereBoforholdResponse(behandling.virkningstidspunktEllerSøktFomDato)
         }
@@ -513,7 +509,6 @@ class BoforholdService(
         husstandsbarnSomSkalSlettes: Set<Husstandsbarn>,
     ) {
         behandling.husstandsbarn.removeAll(husstandsbarnSomSkalSlettes)
-        entityManager.flush()
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
                 "forbindelse med førstegangsoppdatering av boforhold."
