@@ -317,11 +317,19 @@ class SorteringTest {
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
                     taMed = true,
                 ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.KAPITALINNTEKT_EGNE_OPPLYSNINGER,
+                    taMed = true,
+                ),
             )
 
         val sortertInntekter = inntekter.årsinntekterSortert()
 
-        sortertInntekter shouldHaveSize 11
+        sortertInntekter shouldHaveSize 12
         sortertInntekter[3].type shouldBe Inntektsrapportering.FORELDREPENGER
         sortertInntekter[3].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
         sortertInntekter[6].type shouldBe Inntektsrapportering.FORELDREPENGER
@@ -339,6 +347,7 @@ class SorteringTest {
                 Inntektsrapportering.AINNTEKT,
                 Inntektsrapportering.KAPITALINNTEKT,
                 Inntektsrapportering.LIGNINGSINNTEKT,
+                Inntektsrapportering.KAPITALINNTEKT_EGNE_OPPLYSNINGER,
                 Inntektsrapportering.LØNN_MANUELT_BEREGNET,
             )
     }
