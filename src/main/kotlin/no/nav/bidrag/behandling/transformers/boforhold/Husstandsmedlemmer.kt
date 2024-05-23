@@ -73,6 +73,12 @@ fun Husstandsbarn.tilBoforholdbBarnRequest(endreBostatus: EndreBostatus? = null)
         } else {
             LocalDate.now().withDayOfMonth(1)
         }
+    //            perioder.filter {
+//                it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
+//            }.filter {
+//                it.datoTom == null || it.datoTom?.isBefore(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true ||
+//                        it.datoTom?.isEqual(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true
+//            }
     return BoforholdBarnRequest(
         relatertPersonPersonId = ident,
         fødselsdato = fødselsdato,
@@ -81,9 +87,8 @@ fun Husstandsbarn.tilBoforholdbBarnRequest(endreBostatus: EndreBostatus? = null)
             hentOffentligePerioder().map { it.tilBostatus() }
                 .sortedBy { it.periodeFom },
         behandledeBostatusopplysninger =
-            perioder.filter {
-                it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
-            }.map { it.tilBostatus() }.sortedBy { it.periodeFom },
+
+            perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
         endreBostatus = endreBostatus,
     )
 }

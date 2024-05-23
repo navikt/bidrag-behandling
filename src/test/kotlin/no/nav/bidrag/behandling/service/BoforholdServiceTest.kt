@@ -755,7 +755,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                husstandsbarn.perioder.shouldHaveSize(2)
+                husstandsbarn.perioder.shouldHaveSize(4)
             }
 
             @Test
@@ -986,7 +986,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            val periodisertBoforhold = BoforholdApi.beregnBoforholdBarnV2(testdataBarn2.fødselsdato, listOf(periodiseringsrequest))
+            val periodisertBoforhold =
+                BoforholdApi.beregnBoforholdBarnV2(testdataBarn2.fødselsdato, listOf(periodiseringsrequest))
 
             // så
             assertSoftly(periodisertBoforhold) { p ->
