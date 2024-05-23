@@ -1,13 +1,8 @@
 package no.nav.bidrag.behandling
 
-import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
-import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
-import java.nio.charset.Charset
 
 fun behandlingNotFoundException(behandlingId: Long): Nothing =
     throw HttpClientErrorException(

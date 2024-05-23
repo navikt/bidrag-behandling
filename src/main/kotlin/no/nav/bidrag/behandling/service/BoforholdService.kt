@@ -78,11 +78,11 @@ class BoforholdService(
         return OppdatereBoforholdResponse(
             oppdatertNotat = request,
             valideringsfeil =
-            BoforholdValideringsfeil(
-                husstandsbarn =
-                behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
-                    .filter { it.harFeil },
-            ),
+                BoforholdValideringsfeil(
+                    husstandsbarn =
+                        behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                            .filter { it.harFeil },
+                ),
         )
     }
 
@@ -179,13 +179,13 @@ class BoforholdService(
                 )
             husstandsbarn.oppdaterePerioder(
                 nyHusstandsbarnperiode =
-                Husstandsbarnperiode(
-                    husstandsbarn = husstandsbarn,
-                    bostatus = Bostatuskode.MED_FORELDER,
-                    datoFom = behandling.virkningstidspunktEllerSøktFomDato,
-                    datoTom = null,
-                    kilde = Kilde.MANUELL,
-                ),
+                    Husstandsbarnperiode(
+                        husstandsbarn = husstandsbarn,
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        datoFom = behandling.virkningstidspunktEllerSøktFomDato,
+                        datoTom = null,
+                        kilde = Kilde.MANUELL,
+                    ),
             )
             behandling.husstandsbarn.add(husstandsbarn)
 
@@ -218,13 +218,13 @@ class BoforholdService(
 
             eksisterendeHusstandsbarn.oppdaterePerioder(
                 nyHusstandsbarnperiode =
-                Husstandsbarnperiode(
-                    husstandsbarn = eksisterendeHusstandsbarn,
-                    bostatus = bostatusperiode.bostatus,
-                    datoFom = bostatusperiode.datoFom,
-                    datoTom = bostatusperiode.datoTom,
-                    kilde = Kilde.MANUELL,
-                ),
+                    Husstandsbarnperiode(
+                        husstandsbarn = eksisterendeHusstandsbarn,
+                        bostatus = bostatusperiode.bostatus,
+                        datoFom = bostatusperiode.datoFom,
+                        datoTom = bostatusperiode.datoTom,
+                        kilde = Kilde.MANUELL,
+                    ),
             )
 
             logEndring(behandling, oppdatereHusstandsmedlem, eksisterendeHusstandsbarn)
@@ -260,20 +260,20 @@ class BoforholdService(
         val perioderDetaljer =
             husstandsbarn.perioder.map {
                 "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
-                        "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
+                    "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
             }.joinToString(", ", prefix = "[", postfix = "]")
         oppdatereHusstandsmedlem.angreSisteStegForHusstandsmedlem?.let {
             log.info { "Angret siste steg for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." }
             secureLogger.info {
                 "Angret siste steg for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}. " +
-                        "Perioder = $perioderDetaljer"
+                    "Perioder = $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.tilbakestillPerioderForHusstandsmedlem?.let {
             log.info { "Tilbakestilte perioder for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." }
             secureLogger.info {
                 "Tilbakestilte perioder for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." +
-                        "Perioder = $perioderDetaljer"
+                    "Perioder = $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.opprettHusstandsmedlem?.let { personalia ->
@@ -283,22 +283,22 @@ class BoforholdService(
             log.info { "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling ${behandling.id}." }
             secureLogger.info {
                 "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling ${behandling.id}." +
-                        "Perioder = $perioderDetaljer"
+                    "Perioder = $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.oppdaterPeriode?.let { bostatusperiode ->
             val detaljer =
                 "datoFom: ${bostatusperiode.datoFom}, datoTom: ${bostatusperiode.datoTom}, " +
-                        "bostatus: ${bostatusperiode.bostatus}"
+                    "bostatus: ${bostatusperiode.bostatus}"
             if (bostatusperiode.idPeriode != null) {
                 log.info {
                     "Oppdaterte periode ${bostatusperiode.idPeriode} for husstandsbarn ${bostatusperiode.idHusstandsbarn} til $detaljer " +
-                            " i behandling ${behandling.id}"
+                        " i behandling ${behandling.id}"
                 }
             } else {
                 log.info {
                     "Ny periode $detaljer ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling med " +
-                            "${behandling.id}."
+                        "${behandling.id}."
                 }
             }
         }
@@ -332,16 +332,10 @@ class BoforholdService(
             (perioder + manuellePerioder).filter {
                 it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
             }.filter {
-                it.datoTom?.isBefore(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true
-                        || it.datoTom?.isEqual(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true
+                it.datoTom == null || it.datoTom?.isBefore(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true ||
+                    it.datoTom?.isEqual(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true
             }
                 .toSet().tilBoforholdbBarnRequest(this, endreBostatus)
-
-        // TODO: FJERNE
-        val test = BoforholdApi.beregnBoforholdBarnV2(
-            behandling.virkningstidspunktEllerSøktFomDato,
-            listOf(periodiseringsrequest),
-        )
 
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV2(
@@ -521,7 +515,7 @@ class BoforholdService(
         behandling.husstandsbarn.removeAll(husstandsbarnSomSkalSlettes)
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                    "forbindelse med førstegangsoppdatering av boforhold."
+                "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 
