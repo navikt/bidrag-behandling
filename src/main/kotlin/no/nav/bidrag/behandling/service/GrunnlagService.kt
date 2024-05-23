@@ -35,7 +35,7 @@ import no.nav.bidrag.behandling.transformers.behandling.finnEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
@@ -281,9 +281,9 @@ class GrunnlagService(
             }
         val boforhold = sisteAktiveGrunnlag.konverterData<List<RelatertPersonGrunnlagDto>>()!!
         val boforholdPeriodisert =
-            BoforholdApi.beregnV2(
+            BoforholdApi.beregnBoforholdBarnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                boforhold.tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                boforhold.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
             )
         boforholdPeriodisert.filter { it.relatertPersonPersonId != null }.groupBy { it.relatertPersonPersonId }
             .forEach { (gjelder, perioder) ->
@@ -577,9 +577,9 @@ class GrunnlagService(
         husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
     ) {
         val boforholdPeriodisert =
-            BoforholdApi.beregnV2(
+            BoforholdApi.beregnBoforholdBarnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                husstandsmedlemmerOgEgneBarn.tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                husstandsmedlemmerOgEgneBarn.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
             )
 
         val bmsNyesteBearbeidaBoforholdFørLagring =

@@ -135,7 +135,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         behandling.avslag = null
         behandling.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
         testdataManager.lagreBehandlingNewTransaction(behandling)
-        val nyVirkningstidspunkt = LocalDate.parse("2022-01-01")
+        val nyttVirkningstidspunkt = LocalDate.parse("2022-01-01")
 
         // hvis
         val behandlingRes =
@@ -145,14 +145,14 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 HttpEntity(
                     OppdatereVirkningstidspunkt(
                         avslag = Resultatkode.AVSLAG,
-                        virkningstidspunkt = nyVirkningstidspunkt,
+                        virkningstidspunkt = nyttVirkningstidspunkt,
                     ),
                 ),
                 BehandlingDtoV2::class.java,
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyVirkningstidspunkt
+        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyttVirkningstidspunkt
         responseBody.virkningstidspunkt.årsak shouldBe null
         responseBody.virkningstidspunkt.avslag shouldBe Resultatkode.AVSLAG
 
@@ -161,7 +161,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         assertNotNull(oppdatertBehandling)
         assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
-            virkningstidspunkt shouldBe nyVirkningstidspunkt
+            virkningstidspunkt shouldBe nyttVirkningstidspunkt
             avslag shouldBe Resultatkode.AVSLAG
             årsak shouldBe null
         }
