@@ -661,8 +661,8 @@ class BoforholdService(
         } catch (illegalArgumentException: IllegalArgumentException) {
             log.warn {
                 "Mottok mangelfulle opplysninger ved oppdatering av boforhold i behandling ${this.behandling.id}. " +
-                        "Mottatt input: nyHusstandsbarnperiode=$nyHusstandsbarnperiode, " +
-                        "sletteHusstandsbarnperiode=$sletteHusstandsbarnperiode"
+                    "Mottatt input: nyHusstandsbarnperiode=$nyHusstandsbarnperiode, " +
+                    "sletteHusstandsbarnperiode=$sletteHusstandsbarnperiode"
             }
             oppdateringAvBoforholdFeilet(
                 "Oppdatering av boforhold i behandling ${this.behandling.id} feilet pga mangelfulle inputdata",
@@ -709,7 +709,7 @@ class BoforholdService(
 
         throw IllegalArgumentException(
             "Mangler data til å avgjøre endringstype. Motttok input: nyHusstandsbarnperiode: " +
-                    "$nyHusstandsbarnperiode, sletteHusstandsbarnperiode: $sletteHusstandsbarnperiode",
+                "$nyHusstandsbarnperiode, sletteHusstandsbarnperiode: $sletteHusstandsbarnperiode",
         )
     }
 }
