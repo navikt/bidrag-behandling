@@ -250,6 +250,8 @@ class SorteringTest {
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2022-01"),
                     opprinneligTom = YearMonth.parse("2022-12"),
+                    datoFom = YearMonth.parse("2022-01"),
+                    datoTom = YearMonth.parse("2022-12"),
                     type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
                     taMed = true,
                 ),
@@ -325,15 +327,23 @@ class SorteringTest {
                     type = Inntektsrapportering.KAPITALINNTEKT_EGNE_OPPLYSNINGER,
                     taMed = true,
                 ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    datoFom = YearMonth.parse("2022-12"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.NÆRINGSINNTEKT_MANUELT_BEREGNET,
+                    taMed = true,
+                ),
             )
 
         val sortertInntekter = inntekter.årsinntekterSortert()
 
-        sortertInntekter shouldHaveSize 12
+        sortertInntekter shouldHaveSize 13
         sortertInntekter[3].type shouldBe Inntektsrapportering.FORELDREPENGER
         sortertInntekter[3].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
-        sortertInntekter[6].type shouldBe Inntektsrapportering.FORELDREPENGER
-        sortertInntekter[6].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
+        sortertInntekter[7].type shouldBe Inntektsrapportering.FORELDREPENGER
+        sortertInntekter[7].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
 
         sortertInntekter.map { it.type } shouldContainInOrder
             listOf(
@@ -342,6 +352,7 @@ class SorteringTest {
                 Inntektsrapportering.OVERGANGSSTØNAD,
                 Inntektsrapportering.FORELDREPENGER,
                 Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                Inntektsrapportering.NÆRINGSINNTEKT_MANUELT_BEREGNET,
                 Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                 Inntektsrapportering.FORELDREPENGER,
                 Inntektsrapportering.AINNTEKT,

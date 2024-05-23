@@ -97,7 +97,7 @@ fun Set<Inntekt>.årsinntekterSortert(
                     (
                         it.datoFom?.toEpochDay()
                             ?: 1
-                    ) + index
+                    ) * 1000 + index
                 } else {
                     it.opprinneligFom
                 }
