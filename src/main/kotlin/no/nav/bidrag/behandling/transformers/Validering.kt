@@ -70,12 +70,6 @@ fun Husstandsbarn.validereBoforhold(
     valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>,
     validerePerioder: Boolean = true,
 ): Set<BoforholdPeriodeseringsfeil> {
-    val kanIkkeVæreSenereEnnDato =
-        if (virkniningstidspunkt.isAfter(LocalDate.now())) {
-            maxOf(this.fødselsdato, virkniningstidspunkt.withDayOfMonth(1))
-        } else {
-            LocalDate.now().withDayOfMonth(1)
-        }
     val hullIPerioder =
         this.perioder.map {
             Datoperiode(it.datoFom!!, it.datoTom)
@@ -87,7 +81,7 @@ fun Husstandsbarn.validereBoforhold(
                 hullIPerioder,
                 overlappendePerioder = this.perioder.finnHusstandsbarnOverlappendePerioder(),
                 manglerPerioder = this.perioder.isEmpty(),
-                fremtidigPeriode = this.perioder.any { it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) },
+                fremtidigPeriode = this.inneholderFremtidigeBoforholdsperioder(),
             ),
         )
     }
@@ -297,9 +291,13 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
 
     this.oppdaterPeriode?.let {
         val husstandsbarn = behandling.husstandsbarn.find { this.oppdaterPeriode.idHusstandsbarn == it.id }
+
         if (husstandsbarn == null) {
             husstandsbarnIkkeFunnetException(this.oppdaterPeriode.idHusstandsbarn, behandling.id!!)
         }
+
+        husstandsbarn.validereNyPeriode(it.datoFom, it.datoTom)
+
         if (it.idPeriode != null) {
             val husstandsperiode = behandling.finnHusstandsbarnperiode(it.idPeriode)
             if (husstandsperiode == null) {
@@ -516,4 +514,43 @@ private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
         }
     }
     return sammenstiltePerioder.toSet()
+}
+
+private fun Husstandsbarn.inneholderFremtidigeBoforholdsperioder(): Boolean {
+    val kanIkkeVæreSenereEnnDato = this.senestePeriodeFomDato()
+
+    return this.perioder.any {
+        it.datoFom!!.isAfter(kanIkkeVæreSenereEnnDato) ||
+            (
+                it.datoTom != null &&
+                    it.datoTom!!.isAfter(
+                        kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1),
+                    )
+            )
+    }
+}
+
+private fun Husstandsbarn.validereNyPeriode(
+    nyFomDato: LocalDate?,
+    nyTomDato: LocalDate?,
+) {
+    val kanIkkeVæreSenereEnnDato = this.senestePeriodeFomDato()
+
+    if (nyFomDato != null && nyFomDato.isAfter(kanIkkeVæreSenereEnnDato) ||
+        (nyTomDato != null && nyTomDato.isAfter(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)))
+    ) {
+        oppdateringAvBoforholdFeilet(
+            "Oppdatering av boforhold feilet for behanding ${behandling.id} pga" +
+                " fremtidig periode: [$nyFomDato, $nyTomDato]",
+        )
+    }
+}
+
+private fun Husstandsbarn.senestePeriodeFomDato(): LocalDate {
+    val virkningsdato = this.behandling.virkningstidspunktEllerSøktFomDato
+    return if (virkningsdato.isAfter(LocalDate.now())) {
+        maxOf(this.fødselsdato, virkningsdato.withDayOfMonth(1))
+    } else {
+        LocalDate.now().withDayOfMonth(1)
+    }
 }

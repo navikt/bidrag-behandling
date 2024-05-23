@@ -331,7 +331,11 @@ class BoforholdService(
         val periodiseringsrequest =
             (perioder + manuellePerioder).filter {
                 it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
-            }.toSet().tilBoforholdbBarnRequest(this, endreBostatus)
+            }.filter {
+                it.datoTom == null || it.datoTom?.isBefore(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true ||
+                    it.datoTom?.isEqual(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true
+            }
+                .toSet().tilBoforholdbBarnRequest(this, endreBostatus)
 
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV2(
