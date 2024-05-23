@@ -1,8 +1,10 @@
 package no.nav.bidrag.behandling.transformers.boforhold
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
@@ -13,6 +15,8 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import java.time.LocalDate
+
+private val log = KotlinLogging.logger {}
 
 fun Set<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(virkningsdato: LocalDate) =
     this.toList().tilBoforholdbBarnRequest(virkningsdato)
@@ -61,21 +65,38 @@ fun Set<Bostatus>.tilBoforholdBarnRequest(
     )
 }
 
-fun Set<Husstandsbarnperiode>.tilBoforholdbBarnRequest(
-    husstandsbarnMedKunOffentligePerioder: Husstandsbarn,
-    endreBostatus: EndreBostatus? = null,
-): BoforholdBarnRequest {
+fun Husstandsbarn.tilBoforholdbBarnRequest(endreBostatus: EndreBostatus? = null): BoforholdBarnRequest {
+    val virkningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+    val kanIkkeVæreSenereEnnDato =
+        if (virkningstidspunkt.isAfter(LocalDate.now())) {
+            maxOf(this.fødselsdato, virkningstidspunkt.withDayOfMonth(1))
+        } else {
+            LocalDate.now().withDayOfMonth(1)
+        }
     return BoforholdBarnRequest(
-        relatertPersonPersonId = husstandsbarnMedKunOffentligePerioder.ident,
-        fødselsdato = husstandsbarnMedKunOffentligePerioder.fødselsdato,
+        relatertPersonPersonId = ident,
+        fødselsdato = fødselsdato,
         erBarnAvBmBp = true,
         innhentedeOffentligeOpplysninger =
-            husstandsbarnMedKunOffentligePerioder.perioder.map { it.tilBostatus() }
+            hentOffentligePerioder().map { it.tilBostatus() }
                 .sortedBy { it.periodeFom },
-        behandledeBostatusopplysninger = this.map { it.tilBostatus() }.sortedBy { it.periodeFom },
+        behandledeBostatusopplysninger =
+            perioder.filter {
+                it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
+            }.map { it.tilBostatus() }.sortedBy { it.periodeFom },
         endreBostatus = endreBostatus,
     )
 }
+
+fun Husstandsbarn.hentOffentligePerioder(): Set<Husstandsbarnperiode> =
+    hentSisteBearbeidetBoforhold()?.tilPerioder(this) ?: if (kilde == Kilde.OFFENTLIG) {
+        log.warn {
+            "Fant ikke originale bearbeidet perioder for offentlig husstandsmedlem $id i behandling ${behandling.id}. Lagt til initiell periode "
+        }
+        setOf(opprettDefaultPeriodeForOffentligHusstandsmedlem())
+    } else {
+        setOf()
+    }
 
 fun Husstandsbarnperiode.tilBostatus() =
     Bostatus(
