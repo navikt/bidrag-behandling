@@ -55,12 +55,6 @@ fun oppdateringAvBoforholdFeilet(melding: String): Nothing =
         melding,
     )
 
-fun manglerForrigePeriode(behandlingsid: Long): Nothing =
-    throw HttpClientErrorException(
-        HttpStatus.BAD_REQUEST,
-        "Angre siste endringer av boforhold feilet for behandling $behandlingsid. Mangler forrige periode",
-    )
-
 fun requestManglerDataException(
     behandlingsid: Long,
     ressurstype: Ressurstype,
