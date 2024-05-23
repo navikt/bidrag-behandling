@@ -308,7 +308,7 @@ class BoforholdService(
         nyEllerOppdatertHusstandsbarnperiode: Husstandsbarnperiode? = null,
         slettHusstandsbarnperiode: Long? = null,
     ) {
-        val endreBostatus = this.tilEndreBostatus(nyEllerOppdatertHusstandsbarnperiode, slettHusstandsbarnperiode)
+        val endreBostatus = tilEndreBostatus(nyEllerOppdatertHusstandsbarnperiode, slettHusstandsbarnperiode)
 
         val periodiseringsrequest = tilBoforholdbBarnRequest(endreBostatus)
 

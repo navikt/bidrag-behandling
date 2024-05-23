@@ -755,7 +755,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                husstandsbarn.perioder.shouldHaveSize(4)
+                husstandsbarn.perioder.shouldHaveSize(2)
             }
 
             @Test
