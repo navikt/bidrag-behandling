@@ -104,56 +104,6 @@ fun Set<Inntekt>.årsinntekterSortert(
             },
     )
 
-fun Set<Inntekt>.årsinntekterSortert2(
-    sorterTaMed: Boolean = true,
-    eksluderYtelserUtenforVirkningstidspunkt: Boolean = false,
-): List<Inntekt> {
-    val filtreteInntekter =
-        this.filter { !eksplisitteYtelser.contains(it.type) }
-            .filtrerUtHistoriskeInntekter()
-            .filter {
-                if (eksluderYtelserUtenforVirkningstidspunkt && årsinntekterYtelser.contains(it.type)) {
-                    it.opprinneligPeriode
-                        ?.inneholder(YearMonth.from(it.behandling?.virkningstidspunktEllerSøktFomDato)) ?: true
-                } else {
-                    true
-                }
-            }
-    val sorterteInntekterIkkeTaMed =
-        filtreteInntekter.filter { !it.taMed }.sortedWith(
-            compareBy<Inntekt> {
-                it.taMed && sorterTaMed
-            }
-                .thenBy {
-                    val index =
-                        årsinntekterPrioriteringsliste.indexOf(
-                            it.type,
-                        )
-                    if (index == -1) 1000 else index
-                }.thenBy { it.opprinneligFom },
-        )
-    val sorterteInntekterTaMed =
-        filtreteInntekter.filter { it.taMed }.sortedWith(
-            compareBy<Inntekt> {
-                it.taMed && sorterTaMed
-            }.thenBy {
-                val index =
-                    årsinntekterPrioriteringsliste.indexOf(
-                        it.type,
-                    ).let { prioritering -> if (prioritering == -1) 1000 else prioritering }
-                if (sorterTaMed) {
-                    (
-                        it.datoFom?.toEpochDay()
-                            ?: 1
-                    ) + index
-                } else {
-                    it.opprinneligFom
-                }
-            },
-        )
-    return sorterteInntekterTaMed + sorterteInntekterIkkeTaMed
-}
-
 fun Husstandsbarn.erSøknadsbarn() = this.behandling.søknadsbarn.map { it.ident }.contains(this.ident)
 
 fun Set<Husstandsbarn>.sortert() =
