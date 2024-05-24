@@ -178,7 +178,7 @@ class BoforholdService(
                     navn = personalia.navn,
                 )
             husstandsbarn.oppdaterePerioder(
-                nyHusstandsbarnperiode =
+                nyEllerOppdatertHusstandsbarnperiode =
                     Husstandsbarnperiode(
                         husstandsbarn = husstandsbarn,
                         bostatus = Bostatuskode.MED_FORELDER,
@@ -212,13 +212,10 @@ class BoforholdService(
 
             eksisterendeHusstandsbarn.lagreEksisterendePerioder()
 
-            if (bostatusperiode.idPeriode != null) {
-                eksisterendeHusstandsbarn.perioder.remove(behandling.finnHusstandsbarnperiode(bostatusperiode.idPeriode))
-            }
-
             eksisterendeHusstandsbarn.oppdaterePerioder(
-                nyHusstandsbarnperiode =
+                nyEllerOppdatertHusstandsbarnperiode =
                     Husstandsbarnperiode(
+                        id = bostatusperiode.idPeriode,
                         husstandsbarn = eksisterendeHusstandsbarn,
                         bostatus = bostatusperiode.bostatus,
                         datoFom = bostatusperiode.datoFom,
@@ -308,34 +305,12 @@ class BoforholdService(
     }
 
     private fun Husstandsbarn.oppdaterePerioder(
-        nyHusstandsbarnperiode: Husstandsbarnperiode? = null,
+        nyEllerOppdatertHusstandsbarnperiode: Husstandsbarnperiode? = null,
         slettHusstandsbarnperiode: Long? = null,
     ) {
-        val virkningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
-        val kanIkkeVæreSenereEnnDato =
-            if (virkningstidspunkt.isAfter(LocalDate.now())) {
-                maxOf(this.fødselsdato, virkningstidspunkt.withDayOfMonth(1))
-            } else {
-                LocalDate.now().withDayOfMonth(1)
-            }
+        val endreBostatus = tilEndreBostatus(nyEllerOppdatertHusstandsbarnperiode, slettHusstandsbarnperiode)
 
-        val manuellePerioder =
-            (perioder.filter { it.kilde == Kilde.MANUELL && it.id != slettHusstandsbarnperiode } + nyHusstandsbarnperiode).filterNotNull()
-
-        val endreBostatus = this.tilEndreBostatus(nyHusstandsbarnperiode, slettHusstandsbarnperiode)
-
-        // Boforhold beregning V2 forventer originale offfentlige perioder som input sammen med manuelle perioder.
-        // Resetter derfor til offentlige perioder før de settes sammen med manuelle perioder
-        this.resetTilOffentligePerioder()
-
-        val periodiseringsrequest =
-            (perioder + manuellePerioder).filter {
-                it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
-            }.filter {
-                it.datoTom == null || it.datoTom?.isBefore(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true ||
-                    it.datoTom?.isEqual(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true
-            }
-                .toSet().tilBoforholdbBarnRequest(this, endreBostatus)
+        val periodiseringsrequest = tilBoforholdbBarnRequest(endreBostatus)
 
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV2(
@@ -639,23 +614,27 @@ class BoforholdService(
     }
 
     private fun Husstandsbarn.tilEndreBostatus(
-        nyHusstandsbarnperiode: Husstandsbarnperiode? = null,
+        nyEllerOppdatertHusstandsbarnperiode: Husstandsbarnperiode? = null,
         sletteHusstandsbarnperiode: Long? = null,
     ): EndreBostatus? {
         try {
-            if (nyHusstandsbarnperiode == null && sletteHusstandsbarnperiode == null) {
+            if (nyEllerOppdatertHusstandsbarnperiode == null && sletteHusstandsbarnperiode == null) {
                 return null
             }
 
             return EndreBostatus(
-                typeEndring = bestemmeEndringstype(nyHusstandsbarnperiode, sletteHusstandsbarnperiode),
-                nyBostatus = bestemmeNyBostatus(nyHusstandsbarnperiode),
-                originalBostatus = bestemmeOriginalBostatus(this, nyHusstandsbarnperiode, sletteHusstandsbarnperiode),
+                typeEndring = bestemmeEndringstype(nyEllerOppdatertHusstandsbarnperiode, sletteHusstandsbarnperiode),
+                nyBostatus = bestemmeNyBostatus(nyEllerOppdatertHusstandsbarnperiode),
+                originalBostatus =
+                    bestemmeOriginalBostatus(
+                        nyEllerOppdatertHusstandsbarnperiode,
+                        sletteHusstandsbarnperiode,
+                    ),
             )
         } catch (illegalArgumentException: IllegalArgumentException) {
             log.warn {
                 "Mottok mangelfulle opplysninger ved oppdatering av boforhold i behandling ${this.behandling.id}. " +
-                    "Mottatt input: nyHusstandsbarnperiode=$nyHusstandsbarnperiode, " +
+                    "Mottatt input: nyEllerOppdatertHusstandsbarnperiode=$nyEllerOppdatertHusstandsbarnperiode, " +
                     "sletteHusstandsbarnperiode=$sletteHusstandsbarnperiode"
             }
             oppdateringAvBoforholdFeilet(
@@ -664,19 +643,18 @@ class BoforholdService(
         }
     }
 
-    private fun bestemmeOriginalBostatus(
-        husstandsbarn: Husstandsbarn,
+    private fun Husstandsbarn.bestemmeOriginalBostatus(
         nyHusstandsbarnperiode: Husstandsbarnperiode? = null,
         sletteHusstandsbarnperiode: Long? = null,
     ): Bostatus? {
         nyHusstandsbarnperiode?.id?.let {
-            return husstandsbarn.perioder.find { nyHusstandsbarnperiode.id == it.id }?.tilBostatus()
+            return perioder.find { nyHusstandsbarnperiode.id == it.id }?.tilBostatus()
         }
-        sletteHusstandsbarnperiode.let { id -> return husstandsbarn.perioder.find { id == it.id }?.tilBostatus() }
+        sletteHusstandsbarnperiode.let { id -> return perioder.find { id == it.id }?.tilBostatus() }
     }
 
-    private fun bestemmeNyBostatus(nyHusstandsbarnperiode: Husstandsbarnperiode? = null): Bostatus? {
-        return nyHusstandsbarnperiode?.let {
+    private fun bestemmeNyBostatus(nyEllerOppdatertHusstandsbarnperiode: Husstandsbarnperiode? = null): Bostatus? {
+        return nyEllerOppdatertHusstandsbarnperiode?.let {
             Bostatus(
                 periodeFom = it.datoFom,
                 periodeTom = it.datoTom,
@@ -687,10 +665,10 @@ class BoforholdService(
     }
 
     private fun bestemmeEndringstype(
-        nyHusstandsbarnperiode: Husstandsbarnperiode? = null,
+        nyEllerOppdatertHusstandsbarnperiode: Husstandsbarnperiode? = null,
         sletteHusstandsbarnperiode: Long? = null,
     ): TypeEndring {
-        nyHusstandsbarnperiode?.let {
+        nyEllerOppdatertHusstandsbarnperiode?.let {
             if (it.id != null) {
                 return TypeEndring.ENDRET
             }
@@ -702,8 +680,8 @@ class BoforholdService(
         }
 
         throw IllegalArgumentException(
-            "Mangler data til å avgjøre endringstype. Motttok input: nyHusstandsbarnperiode: " +
-                "$nyHusstandsbarnperiode, sletteHusstandsbarnperiode: $sletteHusstandsbarnperiode",
+            "Mangler data til å avgjøre endringstype. Motttok input: nyEllerOppdatertHusstandsbarnperiode: " +
+                "$nyEllerOppdatertHusstandsbarnperiode, sletteHusstandsbarnperiode: $sletteHusstandsbarnperiode",
         )
     }
 }

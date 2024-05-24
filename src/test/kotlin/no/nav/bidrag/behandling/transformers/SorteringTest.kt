@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -132,6 +133,234 @@ class SorteringTest {
             this[0].periode.fom shouldBe YearMonth.parse("2021-01")
             this[0].periode.til shouldBe YearMonth.parse("2021-12")
         }
+    }
+
+    @Test
+    fun `skal sortere inntekter etter type`() {
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2021-01"),
+                    opprinneligTom = YearMonth.parse("2021-12"),
+                    type = Inntektsrapportering.OVERGANGSSTØNAD,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.FORELDREPENGER,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.FORELDREPENGER,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.LIGNINGSINNTEKT,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.KAPITALINNTEKT,
+                    taMed = false,
+                ),
+            )
+
+        val sortertInntekter = inntekter.årsinntekterSortert()
+
+        sortertInntekter shouldHaveSize 10
+        sortertInntekter[5].type shouldBe Inntektsrapportering.FORELDREPENGER
+        sortertInntekter[5].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
+        sortertInntekter[6].type shouldBe Inntektsrapportering.FORELDREPENGER
+        sortertInntekter[6].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
+        sortertInntekter.map { it.type } shouldContainInOrder
+            listOf(
+                Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                Inntektsrapportering.OVERGANGSSTØNAD,
+                Inntektsrapportering.FORELDREPENGER,
+                Inntektsrapportering.FORELDREPENGER,
+                Inntektsrapportering.AINNTEKT,
+                Inntektsrapportering.KAPITALINNTEKT,
+                Inntektsrapportering.LIGNINGSINNTEKT,
+            )
+    }
+
+    @Test
+    fun `skal sortere valgte inntekter etter type`() {
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2021-01"),
+                    opprinneligTom = YearMonth.parse("2021-12"),
+                    type = Inntektsrapportering.OVERGANGSSTØNAD,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    datoFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    taMed = true,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    datoFom = YearMonth.parse("2022-01"),
+                    datoTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                    taMed = true,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT,
+                    taMed = true,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.FORELDREPENGER,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.KAPITALINNTEKT,
+                    taMed = true,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.LIGNINGSINNTEKT,
+                    taMed = true,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.FORELDREPENGER,
+                    taMed = true,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                    taMed = true,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    datoFom = YearMonth.parse("2023-01"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.KAPITALINNTEKT_EGNE_OPPLYSNINGER,
+                    taMed = true,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    datoFom = YearMonth.parse("2022-12"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.NÆRINGSINNTEKT_MANUELT_BEREGNET,
+                    taMed = true,
+                ),
+            )
+
+        val sortertInntekter = inntekter.årsinntekterSortert()
+
+        sortertInntekter shouldHaveSize 13
+        sortertInntekter[3].type shouldBe Inntektsrapportering.FORELDREPENGER
+        sortertInntekter[3].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
+        sortertInntekter[7].type shouldBe Inntektsrapportering.FORELDREPENGER
+        sortertInntekter[7].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
+
+        sortertInntekter.map { it.type } shouldContainInOrder
+            listOf(
+                Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                Inntektsrapportering.OVERGANGSSTØNAD,
+                Inntektsrapportering.FORELDREPENGER,
+                Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                Inntektsrapportering.NÆRINGSINNTEKT_MANUELT_BEREGNET,
+                Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                Inntektsrapportering.FORELDREPENGER,
+                Inntektsrapportering.AINNTEKT,
+                Inntektsrapportering.KAPITALINNTEKT,
+                Inntektsrapportering.LIGNINGSINNTEKT,
+                Inntektsrapportering.KAPITALINNTEKT_EGNE_OPPLYSNINGER,
+                Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+            )
     }
 
     @Test

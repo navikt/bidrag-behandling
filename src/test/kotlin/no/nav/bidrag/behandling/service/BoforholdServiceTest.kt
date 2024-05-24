@@ -721,12 +721,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 assertSoftly("Resultat etter første oppdatering") {
-                    husstandsbarn.perioder.shouldHaveSize(2)
+                    husstandsbarn.perioder.shouldHaveSize(4)
                     husstandsbarn.forrigePerioder.shouldNotBeEmpty()
                     val førstePeriode = husstandsbarn.perioder.minBy { it.datoFom!! }
                     val andrePeriode = husstandsbarn.perioder.maxBy { it.datoFom!! }
                     førstePeriode!!.datoFom shouldBe LocalDate.parse("2023-01-01")
-                    andrePeriode!!.datoFom shouldBe LocalDate.parse("2023-06-01")
+                    andrePeriode!!.datoFom shouldBe LocalDate.parse("2024-02-01")
                 }
 
                 boforholdService.oppdatereHusstandsbarnManuelt(
@@ -755,7 +755,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                husstandsbarn.perioder.shouldHaveSize(2)
+                husstandsbarn.perioder.shouldHaveSize(4)
             }
 
             @Test
@@ -986,7 +986,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
             // hvis
-            val periodisertBoforhold = BoforholdApi.beregnBoforholdBarnV2(testdataBarn2.fødselsdato, listOf(periodiseringsrequest))
+            val periodisertBoforhold =
+                BoforholdApi.beregnBoforholdBarnV2(testdataBarn2.fødselsdato, listOf(periodiseringsrequest))
 
             // så
             assertSoftly(periodisertBoforhold) { p ->

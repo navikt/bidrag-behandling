@@ -26,6 +26,8 @@ val årsinntekterPrioriteringsliste =
         Inntektsrapportering.KAPITALINNTEKT,
         Inntektsrapportering.LIGNINGSINNTEKT,
     )
+
+val manuelleInntekter = Inntektsrapportering.entries.filter { it.kanLeggesInnManuelt }
 val ligningsinntekter =
     listOf(
         Inntektsrapportering.LIGNINGSINNTEKT,
@@ -58,6 +60,7 @@ fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
         inntekt.opprinneligFom == null || ligningsinntekter.contains(inntekt.type) && inntekt.opprinneligFom?.year == sisteLigningsår
     }
 
+@OptIn(ExperimentalStdlibApi::class)
 fun Set<Inntekt>.årsinntekterSortert(
     sorterTaMed: Boolean = true,
     eksluderYtelserUtenforVirkningstidspunkt: Boolean = false,
@@ -82,15 +85,19 @@ fun Set<Inntekt>.årsinntekterSortert(
                     )
                 if (index == -1 || it.taMed && sorterTaMed) 1000 else index
             }.thenBy {
+                val manuelleInntekterPrioritering = manuelleInntekter.map { it.name }.sorted()
                 val index =
                     årsinntekterPrioriteringsliste.indexOf(
                         it.type,
                     )
+                        .let { prioritering ->
+                            if (prioritering == -1) 1000 + manuelleInntekterPrioritering.indexOf(it.type.name) else prioritering
+                        }
                 if (it.taMed && sorterTaMed) {
                     (
                         it.datoFom?.toEpochDay()
                             ?: 1
-                    ) + index
+                    ) * 1000 + index
                 } else {
                     it.opprinneligFom
                 }
