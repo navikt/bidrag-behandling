@@ -66,29 +66,14 @@ fun Set<Bostatus>.tilBoforholdBarnRequest(
 }
 
 fun Husstandsbarn.tilBoforholdbBarnRequest(endreBostatus: EndreBostatus? = null): BoforholdBarnRequest {
-    val virkningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
-    val kanIkkeVæreSenereEnnDato =
-        if (virkningstidspunkt.isAfter(LocalDate.now())) {
-            maxOf(this.fødselsdato, virkningstidspunkt.withDayOfMonth(1))
-        } else {
-            LocalDate.now().withDayOfMonth(1)
-        }
-    //            perioder.filter {
-//                it.datoFom?.isBefore(kanIkkeVæreSenereEnnDato) == true || it.datoFom?.isEqual(kanIkkeVæreSenereEnnDato) == true
-//            }.filter {
-//                it.datoTom == null || it.datoTom?.isBefore(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true ||
-//                        it.datoTom?.isEqual(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)) == true
-//            }
     return BoforholdBarnRequest(
         relatertPersonPersonId = ident,
         fødselsdato = fødselsdato,
-        erBarnAvBmBp = true,
+        erBarnAvBmBp = true, // TODO: Dette er ikke alltid true for bidrag og særlige utgifter
         innhentedeOffentligeOpplysninger =
             hentOffentligePerioder().map { it.tilBostatus() }
                 .sortedBy { it.periodeFom },
-        behandledeBostatusopplysninger =
-
-            perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
+        behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
         endreBostatus = endreBostatus,
     )
 }
