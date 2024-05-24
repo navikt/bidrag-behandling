@@ -7,7 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.transformers.validerBoforhold
-import no.nav.bidrag.behandling.transformers.validerSivilstand
+import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -394,7 +394,7 @@ class ValiderBoforholdSivilstandPerioderTest {
                     ),
                 )
 
-            val result = sivilstandListe.validerSivilstand(LocalDate.parse("2022-01-01"))
+            val result = sivilstandListe.validereSivilstand(LocalDate.parse("2022-01-01"))
 
             assertSoftly(result) {
                 overlappendePerioder shouldHaveSize 0
@@ -430,7 +430,7 @@ class ValiderBoforholdSivilstandPerioderTest {
                     ),
                 )
 
-            val result = sivilstandListe.validerSivilstand(LocalDate.parse("2022-01-01"))
+            val result = sivilstandListe.validereSivilstand(LocalDate.parse("2022-01-01"))
 
             assertSoftly(result) {
                 overlappendePerioder shouldHaveSize 0
@@ -451,7 +451,7 @@ class ValiderBoforholdSivilstandPerioderTest {
                     listOf(Datoperiode(YearMonth.now().plusMonths(1).atDay(1), null) to Sivilstandskode.GIFT_SAMBOER),
                 )
 
-            val result = sivilstandListe.validerSivilstand(LocalDate.parse("2022-01-01"))
+            val result = sivilstandListe.validereSivilstand(LocalDate.parse("2022-01-01"))
 
             assertSoftly(result) {
                 overlappendePerioder shouldHaveSize 0
@@ -468,7 +468,7 @@ class ValiderBoforholdSivilstandPerioderTest {
         fun `skal validere sivilstand hvis mangler periode`() {
             val sivilstandListe = opprettSivilstand(listOf())
 
-            val result = sivilstandListe.validerSivilstand(LocalDate.parse("2022-01-01"))
+            val result = sivilstandListe.validereSivilstand(LocalDate.parse("2022-01-01"))
 
             assertSoftly(result) {
                 overlappendePerioder shouldHaveSize 0
@@ -492,7 +492,7 @@ class ValiderBoforholdSivilstandPerioderTest {
                     ),
                 )
 
-            val result = sivilstandListe.validerSivilstand(LocalDate.parse("2022-01-01"))
+            val result = sivilstandListe.validereSivilstand(LocalDate.parse("2022-01-01"))
 
             assertSoftly(result) {
                 overlappendePerioder shouldHaveSize 0
@@ -529,7 +529,7 @@ class ValiderBoforholdSivilstandPerioderTest {
                     ),
                 )
 
-            val result = sivilstandListe.validerSivilstand(LocalDate.parse("2022-01-01"))
+            val result = sivilstandListe.validereSivilstand(LocalDate.parse("2022-01-01"))
 
             assertSoftly(result) {
                 hullIPerioder shouldHaveSize 0

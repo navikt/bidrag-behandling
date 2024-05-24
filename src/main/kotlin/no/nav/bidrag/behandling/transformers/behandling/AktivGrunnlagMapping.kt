@@ -6,7 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
-import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -138,10 +138,10 @@ fun List<Grunnlag>.hentEndringerSivilstand(
         val nySivilstandGrunnlagBearbeidet = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nySivilstandGrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
         val aktivSivilstandData =
-            aktivSivilstandGrunnlag.konverterData<SivilstandBeregnet>()
+            aktivSivilstandGrunnlag.konvertereData<SivilstandBeregnet>()
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkniningstidspunkt)
         val nySivilstandData =
-            nySivilstandGrunnlagBearbeidet.konverterData<SivilstandBeregnet>()
+            nySivilstandGrunnlagBearbeidet.konvertereData<SivilstandBeregnet>()
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkniningstidspunkt)
         if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
             return SivilstandIkkeAktivGrunnlagDto(
@@ -158,7 +158,7 @@ fun List<Grunnlag>.hentEndringerSivilstand(
                 status = nySivilstandData.status,
                 innhentetTidspunkt = nySivilstandGrunnlagBearbeidet!!.innhentet,
                 grunnlag =
-                    nySivilstandGrunnlag?.konverterData<List<SivilstandGrunnlagDto>>()
+                    nySivilstandGrunnlag?.konvertereData<List<SivilstandGrunnlagDto>>()
                         ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(virkniningstidspunkt)
                         ?.toSet() ?: emptySet(),
             )

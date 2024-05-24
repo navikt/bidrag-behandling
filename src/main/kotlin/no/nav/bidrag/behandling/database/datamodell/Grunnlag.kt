@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
@@ -45,7 +46,7 @@ open class Grunnlag(
     override fun toString(): String {
         return try {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
-                "id=$id, behandling=${behandling.id}, innhentet=$innhentet, gjelder=$gjelder)"
+                    "id=$id, behandling=${behandling.id}, innhentet=$innhentet, gjelder=$gjelder)"
         } catch (e: Exception) {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
@@ -70,10 +71,14 @@ fun Set<Grunnlag>.hentSisteAktiv() =
         .values
         .filterNotNull()
 
+fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) = hentSisteAktiv()
+    .find { it.erBearbeidet == erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
+    .konvertereData<Set<Sivilstand>>()
+
 fun Husstandsbarn.hentSisteBearbeidetBoforhold() =
     behandling.grunnlag.hentSisteAktiv()
         .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
-        .konverterData<List<BoforholdResponse>>()
+        .konvertereData<List<BoforholdResponse>>()
 
 fun List<Grunnlag>.hentGrunnlagForType(
     type: Grunnlagsdatatype,
@@ -87,10 +92,12 @@ fun List<Grunnlag>.hentBearbeidetInntekterForType(
     ident: String,
 ) = find {
     it.type == type && it.erBearbeidet && it.rolle.ident == ident
-}.konverterData<SummerteInntekter<SummertÅrsinntekt>>()
+}.konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
 
-inline fun <reified T> Grunnlag?.konverterData(): T? {
-    return this?.data?.let {
-        objectmapper.readValue(it)
-    }
+inline fun <reified T> Grunnlag?.konvertereData(): T? {
+    return this?.data?.let { objectmapper.readValue(it) }
 }
+
+
+
+

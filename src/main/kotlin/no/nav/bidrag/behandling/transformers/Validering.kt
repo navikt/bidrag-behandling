@@ -106,7 +106,7 @@ fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<Bo
     return valideringsfeil.toSet()
 }
 
-fun Set<Sivilstand>.validerSivilstand(virkningstidspunkt: LocalDate): SivilstandPeriodeseringsfeil {
+fun Set<Sivilstand>.validereSivilstand(virkningstidspunkt: LocalDate): SivilstandPeriodeseringsfeil {
     val kanIkkeVæreSenereEnnDato = maxOf(LocalDate.now().withDayOfMonth(1), virkningstidspunkt.withDayOfMonth(1))
     return SivilstandPeriodeseringsfeil(
         map { Datoperiode(it.datoFom!!, it.datoTom) }.finnHullIPerioder(virkningstidspunkt),

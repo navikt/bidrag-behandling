@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -718,7 +718,7 @@ class VedtakTilBehandlingTest {
                 )
             skattepliktig shouldHaveSize 1
             val skattepliktigInnhold =
-                skattepliktig[0].konverterData<SummerteInntekter<SummertÅrsinntekt>>()
+                skattepliktig[0].konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
             skattepliktigInnhold!!.versjon shouldBe "V1"
             skattepliktigInnhold.inntekter shouldHaveSize 10
             skattepliktigInnhold.inntekter.ainntektListe shouldHaveSize 4

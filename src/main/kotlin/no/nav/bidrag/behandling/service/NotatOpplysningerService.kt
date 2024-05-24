@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
-import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.notat.Arbeidsforhold
 import no.nav.bidrag.behandling.dto.v1.notat.Boforhold
 import no.nav.bidrag.behandling.dto.v1.notat.BoforholdBarn
@@ -135,14 +135,14 @@ class NotatOpplysningerService(
         val opplysningerSivilstand =
             behandling.grunnlag.hentSisteAktiv()
                 .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
-                ?.konverterData<List<SivilstandGrunnlagDto>>()
+                ?.konvertereData<List<SivilstandGrunnlagDto>>()
                 ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
                 ?: emptyList()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
             behandling.grunnlag.hentSisteAktiv()
                 .filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.flatMap { r ->
-                    r.konverterData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
+                    r.konvertereData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
                 }
 
         return NotatDto(

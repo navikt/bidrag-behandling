@@ -1279,6 +1279,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Disabled
             open fun `skal slette sivilstandsperiode`() {
             }
+            
         }
     }
 
