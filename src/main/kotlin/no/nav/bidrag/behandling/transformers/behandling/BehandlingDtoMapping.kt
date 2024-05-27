@@ -5,7 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
@@ -22,7 +22,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.transformers.boforhold.tilDto
+import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
@@ -36,7 +36,7 @@ import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import no.nav.bidrag.behandling.transformers.validerBoforhold
-import no.nav.bidrag.behandling.transformers.validerSivilstand
+import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -107,7 +107,7 @@ fun Behandling.tilBehandlingDtoV2(
 fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     if (this == null) return null
     val grunnlag =
-        konverterData<List<SivilstandGrunnlagDto>>()
+        konvertereData<List<SivilstandGrunnlagDto>>()
             ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
     return this?.let {
         SivilstandAktivGrunnlagDto(
@@ -123,7 +123,7 @@ fun List<Grunnlag>.tilHusstandsbarn() =
             innhentetTidspunkt = it.innhentet,
             ident = it.gjelder,
             perioder =
-                it.konverterData<List<BoforholdResponse>>()?.map { boforholdrespons ->
+                it.konvertereData<List<BoforholdResponse>>()?.map { boforholdrespons ->
                     HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
                         boforholdrespons.periodeFom,
                         boforholdrespons.periodeTom,
@@ -135,7 +135,7 @@ fun List<Grunnlag>.tilHusstandsbarn() =
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
-        husstandsbarn = husstandsbarn.sortert().map { it.tilDto() }.toSet(),
+        husstandsbarn = husstandsbarn.sortert().map { it.tilHusstandsbarnperiodeDto() }.toSet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
             BehandlingNotatDto(
@@ -145,7 +145,7 @@ fun Behandling.tilBoforholdV2() =
         valideringsfeil =
             BoforholdValideringsfeil(
                 husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
-                sivilstand = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
+                sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
             ),
     )
 
@@ -171,7 +171,7 @@ fun Behandling.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = em
         månedsinntekter =
             gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
                 .flatMap { grunnlag ->
-                    grunnlag.konverterData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
+                    grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
                         it.tilInntektDtoV2(
                             grunnlag.rolle.ident!!,
                         )
@@ -193,7 +193,7 @@ fun Behandling.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = em
 fun List<Grunnlag>.tilAktivGrunnlagsdata() =
     AktiveGrunnlagsdata(
         arbeidsforhold =
-            find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konverterData<Set<ArbeidsforholdGrunnlagDto>>()
+            find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
                 ?: emptySet(),
         husstandsbarn =
             filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsbarn(),
@@ -417,7 +417,7 @@ fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     rolle: Rolle,
 ) = asSequence()
     .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    .mapNotNull { it.konverterData<List<BoforholdResponse>>() }
+    .mapNotNull { it.konvertereData<List<BoforholdResponse>>() }
     .flatten().distinct().toList().filtrerPerioderEtterVirkningstidspunkt(
         husstandsbarn,
         virkniningstidspunkt,

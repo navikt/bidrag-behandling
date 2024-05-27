@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
-import no.nav.bidrag.behandling.transformers.validerSivilstand
+import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
@@ -162,7 +162,7 @@ fun Behandling.validerForBeregning() {
     val feil =
         if (avslag == null) {
             val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
-            val sivilstandFeil = sivilstand.validerSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil }
+            val sivilstandFeil = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil }
             val husstandsbarnFeil =
                 husstandsbarn.validerBoforhold(
                     virkningstidspunktEllerSøktFomDato,

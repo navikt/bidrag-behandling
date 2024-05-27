@@ -1293,8 +1293,22 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            @Disabled
+            @Disabled("Test må fikses og oppdateres i hht ny versjon av SivilstandApi etter 20240527")
             open fun `skal slette sivilstandsperiode`() {
+                // gitt
+                val behandling = testdataManager.oppretteBehandling()
+
+                behandling.sivilstand shouldHaveSize 2
+                behandling.sivilstand.maxBy { it.id!! }.id shouldBe 2
+
+                // hvis
+                boforholdService.oppdatereSivilstandManuelt(
+                    behandling.id!!,
+                    OppdatereSivilstand(sletteSivilstandsperiode = 2),
+                )
+
+                // så
+                behandling.sivilstand shouldHaveSize 1
             }
         }
     }

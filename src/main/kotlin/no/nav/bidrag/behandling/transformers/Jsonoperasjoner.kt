@@ -19,14 +19,17 @@ class Jsonoperasjoner {
                     objekt,
                 )
 
-        fun <T> tilJson(sett: Set<T>): String =
-            GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .toJson(
-                    sett,
-                )
+        inline fun <reified T> tilJson(sett: Set<T>): String {
+            val gson =
+                GsonBuilder()
+                    .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+                    .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
+                    .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+
+            val a = ArrayList<T>()
+            a.addAll(sett)
+            return gson.toJson(a, kolleksjon<T>())
+        }
 
         inline fun <reified T> jsonListeTilObjekt(json: String) =
             GsonBuilder()
@@ -47,3 +50,5 @@ class Jsonoperasjoner {
 inline fun <reified T> Gson.fromJsonList(json: String) = fromJson<List<T>>(json, object : TypeToken<List<T>>() {}.type)
 
 inline fun <reified T> genericType(): Type = object : TypeToken<T?>() {}.type
+
+inline fun <reified T> kolleksjon() = object : TypeToken<ArrayList<T?>?>() {}.type
