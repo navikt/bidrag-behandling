@@ -20,7 +20,7 @@ data class OppdatereBoforholdRequestV2(
 data class OppdatereBoforholdResponse(
     @Schema(description = "Husstandsbarn som ble opprettet")
     val oppdatertHusstandsbarn: HusstandsbarnDtoV2? = null,
-    val oppdatertSivilstand: SivilstandDto? = null,
+    val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
     val oppdatertNotat: OppdaterNotat? = null,
     val valideringsfeil: BoforholdValideringsfeil,
 )
@@ -67,6 +67,10 @@ data class OpprettHusstandsstandsmedlem(
 data class OppdatereSivilstand(
     val nyEllerEndretSivilstandsperiode: Sivilstandsperiode? = null,
     val sletteSivilstandsperiode: Long? = null,
+    @Schema(type = "Long", description = "Tilbakestiller til historikk fra offentlige registre")
+    val tilbakestilleHistorikk: Boolean = false,
+    @Schema(type = "Boolean", description = "Settes til true for å angre siste endring")
+    val angreSisteEndring: Boolean = false,
 )
 
 data class Sivilstandsperiode(

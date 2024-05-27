@@ -11,10 +11,9 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.validerBoforhold
-import no.nav.bidrag.behandling.transformers.validerSivilstand
-import java.time.LocalDate
+import no.nav.bidrag.behandling.transformers.validereSivilstand
 
-fun Set<Husstandsbarnperiode>.tilDto() =
+fun Set<Husstandsbarnperiode>.tilHusstandsbarnperiodeDto() =
     this.map {
         HusstandsbarnperiodeDto(
             it.id,
@@ -25,12 +24,12 @@ fun Set<Husstandsbarnperiode>.tilDto() =
         )
     }.sortedBy { it.datoFom }.toSet()
 
-fun Husstandsbarn.tilDto() =
+fun Husstandsbarn.tilHusstandsbarnperiodeDto() =
     HusstandsbarnDtoV2(
         this.id,
         this.kilde,
         !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
-        this.perioder.sortedBy { it.datoFom }.toSet().tilDto(),
+        this.perioder.sortedBy { it.datoFom }.toSet().tilHusstandsbarnperiodeDto(),
         this.ident,
         this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato,
@@ -38,7 +37,7 @@ fun Husstandsbarn.tilDto() =
 
 fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
     OppdatereBoforholdResponse(
-        oppdatertHusstandsbarn = this.tilDto(),
+        oppdatertHusstandsbarn = this.tilHusstandsbarnperiodeDto(),
         valideringsfeil =
             BoforholdValideringsfeil(
                 husstandsbarn =
@@ -47,13 +46,15 @@ fun Husstandsbarn.tilOppdatereBoforholdResponse(behandling: Behandling) =
             ),
     )
 
-fun Sivilstand.tilDto() = SivilstandDto(this.id, this.datoFom, datoTom = this.datoTom, this.sivilstand, this.kilde)
+fun Sivilstand.tilHusstandsbarnperiodeDto() = SivilstandDto(this.id, this.datoFom, datoTom = this.datoTom, this.sivilstand, this.kilde)
 
-fun Sivilstand.tilOppdatereBoforholdResponse(virkningstidspunkt: LocalDate) =
+fun Set<Sivilstand>.tilSivilstandDto() = this.map { it.tilHusstandsbarnperiodeDto() }.toSet()
+
+fun Set<Sivilstand>.tilOppdatereBoforholdResponse() =
     OppdatereBoforholdResponse(
-        oppdatertSivilstand = this.tilDto(),
+        oppdatertSivilstandshistorikk = this.tilSivilstandDto(),
         valideringsfeil =
             BoforholdValideringsfeil(
-                sivilstand = setOf(this).validerSivilstand(virkningstidspunkt),
+                sivilstand = this.validereSivilstand(this.first().behandling.virkningstidspunktEllerSøktFomDato),
             ),
     )
