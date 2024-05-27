@@ -566,33 +566,33 @@ class BoforholdService(
         manuelleBarnMedIdent.forEach { manueltBarn ->
             if (identerOffisielleBarn.contains(manueltBarn.ident)) {
                 val offisieltBarn = nyttPeriodisertBoforhold.find { manueltBarn.ident == it.ident }
-                val bostatuser: Set<Bostatus>? = offisieltBarn?.perioder?.map { it.tilBostatus() }?.toSet()
 
-                bostatuser?.let {
-                    offisieltBarn.resetTilOffentligePerioder()
-                    val periodisertBoforhold =
-                        BoforholdApi.beregnBoforholdBarnV2(
-                            behandling.virkningstidspunktEllerSøktFomDato,
-                            listOf(
-                                BoforholdBarnRequest(
-                                    relatertPersonPersonId = offisieltBarn.ident,
-                                    fødselsdato = offisieltBarn.fødselsdato,
-                                    erBarnAvBmBp = true,
-                                    innhentedeOffentligeOpplysninger =
-                                        offisieltBarn.perioder.map { it.tilBostatus() }
-                                            .sortedBy { it.periodeFom },
-                                    behandledeBostatusopplysninger = manueltBarn.perioder.map { it.tilBostatus() },
-                                    endreBostatus = null,
-                                ),
-                            ),
-                        )
-                    val hbp = periodisertBoforhold.tilPerioder(offisieltBarn)
-
-                    manueltBarn.perioder.clear()
-                    manueltBarn.perioder.addAll(hbp.toSet())
-                    manueltBarn.kilde = Kilde.OFFENTLIG
-                    nyttPeriodisertBoforhold.minus(offisieltBarn)
+                log.info {
+                    "Slår sammen manuelt husstandsbarn med id ${manueltBarn.id} med informasjon fra offentlige registre. Oppgraderer kilde til barnet til OFFISIELT"
                 }
+                offisieltBarn!!.resetTilOffentligePerioder()
+                val periodisertBoforhold =
+                    BoforholdApi.beregnBoforholdBarnV2(
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                        listOf(
+                            BoforholdBarnRequest(
+                                relatertPersonPersonId = offisieltBarn.ident,
+                                fødselsdato = offisieltBarn.fødselsdato,
+                                erBarnAvBmBp = true,
+                                innhentedeOffentligeOpplysninger =
+                                    offisieltBarn.perioder.map { it.tilBostatus() }
+                                        .sortedBy { it.periodeFom },
+                                behandledeBostatusopplysninger = emptyList(),
+                                endreBostatus = null,
+                            ),
+                        ),
+                    )
+                val hbp = periodisertBoforhold.tilPerioder(offisieltBarn)
+
+                manueltBarn.perioder.clear()
+                manueltBarn.perioder.addAll(hbp.toSet())
+                manueltBarn.kilde = Kilde.OFFENTLIG
+                nyttPeriodisertBoforhold.minus(offisieltBarn)
             }
         }
     }
