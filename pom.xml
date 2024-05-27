@@ -16,8 +16,8 @@
     <properties>
         <java.version>21</java.version>
         <kotlin.version>1.9.23</kotlin.version>
-        <bidrag-felles.version>2024.05.14.133020</bidrag-felles.version>
-        <bidrag-beregn-felles.version>2024.05.07.142457</bidrag-beregn-felles.version>
+        <bidrag-felles.version>2024.05.21.133504</bidrag-felles.version>
+        <bidrag-beregn-felles.version>2024.05.23.160942</bidrag-beregn-felles.version>
         <h2.version>2.2.224</h2.version>
         <logback-encoder.version>7.4</logback-encoder.version>
         <token-support.version>3.2.0</token-support.version>
@@ -26,7 +26,7 @@
         <kotest.version>5.8.1</kotest.version>
         <mockk.version>4.0.2</mockk.version>
         <kotlin-logging-jvm.version>6.0.9</kotlin-logging-jvm.version>
-        <flyway.version>10.12.0</flyway.version>
+        <flyway.version>10.13.0</flyway.version>
         <jackson.version>2.17.1</jackson.version>
         <testcontainers.version>1.19.7</testcontainers.version>
         <spring-boot-testcontainers.version>3.2.3</spring-boot-testcontainers.version>
@@ -37,9 +37,9 @@
         <arrow-core.version>1.2.4</arrow-core.version>
         <checker-qual.version>3.43.0</checker-qual.version>
         <asm.version>9.7</asm.version>
-        <swagger.version>2.2.21</swagger.version>
+        <swagger.version>2.2.22</swagger.version>
         <jetbrains.annotations.version>24.1.0</jetbrains.annotations.version>
-        <nimbus-jose-jwt.version>9.37.3</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>9.39.1</nimbus-jose-jwt.version>
     </properties>
 
     <repositories>
@@ -390,7 +390,7 @@
         <dependency>
             <groupId>io.getunleash</groupId>
             <artifactId>unleash-client-java</artifactId>
-            <version>9.2.0</version>
+            <version>9.2.2</version>
         </dependency>
         <!--Logging-->
         <dependency>

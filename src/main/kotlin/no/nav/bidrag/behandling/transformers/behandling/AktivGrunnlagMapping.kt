@@ -26,7 +26,6 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.sivilstand.dto.Sivilstand
-import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -138,15 +137,15 @@ fun List<Grunnlag>.hentEndringerSivilstand(
         val nySivilstandGrunnlagBearbeidet = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nySivilstandGrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
         val aktivSivilstandData =
-            aktivSivilstandGrunnlag.konvertereData<SivilstandBeregnet>()
-                ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkniningstidspunkt)
+            aktivSivilstandGrunnlag.konvertereData<List<Sivilstand>>()
+                ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
         val nySivilstandData =
-            nySivilstandGrunnlagBearbeidet.konvertereData<SivilstandBeregnet>()
-                ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkniningstidspunkt)
+            nySivilstandGrunnlagBearbeidet.konvertereData<List<Sivilstand>>()
+                ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
         if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
             return SivilstandIkkeAktivGrunnlagDto(
                 sivilstand =
-                    nySivilstandData.sivilstandListe.map {
+                    nySivilstandData.map {
                         SivilstandDto(
                             null,
                             it.periodeFom,
@@ -155,7 +154,6 @@ fun List<Grunnlag>.hentEndringerSivilstand(
                             Kilde.OFFENTLIG,
                         )
                     },
-                status = nySivilstandData.status,
                 innhentetTidspunkt = nySivilstandGrunnlagBearbeidet!!.innhentet,
                 grunnlag =
                     nySivilstandGrunnlag?.konvertereData<List<SivilstandGrunnlagDto>>()
@@ -171,33 +169,14 @@ fun List<Grunnlag>.hentEndringerSivilstand(
     }
 }
 
-fun SivilstandBeregnet.erLik(other: SivilstandBeregnet): Boolean {
-    if (status != other.status) return false
-    if (sivilstandListe.size != other.sivilstandListe.size) return false
-    sivilstandListe.sortedBy { it.periodeFom }.forEachIndexed { index, sivilstand ->
-        val otherSivilstand = other.sivilstandListe[index]
-        if (otherSivilstand.periodeFom == sivilstand.periodeFom &&
-            otherSivilstand.periodeTom == sivilstand.periodeTom &&
-            otherSivilstand.sivilstandskode == sivilstand.sivilstandskode
-        ) {
-            return true
-        }
-    }
-    return false
-}
-
 fun List<Sivilstand>.erLik(other: List<Sivilstand>): Boolean {
     if (size != other.size) return false
-    sortedBy { it.periodeFom }.forEachIndexed { index, sivilstand ->
-        val otherSivilstand = other[index]
-        if (otherSivilstand.periodeFom == sivilstand.periodeFom &&
-            otherSivilstand.periodeTom == sivilstand.periodeTom &&
-            otherSivilstand.sivilstandskode == sivilstand.sivilstandskode
-        ) {
-            return true
+    return sortedBy { it.periodeFom }.all { sivilstand ->
+        other.sortedBy { it.periodeFom }.any {
+            it.periodeFom == sivilstand.periodeFom && it.periodeTom == sivilstand.periodeTom &&
+                it.sivilstandskode == sivilstand.sivilstandskode
         }
     }
-    return false
 }
 
 fun List<BoforholdResponse>.erLik(

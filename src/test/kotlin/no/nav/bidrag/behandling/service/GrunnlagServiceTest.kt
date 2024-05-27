@@ -21,7 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -855,9 +855,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             )
 
             val bearbeidaBoforhold =
-                BoforholdApi.beregnV2(
+                BoforholdApi.beregnBoforholdBarnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    endretBoforhold.tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                    endretBoforhold.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
@@ -1774,9 +1774,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     ),
             )
 
-            entityManager.flush()
-            entityManager.refresh(behandling)
-
             val aktivereGrunnlagRequest =
                 AktivereGrunnlagRequestV2(
                     Personident(testdataHusstandsmedlem1.ident),
@@ -1785,9 +1782,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // hvis
             grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
-
-            // så
-            entityManager.refresh(behandling)
 
             assertSoftly(behandling.grunnlag) { g ->
                 g.isNotEmpty()
@@ -1912,11 +1906,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
             )
 
             val bearbeidaBoforhold =
-                BoforholdApi.beregnV2(
+                BoforholdApi.beregnBoforholdBarnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                         rådataBoforhold.data,
-                    ).tilBoforholdRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                    ).tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
