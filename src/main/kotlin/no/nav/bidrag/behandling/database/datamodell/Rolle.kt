@@ -15,11 +15,14 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Entity(name = "rolle")
 @SQLDelete(sql = "UPDATE rolle SET deleted = true WHERE id=?")
 @SQLRestriction(value = "deleted=false")

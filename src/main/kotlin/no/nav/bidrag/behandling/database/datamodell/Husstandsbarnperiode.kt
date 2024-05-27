@@ -12,8 +12,11 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
 import java.time.LocalDate
 
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Entity
 @JsonIgnoreProperties(value = ["husstandsbarn", "id"])
 open class Husstandsbarnperiode(

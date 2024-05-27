@@ -29,6 +29,8 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import org.springframework.http.HttpStatus
@@ -41,6 +43,7 @@ import java.time.LocalDateTime
 @Entity(name = "behandling")
 @SQLDelete(sql = "UPDATE behandling SET deleted = true, slettet_tidspunkt = now() WHERE id=?")
 @SQLRestriction(value = "deleted=false")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 open class Behandling(
     @Enumerated(EnumType.STRING)
     open val vedtakstype: Vedtakstype,

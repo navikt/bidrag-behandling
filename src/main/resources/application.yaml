@@ -142,3 +142,7 @@ spring:
     locations: classpath:/db/migration
   jpa:
     database: postgresql
+    properties.hibernate.cache.region.factory_class: jcache
+    properties.hibernate.cache.use_query_cache: true
+    properties.hibernate.cache.use_second_level_cache: true
+    hibernate.javax.cache.provider: org.ehcache.jsr107.EhcacheCachingProvider

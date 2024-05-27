@@ -11,8 +11,11 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
 import java.time.LocalDate
 
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Entity(name = "sivilstand")
 open class Sivilstand(
     @ManyToOne(fetch = FetchType.LAZY)

@@ -17,11 +17,14 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDateTime
 
 @Entity(name = "grunnlag")
 @Schema(name = "GrunnlagEntity")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
