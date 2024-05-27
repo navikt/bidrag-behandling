@@ -11,8 +11,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
 import java.math.BigDecimal
 
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Entity(name = "inntektspost")
 open class Inntektspost(
     @Column(name = "belop")

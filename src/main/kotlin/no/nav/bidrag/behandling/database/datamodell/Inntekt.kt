@@ -15,9 +15,12 @@ import jakarta.persistence.OneToMany
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
 import java.math.BigDecimal
 import java.time.LocalDate
 
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Entity(name = "inntekt")
 open class Inntekt(
     @Enumerated(EnumType.STRING)

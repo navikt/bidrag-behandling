@@ -13,9 +13,12 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDate
 
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Entity
 open class Husstandsbarn(
     @ManyToOne(fetch = FetchType.LAZY)
