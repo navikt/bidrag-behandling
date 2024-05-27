@@ -17,6 +17,8 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import org.hibernate.annotations.ColumnTransformer
@@ -61,8 +63,18 @@ fun Rolle.tilNyestePersonident() = ident?.let { hentNyesteIdent(it) }
 fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""
 
 fun Rolle.lagreSivilstandshistorikk(historikk: Set<Sivilstand>) {
-    forrigeSivilstandshistorikk = tilJson(historikk)
+    forrigeSivilstandshistorikk = tilJson(historikk.tilSerialiseringsformat())
 }
+
+fun Set<Sivilstand>.tilSerialiseringsformat() =
+    this.map {
+        SivilstandUtenBehandling(
+            datoFom = it.datoFom,
+            datoTom = it.datoTom,
+            kilde = it.kilde,
+            sivilstand = it.sivilstand,
+        )
+    }
 
 fun Rolle.henteLagretSivilstandshistorikk(): Set<Sivilstand> {
     return jsonListeTilObjekt<Sivilstand>(
@@ -72,3 +84,15 @@ fun Rolle.henteLagretSivilstandshistorikk(): Set<Sivilstand> {
         ),
     )
 }
+
+data class SivilstandUtenBehandling(
+    open val datoFom: LocalDate? = null,
+    open val datoTom: LocalDate? = null,
+    @Enumerated(EnumType.STRING)
+    open val sivilstand: Sivilstandskode,
+    @Enumerated(EnumType.STRING)
+    open val kilde: Kilde,
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    open val id: Long? = null,
+)
