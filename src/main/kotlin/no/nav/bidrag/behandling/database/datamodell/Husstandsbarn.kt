@@ -42,6 +42,6 @@ open class Husstandsbarn(
 ) {
     override fun toString(): String {
         return "Husstandsbarn(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, perioder(size)=${perioder.size}, " +
-            "forrigePerioder=${forrigePerioder?.substring(0, 10)}...)"
+            "forrigePerioder=${forrigePerioder?.substring(0, maxOf(forrigePerioder!!.length, 10))}...)"
     }
 }

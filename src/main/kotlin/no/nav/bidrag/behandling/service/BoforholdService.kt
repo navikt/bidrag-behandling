@@ -24,16 +24,17 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.boforhold.tilDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
+import no.nav.bidrag.behandling.transformers.boforhold.tilPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validere
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
@@ -530,38 +531,26 @@ class BoforholdService(
             if (husstandsbarnSomSkalOppdateres.map { it.ident }.contains(nyttHusstandsbarn.ident)) {
                 val eksisterendeHusstandsbarn =
                     husstandsbarnSomSkalOppdateres.find { it.ident == nyttHusstandsbarn.ident }!!
-                val offentligeBostatuser = nyttHusstandsbarn.perioder.map { it.tilBostatus() }
 
-                val request =
-                    BoforholdBarnRequest(
-                        relatertPersonPersonId = eksisterendeHusstandsbarn.ident,
-                        fødselsdato = eksisterendeHusstandsbarn.fødselsdato,
-                        erBarnAvBmBp = true,
-                        innhentedeOffentligeOpplysninger = offentligeBostatuser,
-                        behandledeBostatusopplysninger = emptyList(),
-                        endreBostatus = null,
-                    )
+                val oppdatertePerioder =
+                    overskriveManuelleOpplysninger.ifTrue {
+                        nyttHusstandsbarn.perioder.forEach {
+                            it.husstandsbarn = eksisterendeHusstandsbarn
+                        }
+                        nyttHusstandsbarn.perioder
+                    } // Kjør ny periodisering for å oppdatere kilde på periodene basert på nye opplysninger
+                        ?: BoforholdApi.beregnBoforholdBarnV2(
+                            behandling.virkningstidspunktEllerSøktFomDato,
+                            listOf(
+                                eksisterendeHusstandsbarn.tilBoforholdbBarnRequest(),
+                            ),
+                        ).tilPerioder(eksisterendeHusstandsbarn)
 
-                val husstandsbarnperioder =
-                    when (overskriveManuelleOpplysninger) {
-                        false ->
-                            BoforholdApi.beregnBoforholdBarnV2(
-                                behandling.virkningstidspunktEllerSøktFomDato,
-                                listOf(request),
-                            ).tilHusstandsbarn(behandling).first().perioder
-
-                        true -> nyttHusstandsbarn.perioder
-                    }
                 eksisterendeHusstandsbarn.perioder.clear()
-                husstandsbarnperioder.forEach {
-                    it.husstandsbarn = eksisterendeHusstandsbarn
-                    entityManager.persist(it)
-                    eksisterendeHusstandsbarn.perioder.add(it)
-                }
+                eksisterendeHusstandsbarn.perioder.addAll(oppdatertePerioder)
                 // Legger nye offisielle husstandsbarn uten å kjøre ny periodisering
             } else {
-                entityManager.persist(nyttHusstandsbarn)
-                behandling.husstandsbarn.add(nyttHusstandsbarn)
+                behandling.husstandsbarn.add(husstandsbarnRepository.save(nyttHusstandsbarn))
             }
         }
     }
@@ -584,11 +573,20 @@ class BoforholdService(
                     val periodisertBoforhold =
                         BoforholdApi.beregnBoforholdBarnV2(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            listOf(bostatuser.tilBoforholdBarnRequest(offisieltBarn)),
+                            listOf(
+                                BoforholdBarnRequest(
+                                    relatertPersonPersonId = offisieltBarn.ident,
+                                    fødselsdato = offisieltBarn.fødselsdato,
+                                    erBarnAvBmBp = true,
+                                    innhentedeOffentligeOpplysninger =
+                                        offisieltBarn.perioder.map { it.tilBostatus() }
+                                            .sortedBy { it.periodeFom },
+                                    behandledeBostatusopplysninger = manueltBarn.perioder.map { it.tilBostatus() },
+                                    endreBostatus = null,
+                                ),
+                            ),
                         )
-                    val hbp =
-                        periodisertBoforhold.tilHusstandsbarn(offisieltBarn.behandling)
-                            .flatMap { it.perioder }
+                    val hbp = periodisertBoforhold.tilPerioder(offisieltBarn)
 
                     manueltBarn.perioder.clear()
                     manueltBarn.perioder.addAll(hbp.toSet())
