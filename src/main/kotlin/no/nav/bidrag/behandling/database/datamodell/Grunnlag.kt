@@ -46,7 +46,7 @@ open class Grunnlag(
     override fun toString(): String {
         return try {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
-                    "id=$id, behandling=${behandling.id}, innhentet=$innhentet, gjelder=$gjelder)"
+                "id=$id, behandling=${behandling.id}, innhentet=$innhentet, gjelder=$gjelder)"
         } catch (e: Exception) {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
@@ -71,9 +71,10 @@ fun Set<Grunnlag>.hentSisteAktiv() =
         .values
         .filterNotNull()
 
-fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) = hentSisteAktiv()
-    .find { it.erBearbeidet == erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
-    .konvertereData<Set<Sivilstand>>()
+fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
+    hentSisteAktiv()
+        .find { it.erBearbeidet == erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
+        .konvertereData<Set<Sivilstand>>()
 
 fun Husstandsbarn.hentSisteBearbeidetBoforhold() =
     behandling.grunnlag.hentSisteAktiv()
@@ -97,7 +98,3 @@ fun List<Grunnlag>.hentBearbeidetInntekterForType(
 inline fun <reified T> Grunnlag?.konvertereData(): T? {
     return this?.data?.let { objectmapper.readValue(it) }
 }
-
-
-
-

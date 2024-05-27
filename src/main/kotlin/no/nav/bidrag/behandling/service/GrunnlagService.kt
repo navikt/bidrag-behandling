@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForTy
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
-import no.nav.bidrag.behandling.database.datamodell.konverterData
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -255,7 +255,7 @@ class GrunnlagService(
                 log.warn { "Fant ikke en aktiv sivilstand grunnlag. Gjør ingen endring etter oppdatert virkningstidspunkt" }
                 return
             }
-        val sivilstandBeregnet = sisteAktiveGrunnlag.konverterData<Set<SivilstandGrunnlagDto>>()!!
+        val sivilstandBeregnet = sisteAktiveGrunnlag.konvertereData<Set<SivilstandGrunnlagDto>>()!!
         val sivilstandPeriodisert =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
@@ -279,7 +279,7 @@ class GrunnlagService(
                 log.warn { "Fant ingen aktiv boforhold grunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
                 return
             }
-        val boforhold = sisteAktiveGrunnlag.konverterData<List<RelatertPersonGrunnlagDto>>()!!
+        val boforhold = sisteAktiveGrunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>()!!
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,

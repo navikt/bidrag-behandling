@@ -33,7 +33,7 @@ fun Set<Sivilstand>.tilSivilstandGrunnlagDto() =
 fun Set<Sivilstand>.tilSvilstandRequest() =
     SivilstandRequest(
         manuellePerioder = this.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto(),
-        offentligePerioder = this.filter { Kilde.OFFENTLIG == it.kilde }.toSet().tilSivilstandGrunnlagDto()
+        offentligePerioder = this.filter { Kilde.OFFENTLIG == it.kilde }.toSet().tilSivilstandGrunnlagDto(),
     )
 
 fun Sivilstandskode.tilSivilstandskodePDL() =
@@ -81,4 +81,3 @@ fun Behandling.overskriveMedBearbeidaSivilstandshistorikk(nyHistorikk: Set<Sivil
     this.sivilstand.clear()
     this.sivilstand.addAll(nyHistorikk.tilSivilstand(this))
 }
-

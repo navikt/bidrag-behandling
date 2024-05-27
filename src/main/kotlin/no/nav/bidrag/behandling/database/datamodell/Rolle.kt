@@ -68,8 +68,7 @@ fun Rolle.henteLagretSivilstandshistorikk(): Set<Sivilstand> {
     return jsonListeTilObjekt<Sivilstand>(
         forrigeSivilstandshistorikk ?: oppdateringAvBoforholdFeilet(
             "Fant ikke tidligere lagret sivilstandshistorikk for " +
-                    "bidragsmottaker i behandling ${behandling.id}"
-        )
+                "bidragsmottaker i behandling ${behandling.id}",
+        ),
     )
 }
-
