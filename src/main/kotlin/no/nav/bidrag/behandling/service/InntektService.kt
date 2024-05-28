@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
 import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
@@ -36,6 +37,7 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.YearMonth
 
 private val log = KotlinLogging.logger {}
@@ -90,7 +92,13 @@ class InntektService(
         }
         behandling.inntekter.removeAll(inntekterSomSkalSlettes)
 
-        val lagretInntekter = inntektRepository.saveAll(summerteÅrsinntekter.tilInntekt(behandling, personident))
+        val lagretInntekter =
+            inntektRepository.saveAll(
+                summerteÅrsinntekter.tilInntekt(behandling, personident).map {
+                    it.automatiskTaMedYtelserFraNav()
+                    it
+                },
+            )
         behandling.inntekter.addAll(lagretInntekter)
     }
 
@@ -329,6 +337,26 @@ class InntektService(
             idTilInntekterSomBleOppdatert.add(nyInntekt.id!!)
             behandling.inntekter.add(nyInntekt)
             log.info { "Ny offisiell inntekt ${nyInntekt.id} ble lagt til i behandling ${behandling.id} for rolle ${rolle.rolletype}" }
+        }
+    }
+
+    private fun Inntekt.automatiskTaMedYtelserFraNav() {
+        if (eksplisitteYtelser.contains(type)) {
+            taMed = true
+            datoFom = opprinneligFom
+            datoTom =
+                if (opprinneligTom != null &&
+                    opprinneligTom!!.isAfter(
+                        maxOf(
+                            LocalDate.now(),
+                            behandling!!.virkningstidspunktEllerSøktFomDato,
+                        ),
+                    )
+                ) {
+                    null
+                } else {
+                    opprinneligTom
+                }
         }
     }
 
