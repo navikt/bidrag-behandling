@@ -81,19 +81,19 @@ class HentBehandlingTest : BehandlingControllerTest() {
             }
 
             assertSoftly(inntekterAlle) {
-                summertInntektListe shouldHaveSize 1
+                summertInntektListe shouldHaveSize 4
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
                 summertInntektListe[0].barnetillegg shouldBe null
                 summertInntektListe[0].kontantstøtte shouldBe null
             }
             assertSoftly(inntekterBarn2) {
-                summertInntektListe shouldHaveSize 1
+                summertInntektListe shouldHaveSize 4
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
                 summertInntektListe[0].barnetillegg shouldBe null
                 summertInntektListe[0].kontantstøtte shouldBe null
             }
             assertSoftly(inntekterBarn1) {
-                summertInntektListe shouldHaveSize 1
+                summertInntektListe shouldHaveSize 5
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
                 summertInntektListe[0].barnetillegg shouldBe BigDecimal(5000)
                 summertInntektListe[0].kontantstøtte shouldBe null

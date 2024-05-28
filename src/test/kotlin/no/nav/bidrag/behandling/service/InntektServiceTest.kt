@@ -147,6 +147,122 @@ class InntektServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        open fun `skal lagre innnhentede ytelser og automatisk ta med for beregning`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling()
+
+            val summerteInntekter =
+                SummerteInntekter(
+                    versjon = "xyz",
+                    inntekter =
+                        listOf(
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.BARNETILLEGG,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2024-01"),
+                                        YearMonth.parse("2035-01"),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.SMÅBARNSTILLEGG,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.SMÅBARNSTILLEGG,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        null,
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.AINNTEKT,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.LIGNINGSINNTEKT,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                            SummertÅrsinntekt(
+                                inntektRapportering = Inntektsrapportering.KONTANTSTØTTE,
+                                periode =
+                                    ÅrMånedsperiode(
+                                        YearMonth.parse("2023-01"),
+                                        YearMonth.parse("2024-01"),
+                                    ),
+                                sumInntekt = BigDecimal(500),
+                            ),
+                        ),
+                )
+
+            // hvis
+            inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
+                behandling.id!!,
+                personident = Personident(behandling.bidragsmottaker?.ident!!),
+                summerteÅrsinntekter = summerteInntekter.inntekter,
+            )
+
+            entityManager.merge(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            val inntekter = oppdatertBehandling.get().inntekter
+            val inntekterIkkeValgt = inntekter.filter { !it.taMed }
+            val inntekterValgt = inntekter.filter { it.taMed }
+            assertSoftly {
+                inntekterValgt shouldHaveSize 6
+                inntekterIkkeValgt shouldHaveSize 3
+            }
+        }
+
+        @Test
+        @Transactional
         open fun `skal lagre innnhentede inntekter for BARNETILLEGG`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling()
@@ -185,6 +301,9 @@ class InntektServiceTest : TestContainerRunner() {
                 val barnetillegg =
                     oppdatertBehandling.get().inntekter.first { Inntektsrapportering.BARNETILLEGG == it.type }
                 barnetillegg.belop shouldBe (500).toBigDecimal()
+                barnetillegg.taMed shouldBe true
+                barnetillegg.datoFom shouldBe barnetillegg.opprinneligFom
+                barnetillegg.datoTom shouldBe barnetillegg.opprinneligTom
                 barnetillegg.inntektsposter.size shouldBe 1
                 barnetillegg.inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
                 barnetillegg.inntektsposter.first().beløp shouldBe (500).toBigDecimal()
