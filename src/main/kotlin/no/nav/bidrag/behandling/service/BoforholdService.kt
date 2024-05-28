@@ -453,7 +453,7 @@ class BoforholdService(
                 val offisieltBarn = nyttPeriodisertBoforhold.find { manueltBarn.ident == it.ident }
 
                 log.info {
-                    "Slår sammen manuelt husstandsbarn med id ${manueltBarn.id} med informasjon fra offentlige registre. Oppgraderer kilde til barnet til OFFISIELT"
+                    "Slår sammen manuelt husstandsbarn med id ${manueltBarn.id} med informasjon fra offentlige registre. Oppgraderer kilde til barnet til OFFENTLIG"
                 }
                 offisieltBarn!!.resetTilOffentligePerioder()
                 val periodisertBoforhold =
