@@ -431,6 +431,7 @@ class BoforholdService(
                             ),
                         ).tilPerioder(eksisterendeHusstandsbarn)
 
+                eksisterendeHusstandsbarn.lagreEksisterendePerioder()
                 eksisterendeHusstandsbarn.perioder.clear()
                 eksisterendeHusstandsbarn.perioder.addAll(oppdatertePerioder)
                 // Legger nye offisielle husstandsbarn uten å kjøre ny periodisering

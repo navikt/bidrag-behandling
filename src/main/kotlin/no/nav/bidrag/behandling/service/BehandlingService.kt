@@ -215,6 +215,7 @@ class BehandlingService(
             log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+            grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
 
             log.info { "Virkningstidspunkt er endret. Beregner sivilstand perioder på nytt for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling)

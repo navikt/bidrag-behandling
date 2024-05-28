@@ -176,7 +176,7 @@ fun Behandling.validerForBeregning() {
                         grunnlagSomMåBekreftes.type,
                         husstandsbarn =
                             (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                husstandsbarn.find { it.ident == grunnlagSomMåBekreftes.gjelder }
+                                husstandsbarn.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
                             },
                     )
                 }.toSet()

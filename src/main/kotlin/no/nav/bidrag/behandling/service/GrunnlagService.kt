@@ -44,6 +44,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekter
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
@@ -612,6 +613,38 @@ class GrunnlagService(
         if (bmsNyesteBearbeidaBoforholdFørLagring.isEmpty() && bmsNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
+        aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
+    }
+
+    fun aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling: Behandling) {
+        val rolleInhentetFor = behandling.bidragsmottaker!! // TODO: Dette skal være BP i særtilskudd
+        val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+        if (ikkeAktiveGrunnlag.isEmpty()) return
+        val endringerSomMåBekreftes =
+            ikkeAktiveGrunnlag.hentEndringerBoforhold(
+                aktiveGrunnlag,
+                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.husstandsbarn,
+                rolleInhentetFor,
+            )
+
+        behandling.husstandsbarn.filter { it.kilde == Kilde.OFFENTLIG }
+            .filter { hb -> endringerSomMåBekreftes.none { it.ident == hb.ident } }
+            .forEach { hb ->
+                val ikkeAktivGrunnlag =
+                    ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.BOFORHOLD, rolleInhentetFor.ident!!)
+                        .find { it.gjelder != null && it.gjelder == hb.ident } ?: return@forEach
+                log.info {
+                    "Ikke aktive boforhold grunnlag ${ikkeAktivGrunnlag.id} med type ${Grunnlagsdatatype.BOFORHOLD}" +
+                        " for rolle ${rolleInhentetFor.rolletype}" +
+                        " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. " +
+                        "Automatisk aktiverer ny innhentet grunnlag."
+                }
+                ikkeAktivGrunnlag.aktiv = LocalDateTime.now()
+            }
+
+        aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
     }
 
     private fun innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag: HentGrunnlagDto): Boolean =
