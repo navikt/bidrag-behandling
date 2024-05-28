@@ -865,18 +865,34 @@ class GrunnlagService(
                 aktivereSisteInnhentedeRådata(grunnlagstype.type, innhentetForRolle, behandling)
             }
         } else if (erGrunnlagEndret) {
+            val uaktiverteGrunnlag =
+                behandling.henteUaktiverteGrunnlag(grunnlagstype, innhentetForRolle)
+                    .filter { gjelderPerson == null || it.gjelder == gjelderPerson?.verdi }
             val grunnlagSomSkalOppdateres =
-                behandling.henteUaktiverteGrunnlag(grunnlagstype, innhentetForRolle).maxBy { it.innhentet }
+                uaktiverteGrunnlag
+                    .maxBy { it.innhentet }
+
+            log.info {
+                "Oppdaterer uaktivert grunnlag ${grunnlagSomSkalOppdateres.id} " +
+                    "i behandling ${behandling.id} med ny innhentet grunnlagsdata"
+            }
             grunnlagSomSkalOppdateres.data = tilJson(innhentetGrunnlag)
             grunnlagSomSkalOppdateres.innhentet = LocalDateTime.now()
             grunnlagSomSkalOppdateres.aktiv = aktiveringstidspunkt
 
-            behandling.henteUaktiverteGrunnlag(grunnlagstype, innhentetForRolle).forEach {
-                if (it.id != grunnlagSomSkalOppdateres.id) {
+            uaktiverteGrunnlag.filter { it.id != grunnlagSomSkalOppdateres.id }
+                .forEach {
+                    log.info {
+                        "Sletter grunnlag ${it.id} fra behandling ${behandling.id} " +
+                            "fordi den er duplikat av grunnlag ${grunnlagSomSkalOppdateres.id}"
+                    }
+                    secureLogger.info {
+                        "Sletter grunnlag ${it.id} fra behandling ${behandling.id} " +
+                            "fordi den er duplikat av grunnlag ${grunnlagSomSkalOppdateres.id}: $it"
+                    }
                     behandling.grunnlag.remove(it)
                     grunnlagRepository.deleteById(it.id!!)
                 }
-            }
         } else {
             log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandling." }
         }
