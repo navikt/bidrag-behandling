@@ -82,7 +82,7 @@ class BoforholdService(
             behandlingRepository.findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        behandling.inntektsbegrunnelseKunINotat = request.kunINotat ?: behandling.inntektsbegrunnelseKunINotat
+        behandling.boforholdsbegrunnelseKunINotat = request.kunINotat ?: behandling.boforholdsbegrunnelseKunINotat
 
         return OppdatereBoforholdResponse(
             oppdatertNotat = request,
