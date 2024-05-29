@@ -274,6 +274,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     true,
+                    testdataBarn1.tilPersonDto().ident,
                 )
 
                 // så
@@ -356,12 +357,23 @@ class BoforholdServiceTest : TestContainerRunner() {
                         grunnlagBoforhold.tilBoforholdbBarnRequest(periodeFom),
                     )
 
+                periodisertBoforhold.groupBy { it.relatertPersonPersonId }.forEach { (personId, boforhold) ->
+                    testdataManager.oppretteOgLagreGrunnlag(
+                        behandling = behandling,
+                        grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                        gjelderIdent = personId,
+                        grunnlagsdata = boforhold,
+                    )
+                }
+                testdataManager.lagreBehandling(behandling)
+
                 // hvis
                 boforholdService.oppdatereAutomatiskInnhentaBoforhold(
                     behandling,
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
-                    false,
+                    true,
+                    testdataBarn1.tilPersonDto().ident,
                 )
 
                 // så
@@ -382,7 +394,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }) { barn2 ->
                     barn2 shouldNotBe null
-                    barn2!!.perioder.size shouldBe 2
+                    barn2!!.perioder.size shouldBe 3
                     barn2.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 0
                     barn2.perioder.last().kilde shouldBe Kilde.OFFENTLIG
                     barn2.perioder.last().datoFom shouldBe LocalDate.of(2022, 1, 1)
@@ -441,6 +453,15 @@ class BoforholdServiceTest : TestContainerRunner() {
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     false,
+                    testdataBarn2.tilPersonDto().ident,
+                )
+
+                boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                    behandling,
+                    periodisertBoforhold,
+                    grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                    true,
+                    testdataBarn1.tilPersonDto().ident,
                 )
 
                 // så
@@ -523,6 +544,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     true,
+                    testdataBarn2.tilPersonDto().ident,
                 )
 
                 // så

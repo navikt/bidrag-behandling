@@ -220,6 +220,7 @@ class BehandlingService(
             log.info { "Virkningstidspunkt er endret. Beregner sivilstand perioder på nytt for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling)
             // TODO: Legg til rekalkulering av sivilstandperioder
+            // TODO: Legg til aktivering av grunnlag hvis det ikke kreves bekreftelse
 
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)

@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
+import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -275,7 +276,7 @@ class GrunnlagService(
         val sisteAktiveGrunnlag =
             behandling.henteNyesteAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
-                behandling.bidragsmottaker!!,
+                behandling.rolleSomBoforholdSkalHentesFor!!,
             ) ?: run {
                 log.warn { "Fant ingen aktiv boforhold grunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
                 return
@@ -299,7 +300,7 @@ class GrunnlagService(
     ) {
         behandling.henteAktiverteGrunnlag(
             Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-            behandling.bidragsmottaker!!,
+            behandling.rolleSomBoforholdSkalHentesFor!!,
         ).find { it.gjelder == gjelder }?.let {
             it.data = tilJson(perioder)
         }
@@ -372,7 +373,7 @@ class GrunnlagService(
                     aktiveGrunnlag,
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsbarn,
-                    behandling.bidragsmottaker!!,
+                    behandling.rolleSomBoforholdSkalHentesFor!!,
                 ),
             sivilstand =
                 nyinnhentetGrunnlag.hentEndringerSivilstand(
@@ -411,13 +412,6 @@ class GrunnlagService(
                 .filter { gjelderHusstandsbarn.verdi == it.gjelder && grunnlagstype == it.type }
                 .firstOrNull { it.erBearbeidet }
 
-        val bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting =
-            behandling
-                .henteNyesteGrunnlag(Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false), behandling.bidragsmottaker!!)
-                ?.data?.let { jsonListeTilObjekt<RelatertPersonGrunnlagDto>(it) }
-                ?.filter { it.erBarnAvBmBp && it.relatertPersonPersonId != null }
-                ?.groupBy { it.relatertPersonPersonId!! }?.map { Personident(it.key) }?.toSet()
-
         if (nyesteIkkeAktiverteBoforholdForHusstandsmedlem == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
@@ -426,12 +420,21 @@ class GrunnlagService(
             )
         }
 
+        val bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting =
+            behandling
+                .grunnlag.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(
+                    behandling.rolleSomBoforholdSkalHentesFor!!,
+                )
+
         // TOOD: Vurdere å trigge ny grunnlagsinnhenting
         if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.isNullOrEmpty()) {
-            log.error { "Fant ingen husstandsmedlemmer i nyeste boforholdsgrunnlag for BM i behandling ${behandling.id}" }
+            log.error {
+                "Fant ingen husstandsmedlemmer som er barn av ${behandling.rolleSomBoforholdSkalHentesFor!!.rolletype} i nyeste boforholdsgrunnlag i behandling ${behandling.id}"
+            }
             throw HttpClientErrorException(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "Fant ingen husstandsmedlemmer i nyeste boforholdsgrunnlag for BM i behandling ${behandling.id}",
+                "Fant ingen husstandsmedlemmer som er barn av " +
+                    "${behandling.rolleSomBoforholdSkalHentesFor!!.rolletype} i nyeste boforholdsgrunnlag i behandling ${behandling.id}",
             )
         }
 
@@ -440,6 +443,7 @@ class GrunnlagService(
             jsonTilObjekt<List<BoforholdResponse>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem.data),
             bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
             overskriveManuelleOpplysninger,
+            gjelderHusstandsbarn,
         )
 
         nyesteIkkeAktiverteBoforholdForHusstandsmedlem.aktiv = LocalDateTime.now()

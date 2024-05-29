@@ -113,6 +113,7 @@ class BoforholdService(
         periodisertBoforhold: List<BoforholdResponse>,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
         overskriveManuelleOpplysninger: Boolean,
+        gjelderHusstandsbarn: Personident,
     ) {
         val nyeHusstandsbarnMedPerioder = periodisertBoforhold.tilHusstandsbarn(behandling)
         // Ved overskriving bevares manuelle barn, men dersom manuelt barn med personident også finnes i grunnlag,
@@ -121,6 +122,7 @@ class BoforholdService(
             sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
                 behandling,
                 bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
+                gjelderHusstandsbarn,
             )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
@@ -131,6 +133,7 @@ class BoforholdService(
             endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
                 behandling,
                 bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
+                gjelderHusstandsbarn,
             )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
@@ -139,7 +142,14 @@ class BoforholdService(
             leggeTilNyeEllerOppdatereEksisterendeOffentligeHusstandsbarn(behandling, nyeHusstandsbarnMedPerioder)
         }
 
-        log.info { "Husstandsbarn ble oppdatert for behandling ${behandling.id}" }
+        log.info {
+            "Husstandsbarn ble oppdatert for behandling ${behandling.id} " +
+                "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+        }
+        secureLogger.info {
+            "Husstandsbarn ${gjelderHusstandsbarn.verdi} ble oppdatert for behandling ${behandling.id} " +
+                "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+        }
     }
 
     @Transactional
@@ -366,6 +376,10 @@ class BoforholdService(
     ) {
         husstandsbarnSomSkalSlettes.perioder.clear()
         sletteHusstandsbarn(behandling, setOf(husstandsbarnSomSkalSlettes))
+        secureLogger.info {
+            "Slettet $husstandsbarnSomSkalSlettes husstandsbarn fra behandling ${behandling.id} i " +
+                "forbindelse med førstegangsoppdatering av boforhold."
+        }
     }
 
     // Sikrer mot ConcurrentModificationException
@@ -383,24 +397,15 @@ class BoforholdService(
     private fun sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
+        gjelderHusstandsbarn: Personident,
     ) {
-        var husstandsbarnSomSkalSlettes: Set<Husstandsbarn> = emptySet()
+        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsbarn.verdi }) return
 
-        behandling.husstandsbarn.asSequence().filter { i -> Kilde.OFFENTLIG == i.kilde }
-            .forEach { eksisterendeHusstandsbarn ->
-
-                val eksisterendeHusstandsbarnOppdateres =
-                    bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
-                        .contains(eksisterendeHusstandsbarn.ident)
-
-                if (!eksisterendeHusstandsbarnOppdateres) {
-                    eksisterendeHusstandsbarn.perioder.clear()
-                    husstandsbarnSomSkalSlettes = husstandsbarnSomSkalSlettes.plus(eksisterendeHusstandsbarn)
-                }
+        behandling.husstandsbarn.find { i -> Kilde.OFFENTLIG == i.kilde && i.ident == gjelderHusstandsbarn.verdi }
+            ?.let { eksisterendeHusstandsbarn ->
+                eksisterendeHusstandsbarn.perioder.clear()
+                sletteHusstandsbarn(behandling, eksisterendeHusstandsbarn)
             }
-        if (husstandsbarnSomSkalSlettes.isNotEmpty()) {
-            sletteHusstandsbarn(behandling, husstandsbarnSomSkalSlettes)
-        }
     }
 
     private fun leggeTilNyeEllerOppdatereEksisterendeOffentligeHusstandsbarn(
@@ -434,9 +439,18 @@ class BoforholdService(
                 eksisterendeHusstandsbarn.lagreEksisterendePerioder()
                 eksisterendeHusstandsbarn.perioder.clear()
                 eksisterendeHusstandsbarn.perioder.addAll(oppdatertePerioder)
+                log.info {
+                    "Oppdaterte husstandsbarn ${eksisterendeHusstandsbarn.id} i behandling ${behandling.id} med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+                }
+                secureLogger.info {
+                    "Oppdaterte husstandsbarn $eksisterendeHusstandsbarn i behandling ${behandling.id} med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+                }
                 // Legger nye offisielle husstandsbarn uten å kjøre ny periodisering
             } else {
-                behandling.husstandsbarn.add(husstandsbarnRepository.save(nyttHusstandsbarn))
+                val nyHusstandsbarn = husstandsbarnRepository.save(nyttHusstandsbarn)
+                behandling.husstandsbarn.add(nyHusstandsbarn)
+                log.info { "Ny husstandsbarn ${nyHusstandsbarn.id} ble opprettett i behandling ${behandling.id}" }
+                secureLogger.info { "Ny husstandsbarn $nyHusstandsbarn ble opprettett i behandling ${behandling.id}" }
             }
         }
     }
@@ -486,15 +500,17 @@ class BoforholdService(
     private fun endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
+        gjelderHusstandsbarn: Personident,
     ) {
-        behandling.husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.forEach { eksisterendeHusstandsbarn ->
-            if (!bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
-                    .contains(eksisterendeHusstandsbarn.ident)
-            ) {
+        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsbarn.verdi }) return
+
+        behandling.husstandsbarn.find { Kilde.OFFENTLIG == it.kilde && it.ident == gjelderHusstandsbarn.verdi }
+            ?.let { eksisterendeHusstandsbarn ->
+                log.info { "Oppdaterer husstandsbarn ${eksisterendeHusstandsbarn.id} til kilde MANUELL i behandling ${behandling.id}" }
+                secureLogger.info { "Oppdaterer husstandsbarn $eksisterendeHusstandsbarn til kilde MANUELL i behandling ${behandling.id}" }
                 eksisterendeHusstandsbarn.kilde = Kilde.MANUELL
                 eksisterendeHusstandsbarn.perioder.forEach { periode -> periode.kilde = Kilde.MANUELL }
             }
-        }
     }
 
     companion object {
