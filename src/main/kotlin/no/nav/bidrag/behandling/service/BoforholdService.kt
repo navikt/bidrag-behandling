@@ -434,7 +434,10 @@ class BoforholdService(
                         ?: BoforholdApi.beregnBoforholdBarnV2(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             listOf(
-                                eksisterendeHusstandsbarn.tilBoforholdbBarnRequest(),
+                                eksisterendeHusstandsbarn.tilBoforholdbBarnRequest()
+                                    .copy(
+                                        innhentedeOffentligeOpplysninger = nyttHusstandsbarn.perioder.map { it.tilBostatus() },
+                                    ),
                             ),
                         ).tilPerioder(eksisterendeHusstandsbarn)
 
