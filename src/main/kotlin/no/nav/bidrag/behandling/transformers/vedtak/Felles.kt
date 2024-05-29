@@ -15,7 +15,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.sak.RolleDto
 
 val grunnlagstyperSomIkkeTrengerÅBekreftes =
-    listOf(Grunnlagsdatatype.SIVILSTAND, Grunnlagsdatatype.ARBEIDSFORHOLD)
+    listOf(Grunnlagsdatatype.SIVILSTAND, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.ARBEIDSFORHOLD)
 
 fun Set<Grunnlag>.hentAlleSomMåBekreftes() = hentAlleIkkeAktiv().filter { !grunnlagstyperSomIkkeTrengerÅBekreftes.contains(it.type) }
 
