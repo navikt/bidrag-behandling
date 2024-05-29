@@ -295,7 +295,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val søknadsid = 123213L
             val actualBehandling = behandlingRepository.save(prepareBehandling(søknadsid))
             behandlingRepository.delete(actualBehandling)
-            stubUtils.stubHenteGrunnlagOk()
+            stubUtils.stubHenteGrunnlag()
             stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
             stubKodeverkProvider()
             kjøreStubber(actualBehandling)

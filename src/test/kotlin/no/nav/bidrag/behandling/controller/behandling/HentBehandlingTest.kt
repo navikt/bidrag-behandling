@@ -4,10 +4,12 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
@@ -33,15 +35,15 @@ class HentBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal hente behandling`() {
         // gitt
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             navnResponsfil = "grunnlagresponse.json",
             rolle = testdataBM.tilRolle(),
         )
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             tomRespons = true,
             rolle = testdataBarn1.tilRolle(),
         )
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             tomRespons = true,
             rolle = testdataBarn2.tilRolle(),
         )
@@ -136,6 +138,52 @@ class HentBehandlingTest : BehandlingControllerTest() {
             )
 
         Assertions.assertEquals(HttpStatus.FORBIDDEN, behandlingRes.statusCode)
+    }
+
+    @Test
+    fun `skal hente behandling med informajson om feil ved siste grunnlagsinnhenting`() {
+        // gitt
+        val fomdatoIFeilrespons = LocalDate.of(2020, 6, 1)
+        val tildatoIFeilrespons = LocalDate.of(2023, 7, 1)
+        val feilmeldingIFeilrespons = "Feil ved henting av ainntekt."
+
+        stubUtils.stubHenteGrunnlag(
+            navnResponsfil = "hente-grunnlagrespons-med-feil.json",
+            rolle = testdataBM.tilRolle(),
+        )
+        stubUtils.stubHenteGrunnlag(
+            tomRespons = true,
+            rolle = testdataBarn1.tilRolle(),
+        )
+        stubUtils.stubHenteGrunnlag(
+            tomRespons = true,
+            rolle = testdataBarn2.tilRolle(),
+        )
+
+        val behandling = testdataManager.lagreBehandling(opprettBehandling())
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/" + behandling.id,
+                HttpMethod.GET,
+                null,
+                BehandlingDtoV2::class.java,
+            )
+
+        // så
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+
+        assertSoftly(behandlingRes.body?.feilOppståttVedSisteGrunnlagsinnhenting) { feil ->
+            feil shouldNotBe null
+            feil!! shouldHaveSize 2
+            feil.first().rolleid shouldBe behandling.bidragsmottaker!!.id!!
+            feil.first().periode.fom shouldBe fomdatoIFeilrespons
+            feil.first().periode.til shouldBe tildatoIFeilrespons
+            feil.first().feilmelding shouldBe feilmeldingIFeilrespons
+            feil.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.grunnlagsdatatype } shouldHaveSize 1
+            feil.filter { Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == it.grunnlagsdatatype } shouldHaveSize 1
+        }
     }
 
     private fun opprettBehandling(): Behandling {

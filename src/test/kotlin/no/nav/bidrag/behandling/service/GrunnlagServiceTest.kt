@@ -132,9 +132,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
             behandling.roller.forEach {
                 when (it.rolletype) {
-                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
                     Rolletype.BARN ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             rolle = it,
                             navnResponsfil = "hente-grunnlagrespons-barn1.json",
                         )
@@ -197,9 +197,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
             behandling.roller.forEach {
                 when (it.rolletype) {
-                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
                     Rolletype.BARN ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             rolle = it,
                             navnResponsfil = "hente-grunnlagrespons-barn1.json",
                         )
@@ -306,7 +306,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             behandling.roller.forEach {
                 when (it.rolletype) {
                     Rolletype.BIDRAGSMOTTAKER ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             rolle = it,
                             responsobjekt =
                                 tilHentGrunnlagDto(
@@ -317,7 +317,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                 ),
                         )
 
-                    else -> stubUtils.stubHenteGrunnlagOk(rolle = it, tomRespons = true)
+                    else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
                 }
             }
 
@@ -414,7 +414,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             behandling.roller.forEach {
                 when (it.rolletype) {
                     Rolletype.BIDRAGSMOTTAKER ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             rolle = it,
                             responsobjekt =
                                 tilHentGrunnlagDto(
@@ -425,7 +425,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                 ),
                         )
 
-                    else -> stubUtils.stubHenteGrunnlagOk(rolle = it, tomRespons = true)
+                    else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
                 }
             }
 
@@ -509,7 +509,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             behandling.roller.forEach {
                 when (it.rolletype) {
                     Rolletype.BIDRAGSMOTTAKER ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             rolle = it,
                             responsobjekt =
                                 tilHentGrunnlagDto(
@@ -520,7 +520,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                 ),
                         )
 
-                    else -> stubUtils.stubHenteGrunnlagOk(rolle = it, tomRespons = true)
+                    else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
                 }
             }
 
@@ -570,7 +570,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             behandling.roller.forEach {
                 when (it.rolletype) {
                     Rolletype.BIDRAGSMOTTAKER ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             it,
                             responsobjekt =
                                 tilHentGrunnlagDto(
@@ -581,7 +581,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                 ),
                         )
 
-                    Rolletype.BARN -> stubUtils.stubHenteGrunnlagOk(it, tomRespons = true)
+                    Rolletype.BARN -> stubUtils.stubHenteGrunnlag(it, tomRespons = true)
 
                     else -> throw Exception()
                 }
@@ -634,7 +634,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal lagre tomt grunnlag uten å sette til aktiv dersom sist lagrede grunnlag ikke var tomt`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false)
-            stubUtils.stubHenteGrunnlagOk(tomRespons = true)
+            stubUtils.stubHenteGrunnlag(tomRespons = true)
 
             val småbarnstillegg =
                 SmåbarnstilleggGrunnlagDto(
@@ -705,9 +705,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val behandling = testdataManager.oppretteBehandling(false)
             behandling.roller.forEach {
                 when (it.rolletype) {
-                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
                     Rolletype.BARN ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             rolle = it,
                             navnResponsfil = "hente-grunnlagrespons-barn1.json",
                         )
@@ -801,9 +801,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val behandling = testdataManager.oppretteBehandling(false)
             behandling.roller.forEach {
                 when (it.rolletype) {
-                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
                     Rolletype.BARN ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             rolle = it,
                             navnResponsfil = "hente-grunnlagrespons-barn1.json",
                         )
@@ -905,7 +905,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal ikke lagre tomt grunnlag dersom sist lagrede grunnlag var tomt`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false)
-            stubUtils.stubHenteGrunnlagOk(tomRespons = true)
+            stubUtils.stubHenteGrunnlag(tomRespons = true)
 
             val lagretGrunnlag =
                 behandlingRepository.findBehandlingById(behandling.id!!).get().grunnlag
@@ -1876,9 +1876,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val behandling = testdataManager.oppretteBehandling(false)
             behandling.roller.forEach {
                 when (it.rolletype) {
-                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlagOk(it)
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
                     Rolletype.BARN ->
-                        stubUtils.stubHenteGrunnlagOk(
+                        stubUtils.stubHenteGrunnlag(
                             rolle = it,
                             navnResponsfil = "hente-grunnlagrespons-barn1.json",
                         )
@@ -2094,7 +2094,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            behandling.grunnlag shouldBe emptySet()
+            assertSoftly(behandling) { b ->
+                b.grunnlag shouldHaveSize 0
+                b.grunnlagsinnhentingFeilet shouldNotBe null
+            }
         }
     }
 

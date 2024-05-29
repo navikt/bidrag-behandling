@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
+import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
@@ -159,6 +160,7 @@ class GrunnlagService(
             behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
 
             if (feilrapporteringer.isNotEmpty()) {
+                behandling.grunnlagsinnhentingFeilet = objectmapper.writeValueAsString(feilrapporteringer)
                 secureLogger.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +

@@ -29,6 +29,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import org.springframework.http.HttpStatus
@@ -94,7 +95,9 @@ open class Behandling(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
-    open var grunnlagspakkeid: Long? = null,
+    @Column(name = "grunnlagsinnhenting_feilet", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    open var grunnlagsinnhentingFeilet: String? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
