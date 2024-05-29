@@ -47,13 +47,6 @@ class Jsonoperasjoner {
                 .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
                 .fromJsonList<T>(json).toSet()
 
-        inline fun <reified T, V> jsonMapTilObjekt(json: String) =
-            GsonBuilder()
-                .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJsonMap<T, V>(json)
-
         inline fun <reified T> jsonTilObjekt(json: String) =
             GsonBuilder()
                 .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
@@ -64,15 +57,6 @@ class Jsonoperasjoner {
 }
 
 inline fun <reified T> Gson.fromJsonList(json: String) = fromJson<List<T>>(json, object : TypeToken<List<T>>() {}.type)
-
-inline fun <reified T, V> Gson.fromJsonMap(json: String): Map<T, V> {
-    try {
-        return fromJson<Map<T, V>>(json, object : TypeToken<Map<T, V>>() {}.type)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        throw e
-    }
-}
 
 inline fun <reified T> genericType(): Type = object : TypeToken<T?>() {}.type
 
