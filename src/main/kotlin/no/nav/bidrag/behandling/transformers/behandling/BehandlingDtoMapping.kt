@@ -78,42 +78,42 @@ fun Behandling.tilBehandlingDtoV2(
     søknadsid = soknadsid,
     behandlerenhet = behandlerEnhet,
     roller =
-        roller.map {
-            RolleDto(
-                it.id!!,
-                it.rolletype,
-                it.ident,
-                it.navn ?: hentPersonVisningsnavn(it.ident),
-                it.foedselsdato,
-            )
-        }.toSet(),
+    roller.map {
+        RolleDto(
+            it.id!!,
+            it.rolletype,
+            it.ident,
+            it.navn ?: hentPersonVisningsnavn(it.ident),
+            it.foedselsdato,
+        )
+    }.toSet(),
     søknadRefId = soknadRefId,
     vedtakRefId = refVedtaksid,
     virkningstidspunkt =
-        VirkningstidspunktDto(
-            virkningstidspunkt = virkningstidspunkt,
-            opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-            årsak = årsak,
-            avslag = avslag,
-            notat =
-                BehandlingNotatDto(
-                    medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
-                    kunINotat = virkningstidspunktbegrunnelseKunINotat,
-                ),
+    VirkningstidspunktDto(
+        virkningstidspunkt = virkningstidspunkt,
+        opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+        årsak = årsak,
+        avslag = avslag,
+        notat =
+        BehandlingNotatDto(
+            medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+            kunINotat = virkningstidspunktbegrunnelseKunINotat,
         ),
+    ),
     boforhold = tilBoforholdV2(),
     inntekter = tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
     ikkeAktiverteEndringerIGrunnlagsdata =
-        ikkeAktiverteEndringerIGrunnlagsdata
-            ?: IkkeAktiveGrunnlagsdata(),
+    ikkeAktiverteEndringerIGrunnlagsdata
+        ?: IkkeAktiveGrunnlagsdata(),
     feilOppståttVedSisteGrunnlagsinnhenting =
-        grunnlagsinnhentingFeilet?.let {
-            val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
-                object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
+    grunnlagsinnhentingFeilet?.let {
+        val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
+            object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
 
-            objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
-        },
+        objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
+    },
 )
 
 private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
@@ -122,7 +122,7 @@ private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsf
             rolleid = behandling.roller.find { feil.value.personId == it.ident }!!.id!!,
             feilmelding = feil.value.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
             grunnlagsdatatype = feil.key,
-            periode = Datoperiode(feil.value.periodeFra!!, feil.value.periodeTil),
+            periode = feil.value.periodeFra?.let { Datoperiode(feil.value.periodeFra!!, feil.value.periodeTil) },
         )
     }.toSet()
 
@@ -143,13 +143,13 @@ fun List<Grunnlag>.tilHusstandsbarn() =
             innhentetTidspunkt = it.innhentet,
             ident = it.gjelder,
             perioder =
-                it.konvertereData<List<BoforholdResponse>>()?.map { boforholdrespons ->
-                    HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
-                        boforholdrespons.periodeFom,
-                        boforholdrespons.periodeTom,
-                        boforholdrespons.bostatus,
-                    )
-                }?.toSet() ?: emptySet(),
+            it.konvertereData<List<BoforholdResponse>>()?.map { boforholdrespons ->
+                HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
+                    boforholdrespons.periodeFom,
+                    boforholdrespons.periodeTom,
+                    boforholdrespons.bostatus,
+                )
+            }?.toSet() ?: emptySet(),
         )
     }.toSet()
 
@@ -158,100 +158,100 @@ fun Behandling.tilBoforholdV2() =
         husstandsbarn = husstandsbarn.sortert().map { it.tilHusstandsbarnperiodeDto() }.toSet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
-            BehandlingNotatDto(
-                medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
-                kunINotat = boforholdsbegrunnelseKunINotat,
-            ),
+        BehandlingNotatDto(
+            medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+            kunINotat = boforholdsbegrunnelseKunINotat,
+        ),
         valideringsfeil =
-            BoforholdValideringsfeil(
-                husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
-                sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
-            ),
+        BoforholdValideringsfeil(
+            husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
+            sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
+        ),
     )
 
 fun Behandling.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList()) =
     InntekterDtoV2(
         barnetillegg =
-            inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                .sorterEtterDatoOgBarn()
-                .tilInntektDtoV2().toSet(),
+        inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
+            .sorterEtterDatoOgBarn()
+            .tilInntektDtoV2().toSet(),
         utvidetBarnetrygd =
-            inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
-                .sorterEtterDato()
-                .tilInntektDtoV2()
-                .toSet(),
+        inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+            .sorterEtterDato()
+            .tilInntektDtoV2()
+            .toSet(),
         kontantstøtte =
-            inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                .sorterEtterDatoOgBarn()
-                .tilInntektDtoV2().toSet(),
+        inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+            .sorterEtterDatoOgBarn()
+            .tilInntektDtoV2().toSet(),
         småbarnstillegg =
-            inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
-                .sorterEtterDato()
-                .tilInntektDtoV2().toSet(),
+        inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+            .sorterEtterDato()
+            .tilInntektDtoV2().toSet(),
         månedsinntekter =
-            gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
-                .flatMap { grunnlag ->
-                    grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
-                        it.tilInntektDtoV2(
-                            grunnlag.rolle.ident!!,
-                        )
-                    } ?: emptyList()
-                }.toSet(),
+        gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
+            .flatMap { grunnlag ->
+                grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
+                    it.tilInntektDtoV2(
+                        grunnlag.rolle.ident!!,
+                    )
+                } ?: emptyList()
+            }.toSet(),
         årsinntekter =
-            inntekter.årsinntekterSortert()
-                .tilInntektDtoV2()
-                .toSet(),
+        inntekter.årsinntekterSortert()
+            .tilInntektDtoV2()
+            .toSet(),
         beregnetInntekter = hentBeregnetInntekter(),
         notat =
-            BehandlingNotatDto(
-                medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                kunINotat = inntektsbegrunnelseKunINotat,
-            ),
+        BehandlingNotatDto(
+            medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+            kunINotat = inntektsbegrunnelseKunINotat,
+        ),
         valideringsfeil = hentInntekterValideringsfeil(),
     )
 
 fun List<Grunnlag>.tilAktivGrunnlagsdata() =
     AktiveGrunnlagsdata(
         arbeidsforhold =
-            find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
-                ?: emptySet(),
+        find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
+            ?: emptySet(),
         husstandsbarn =
-            filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsbarn(),
+        filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsbarn(),
         sivilstand =
-            find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
+        find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )
 
 fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto {
     return InntektValideringsfeilDto(
         årsinntekter =
-            inntekter.mapValideringsfeilForÅrsinntekter(
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ).takeIf { it.isNotEmpty() },
+        inntekter.mapValideringsfeilForÅrsinntekter(
+            virkningstidspunktEllerSøktFomDato,
+            roller,
+        ).takeIf { it.isNotEmpty() },
         barnetillegg =
-            inntekter.mapValideringsfeilForYtelseSomGjelderBarn(
-                Inntektsrapportering.BARNETILLEGG,
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ).takeIf { it.isNotEmpty() },
+        inntekter.mapValideringsfeilForYtelseSomGjelderBarn(
+            Inntektsrapportering.BARNETILLEGG,
+            virkningstidspunktEllerSøktFomDato,
+            roller,
+        ).takeIf { it.isNotEmpty() },
         småbarnstillegg =
-            inntekter.mapValideringsfeilForYtelse(
-                Inntektsrapportering.SMÅBARNSTILLEGG,
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ),
+        inntekter.mapValideringsfeilForYtelse(
+            Inntektsrapportering.SMÅBARNSTILLEGG,
+            virkningstidspunktEllerSøktFomDato,
+            roller,
+        ),
         utvidetBarnetrygd =
-            inntekter.mapValideringsfeilForYtelse(
-                Inntektsrapportering.UTVIDET_BARNETRYGD,
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ),
+        inntekter.mapValideringsfeilForYtelse(
+            Inntektsrapportering.UTVIDET_BARNETRYGD,
+            virkningstidspunktEllerSøktFomDato,
+            roller,
+        ),
         kontantstøtte =
-            inntekter.mapValideringsfeilForYtelseSomGjelderBarn(
-                Inntektsrapportering.KONTANTSTØTTE,
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ).takeIf { it.isNotEmpty() },
+        inntekter.mapValideringsfeilForYtelseSomGjelderBarn(
+            Inntektsrapportering.KONTANTSTØTTE,
+            virkningstidspunktEllerSøktFomDato,
+            roller,
+        ).takeIf { it.isNotEmpty() },
     )
 }
 
@@ -277,8 +277,8 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                 overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                 fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
                 manglerPerioder =
-                    (rolle.rolletype != Rolletype.BARN)
-                        .ifTrue { this.isEmpty() } ?: false,
+                (rolle.rolletype != Rolletype.BARN)
+                    .ifTrue { this.isEmpty() } ?: false,
                 ident = rolle.ident!!,
                 rolle = rolle.rolletype,
             )
@@ -298,7 +298,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
     InntektValideringsfeil(
         overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
         fremtidigPeriode =
-            inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+        inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
         ident = gjelderIdent,
         rolle = gjelderRolle?.rolletype,
         gjelderBarn = gjelderBarn,
@@ -331,16 +331,16 @@ fun Behandling.hentBeregnetInntekter() =
     }.map {
         it.copy(
             summertInntektListe =
-                it.summertInntektListe.map { delberegning ->
-                    delberegning.copy(
-                        barnetillegg = delberegning.barnetillegg?.nærmesteHeltall,
-                        småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
-                        kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
-                        utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
-                        skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
-                        totalinntekt = delberegning.totalinntekt.nærmesteHeltall,
-                    )
-                },
+            it.summertInntektListe.map { delberegning ->
+                delberegning.copy(
+                    barnetillegg = delberegning.barnetillegg?.nærmesteHeltall,
+                    småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
+                    kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
+                    utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
+                    skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
+                    totalinntekt = delberegning.totalinntekt.nærmesteHeltall,
+                )
+            },
         )
     }
 
@@ -419,11 +419,11 @@ fun List<LocalDate?>.hentIndekserEtterVirkningstidspunkt(
 fun SivilstandBeregnet.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkningstidspunkt: LocalDate): SivilstandBeregnet {
     return copy(
         sivilstandListe =
-            sivilstandListe.slice(
-                sivilstandListe.map {
-                    it.periodeFom
-                }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt),
-            ).sortedBy { it.periodeFom },
+        sivilstandListe.slice(
+            sivilstandListe.map {
+                it.periodeFom
+            }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt),
+        ).sortedBy { it.periodeFom },
     )
 }
 

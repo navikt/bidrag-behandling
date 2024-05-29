@@ -178,8 +178,8 @@ class HentBehandlingTest : BehandlingControllerTest() {
             feil shouldNotBe null
             feil!! shouldHaveSize 2
             feil.first().rolleid shouldBe behandling.bidragsmottaker!!.id!!
-            feil.first().periode.fom shouldBe fomdatoIFeilrespons
-            feil.first().periode.til shouldBe tildatoIFeilrespons
+            feil.first().periode?.fom shouldBe fomdatoIFeilrespons
+            feil.first().periode?.til shouldBe tildatoIFeilrespons
             feil.first().feilmelding shouldBe feilmeldingIFeilrespons
             feil.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.grunnlagsdatatype } shouldHaveSize 1
             feil.filter { Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == it.grunnlagsdatatype } shouldHaveSize 1

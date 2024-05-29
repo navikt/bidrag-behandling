@@ -89,7 +89,7 @@ data class Grunnlagsinnhentingsfeil(
     val grunnlagsdatatype: Grunnlagsdatatype,
     val feilmelding: String,
     @JsonDeserialize(using = PeriodeDeserialiserer::class)
-    val periode: Periode<LocalDate>,
+    val periode: Periode<LocalDate>? = null,
 )
 
 @Schema(enumAsRef = true)
