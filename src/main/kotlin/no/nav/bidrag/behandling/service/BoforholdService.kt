@@ -472,7 +472,7 @@ class BoforholdService(
                 log.info {
                     "Slår sammen manuelt husstandsbarn med id ${manueltBarn.id} med informasjon fra offentlige registre. Oppgraderer kilde til barnet til OFFENTLIG"
                 }
-                offisieltBarn!!.resetTilOffentligePerioder()
+                offisieltBarn.resetTilOffentligePerioder()
                 val request =
                     BoforholdBarnRequest(
                         relatertPersonPersonId = offisieltBarn.ident,
