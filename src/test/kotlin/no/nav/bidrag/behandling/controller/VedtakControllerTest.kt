@@ -160,7 +160,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
 
         response.statusCode shouldBe HttpStatus.BAD_REQUEST
         response.headers[HttpHeaders.WARNING]!!.first() shouldContain "Validering feilet - Feil ved validering av behandling for beregning"
-        response.body!!.måBekrefteNyeOpplysninger shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
+        response.body!!.måBekrefteNyeOpplysninger.map { it.type } shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
     }
 
     @Test
@@ -195,7 +195,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
 
         response.statusCode shouldBe HttpStatus.BAD_REQUEST
         response.headers[HttpHeaders.WARNING]!!.first() shouldContain "Validering feilet - Feil ved validering av behandling for beregning"
-        response.body!!.måBekrefteNyeOpplysninger shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
+        response.body!!.måBekrefteNyeOpplysninger.map { it.type } shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
     }
 
     private fun save(behandling: Behandling) {
