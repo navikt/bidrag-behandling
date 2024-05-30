@@ -41,7 +41,8 @@ open class Husstandsbarn(
     open var forrigePerioder: String? = null,
 ) {
     override fun toString(): String {
-        return "Husstandsbarn(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, perioder(size)=${perioder.size}, " +
-            "forrigePerioder=${forrigePerioder?.substring(0, 10)}...)"
+        return "Husstandsbarn(id=$id, behandlingId=${behandling.id}, ident=$ident, navn=$navn, fødselsdato=$fødselsdato," +
+            " perioder(size)=${perioder.size}, kilde=$kilde, " +
+            "forrigePerioder=${forrigePerioder?.substring(0, maxOf(forrigePerioder!!.length, 10)) ?: ""}...)"
     }
 }

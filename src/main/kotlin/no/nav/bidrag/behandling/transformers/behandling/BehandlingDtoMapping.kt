@@ -441,4 +441,4 @@ fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     .flatten().distinct().toList().filtrerPerioderEtterVirkningstidspunkt(
         husstandsbarn,
         virkniningstidspunkt,
-    )
+    ).sortedBy { it.periodeFom }

@@ -269,11 +269,19 @@ class BoforholdServiceTest : TestContainerRunner() {
                     )
 
                 // hvis
-                boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
-                    periodisertBoforhold,
+                    periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn1.ident }!!,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     true,
+                    testdataBarn1.tilPersonDto().ident,
+                )
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
+                    behandling,
+                    periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn2.ident },
+                    grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                    true,
+                    testdataBarn2.tilPersonDto().ident,
                 )
 
                 // så
@@ -356,12 +364,30 @@ class BoforholdServiceTest : TestContainerRunner() {
                         grunnlagBoforhold.tilBoforholdbBarnRequest(periodeFom),
                     )
 
+                periodisertBoforhold.groupBy { it.relatertPersonPersonId }.forEach { (personId, boforhold) ->
+                    testdataManager.oppretteOgLagreGrunnlag(
+                        behandling = behandling,
+                        grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                        gjelderIdent = personId,
+                        grunnlagsdata = boforhold,
+                    )
+                }
+                testdataManager.lagreBehandling(behandling)
+
                 // hvis
-                boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
-                    periodisertBoforhold,
+                    periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn1.ident }!!,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
-                    false,
+                    true,
+                    testdataBarn1.tilPersonDto().ident,
+                )
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
+                    behandling,
+                    periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn2.ident },
+                    grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                    true,
+                    testdataBarn2.tilPersonDto().ident,
                 )
 
                 // så
@@ -382,7 +408,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }) { barn2 ->
                     barn2 shouldNotBe null
-                    barn2!!.perioder.size shouldBe 2
+                    barn2!!.perioder.size shouldBe 3
                     barn2.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 0
                     barn2.perioder.last().kilde shouldBe Kilde.OFFENTLIG
                     barn2.perioder.last().datoFom shouldBe LocalDate.of(2022, 1, 1)
@@ -436,11 +462,20 @@ class BoforholdServiceTest : TestContainerRunner() {
                     )
 
                 // hvis
-                boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     false,
+                    testdataBarn2.tilPersonDto().ident,
+                )
+
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
+                    behandling,
+                    periodisertBoforhold,
+                    grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
+                    true,
+                    testdataBarn1.tilPersonDto().ident,
                 )
 
                 // så
@@ -518,11 +553,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                     )
 
                 // hvis
-                boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     true,
+                    testdataBarn2.tilPersonDto().ident,
                 )
 
                 // så
@@ -1216,7 +1252,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     Sivilstand(
                         behandling,
                         datoFom = behandling.virkningstidspunkt?.plusMonths(2),
-                        datoTom = null,
+                        datoTom = behandling.virkningstidspunkt?.plusMonths(4),
                         Sivilstandskode.GIFT_SAMBOER,
                         Kilde.MANUELL,
                     ),
@@ -1233,7 +1269,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 boforholdService.oppdatereAutomatiskInnhentaSivilstand(behandling, false)
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s.size shouldBe 2
+                    s.size shouldBe 3
                     s.first { Sivilstandskode.BOR_ALENE_MED_BARN == it.sivilstand } shouldNotBe null
                     s.first { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom } shouldNotBe null
                     s.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1

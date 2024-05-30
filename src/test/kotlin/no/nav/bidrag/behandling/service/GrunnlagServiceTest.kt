@@ -1829,8 +1829,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             assertSoftly(behandling.husstandsbarn) {
-                it.size shouldBe 1
-                it.first().perioder.size shouldBe 1
+                it.size shouldBe 3
+                it.first().perioder.size shouldBe 3
             }
         }
 

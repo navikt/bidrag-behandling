@@ -30,11 +30,11 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaSivilstandshistorikk
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
+import no.nav.bidrag.behandling.transformers.boforhold.tilPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -42,6 +42,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSvilstandRequest
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.behandling.transformers.validereSivilstand
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
@@ -81,7 +82,7 @@ class BoforholdService(
             behandlingRepository.findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        behandling.inntektsbegrunnelseKunINotat = request.kunINotat ?: behandling.inntektsbegrunnelseKunINotat
+        behandling.boforholdsbegrunnelseKunINotat = request.kunINotat ?: behandling.boforholdsbegrunnelseKunINotat
 
         return OppdatereBoforholdResponse(
             oppdatertNotat = request,
@@ -107,38 +108,50 @@ class BoforholdService(
     }
 
     @Transactional
-    fun oppdatereAutomatiskInnhentaBoforhold(
+    fun oppdatereAutomatiskInnhentetBoforhold(
         behandling: Behandling,
         periodisertBoforhold: List<BoforholdResponse>,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
         overskriveManuelleOpplysninger: Boolean,
+        gjelderHusstandsbarn: Personident,
     ) {
-        val nyeHusstandsbarnMedPerioder = periodisertBoforhold.tilHusstandsbarn(behandling)
+        val nyeHusstandsbarnMedPerioder = periodisertBoforhold.tilHusstandsbarn(behandling).first()
         // Ved overskriving bevares manuelle barn, men dersom manuelt barn med personident også finnes i grunnlag,
         // erstattes dette med offentlige opplysninger. Manuelle perioder til offisielle barn slettes.
         if (overskriveManuelleOpplysninger) {
             sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
                 behandling,
                 bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
+                gjelderHusstandsbarn,
             )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
                 nyeHusstandsbarnMedPerioder,
+                true,
             )
             leggeTilNyeEllerOppdatereEksisterendeOffentligeHusstandsbarn(behandling, nyeHusstandsbarnMedPerioder, true)
         } else {
             endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
                 behandling,
                 bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
+                gjelderHusstandsbarn,
             )
             slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
                 behandling,
                 nyeHusstandsbarnMedPerioder,
+                false,
             )
             leggeTilNyeEllerOppdatereEksisterendeOffentligeHusstandsbarn(behandling, nyeHusstandsbarnMedPerioder)
         }
 
-        log.info { "Husstandsbarn ble oppdatert for behandling ${behandling.id}" }
+        log.info {
+            "Husstandsbarn ble oppdatert for behandling ${behandling.id} " +
+                "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+        }
+        secureLogger.info {
+            "Husstandsbarn ${gjelderHusstandsbarn.verdi} ble oppdatert for behandling ${behandling.id} " +
+                "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+        }
     }
 
     @Transactional
@@ -365,6 +378,10 @@ class BoforholdService(
     ) {
         husstandsbarnSomSkalSlettes.perioder.clear()
         sletteHusstandsbarn(behandling, setOf(husstandsbarnSomSkalSlettes))
+        secureLogger.info {
+            "Slettet $husstandsbarnSomSkalSlettes husstandsbarn fra behandling ${behandling.id} i " +
+                "forbindelse med førstegangsoppdatering av boforhold."
+        }
     }
 
     // Sikrer mot ConcurrentModificationException
@@ -382,104 +399,112 @@ class BoforholdService(
     private fun sletteOffentligeHusstandsbarnSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
+        gjelderHusstandsbarn: Personident,
     ) {
-        var husstandsbarnSomSkalSlettes: Set<Husstandsbarn> = emptySet()
+        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsbarn.verdi }) return
 
-        behandling.husstandsbarn.asSequence().filter { i -> Kilde.OFFENTLIG == i.kilde }
-            .forEach { eksisterendeHusstandsbarn ->
-
-                val eksisterendeHusstandsbarnOppdateres =
-                    bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
-                        .contains(eksisterendeHusstandsbarn.ident)
-
-                if (!eksisterendeHusstandsbarnOppdateres) {
-                    eksisterendeHusstandsbarn.perioder.clear()
-                    husstandsbarnSomSkalSlettes = husstandsbarnSomSkalSlettes.plus(eksisterendeHusstandsbarn)
-                }
+        behandling.husstandsbarn.find { i -> Kilde.OFFENTLIG == i.kilde && i.ident == gjelderHusstandsbarn.verdi }
+            ?.let { eksisterendeHusstandsbarn ->
+                eksisterendeHusstandsbarn.perioder.clear()
+                sletteHusstandsbarn(behandling, eksisterendeHusstandsbarn)
             }
-        if (husstandsbarnSomSkalSlettes.isNotEmpty()) {
-            sletteHusstandsbarn(behandling, husstandsbarnSomSkalSlettes)
-        }
     }
 
     private fun leggeTilNyeEllerOppdatereEksisterendeOffentligeHusstandsbarn(
         behandling: Behandling,
-        nyttPeriodisertBoforhold: Set<Husstandsbarn>,
+        nyttHusstandsbarn: Husstandsbarn,
         overskriveManuelleOpplysninger: Boolean = false,
     ) {
         val husstandsbarnSomSkalOppdateres =
             behandling.husstandsbarn.asSequence().filter { i -> Kilde.OFFENTLIG == i.kilde }.toSet()
 
-        nyttPeriodisertBoforhold.forEach { nyttHusstandsbarn ->
-            // Oppdaterer eksisterende husstandsbarn. Sletter manuelle perioder. Kjører ny periodisering av offentlige perioder.
-            if (husstandsbarnSomSkalOppdateres.map { it.ident }.contains(nyttHusstandsbarn.ident)) {
-                val eksisterendeHusstandsbarn =
-                    husstandsbarnSomSkalOppdateres.find { it.ident == nyttHusstandsbarn.ident }!!
-                val offentligeBostatuser = nyttHusstandsbarn.perioder.map { it.tilBostatus() }
+        val eksisterendeHusstandsbarn =
+            husstandsbarnSomSkalOppdateres.find { it.ident == nyttHusstandsbarn.ident }
 
-                val request =
-                    BoforholdBarnRequest(
-                        relatertPersonPersonId = eksisterendeHusstandsbarn.ident,
-                        fødselsdato = eksisterendeHusstandsbarn.fødselsdato,
-                        erBarnAvBmBp = true,
-                        innhentedeOffentligeOpplysninger = offentligeBostatuser,
-                        behandledeBostatusopplysninger = emptyList(),
-                        endreBostatus = null,
-                    )
-
-                val husstandsbarnperioder =
-                    when (overskriveManuelleOpplysninger) {
-                        false ->
-                            BoforholdApi.beregnBoforholdBarnV2(
-                                behandling.virkningstidspunktEllerSøktFomDato,
-                                listOf(request),
-                            ).tilHusstandsbarn(behandling).first().perioder
-
-                        true -> nyttHusstandsbarn.perioder
+        // Oppdaterer eksisterende husstandsbarn. Sletter manuelle perioder. Kjører ny periodisering av offentlige perioder.
+        if (eksisterendeHusstandsbarn != null) {
+            val oppdatertePerioder =
+                overskriveManuelleOpplysninger.ifTrue {
+                    nyttHusstandsbarn.perioder.forEach {
+                        it.husstandsbarn = eksisterendeHusstandsbarn
                     }
-                eksisterendeHusstandsbarn.perioder.clear()
-                husstandsbarnperioder.forEach {
-                    it.husstandsbarn = eksisterendeHusstandsbarn
-                    entityManager.persist(it)
-                    eksisterendeHusstandsbarn.perioder.add(it)
-                }
-                // Legger nye offisielle husstandsbarn uten å kjøre ny periodisering
-            } else {
-                entityManager.persist(nyttHusstandsbarn)
-                behandling.husstandsbarn.add(nyttHusstandsbarn)
+                    nyttHusstandsbarn.perioder
+                } // Kjør ny periodisering for å oppdatere kilde på periodene basert på nye opplysninger
+                    ?: BoforholdApi.beregnBoforholdBarnV2(
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                        listOf(
+                            eksisterendeHusstandsbarn.tilBoforholdbBarnRequest()
+                                .copy(
+                                    innhentedeOffentligeOpplysninger = nyttHusstandsbarn.perioder.map { it.tilBostatus() },
+                                ),
+                        ),
+                    ).tilPerioder(eksisterendeHusstandsbarn)
+
+            eksisterendeHusstandsbarn.lagreEksisterendePerioder()
+            eksisterendeHusstandsbarn.perioder.clear()
+            eksisterendeHusstandsbarn.perioder.addAll(oppdatertePerioder)
+            log.info {
+                "Oppdaterte husstandsbarn ${eksisterendeHusstandsbarn.id} i behandling ${behandling.id} med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
             }
+            secureLogger.info {
+                "Oppdaterte husstandsbarn $eksisterendeHusstandsbarn i behandling ${behandling.id} med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+            }
+        } else {
+            // Legger nye offisielle husstandsbarn uten å kjøre ny periodisering
+            val nyHusstandsbarn = husstandsbarnRepository.save(nyttHusstandsbarn)
+            behandling.husstandsbarn.add(nyHusstandsbarn)
+            log.info { "Ny husstandsbarn ${nyHusstandsbarn.id} ble opprettet i behandling ${behandling.id}" }
+            secureLogger.info { "Ny husstandsbarn $nyHusstandsbarn ble opprettet i behandling ${behandling.id}" }
         }
     }
 
     private fun slåSammenHusstandsmedlemmmerSomEksistererBådeSomManuelleOgOffentlige(
         behandling: Behandling,
-        nyttPeriodisertBoforhold: Set<Husstandsbarn>,
+        offisieltBarn: Husstandsbarn,
+        overskriveManuelleOpplysninger: Boolean,
     ) {
         val manuelleBarnMedIdent =
             behandling.husstandsbarn.filter { Kilde.MANUELL == it.kilde }.filter { it.ident != null }
-        val identerOffisielleBarn = nyttPeriodisertBoforhold.mapNotNull { it.ident }.toSet()
+        val identOffisielleBarn = offisieltBarn.ident
 
         manuelleBarnMedIdent.forEach { manueltBarn ->
-            if (identerOffisielleBarn.contains(manueltBarn.ident)) {
-                val offisieltBarn = nyttPeriodisertBoforhold.find { manueltBarn.ident == it.ident }
-                val bostatuser: Set<Bostatus>? = offisieltBarn?.perioder?.map { it.tilBostatus() }?.toSet()
-
-                bostatuser?.let {
-                    offisieltBarn.resetTilOffentligePerioder()
-                    val periodisertBoforhold =
+            if (identOffisielleBarn == manueltBarn.ident) {
+                log.info {
+                    "Slår sammen manuelt husstandsbarn med id ${manueltBarn.id} med informasjon fra offentlige registre. Oppgraderer kilde til barnet til OFFENTLIG"
+                }
+                offisieltBarn!!.resetTilOffentligePerioder()
+                val request =
+                    BoforholdBarnRequest(
+                        relatertPersonPersonId = offisieltBarn.ident,
+                        fødselsdato = offisieltBarn.fødselsdato,
+                        erBarnAvBmBp = true,
+                        innhentedeOffentligeOpplysninger =
+                            offisieltBarn.perioder.map { it.tilBostatus() }
+                                .sortedBy { it.periodeFom },
+                        behandledeBostatusopplysninger = emptyList(),
+                        endreBostatus = null,
+                    )
+                val periodisertBoforhold =
+                    if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV2(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            listOf(bostatuser.tilBoforholdBarnRequest(offisieltBarn)),
+                            listOf(request),
                         )
-                    val hbp =
-                        periodisertBoforhold.tilHusstandsbarn(offisieltBarn.behandling)
-                            .flatMap { it.perioder }
+                    } else {
+                        BoforholdApi.beregnBoforholdBarnV2(
+                            behandling.virkningstidspunktEllerSøktFomDato,
+                            listOf(
+                                request.copy(
+                                    behandledeBostatusopplysninger = manueltBarn.perioder.map { it.tilBostatus() },
+                                ),
+                            ),
+                        )
+                    }
 
-                    manueltBarn.perioder.clear()
-                    manueltBarn.perioder.addAll(hbp.toSet())
-                    manueltBarn.kilde = Kilde.OFFENTLIG
-                    nyttPeriodisertBoforhold.minus(offisieltBarn)
-                }
+                val oppdatertPerioder = periodisertBoforhold.tilPerioder(offisieltBarn)
+                manueltBarn.perioder.clear()
+                manueltBarn.perioder.addAll(oppdatertPerioder.toSet())
+                manueltBarn.kilde = Kilde.OFFENTLIG
             }
         }
     }
@@ -487,15 +512,17 @@ class BoforholdService(
     private fun endreKildePåOffentligeBarnSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
+        gjelderHusstandsbarn: Personident,
     ) {
-        behandling.husstandsbarn.filter { Kilde.OFFENTLIG == it.kilde }.forEach { eksisterendeHusstandsbarn ->
-            if (!bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.map { it.verdi }
-                    .contains(eksisterendeHusstandsbarn.ident)
-            ) {
+        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsbarn.verdi }) return
+
+        behandling.husstandsbarn.find { Kilde.OFFENTLIG == it.kilde && it.ident == gjelderHusstandsbarn.verdi }
+            ?.let { eksisterendeHusstandsbarn ->
+                log.info { "Endret husstandsbarn ${eksisterendeHusstandsbarn.id} til kilde MANUELL i behandling ${behandling.id}" }
+                secureLogger.info { "Endret husstandsbarn $eksisterendeHusstandsbarn til kilde MANUELL i behandling ${behandling.id}" }
                 eksisterendeHusstandsbarn.kilde = Kilde.MANUELL
                 eksisterendeHusstandsbarn.perioder.forEach { periode -> periode.kilde = Kilde.MANUELL }
             }
-        }
     }
 
     companion object {

@@ -12,9 +12,8 @@ import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(lagretSivilstand: Set<Sivilstand>? = emptySet()) =
     SivilstandRequest(
         this.toList(),
-        lagretSivilstand?.let {
-            lagretSivilstand.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto()
-        } ?: emptyList(),
+        lagretSivilstand?.toList()?.tilSivilstandBeregnV2Dto() ?: emptyList(),
+        null,
     )
 
 fun Set<Sivilstand>.tilSivilstandGrunnlagDto() =
@@ -32,8 +31,9 @@ fun Set<Sivilstand>.tilSivilstandGrunnlagDto() =
 
 fun Set<Sivilstand>.tilSvilstandRequest() =
     SivilstandRequest(
-        manuellePerioder = this.filter { Kilde.MANUELL == it.kilde }.tilSivilstandBeregnV2Dto(),
-        offentligePerioder = this.filter { Kilde.OFFENTLIG == it.kilde }.toSet().tilSivilstandGrunnlagDto(),
+        innhentedeOffentligeOpplysninger = emptyList(),
+        behandledeSivilstandsopplysninger = toList().tilSivilstandBeregnV2Dto(),
+        endreSivilstand = null,
     )
 
 fun Sivilstandskode.tilSivilstandskodePDL() =

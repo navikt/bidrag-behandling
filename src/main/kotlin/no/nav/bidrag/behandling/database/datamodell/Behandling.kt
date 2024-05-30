@@ -13,7 +13,9 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
+import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
@@ -140,6 +142,7 @@ open class Behandling(
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+    val rolleSomBoforholdSkalHentesFor get() = if (stonadstype == Stønadstype.FORSKUDD) bidragsmottaker else bidragspliktig
 
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
@@ -171,6 +174,16 @@ fun Behandling.validerForBeregning() {
                     virkningstidspunktEllerSøktFomDato,
                 ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
             val måBekrefteOpplysninger = grunnlag.hentAlleSomMåBekreftes().map { it.type }.toSet()
+            val måBekrefteOpplysningerV2 =
+                grunnlag.hentAlleSomMåBekreftes().map { grunnlagSomMåBekreftes ->
+                    MåBekrefteNyeOpplysninger(
+                        grunnlagSomMåBekreftes.type,
+                        husstandsbarn =
+                            (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
+                                husstandsbarn.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                            },
+                    )
+                }.toSet()
             val harFeil =
                 inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null ||
                     virkningstidspunktFeil != null || måBekrefteOpplysninger.isNotEmpty()
@@ -181,6 +194,7 @@ fun Behandling.validerForBeregning() {
                     husstandsbarnFeil,
                     sivilstandFeil,
                     måBekrefteOpplysninger,
+                    måBekrefteOpplysningerV2,
                 )
             }
         } else if (virkningstidspunktFeil != null) {

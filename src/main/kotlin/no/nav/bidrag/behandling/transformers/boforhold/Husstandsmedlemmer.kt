@@ -50,21 +50,6 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(virkningsdato: Loca
         )
     }
 
-fun Set<Bostatus>.tilBoforholdBarnRequest(
-    husstandsbarn: Husstandsbarn,
-    endreBostatus: EndreBostatus? = null,
-): BoforholdBarnRequest {
-    val offisiellePerioder = husstandsbarn.perioder.filter { Kilde.OFFENTLIG == it.kilde }.map { it.tilBostatus() }
-    return BoforholdBarnRequest(
-        relatertPersonPersonId = husstandsbarn.ident,
-        fødselsdato = husstandsbarn.fødselsdato,
-        erBarnAvBmBp = Kilde.OFFENTLIG == husstandsbarn.kilde,
-        innhentedeOffentligeOpplysninger = offisiellePerioder,
-        behandledeBostatusopplysninger = this.toList(),
-        endreBostatus = endreBostatus,
-    )
-}
-
 fun Husstandsbarn.tilBoforholdbBarnRequest(endreBostatus: EndreBostatus? = null): BoforholdBarnRequest {
     return BoforholdBarnRequest(
         relatertPersonPersonId = ident,
