@@ -1238,7 +1238,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     Sivilstand(
                         behandling,
                         datoFom = behandling.virkningstidspunkt?.plusMonths(2),
-                        datoTom = null,
+                        datoTom = behandling.virkningstidspunkt?.plusMonths(4),
                         Sivilstandskode.GIFT_SAMBOER,
                         Kilde.MANUELL,
                     ),
@@ -1255,7 +1255,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 boforholdService.oppdatereAutomatiskInnhentaSivilstand(behandling, false)
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s.size shouldBe 2
+                    s.size shouldBe 3
                     s.first { Sivilstandskode.BOR_ALENE_MED_BARN == it.sivilstand } shouldNotBe null
                     s.first { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom } shouldNotBe null
                     s.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
