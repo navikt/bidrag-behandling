@@ -481,8 +481,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
         }
 
-        @Transactional
         @Test
+        @Transactional
         open fun `skal lagre ikke aktiv grunnlag hvis beregnet inntekt ikke er lik lagret grunnlag`() {
             // gitt
             val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
@@ -564,8 +564,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            entityManager.refresh(behandling)
-
             assertSoftly(behandling.grunnlag) { g ->
                 g.size shouldBe 3
                 g.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 3

@@ -19,11 +19,4 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     @Modifying
     @Query("update behandling set deleted = true, slettet_tidspunkt = now() where id = :behandlingsid", nativeQuery = true)
     fun logiskSlett(behandlingsid: Long)
-
-    @Modifying
-    @Query("update behandling b set b.grunnlagSistInnhentet = :tidspunktInnhentet where b.id = :behandlingsid")
-    fun oppdatereTidspunktGrunnlagsinnhenting(
-        behandlingsid: Long,
-        tidspunktInnhentet: LocalDateTime = LocalDateTime.now(),
-    )
 }

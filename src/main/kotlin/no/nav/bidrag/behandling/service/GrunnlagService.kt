@@ -160,7 +160,7 @@ class GrunnlagService(
                 feilrapporteringer += henteOglagreGrunnlag(behandling, it)
             }
 
-            behandlingRepository.oppdatereTidspunktGrunnlagsinnhenting(behandling.id!!)
+            behandling.grunnlagSistInnhentet = LocalDateTime.now()
 
             if (feilrapporteringer.isNotEmpty()) {
                 behandling.grunnlagsinnhentingFeilet = objectmapper.writeValueAsString(feilrapporteringer)
