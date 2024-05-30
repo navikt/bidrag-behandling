@@ -170,7 +170,7 @@ class BehandlingService(
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
                 secureLogger.info {
                     "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
-                        "for person ${request.personident}"
+                        "for person ${request.personident}: $request"
                 }
                 grunnlagService.aktivereGrunnlag(it, request)
                 val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.toSet().hentSisteAktiv()

@@ -438,7 +438,7 @@ class GrunnlagService(
             )
         }
 
-        boforholdService.oppdatereAutomatiskInnhentaBoforhold(
+        boforholdService.oppdaterAutomatiskInnhentetBoforhold(
             behandling,
             jsonTilObjekt<List<BoforholdResponse>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem.data),
             bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
@@ -870,8 +870,10 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime? = null,
         gjelderPerson: Personident? = null,
     ) {
+        log.info { "Lagrer grunnlag $grunnlagstype, $innhentetGrunnlag hvis endret" }
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
             nyesteGrunnlag(behandling, innhentetForRolle, grunnlagstype, gjelderPerson)
+
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, innhentetForRolle, gjelderPerson)
         val erFørstegangsinnhenting = nyesteGrunnlag == null
 
