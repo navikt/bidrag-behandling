@@ -269,14 +269,14 @@ class BoforholdServiceTest : TestContainerRunner() {
                     )
 
                 // hvis
-                boforholdService.oppdaterAutomatiskInnhentetBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn1.ident }!!,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     true,
                     testdataBarn1.tilPersonDto().ident,
                 )
-                boforholdService.oppdaterAutomatiskInnhentetBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn2.ident },
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
@@ -375,14 +375,14 @@ class BoforholdServiceTest : TestContainerRunner() {
                 testdataManager.lagreBehandling(behandling)
 
                 // hvis
-                boforholdService.oppdaterAutomatiskInnhentetBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn1.ident }!!,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     true,
                     testdataBarn1.tilPersonDto().ident,
                 )
-                boforholdService.oppdaterAutomatiskInnhentetBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn2.ident },
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
@@ -462,7 +462,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     )
 
                 // hvis
-                boforholdService.oppdaterAutomatiskInnhentetBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
@@ -470,7 +470,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     testdataBarn2.tilPersonDto().ident,
                 )
 
-                boforholdService.oppdaterAutomatiskInnhentetBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
@@ -553,7 +553,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     )
 
                 // hvis
-                boforholdService.oppdaterAutomatiskInnhentetBoforhold(
+                boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
                     periodisertBoforhold,
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),

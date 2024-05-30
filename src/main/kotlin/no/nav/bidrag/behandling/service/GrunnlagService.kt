@@ -438,7 +438,7 @@ class GrunnlagService(
             )
         }
 
-        boforholdService.oppdaterAutomatiskInnhentetBoforhold(
+        boforholdService.oppdatereAutomatiskInnhentetBoforhold(
             behandling,
             jsonTilObjekt<List<BoforholdResponse>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem.data),
             bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,

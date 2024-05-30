@@ -108,7 +108,7 @@ class BoforholdService(
     }
 
     @Transactional
-    fun oppdaterAutomatiskInnhentetBoforhold(
+    fun oppdatereAutomatiskInnhentetBoforhold(
         behandling: Behandling,
         periodisertBoforhold: List<BoforholdResponse>,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
