@@ -252,6 +252,42 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Test
+        @Transactional
+        open fun `skal slette gammel feilmelding ved ny feilfri innhenting`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            stubbeHentingAvPersoninfoForTestpersoner()
+            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+            behandling.grunnlagsinnhentingFeilet = "{\"BARNETILLEGG\":{\"grunnlagstype\":\"BARNETILLEGG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"}}"
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                    Rolletype.BARN ->
+                        stubUtils.stubHenteGrunnlag(
+                            rolle = it,
+                            navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                        )
+
+                    else -> throw Exception()
+                }
+            }
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+            entityManager.refresh(oppdatertBehandling.get())
+
+            assertSoftly(oppdatertBehandling) {
+                it.isPresent shouldBe true
+                it.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+                it.get().grunnlag.size shouldBe totaltAntallGrunnlag
+                it.get().grunnlagsinnhentingFeilet shouldBe null
+            }
+        }
+
+        @Test
         fun `skal ikke oppdatere grunnlag dersom venteperioden etter forrige innhenting ikke er over`() {
             // gitt
             val grunnlagSistInnhentet = LocalDateTime.now().minusMinutes(30)

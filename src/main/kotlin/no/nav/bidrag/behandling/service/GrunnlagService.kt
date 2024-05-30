@@ -152,6 +152,7 @@ class GrunnlagService(
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
+            behandling.grunnlagsinnhentingFeilet = null
 
             grunnlagRequestobjekter.forEach {
                 feilrapporteringer += henteOglagreGrunnlag(behandling, it)
