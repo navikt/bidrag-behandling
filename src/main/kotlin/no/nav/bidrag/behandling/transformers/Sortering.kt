@@ -61,7 +61,7 @@ fun Inntekt.erHistorisk(inntekter: Collection<Inntekt>): Boolean {
 
 fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
     this.filter { inntekt ->
-        inntekt.erHistorisk(this)
+        !inntekt.erHistorisk(this)
     }
 
 fun Set<Inntekt>.årsinntekterSortert(
