@@ -447,7 +447,7 @@ class StubUtils {
         )
     }
 
-    fun stubHenteGrunnlagOk(
+    fun stubHenteGrunnlag(
         rolle: Rolle? = null,
         tomRespons: Boolean = false,
         navnResponsfil: String = "hente-grunnlagrespons.json",
@@ -500,16 +500,16 @@ class StubUtils {
         var barnNummer = 1
         behandling.roller.forEach {
             when (it.rolletype) {
-                Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlagOk(it)
+                Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlag(it)
                 Rolletype.BARN -> {
-                    stubHenteGrunnlagOk(
+                    stubHenteGrunnlag(
                         rolle = it,
                         navnResponsfil = "hente-grunnlagrespons-barn${barnNummer++}.json",
                     )
                 }
 
                 else -> {
-                    stubHenteGrunnlagOk(tomRespons = true)
+                    stubHenteGrunnlag(tomRespons = true)
                 }
             }
         }

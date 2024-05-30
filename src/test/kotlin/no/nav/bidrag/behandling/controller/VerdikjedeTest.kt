@@ -58,15 +58,15 @@ class VerdikjedeTest : KontrollerTestRunner() {
     @Test
     @Disabled("Wiremock-problemer")
     fun `skal opprette behandling og fatte vedtak`() {
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             navnResponsfil = "grunnlagresponse.json",
             rolle = testdataBM.tilRolle(),
         )
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             tomRespons = true,
             rolle = testdataBarn1.tilRolle(),
         )
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             tomRespons = true,
             rolle = testdataBarn2.tilRolle(),
         )
