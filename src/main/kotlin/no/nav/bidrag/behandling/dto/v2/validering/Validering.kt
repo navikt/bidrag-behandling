@@ -158,4 +158,33 @@ data class BeregningValideringsfeil(
     val husstandsbarn: List<BoforholdPeriodeseringsfeil>? = null,
     val sivilstand: SivilstandPeriodeseringsfeil?,
     val måBekrefteNyeOpplysninger: Set<Grunnlagsdatatype> = emptySet(),
+    val måBekrefteNyeOpplysningerV2: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )
+
+data class MåBekrefteNyeOpplysninger(
+    val type: Grunnlagsdatatype,
+    @JsonIgnore
+    val husstandsbarn: Husstandsbarn? = null,
+) {
+    @get:Schema(
+        description = "Barn som det må bekreftes nye opplysninger for. Vil bare være satt hvis type = BOFORHOLD",
+    )
+    val gjelderBarn: HusstandsbarnDto?
+        get() =
+            husstandsbarn?.let {
+                HusstandsbarnDto(
+                    navn = it.navn ?: hentPersonVisningsnavn(it.ident),
+                    ident = it.ident,
+                    fødselsdato = it.fødselsdato,
+                    husstandsbarnId = it.id ?: -1,
+                )
+            }
+
+    data class HusstandsbarnDto(
+        val navn: String?,
+        val ident: String?,
+        val fødselsdato: LocalDate,
+        @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil")
+        val husstandsbarnId: Long,
+    )
+}

@@ -92,9 +92,8 @@ fun Husstandsbarn.validereBoforhold(
 fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<BoforholdPeriodeseringsfeil> {
     val valideringsfeil = mutableListOf<BoforholdPeriodeseringsfeil>()
 
-    groupBy { it.ident }.forEach {
-        val husstandsbarn = it.value.first()
-        husstandsbarn.validereBoforhold(virkniningstidspunkt, valideringsfeil)
+    forEach {
+        it.validereBoforhold(virkniningstidspunkt, valideringsfeil)
     }
 
     return valideringsfeil.toSet()

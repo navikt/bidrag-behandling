@@ -170,7 +170,7 @@ class BehandlingService(
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
                 secureLogger.info {
                     "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
-                        "for person ${request.personident}"
+                        "for person ${request.personident}: $request"
                 }
                 grunnlagService.aktivereGrunnlag(it, request)
                 val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.toSet().hentSisteAktiv()
@@ -215,10 +215,12 @@ class BehandlingService(
             log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+            grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
 
             log.info { "Virkningstidspunkt er endret. Beregner sivilstand perioder på nytt for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling)
             // TODO: Legg til rekalkulering av sivilstandperioder
+            // TODO: Legg til aktivering av grunnlag hvis det ikke kreves bekreftelse
 
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)
