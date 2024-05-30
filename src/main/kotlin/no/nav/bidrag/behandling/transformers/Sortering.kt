@@ -50,14 +50,18 @@ fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
             },
     )
 
+fun Inntekt.erHistorisk(inntekter: Collection<Inntekt>): Boolean {
+    if (!ligningsinntekter.contains(type) || taMed || opprinneligFom == null) return false
+    val sisteLigningsår =
+        inntekter.sortedBy { it.opprinneligFom }
+            .lastOrNull { it.type == type }?.opprinneligFom?.year
+            ?: return false
+    return ligningsinntekter.contains(type) && opprinneligFom?.year != sisteLigningsår
+}
+
 fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
     this.filter { inntekt ->
-        if (!ligningsinntekter.contains(inntekt.type) || inntekt.taMed) return@filter true
-        val sisteLigningsår =
-            this.sortedBy { it.opprinneligFom }
-                .lastOrNull { it.type == inntekt.type }?.opprinneligFom?.year
-                ?: return@filter true
-        inntekt.opprinneligFom == null || ligningsinntekter.contains(inntekt.type) && inntekt.opprinneligFom?.year == sisteLigningsår
+        inntekt.erHistorisk(this)
     }
 
 fun Set<Inntekt>.årsinntekterSortert(

@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndringer
+import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -112,9 +113,9 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         gjelderBarn = null,
     )
 
-fun List<Inntekt>.tilInntektDtoV2() = this.map { it.tilInntektDtoV2() }
+fun List<Inntekt>.tilInntektDtoV2() = this.map { it.tilInntektDtoV2(it.erHistorisk(this)) }
 
-fun Inntekt.tilInntektDtoV2() =
+fun Inntekt.tilInntektDtoV2(erHistorisk: Boolean = false) =
     InntektDtoV2(
         id = this.id,
         taMed = this.taMed,
@@ -134,6 +135,7 @@ fun Inntekt.tilInntektDtoV2() =
         inntektstyper = this.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
         opprinneligFom = this.opprinneligFom,
         opprinneligTom = this.opprinneligTom,
+        historisk = erHistorisk,
     )
 
 fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Inntekt {
