@@ -60,20 +60,21 @@ fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
         inntekt.opprinneligFom == null || ligningsinntekter.contains(inntekt.type) && inntekt.opprinneligFom?.year == sisteLigningsår
     }
 
-@OptIn(ExperimentalStdlibApi::class)
 fun Set<Inntekt>.årsinntekterSortert(
     sorterTaMed: Boolean = true,
     eksluderYtelserUtenforVirkningstidspunkt: Boolean = false,
-) = this.filter { !eksplisitteYtelser.contains(it.type) }
-    .filtrerUtHistoriskeInntekter()
-    .filter {
-        if (eksluderYtelserUtenforVirkningstidspunkt && årsinntekterYtelser.contains(it.type)) {
-            it.opprinneligPeriode
-                ?.inneholder(YearMonth.from(it.behandling?.virkningstidspunktEllerSøktFomDato)) ?: true
-        } else {
-            true
-        }
+    inkluderHistoriskeInntekter: Boolean = false,
+) = when (inkluderHistoriskeInntekter) {
+    true -> this.filter { !eksplisitteYtelser.contains(it.type) }
+    else -> this.filter { !eksplisitteYtelser.contains(it.type) }.filtrerUtHistoriskeInntekter()
+}.filter {
+    if (eksluderYtelserUtenforVirkningstidspunkt && årsinntekterYtelser.contains(it.type)) {
+        it.opprinneligPeriode
+            ?.inneholder(YearMonth.from(it.behandling?.virkningstidspunktEllerSøktFomDato)) ?: true
+    } else {
+        true
     }
+}
     .sortedWith(
         compareBy<Inntekt> {
             it.taMed && sorterTaMed
