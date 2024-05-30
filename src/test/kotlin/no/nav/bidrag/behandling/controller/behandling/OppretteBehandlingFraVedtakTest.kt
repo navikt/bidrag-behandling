@@ -27,15 +27,15 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
     @Test
     @Transactional
     fun `skal opprette en behandling fra vedtak`() {
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             navnResponsfil = "grunnlagresponse.json",
             rolle = testdataBM.tilRolle(),
         )
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             tomRespons = true,
             rolle = testdataBarn1.tilRolle(),
         )
-        stubUtils.stubHenteGrunnlagOk(
+        stubUtils.stubHenteGrunnlag(
             tomRespons = true,
             rolle = testdataBarn2.tilRolle(),
         )

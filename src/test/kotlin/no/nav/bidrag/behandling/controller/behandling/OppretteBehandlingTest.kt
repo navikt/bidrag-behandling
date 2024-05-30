@@ -31,7 +31,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             val personidentBarn1 = Personident("12345678912")
             val personidentBarn2 = Personident("12345678913")
 
-            stubUtils.stubHenteGrunnlagOk()
+            stubUtils.stubHenteGrunnlag()
 
             val roller =
                 setOf(
@@ -107,7 +107,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             val personidentBarn = Personident("12345678910")
             val personidentBm = Personident("12345678911")
 
-            stubUtils.stubHenteGrunnlagOk()
+            stubUtils.stubHenteGrunnlag()
 
             val roller =
                 setOf(
@@ -192,7 +192,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             val personidentBm = Personident("12345678911")
 
             stubUtils.stubOpprettForsendelse(status = HttpStatus.BAD_REQUEST)
-            stubUtils.stubHenteGrunnlagOk()
+            stubUtils.stubHenteGrunnlag()
 
             val roller =
                 setOf(

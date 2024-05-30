@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.v2.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
@@ -9,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
+import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -17,6 +19,7 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Periode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -51,6 +54,7 @@ data class BehandlingDtoV2(
     val boforhold: BoforholdDtoV2,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
+    val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
 )
 
 data class AktiveGrunnlagsdata(
@@ -79,6 +83,14 @@ data class IkkeAktiveInntekter(
             barnetillegg.isEmpty() && utvidetBarnetrygd.isEmpty() &&
                 kontantstøtte.isEmpty() && småbarnstillegg.isEmpty() && årsinntekter.isEmpty()
 }
+
+data class Grunnlagsinnhentingsfeil(
+    val rolleid: Long,
+    val grunnlagsdatatype: Grunnlagsdatatype,
+    val feilmelding: String,
+    @JsonDeserialize(using = PeriodeDeserialiserer::class)
+    val periode: Periode<LocalDate>? = null,
+)
 
 @Schema(enumAsRef = true)
 enum class GrunnlagInntektEndringstype {

@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
+import com.fasterxml.jackson.core.type.TypeReference
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
@@ -14,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
@@ -21,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
+import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -45,9 +48,11 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
@@ -102,19 +107,34 @@ fun Behandling.tilBehandlingDtoV2(
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata
             ?: IkkeAktiveGrunnlagsdata(),
+    feilOppståttVedSisteGrunnlagsinnhenting =
+        grunnlagsinnhentingFeilet?.let {
+            val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
+                object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
+
+            objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
+        },
 )
+
+private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
+    this.map { feil ->
+        Grunnlagsinnhentingsfeil(
+            rolleid = behandling.roller.find { feil.value.personId == it.ident }!!.id!!,
+            feilmelding = feil.value.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
+            grunnlagsdatatype = feil.key,
+            periode = feil.value.periodeFra?.let { Datoperiode(feil.value.periodeFra!!, feil.value.periodeTil) },
+        )
+    }.toSet()
 
 fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     if (this == null) return null
     val grunnlag =
         konvertereData<List<SivilstandGrunnlagDto>>()
             ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
-    return this?.let {
-        SivilstandAktivGrunnlagDto(
-            grunnlag = grunnlag?.toSet() ?: emptySet(),
-            innhentetTidspunkt = innhentet,
-        )
-    }
+    return SivilstandAktivGrunnlagDto(
+        grunnlag = grunnlag?.toSet() ?: emptySet(),
+        innhentetTidspunkt = innhentet,
+    )
 }
 
 fun List<Grunnlag>.tilHusstandsbarn() =

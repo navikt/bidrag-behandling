@@ -33,7 +33,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
         val behandling = testdataManager.oppretteBehandling(false)
         val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
 
-        stubUtils.stubHenteGrunnlagOk()
+        stubUtils.stubHenteGrunnlag()
 
         grunnlagRequestobjekter.forEach {
             // when
