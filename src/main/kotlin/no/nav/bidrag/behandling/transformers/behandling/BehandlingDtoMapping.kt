@@ -63,6 +63,7 @@ import java.time.ZoneOffset
 fun Behandling.tilBehandlingDtoV2(
     gjeldendeAktiveGrunnlagsdata: List<Grunnlag>,
     ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata? = null,
+    inkluderHistoriskeInntekter: Boolean = false,
 ) = BehandlingDtoV2(
     id = id!!,
     vedtakstype = vedtakstype,
@@ -102,7 +103,11 @@ fun Behandling.tilBehandlingDtoV2(
                 ),
         ),
     boforhold = tilBoforholdV2(),
-    inntekter = tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
+    inntekter =
+        tilInntektDtoV2(
+            gjeldendeAktiveGrunnlagsdata,
+            inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
+        ),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata
@@ -169,46 +174,48 @@ fun Behandling.tilBoforholdV2() =
             ),
     )
 
-fun Behandling.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList()) =
-    InntekterDtoV2(
-        barnetillegg =
-            inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                .sorterEtterDatoOgBarn()
-                .tilInntektDtoV2().toSet(),
-        utvidetBarnetrygd =
-            inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
-                .sorterEtterDato()
-                .tilInntektDtoV2()
-                .toSet(),
-        kontantstøtte =
-            inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                .sorterEtterDatoOgBarn()
-                .tilInntektDtoV2().toSet(),
-        småbarnstillegg =
-            inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
-                .sorterEtterDato()
-                .tilInntektDtoV2().toSet(),
-        månedsinntekter =
-            gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
-                .flatMap { grunnlag ->
-                    grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
-                        it.tilInntektDtoV2(
-                            grunnlag.rolle.ident!!,
-                        )
-                    } ?: emptyList()
-                }.toSet(),
-        årsinntekter =
-            inntekter.årsinntekterSortert()
-                .tilInntektDtoV2()
-                .toSet(),
-        beregnetInntekter = hentBeregnetInntekter(),
-        notat =
-            BehandlingNotatDto(
-                medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
-                kunINotat = inntektsbegrunnelseKunINotat,
-            ),
-        valideringsfeil = hentInntekterValideringsfeil(),
-    )
+fun Behandling.tilInntektDtoV2(
+    gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList(),
+    inkluderHistoriskeInntekter: Boolean = false,
+) = InntekterDtoV2(
+    barnetillegg =
+        inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
+            .sorterEtterDatoOgBarn()
+            .tilInntektDtoV2().toSet(),
+    utvidetBarnetrygd =
+        inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+            .sorterEtterDato()
+            .tilInntektDtoV2()
+            .toSet(),
+    kontantstøtte =
+        inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+            .sorterEtterDatoOgBarn()
+            .tilInntektDtoV2().toSet(),
+    småbarnstillegg =
+        inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+            .sorterEtterDato()
+            .tilInntektDtoV2().toSet(),
+    månedsinntekter =
+        gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
+            .flatMap { grunnlag ->
+                grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
+                    it.tilInntektDtoV2(
+                        grunnlag.rolle.ident!!,
+                    )
+                } ?: emptyList()
+            }.toSet(),
+    årsinntekter =
+        inntekter.årsinntekterSortert(inkluderHistoriskeInntekter = inkluderHistoriskeInntekter)
+            .tilInntektDtoV2()
+            .toSet(),
+    beregnetInntekter = hentBeregnetInntekter(),
+    notat =
+        BehandlingNotatDto(
+            medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+            kunINotat = inntektsbegrunnelseKunINotat,
+        ),
+    valideringsfeil = hentInntekterValideringsfeil(),
+)
 
 fun List<Grunnlag>.tilAktivGrunnlagsdata() =
     AktiveGrunnlagsdata(
@@ -377,7 +384,7 @@ fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
             husstandsbarnListe.find { it.ident == barnId }
                 ?: return@flatMap perioder
         val perioderFiltrert =
-            perioder.slice(
+            perioder.sortedBy { it.periodeFom }.slice(
                 perioder.map { it.periodeFom }
                     .hentIndekserEtterVirkningstidspunkt(virkningstidspunkt, barn.fødselsdato),
             )
@@ -392,7 +399,7 @@ fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
 fun List<SivilstandGrunnlagDto>.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(
     virkningstidspunkt: LocalDate,
 ): List<SivilstandGrunnlagDto> {
-    return slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt)).sortedBy { it.gyldigFom }
+    return sortedBy { it.gyldigFom }.slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
 }
 
 fun List<LocalDate?>.hentIndekserEtterVirkningstidspunkt(
@@ -419,16 +426,16 @@ fun List<LocalDate?>.hentIndekserEtterVirkningstidspunkt(
 fun SivilstandBeregnet.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkningstidspunkt: LocalDate): SivilstandBeregnet {
     return copy(
         sivilstandListe =
-            sivilstandListe.slice(
+            sivilstandListe.sortedBy { it.periodeFom }.slice(
                 sivilstandListe.map {
                     it.periodeFom
                 }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt),
-            ).sortedBy { it.periodeFom },
+            ),
     )
 }
 
 fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkningstidspunkt: LocalDate): List<Sivilstand> {
-    return slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt)).sortedBy { it.periodeFom }
+    return sortedBy { it.periodeFom }.slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
 }
 
 fun List<Grunnlag>.hentAlleBearbeidaBoforhold(

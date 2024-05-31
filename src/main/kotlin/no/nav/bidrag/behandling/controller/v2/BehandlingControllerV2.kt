@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -39,6 +38,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 
 private val log = KotlinLogging.logger {}
 
@@ -252,26 +252,9 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
+        @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
     ): BehandlingDtoV2 {
-        return behandlingService.henteBehandling(behandlingsid)
-    }
-
-    @Suppress("unused")
-    @GetMapping("/behandling/boforhold/{behandlingsid}")
-    @Operation(
-        description = "Hente en behandling",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Hentet behandling"),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
-        ],
-    )
-    fun henteBoforhold(
-        @PathVariable behandlingsid: Long,
-    ): BoforholdDtoV2 {
-        return behandlingService.henteBehandling(behandlingsid).boforhold
+        return behandlingService.henteBehandling(behandlingsid, inkluderHistoriskeInntekter)
     }
 
     @Suppress("unused")

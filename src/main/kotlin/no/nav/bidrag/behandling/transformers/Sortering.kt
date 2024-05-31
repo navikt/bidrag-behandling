@@ -50,30 +50,35 @@ fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
             },
     )
 
+fun Inntekt.erHistorisk(inntekter: Collection<Inntekt>): Boolean {
+    if (!ligningsinntekter.contains(type) || taMed || opprinneligFom == null) return false
+    val sisteLigningsår =
+        inntekter.sortedBy { it.opprinneligFom }
+            .lastOrNull { it.type == type }?.opprinneligFom?.year
+            ?: return false
+    return ligningsinntekter.contains(type) && opprinneligFom?.year != sisteLigningsår
+}
+
 fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
     this.filter { inntekt ->
-        if (!ligningsinntekter.contains(inntekt.type) || inntekt.taMed) return@filter true
-        val sisteLigningsår =
-            this.sortedBy { it.opprinneligFom }
-                .lastOrNull { it.type == inntekt.type }?.opprinneligFom?.year
-                ?: return@filter true
-        inntekt.opprinneligFom == null || ligningsinntekter.contains(inntekt.type) && inntekt.opprinneligFom?.year == sisteLigningsår
+        !inntekt.erHistorisk(this)
     }
 
-@OptIn(ExperimentalStdlibApi::class)
 fun Set<Inntekt>.årsinntekterSortert(
     sorterTaMed: Boolean = true,
     eksluderYtelserUtenforVirkningstidspunkt: Boolean = false,
-) = this.filter { !eksplisitteYtelser.contains(it.type) }
-    .filtrerUtHistoriskeInntekter()
-    .filter {
-        if (eksluderYtelserUtenforVirkningstidspunkt && årsinntekterYtelser.contains(it.type)) {
-            it.opprinneligPeriode
-                ?.inneholder(YearMonth.from(it.behandling?.virkningstidspunktEllerSøktFomDato)) ?: true
-        } else {
-            true
-        }
+    inkluderHistoriskeInntekter: Boolean = false,
+) = when (inkluderHistoriskeInntekter) {
+    true -> this.filter { !eksplisitteYtelser.contains(it.type) }
+    else -> this.filter { !eksplisitteYtelser.contains(it.type) }.filtrerUtHistoriskeInntekter()
+}.filter {
+    if (eksluderYtelserUtenforVirkningstidspunkt && årsinntekterYtelser.contains(it.type)) {
+        it.opprinneligPeriode
+            ?.inneholder(YearMonth.from(it.behandling?.virkningstidspunktEllerSøktFomDato)) ?: true
+    } else {
+        true
     }
+}
     .sortedWith(
         compareBy<Inntekt> {
             it.taMed && sorterTaMed

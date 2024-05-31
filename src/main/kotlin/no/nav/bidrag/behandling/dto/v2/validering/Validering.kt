@@ -117,8 +117,6 @@ data class BoforholdPeriodeseringsfeil(
         val fødselsdato: LocalDate,
         @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil")
         val husstandsbarnId: Long,
-        @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil", deprecated = true)
-        val tekniskId: Long = husstandsbarnId,
     )
 }
 
@@ -157,8 +155,7 @@ data class BeregningValideringsfeil(
     val inntekter: InntektValideringsfeilDto? = null,
     val husstandsbarn: List<BoforholdPeriodeseringsfeil>? = null,
     val sivilstand: SivilstandPeriodeseringsfeil?,
-    val måBekrefteNyeOpplysninger: Set<Grunnlagsdatatype> = emptySet(),
-    val måBekrefteNyeOpplysningerV2: Set<MåBekrefteNyeOpplysninger> = emptySet(),
+    val måBekrefteNyeOpplysninger: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )
 
 data class MåBekrefteNyeOpplysninger(

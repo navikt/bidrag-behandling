@@ -173,8 +173,7 @@ fun Behandling.validerForBeregning() {
                 husstandsbarn.validerBoforhold(
                     virkningstidspunktEllerSøktFomDato,
                 ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
-            val måBekrefteOpplysninger = grunnlag.hentAlleSomMåBekreftes().map { it.type }.toSet()
-            val måBekrefteOpplysningerV2 =
+            val måBekrefteOpplysninger =
                 grunnlag.hentAlleSomMåBekreftes().map { grunnlagSomMåBekreftes ->
                     MåBekrefteNyeOpplysninger(
                         grunnlagSomMåBekreftes.type,
@@ -194,7 +193,6 @@ fun Behandling.validerForBeregning() {
                     husstandsbarnFeil,
                     sivilstandFeil,
                     måBekrefteOpplysninger,
-                    måBekrefteOpplysningerV2,
                 )
             }
         } else if (virkningstidspunktFeil != null) {

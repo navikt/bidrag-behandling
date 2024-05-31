@@ -214,6 +214,7 @@ class BehandlingService(
             behandling.virkningstidspunkt = request.virkningstidspunkt ?: behandling.virkningstidspunkt
             log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
 
@@ -300,7 +301,10 @@ class BehandlingService(
             }
     }
 
-    fun henteBehandling(behandlingsid: Long): BehandlingDtoV2 {
+    fun henteBehandling(
+        behandlingsid: Long,
+        inkluderHistoriskeInntekter: Boolean = false,
+    ): BehandlingDtoV2 {
         val behandling = hentBehandlingById(behandlingsid)
         tilgangskontrollService.sjekkTilgangBehandling(behandling)
 
@@ -312,6 +316,7 @@ class BehandlingService(
         return behandling.tilBehandlingDtoV2(
             behandling.grunnlagListe.toSet().hentSisteAktiv(),
             grunnlagsdataEndretEtterAktivering,
+            inkluderHistoriskeInntekter,
         )
     }
 

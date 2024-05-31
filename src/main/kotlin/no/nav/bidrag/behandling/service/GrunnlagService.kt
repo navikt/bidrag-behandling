@@ -275,6 +275,19 @@ class GrunnlagService(
     }
 
     @Transactional
+    fun oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        val sisteIkkeAktiveGrunnlag =
+            behandling.henteNyesteIkkeAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
+                behandling.rolleSomBoforholdSkalHentesFor!!,
+            ) ?: run {
+                log.debug { "Fant ingen ikke aktiv boforhold grunnlag. Gjør ingen endringer" }
+                return
+            }
+        sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(false)
+    }
+
+    @Transactional
     fun oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val sisteAktiveGrunnlag =
             behandling.henteNyesteAktiveGrunnlag(
@@ -284,7 +297,11 @@ class GrunnlagService(
                 log.warn { "Fant ingen aktiv boforhold grunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
                 return
             }
-        val boforhold = sisteAktiveGrunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>()!!
+        sisteAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag()
+    }
+
+    private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
+        val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
@@ -292,7 +309,7 @@ class GrunnlagService(
             )
         boforholdPeriodisert.filter { it.relatertPersonPersonId != null }.groupBy { it.relatertPersonPersonId }
             .forEach { (gjelder, perioder) ->
-                overskrivBearbeidetBoforholdGrunnlag(behandling, gjelder, perioder)
+                overskrivBearbeidetBoforholdGrunnlag(behandling, gjelder, perioder, rekalkulerOgOverskriveAktiverte)
             }
     }
 
@@ -300,11 +317,21 @@ class GrunnlagService(
         behandling: Behandling,
         gjelder: String?,
         perioder: List<BoforholdResponse>,
+        rekalkulerOgOverskriveAktiverte: Boolean = true,
     ) {
-        behandling.henteAktiverteGrunnlag(
-            Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-            behandling.rolleSomBoforholdSkalHentesFor!!,
-        ).find { it.gjelder == gjelder }?.let {
+        val grunnlagSomSkalOverskrives =
+            if (rekalkulerOgOverskriveAktiverte) {
+                behandling.henteAktiverteGrunnlag(
+                    Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                    behandling.rolleSomBoforholdSkalHentesFor!!,
+                )
+            } else {
+                behandling.henteUaktiverteGrunnlag(
+                    Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                    behandling.rolleSomBoforholdSkalHentesFor!!,
+                )
+            }
+        grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let {
             it.data = tilJson(perioder)
         }
     }
@@ -1144,6 +1171,15 @@ class GrunnlagService(
         grunnlag.filter {
             it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
                 it.gjelder == gjelder?.verdi
+        }.toSet().maxByOrNull { it.innhentet }
+
+    private fun Behandling.henteNyesteIkkeAktiveGrunnlag(
+        grunnlagstype: Grunnlagstype,
+        rolleInnhentetFor: Rolle,
+    ): Grunnlag? =
+        grunnlag.filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                it.aktiv == null
         }.toSet().maxByOrNull { it.innhentet }
 
     private fun Behandling.henteNyesteAktiveGrunnlag(

@@ -44,6 +44,7 @@ data class InntektDtoV2(
     val inntektsposter: Set<InntektspostDtoV2>,
     @Schema(required = true)
     val inntektstyper: Set<Inntektstype> = emptySet(),
+    val historisk: Boolean? = false,
 )
 
 data class InntekterDtoV2(
