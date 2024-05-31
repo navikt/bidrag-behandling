@@ -384,7 +384,7 @@ fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
             husstandsbarnListe.find { it.ident == barnId }
                 ?: return@flatMap perioder
         val perioderFiltrert =
-            perioder.slice(
+            perioder.sortedBy { it.periodeFom }.slice(
                 perioder.map { it.periodeFom }
                     .hentIndekserEtterVirkningstidspunkt(virkningstidspunkt, barn.fødselsdato),
             )
@@ -399,7 +399,7 @@ fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
 fun List<SivilstandGrunnlagDto>.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(
     virkningstidspunkt: LocalDate,
 ): List<SivilstandGrunnlagDto> {
-    return slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt)).sortedBy { it.gyldigFom }
+    return sortedBy { it.gyldigFom }.slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
 }
 
 fun List<LocalDate?>.hentIndekserEtterVirkningstidspunkt(
@@ -426,16 +426,16 @@ fun List<LocalDate?>.hentIndekserEtterVirkningstidspunkt(
 fun SivilstandBeregnet.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkningstidspunkt: LocalDate): SivilstandBeregnet {
     return copy(
         sivilstandListe =
-            sivilstandListe.slice(
+            sivilstandListe.sortedBy { it.periodeFom }.slice(
                 sivilstandListe.map {
                     it.periodeFom
                 }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt),
-            ).sortedBy { it.periodeFom },
+            ),
     )
 }
 
 fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkningstidspunkt: LocalDate): List<Sivilstand> {
-    return slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt)).sortedBy { it.periodeFom }
+    return sortedBy { it.periodeFom }.slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
 }
 
 fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
