@@ -373,13 +373,19 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
 }
 
 fun OppdatereSivilstand.validere(behandling: Behandling) {
-    this.sletteSivilstandsperiode?.let {
+    this.sletteSivilstandsperiode?.let { id ->
         val sivilstand = behandling.sivilstand.find { this.sletteSivilstandsperiode == it.id }
         if (sivilstand == null) {
+            ressursIkkeFunnetException("Fant ikke sivilstandsperiode med id $id.")
+        } else if (behandling.sivilstand.none { id != it.id }) {
+            ressursIkkeTilknyttetBehandling("Kan ikke slette det eneste innslaget i sivilstandshistorikken til behandling ${behandling.id}")
         }
     }
 
-    this.nyEllerEndretSivilstandsperiode.let {
+    this.nyEllerEndretSivilstandsperiode?.id?.let { id ->
+        if (behandling.sivilstand.find { id == it.id } == null) {
+            ressursIkkeFunnetException("Fant ikke sivilstandsinnlsag med id $id.")
+        }
     }
 
     if (this.sletteSivilstandsperiode == null && this.nyEllerEndretSivilstandsperiode == null) {

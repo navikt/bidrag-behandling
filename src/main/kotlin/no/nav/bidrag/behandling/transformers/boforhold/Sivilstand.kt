@@ -1,13 +1,23 @@
 package no.nav.bidrag.behandling.transformers.boforhold
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
+import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
+import no.nav.bidrag.sivilstand.dto.EndreSivilstand
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
+import no.nav.bidrag.sivilstand.dto.TypeEndring
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
+
+private val log = KotlinLogging.logger {}
 
 fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(lagretSivilstand: Set<Sivilstand>? = emptySet()) =
     SivilstandRequest(
@@ -16,25 +26,19 @@ fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(lagretSivilstand: Set<Sivils
         null,
     )
 
-fun Set<Sivilstand>.tilSivilstandGrunnlagDto() =
-    this.map {
-        SivilstandGrunnlagDto(
-            gyldigFom = it.datoFom,
-            type = it.sivilstand.tilSivilstandskodePDL(),
-            bekreftelsesdato = null,
-            personId = null,
-            master = null,
-            historisk = null,
-            registrert = null,
-        )
-    }
+fun Set<Sivilstand>.henteNyesteGrunnlagsdata() =
+    this.first().behandling.grunnlag.hentSisteAktiv()
+        .find { !it.erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
+        .konvertereData<List<SivilstandGrunnlagDto>>() ?: emptyList()
 
-fun Set<Sivilstand>.tilSvilstandRequest() =
-    SivilstandRequest(
-        innhentedeOffentligeOpplysninger = emptyList(),
-        behandledeSivilstandsopplysninger = toList().tilSivilstandBeregnV2Dto(),
-        endreSivilstand = null,
-    )
+fun Set<Sivilstand>.tilSvilstandRequest(
+    nyttEllerEndretInnslag: Sivilstandsperiode? = null,
+    sletteInnslag: Long? = null,
+) = SivilstandRequest(
+    innhentedeOffentligeOpplysninger = this.henteNyesteGrunnlagsdata(),
+    behandledeSivilstandsopplysninger = toList().tilSivilstandBeregnV2Dto(),
+    endreSivilstand = tilEndreSivilstand(nyttEllerEndretInnslag, sletteInnslag),
+)
 
 fun Sivilstandskode.tilSivilstandskodePDL() =
     when (this) {
@@ -48,12 +52,20 @@ fun Sivilstandskode.tilSivilstandskodePDL() =
 fun List<Sivilstand>.tilSivilstandBeregnV2Dto() =
     this.map {
         SivilstandBeregnV2Dto(
-            periodeFom = it.datoFom!!,
+            periodeFom = it.datoFom,
             periodeTom = it.datoTom,
             kilde = it.kilde,
             sivilstandskode = it.sivilstand,
         )
     }
+
+fun Sivilstand.tilSivilstandBeregnV2Dto() =
+    SivilstandBeregnV2Dto(
+        periodeFom = this.datoFom,
+        periodeTom = this.datoTom,
+        kilde = this.kilde,
+        sivilstandskode = this.sivilstand,
+    )
 
 fun Set<SivilstandBeregnV2Dto>.tilSivilstand(behandling: Behandling): List<Sivilstand> =
     this.map {
@@ -80,4 +92,69 @@ fun List<no.nav.bidrag.sivilstand.response.SivilstandV1>.tilSivilstand(behandlin
 fun Behandling.overskriveMedBearbeidaSivilstandshistorikk(nyHistorikk: Set<SivilstandBeregnV2Dto>) {
     this.sivilstand.clear()
     this.sivilstand.addAll(nyHistorikk.tilSivilstand(this))
+}
+
+private fun Set<Sivilstand>.tilEndreSivilstand(
+    nyttEllerEndretInnslag: Sivilstandsperiode? = null,
+    sletteInnslag: Long? = null,
+): EndreSivilstand? {
+    try {
+        if (nyttEllerEndretInnslag == null && sletteInnslag == null) {
+            return null
+        }
+        return EndreSivilstand(
+            typeEndring = bestemmeEndringstype(nyttEllerEndretInnslag, sletteInnslag),
+            nySivilstand = bestemmeNySivilstand(nyttEllerEndretInnslag),
+            originalSivilstand = bestemmmeOriginalSivilstand(nyttEllerEndretInnslag, sletteInnslag),
+        )
+    } catch (illegalArgumentException: IllegalArgumentException) {
+        log.warn {
+            "Mottok mangelfulle opplysninger ved oppdatering av sivilstand i behandling ${this.first().behandling.id}. " +
+                "Mottatt input: nyttEllerEndretInnslag=$nyttEllerEndretInnslag, " +
+                "sletteInnslag=$sletteInnslag"
+        }
+        oppdateringAvBoforholdFeilet(
+            "Oppdatering av sivilstand i behandling ${this.first().behandling.id} feilet pga mangelfulle inputdata",
+        )
+    }
+}
+
+fun Set<Sivilstand>.bestemmmeOriginalSivilstand(
+    nyttEllerEndretInnslag: Sivilstandsperiode?,
+    sletteInnslag: Long?,
+): SivilstandBeregnV2Dto? {
+    nyttEllerEndretInnslag?.id?.let { id -> return this.find { it.id == id }?.tilSivilstandBeregnV2Dto() }
+    sletteInnslag?.let { id -> return this.find { it.id == id }?.tilSivilstandBeregnV2Dto() } ?: return null
+}
+
+fun bestemmeNySivilstand(nyttEllerEndretInnslag: Sivilstandsperiode?): SivilstandBeregnV2Dto? {
+    return nyttEllerEndretInnslag?.let {
+        SivilstandBeregnV2Dto(
+            periodeFom = it.fraOgMed,
+            periodeTom = it.tilOgMed,
+            kilde = Kilde.MANUELL,
+            sivilstandskode = it.sivilstand,
+        )
+    }
+}
+
+private fun bestemmeEndringstype(
+    nyttEllerEndretInnslag: Sivilstandsperiode? = null,
+    sletteInnslag: Long? = null,
+): TypeEndring {
+    nyttEllerEndretInnslag?.let {
+        if (it.id != null) {
+            return TypeEndring.ENDRET
+        }
+        return TypeEndring.NY
+    }
+
+    if (sletteInnslag != null) {
+        return TypeEndring.SLETTET
+    }
+
+    throw IllegalArgumentException(
+        "Mangler data til å avgjøre endringstype. Motttok input: nyttEllerEndretInnslag: $nyttEllerEndretInnslag, " +
+            " sletteInnslag: $sletteInnslag",
+    )
 }

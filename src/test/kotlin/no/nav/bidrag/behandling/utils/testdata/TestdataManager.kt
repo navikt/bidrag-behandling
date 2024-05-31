@@ -60,7 +60,7 @@ class TestdataManager(
                     behandling,
                     LocalDate.parse("2023-01-01"),
                     LocalDate.parse("2023-05-31"),
-                    Sivilstandskode.BOR_ALENE_MED_BARN,
+                    Sivilstandskode.GIFT_SAMBOER,
                 ),
                 opprettSivilstand(
                     behandling,

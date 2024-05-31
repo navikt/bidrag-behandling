@@ -309,14 +309,11 @@ class BoforholdService(
                     nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
                     jsonListeTilObjekt<SivilstandBeregnV2Dto>(nyesteIkkeaktivertePeriodiserteSivilstand.data)
                 }
-
                 false -> {
-                    SivilstandApi.beregnV2(
-                        behandling.virkningstidspunktEllerSøktFomDato,
-                        jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeaktiverteSivilstand.data).tilSivilstandRequest(
-                            behandling.sivilstand,
-                        ),
-                    ).toSet()
+                    val request =
+                        jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeaktiverteSivilstand.data)
+                            .tilSivilstandRequest(behandling.sivilstand.filter { Kilde.MANUELL == it.kilde }.toSet())
+                    SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, request).toSet()
                 }
             }
 
@@ -352,10 +349,16 @@ class BoforholdService(
             )
         }
         oppdatereSivilstand.nyEllerEndretSivilstandsperiode?.let {
-            val sivilstand = Sivilstand(behandling, it.fraOgMed, it.tilOgMed, it.sivilstand, Kilde.MANUELL)
-            behandling.sivilstand.add(sivilstand)
-            log.info { "Sivilstandsperiode (id ${sivilstand.id}) ble manuelt lagt til behandling $behandlingsid." }
-            return behandling.sivilstand.tilOppdatereBoforholdResponse()
+            behandling.bidragsmottaker!!.lagreSivilstandshistorikk(behandling.sivilstand)
+            behandling.oppdatereSivilstandshistorikk(it)
+            loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
+            return OppdatereBoforholdResponse(
+                oppdatertSivilstandshistorikk = behandling.sivilstand.tilSivilstandDto(),
+                valideringsfeil =
+                    BoforholdValideringsfeil(
+                        sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
+                    ),
+            )
         }
 
         if (oppdatereSivilstand.angreSisteEndring) {
@@ -685,20 +688,14 @@ class BoforholdService(
         sletteInnslag: Long? = null,
     ) {
         val manuelleInnslag =
-            (
-                this.sivilstand.filter { Kilde.MANUELL == it.kilde }.filter { it.id != sletteInnslag } +
-                    nyttEllerEndretInnslag?.tilSivilstand(this)
-            ).filterNotNull().toMutableSet()
+            (this.sivilstand.filter { Kilde.MANUELL == it.kilde }.filter { it.id != sletteInnslag }).toMutableSet()
 
         this.tilbakestilleTilOffentligSivilstandshistorikk()
         val historikkTilPeriodisering = this.sivilstand + manuelleInnslag
 
-        this.overskriveMedBearbeidaSivilstandshistorikk(
-            SivilstandApi.beregnV2(
-                this.virkningstidspunktEllerSøktFomDato,
-                historikkTilPeriodisering.tilSvilstandRequest(),
-            ).toSet(),
-        )
+        val request = historikkTilPeriodisering.tilSvilstandRequest(nyttEllerEndretInnslag, sletteInnslag)
+        val resultat = SivilstandApi.beregnV2(this.virkningstidspunktEllerSøktFomDato, request).toSet()
+        this.overskriveMedBearbeidaSivilstandshistorikk(resultat)
     }
 
     private fun bestemmeEndringstype(
