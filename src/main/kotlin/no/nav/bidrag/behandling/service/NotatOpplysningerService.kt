@@ -377,7 +377,7 @@ private fun Behandling.hentInntekterForIdent(
                 }
         },
     årsinntekter =
-        inntekter.årsinntekterSortert()
+        inntekter.årsinntekterSortert(!filtrerBareOffentlige)
             .filter { it.ident == ident }
             .ekskluderYtelserFørVirkningstidspunkt()
             .filtrerKilde(filtrerBareOffentlige)
