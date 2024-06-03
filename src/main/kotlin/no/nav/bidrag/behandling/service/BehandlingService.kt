@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.toV2
 import no.nav.bidrag.behandling.transformers.behandling.tilAktivGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
@@ -182,6 +183,21 @@ class BehandlingService(
                     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
                     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
                 )
+            }
+    }
+
+    @Transactional
+    fun oppdatereUtgift(
+        behandlingsid: Long,
+        request: OppdatereUtgiftRequest,
+    ): Behandling {
+        return behandlingRepository.findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+                log.info { "Oppdaterer utgift for behandling $behandlingsid" }
+                secureLogger.info { "Oppdaterer utgift for behandling $behandlingsid, forespørsel=$request" }
+                request.valider(it)
+
+                it
             }
     }
 

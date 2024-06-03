@@ -55,9 +55,11 @@ data class BehandlingDtoV2(
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
+    @Schema(description = "Utgiftsgrunnlag for særtilskudd. Vil alltid være null for forskudd og bidrag")
+    val utgift: SærtilskuddUtgifterDto? = null,
 )
 
-data class SærtilskuddUtgifter(
+data class SærtilskuddUtgifterDto(
     val beløpBetaltAvBp: BigDecimal = BigDecimal.ZERO,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val beregnetBeløp: BigDecimal = BigDecimal.ZERO,

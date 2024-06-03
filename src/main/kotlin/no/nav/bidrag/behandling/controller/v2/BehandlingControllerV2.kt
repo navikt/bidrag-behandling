@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -150,6 +151,34 @@ class BehandlingControllerV2(
     ): OppdatereInntektResponse {
         log.info { "Oppdatere inntekter for behandling $behandlingsid" }
         return inntektService.oppdatereInntektManuelt(behandlingsid, request)
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/utgift")
+    @Operation(
+        description = "Oppdatere utgift for behandling. Returnerer oppdatert behandling detaljer. L",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun oppdatereUtgift(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdatereUtgiftRequest,
+    ): BehandlingDtoV2 {
+        log.info { "Oppdaterer utgift for behandling $behandlingsid" }
+        secureLogger.info { "Oppdaterer utgift for behandling $behandlingsid med forespørsel $request" }
+
+        val behandling = behandlingService.oppdatereUtgift(behandlingsid, request)
+
+        return behandling.tilBehandlingDtoV2(
+            behandling.grunnlag.hentSisteAktiv(),
+            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
+        )
     }
 
     @PutMapping("/behandling/{behandlingsid}/virkningstidspunkt")

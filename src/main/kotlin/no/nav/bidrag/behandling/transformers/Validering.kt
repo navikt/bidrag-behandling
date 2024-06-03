@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleHusstandsmedlemPerioder
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -29,6 +30,7 @@ import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
@@ -41,6 +43,30 @@ fun Behandling.validerKanOppdatere() {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
             "Vedtak er fattet for behandling og kan derfor ikke oppdateres",
+        )
+    }
+}
+
+fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
+    val feilliste = mutableListOf<String>()
+    if (behandling.engangsbeloptype != Engangsbeløptype.SÆRTILSKUDD) {
+        feilliste.add("Kan ikke sette utgift for behandling som ikke er av typen SÆRTILSKUDD")
+    }
+    val erAvslag = (avslag != null || behandling.avslag != null)
+    if (erAvslag && nyEllerEndretUtgift != null) {
+        feilliste.add("Kan oppdatere eller opprette ny utgift hvis avslag er satt")
+    }
+    if (erAvslag && sletteUtgift != null) {
+        feilliste.add("Kan slette utgift hvis avslag er satt")
+    }
+    if (erAvslag && angreSisteEndring) {
+        feilliste.add("Kan angre siste endring hvis avslag er satt")
+    }
+
+    if (feilliste.isNotEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Ugyldig data ved oppdatering av utgift: ${feilliste.joinToString(", ")}",
         )
     }
 }
