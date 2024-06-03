@@ -134,7 +134,8 @@ private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsf
 
 fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     if (this == null) return null
-    val harUgyldigStatus = behandling.sivilstand.any { it.sivilstand == Sivilstandskode.UKJENT }
+    val harUgyldigStatus =
+        behandling.sivilstand.any { it.sivilstand == Sivilstandskode.UKJENT } || behandling.sivilstand.isEmpty()
     val sortertGrunnlag = konvertereData<List<SivilstandGrunnlagDto>>()?.sortedBy { it.gyldigFom }
     val filtrertGrunnlag =
         harUgyldigStatus.ifTrue { sortertGrunnlag }
