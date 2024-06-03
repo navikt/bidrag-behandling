@@ -45,6 +45,7 @@ import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -133,11 +134,15 @@ private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsf
 
 fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     if (this == null) return null
-    val grunnlag =
-        konvertereData<List<SivilstandGrunnlagDto>>()
-            ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
+    val harUgyldigStatus =
+        behandling.sivilstand.any { it.sivilstand == Sivilstandskode.UKJENT } || behandling.sivilstand.isEmpty()
+    val sortertGrunnlag = konvertereData<List<SivilstandGrunnlagDto>>()?.sortedBy { it.gyldigFom }
+    val filtrertGrunnlag =
+        harUgyldigStatus.ifTrue { sortertGrunnlag }
+            ?: sortertGrunnlag?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
+
     return SivilstandAktivGrunnlagDto(
-        grunnlag = grunnlag?.toSet() ?: emptySet(),
+        grunnlag = filtrertGrunnlag?.toSet() ?: emptySet(),
         innhentetTidspunkt = innhentet,
     )
 }
@@ -399,23 +404,27 @@ fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
 fun List<SivilstandGrunnlagDto>.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(
     virkningstidspunkt: LocalDate,
 ): List<SivilstandGrunnlagDto> {
-    return sortedBy { it.gyldigFom }.slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
+    val filtrertGrunnlag =
+        sortedBy { it.gyldigFom }.slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
+    return filtrertGrunnlag.ifEmpty {
+        listOf(sortedBy { it.gyldigFom }.last())
+    }
 }
 
 fun List<LocalDate?>.hentIndekserEtterVirkningstidspunkt(
     virkningstidspunkt: LocalDate,
     fødselsdato: LocalDate? = null,
 ): List<Int> {
-    val kanIkkeVæreSenereEnnDato = finnCutoffDatoFom(virkningstidspunkt, fødselsdato)
+    val kanIkkeVæreTidligereEnnDato = finnCutoffDatoFom(virkningstidspunkt, fødselsdato)
     val datoerSortert = sortedBy { it }
 
     return datoerSortert.mapIndexedNotNull { index, dato ->
         index.takeIf {
             if (dato == null) return@takeIf true
-            val erEtterVirkningstidspunkt = dato >= kanIkkeVæreSenereEnnDato
+            val erEtterVirkningstidspunkt = dato >= kanIkkeVæreTidligereEnnDato
             if (!erEtterVirkningstidspunkt) {
                 val nesteDato = datoerSortert.drop(index + 1).firstOrNull()
-                nesteDato == null || nesteDato > kanIkkeVæreSenereEnnDato
+                nesteDato == null || nesteDato > kanIkkeVæreTidligereEnnDato
             } else {
                 true
             }

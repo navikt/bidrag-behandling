@@ -138,7 +138,6 @@ data class SivilstandPeriodeseringsfeil(
     @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 
-    @get:JsonIgnore
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() || overlappendePerioder.isNotEmpty() ||
