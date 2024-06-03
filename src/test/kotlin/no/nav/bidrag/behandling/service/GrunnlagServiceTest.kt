@@ -109,8 +109,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     @BeforeEach
     fun setup() {
-        grunnlagRepository.deleteAll()
-        behandlingRepository.deleteAll()
+        try {
+            grunnlagRepository.deleteAll()
+            behandlingRepository.deleteAll()
+        } catch (e: Exception) {
+            // Ignore
+        }
 
         stubUtils.stubKodeverkSkattegrunnlag()
         stubUtils.stubKodeverkLønnsbeskrivelse()

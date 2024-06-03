@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforho
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
+import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
@@ -43,6 +44,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
@@ -164,11 +166,20 @@ class NotatOpplysningerService(
                 Inntekter(
                     notat = behandling.tilNotatInntekt(),
                     inntekterPerRolle =
-                        behandling.roller.map { r ->
+                        behandling.roller.map { rolle ->
                             behandling.hentInntekterForIdent(
-                                r.ident!!,
-                                r,
-                                alleArbeidsforhold.filter { r.ident == it.partPersonId },
+                                rolle.ident!!,
+                                rolle,
+                                alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
+                            )
+                        },
+                    offentligeInntekterPerRolle =
+                        behandling.roller.map { rolle ->
+                            behandling.hentInntekterForIdent(
+                                rolle.ident!!,
+                                rolle,
+                                alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
+                                filtrerBareOffentlige = true,
                             )
                         },
                 ),
@@ -343,22 +354,33 @@ private fun Inntekt.tilNotatInntektDto() =
             },
     )
 
+private fun List<Inntekt>.filtrerKilde(filtrerBareOffentlige: Boolean = false) =
+    filter { !filtrerBareOffentlige || it.kilde == Kilde.OFFENTLIG }
+
 private fun Behandling.hentInntekterForIdent(
     ident: String,
     rolle: Rolle,
     arbeidsforhold: List<ArbeidsforholdGrunnlagDto>,
+    filtrerBareOffentlige: Boolean = false,
 ) = InntekterPerRolle(
     gjelder = rolle.tilNotatRolle(),
     beregnetInntekter =
-        hentBeregnetInntekter().filter { it.inntektGjelderBarnIdent != null }.map { inntektPerBarn ->
-            NotatBeregnetInntektDto(
-                roller.find { it.ident == inntektPerBarn.inntektGjelderBarnIdent!!.verdi }!!.tilNotatRolle(),
-                inntektPerBarn.summertInntektListe,
-            )
+        if (filtrerBareOffentlige) {
+            emptyList()
+        } else {
+            hentBeregnetInntekter()
+                .filter { it.inntektGjelderBarnIdent != null }.map { inntektPerBarn ->
+                    NotatBeregnetInntektDto(
+                        roller.find { it.ident == inntektPerBarn.inntektGjelderBarnIdent!!.verdi }!!.tilNotatRolle(),
+                        inntektPerBarn.summertInntektListe,
+                    )
+                }
         },
     årsinntekter =
-        inntekter.årsinntekterSortert(sorterTaMed = false, eksluderYtelserUtenforVirkningstidspunkt = true)
+        inntekter.årsinntekterSortert(!filtrerBareOffentlige)
             .filter { it.ident == ident }
+            .ekskluderYtelserFørVirkningstidspunkt()
+            .filtrerKilde(filtrerBareOffentlige)
             .map {
                 it.tilNotatInntektDto()
             },
@@ -366,6 +388,8 @@ private fun Behandling.hentInntekterForIdent(
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
             inntekter
                 .filter { it.type == Inntektsrapportering.BARNETILLEGG }
+                .filtrerKilde(filtrerBareOffentlige)
+                .ekskluderYtelserFørVirkningstidspunkt()
                 .sorterEtterDatoOgBarn()
                 .map {
                     it.tilNotatInntektDto()
@@ -378,6 +402,8 @@ private fun Behandling.hentInntekterForIdent(
             inntekter
                 .sortedBy { it.datoFom }
                 .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+                .filtrerKilde(filtrerBareOffentlige)
+                .ekskluderYtelserFørVirkningstidspunkt()
                 .sorterEtterDato()
                 .map {
                     it.tilNotatInntektDto()
@@ -389,6 +415,8 @@ private fun Behandling.hentInntekterForIdent(
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
             inntekter
                 .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+                .filtrerKilde(filtrerBareOffentlige)
+                .ekskluderYtelserFørVirkningstidspunkt()
                 .sorterEtterDatoOgBarn()
                 .map {
                     it.tilNotatInntektDto()
@@ -400,6 +428,8 @@ private fun Behandling.hentInntekterForIdent(
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
             inntekter
                 .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+                .filtrerKilde(filtrerBareOffentlige)
+                .ekskluderYtelserFørVirkningstidspunkt()
                 .sorterEtterDato()
                 .map {
                     it.tilNotatInntektDto()
