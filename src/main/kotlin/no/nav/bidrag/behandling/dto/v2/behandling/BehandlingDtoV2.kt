@@ -57,6 +57,26 @@ data class BehandlingDtoV2(
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
 )
 
+data class SærtilskuddUtgifter(
+    val beløpBetaltAvBp: BigDecimal = BigDecimal.ZERO,
+    @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
+    val beregnetBeløp: BigDecimal = BigDecimal.ZERO,
+    val utgifter: List<Utgift> = emptyList(),
+)
+
+data class Utgift(
+    @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
+    val dato: LocalDate,
+    @Schema(description = "Beskrivelse av utgiften. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)")
+    val beskrivelse: String,
+    @Schema(description = "Beløp som er betalt for utgiften det gjelder")
+    val kravbeløp: BigDecimal,
+    @Schema(description = "Beløp som er godkjent for beregningen")
+    val godkjentBeløp: BigDecimal = kravbeløp,
+    @Schema(description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp")
+    val begrunnelse: String,
+)
+
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
     val husstandsbarn: Set<HusstandsbarnGrunnlagDto>,
