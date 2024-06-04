@@ -41,8 +41,8 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
-import no.nav.bidrag.boforhold.dto.TypeEndring
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
@@ -1292,7 +1292,6 @@ class BoforholdServiceTest : TestContainerRunner() {
         open inner class OppdatereManuelt {
             @Test
             @Transactional
-            // TODO: Oppdatere med fornuftige sjekker når SivilstandsApi er klar
             open fun `skal legge til sivilstand manuelt`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling()
@@ -1319,14 +1318,10 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                // TODO: Legge til passende sjekker når SivilstandApi er klar
-                assert(true)
-                /*
                 assertSoftly(behandling.sivilstand) { s ->
                     s shouldHaveSize 3
                     s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
                 }
-                 */
             }
 
             @Test
@@ -1348,8 +1343,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-                // TODO: Avkommentere når SivilstandApi er klar
-                // behandling.sivilstand shouldHaveSize 3
+                behandling.sivilstand shouldHaveSize 3
 
                 // hvis
                 boforholdService.oppdatereSivilstandManuelt(
