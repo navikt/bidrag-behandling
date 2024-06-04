@@ -297,7 +297,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             val boforholdPeriodisert =
                 BoforholdApi.beregnBoforholdBarnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    grunnlag.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                    grunnlag.tilBoforholdbBarnRequest(behandling),
                 )
             listOf(
                 behandling.opprettGrunnlag(

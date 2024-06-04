@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdaterHusstandsmedlemPeriode
@@ -26,6 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
+import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -140,7 +142,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV2(
                         testdataBarn2.fødselsdato,
-                        grunnlagBoforhold.tilBoforholdbBarnRequest(testdataBarn2.fødselsdato),
+                        grunnlagBoforhold.tilBoforholdbBarnRequest(behandling),
                     )
 
                 // hvis
@@ -187,7 +189,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV2(
                         LocalDate.now(),
-                        grunnlagBoforhold.tilBoforholdbBarnRequest(LocalDate.now()),
+                        grunnlagBoforhold.tilBoforholdbBarnRequest(behandling),
                     )
 
                 behandling.husstandsbarn.size shouldBe 2
@@ -269,7 +271,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV2(
                         periodeFom,
-                        grunnlagBoforhold.tilBoforholdbBarnRequest(periodeFom),
+                        grunnlagBoforhold.tilBoforholdbBarnRequest(behandling),
                     )
 
                 // hvis
@@ -365,7 +367,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV2(
                         periodeFom,
-                        grunnlagBoforhold.tilBoforholdbBarnRequest(periodeFom),
+                        grunnlagBoforhold.tilBoforholdbBarnRequest(behandling),
                     )
 
                 periodisertBoforhold.groupBy { it.relatertPersonPersonId }.forEach { (personId, boforhold) ->
@@ -462,7 +464,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV2(
                         periodeFom,
-                        grunnlagBoforhold.tilBoforholdbBarnRequest(periodeFom),
+                        grunnlagBoforhold.tilBoforholdbBarnRequest(behandling),
                     )
 
                 // hvis
@@ -553,7 +555,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV2(
                         periodeFom,
-                        grunnlagBoforhold.tilBoforholdbBarnRequest(periodeFom),
+                        grunnlagBoforhold.tilBoforholdbBarnRequest(behandling),
                     )
 
                 // hvis
@@ -587,6 +589,95 @@ class BoforholdServiceTest : TestContainerRunner() {
 
         @Nested
         open inner class OppdatereManuelt {
+            @Test
+            @Transactional
+            open fun `skal bruke offentlig bostedsinformasjon for manuelt barn som bor på samme adresse som BM`() {
+                // gitt
+                val behandling = opprettBehandlingForBoforholdTest()
+                val personidentBarnMedDNummer = "213123"
+                val fødselsdatoBarnMedDNummer = LocalDate.now().minusYears(7)
+                val navnBarnMedDNummer = "Bark E. Bille"
+
+                val dataFraGrunnlag =
+                    behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type && it.erBearbeidet }.groupBy {
+                        it.gjelder
+                    }.map {
+                        val t = it.value.filter { it.aktiv != null }.maxBy { it.aktiv!! }
+                        val data = t.konvertereData<Set<BoforholdResponse>>()
+                        RelatertPersonGrunnlagDto(
+                            relatertPersonPersonId = it.key,
+                            borISammeHusstandDtoListe =
+                                data?.map { BorISammeHusstandDto(it.periodeFom, it.periodeTom) }
+                                    ?: emptyList(),
+                            erBarnAvBmBp = true,
+                            fødselsdato = data?.first()?.fødselsdato,
+                            navn = null,
+                            partPersonId = behandling.bidragsmottaker!!.ident,
+                        )
+                    } +
+                        listOf(
+                            RelatertPersonGrunnlagDto(
+                                relatertPersonPersonId = personidentBarnMedDNummer,
+                                borISammeHusstandDtoListe =
+                                    listOf(
+                                        BorISammeHusstandDto(
+                                            LocalDate.now().minusMonths(7),
+                                            null,
+                                        ),
+                                    ),
+                                erBarnAvBmBp = true,
+                                fødselsdato = fødselsdatoBarnMedDNummer,
+                                navn = navnBarnMedDNummer,
+                                partPersonId = behandling.bidragsmottaker!!.ident,
+                            ),
+                        )
+
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        aktiv = LocalDateTime.now(),
+                        behandling = behandling,
+                        data = objectmapper.writeValueAsString(dataFraGrunnlag),
+                        innhentet = LocalDateTime.now().minusDays(1),
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD,
+                        erBearbeidet = false,
+                    ),
+                )
+
+                behandling.husstandsbarn.shouldHaveSize(1)
+
+                // hvis
+                boforholdService.oppdatereHusstandsbarnManuelt(
+                    behandling.id!!,
+                    OppdatereHusstandsmedlem(
+                        opprettHusstandsmedlem =
+                            OpprettHusstandsstandsmedlem(
+                                personident = Personident(personidentBarnMedDNummer),
+                                fødselsdato = fødselsdatoBarnMedDNummer,
+                                navn = navnBarnMedDNummer,
+                            ),
+                    ),
+                )
+
+                // så
+                assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }) { g ->
+                    g shouldHaveSize 4
+                    g.filter { it.erBearbeidet } shouldHaveSize 3
+                    g.filter { it.erBearbeidet && personidentBarnMedDNummer == it.gjelder } shouldHaveSize 1
+                }
+
+                assertSoftly(behandling.husstandsbarn.find { it.ident == "213123" }!!) {
+                    it.perioder.shouldHaveSize(2)
+                    it.navn shouldBe navnBarnMedDNummer
+                    it.fødselsdato shouldBe fødselsdatoBarnMedDNummer
+                    val periode = it.perioder.sortedBy { it.datoFom }.first()
+                    periode.kilde shouldBe Kilde.OFFENTLIG
+                    periode.datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
+                    periode.datoTom shouldNotBe null
+                    periode.bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
+                }
+            }
+
             @Test
             @Transactional
             open fun `skal få slette både manuelle og offentlige husstandsbarnperioder`() {
@@ -983,6 +1074,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal returnere riktig kilde på husstandsbarnperiode`() {
             // gitt
+            val behandling = opprettBehandlingForBoforholdTest()
             val grunnlagBoforhold =
                 listOf(
                     RelatertPersonGrunnlagDto(
@@ -1001,7 +1093,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-            val boforholdsrequest = grunnlagBoforhold.tilBoforholdbBarnRequest(testdataBarn2.fødselsdato)
+            val boforholdsrequest = grunnlagBoforhold.tilBoforholdbBarnRequest(behandling)
             val manuellPeriode =
                 Bostatus(
                     periodeFom = LocalDate.now().minusMonths(5),

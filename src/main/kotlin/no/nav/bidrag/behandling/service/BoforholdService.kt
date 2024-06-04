@@ -6,6 +6,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -15,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.database.datamodell.henteLagretSivilstandshistorikk
 import no.nav.bidrag.behandling.database.datamodell.henteSisteSivilstand
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.lagreSivilstandshistorikk
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsbarnRepository
@@ -28,6 +30,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaSivilstandshistorikk
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
@@ -55,6 +58,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
@@ -199,18 +203,36 @@ class BoforholdService(
                     navn = personalia.navn,
                 )
 
-            husstandsbarn.oppdaterePerioder(
-                nyEllerOppdatertHusstandsbarnperiode =
-                    Husstandsbarnperiode(
-                        husstandsbarn = husstandsbarn,
-                        bostatus = Bostatuskode.MED_FORELDER,
-                        datoFom = behandling.virkningstidspunktEllerSøktFomDato,
-                        datoTom = null,
-                        kilde = Kilde.MANUELL,
-                    ),
-            )
-            behandling.husstandsbarn.add(husstandsbarn)
+            val offentligePerioder =
+                personalia.personident?.let {
+                    val respons =
+                        BoforholdApi.beregnBoforholdBarnV2(
+                            behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.henteGrunnlagHusstandsmedlemSomManglerRelasjonTilBm(it)
+                                .tilBoforholdbBarnRequest(behandling),
+                        )
 
+                    if (respons.isNotEmpty()) {
+                        husstandsbarn.perioder.addAll(respons.tilPerioder(husstandsbarn))
+                        lagreBearbeidaBoforholdsgrunnlag(behandling, respons, personalia.personident)
+                    }
+                    respons
+                }
+
+            if (offentligePerioder?.isEmpty() == true) {
+                husstandsbarn.oppdaterePerioder(
+                    nyEllerOppdatertHusstandsbarnperiode =
+                        Husstandsbarnperiode(
+                            husstandsbarn = husstandsbarn,
+                            bostatus = Bostatuskode.MED_FORELDER,
+                            datoFom = behandling.virkningstidspunktEllerSøktFomDato,
+                            datoTom = null,
+                            kilde = Kilde.MANUELL,
+                        ),
+                )
+            }
+
+            behandling.husstandsbarn.add(husstandsbarn)
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsbarn)
             return husstandsbarnRepository.save(husstandsbarn).tilOppdatereBoforholdResponse(behandling)
         }
@@ -309,6 +331,7 @@ class BoforholdService(
                     nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
                     jsonListeTilObjekt<SivilstandBeregnV2Dto>(nyesteIkkeaktivertePeriodiserteSivilstand.data)
                 }
+
                 false -> {
                     val request =
                         jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeaktiverteSivilstand.data)
@@ -332,7 +355,8 @@ class BoforholdService(
         oppdatereSivilstand: OppdatereSivilstand,
     ): OppdatereBoforholdResponse? {
         val behandling =
-            behandlingRepository.findById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereSivilstand.validere(behandling)
 
@@ -805,12 +829,29 @@ class BoforholdService(
         this.sivilstand.addAll(rolle.henteLagretSivilstandshistorikk())
     }
 
-    private fun Sivilstandsperiode.tilSivilstand(behandling: Behandling) =
-        Sivilstand(
-            behandling = behandling,
-            kilde = Kilde.MANUELL,
-            sivilstand = sivilstand,
-            datoFom = fraOgMed,
-            datoTom = tilOgMed,
+    private fun Behandling.henteGrunnlagHusstandsmedlemSomManglerRelasjonTilBm(personident: Personident): Set<RelatertPersonGrunnlagDto> {
+        return this.grunnlag.filter { !it.erBearbeidet }.filter { it.aktiv != null }.maxByOrNull { it.aktiv!! }
+            .konvertereData<Set<RelatertPersonGrunnlagDto>>()?.filter { personident.verdi == it.relatertPersonPersonId }
+            ?.map { it.copy(erBarnAvBmBp = true) }
+            ?.toSet() ?: emptySet()
+    }
+
+    private fun lagreBearbeidaBoforholdsgrunnlag(
+        behandling: Behandling,
+        boforholdrespons: List<BoforholdResponse>,
+        personidentBarn: Personident,
+    ) {
+        behandling.grunnlag.add(
+            Grunnlag(
+                behandling = behandling,
+                type = Grunnlagsdatatype.BOFORHOLD,
+                erBearbeidet = true,
+                data = tilJson(boforholdrespons),
+                innhentet = LocalDateTime.now(),
+                aktiv = LocalDateTime.now(),
+                rolle = behandling.bidragsmottaker!!,
+                gjelder = personidentBarn.verdi,
+            ),
         )
+    }
 }

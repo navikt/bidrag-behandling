@@ -305,7 +305,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                boforhold.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                boforhold.tilBoforholdbBarnRequest(behandling),
             )
         boforholdPeriodisert.filter { it.relatertPersonPersonId != null }.groupBy { it.relatertPersonPersonId }
             .forEach { (gjelder, perioder) ->
@@ -614,7 +614,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                husstandsmedlemmerOgEgneBarn.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                husstandsmedlemmerOgEgneBarn.tilBoforholdbBarnRequest(behandling),
             )
 
         val bmsNyesteBearbeidaBoforholdFørLagring =
