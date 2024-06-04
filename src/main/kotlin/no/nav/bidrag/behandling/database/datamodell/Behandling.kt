@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
@@ -94,6 +95,8 @@ open class Behandling(
     open var inntektsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "INNTEKTSBEGRUNNELSE_KUN_NOTAT")
     open var inntektsbegrunnelseKunINotat: String? = null,
+    @Column(name = "UTGIFTSBEGRUNNELSE_KUN_NOTAT")
+    open var utgiftsbegrunnelseKunINotat: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
@@ -136,6 +139,13 @@ open class Behandling(
         orphanRemoval = true,
     )
     open var sivilstand: MutableSet<Sivilstand> = mutableSetOf(),
+    @OneToOne(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = true,
+    )
+    open var utgift: Utgift? = null,
     open var deleted: Boolean = false,
 ) {
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()

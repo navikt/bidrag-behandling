@@ -14,11 +14,13 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.Behandlingtype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SærtilskuddUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
@@ -33,11 +35,14 @@ import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import no.nav.bidrag.behandling.transformers.utgift.beregnetBeløp
+import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
@@ -67,6 +72,7 @@ fun Behandling.tilBehandlingDtoV2(
     inkluderHistoriskeInntekter: Boolean = false,
 ) = BehandlingDtoV2(
     id = id!!,
+    type = if (engangsbeloptype == Engangsbeløptype.SÆRTILSKUDD) Behandlingtype.SÆRLIGE_UTGIFTER else Behandlingtype.FORSKUDD,
     vedtakstype = vedtakstype,
     stønadstype = stonadstype,
     engangsbeløptype = engangsbeloptype,
@@ -110,6 +116,18 @@ fun Behandling.tilBehandlingDtoV2(
             inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
         ),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+    utgift =
+        utgift?.let { utgift ->
+            SærtilskuddUtgifterDto(
+                beløpDirekteBetaltAvBp = utgift.beløpDirekteBetaltAvBp,
+                beregnetBeløp = utgift.beregnetBeløp,
+                notat =
+                    BehandlingNotatDto(
+                        kunINotat = utgiftsbegrunnelseKunINotat,
+                    ),
+                utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
+            )
+        },
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata
             ?: IkkeAktiveGrunnlagsdata(),

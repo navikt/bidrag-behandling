@@ -17,16 +17,18 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
+import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
+import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
+import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.commons.util.secureLogger
@@ -50,6 +52,7 @@ class BehandlingControllerV2(
     private val boforholdService: BoforholdService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
+    private val utgiftService: UtgiftService,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -169,16 +172,11 @@ class BehandlingControllerV2(
     fun oppdatereUtgift(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdatereUtgiftRequest,
-    ): BehandlingDtoV2 {
+    ): OppdatereUtgiftResponse {
         log.info { "Oppdaterer utgift for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer utgift for behandling $behandlingsid med forespørsel $request" }
 
-        val behandling = behandlingService.oppdatereUtgift(behandlingsid, request)
-
-        return behandling.tilBehandlingDtoV2(
-            behandling.grunnlag.hentSisteAktiv(),
-            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
-        )
+        return utgiftService.oppdatereUtgift(behandlingsid, request)
     }
 
     @PutMapping("/behandling/{behandlingsid}/virkningstidspunkt")

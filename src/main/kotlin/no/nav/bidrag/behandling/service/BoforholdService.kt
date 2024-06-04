@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
@@ -71,7 +70,6 @@ private val log = KotlinLogging.logger {}
 class BoforholdService(
     private val behandlingRepository: BehandlingRepository,
     private val husstandsbarnRepository: HusstandsbarnRepository,
-    private val entityManager: EntityManager,
 ) {
     @Transactional
     fun oppdatereNotat(
@@ -309,6 +307,7 @@ class BoforholdService(
                     nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
                     jsonListeTilObjekt<SivilstandBeregnV2Dto>(nyesteIkkeaktivertePeriodiserteSivilstand.data)
                 }
+
                 false -> {
                     val request =
                         jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeaktiverteSivilstand.data)
@@ -332,7 +331,8 @@ class BoforholdService(
         oppdatereSivilstand: OppdatereSivilstand,
     ): OppdatereBoforholdResponse? {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid).orElseThrow { behandlingNotFoundException(behandlingsid) }
+            behandlingRepository.findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereSivilstand.validere(behandling)
 

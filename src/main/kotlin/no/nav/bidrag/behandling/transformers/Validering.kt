@@ -9,12 +9,12 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleHusstandsmedlemPerioder
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.HusstandsbarnOverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendePeriode
@@ -34,9 +34,13 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.time.LocalDate
 
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
+val Behandling.utgiftCuttofDato get() = mottattdato.plusYears(1)
+
+fun Behandling.erDatoForUtgiftForeldet(utgiftDato: LocalDate) = utgiftDato > utgiftCuttofDato
 
 fun Behandling.validerKanOppdatere() {
     if (erVedtakFattet) {
@@ -50,7 +54,7 @@ fun Behandling.validerKanOppdatere() {
 fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
     if (behandling.engangsbeloptype != Engangsbeløptype.SÆRTILSKUDD) {
-        feilliste.add("Kan ikke sette utgift for behandling som ikke er av typen SÆRTILSKUDD")
+        feilliste.add("Kan ikke oppdatere utgift for behandling som ikke er av typen SÆRTILSKUDD")
     }
     val erAvslag = (avslag != null || behandling.avslag != null)
     if (erAvslag && nyEllerEndretUtgift != null) {
@@ -61,6 +65,28 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
     }
     if (erAvslag && angreSisteEndring) {
         feilliste.add("Kan angre siste endring hvis avslag er satt")
+    }
+
+    if (nyEllerEndretUtgift != null) {
+        if (nyEllerEndretUtgift.dato >= LocalDate.now()) {
+            feilliste.add("Dato for utgift kan ikke være senere enn eller lik dagens dato")
+        }
+        if (nyEllerEndretUtgift.godkjentBeløp != nyEllerEndretUtgift.kravbeløp && nyEllerEndretUtgift.begrunnelse.isNullOrEmpty()) {
+            feilliste.add("Begrunnelse må settes hvis kravbeløp er ulik godkjent beløp")
+        }
+        if (nyEllerEndretUtgift.godkjentBeløp > nyEllerEndretUtgift.kravbeløp) {
+            feilliste.add("Godkjent beløp kan ikke være høyere enn kravbeløp")
+        }
+        if (behandling.erDatoForUtgiftForeldet(nyEllerEndretUtgift.dato) && nyEllerEndretUtgift.godkjentBeløp > BigDecimal.ZERO) {
+            feilliste.add("Godkjent beløp må være 0 når dato på utgiften er 1 år etter mottatt dato")
+        }
+        val utgift = behandling.utgift
+        if (nyEllerEndretUtgift.id != null && (utgift == null || utgift.utgiftsposter.none { it.id == nyEllerEndretUtgift.id })) {
+            feilliste.add("Utgiftspost med id ${nyEllerEndretUtgift.id} finnes ikke i behandling ${behandling.id}")
+        }
+        if (sletteUtgift != null && (utgift == null || utgift.utgiftsposter.none { it.id == sletteUtgift })) {
+            feilliste.add("Utgiftspost med id $sletteUtgift finnes ikke i behandling ${behandling.id}")
+        }
     }
 
     if (feilliste.isNotEmpty()) {
