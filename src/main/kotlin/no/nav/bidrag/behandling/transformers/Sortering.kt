@@ -64,20 +64,28 @@ fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
         !inntekt.erHistorisk(this)
     }
 
+fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirkningstidspunkt: Boolean = true) =
+    filter {
+        if (eksluderYtelserFørVirkningstidspunkt && årsinntekterYtelser.contains(it.type) ||
+            eksplisitteYtelser.contains(
+                it.type,
+            )
+        ) {
+            val periode = it.opprinneligPeriode ?: return@filter true
+            val virkningstidspunkt =
+                it.behandling?.virkningstidspunktEllerSøktFomDato?.let { YearMonth.from(it) } ?: return@filter true
+            periode.fom >= virkningstidspunkt || periode.til != null && periode.til!! >= virkningstidspunkt
+        } else {
+            true
+        }
+    }
+
 fun Set<Inntekt>.årsinntekterSortert(
     sorterTaMed: Boolean = true,
-    eksluderYtelserUtenforVirkningstidspunkt: Boolean = false,
     inkluderHistoriskeInntekter: Boolean = false,
 ) = when (inkluderHistoriskeInntekter) {
     true -> this.filter { !eksplisitteYtelser.contains(it.type) }
     else -> this.filter { !eksplisitteYtelser.contains(it.type) }.filtrerUtHistoriskeInntekter()
-}.filter {
-    if (eksluderYtelserUtenforVirkningstidspunkt && årsinntekterYtelser.contains(it.type)) {
-        it.opprinneligPeriode
-            ?.inneholder(YearMonth.from(it.behandling?.virkningstidspunktEllerSøktFomDato)) ?: true
-    } else {
-        true
-    }
 }
     .sortedWith(
         compareBy<Inntekt> {
