@@ -37,7 +37,6 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
 import java.time.YearMonth
 
 private val log = KotlinLogging.logger {}
@@ -341,14 +340,19 @@ class InntektService(
     }
 
     private fun Inntekt.automatiskTaMedYtelserFraNav() {
-        if (eksplisitteYtelser.contains(type)) {
+        if (eksplisitteYtelser.contains(type) && erOpprinneligFomFørEllerLikVirkningstidspunktEllerDagensDato()) {
             taMed = true
-            datoFom = opprinneligFom
+            datoFom =
+                if (opprinneligFom!! > behandling!!.virkningstidspunktEllerSøktFomDato) {
+                    behandling!!.virkningstidspunktEllerSøktFomDato
+                } else {
+                    opprinneligFom
+                }
             datoTom =
                 if (opprinneligTom != null &&
                     opprinneligTom!!.isAfter(
                         maxOf(
-                            LocalDate.now(),
+                            YearMonth.now().atEndOfMonth(),
                             behandling!!.virkningstidspunktEllerSøktFomDato,
                         ),
                     )
@@ -358,6 +362,13 @@ class InntektService(
                     opprinneligTom
                 }
         }
+    }
+
+    private fun Inntekt.erOpprinneligFomFørEllerLikVirkningstidspunktEllerDagensDato(): Boolean {
+        if (opprinneligFom == null) return false
+        val virkningstidspunktEllerDagensDato =
+            maxOf(behandling!!.virkningstidspunktEllerSøktFomDato, YearMonth.now().atEndOfMonth())
+        return opprinneligFom!!.isBefore(virkningstidspunktEllerDagensDato) || opprinneligFom == virkningstidspunktEllerDagensDato
     }
 
     private fun henteInntektMedId(
