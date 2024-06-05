@@ -13,8 +13,7 @@ import java.time.LocalDate
 data class OppdatereUtgiftRequest(
     @Schema(
         description =
-            "Oppdater avslag. Hvis verdien er satt til null så vil det ikke bli gjort noe endringer. " +
-                "Hvis verdien er satt så vil avslag settes til samme verdi fra forespørsel",
+            "Oppdater avslag.",
         enumAsRef = true,
     )
     val avslag: Resultatkode? = null,
