@@ -799,8 +799,9 @@ class BoforholdService(
     }
 
     private fun Behandling.gjenoppretteForrigeSivilstandshistorikk(rolle: Rolle) {
+        val lagretHistorikk = rolle.henteLagretSivilstandshistorikk(this)
         rolle.lagreSivilstandshistorikk(this.sivilstand)
         this.sivilstand.clear()
-        this.sivilstand.addAll(rolle.henteLagretSivilstandshistorikk(this))
+        this.sivilstand.addAll(lagretHistorikk)
     }
 }
