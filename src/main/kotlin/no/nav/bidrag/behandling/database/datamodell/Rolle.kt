@@ -77,12 +77,13 @@ fun Set<Sivilstand>.tilSerialiseringsformat() =
     }
 
 fun Rolle.henteLagretSivilstandshistorikk(behandling: Behandling): Set<Sivilstand> {
-    val sivilstand = jsonListeTilObjekt<Sivilstand>(
-        forrigeSivilstandshistorikk ?: oppdateringAvBoforholdFeilet(
-            "Fant ikke tidligere lagret sivilstandshistorikk for " +
+    val sivilstand =
+        jsonListeTilObjekt<Sivilstand>(
+            forrigeSivilstandshistorikk ?: oppdateringAvBoforholdFeilet(
+                "Fant ikke tidligere lagret sivilstandshistorikk for " +
                     "bidragsmottaker i behandling ${behandling.id}",
-        ),
-    )
+            ),
+        )
 
     sivilstand.forEach { it.behandling = behandling }
 
