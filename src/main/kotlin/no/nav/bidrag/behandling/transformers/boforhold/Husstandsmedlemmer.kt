@@ -33,23 +33,23 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(virkningsdato: Loca
     return this.filter { it.erBarnAvBmBp }.filter { it.fødselsdato != null }.map {
         BoforholdBarnRequest(
             innhentedeOffentligeOpplysninger =
-            when (it.borISammeHusstandDtoListe.isNotEmpty()) {
-                true ->
-                    it.borISammeHusstandDtoListe.tilBostatus(
-                        Bostatuskode.MED_FORELDER,
-                        Kilde.OFFENTLIG,
-                    )
+                when (it.borISammeHusstandDtoListe.isNotEmpty()) {
+                    true ->
+                        it.borISammeHusstandDtoListe.tilBostatus(
+                            Bostatuskode.MED_FORELDER,
+                            Kilde.OFFENTLIG,
+                        )
 
-                false ->
-                    listOf(
-                        Bostatus(
-                            bostatusKode = Bostatuskode.IKKE_MED_FORELDER,
-                            kilde = Kilde.OFFENTLIG,
-                            periodeFom = maxOf(it.fødselsdato!!, virkningsdato),
-                            periodeTom = null,
-                        ),
-                    )
-            },
+                    false ->
+                        listOf(
+                            Bostatus(
+                                bostatusKode = Bostatuskode.IKKE_MED_FORELDER,
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = maxOf(it.fødselsdato!!, virkningsdato),
+                                periodeTom = null,
+                            ),
+                        )
+                },
             erBarnAvBmBp = it.erBarnAvBmBp,
             fødselsdato = it.fødselsdato!!,
             relatertPersonPersonId = it.relatertPersonPersonId,
@@ -65,8 +65,8 @@ fun Husstandsbarn.tilBoforholdbBarnRequest(endreBostatus: EndreBostatus? = null)
         fødselsdato = fødselsdato,
         erBarnAvBmBp = true, // TODO: Dette er ikke alltid true for bidrag og særlige utgifter
         innhentedeOffentligeOpplysninger =
-        hentOffentligePerioder().map { it.tilBostatus() }
-            .sortedBy { it.periodeFom },
+            hentOffentligePerioder().map { it.tilBostatus() }
+                .sortedBy { it.periodeFom },
         behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
         endreBostatus = endreBostatus,
     )
