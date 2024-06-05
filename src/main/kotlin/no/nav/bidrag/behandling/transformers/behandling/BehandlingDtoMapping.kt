@@ -64,6 +64,19 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
 import java.time.ZoneOffset
 
+val engangsbeløpSærligeutgifter = listOf(Engangsbeløptype.SÆRTILSKUDD)
+
+fun Behandling.tilType() =
+    if (engangsbeloptype != null &&
+        engangsbeløpSærligeutgifter.contains(
+            engangsbeloptype,
+        )
+    ) {
+        Behandlingtype.SÆRLIGE_UTGIFTER
+    } else {
+        Behandlingtype.FORSKUDD
+    }
+
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 @Suppress("ktlint:standard:value-argument-comment")
 fun Behandling.tilBehandlingDtoV2(
@@ -72,7 +85,7 @@ fun Behandling.tilBehandlingDtoV2(
     inkluderHistoriskeInntekter: Boolean = false,
 ) = BehandlingDtoV2(
     id = id!!,
-    type = if (engangsbeloptype == Engangsbeløptype.SÆRTILSKUDD) Behandlingtype.SÆRLIGE_UTGIFTER else Behandlingtype.FORSKUDD,
+    type = tilType(),
     vedtakstype = vedtakstype,
     stønadstype = stonadstype,
     engangsbeløptype = engangsbeloptype,

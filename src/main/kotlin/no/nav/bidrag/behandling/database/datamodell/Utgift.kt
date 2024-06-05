@@ -22,7 +22,7 @@ open class Utgift(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "utgift_id_seq")
     @SequenceGenerator(name = "utgift_id_seq", sequenceName = "utgift_id_seq", initialValue = 1, allocationSize = 1)
-    open val id: Long? = null,
+    open var id: Long? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "utgift",
@@ -41,7 +41,7 @@ open class Utgift(
                 0,
                 maxOf(forrigeUtgiftsposterHistorikk!!.length, 10),
             ) ?: ""
-        return "Utgift(id=$id, behandlingId=${behandling.id}, beløpBetaltAvBp=$beløpDirekteBetaltAvBp" +
+        return "Utgift(id=$id, behandlingId=${behandling.id}, beløpBetaltAvBp=$beløpDirekteBetaltAvBp, " +
             " utgiftsposter(size)=${utgiftsposter.size}, " +
             "forrigeUtgiftsposterHistorikk=$forrigeHistorikkString...)"
     }
