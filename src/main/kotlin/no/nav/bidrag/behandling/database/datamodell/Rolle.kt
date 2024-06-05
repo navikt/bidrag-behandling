@@ -76,23 +76,27 @@ fun Set<Sivilstand>.tilSerialiseringsformat() =
         )
     }
 
-fun Rolle.henteLagretSivilstandshistorikk(): Set<Sivilstand> {
-    return jsonListeTilObjekt<Sivilstand>(
+fun Rolle.henteLagretSivilstandshistorikk(behandling: Behandling): Set<Sivilstand> {
+    val sivilstand = jsonListeTilObjekt<Sivilstand>(
         forrigeSivilstandshistorikk ?: oppdateringAvBoforholdFeilet(
             "Fant ikke tidligere lagret sivilstandshistorikk for " +
-                "bidragsmottaker i behandling ${behandling.id}",
+                    "bidragsmottaker i behandling ${behandling.id}",
         ),
     )
+
+    sivilstand.forEach { it.behandling = behandling }
+
+    return sivilstand
 }
 
 data class SivilstandUtenBehandling(
-    open val datoFom: LocalDate? = null,
-    open val datoTom: LocalDate? = null,
+    val datoFom: LocalDate? = null,
+    val datoTom: LocalDate? = null,
     @Enumerated(EnumType.STRING)
-    open val sivilstand: Sivilstandskode,
+    val sivilstand: Sivilstandskode,
     @Enumerated(EnumType.STRING)
-    open val kilde: Kilde,
+    val kilde: Kilde,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    val id: Long? = null,
 )

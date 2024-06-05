@@ -801,15 +801,6 @@ class BoforholdService(
     private fun Behandling.gjenoppretteForrigeSivilstandshistorikk(rolle: Rolle) {
         rolle.lagreSivilstandshistorikk(this.sivilstand)
         this.sivilstand.clear()
-        this.sivilstand.addAll(rolle.henteLagretSivilstandshistorikk())
+        this.sivilstand.addAll(rolle.henteLagretSivilstandshistorikk(this))
     }
-
-    private fun Sivilstandsperiode.tilSivilstand(behandling: Behandling) =
-        Sivilstand(
-            behandling = behandling,
-            kilde = Kilde.MANUELL,
-            sivilstand = sivilstand,
-            datoFom = fraOgMed,
-            datoTom = tilOgMed,
-        )
 }
