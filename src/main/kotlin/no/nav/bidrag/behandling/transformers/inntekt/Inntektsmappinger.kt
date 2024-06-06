@@ -11,8 +11,10 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndringer
+import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -24,7 +26,47 @@ import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
+
+fun Inntekt.bestemDatoFomForOffentligInntekt() =
+    skalAutomatiskSettePeriode().ifTrue {
+        maxOf(
+            opprinneligFom!!,
+            behandling!!.virkningstidspunktEllerSøktFomDato,
+        )
+    }
+
+fun Inntekt.bestemDatoTomForOffentligInntekt() =
+    skalAutomatiskSettePeriode().ifTrue {
+        opprinneligTom?.let { tom ->
+            val maxDate = maxOf(YearMonth.now().atEndOfMonth(), behandling!!.virkningstidspunktEllerSøktFomDato)
+            if (tom.isAfter(maxDate)) null else tom
+        }
+    }
+
+fun Inntekt.skalAutomatiskSettePeriode(): Boolean {
+    return kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type) && erOpprinneligPeriodeInnenforVirkningstidspunkt()
+}
+
+private fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
+    opprinneligFom?.let { fom ->
+        (opprinneligTom ?: LocalDate.MAX).let { tom ->
+            behandling?.virkningstidspunktEllerSøktFomDato?.let { virkningstidspunkt ->
+                val virkningstidspunktEllerStartenAvNesteMåned =
+                    maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt)
+                if (fom.isAfter(virkningstidspunktEllerStartenAvNesteMåned) &&
+                    tom.isAfter(virkningstidspunktEllerStartenAvNesteMåned)
+                ) {
+                    false
+                } else {
+                    virkningstidspunkt in fom..tom ||
+                        virkningstidspunktEllerStartenAvNesteMåned >= fom && tom.isAfter(virkningstidspunkt)
+                }
+            }
+        }
+    } ?: false
 
 fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
     inntekt.type = this.type

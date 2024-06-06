@@ -49,6 +49,12 @@ fun oppdateringAvBoforholdFeiletException(behandlingsid: Long): Nothing =
         "Oppdatering av boforhold feilet for behandling $behandlingsid",
     )
 
+fun oppdateringAvInntektFeilet(melding: String): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        melding,
+    )
+
 fun oppdateringAvBoforholdFeilet(melding: String): Nothing =
     throw HttpClientErrorException(
         HttpStatus.BAD_REQUEST,

@@ -302,7 +302,7 @@ class InntektServiceTest : TestContainerRunner() {
                     oppdatertBehandling.get().inntekter.first { Inntektsrapportering.BARNETILLEGG == it.type }
                 barnetillegg.belop shouldBe (500).toBigDecimal()
                 barnetillegg.taMed shouldBe true
-                barnetillegg.datoFom shouldBe barnetillegg.opprinneligFom
+                barnetillegg.datoFom shouldBe behandling.virkningstidspunkt
                 barnetillegg.datoTom shouldBe barnetillegg.opprinneligTom
                 barnetillegg.inntektsposter.size shouldBe 1
                 barnetillegg.inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
@@ -976,9 +976,9 @@ class InntektServiceTest : TestContainerRunner() {
                 oppdatertBehandling.get().inntekter.size shouldBe 1
                 oppdatertBehandling.get().inntekter.first().belop shouldBe ainntekt.belop
                 oppdatertBehandling.get().inntekter.first().datoFom shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.fom
+                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode!!.fom
                 oppdatertBehandling.get().inntekter.first().datoTom shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode.til
+                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode!!.til
                 oppdatertBehandling.get().inntekter.first().opprinneligFom shouldBe ainntekt.opprinneligFom
                 oppdatertBehandling.get().inntekter.first().opprinneligTom shouldBe ainntekt.opprinneligTom
                 oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1
@@ -1091,6 +1091,50 @@ class InntektServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        open fun `skal ta med offentlig inntekt som er ekplisitt ytelse og sette datoFom og datoTom automatisk`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling()
+            behandling.virkningstidspunkt = LocalDate.parse("2023-05-01")
+            val utvidetBarnetrygd =
+                Inntekt(
+                    behandling = behandling,
+                    type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    belop = BigDecimal(14000),
+                    opprinneligFom = YearMonth.parse("2023-01").atDay(1),
+                    opprinneligTom = YearMonth.parse("2024-05").atEndOfMonth(),
+                    datoTom = null,
+                    datoFom = null,
+                    ident = testdataBM.ident,
+                    gjelderBarn = testdataBarn1.ident,
+                    kilde = Kilde.OFFENTLIG,
+                    taMed = false,
+                )
+
+            val lagreUtvidetBarnetrygd = inntektRepository.save(utvidetBarnetrygd)
+            behandling.inntekter.add(lagreUtvidetBarnetrygd)
+            testdataManager.lagreBehandlingNewTransaction(behandling)
+            val oppdatereInntektRequest =
+                OppdatereInntektRequest(
+                    oppdatereInntektsperiode =
+                        OppdaterePeriodeInntekt(
+                            taMedIBeregning = true,
+                            id = lagreUtvidetBarnetrygd.id!!,
+                        ),
+                )
+
+            // hvis
+            inntektService.oppdatereInntektManuelt(behandling.id!!, oppdatereInntektRequest)
+
+            assertSoftly {
+                shouldBePresent(behandling)
+                behandling.inntekter.size shouldBe 1
+                behandling.inntekter.first().datoFom shouldBe behandling.virkningstidspunkt
+                behandling.inntekter.first().datoTom shouldBe YearMonth.parse("2024-05").atEndOfMonth()
+            }
+        }
+
+        @Test
+        @Transactional
         open fun `skal legge til ny manuell inntekt`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling()
@@ -1100,7 +1144,7 @@ class InntektServiceTest : TestContainerRunner() {
                     oppdatereManuellInntekt =
                         OppdatereManuellInntekt(
                             taMed = true,
-                            type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                            type = Inntektsrapportering.UTVIDET_BARNETRYGD,
                             beløp = BigDecimal(643000),
                             datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
                             datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),

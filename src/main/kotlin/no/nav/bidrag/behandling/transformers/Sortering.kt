@@ -133,4 +133,4 @@ fun List<Inntekt>.sorterEtterDatoOgBarn() =
         }, { it.gjelderBarn }),
     )
 
-fun List<Inntekt>.sorterEtterDato() = sortedWith(compareBy({ it.datoFom ?: it.opprinneligFom }))
+fun List<Inntekt>.sorterEtterDato() = sortedWith(compareBy { it.datoFom ?: it.opprinneligFom })

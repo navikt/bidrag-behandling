@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarnperiodeDto
+import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
@@ -186,19 +187,23 @@ fun Behandling.tilInntektDtoV2(
     barnetillegg =
         inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
             .sorterEtterDatoOgBarn()
+            .ekskluderYtelserFørVirkningstidspunkt()
             .tilInntektDtoV2().toSet(),
     utvidetBarnetrygd =
         inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
             .sorterEtterDato()
+            .ekskluderYtelserFørVirkningstidspunkt()
             .tilInntektDtoV2()
             .toSet(),
     kontantstøtte =
         inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
             .sorterEtterDatoOgBarn()
+            .ekskluderYtelserFørVirkningstidspunkt()
             .tilInntektDtoV2().toSet(),
     småbarnstillegg =
         inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
             .sorterEtterDato()
+            .ekskluderYtelserFørVirkningstidspunkt()
             .tilInntektDtoV2().toSet(),
     månedsinntekter =
         gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
