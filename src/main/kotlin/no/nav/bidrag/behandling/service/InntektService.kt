@@ -17,13 +17,17 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
+import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
+import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoFomForOffentligInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.skalAutomatiskSettePeriode
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
@@ -59,7 +63,8 @@ class InntektService(
     fun rekalkulerPerioderInntekter(behandling: Behandling) {
         if (behandling.virkningstidspunkt == null) return
 
-        behandling.inntekter.filter { it.taMed && it.datoFom != null && it.datoFom!! < behandling.virkningstidspunkt }
+        behandling.inntekter
+            .filter { it.taMed && it.datoFom != null && it.datoFom!! < behandling.virkningstidspunkt }
             .forEach {
                 if (it.datoTom != null && behandling.virkningstidspunkt!! >= it.datoTom) {
                     it.taMed = false
@@ -68,6 +73,14 @@ class InntektService(
                 } else {
                     it.datoFom = behandling.virkningstidspunkt
                 }
+            }
+
+        behandling.inntekter
+            .filter { it.taMed }
+            .filter { eksplisitteYtelser.contains(it.type) && it.kilde == Kilde.OFFENTLIG && it.opprinneligFom != null }
+            .forEach {
+                it.datoFom = it.bestemDatoFomForOffentligInntekt()
+                it.datoTom = it.bestemDatoTomForOffentligInntekt()
             }
     }
 
@@ -172,8 +185,17 @@ class InntektService(
         oppdatereInntektRequest.oppdatereInntektsperiode?.let { periode ->
             val inntekt = henteInntektMedId(behandling, periode.id)
             periode.taMedIBeregning.ifTrue {
-                inntekt.datoFom = periode.angittPeriode.fom
-                inntekt.datoTom = periode.angittPeriode.til
+                inntekt.datoFom =
+                    if (inntekt.skalAutomatiskSettePeriode()) {
+                        inntekt.bestemDatoFomForOffentligInntekt()
+                    } else {
+                        periode.angittPeriode?.fom
+                            ?: oppdateringAvInntektFeilet(
+                                "Angitt periode må settes ved oppdatering av offentlig inntekt som er tatt med i beregningen",
+                            )
+                    }
+                inntekt.datoTom =
+                    if (inntekt.skalAutomatiskSettePeriode()) inntekt.bestemDatoTomForOffentligInntekt() else periode.angittPeriode?.til
             } ?: run {
                 inntekt.datoFom = null
                 inntekt.datoTom = null
@@ -223,8 +245,8 @@ class InntektService(
 
         oppdatereInntekterRequest.oppdatereInntektsperioder.forEach {
             val inntekt = inntektRepository.findById(it.id).orElseThrow { inntektIkkeFunnetException(it.id) }
-            inntekt.datoFom = it.angittPeriode.fom
-            inntekt.datoTom = it.angittPeriode.til
+            inntekt.datoFom = it.angittPeriode?.fom
+            inntekt.datoTom = it.angittPeriode?.til
             inntekt.taMed = it.taMedIBeregning
         }
 
@@ -340,35 +362,11 @@ class InntektService(
     }
 
     private fun Inntekt.automatiskTaMedYtelserFraNav() {
-        if (eksplisitteYtelser.contains(type) && erOpprinneligFomFørEllerLikVirkningstidspunktEllerDagensDato()) {
+        if (skalAutomatiskSettePeriode()) {
             taMed = true
-            datoFom =
-                if (opprinneligFom!! > behandling!!.virkningstidspunktEllerSøktFomDato) {
-                    behandling!!.virkningstidspunktEllerSøktFomDato
-                } else {
-                    opprinneligFom
-                }
-            datoTom =
-                if (opprinneligTom != null &&
-                    opprinneligTom!!.isAfter(
-                        maxOf(
-                            YearMonth.now().atEndOfMonth(),
-                            behandling!!.virkningstidspunktEllerSøktFomDato,
-                        ),
-                    )
-                ) {
-                    null
-                } else {
-                    opprinneligTom
-                }
+            datoFom = bestemDatoFomForOffentligInntekt()
+            datoTom = bestemDatoTomForOffentligInntekt()
         }
-    }
-
-    private fun Inntekt.erOpprinneligFomFørEllerLikVirkningstidspunktEllerDagensDato(): Boolean {
-        if (opprinneligFom == null) return false
-        val virkningstidspunktEllerDagensDato =
-            maxOf(behandling!!.virkningstidspunktEllerSøktFomDato, YearMonth.now().atEndOfMonth())
-        return opprinneligFom!!.isBefore(virkningstidspunktEllerDagensDato) || opprinneligFom == virkningstidspunktEllerDagensDato
     }
 
     private fun henteInntektMedId(
