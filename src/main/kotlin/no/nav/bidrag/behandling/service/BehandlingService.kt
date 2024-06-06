@@ -88,14 +88,7 @@ class BehandlingService(
             return OpprettBehandlingResponse(it.id!!)
         }
 
-        ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller)
-        ingenVoksneUtenIdent(opprettBehandling.roller)
-
-        Validate.isTrue(
-            opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
-            "${OpprettBehandlingRequest::stønadstype.name} eller " +
-                "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
-        )
+        opprettBehandling.valider()
 
         val opprettetAv =
             TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"

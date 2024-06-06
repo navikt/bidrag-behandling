@@ -42,6 +42,7 @@ class UtgiftService(
         val utgift = behandling.utgift ?: Utgift(behandling = behandling)
         utgift.beløpDirekteBetaltAvBp = request.beløpDirekteBetaltAvBp ?: utgift.beløpDirekteBetaltAvBp
         behandling.utgiftsbegrunnelseKunINotat = request.notat?.kunINotat ?: behandling.utgiftsbegrunnelseKunINotat
+        behandling.avslag = request.avslag
         if (request.nyEllerEndretUtgift != null) {
             utgift.lagreHistorikk()
             val nyUtgiftspost = request.nyEllerEndretUtgift.tilUtgiftspost(utgift)

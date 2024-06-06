@@ -44,9 +44,11 @@ data class OppdatereUtgiftResponse(
     @Schema(description = "Beløp som er direkte betalt av BP")
     val beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
     @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt og beløp som er direkte betalt av BP")
-    val totalBeløpBetaltAvBp: BigDecimal = BigDecimal.ZERO,
+    val totalBeløpBetaltAvBp: BigDecimal? = null,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
-    val beregnetBeløp: BigDecimal = BigDecimal.ZERO,
+    val totalGodkjentBeløp: BigDecimal = BigDecimal.ZERO,
+    @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
+    val totalGodkjentBeløpBp: BigDecimal? = null,
 )
 
 data class OppdatereUtgift(

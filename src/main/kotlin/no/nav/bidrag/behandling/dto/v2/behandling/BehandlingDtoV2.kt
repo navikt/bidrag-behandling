@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -30,7 +31,7 @@ import java.time.LocalDateTime
 
 data class BehandlingDtoV2(
     val id: Long,
-    val type: Behandlingtype,
+    val type: TypeBehandling,
     val vedtakstype: Vedtakstype,
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
@@ -182,13 +183,6 @@ data class HusstandsbarnGrunnlagDto(
         @Schema(required = true)
         val bostatus: Bostatuskode,
     )
-}
-
-@Schema(enumAsRef = true)
-enum class Behandlingtype {
-    FORSKUDD,
-    SÆRLIGE_UTGIFTER,
-    BIDRAG,
 }
 
 data class Grunnlagstype(

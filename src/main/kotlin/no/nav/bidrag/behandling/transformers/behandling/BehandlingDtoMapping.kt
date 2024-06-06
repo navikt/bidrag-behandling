@@ -14,7 +14,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.Behandlingtype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
@@ -41,9 +40,10 @@ import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
-import no.nav.bidrag.behandling.transformers.utgift.beregnetBeløp
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
+import no.nav.bidrag.behandling.transformers.utgift.totalGodkjentBeløp
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
@@ -64,19 +64,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
 import java.time.ZoneOffset
-
-val engangsbeløpSærligeutgifter = listOf(Engangsbeløptype.SÆRTILSKUDD)
-
-fun Behandling.tilType() =
-    if (engangsbeloptype != null &&
-        engangsbeløpSærligeutgifter.contains(
-            engangsbeloptype,
-        )
-    ) {
-        Behandlingtype.SÆRLIGE_UTGIFTER
-    } else {
-        Behandlingtype.FORSKUDD
-    }
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 @Suppress("ktlint:standard:value-argument-comment")
@@ -134,7 +121,7 @@ fun Behandling.tilBehandlingDtoV2(
         utgift?.let { utgift ->
             SærtilskuddUtgifterDto(
                 beløpDirekteBetaltAvBp = utgift.beløpDirekteBetaltAvBp,
-                beregnetBeløp = utgift.beregnetBeløp,
+                beregnetBeløp = utgift.totalGodkjentBeløp,
                 notat =
                     BehandlingNotatDto(
                         kunINotat = utgiftsbegrunnelseKunINotat,

@@ -51,7 +51,7 @@ open class Behandling(
     @Column(name = "dato_fom")
     open val søktFomDato: LocalDate,
     open val datoTom: LocalDate? = null,
-    open val mottattdato: LocalDate,
+    open var mottattdato: LocalDate,
     open val saksnummer: String,
     open var soknadsid: Long,
     open val soknadRefId: Long? = null,
