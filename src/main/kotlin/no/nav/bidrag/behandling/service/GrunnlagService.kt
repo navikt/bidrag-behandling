@@ -251,13 +251,13 @@ class GrunnlagService(
     }
 
     @Transactional
-    fun oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling: Behandling) {
+    fun oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val sisteAktiveGrunnlag =
             behandling.henteNyesteAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
                 behandling.bidragsmottaker!!,
             ) ?: run {
-                log.warn { "Fant ikke en aktiv sivilstand grunnlag. Gjør ingen endring etter oppdatert virkningstidspunkt" }
+                log.warn { "Fant ingen aktive sivilstandsgrunnlag. Gjør ingen endring etter oppdatert virkningstidspunkt" }
                 return
             }
         val sivilstandBeregnet = sisteAktiveGrunnlag.konvertereData<Set<SivilstandGrunnlagDto>>()!!
@@ -275,13 +275,27 @@ class GrunnlagService(
     }
 
     @Transactional
+    fun oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling: Behandling) {
+        val sisteIkkeAktiveGrunnlag =
+            behandling.henteNyesteIkkeAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
+                behandling.bidragsmottaker!!,
+            ) ?: run {
+                log.debug { "Fant ingen ikke-aktive sivilstandsgrunnlag. Gjør ingen endringer" }
+                return
+            }
+
+        sisteIkkeAktiveGrunnlag.oppdatereSivilstandshistorikk()
+    }
+
+    @Transactional
     fun oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val sisteIkkeAktiveGrunnlag =
             behandling.henteNyesteIkkeAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
                 behandling.rolleSomBoforholdSkalHentesFor!!,
             ) ?: run {
-                log.debug { "Fant ingen ikke aktiv boforhold grunnlag. Gjør ingen endringer" }
+                log.debug { "Fant ingen ikke-aktive boforholdsgrunnlag. Gjør ingen endringer" }
                 return
             }
         sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(false)
@@ -294,10 +308,33 @@ class GrunnlagService(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
                 behandling.rolleSomBoforholdSkalHentesFor!!,
             ) ?: run {
-                log.warn { "Fant ingen aktiv boforhold grunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
+                log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
                 return
             }
         sisteAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag()
+    }
+
+    private fun Grunnlag.oppdatereSivilstandshistorikk() {
+        val sivilstand = konvertereData<Set<SivilstandGrunnlagDto>>()!!
+        val periodisertHistorikk =
+            SivilstandApi.beregnV2(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                sivilstand.tilSivilstandRequest(),
+            )
+
+        overskriveGjeldendeBearbeidaSivilstand(behandling, periodisertHistorikk)
+    }
+
+    private fun overskriveGjeldendeBearbeidaSivilstand(
+        behandling: Behandling,
+        historikk: List<SivilstandBeregnV2Dto>,
+    ) {
+        val nyesteAktiveBearbeidaSivilstand =
+            behandling.henteNyesteAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+                behandling.bidragsmottaker!!,
+            )
+        nyesteAktiveBearbeidaSivilstand?.data = tilJson(historikk)
     }
 
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
@@ -676,6 +713,51 @@ class GrunnlagService(
                         "Automatisk aktiverer ny innhentet grunnlag."
                 }
                 ikkeAktivGrunnlag.aktiv = LocalDateTime.now()
+            }
+
+        aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
+    }
+
+    fun aktivereSivilstandHvisEndringIkkeMåAksepteres(behandling: Behandling) {
+        val rolleInhentetFor = behandling.bidragsmottaker!!
+        val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+        if (ikkeAktiveGrunnlag.isEmpty()) return
+        val endringerSomMåBekreftes =
+            ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato)
+
+        if (!(endringerSomMåBekreftes?.grunnlag?.none() ?: false)) {
+            val ikkeAktiverteSivilstandsgrunnlag =
+                ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
+
+            ikkeAktiverteSivilstandsgrunnlag.forEach {
+                val type =
+                    when (it.erBearbeidet) {
+                        true -> "bearbeida"
+                        false -> "ikke-bearbeida"
+                    }
+
+                log.info {
+                    "Ikke-aktivert $type sivilstandsgrunnlag med id ${it.id} i behandling ${behandling.id},"
+                    "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
+                }
+
+                it.aktiv = LocalDateTime.now()
+            }
+        }
+
+        behandling.sivilstand.filter { it.kilde == Kilde.OFFENTLIG }
+            .filter { endringerSomMåBekreftes?.grunnlag?.none() ?: false }
+            .forEach {
+                val ikkeAktivertGrunnlag =
+                    ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
+                        .maxBy { it.innhentet }
+
+                log.info {
+                    "Ikke-aktivert sivilstandsgrunnlag med id ${ikkeAktivertGrunnlag.id} i behandling ${behandling.id},"
+                    "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
+                }
+                ikkeAktivertGrunnlag.aktiv = LocalDateTime.now()
             }
 
         aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
