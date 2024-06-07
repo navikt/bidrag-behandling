@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.henteSisteSivilstand
 import no.nav.bidrag.behandling.database.datamodell.lagreSivilstandshistorikk
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsbarnRepository
+import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -47,9 +48,9 @@ import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
-import no.nav.bidrag.boforhold.dto.TypeEndring
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -70,6 +71,7 @@ private val log = KotlinLogging.logger {}
 class BoforholdService(
     private val behandlingRepository: BehandlingRepository,
     private val husstandsbarnRepository: HusstandsbarnRepository,
+    private val sivilstandRepository: SivilstandRepository,
 ) {
     @Transactional
     fun oppdatereNotat(
@@ -341,7 +343,9 @@ class BoforholdService(
             behandling.oppdatereSivilstandshistorikk(sletteInnslag = idSivilstandsperiode)
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
             return OppdatereBoforholdResponse(
-                oppdatertSivilstandshistorikk = behandling.sivilstand.tilSivilstandDto(),
+                oppdatertSivilstandshistorikk =
+                    sivilstandRepository.saveAll(behandling.sivilstand).toSet()
+                        .tilSivilstandDto(),
                 valideringsfeil =
                     BoforholdValideringsfeil(
                         sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
@@ -353,7 +357,8 @@ class BoforholdService(
             behandling.oppdatereSivilstandshistorikk(it)
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
             return OppdatereBoforholdResponse(
-                oppdatertSivilstandshistorikk = behandling.sivilstand.tilSivilstandDto(),
+                oppdatertSivilstandshistorikk =
+                    sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilSivilstandDto(),
                 valideringsfeil =
                     BoforholdValideringsfeil(
                         sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
@@ -364,15 +369,22 @@ class BoforholdService(
         if (oppdatereSivilstand.angreSisteEndring) {
             behandling.gjenoppretteForrigeSivilstandshistorikk(behandling.bidragsmottaker!!)
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
-            return behandling.sivilstand.tilOppdatereBoforholdResponse()
+            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse()
         } else if (oppdatereSivilstand.tilbakestilleHistorikk) {
             behandling.bidragsmottaker!!.lagreSivilstandshistorikk(behandling.sivilstand)
             behandling.tilbakestilleTilOffentligSivilstandshistorikk()
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
-            return behandling.sivilstand.tilOppdatereBoforholdResponse()
+            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse()
         }
 
         oppdateringAvBoforholdFeiletException(behandlingsid)
+    }
+
+    @Transactional
+    fun oppdatereSivilstandshistorikk(behandling: Behandling) {
+        behandling.bidragsmottaker!!.lagreSivilstandshistorikk(behandling.sivilstand)
+        behandling.oppdatereSivilstandshistorikk()
+        sivilstandRepository.saveAll(behandling.sivilstand)
     }
 
     private fun sletteHusstandsbarn(
@@ -687,13 +699,8 @@ class BoforholdService(
         nyttEllerEndretInnslag: Sivilstandsperiode? = null,
         sletteInnslag: Long? = null,
     ) {
-        val manuelleInnslag =
-            (this.sivilstand.filter { Kilde.MANUELL == it.kilde }.filter { it.id != sletteInnslag }).toMutableSet()
-
+        val request = this.sivilstand.tilSvilstandRequest(nyttEllerEndretInnslag, sletteInnslag)
         this.tilbakestilleTilOffentligSivilstandshistorikk()
-        val historikkTilPeriodisering = this.sivilstand + manuelleInnslag
-
-        val request = historikkTilPeriodisering.tilSvilstandRequest(nyttEllerEndretInnslag, sletteInnslag)
         val resultat = SivilstandApi.beregnV2(this.virkningstidspunktEllerSøktFomDato, request).toSet()
         this.overskriveMedBearbeidaSivilstandshistorikk(resultat)
     }
@@ -800,17 +807,9 @@ class BoforholdService(
     }
 
     private fun Behandling.gjenoppretteForrigeSivilstandshistorikk(rolle: Rolle) {
+        val lagretHistorikk = rolle.henteLagretSivilstandshistorikk(this)
         rolle.lagreSivilstandshistorikk(this.sivilstand)
         this.sivilstand.clear()
-        this.sivilstand.addAll(rolle.henteLagretSivilstandshistorikk())
+        this.sivilstand.addAll(lagretHistorikk)
     }
-
-    private fun Sivilstandsperiode.tilSivilstand(behandling: Behandling) =
-        Sivilstand(
-            behandling = behandling,
-            kilde = Kilde.MANUELL,
-            sivilstand = sivilstand,
-            datoFom = fraOgMed,
-            datoTom = tilOgMed,
-        )
 }

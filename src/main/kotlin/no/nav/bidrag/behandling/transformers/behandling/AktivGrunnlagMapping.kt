@@ -136,16 +136,20 @@ fun List<Grunnlag>.hentEndringerSivilstand(
         val aktivSivilstandGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nySivilstandGrunnlagBearbeidet = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nySivilstandGrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
-        val aktivSivilstandData =
+        val aktiveSivilstandsdata =
             aktivSivilstandGrunnlag.konvertereData<List<Sivilstand>>()
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
-        val nySivilstandData =
+        val nyeSivilstandsdata =
             nySivilstandGrunnlagBearbeidet.konvertereData<List<Sivilstand>>()
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
-        if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
+        if (aktiveSivilstandsdata != null && nyeSivilstandsdata != null &&
+            !nyeSivilstandsdata.erLik(
+                aktiveSivilstandsdata,
+            )
+        ) {
             return SivilstandIkkeAktivGrunnlagDto(
                 sivilstand =
-                    nySivilstandData.map {
+                    nyeSivilstandsdata.map {
                         SivilstandDto(
                             null,
                             it.periodeFom,

@@ -469,7 +469,9 @@ fun OppdatereSivilstand.validere(behandling: Behandling) {
         }
     }
 
-    if (this.sletteSivilstandsperiode == null && this.nyEllerEndretSivilstandsperiode == null) {
+    if (this.sletteSivilstandsperiode == null && this.nyEllerEndretSivilstandsperiode == null &&
+        !this.tilbakestilleHistorikk && !this.angreSisteEndring
+    ) {
         requestManglerDataException(behandling.id!!, Ressurstype.SIVILSTAND)
     }
 }

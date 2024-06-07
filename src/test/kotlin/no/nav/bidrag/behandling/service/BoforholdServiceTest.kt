@@ -41,8 +41,8 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
-import no.nav.bidrag.boforhold.dto.TypeEndring
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
@@ -1292,7 +1292,6 @@ class BoforholdServiceTest : TestContainerRunner() {
         open inner class OppdatereManuelt {
             @Test
             @Transactional
-            // TODO: Oppdatere med fornuftige sjekker når SivilstandsApi er klar
             open fun `skal legge til sivilstand manuelt`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling()
@@ -1319,19 +1318,15 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                // TODO: Legge til passende sjekker når SivilstandApi er klar
-                assert(true)
-                /*
                 assertSoftly(behandling.sivilstand) { s ->
                     s shouldHaveSize 3
                     s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 3
                 }
-                 */
             }
 
             @Test
             @Transactional
-            @Disabled("Ferdigstille når SivilstandApi er klar")
             open fun `skal slette sivilstandsperiode`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling()
@@ -1348,8 +1343,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-                // TODO: Avkommentere når SivilstandApi er klar
-                // behandling.sivilstand shouldHaveSize 3
+                behandling.sivilstand shouldHaveSize 3
 
                 // hvis
                 boforholdService.oppdatereSivilstandManuelt(
@@ -1358,7 +1352,113 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                behandling.sivilstand shouldHaveSize 2
+                assertSoftly(behandling.sivilstand) {
+                    it shouldHaveSize 2
+                    it.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 0
+                    it.filter { it.id != null } shouldHaveSize 2
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal tilbakestille til offentlig sivilstandshistorikk`() {
+                // gitt
+                val behandling = testdataManager.oppretteBehandling()
+                leggeTilGrunnlagForSivilstand(behandling)
+
+                assertSoftly(behandling.sivilstand) { s ->
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                }
+
+                assertSoftly(behandling.grunnlag) { g ->
+                    g shouldHaveSize 2
+                }
+
+                val fomdato = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(7)
+
+                boforholdService.oppdatereSivilstandManuelt(
+                    behandling.id!!,
+                    OppdatereSivilstand(
+                        nyEllerEndretSivilstandsperiode =
+                            Sivilstandsperiode(fomdato, null, Sivilstandskode.GIFT_SAMBOER),
+                    ),
+                )
+
+                assertSoftly(behandling.sivilstand) { s ->
+                    s shouldHaveSize 3
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 3
+                }
+
+                // hvis
+                boforholdService.oppdatereSivilstandManuelt(
+                    behandling.id!!,
+                    OppdatereSivilstand(tilbakestilleHistorikk = true),
+                )
+
+                // så
+                assertSoftly(behandling.sivilstand) { s ->
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 2
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal angre siste endring`() {
+                // gitt
+                val behandling = testdataManager.oppretteBehandling()
+                leggeTilGrunnlagForSivilstand(behandling)
+
+                assertSoftly(behandling.sivilstand) { s ->
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                }
+
+                assertSoftly(behandling.grunnlag) { g ->
+                    g shouldHaveSize 2
+                }
+
+                val fomdato1 = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(7)
+
+                boforholdService.oppdatereSivilstandManuelt(
+                    behandling.id!!,
+                    OppdatereSivilstand(
+                        nyEllerEndretSivilstandsperiode =
+                            Sivilstandsperiode(fomdato1, null, Sivilstandskode.GIFT_SAMBOER),
+                    ),
+                )
+
+                val fomdato2 = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(1)
+
+                boforholdService.oppdatereSivilstandManuelt(
+                    behandling.id!!,
+                    OppdatereSivilstand(
+                        nyEllerEndretSivilstandsperiode =
+                            Sivilstandsperiode(fomdato2, null, Sivilstandskode.ENSLIG),
+                    ),
+                )
+
+                assertSoftly(behandling.sivilstand) { s ->
+                    s shouldHaveSize 4
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 4
+                }
+
+                // hvis
+                boforholdService.oppdatereSivilstandManuelt(
+                    behandling.id!!,
+                    OppdatereSivilstand(angreSisteEndring = true),
+                )
+
+                // så
+                assertSoftly(behandling.sivilstand) { s ->
+                    s shouldHaveSize 3
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 3
+                }
             }
         }
     }
