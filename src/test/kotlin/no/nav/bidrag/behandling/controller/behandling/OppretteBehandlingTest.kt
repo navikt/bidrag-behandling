@@ -6,7 +6,9 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.DisplayName
@@ -98,6 +100,56 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                     Void::class.java,
                 )
             Assertions.assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+        }
+
+        @Test
+        fun `skal opprette en behandling for særlige utgifter`() {
+            val personidentBp = Personident("12345678912")
+            val personidentBm = Personident("213213")
+            val personidentBarn = Personident("123213123")
+
+            val roller =
+                setOf(
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        personidentBarn,
+                        fødselsdato = LocalDate.now().minusMonths(136),
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BIDRAGSMOTTAKER,
+                        personidentBm,
+                        fødselsdato = LocalDate.now().minusMonths(499),
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BIDRAGSPLIKTIG,
+                        personidentBp,
+                        fødselsdato = LocalDate.now().minusMonths(499),
+                    ),
+                )
+            val testBehandlingMedNull =
+                oppretteBehandlingRequestTest("1900000", "en12", roller)
+                    .copy(
+                        engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
+                        stønadstype = null,
+                        vedtakstype = Vedtakstype.FASTSETTELSE,
+                    )
+
+            stubUtils.stubHenteGrunnlag()
+            val responseMedNull =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUriV2()}/behandling",
+                    HttpMethod.POST,
+                    HttpEntity(testBehandlingMedNull),
+                    OpprettBehandlingResponse::class.java,
+                )
+            Assertions.assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+
+            val behandling = testdataManager.hentBehandling(responseMedNull.body!!.id)!!
+
+            behandling.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
+            behandling.engangsbeloptype shouldBe Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+            behandling.stonadstype shouldBe null
+            behandling.utgift shouldBe null
         }
 
         //        @Disabled("Wiremock-problem kun på Github")

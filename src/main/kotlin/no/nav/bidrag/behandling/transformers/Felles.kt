@@ -51,18 +51,26 @@ val engangsbeløpSærligeutgifter =
         Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING,
     )
 
-fun Behandling.tilType() =
-    if (engangsbeloptype != null &&
-        engangsbeløpSærligeutgifter.contains(
-            engangsbeloptype,
-        )
-    ) {
-        TypeBehandling.SÆRLIGE_UTGIFTER
-    } else if (stonadstype == Stønadstype.FORSKUDD) {
-        TypeBehandling.FORSKUDD
-    } else {
-        TypeBehandling.BIDRAG
-    }
+fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
+
+fun Behandling.erForskudd() = tilType() == TypeBehandling.FORSKUDD
+
+fun Behandling.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRLIGE_UTGIFTER
+
+fun bestemTypeBehandling(
+    stønadstype: Stønadstype?,
+    engangsbeløptype: Engangsbeløptype?,
+) = if (engangsbeløptype != null &&
+    engangsbeløpSærligeutgifter.contains(
+        engangsbeløptype,
+    )
+) {
+    TypeBehandling.SÆRLIGE_UTGIFTER
+} else if (stønadstype == Stønadstype.FORSKUDD) {
+    TypeBehandling.FORSKUDD
+} else {
+    TypeBehandling.BIDRAG
+}
 
 @Schema(enumAsRef = true)
 enum class TypeBehandling {

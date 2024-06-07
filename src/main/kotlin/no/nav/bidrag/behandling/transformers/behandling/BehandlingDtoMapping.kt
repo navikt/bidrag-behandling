@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.erSærligeUtgifter
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
@@ -128,6 +129,15 @@ fun Behandling.tilBehandlingDtoV2(
                     ),
                 utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
             )
+        } ?: if (erSærligeUtgifter()) {
+            SærtilskuddUtgifterDto(
+                notat =
+                    BehandlingNotatDto(
+                        kunINotat = utgiftsbegrunnelseKunINotat,
+                    ),
+            )
+        } else {
+            null
         },
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata

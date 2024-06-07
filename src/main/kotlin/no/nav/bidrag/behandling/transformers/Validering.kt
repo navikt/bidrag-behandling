@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleHusstandsmedlemPerioder
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.erSærligeUtgifter
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -59,12 +60,13 @@ fun OpprettBehandlingRequest.valider() {
     (stønadstype == null && engangsbeløpstype == null).ifTrue {
         feilliste.add("Stønadstype eller engangsbeløpstype må settes")
     }
-    if (engangsbeløpstype != null && engangsbeløpSærligeutgifter.contains(engangsbeløpstype)) {
-        val harRolleBp = roller.any { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
-        val harRolleBm = roller.any { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+    if (erSærligeUtgifter()) {
         when {
-            !harRolleBp -> feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSPLIKTIG}")
-            harRolleBm -> feilliste.add("Behandling av typen $engangsbeløpstype kan ikke ha en rolle av typen ${Rolletype.BIDRAGSMOTTAKER}")
+            roller.none { it.rolletype == Rolletype.BIDRAGSPLIKTIG } ->
+                feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSPLIKTIG}")
+
+            roller.none { it.rolletype == Rolletype.BIDRAGSMOTTAKER } ->
+                feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSMOTTAKER}")
         }
     }
     roller.any { it.rolletype == Rolletype.BARN && (it.ident?.verdi.isNullOrBlank() || it.navn.isNullOrBlank()) }

@@ -48,6 +48,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -340,6 +341,61 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandlingAfter.soknadsid shouldBe søknadsid
             opprettetBehandlingAfter.saksnummer shouldBe "12312"
             opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
+        }
+
+        @Test
+        @Transactional
+        open fun `skal opprette en særlige utgifter behandling`() {
+            val søknadsid = 123213L
+            stubUtils.stubHenteGrunnlag()
+            stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
+            stubKodeverkProvider()
+
+            val opprettetBehandling =
+                behandlingService.opprettBehandling(
+                    OpprettBehandlingRequest(
+                        vedtakstype = Vedtakstype.FASTSETTELSE,
+                        søktFomDato = LocalDate.parse("2023-01-01"),
+                        mottattdato = LocalDate.parse("2023-01-01"),
+                        søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                        saksnummer = "12312",
+                        søknadsid = søknadsid,
+                        behandlerenhet = "1233",
+                        stønadstype = null,
+                        engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
+                        roller =
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident(testdataBarn1.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSMOTTAKER,
+                                    ident = Personident(testdataBM.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSPLIKTIG,
+                                    ident = Personident(testdataBP.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                            ),
+                    ),
+                )
+
+            val opprettetBehandlingAfter =
+                behandlingService.hentBehandlingById(opprettetBehandling.id)
+
+            opprettetBehandlingAfter.stonadstype shouldBe null
+            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+            opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
+            opprettetBehandlingAfter.årsak shouldBe null
+            opprettetBehandlingAfter.roller shouldHaveSize 3
+            opprettetBehandlingAfter.soknadsid shouldBe søknadsid
+            opprettetBehandlingAfter.saksnummer shouldBe "12312"
+            opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
+            opprettetBehandlingAfter.utgift shouldBe null
         }
 
         @Test
