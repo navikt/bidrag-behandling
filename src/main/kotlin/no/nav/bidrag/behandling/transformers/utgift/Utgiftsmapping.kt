@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
+import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
@@ -33,12 +34,17 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
             oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
             utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
             notat = BehandlingNotatDto(behandling.utgiftsbegrunnelseKunINotat ?: ""),
-            beløpDirekteBetaltAvBp = beløpDirekteBetaltAvBp,
-            totalBeløpBetaltAvBp = totalBeløpBetaltAvBp,
-            totalGodkjentBeløp = totalGodkjentBeløp,
-            totalGodkjentBeløpBp = totalGodkjentBeløpBp,
+            beregning = tilBeregningDto(),
         )
     }
+
+fun Utgift.tilBeregningDto() =
+    UtgiftBeregningDto(
+        beløpDirekteBetaltAvBp = beløpDirekteBetaltAvBp,
+        totalBeløpBetaltAvBp = totalBeløpBetaltAvBp,
+        totalGodkjentBeløp = totalGodkjentBeløp,
+        totalGodkjentBeløpBp = totalGodkjentBeløpBp,
+    )
 
 fun Utgiftspost.tilDto() =
     UtgiftspostDto(

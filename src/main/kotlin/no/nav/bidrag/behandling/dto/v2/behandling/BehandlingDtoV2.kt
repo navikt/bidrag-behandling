@@ -62,14 +62,20 @@ data class BehandlingDtoV2(
 )
 
 data class SærtilskuddUtgifterDto(
+    val beregning: UtgiftBeregningDto? = null,
+    val notat: BehandlingNotatDto,
+    val utgifter: List<UtgiftspostDto> = emptyList(),
+)
+
+data class UtgiftBeregningDto(
     @Schema(description = "Beløp som er direkte betalt av BP")
     val beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
     @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt og beløp som er direkte betalt av BP")
-    val totalBeløpBetaltAvBp: BigDecimal = BigDecimal.ZERO,
+    val totalBeløpBetaltAvBp: BigDecimal? = null,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
-    val beregnetBeløp: BigDecimal = BigDecimal.ZERO,
-    val notat: BehandlingNotatDto,
-    val utgifter: List<UtgiftspostDto> = emptyList(),
+    val totalGodkjentBeløp: BigDecimal = BigDecimal.ZERO,
+    @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
+    val totalGodkjentBeløpBp: BigDecimal? = null,
 )
 
 data class UtgiftspostDto(

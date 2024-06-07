@@ -107,7 +107,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
-                        dato = LocalDate.parse("2021-01-01"),
+                        dato = LocalDate.now().minusMonths(1),
                         beskrivelse = "Beskrivelse",
                         kravbeløp = BigDecimal(1000),
                         godkjentBeløp = BigDecimal(500),
@@ -118,11 +118,14 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         response shouldNotBe null
         response.oppdatertUtgiftspost shouldNotBe null
-        response.totalBeløpBetaltAvBp shouldBe BigDecimal(0)
-        response.totalGodkjentBeløp shouldBe BigDecimal(500)
-        response.beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
+        assertSoftly(response.beregning!!) {
+            totalBeløpBetaltAvBp shouldBe BigDecimal(0)
+            totalGodkjentBeløp shouldBe BigDecimal(500)
+            beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
+        }
+
         assertSoftly(response.oppdatertUtgiftspost!!) {
-            dato shouldBe LocalDate.parse("2021-01-01")
+            dato shouldBe LocalDate.now().minusMonths(1)
             beskrivelse shouldBe "Beskrivelse"
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
@@ -157,7 +160,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         id = utgiftspostId,
-                        dato = LocalDate.parse("2021-01-01"),
+                        dato = LocalDate.now().minusMonths(1),
                         beskrivelse = "Beskrivelse ny",
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
@@ -168,13 +171,16 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         response shouldNotBe null
         response.oppdatertUtgiftspost shouldNotBe null
-        response.totalBeløpBetaltAvBp shouldBe BigDecimal(0)
-        response.totalGodkjentBeløp shouldBe BigDecimal(500)
-        response.beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
-        response.totalGodkjentBeløpBp shouldBe BigDecimal(0)
+        assertSoftly(response.beregning!!) {
+            totalBeløpBetaltAvBp shouldBe BigDecimal(0)
+            totalGodkjentBeløp shouldBe BigDecimal(500)
+            beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
+            totalGodkjentBeløpBp shouldBe BigDecimal(0)
+        }
+
         assertSoftly(response.oppdatertUtgiftspost!!) {
             id shouldBe utgiftspostId
-            dato shouldBe LocalDate.parse("2021-01-01")
+            dato shouldBe LocalDate.now().minusMonths(1)
             beskrivelse shouldBe "Beskrivelse ny"
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
@@ -207,7 +213,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
-                        dato = LocalDate.parse("2021-01-01"),
+                        dato = LocalDate.now().minusMonths(1),
                         beskrivelse = "Beskrivelse ny",
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
@@ -219,13 +225,16 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         response shouldNotBe null
         response.oppdatertUtgiftspost shouldNotBe null
-        response.totalBeløpBetaltAvBp shouldBe BigDecimal(500)
-        response.totalGodkjentBeløp shouldBe BigDecimal(1000)
-        response.beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
-        response.totalGodkjentBeløpBp shouldBe BigDecimal(500)
+
+        assertSoftly(response.beregning!!) {
+            totalBeløpBetaltAvBp shouldBe BigDecimal(500)
+            totalGodkjentBeløp shouldBe BigDecimal(1000)
+            beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
+            totalGodkjentBeløpBp shouldBe BigDecimal(500)
+        }
         response.utgiftposter shouldHaveSize 2
         assertSoftly(response.oppdatertUtgiftspost!!) {
-            dato shouldBe LocalDate.parse("2021-01-01")
+            dato shouldBe LocalDate.now().minusMonths(1)
             beskrivelse shouldBe "Beskrivelse ny"
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
@@ -270,10 +279,13 @@ class UtgiftserviceTest : TestContainerRunner() {
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
 
         response.oppdatertUtgiftspost shouldBe null
-        response.totalBeløpBetaltAvBp shouldBe BigDecimal(2000)
-        response.totalGodkjentBeløp shouldBe BigDecimal(1000)
-        response.beløpDirekteBetaltAvBp shouldBe BigDecimal(1500)
-        response.totalGodkjentBeløpBp shouldBe BigDecimal(500)
+
+        assertSoftly(response.beregning!!) {
+            totalBeløpBetaltAvBp shouldBe BigDecimal(2000)
+            totalGodkjentBeløp shouldBe BigDecimal(1000)
+            beløpDirekteBetaltAvBp shouldBe BigDecimal(1500)
+            totalGodkjentBeløpBp shouldBe BigDecimal(500)
+        }
         response.utgiftposter shouldHaveSize 2
     }
 
@@ -387,7 +399,7 @@ class UtgiftserviceTest : TestContainerRunner() {
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
-                    dato = LocalDate.parse("2021-01-01"),
+                    dato = LocalDate.now().minusMonths(2),
                     beskrivelse = "Beskrivelse",
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
@@ -402,7 +414,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         id = utgiftspostId,
-                        dato = LocalDate.parse("2022-01-01"),
+                        dato = LocalDate.now().minusMonths(1),
                         beskrivelse = "Beskrivelse ny",
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
@@ -412,7 +424,7 @@ class UtgiftserviceTest : TestContainerRunner() {
         val responseOppdater = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
         assertSoftly(responseOppdater.utgiftposter[0]) {
             id shouldBe utgiftspostId
-            dato shouldBe LocalDate.parse("2022-01-01")
+            dato shouldBe LocalDate.now().minusMonths(1)
             beskrivelse shouldBe "Beskrivelse ny"
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
@@ -424,7 +436,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             )
         val responseAngre = utgiftService.oppdatereUtgift(behandling.id!!, forespørselAngre)
         assertSoftly(responseAngre.utgiftposter[0]) {
-            dato shouldBe LocalDate.parse("2021-01-01")
+            dato shouldBe LocalDate.now().minusMonths(2)
             beskrivelse shouldBe "Beskrivelse"
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)

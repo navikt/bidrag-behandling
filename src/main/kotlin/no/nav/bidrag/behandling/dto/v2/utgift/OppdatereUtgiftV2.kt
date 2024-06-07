@@ -5,6 +5,7 @@ import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.PositiveOrZero
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import java.math.BigDecimal
@@ -41,14 +42,7 @@ data class OppdatereUtgiftResponse(
     val oppdatertUtgiftspost: UtgiftspostDto? = null,
     val utgiftposter: List<UtgiftspostDto> = emptyList(),
     val notat: BehandlingNotatDto,
-    @Schema(description = "Beløp som er direkte betalt av BP")
-    val beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
-    @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt og beløp som er direkte betalt av BP")
-    val totalBeløpBetaltAvBp: BigDecimal? = null,
-    @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
-    val totalGodkjentBeløp: BigDecimal = BigDecimal.ZERO,
-    @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
-    val totalGodkjentBeløpBp: BigDecimal? = null,
+    val beregning: UtgiftBeregningDto? = null,
 )
 
 data class OppdatereUtgift(

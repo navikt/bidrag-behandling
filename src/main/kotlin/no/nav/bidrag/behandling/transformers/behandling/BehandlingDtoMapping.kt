@@ -43,8 +43,8 @@ import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
-import no.nav.bidrag.behandling.transformers.utgift.totalGodkjentBeløp
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
@@ -121,8 +121,7 @@ fun Behandling.tilBehandlingDtoV2(
     utgift =
         utgift?.let { utgift ->
             SærtilskuddUtgifterDto(
-                beløpDirekteBetaltAvBp = utgift.beløpDirekteBetaltAvBp,
-                beregnetBeløp = utgift.totalGodkjentBeløp,
+                beregning = utgift.tilBeregningDto(),
                 notat =
                     BehandlingNotatDto(
                         kunINotat = utgiftsbegrunnelseKunINotat,

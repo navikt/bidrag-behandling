@@ -53,9 +53,13 @@ class UtgiftService(
             }
 
             log.info {
-                "${nyUtgiftspost.id?.let { "Oppdatert" } ?: "Opprettet"} utgift med dato ${nyUtgiftspost.dato} og beskrivelse ${nyUtgiftspost.beskrivelse} i behandling $behandlingsid"
+                "${nyUtgiftspost.id?.let { "Oppdatert" } ?: "Opprettet"} utgift med dato ${nyUtgiftspost.dato} " +
+                    "og beskrivelse ${nyUtgiftspost.beskrivelse} i behandling $behandlingsid"
             }
-            secureLogger.info { "${nyUtgiftspost.id?.let { "Oppdatert" } ?: "Opprettet"} utgift $nyUtgiftspost i behandling $behandlingsid" }
+            secureLogger.info {
+                "${nyUtgiftspost.id?.let { "Oppdatert" } ?: "Opprettet"} " +
+                    "utgift $nyUtgiftspost i behandling $behandlingsid"
+            }
 
             utgift.utgiftsposter.add(nyUtgiftspost)
             behandling.utgift = utgiftRepository.save(utgift)
