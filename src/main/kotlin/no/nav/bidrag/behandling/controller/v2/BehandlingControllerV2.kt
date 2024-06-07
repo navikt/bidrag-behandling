@@ -21,11 +21,14 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
+import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
+import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
+import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.commons.util.secureLogger
@@ -49,6 +52,7 @@ class BehandlingControllerV2(
     private val boforholdService: BoforholdService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
+    private val utgiftService: UtgiftService,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -150,6 +154,29 @@ class BehandlingControllerV2(
     ): OppdatereInntektResponse {
         log.info { "Oppdatere inntekter for behandling $behandlingsid" }
         return inntektService.oppdatereInntektManuelt(behandlingsid, request)
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/utgift")
+    @Operation(
+        description = "Oppdatere utgift for behandling. Returnerer oppdatert behandling detaljer. L",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun oppdatereUtgift(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdatereUtgiftRequest,
+    ): OppdatereUtgiftResponse {
+        log.info { "Oppdaterer utgift for behandling $behandlingsid" }
+        secureLogger.info { "Oppdaterer utgift for behandling $behandlingsid med forespørsel $request" }
+
+        return utgiftService.oppdatereUtgift(behandlingsid, request)
     }
 
     @PutMapping("/behandling/{behandlingsid}/virkningstidspunkt")

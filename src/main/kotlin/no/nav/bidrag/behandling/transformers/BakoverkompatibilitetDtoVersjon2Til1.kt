@@ -51,7 +51,6 @@ fun BehandlingDtoV2.tilBehandlingDto() =
         behandlerenhet = behandlerenhet,
         roller = roller,
         søknadRefId = søknadRefId,
-        grunnlagspakkeid = grunnlagspakkeid,
         virkningstidspunkt = virkningstidspunkt,
         boforhold = boforhold.tilBoforholdDto(),
         inntekter = inntekter.tilInntekterDto(),

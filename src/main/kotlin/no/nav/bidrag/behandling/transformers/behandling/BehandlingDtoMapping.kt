@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SærtilskuddUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
@@ -28,17 +29,22 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarnperiodeDto
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.erSærligeUtgifter
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
+import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
+import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
@@ -68,6 +74,7 @@ fun Behandling.tilBehandlingDtoV2(
     inkluderHistoriskeInntekter: Boolean = false,
 ) = BehandlingDtoV2(
     id = id!!,
+    type = tilType(),
     vedtakstype = vedtakstype,
     stønadstype = stonadstype,
     engangsbeløptype = engangsbeloptype,
@@ -111,6 +118,26 @@ fun Behandling.tilBehandlingDtoV2(
             inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
         ),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+    utgift =
+        utgift?.let { utgift ->
+            SærtilskuddUtgifterDto(
+                beregning = utgift.tilBeregningDto(),
+                notat =
+                    BehandlingNotatDto(
+                        kunINotat = utgiftsbegrunnelseKunINotat,
+                    ),
+                utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
+            )
+        } ?: if (erSærligeUtgifter()) {
+            SærtilskuddUtgifterDto(
+                notat =
+                    BehandlingNotatDto(
+                        kunINotat = utgiftsbegrunnelseKunINotat,
+                    ),
+            )
+        } else {
+            null
+        },
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata
             ?: IkkeAktiveGrunnlagsdata(),

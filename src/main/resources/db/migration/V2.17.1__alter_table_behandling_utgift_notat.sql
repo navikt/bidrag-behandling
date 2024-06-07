@@ -1,0 +1,1 @@
+alter table behandling add column if not exists UTGIFTSBEGRUNNELSE_KUN_NOTAT text;
