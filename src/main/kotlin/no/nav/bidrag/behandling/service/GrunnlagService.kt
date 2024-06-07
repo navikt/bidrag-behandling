@@ -718,7 +718,7 @@ class GrunnlagService(
         aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
     }
 
-    fun aktivereSivilstandHvisEndringIkkeMåAksepteres(behandling: Behandling) {
+    fun aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling: Behandling) {
         val rolleInhentetFor = behandling.bidragsmottaker!!
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
@@ -726,7 +726,7 @@ class GrunnlagService(
         val endringerSomMåBekreftes =
             ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato)
 
-        if (!(endringerSomMåBekreftes?.grunnlag?.none() ?: false)) {
+        if (endringerSomMåBekreftes?.grunnlag?.none() ?: false) {
             val ikkeAktiverteSivilstandsgrunnlag =
                 ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
 

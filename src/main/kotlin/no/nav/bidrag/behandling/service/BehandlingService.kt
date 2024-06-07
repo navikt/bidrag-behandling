@@ -222,7 +222,7 @@ class BehandlingService(
             grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)
             boforholdService.oppdatereSivilstandshistorikk(behandling)
-            grunnlagService.aktivereSivilstandHvisEndringIkkeMåAksepteres(behandling)
+            grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
 
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)
