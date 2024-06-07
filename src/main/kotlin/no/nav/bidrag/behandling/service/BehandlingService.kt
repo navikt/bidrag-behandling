@@ -212,16 +212,17 @@ class BehandlingService(
         val erVirkningstidspunktEndret = request.virkningstidspunkt != behandling.virkningstidspunkt
         if (erVirkningstidspunktEndret) {
             behandling.virkningstidspunkt = request.virkningstidspunkt ?: behandling.virkningstidspunkt
-            log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling ${behandling.id}" }
+            log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlemsperioder på ny for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
 
-            log.info { "Virkningstidspunkt er endret. Beregner sivilstand perioder på nytt for behandling ${behandling.id}" }
-            grunnlagService.oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling)
-            // TODO: Legg til rekalkulering av sivilstandperioder
-            // TODO: Legg til aktivering av grunnlag hvis det ikke kreves bekreftelse
+            log.info { "Virkningstidspunkt er endret. Bygger sivilstandshistorikk på ny for behandling ${behandling.id}" }
+            grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)
+            boforholdService.oppdatereSivilstandshistorikk(behandling)
+            grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
 
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)

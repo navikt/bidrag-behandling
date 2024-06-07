@@ -10,6 +10,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
@@ -21,8 +22,15 @@ private val log = KotlinLogging.logger {}
 fun Set<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(virkningsdato: LocalDate) =
     this.toList().tilBoforholdbBarnRequest(virkningsdato)
 
-fun List<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(virkningsdato: LocalDate) =
-    this.filter { it.erBarnAvBmBp }.map {
+fun List<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(virkningsdato: LocalDate): List<BoforholdBarnRequest> {
+    val barnAvBmBpManglerFødselsdato = this.filter { it.erBarnAvBmBp }.filter { it.fødselsdato == null }
+    if (barnAvBmBpManglerFødselsdato.isNotEmpty()) {
+        secureLogger.warn {
+            "Husstandsmedlem som er barn av BM eller BP (personident forelder: ${barnAvBmBpManglerFødselsdato.first().partPersonId}) mangler fødselsdato."
+        }
+    }
+
+    return this.filter { it.erBarnAvBmBp }.filter { it.fødselsdato != null }.map {
         BoforholdBarnRequest(
             innhentedeOffentligeOpplysninger =
                 when (it.borISammeHusstandDtoListe.isNotEmpty()) {
@@ -49,6 +57,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(virkningsdato: Loca
             endreBostatus = null,
         )
     }
+}
 
 fun Husstandsbarn.tilBoforholdbBarnRequest(endreBostatus: EndreBostatus? = null): BoforholdBarnRequest {
     return BoforholdBarnRequest(

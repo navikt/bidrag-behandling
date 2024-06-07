@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -32,6 +33,8 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
@@ -46,6 +49,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -53,8 +57,10 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -780,7 +786,151 @@ class BehandlingServiceTest : TestContainerRunner() {
     open inner class OppdatereVirkningstidspunktTest {
         @Test
         @Transactional
-        open fun `skal oppdatere virkningstidspunkt og oppdatere boforhold og sivilstand`() {
+        open fun `skal oppdatere ikke aktivert sivilstand ved endring av virkningsdato fremover i tid`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubPersonConsumer()
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            val nyttSivilstandsgrunnlag =
+                setOf(
+                    SivilstandGrunnlagDto(
+                        bekreftelsesdato = null,
+                        gyldigFom = LocalDate.now().minusMonths(2),
+                        historisk = false,
+                        master = "Freg",
+                        personId = behandling.bidragsmottaker!!.ident,
+                        registrert = LocalDateTime.now().minusMonths(2),
+                        type = SivilstandskodePDL.GIFT,
+                    ),
+                )
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    erBearbeidet = false,
+                    data = tilJson(nyttSivilstandsgrunnlag),
+                ),
+            )
+
+            val periodisertSivilstandshistorikk =
+                SivilstandApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    nyttSivilstandsgrunnlag.tilSivilstandRequest(),
+                )
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    erBearbeidet = true,
+                    data = tilJson(periodisertSivilstandshistorikk),
+                ),
+            )
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }) { g ->
+                g shouldHaveSize 4
+                g.filter { it.aktiv == null } shouldHaveSize 2
+            }
+
+            val nyVirkningsdato = behandling.virkningstidspunkt!!.plusMonths(5)
+
+            // hvis
+            behandlingService.oppdatereVirkningstidspunkt(
+                behandling.id!!,
+                OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
+            )
+
+            // så
+            entityManager.flush()
+            entityManager.refresh(behandling)
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }) { s ->
+                s shouldHaveSize 4
+                jsonListeTilObjekt<Sivilstand>(
+                    s.first { it.erBearbeidet && it.aktiv == null }.data,
+                ).first().periodeFom shouldBeEqual nyVirkningsdato
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere ikke aktivert sivilstand ved endring av virkningsdato bakover i tid`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubPersonConsumer()
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            val nyttSivilstandsgrunnlag =
+                setOf(
+                    SivilstandGrunnlagDto(
+                        bekreftelsesdato = null,
+                        gyldigFom = LocalDate.now().minusMonths(2),
+                        historisk = false,
+                        master = "Freg",
+                        personId = behandling.bidragsmottaker!!.ident,
+                        registrert = LocalDateTime.now().minusMonths(2),
+                        type = SivilstandskodePDL.GIFT,
+                    ),
+                )
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    erBearbeidet = false,
+                    data = tilJson(nyttSivilstandsgrunnlag),
+                ),
+            )
+
+            val periodisertSivilstandshistorikk =
+                SivilstandApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    nyttSivilstandsgrunnlag.tilSivilstandRequest(),
+                )
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    erBearbeidet = true,
+                    data = tilJson(periodisertSivilstandshistorikk),
+                ),
+            )
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }) { g ->
+                g shouldHaveSize 4
+                g.filter { it.aktiv == null } shouldHaveSize 2
+            }
+
+            val nyVirkningsdato = behandling.virkningstidspunkt!!.minusMonths(5)
+
+            // hvis
+            behandlingService.oppdatereVirkningstidspunkt(
+                behandling.id!!,
+                OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
+            )
+
+            // så
+            entityManager.flush()
+            entityManager.refresh(behandling)
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }) { s ->
+                s shouldHaveSize 4
+                jsonListeTilObjekt<Sivilstand>(
+                    s.first { it.erBearbeidet && it.aktiv == null }.data,
+                ).first().periodeFom shouldBeEqual nyVirkningsdato
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere virkningstidspunkt og oppdatere gjeldende aktiverte boforhold og sivilstand`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
@@ -795,8 +945,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g shouldHaveSize 3
                 g.filter { it.aktiv != null } shouldHaveSize 3
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
-                jsonListeTilObjekt<BoforholdResponse>(g.first { it.erBearbeidet }.data).first().periodeFom shouldBeEqual
-                    behandling.virkningstidspunkt!!
+                jsonListeTilObjekt<BoforholdResponse>(g.first { it.erBearbeidet }.data)
+                    .first().periodeFom shouldBeEqual behandling.virkningstidspunkt!!
             }
 
             // hvis
