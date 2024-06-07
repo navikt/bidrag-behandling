@@ -358,8 +358,7 @@ class BoforholdService(
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
             return OppdatereBoforholdResponse(
                 oppdatertSivilstandshistorikk =
-                    sivilstandRepository.saveAll(behandling.sivilstand).toSet()
-                        .tilSivilstandDto(),
+                    sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilSivilstandDto(),
                 valideringsfeil =
                     BoforholdValideringsfeil(
                         sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
