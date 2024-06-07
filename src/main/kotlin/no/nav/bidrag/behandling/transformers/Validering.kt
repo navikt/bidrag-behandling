@@ -69,11 +69,18 @@ fun OpprettBehandlingRequest.valider() {
                 feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSMOTTAKER}")
         }
     }
-    roller.any { it.rolletype == Rolletype.BARN && (it.ident?.verdi.isNullOrBlank() || it.navn.isNullOrBlank()) }
-        .let { feilliste.add("Barn må ha enten ident eller navn") }
+    roller.any { it.rolletype == Rolletype.BARN && (it.ident?.verdi.isNullOrBlank() && it.navn.isNullOrBlank()) }
+        .ifTrue { feilliste.add("Barn må ha enten ident eller navn") }
 
     roller.any { it.rolletype != Rolletype.BARN && it.ident?.verdi.isNullOrBlank() }
-        .let { feilliste.add("Voksne må ha ident") }
+        .ifTrue { feilliste.add("Voksne må ha ident") }
+
+    if (feilliste.isNotEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Ugyldig data ved oppdatering av utgift: ${feilliste.joinToString(", ")}",
+        )
+    }
 }
 
 fun OppdatereUtgiftRequest.valider(behandling: Behandling) {

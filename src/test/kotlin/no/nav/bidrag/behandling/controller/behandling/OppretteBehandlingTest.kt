@@ -127,7 +127,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                     ),
                 )
             val testBehandlingMedNull =
-                oppretteBehandlingRequestTest("1900000", "en12", roller)
+                oppretteBehandlingRequestTest("1900000", "en12", roller, søknadsid = 1239988330001323)
                     .copy(
                         engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
                         stønadstype = null,
