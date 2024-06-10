@@ -625,7 +625,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                                             null,
                                         ),
                                     ),
-                                erBarnAvBmBp = true,
+                                erBarnAvBmBp = false,
                                 fødselsdato = fødselsdatoBarnMedDNummer,
                                 navn = navnBarnMedDNummer,
                                 partPersonId = behandling.bidragsmottaker!!.ident,
@@ -666,7 +666,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     g.filter { it.erBearbeidet && personidentBarnMedDNummer == it.gjelder } shouldHaveSize 1
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == "213123" }!!) {
+                assertSoftly(behandling.husstandsbarn.find { it.ident == personidentBarnMedDNummer }!!) {
                     it.perioder.shouldHaveSize(2)
                     it.navn shouldBe navnBarnMedDNummer
                     it.fødselsdato shouldBe fødselsdatoBarnMedDNummer

@@ -207,7 +207,7 @@ class BoforholdService(
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV2(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.henteGrunnlagHusstandsmedlemSomManglerRelasjonTilBm(it)
+                            behandling.henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
                                 .tilBoforholdBarnRequest(behandling),
                         )
 
@@ -833,7 +833,11 @@ class BoforholdService(
         this.sivilstand.addAll(lagretHistorikk)
     }
 
-    private fun Behandling.henteGrunnlagHusstandsmedlemSomManglerRelasjonTilBm(personident: Personident): Set<RelatertPersonGrunnlagDto> {
+    /**
+     * Henter eksisterende boforholdsgrunnlag i gitt behandling for oppgitt personident. Setter erBarnAvBp til sann.
+     * Brukes til å hente evnt. husstandsmedlem som mangler relasjon til BM.
+     */
+    private fun Behandling.henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(personident: Personident): Set<RelatertPersonGrunnlagDto> {
         return this.grunnlag.filter { !it.erBearbeidet }.filter { it.aktiv != null }.maxByOrNull { it.aktiv!! }
             .konvertereData<Set<RelatertPersonGrunnlagDto>>()?.filter { personident.verdi == it.relatertPersonPersonId }
             ?.map { it.copy(erBarnAvBmBp = true) }
