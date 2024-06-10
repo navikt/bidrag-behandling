@@ -179,7 +179,7 @@ fun Inntekt.tilInntektDtoV2(erHistorisk: Boolean = false) =
         opprinneligTom =
             this.opprinneligTom?.let { opprinneligTom ->
                 if (this.kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(this.type)) {
-                    if (opprinneligTom.isAfter(YearMonth.now().atEndOfMonth())) null else opprinneligTom
+                    if (opprinneligTom.isAfter(YearMonth.now().atDay(1))) null else opprinneligTom
                 } else {
                     opprinneligTom
                 }
