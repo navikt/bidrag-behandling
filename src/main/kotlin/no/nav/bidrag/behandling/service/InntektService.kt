@@ -79,6 +79,7 @@ class InntektService(
             .filter { it.taMed }
             .filter { eksplisitteYtelser.contains(it.type) && it.kilde == Kilde.OFFENTLIG && it.opprinneligFom != null }
             .forEach {
+                it.taMed = it.skalAutomatiskSettePeriode()
                 it.datoFom = it.bestemDatoFomForOffentligInntekt()
                 it.datoTom = it.bestemDatoTomForOffentligInntekt()
             }

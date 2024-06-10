@@ -179,7 +179,8 @@ fun Inntekt.tilInntektDtoV2(erHistorisk: Boolean = false) =
         opprinneligTom =
             this.opprinneligTom?.let { opprinneligTom ->
                 if (this.kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(this.type)) {
-                    if (opprinneligTom.isAfter(YearMonth.now().atDay(1))) null else opprinneligTom
+                    val maxDate = maxOf(YearMonth.now().atDay(1), behandling!!.virkningstidspunktEllerSøktFomDato)
+                    if (opprinneligTom.isAfter(maxDate)) null else opprinneligTom
                 } else {
                     opprinneligTom
                 }
