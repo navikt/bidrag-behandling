@@ -176,7 +176,14 @@ fun Inntekt.tilInntektDtoV2(erHistorisk: Boolean = false) =
         inntektsposter = this.inntektsposter.tilInntektspostDtoV2().toSet(),
         inntektstyper = this.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
         opprinneligFom = this.opprinneligFom,
-        opprinneligTom = this.opprinneligTom,
+        opprinneligTom =
+            this.opprinneligTom?.let { opprinneligTom ->
+                if (this.kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(this.type)) {
+                    if (opprinneligTom.isAfter(YearMonth.now().atEndOfMonth())) null else opprinneligTom
+                } else {
+                    opprinneligTom
+                }
+            },
         historisk = erHistorisk,
     )
 
