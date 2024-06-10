@@ -226,7 +226,10 @@ fun List<Grunnlag>.hentEndringerInntekter(
                     )
             val erBeløpEndret =
                 eksisterendeInntekt.belop.nærmesteHeltall != grunnlag.sumInntekt.nærmesteHeltall
-            if (erBeløpEndret ||
+            val er12MndOg3MndPeriodeEndret =
+                eksisterendeInntekt.opprinneligPeriode != null && ainntekt12Og3Måneder.contains(eksisterendeInntekt.type) &&
+                    eksisterendeInntekt.opprinneligPeriode != grunnlag.periode
+            if (erBeløpEndret || er12MndOg3MndPeriodeEndret ||
                 erInntektsposterEndret(
                     eksisterendeInntekt.inntektsposter,
                     grunnlag.inntektPostListe,
