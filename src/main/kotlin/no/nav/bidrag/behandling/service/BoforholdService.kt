@@ -54,7 +54,6 @@ import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
-import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
@@ -274,11 +273,10 @@ class BoforholdService(
     @Transactional
     fun lagreFørstegangsinnhentingAvPeriodisertSivilstand(
         behandling: Behandling,
-        personident: Personident,
-        periodisertSivilstand: SivilstandBeregnet,
+        periodisertSivilstand: Set<SivilstandBeregnV2Dto>,
     ) {
         behandling.sivilstand.removeAll(behandling.sivilstand.filter { Kilde.OFFENTLIG == it.kilde }.toSet())
-        behandling.sivilstand.addAll(periodisertSivilstand.sivilstandListe.tilSivilstand(behandling))
+        behandling.sivilstand.addAll(periodisertSivilstand.tilSivilstand(behandling))
     }
 
     @Transactional

@@ -56,7 +56,6 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
-import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
@@ -623,6 +622,13 @@ class GrunnlagService(
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 innhentetGrunnlag.sivilstandListe.toSet().tilSivilstandRequest(),
+            ).toSet()
+
+        val bmsNyesteBearbeidaSivilstandFørLagring =
+            sistAktiverteGrunnlag<SivilstandBeregnV2Dto>(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+                behandling.bidragsmottaker!!,
             )
 
         lagreGrunnlagHvisEndret<SivilstandBeregnV2Dto>(
@@ -631,6 +637,19 @@ class GrunnlagService(
             Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
             sivilstandPeriodisert.toSet(),
         )
+
+        val bmsNyesteBearbeidaSivilstandEtterLagring =
+            sistAktiverteGrunnlag<SivilstandBeregnV2Dto>(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+                behandling.bidragsmottaker!!,
+            )
+
+        // oppdatere husstandsbarn og husstandsbarnperiode-tabellene hvis førstegangslagring
+        if (bmsNyesteBearbeidaSivilstandFørLagring.isEmpty() && bmsNyesteBearbeidaSivilstandEtterLagring.isNotEmpty()) {
+            boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(behandling, sivilstandPeriodisert)
+        }
+        aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
     }
 
     private fun periodisereOgLagreBoforhold(
@@ -748,8 +767,6 @@ class GrunnlagService(
                 }
                 ikkeAktivertGrunnlag.aktiv = LocalDateTime.now()
             }
-
-        aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
     }
 
     private fun innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag: HentGrunnlagDto): Boolean =
@@ -1178,12 +1195,6 @@ class GrunnlagService(
                     behandling.id!!,
                     Personident(rolle.ident!!),
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
-                )
-            } else if (nyesteGrunnlag == null && erAvTypeBearbeidetSivilstand) {
-                boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(
-                    behandling,
-                    Personident(rolle.ident!!),
-                    innhentetGrunnlag as SivilstandBeregnet,
                 )
             }
         } else if (erGrunnlagEndretSidenSistInnhentet) {

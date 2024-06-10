@@ -1056,7 +1056,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val separeringstidspunkt = LocalDateTime.now().minusMonths(125)
 
                 val grunnlagSivilstand =
-                    listOf(
+                    setOf(
                         SivilstandGrunnlagDto(
                             personId = behandling.bidragsmottaker!!.ident!!,
                             type = SivilstandskodePDL.SKILT,
@@ -1087,13 +1087,12 @@ class BoforholdServiceTest : TestContainerRunner() {
                     )
 
                 val periodisertSivilstand =
-                    SivilstandApi.beregnV1(behandling.virkningstidspunktEllerSøktFomDato, grunnlagSivilstand)
+                    SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, grunnlagSivilstand.tilSivilstandRequest())
 
                 // hvis
                 boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(
                     behandling,
-                    Personident(behandling.bidragsmottaker!!.ident!!),
-                    periodisertSivilstand,
+                    periodisertSivilstand.toSet(),
                 )
 
                 // så

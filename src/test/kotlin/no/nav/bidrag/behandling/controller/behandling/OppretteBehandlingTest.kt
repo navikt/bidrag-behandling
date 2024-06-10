@@ -236,7 +236,6 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             stubUtils.Verify().opprettForsendelseIkkeKalt()
         }
 
-        //        @Disabled("Wiremock-problem kun på Github")
         @Test
         fun `skal opprette en behandling og ignorere feil hvis opprett forsendelse feiler`() {
             // gitt
