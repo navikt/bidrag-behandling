@@ -42,7 +42,7 @@ fun Inntekt.bestemDatoTomForOffentligInntekt() =
     skalAutomatiskSettePeriode().ifTrue {
         opprinneligTom?.let { tom ->
             val maxDate = maxOf(YearMonth.now().atEndOfMonth(), behandling!!.virkningstidspunktEllerSøktFomDato)
-            if (tom.isAfter(maxDate)) null else tom
+            if (tom.plusMonths(1).isAfter(maxDate)) null else tom
         }
     }
 
