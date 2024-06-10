@@ -138,7 +138,7 @@ class InntektsmappingerTest {
                 kilde = Kilde.OFFENTLIG,
             )
         inntekt.bestemDatoFomForOffentligInntekt() shouldBe YearMonth.parse("2023-08").atDay(1)
-        inntekt.bestemDatoTomForOffentligInntekt() shouldBe YearMonth.now().atEndOfMonth()
+        inntekt.bestemDatoTomForOffentligInntekt() shouldBe null
     }
 
     @Test
