@@ -2,11 +2,14 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.YearMonth
+
+fun Set<Utgiftspost>.sorter() = sortedBy { it.dato }
 
 val årsinntekterPrioriteringsliste =
     listOf(
@@ -133,4 +136,4 @@ fun List<Inntekt>.sorterEtterDatoOgBarn() =
         }, { it.gjelderBarn }),
     )
 
-fun List<Inntekt>.sorterEtterDato() = sortedWith(compareBy({ it.datoFom ?: it.opprinneligFom }))
+fun List<Inntekt>.sorterEtterDato() = sortedWith(compareBy { it.datoFom ?: it.opprinneligFom })

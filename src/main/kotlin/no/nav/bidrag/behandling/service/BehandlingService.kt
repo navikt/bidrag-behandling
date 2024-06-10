@@ -14,12 +14,14 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.toV2
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.behandling.tilAktivGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
@@ -35,13 +37,12 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
-import org.apache.commons.lang3.Validate
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
@@ -88,14 +89,7 @@ class BehandlingService(
             return OpprettBehandlingResponse(it.id!!)
         }
 
-        ingenBarnMedVerkenIdentEllerNavn(opprettBehandling.roller)
-        ingenVoksneUtenIdent(opprettBehandling.roller)
-
-        Validate.isTrue(
-            opprettBehandling.stønadstype != null || opprettBehandling.engangsbeløpstype != null,
-            "${OpprettBehandlingRequest::stønadstype.name} eller " +
-                "${OpprettBehandlingRequest::engangsbeløpstype.name} må være satt i forespørselen",
-        )
+        opprettBehandling.valider()
 
         val opprettetAv =
             TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
@@ -106,8 +100,16 @@ class BehandlingService(
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
-                virkningstidspunkt = opprettBehandling.søktFomDato,
-                årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
+                virkningstidspunkt =
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> opprettBehandling.søktFomDato
+                        TypeBehandling.SÆRLIGE_UTGIFTER -> LocalDate.now().withDayOfMonth(1)
+                    },
+                årsak =
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+                        TypeBehandling.SÆRLIGE_UTGIFTER -> null
+                    },
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
@@ -120,6 +122,7 @@ class BehandlingService(
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = TokenUtils.hentApplikasjonsnavn() ?: "ukjent",
             )
+
         val roller =
             HashSet(
                 opprettBehandling.roller.map {
@@ -212,16 +215,17 @@ class BehandlingService(
         val erVirkningstidspunktEndret = request.virkningstidspunkt != behandling.virkningstidspunkt
         if (erVirkningstidspunktEndret) {
             behandling.virkningstidspunkt = request.virkningstidspunkt ?: behandling.virkningstidspunkt
-            log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlem perioder på nytt for behandling ${behandling.id}" }
+            log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlemsperioder på ny for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
 
-            log.info { "Virkningstidspunkt er endret. Beregner sivilstand perioder på nytt for behandling ${behandling.id}" }
-            grunnlagService.oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling)
-            // TODO: Legg til rekalkulering av sivilstandperioder
-            // TODO: Legg til aktivering av grunnlag hvis det ikke kreves bekreftelse
+            log.info { "Virkningstidspunkt er endret. Bygger sivilstandshistorikk på ny for behandling ${behandling.id}" }
+            grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)
+            boforholdService.oppdatereSivilstandshistorikk(behandling)
+            grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
 
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)
@@ -401,15 +405,5 @@ class BehandlingService(
                 )
             },
         )
-    }
-
-    private fun ingenBarnMedVerkenIdentEllerNavn(roller: Set<OpprettRolleDto>) {
-        roller.filter { r -> r.rolletype == Rolletype.BARN }
-            .forEach { Validate.isTrue(!it.ident?.verdi.isNullOrBlank() || !it.navn.isNullOrBlank()) }
-    }
-
-    private fun ingenVoksneUtenIdent(roller: Set<OpprettRolleDto>) {
-        roller.filter { r -> r.rolletype != Rolletype.BARN }
-            .forEach { Validate.isTrue(!it.ident?.verdi.isNullOrBlank()) }
     }
 }

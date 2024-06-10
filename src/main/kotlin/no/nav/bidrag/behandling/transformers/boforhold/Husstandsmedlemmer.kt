@@ -10,18 +10,26 @@ import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
-fun Set<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(behandling: Behandling) = this.toList().tilBoforholdbBarnRequest(behandling)
+fun Set<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandling) = this.toList().tilBoforholdBarnRequest(behandling)
 
-fun List<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(behandling: Behandling) =
+fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandling): List<BoforholdBarnRequest> {
+    val barnAvBmBpManglerFødselsdato = this.filter { it.erBarnAvBmBp }.filter { it.fødselsdato == null }
+    if (barnAvBmBpManglerFødselsdato.isNotEmpty()) {
+        secureLogger.warn {
+            "Husstandsmedlem som er barn av BM eller BP (personident forelder: ${barnAvBmBpManglerFødselsdato.first().partPersonId}) mangler fødselsdato."
+        }
+    }
 
-    this.filter { it.erBarnAvBmBp }.map { g ->
+    return this.filter { it.erBarnAvBmBp }.filter { it.fødselsdato != null }.map { g ->
         BoforholdBarnRequest(
             innhentedeOffentligeOpplysninger =
                 when (g.borISammeHusstandDtoListe.isNotEmpty()) {
@@ -56,8 +64,9 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdbBarnRequest(behandling: Behandl
             endreBostatus = null,
         )
     }
+}
 
-fun Husstandsbarn.tilBoforholdbBarnRequest(
+fun Husstandsbarn.tilBoforholdBarnRequest(
     endreBostatus: EndreBostatus? = null,
     erBarnAvBmBp: Boolean = true,
 ): BoforholdBarnRequest {

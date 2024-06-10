@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
@@ -11,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -29,6 +31,7 @@ import java.time.LocalDateTime
 
 data class BehandlingDtoV2(
     val id: Long,
+    val type: TypeBehandling,
     val vedtakstype: Vedtakstype,
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
@@ -48,23 +51,34 @@ data class BehandlingDtoV2(
     val vedtakRefId: Long? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
-    val grunnlagspakkeid: Long? = null,
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
+    @Schema(description = "Utgiftsgrunnlag for særtilskudd. Vil alltid være null for forskudd og bidrag")
+    val utgift: SærtilskuddUtgifterDto? = null,
 )
 
-data class SærtilskuddUtgifter(
-    val beløpBetaltAvBp: BigDecimal = BigDecimal.ZERO,
+data class SærtilskuddUtgifterDto(
+    val beregning: UtgiftBeregningDto? = null,
+    val notat: BehandlingNotatDto,
+    val utgifter: List<UtgiftspostDto> = emptyList(),
+)
+
+data class UtgiftBeregningDto(
+    @Schema(description = "Beløp som er direkte betalt av BP")
+    val beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
+    @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt og beløp som er direkte betalt av BP")
+    val totalBeløpBetaltAvBp: BigDecimal? = null,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
-    val beregnetBeløp: BigDecimal = BigDecimal.ZERO,
-    val utgifter: List<Utgift> = emptyList(),
+    val totalGodkjentBeløp: BigDecimal = BigDecimal.ZERO,
+    @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
+    val totalGodkjentBeløpBp: BigDecimal? = null,
 )
 
-data class Utgift(
+data class UtgiftspostDto(
     @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
     val dato: LocalDate,
     @Schema(description = "Beskrivelse av utgiften. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)")
@@ -75,6 +89,9 @@ data class Utgift(
     val godkjentBeløp: BigDecimal = kravbeløp,
     @Schema(description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp")
     val begrunnelse: String,
+    @Schema(description = "Om utgiften er betalt av BP")
+    val betaltAvBp: Boolean = false,
+    val id: Long,
 )
 
 data class AktiveGrunnlagsdata(

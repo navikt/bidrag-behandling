@@ -136,16 +136,20 @@ fun List<Grunnlag>.hentEndringerSivilstand(
         val aktivSivilstandGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nySivilstandGrunnlagBearbeidet = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nySivilstandGrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
-        val aktivSivilstandData =
+        val aktiveSivilstandsdata =
             aktivSivilstandGrunnlag.konvertereData<List<Sivilstand>>()
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
-        val nySivilstandData =
+        val nyeSivilstandsdata =
             nySivilstandGrunnlagBearbeidet.konvertereData<List<Sivilstand>>()
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
-        if (aktivSivilstandData != null && nySivilstandData != null && !nySivilstandData.erLik(aktivSivilstandData)) {
+        if (aktiveSivilstandsdata != null && nyeSivilstandsdata != null &&
+            !nyeSivilstandsdata.erLik(
+                aktiveSivilstandsdata,
+            )
+        ) {
             return SivilstandIkkeAktivGrunnlagDto(
                 sivilstand =
-                    nySivilstandData.map {
+                    nyeSivilstandsdata.map {
                         SivilstandDto(
                             null,
                             it.periodeFom,
@@ -222,7 +226,10 @@ fun List<Grunnlag>.hentEndringerInntekter(
                     )
             val erBeløpEndret =
                 eksisterendeInntekt.belop.nærmesteHeltall != grunnlag.sumInntekt.nærmesteHeltall
-            if (erBeløpEndret ||
+            val er12MndOg3MndPeriodeEndret =
+                eksisterendeInntekt.opprinneligPeriode != null && ainntekt12Og3Måneder.contains(eksisterendeInntekt.type) &&
+                    eksisterendeInntekt.opprinneligPeriode != grunnlag.periode
+            if (erBeløpEndret || er12MndOg3MndPeriodeEndret ||
                 erInntektsposterEndret(
                     eksisterendeInntekt.inntektsposter,
                     grunnlag.inntektPostListe,

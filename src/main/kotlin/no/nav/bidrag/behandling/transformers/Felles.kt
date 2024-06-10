@@ -1,6 +1,10 @@
 package no.nav.bidrag.behandling.transformers
 
+import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -39,6 +43,41 @@ val eksplisitteYtelser =
     )
 
 val inntekterSomKanHaHullIPerioder = eksplisitteYtelser
+val engangsbeløpSærligeutgifter =
+    listOf(
+        Engangsbeløptype.SÆRTILSKUDD,
+        Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
+        Engangsbeløptype.SÆRTILSKUDD_OPTIKK,
+        Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING,
+    )
+
+fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
+
+fun Behandling.erForskudd() = tilType() == TypeBehandling.FORSKUDD
+
+fun Behandling.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRLIGE_UTGIFTER
+
+fun bestemTypeBehandling(
+    stønadstype: Stønadstype?,
+    engangsbeløptype: Engangsbeløptype?,
+) = if (engangsbeløptype != null &&
+    engangsbeløpSærligeutgifter.contains(
+        engangsbeløptype,
+    )
+) {
+    TypeBehandling.SÆRLIGE_UTGIFTER
+} else if (stønadstype == Stønadstype.FORSKUDD) {
+    TypeBehandling.FORSKUDD
+} else {
+    TypeBehandling.BIDRAG
+}
+
+@Schema(enumAsRef = true)
+enum class TypeBehandling {
+    FORSKUDD,
+    SÆRLIGE_UTGIFTER,
+    BIDRAG,
+}
 
 fun <T : Comparable<T>> minOfNullable(
     a: T?,

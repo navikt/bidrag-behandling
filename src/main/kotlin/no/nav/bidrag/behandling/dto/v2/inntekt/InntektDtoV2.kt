@@ -96,7 +96,7 @@ data class OppdaterePeriodeInntekt(
     @Schema(description = "Anig om inntekten skal inkluderes i beregning")
     val taMedIBeregning: Boolean = false,
     @Schema(description = "Angi periode inntekten skal dekke ved beregnings")
-    val angittPeriode: Datoperiode,
+    val angittPeriode: Datoperiode? = null,
 )
 
 data class OppdatereManuellInntekt(

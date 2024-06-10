@@ -9,11 +9,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.sivilstand.dto.EndreSivilstand
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
-import no.nav.bidrag.sivilstand.dto.TypeEndring
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
@@ -26,10 +26,15 @@ fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(lagretSivilstand: Set<Sivils
         null,
     )
 
-fun Set<Sivilstand>.henteNyesteGrunnlagsdata() =
-    this.first().behandling.grunnlag.hentSisteAktiv()
-        .find { !it.erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
-        .konvertereData<List<SivilstandGrunnlagDto>>() ?: emptyList()
+fun Set<Sivilstand>.henteNyesteGrunnlagsdata(): List<SivilstandGrunnlagDto> {
+    return if (this.isNotEmpty()) {
+        this.first().behandling.grunnlag.hentSisteAktiv()
+            .find { !it.erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
+            .konvertereData<List<SivilstandGrunnlagDto>>() ?: emptyList()
+    } else {
+        emptyList()
+    }
+}
 
 fun Set<Sivilstand>.tilSvilstandRequest(
     nyttEllerEndretInnslag: Sivilstandsperiode? = null,
@@ -108,13 +113,19 @@ private fun Set<Sivilstand>.tilEndreSivilstand(
             originalSivilstand = bestemmmeOriginalSivilstand(nyttEllerEndretInnslag, sletteInnslag),
         )
     } catch (illegalArgumentException: IllegalArgumentException) {
+        val behandlingsid =
+            if (this.isNotEmpty()) {
+                this.first().behandling.id
+            } else {
+                "ukjent"
+            }
         log.warn {
-            "Mottok mangelfulle opplysninger ved oppdatering av sivilstand i behandling ${this.first().behandling.id}. " +
+            "Mottok mangelfulle opplysninger ved oppdatering av sivilstand i behandling $behandlingsid. " +
                 "Mottatt input: nyttEllerEndretInnslag=$nyttEllerEndretInnslag, " +
                 "sletteInnslag=$sletteInnslag"
         }
         oppdateringAvBoforholdFeilet(
-            "Oppdatering av sivilstand i behandling ${this.first().behandling.id} feilet pga mangelfulle inputdata",
+            "Oppdatering av sivilstand i behandling $behandlingsid feilet pga mangelfulle inputdata",
         )
     }
 }

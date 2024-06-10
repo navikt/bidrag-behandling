@@ -56,7 +56,6 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
-import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
@@ -251,13 +250,13 @@ class GrunnlagService(
     }
 
     @Transactional
-    fun oppdaterAktiveSivilstandEtterEndretVirkningstidspunkt(behandling: Behandling) {
+    fun oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val sisteAktiveGrunnlag =
             behandling.henteNyesteAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
                 behandling.bidragsmottaker!!,
             ) ?: run {
-                log.warn { "Fant ikke en aktiv sivilstand grunnlag. Gjør ingen endring etter oppdatert virkningstidspunkt" }
+                log.warn { "Fant ingen aktive sivilstandsgrunnlag. Gjør ingen endring etter oppdatert virkningstidspunkt" }
                 return
             }
         val sivilstandBeregnet = sisteAktiveGrunnlag.konvertereData<Set<SivilstandGrunnlagDto>>()!!
@@ -275,13 +274,39 @@ class GrunnlagService(
     }
 
     @Transactional
+    fun oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling: Behandling) {
+        val sisteIkkeAktiveGrunnlag =
+            behandling.henteNyesteIkkeAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
+                behandling.bidragsmottaker!!,
+            ) ?: run {
+                log.debug { "Fant ingen ikke-aktive sivilstandsgrunnlag. Gjør ingen endringer" }
+                return
+            }
+
+        val sivilstand = sisteIkkeAktiveGrunnlag.konvertereData<Set<SivilstandGrunnlagDto>>()!!
+        val periodisertHistorikk =
+            SivilstandApi.beregnV2(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                sivilstand.tilSivilstandRequest(),
+            )
+
+        behandling.henteNyesteIkkeAktiveGrunnlag(
+            Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+            behandling.bidragsmottaker!!,
+        )?.let {
+            it.data = tilJson(periodisertHistorikk)
+        }
+    }
+
+    @Transactional
     fun oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val sisteIkkeAktiveGrunnlag =
             behandling.henteNyesteIkkeAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
                 behandling.rolleSomBoforholdSkalHentesFor!!,
             ) ?: run {
-                log.debug { "Fant ingen ikke aktiv boforhold grunnlag. Gjør ingen endringer" }
+                log.debug { "Fant ingen ikke-aktive boforholdsgrunnlag. Gjør ingen endringer" }
                 return
             }
         sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(false)
@@ -294,7 +319,7 @@ class GrunnlagService(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
                 behandling.rolleSomBoforholdSkalHentesFor!!,
             ) ?: run {
-                log.warn { "Fant ingen aktiv boforhold grunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
+                log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
                 return
             }
         sisteAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag()
@@ -597,6 +622,13 @@ class GrunnlagService(
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 innhentetGrunnlag.sivilstandListe.toSet().tilSivilstandRequest(),
+            ).toSet()
+
+        val bmsNyesteBearbeidaSivilstandFørLagring =
+            sistAktiverteGrunnlag<SivilstandBeregnV2Dto>(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+                behandling.bidragsmottaker!!,
             )
 
         lagreGrunnlagHvisEndret<SivilstandBeregnV2Dto>(
@@ -605,6 +637,19 @@ class GrunnlagService(
             Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
             sivilstandPeriodisert.toSet(),
         )
+
+        val bmsNyesteBearbeidaSivilstandEtterLagring =
+            sistAktiverteGrunnlag<SivilstandBeregnV2Dto>(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+                behandling.bidragsmottaker!!,
+            )
+
+        // oppdatere husstandsbarn og husstandsbarnperiode-tabellene hvis førstegangslagring
+        if (bmsNyesteBearbeidaSivilstandFørLagring.isEmpty() && bmsNyesteBearbeidaSivilstandEtterLagring.isNotEmpty()) {
+            boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(behandling, sivilstandPeriodisert)
+        }
+        aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
     }
 
     private fun periodisereOgLagreBoforhold(
@@ -679,6 +724,49 @@ class GrunnlagService(
             }
 
         aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
+    }
+
+    fun aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling: Behandling) {
+        val rolleInhentetFor = behandling.bidragsmottaker!!
+        val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+        if (ikkeAktiveGrunnlag.isEmpty()) return
+        val endringerSomMåBekreftes =
+            ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato)
+
+        if (endringerSomMåBekreftes?.grunnlag?.none() ?: false) {
+            val ikkeAktiverteSivilstandsgrunnlag =
+                ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
+
+            ikkeAktiverteSivilstandsgrunnlag.forEach {
+                val type =
+                    when (it.erBearbeidet) {
+                        true -> "bearbeida"
+                        false -> "ikke-bearbeida"
+                    }
+
+                log.info {
+                    "Ikke-aktivert $type sivilstandsgrunnlag med id ${it.id} i behandling ${behandling.id},"
+                    "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
+                }
+
+                it.aktiv = LocalDateTime.now()
+            }
+        }
+
+        behandling.sivilstand.filter { it.kilde == Kilde.OFFENTLIG }
+            .filter { endringerSomMåBekreftes?.grunnlag?.none() ?: false }
+            .forEach {
+                val ikkeAktivertGrunnlag =
+                    ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
+                        .maxBy { it.innhentet }
+
+                log.info {
+                    "Ikke-aktivert sivilstandsgrunnlag med id ${ikkeAktivertGrunnlag.id} i behandling ${behandling.id},"
+                    "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
+                }
+                ikkeAktivertGrunnlag.aktiv = LocalDateTime.now()
+            }
     }
 
     private fun innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag: HentGrunnlagDto): Boolean =
@@ -1107,12 +1195,6 @@ class GrunnlagService(
                     behandling.id!!,
                     Personident(rolle.ident!!),
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
-                )
-            } else if (nyesteGrunnlag == null && erAvTypeBearbeidetSivilstand) {
-                boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(
-                    behandling,
-                    Personident(rolle.ident!!),
-                    innhentetGrunnlag as SivilstandBeregnet,
                 )
             }
         } else if (erGrunnlagEndretSidenSistInnhentet) {

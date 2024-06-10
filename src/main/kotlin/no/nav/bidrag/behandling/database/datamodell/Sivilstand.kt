@@ -17,7 +17,7 @@ import java.time.LocalDate
 open class Sivilstand(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
-    open val behandling: Behandling,
+    open var behandling: Behandling,
     open val datoFom: LocalDate,
     open val datoTom: LocalDate? = null,
     @Enumerated(EnumType.STRING)

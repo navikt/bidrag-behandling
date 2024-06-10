@@ -112,8 +112,81 @@ class InntektServiceMockTest {
     }
 
     @Test
+    fun `skal oppdatere periode på offentlige ytelser etter endring i virkningstidspunkt`() {
+        val behandling = oppretteBehandling(1)
+        val virkningstidspunkt = LocalDate.parse("2023-07-01")
+        behandling.inntekter =
+            mutableSetOf(
+                opprettInntekt(
+                    behandling = behandling,
+                    datoFom = YearMonth.parse("2024-01"),
+                    datoTom = null,
+                    opprinneligFom = YearMonth.parse("2024-01"),
+                    opprinneligTom = YearMonth.parse("2025-01"),
+                    type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    kilde = Kilde.OFFENTLIG,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    datoFom = YearMonth.parse("2024-01"),
+                    datoTom = null,
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2024-01"),
+                    type = Inntektsrapportering.KONTANTSTØTTE,
+                    kilde = Kilde.OFFENTLIG,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    datoFom = YearMonth.parse("2023-10"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    kilde = Kilde.OFFENTLIG,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    datoFom = YearMonth.parse("2023-10"),
+                    datoTom = YearMonth.parse("2023-12"),
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    kilde = Kilde.OFFENTLIG,
+                ),
+            )
+
+        behandling.virkningstidspunkt = virkningstidspunkt
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+
+        inntektService.rekalkulerPerioderInntekter(behandling.id!!)
+
+        val inntekter = behandling.inntekter.toList()
+        assertSoftly(inntekter[0]) {
+            taMed shouldBe true
+            datoFom shouldBe LocalDate.parse("2024-01-01")
+            datoTom shouldBe null
+        }
+        assertSoftly(inntekter[1]) {
+            taMed shouldBe true
+            datoFom shouldBe virkningstidspunkt
+            datoTom shouldBe LocalDate.parse("2024-01-31")
+        }
+        assertSoftly(inntekter[2]) {
+            taMed shouldBe true
+            datoFom shouldBe virkningstidspunkt
+            datoTom shouldBe LocalDate.parse("2023-12-31")
+        }
+        assertSoftly(inntekter[3]) {
+            taMed shouldBe true
+            datoFom shouldBe virkningstidspunkt
+            datoTom shouldBe LocalDate.parse("2023-12-31")
+        }
+    }
+
+    @Test
     fun `skal lagre inntekter og automatisk ta med offentlige ytelser fra NAV`() {
         val behandling = oppretteBehandling(1)
+        behandling.virkningstidspunkt = LocalDate.parse("2023-02-01")
         behandling.roller = oppretteBehandlingRoller(behandling)
         val summerteInntekter =
             SummerteInntekter(
@@ -228,7 +301,7 @@ class InntektServiceMockTest {
                     Inntektsrapportering.KONTANTSTØTTE,
                 )
             forEach {
-                it.datoFom shouldBe it.opprinneligFom
+                it.datoFom shouldBe maxOf(behandling.virkningstidspunkt!!, it.opprinneligFom!!)
             }
             filter { it.datoTom != null }.forEach {
                 it.datoTom shouldBe it.opprinneligTom
@@ -254,7 +327,8 @@ class InntektServiceMockTest {
     @Test
     fun `skal lagre inntekter og automatisk ta med offentlige ytelser fra NAV og sette datoTom til null hvis etter virkningstidspunkt`() {
         val behandling = oppretteBehandling(1)
-        behandling.virkningstidspunkt = LocalDate.now().plusMonths(4)
+        val virkningstidspunkt = LocalDate.now().plusMonths(4)
+        behandling.virkningstidspunkt = virkningstidspunkt
         behandling.roller = oppretteBehandlingRoller(behandling)
         val summerteInntekter =
             SummerteInntekter(
@@ -274,8 +348,8 @@ class InntektServiceMockTest {
                             inntektRapportering = Inntektsrapportering.UTVIDET_BARNETRYGD,
                             periode =
                                 ÅrMånedsperiode(
-                                    YearMonth.parse("2023-01"),
-                                    YearMonth.now().plusMonths(2),
+                                    virkningstidspunkt.minusMonths(1),
+                                    virkningstidspunkt.plusMonths(5),
                                 ),
                             sumInntekt = BigDecimal(500),
                         ),
@@ -283,8 +357,8 @@ class InntektServiceMockTest {
                             inntektRapportering = Inntektsrapportering.UTVIDET_BARNETRYGD,
                             periode =
                                 ÅrMånedsperiode(
-                                    YearMonth.parse("2024-01"),
-                                    YearMonth.parse("2035-01"),
+                                    YearMonth.parse("2024-01").atDay(1),
+                                    virkningstidspunkt.plusYears(5),
                                 ),
                             sumInntekt = BigDecimal(500),
                         ),
@@ -303,18 +377,14 @@ class InntektServiceMockTest {
         val inntekterValgt = inntekter.filter { it.taMed }.sortedBy { it.datoFom }
 
         assertSoftly {
-            inntekterValgt shouldHaveSize 3
+            inntekterValgt shouldHaveSize 2
         }
         assertSoftly(inntekterValgt[0]) {
-            datoFom shouldBe opprinneligFom
-            datoTom shouldBe opprinneligTom
+            datoFom shouldBe virkningstidspunkt
+            datoTom shouldBe null
         }
         assertSoftly(inntekterValgt[1]) {
-            datoFom shouldBe opprinneligFom
-            datoTom shouldBe opprinneligTom
-        }
-        assertSoftly(inntekterValgt[2]) {
-            datoFom shouldBe opprinneligFom
+            datoFom shouldBe virkningstidspunkt
             datoTom shouldBe null
         }
     }

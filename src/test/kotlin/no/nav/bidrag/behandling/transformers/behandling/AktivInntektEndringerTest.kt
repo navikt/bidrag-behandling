@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
@@ -277,8 +278,8 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
             val inntekter =
                 setOf(
                     opprettInntekt(
-                        datoFom = YearMonth.of(2022, 11),
-                        datoTom = YearMonth.of(2023, 11),
+                        datoFom = YearMonth.of(2023, 2),
+                        datoTom = YearMonth.of(2024, 1),
                         type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                         beløp = 32160000.toBigDecimal(),
                         ident = bmIdent,
@@ -404,6 +405,55 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     it.rapporteringstype == Inntektsrapportering.BARNETILLEGG && it.gjelderBarn!!.verdi == testdataBarn2.ident
                 }
             barnetilleggNyBarn2!!.beløp shouldBe 24000.toBigDecimal()
+        }
+
+        @Test
+        fun `skal finne differanser i inntekter hvis 12mnd og 3mnd inntekter bare har endret periode`() {
+            val behandling = byggBehandling()
+
+            val inntekter =
+                setOf(
+                    opprettInntekt(
+                        datoFom = YearMonth.of(2023, 1),
+                        datoTom = YearMonth.of(2023, 12),
+                        type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                        beløp = 32160000.toBigDecimal(),
+                        ident = bmIdent,
+                        inntektstyperKode =
+                            listOf("fastloenn" to BigDecimal(32160000)),
+                    ),
+                    opprettInntekt(
+                        datoFom = YearMonth.of(2023, 10),
+                        datoTom = YearMonth.of(2023, 12),
+                        type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                        beløp = 32160000.toBigDecimal(),
+                        ident = bmIdent,
+                        inntektstyperKode =
+                            listOf("fastloenn" to BigDecimal(32160000)),
+                    ),
+                )
+
+            val resultat =
+                behandling.grunnlag.toList().hentEndringerInntekter(
+                    behandling.bidragsmottaker!!,
+                    inntekter,
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                )
+            resultat.shouldHaveSize(5)
+
+            val resultatSlettet = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.SLETTET }
+            resultatSlettet shouldHaveSize 0
+
+            val resultatEndring = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }
+            resultatEndring shouldHaveSize 2
+            resultatEndring.any { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }.shouldBeTrue()
+            resultatEndring.any { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }.shouldBeTrue()
+            val ainntekt3Mnd =
+                resultatEndring.find {
+                    it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND
+                }!!
+            ainntekt3Mnd.periode.fom shouldBe YearMonth.parse("2023-11")
+            ainntekt3Mnd.periode.til shouldBe YearMonth.parse("2024-01")
         }
     }
 }

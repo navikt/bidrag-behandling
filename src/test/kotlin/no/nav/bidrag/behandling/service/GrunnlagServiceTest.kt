@@ -16,13 +16,14 @@ import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -43,9 +44,6 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
-import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
-import no.nav.bidrag.sivilstand.response.SivilstandV1
-import no.nav.bidrag.sivilstand.response.Status
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
@@ -99,6 +97,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
     lateinit var grunnlagRepository: GrunnlagRepository
 
     @Autowired
+    lateinit var sivilstandRepository: SivilstandRepository
+
+    @Autowired
     lateinit var grunnlagService: GrunnlagService
 
     @MockBean
@@ -114,6 +115,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         try {
             grunnlagRepository.deleteAll()
             behandlingRepository.deleteAll()
+            sivilstandRepository.deleteAll()
         } catch (e: Exception) {
             // Ignore
         }
@@ -871,7 +873,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        @Disabled("Per 20240603: Avhengig av oppdatert SivilstandApi")
         open fun `skal aktivere førstegangsinnhenting av sivilstand`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false)
@@ -894,7 +895,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             assertSoftly(behandling.sivilstand) { s ->
-                s.size shouldBe 2
+                s.size shouldBe 1
                 s.filter { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
             }
         }
@@ -965,71 +966,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly(behandling.husstandsbarn) { hb ->
                 hb shouldHaveSize 2
                 hb.filter { Kilde.MANUELL == it.kilde && testdataBarn2.ident == it.ident } shouldHaveSize 1
-            }
-        }
-
-        @Test
-        @Transactional
-        open fun `skal ikke aktivere førstegangsinnhenting av nytt bearbeida sivilstandsformat`() {
-            // gitt
-            val behandling = testdataManager.oppretteBehandling(false)
-            stubbeHentingAvPersoninfoForTestpersoner()
-            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
-            stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
-
-            val periodisertSivilstand =
-                SivilstandBeregnet(
-                    status = Status.OK,
-                    sivilstandListe =
-                        listOf(
-                            SivilstandV1(
-                                periodeFom = behandling.bidragsmottaker!!.foedselsdato,
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.ENSLIG,
-                            ),
-                            SivilstandV1(
-                                periodeFom = LocalDate.now().minusYears(15),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
-                            ),
-                            SivilstandV1(
-                                periodeFom = LocalDate.now().minusYears(10),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
-                            ),
-                        ),
-                )
-
-            behandling.grunnlag.add(
-                Grunnlag(
-                    behandling,
-                    Grunnlagsdatatype.SIVILSTAND,
-                    erBearbeidet = true,
-                    data = tilJson(periodisertSivilstand),
-                    innhentet = LocalDateTime.now().minusYears(5),
-                    aktiv = LocalDateTime.now().minusYears(5),
-                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
-                    gjelder = null,
-                ),
-            )
-
-            // hvis
-            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
-
-            // så
-            entityManager.refresh(behandling)
-
-            assertSoftly(behandling.grunnlag) { g ->
-                g.size shouldBe totaltAntallGrunnlag + 1
-                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type } shouldHaveSize 3
-                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.erBearbeidet } shouldHaveSize 2
-                g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }
-                    .filter { it.erBearbeidet && it.aktiv != null } shouldHaveSize 1
-            }
-
-            assertSoftly(behandling.sivilstand) { s ->
-                s.size shouldBe 2
-                s.filter { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
             }
         }
 
@@ -1159,7 +1095,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             assertSoftly(behandling.sivilstand) { s ->
-                s.size shouldBe 2
+                s.size shouldBe 1
                 s.filter { behandling.virkningstidspunktEllerSøktFomDato == it.datoFom }
             }
         }
@@ -1938,7 +1874,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val bearbeidaBoforhold =
                 BoforholdApi.beregnBoforholdBarnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    endretBoforhold.tilBoforholdbBarnRequest(behandling),
+                    endretBoforhold.tilBoforholdBarnRequest(behandling),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
@@ -2022,7 +1958,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.virkningstidspunktEllerSøktFomDato,
                     jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                         rådataBoforhold.data,
-                    ).tilBoforholdbBarnRequest(behandling),
+                    ).tilBoforholdBarnRequest(behandling),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
