@@ -26,6 +26,38 @@ class InntektsmappingerTest {
     }
 
     @Test
+    fun `skal bestemme datoTom for offentlig utvidet barnetrygd hvis samme måned`() {
+        val behandling = oppretteBehandling()
+        behandling.virkningstidspunkt = YearMonth.parse("2023-06").atDay(1)
+        val inntekt =
+            opprettInntekt(
+                behandling = behandling,
+                opprinneligFom = YearMonth.parse("2023-01"),
+                opprinneligTom = YearMonth.now(),
+                type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                kilde = Kilde.OFFENTLIG,
+            )
+        inntekt.bestemDatoFomForOffentligInntekt() shouldBe YearMonth.parse("2023-06").atDay(1)
+        inntekt.bestemDatoTomForOffentligInntekt() shouldBe null
+    }
+
+    @Test
+    fun `skal bestemme datoTom for offentlig utvidet barnetrygd hvis samme måned og virkningstidspunkt er fram i tid`() {
+        val behandling = oppretteBehandling()
+        behandling.virkningstidspunkt = YearMonth.now().plusMonths(1).atDay(1)
+        val inntekt =
+            opprettInntekt(
+                behandling = behandling,
+                opprinneligFom = YearMonth.now().minusMonths(6),
+                opprinneligTom = YearMonth.now().plusMonths(1),
+                type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                kilde = Kilde.OFFENTLIG,
+            )
+        inntekt.bestemDatoFomForOffentligInntekt() shouldBe behandling.virkningstidspunkt
+        inntekt.bestemDatoTomForOffentligInntekt() shouldBe null
+    }
+
+    @Test
     fun `skal bestemme periode for offentlig ytelse hvis opprinnelig periode starter før virkningstidspunkt `() {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunkt = YearMonth.parse("2023-05").atDay(1)
@@ -106,7 +138,7 @@ class InntektsmappingerTest {
                 kilde = Kilde.OFFENTLIG,
             )
         inntekt.bestemDatoFomForOffentligInntekt() shouldBe YearMonth.parse("2023-08").atDay(1)
-        inntekt.bestemDatoTomForOffentligInntekt() shouldBe YearMonth.now().atEndOfMonth()
+        inntekt.bestemDatoTomForOffentligInntekt() shouldBe null
     }
 
     @Test
