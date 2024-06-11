@@ -65,6 +65,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -222,12 +223,13 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
         }
 
-        @Disabled("Wiremock issues - OK alene, feiler i fellesskap med andre")
         @Test
         @Transactional
         open fun `ytelser skal ikke listes som årsinntekter i DTO`() {
             // gitt
             val behandling = oppretteBehandling()
+            behandling.grunnlagSistInnhentet = LocalDateTime.now()
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.inntekter =
                 mutableSetOf(
                     Inntekt(
@@ -242,10 +244,60 @@ class BehandlingServiceTest : TestContainerRunner() {
                         opprinneligTom = LocalDate.parse("2023-09-01"),
                         behandling = behandling,
                     ),
+                    Inntekt(
+                        Inntektsrapportering.BARNETILLEGG,
+                        BigDecimal.valueOf(2450),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.KONTANTSTØTTE,
+                        BigDecimal.valueOf(3500),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.UTVIDET_BARNETRYGD,
+                        BigDecimal.valueOf(3000),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.SMÅBARNSTILLEGG,
+                        BigDecimal.valueOf(1850),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = null,
+                    )
                 )
             testdataManager.lagreBehandling(behandling)
-
-            entityManager.refresh(behandling)
 
             // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
             kjøreStubber(behandling)
@@ -264,27 +316,56 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 behandlingDto.inntekter.årsinntekter.filter { ytelser.contains(it.rapporteringstype) }.size shouldBe 0
-                behandlingDto.inntekter.barnetillegg.size shouldBe 0
-                behandlingDto.inntekter.kontantstøtte.size shouldBe 0
+                behandlingDto.inntekter.barnetillegg.size shouldBe 1
+                behandlingDto.inntekter.kontantstøtte.size shouldBe 1
                 behandlingDto.inntekter.småbarnstillegg.size shouldBe 1
                 behandlingDto.inntekter.utvidetBarnetrygd.size shouldBe 1
-                behandlingDto.inntekter.årsinntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }.size shouldBe 3
+                behandlingDto.inntekter.årsinntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }.size shouldBe 1
             }
         }
 
         @Test
-        @Disabled("Wiremock issues - OK alene, feiler i fellesskap med andre")
         @Transactional
         open fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
             // gitt
             val behandling = oppretteBehandling()
 
-            // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
-            oppretteOgLagreGrunnlag(behandling)
+            // skrur av grunnlagsinnhenting
+            behandling.grunnlagSistInnhentet = LocalDateTime.now()
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+
             kjøreStubber(behandling)
+
+            behandling.grunnlag.add(Grunnlag(
+                aktiv = LocalDateTime.now().minusDays(5),
+                behandling = behandling,
+                innhentet = LocalDateTime.now(),
+                rolle = behandling.bidragsmottaker!!,
+                type = Grunnlagsdatatype.SIVILSTAND,
+                data = commonObjectmapper.writeValueAsString(setOf(Sivilstand(
+                    kilde = Kilde.OFFENTLIG,
+                    periodeFom = LocalDate.now().minusYears(13),
+                    periodeTom = null,
+                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                )))
+            ))
+
+            behandling.grunnlag.add(Grunnlag(
+                behandling = behandling,
+                innhentet = LocalDateTime.now(),
+                rolle = behandling.bidragsmottaker!!,
+                type = Grunnlagsdatatype.SIVILSTAND,
+                data = commonObjectmapper.writeValueAsString(setOf(Sivilstand(
+                    kilde = Kilde.OFFENTLIG,
+                    periodeFom = LocalDate.now().minusYears(15),
+                    periodeTom = null,
+                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                )))
+            ))
 
             // hvis
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
             // så
             assertSoftly {
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null

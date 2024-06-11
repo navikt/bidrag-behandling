@@ -26,6 +26,9 @@ import no.nav.bidrag.behandling.transformers.behandling.tilAktivGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
@@ -37,6 +40,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
