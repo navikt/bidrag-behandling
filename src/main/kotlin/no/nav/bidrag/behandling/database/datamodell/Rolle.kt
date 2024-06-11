@@ -16,11 +16,11 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -63,7 +63,7 @@ fun Rolle.tilNyestePersonident() = ident?.let { hentNyesteIdent(it) }
 fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""
 
 fun Rolle.lagreSivilstandshistorikk(historikk: Set<Sivilstand>) {
-    forrigeSivilstandshistorikk = tilJson(historikk.tilSerialiseringsformat())
+    forrigeSivilstandshistorikk = commonObjectmapper.writeValueAsString(historikk.tilSerialiseringsformat())
 }
 
 fun Set<Sivilstand>.tilSerialiseringsformat() =

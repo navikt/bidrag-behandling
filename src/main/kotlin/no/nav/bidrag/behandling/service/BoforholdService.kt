@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
+import no.nav.bidrag.behandling.service.BoforholdService.Companion.hentForrigeLagredePerioder
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
@@ -404,7 +405,6 @@ class BoforholdService(
     fun oppdatereSivilstandshistorikk(behandling: Behandling) {
         behandling.bidragsmottaker!!.lagreSivilstandshistorikk(behandling.sivilstand)
         behandling.oppdatereSivilstandshistorikk()
-        sivilstandRepository.saveAll(behandling.sivilstand)
     }
 
     private fun sletteHusstandsbarn(
@@ -720,7 +720,6 @@ class BoforholdService(
         sletteInnslag: Long? = null,
     ) {
         val request = this.sivilstand.tilSvilstandRequest(nyttEllerEndretInnslag, sletteInnslag)
-        this.tilbakestilleTilOffentligSivilstandshistorikk()
         val resultat = SivilstandApi.beregnV2(this.virkningstidspunktEllerSøktFomDato, request).toSet()
         this.overskriveMedBearbeidaSivilstandshistorikk(resultat)
     }

@@ -269,7 +269,7 @@ class GrunnlagService(
             Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
             behandling.bidragsmottaker!!,
         )?.let {
-            it.data = tilJson(sivilstandPeriodisert)
+            it.data = commonObjectmapper.writeValueAsString(sivilstandPeriodisert)
         }
     }
 
@@ -295,7 +295,7 @@ class GrunnlagService(
             Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
             behandling.bidragsmottaker!!,
         )?.let {
-            it.data = tilJson(periodisertHistorikk)
+            it.data = commonObjectmapper.writeValueAsString(periodisertHistorikk)
         }
     }
 
