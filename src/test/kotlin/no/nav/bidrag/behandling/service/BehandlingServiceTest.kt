@@ -1114,7 +1114,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere ikke aktivert sivilstand ved endring av virkningsdato fremover i tid`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -1186,7 +1186,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere ikke aktivert sivilstand ved endring av virkningsdato bakover i tid`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -1258,7 +1258,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere virkningstidspunkt og oppdatere gjeldende aktiverte boforhold og sivilstand`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
 
