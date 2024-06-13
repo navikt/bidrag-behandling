@@ -60,6 +60,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagspostD
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.BeforeEach
@@ -264,7 +265,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val behandling = testdataManager.oppretteBehandling(false)
             stubbeHentingAvPersoninfoForTestpersoner()
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
-            behandling.grunnlagsinnhentingFeilet = "{\"BARNETILLEGG\":{\"grunnlagstype\":\"BARNETILLEGG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"}}"
+            behandling.grunnlagsinnhentingFeilet =
+                "{\"BARNETILLEGG\":{\"grunnlagstype\":\"BARNETILLEGG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"}}"
             behandling.roller.forEach {
                 when (it.rolletype) {
                     Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
@@ -2031,6 +2033,148 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // så
             assertNotNull(opplysninger)
             assertEquals(opp4.id, opplysninger.id)
+        }
+    }
+
+    @Nested
+    @DisplayName("Teste differensiering av nytt mot gammelt grunnlag")
+    open inner class Diffing {
+        @Test
+        open fun `skal returnere diff for sivilstand`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+
+            // gjeldende sivilstand
+            behandling.grunnlag.add(
+                Grunnlag(
+                    aktiv = LocalDateTime.now().minusDays(5),
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    erBearbeidet = true,
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            // ny sivilstand
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    erBearbeidet = true,
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            // hvis
+            val ikkeAktivereGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
+
+            // så
+            assertSoftly(ikkeAktivereGrunnlagsdata) { resultat ->
+                resultat.sivilstand shouldNotBe null
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal returnere diff for boforhold`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+            val nyFomdato = LocalDate.now().minusYears(10)
+
+            // gjeldende boforhold
+            behandling.grunnlag.add(
+                Grunnlag(
+                    aktiv = LocalDateTime.now().minusDays(5),
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    gjelder = testdataBarn1.ident,
+                    erBearbeidet = true,
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.BOFORHOLD,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BoforholdResponse(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    bostatus = Bostatuskode.MED_FORELDER,
+                                    fødselsdato = LocalDate.now().minusYears(13),
+                                    relatertPersonPersonId = testdataBarn1.ident,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            // nytt boforhold
+            behandling.grunnlag.add(
+                Grunnlag(
+                    aktiv = null,
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    gjelder = testdataBarn1.ident,
+                    erBearbeidet = true,
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.BOFORHOLD,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BoforholdResponse(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = nyFomdato,
+                                    periodeTom = null,
+                                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                    fødselsdato = LocalDate.now().minusYears(13),
+                                    relatertPersonPersonId = testdataBarn1.ident,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            // hvis
+            val ikkeAktivereGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
+
+            // så
+            assertSoftly(ikkeAktivereGrunnlagsdata) { resultat ->
+                resultat.husstandsbarn shouldNotBe null
+                resultat.husstandsbarn shouldHaveSize 1
+                resultat.husstandsbarn.find { testdataBarn1.ident == it.ident } shouldNotBe null
+                resultat.husstandsbarn.find { testdataBarn1.ident == it.ident }?.perioder?.shouldHaveSize(1)
+                resultat.husstandsbarn.find {
+                    testdataBarn1.ident == it.ident
+                }?.perioder?.maxBy { it.datoFom!! }!!.datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
+                resultat.husstandsbarn.find {
+                    testdataBarn1.ident == it.ident
+                }?.perioder?.maxBy { it.datoFom!! }!!.bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
+            }
         }
     }
 

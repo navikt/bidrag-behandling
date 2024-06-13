@@ -204,6 +204,7 @@ class GrunnlagService(
                 Grunnlagsdatatype.BOFORHOLD -> behandling.bidragsmottaker
                 Grunnlagsdatatype.KONTANTSTØTTE -> behandling.bidragsmottaker
                 Grunnlagsdatatype.BARNETILLEGG -> behandling.bidragsmottaker
+                Grunnlagsdatatype.SIVILSTAND -> behandling.bidragsmottaker
                 else -> rolleGrunnlagErInnhentetFor
             }
 

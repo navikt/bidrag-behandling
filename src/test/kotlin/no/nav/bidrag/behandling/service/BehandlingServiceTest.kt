@@ -15,8 +15,6 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
-import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
@@ -26,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
@@ -34,6 +33,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -42,6 +42,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -57,14 +58,12 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
-import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -72,7 +71,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -295,7 +293,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         opprinneligTom = null,
                         behandling = behandling,
                         gjelderBarn = null,
-                    )
+                    ),
                 )
             testdataManager.lagreBehandling(behandling)
 
@@ -336,32 +334,46 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             kjøreStubber(behandling)
 
-            behandling.grunnlag.add(Grunnlag(
-                aktiv = LocalDateTime.now().minusDays(5),
-                behandling = behandling,
-                innhentet = LocalDateTime.now(),
-                rolle = behandling.bidragsmottaker!!,
-                type = Grunnlagsdatatype.SIVILSTAND,
-                data = commonObjectmapper.writeValueAsString(setOf(Sivilstand(
-                    kilde = Kilde.OFFENTLIG,
-                    periodeFom = LocalDate.now().minusYears(13),
-                    periodeTom = null,
-                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
-                )))
-            ))
+            behandling.grunnlag.add(
+                Grunnlag(
+                    aktiv = LocalDateTime.now().minusDays(5),
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
+                            ),
+                        ),
+                ),
+            )
 
-            behandling.grunnlag.add(Grunnlag(
-                behandling = behandling,
-                innhentet = LocalDateTime.now(),
-                rolle = behandling.bidragsmottaker!!,
-                type = Grunnlagsdatatype.SIVILSTAND,
-                data = commonObjectmapper.writeValueAsString(setOf(Sivilstand(
-                    kilde = Kilde.OFFENTLIG,
-                    periodeFom = LocalDate.now().minusYears(15),
-                    periodeTom = null,
-                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
-                )))
-            ))
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
+                            ),
+                        ),
+                ),
+            )
 
             // hvis
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
@@ -561,6 +573,183 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.hentBehandlingById(behandling.id!!)
+            }
+        }
+    }
+
+    @Nested
+    open inner class AktivereGrunnlag {
+        @Test
+        @Transactional
+        open fun `skal aktivere sivilstand`() {
+            // gitt
+            val b = testdataManager.oppretteBehandling(false)
+            kjøreStubber(b)
+
+            // ny sivilstand
+            b.grunnlag.add(
+                Grunnlag(
+                    behandling = b,
+                    innhentet = LocalDateTime.now(),
+                    erBearbeidet = false,
+                    rolle = b.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                SivilstandGrunnlagDto(
+                                    bekreftelsesdato = b.virkningstidspunktEllerSøktFomDato.minusYears(15),
+                                    gyldigFom = b.virkningstidspunktEllerSøktFomDato.minusYears(15),
+                                    historisk = false,
+                                    master = "Freg",
+                                    personId = b.bidragsmottaker!!.ident!!,
+                                    registrert = b.virkningstidspunktEllerSøktFomDato.minusYears(8).atStartOfDay(),
+                                    type = SivilstandskodePDL.GIFT,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            b.grunnlag.add(
+                Grunnlag(
+                    behandling = b,
+                    innhentet = LocalDateTime.now(),
+                    erBearbeidet = true,
+                    rolle = b.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
+
+            assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.sivilstand) {
+                it shouldNotBe null
+                it!!.grunnlag shouldHaveSize 1
+                it.sivilstand shouldHaveSize 1
+            }
+
+            // hvis
+            val svar =
+                behandlingService.aktivereGrunnlag(
+                    b.id!!,
+                    AktivereGrunnlagRequestV2(Personident(b.bidragsmottaker!!.ident!!), Grunnlagsdatatype.SIVILSTAND),
+                )
+
+            // så
+            assertSoftly(svar) {
+                it.ikkeAktiverteEndringerIGrunnlagsdata.sivilstand shouldBe null
+                it.aktiveGrunnlagsdata.sivilstand shouldNotBe null
+                it.aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 1
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal aktivere boforhold for barn`() {
+            // gitt
+            val b = testdataManager.oppretteBehandling(false)
+            val personidentBarnBoforholdSkalAktiveresFor = Personident(testdataBarn2.ident)
+            kjøreStubber(b)
+
+            val grunnlagHusstandsmedlemmer =
+                setOf(
+                    RelatertPersonGrunnlagDto(
+                        relatertPersonPersonId = testdataBarn1.ident,
+                        fødselsdato = testdataBarn1.fødselsdato,
+                        erBarnAvBmBp = true,
+                        navn = "Lyrisk Sopp",
+                        partPersonId = b.bidragsmottaker!!.ident!!,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-01-01"),
+                                    periodeTil = LocalDate.parse("2023-05-31"),
+                                ),
+                            ),
+                    ),
+                    RelatertPersonGrunnlagDto(
+                        relatertPersonPersonId = personidentBarnBoforholdSkalAktiveresFor.verdi,
+                        fødselsdato = testdataBarn2.fødselsdato,
+                        erBarnAvBmBp = true,
+                        navn = "Lyrisk Sopp",
+                        partPersonId = b.bidragsmottaker!!.ident!!,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-01-01"),
+                                    periodeTil = LocalDate.parse("2023-05-31"),
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-08-01"),
+                                    periodeTil = null,
+                                ),
+                            ),
+                    ),
+                )
+            b.grunnlag.add(
+                Grunnlag(
+                    behandling = b,
+                    innhentet = LocalDateTime.now(),
+                    erBearbeidet = false,
+                    rolle = b.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.BOFORHOLD,
+                    data = commonObjectmapper.writeValueAsString(grunnlagHusstandsmedlemmer),
+                ),
+            )
+
+            val boforholdPeriodisert =
+                BoforholdApi.beregnBoforholdBarnV2(
+                    b.virkningstidspunktEllerSøktFomDato,
+                    grunnlagHusstandsmedlemmer.tilBoforholdbBarnRequest(b.virkningstidspunktEllerSøktFomDato),
+                )
+
+            boforholdPeriodisert
+                .filter { it.relatertPersonPersonId != null && it.relatertPersonPersonId == personidentBarnBoforholdSkalAktiveresFor.verdi }
+                .groupBy { it.relatertPersonPersonId }
+                .forEach {
+                    b.grunnlag.add(
+                        Grunnlag(
+                            behandling = b,
+                            innhentet = LocalDateTime.now(),
+                            erBearbeidet = true,
+                            rolle = b.bidragsmottaker!!,
+                            type = Grunnlagsdatatype.BOFORHOLD,
+                            gjelder = it.key,
+                            data = commonObjectmapper.writeValueAsString(it.value),
+                        ),
+                    )
+                }
+
+            val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
+
+            assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn) {
+                it shouldHaveSize 1
+                it.first().perioder shouldHaveSize 3
+            }
+
+            // hvis
+            val svar =
+                behandlingService.aktivereGrunnlag(
+                    b.id!!,
+                    AktivereGrunnlagRequestV2(personidentBarnBoforholdSkalAktiveresFor, Grunnlagsdatatype.BOFORHOLD),
+                )
+
+            // så
+            assertSoftly(svar) {
+                it.ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn shouldHaveSize 0
+                it.aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 2
             }
         }
     }
@@ -1325,75 +1514,6 @@ class BehandlingServiceTest : TestContainerRunner() {
         val behandling = prepareBehandling()
 
         return behandlingRepository.save(behandling)
-    }
-
-    fun oppretteOgLagreGrunnlag(behandling: Behandling) {
-        testdataManager.oppretteOgLagreGrunnlag(
-            behandling = behandling,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, true),
-            innhentet = LocalDateTime.now(),
-            grunnlagsdata =
-                SummerteInntekter(
-                    versjon = "123",
-                    inntekter =
-                        listOf(
-                            SummertMånedsinntekt(
-                                gjelderÅrMåned = YearMonth.now().minusYears(1).withMonth(12),
-                                sumInntekt = BigDecimal(45000),
-                                inntektPostListe =
-                                    listOf(
-                                        InntektPost(
-                                            beløp = BigDecimal(45000),
-                                            inntekstype = Inntektstype.LØNNSINNTEKT,
-                                            kode = "lønnFraSmåbrukarlaget",
-                                        ),
-                                    ),
-                            ),
-                        ),
-                ),
-        )
-
-        testdataManager.oppretteOgLagreGrunnlag(
-            behandling = behandling,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
-            innhentet = LocalDateTime.now(),
-            aktiv = LocalDateTime.now(),
-            grunnlagsdata =
-                SummerteInntekter(
-                    versjon = "123",
-                    inntekter =
-                        listOf(
-                            SummertÅrsinntekt(
-                                sumInntekt = BigDecimal(388000),
-                                inntektRapportering = Inntektsrapportering.LIGNINGSINNTEKT,
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                                        YearMonth.now().withMonth(1).atDay(1),
-                                    ),
-                                inntektPostListe = emptyList(),
-                            ),
-                        ),
-                ),
-        )
-
-        testdataManager.oppretteOgLagreGrunnlag(
-            behandling,
-            Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
-            innhentet = LocalDateTime.now(),
-            grunnlagsdata =
-                SkattepliktigeInntekter(
-                    ainntekter =
-                        listOf(
-                            AinntektGrunnlagDto(
-                                ainntektspostListe = emptyList(),
-                                personId = behandling.bidragsmottaker?.ident!!,
-                                periodeFra = behandling.søktFomDato.withDayOfMonth(1),
-                                periodeTil = behandling.søktFomDato.plusMonths(1).withDayOfMonth((1)),
-                            ),
-                        ),
-                ),
-        )
     }
 
     private fun kjøreStubber(behandling: Behandling) {
