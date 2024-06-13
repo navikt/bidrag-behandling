@@ -48,7 +48,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere behandling for API v2`() {
         // gitt
-        val b = testdataManager.oppretteBehandling(true)
+        val b = testdataManager.oppretteBehandling(true, false, false)
 
         // hvis
         val behandlingRes =
@@ -509,7 +509,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Transactional
     fun `skal aktivere grunnlag`() {
         // gitt
-        var behandling = testdataManager.oppretteBehandlingINyTransaksjon(false)
+        var behandling = testdataManager.oppretteBehandlingINyTransaksjon(false, false, false)
         behandling.inntekter.add(
             Inntekt(
                 Inntektsrapportering.LIGNINGSINNTEKT,

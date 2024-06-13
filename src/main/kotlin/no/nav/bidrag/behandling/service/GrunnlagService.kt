@@ -735,7 +735,7 @@ class GrunnlagService(
         val endringerSomMåBekreftes =
             ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato)
 
-        if (endringerSomMåBekreftes?.grunnlag?.none() ?: false) {
+        if (endringerSomMåBekreftes?.sivilstand?.none() ?: false) {
             val ikkeAktiverteSivilstandsgrunnlag =
                 ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
 
@@ -754,20 +754,6 @@ class GrunnlagService(
                 it.aktiv = LocalDateTime.now()
             }
         }
-
-        behandling.sivilstand.filter { it.kilde == Kilde.OFFENTLIG }
-            .filter { endringerSomMåBekreftes?.grunnlag?.none() ?: false }
-            .forEach {
-                val ikkeAktivertGrunnlag =
-                    ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
-                        .maxBy { it.innhentet }
-
-                log.info {
-                    "Ikke-aktivert sivilstandsgrunnlag med id ${ikkeAktivertGrunnlag.id} i behandling ${behandling.id},"
-                    "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
-                }
-                ikkeAktivertGrunnlag.aktiv = LocalDateTime.now()
-            }
     }
 
     private fun innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag: HentGrunnlagDto): Boolean =

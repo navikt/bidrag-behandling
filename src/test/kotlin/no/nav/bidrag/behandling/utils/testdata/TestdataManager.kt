@@ -279,7 +279,7 @@ class TestdataManager(
 
         behandling.grunnlag.add(
             Grunnlag(
-                aktiv = LocalDateTime.now(),
+                aktiv = LocalDateTime.now().minusDays(5),
                 behandling = behandling,
                 data = commonObjectmapper.writeValueAsString(sivilstandshistorikk),
                 erBearbeidet = false,
@@ -291,7 +291,7 @@ class TestdataManager(
 
         behandling.grunnlag.add(
             Grunnlag(
-                aktiv = LocalDateTime.now(),
+                aktiv = LocalDateTime.now().minusDays(5),
                 behandling = behandling,
                 data = commonObjectmapper.writeValueAsString(periodisertHistorikk),
                 erBearbeidet = true,
