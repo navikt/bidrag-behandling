@@ -44,12 +44,20 @@ class TestdataManager(
     }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun oppretteBehandlingINyTransaksjon(inkluderInntekter: Boolean = false): Behandling {
-        return oppretteBehandling(inkluderInntekter)
+    fun oppretteBehandlingINyTransaksjon(
+        inkluderInntekter: Boolean = false,
+        inkludereSivilstand: Boolean = true,
+        inkludereBoforhold: Boolean = true,
+    ): Behandling {
+        return oppretteBehandling(inkluderInntekter, inkludereSivilstand, inkludereBoforhold)
     }
 
     @Transactional
-    fun oppretteBehandling(inkluderInntekter: Boolean = false): Behandling {
+    fun oppretteBehandling(
+        inkludereInntekter: Boolean = false,
+        inkludereSivilstand: Boolean = true,
+        inkludereBoforhold: Boolean = true,
+    ): Behandling {
         val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
         behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
@@ -61,10 +69,15 @@ class TestdataManager(
                 opprettRolle(behandling, testdataBM),
             )
 
-        oppretteBoforhold(behandling)
-        oppretteSivilstand(behandling)
+        if (inkludereBoforhold) {
+            oppretteBoforhold(behandling)
+        }
 
-        if (inkluderInntekter) {
+        if (inkludereSivilstand) {
+            oppretteSivilstand(behandling)
+        }
+
+        if (inkludereInntekter) {
             behandling.inntekter = opprettInntekter(behandling, testdataBM)
             behandling.inntekter.forEach {
                 it.inntektsposter = opprettInntektsposter(it)
