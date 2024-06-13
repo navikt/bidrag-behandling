@@ -1007,7 +1007,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Test
         @Transactional
         open fun `skal ikke aktivere bearbeida sivilstandsgrunnlag som krever godkjenning`() {
-
             // gitt
             val behandling = testdataManager.oppretteBehandling(false, true, false)
             behandling.virkningstidspunkt = LocalDate.now().minusYears(2)
@@ -1015,7 +1014,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
-            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND  == it.type }){
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }) {
                 it shouldHaveSize 2
             }
 
@@ -1023,17 +1022,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND  == it.type }){
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }) {
                 it shouldHaveSize 4
                 it.filter { it.aktiv == null } shouldHaveSize 1
-                it.find{ it.aktiv == null && it.erBearbeidet } shouldNotBe null
+                it.find { it.aktiv == null && it.erBearbeidet } shouldNotBe null
             }
         }
 
         @Test
         @Transactional
         open fun `skal ikke aktivere bearbeida boforholdsgrunnlag som krever godkjenning`() {
-
             // gitt
             val behandling = testdataManager.oppretteBehandling(false, false, true)
             behandling.virkningstidspunkt = LocalDate.now().minusYears(2)
@@ -1041,7 +1039,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
-            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD  == it.type }){
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }) {
                 it shouldHaveSize 3
             }
 
@@ -1049,10 +1047,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD  == it.type }){
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }) {
                 it shouldHaveSize 6
                 it.filter { it.aktiv == null } shouldHaveSize 3
-                it.filter{ it.aktiv == null && it.erBearbeidet } shouldHaveSize 2
+                it.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 2
             }
         }
 
