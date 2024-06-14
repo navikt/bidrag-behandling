@@ -991,21 +991,22 @@ class GrunnlagService(
             )
 
         if (erFørstegangsinnhenting && innhentetGrunnlag.isNotEmpty() || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
+            val aktivert =
+                if (nyesteGrunnlag?.aktiv != null) {
+                    aktiveringstidspunkt
+                } else {
+                    LocalDateTime.now()
+                }
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
                 grunnlagstype = grunnlagstype,
                 innhentet = LocalDateTime.now(),
-                aktiv =
-                    if (nyesteGrunnlag?.aktiv != null) {
-                        aktiveringstidspunkt
-                    } else {
-                        LocalDateTime.now()
-                    },
+                aktiv = aktivert,
                 idTilRolleInnhentetFor = innhentetForRolle.id!!,
                 gjelder = gjelderPerson,
             )
-            if (grunnlagstype.erBearbeidet) {
+            if (grunnlagstype.erBearbeidet && aktivert != null) {
                 aktivereSisteInnhentedeRådata(grunnlagstype.type, innhentetForRolle, behandling)
             }
         } else if (erGrunnlagEndret) {
