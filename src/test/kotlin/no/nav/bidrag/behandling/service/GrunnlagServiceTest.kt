@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -22,7 +23,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -838,112 +839,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal ikke aktivere boforholdrådata dersom bearbeida boforhold er ikke er aktivert for samtlige husstandsmedlemmer`() {
-            // gitt
-            val behandling = testdataManager.oppretteBehandling(false, false, false)
-            behandling.roller.forEach {
-                when (it.rolletype) {
-                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
-                    Rolletype.BARN ->
-                        stubUtils.stubHenteGrunnlag(
-                            rolle = it,
-                            navnResponsfil = "hente-grunnlagrespons-barn1.json",
-                        )
-
-                    else -> throw Exception()
-                }
-            }
-
-            val grunnlag = opprettAlleAktiveGrunnlagFraFil(behandling, "hente-grunnlagrespons.json")
-
-            entityManager.refresh(behandling)
-
-            val rådataBoforhold = grunnlag.find { !it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD }
-
-            val nyeBorhosperioder =
-                listOf(
-                    BorISammeHusstandDto(
-                        periodeFra = behandling.virkningstidspunktEllerSøktFomDato,
-                        periodeTil = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(7),
-                    ),
-                    BorISammeHusstandDto(
-                        periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(10),
-                        periodeTil = null,
-                    ),
-                )
-
-            val dataBoforhold = jsonListeTilObjekt<RelatertPersonGrunnlagDto>(rådataBoforhold!!.data)
-
-            val endretBoforholdTestbarn1 =
-                dataBoforhold.find { testdataBarn1.ident == it.relatertPersonPersonId }
-                    ?.copy(borISammeHusstandDtoListe = nyeBorhosperioder)
-
-            val endretBoforhold =
-                listOf(
-                    endretBoforholdTestbarn1!!,
-                    dataBoforhold.find { testdataBarn2.ident == it.relatertPersonPersonId }!!,
-                )
-
-            behandling.grunnlag.add(
-                Grunnlag(
-                    behandling,
-                    Grunnlagsdatatype.BOFORHOLD,
-                    erBearbeidet = false,
-                    data = tilJson(endretBoforhold.toSet()),
-                    innhentet = LocalDateTime.now().minusDays(1),
-                    aktiv = LocalDateTime.now().minusDays(1),
-                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
-                ),
-            )
-
-            val bearbeidaBoforhold =
-                BoforholdApi.beregnBoforholdBarnV2(
-                    behandling.virkningstidspunktEllerSøktFomDato,
-                    endretBoforhold.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
-                )
-
-            bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
-                behandling.grunnlag.add(
-                    Grunnlag(
-                        behandling,
-                        Grunnlagsdatatype.BOFORHOLD,
-                        erBearbeidet = true,
-                        data = tilJson(it.value),
-                        innhentet = LocalDateTime.now().minusDays(1),
-                        aktiv = LocalDateTime.now().minusDays(1),
-                        rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
-                        gjelder = it.key,
-                    ),
-                )
-            }
-
-            stubbeHentingAvPersoninfoForTestpersoner()
-            behandlingRepository.save(behandling)
-
-            assertSoftly(behandling.grunnlag) { g ->
-                g shouldHaveSize 3
-                g.filter { behandling.bidragsmottaker == it.rolle } shouldHaveSize 3
-                g.filter { it.aktiv != null } shouldHaveSize 3
-                g.filter { it.erBearbeidet } shouldHaveSize 2
-                g.filter { !it.erBearbeidet && it.gjelder == null } shouldHaveSize 1
-                g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
-                g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
-            }
-
-            // hvis
-            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
-
-            // så
-            val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
-            assertSoftly(boforhold) { sb ->
-                sb.size shouldBe 5
-                sb.filter { it.aktiv != null } shouldHaveSize 3
-                sb.filter { it.erBearbeidet } shouldHaveSize 3
-            }
-        }
-
-        @Test
-        @Transactional
         open fun `skal ikke lagre tomt grunnlag dersom sist lagrede grunnlag var tomt`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false, false, false)
@@ -1013,7 +908,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
             stubbeHentingAvPersoninfoForTestpersoner()
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
-
             assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }) {
                 it shouldHaveSize 2
             }
@@ -1898,6 +1792,112 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        open fun `skal ikke aktivere boforholdrådata dersom bearbeida boforhold er ikke er aktivert for samtlige husstandsmedlemmer`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false)
+            behandling.roller.forEach {
+                when (it.rolletype) {
+                    Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                    Rolletype.BARN ->
+                        stubUtils.stubHenteGrunnlag(
+                            rolle = it,
+                            navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                        )
+
+                    else -> throw Exception()
+                }
+            }
+
+            val grunnlag = opprettAlleAktiveGrunnlagFraFil(behandling, "hente-grunnlagrespons.json")
+
+            entityManager.refresh(behandling)
+
+            val rådataBoforhold = grunnlag.find { !it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD }
+
+            val nyeBorhosperioder =
+                listOf(
+                    BorISammeHusstandDto(
+                        periodeFra = behandling.virkningstidspunktEllerSøktFomDato,
+                        periodeTil = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(7),
+                    ),
+                    BorISammeHusstandDto(
+                        periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(10),
+                        periodeTil = null,
+                    ),
+                )
+
+            val dataBoforhold = jsonListeTilObjekt<RelatertPersonGrunnlagDto>(rådataBoforhold!!.data)
+
+            val endretBoforholdTestbarn1 =
+                dataBoforhold.find { testdataBarn1.ident == it.relatertPersonPersonId }
+                    ?.copy(borISammeHusstandDtoListe = nyeBorhosperioder)
+
+            val endretBoforhold =
+                listOf(
+                    endretBoforholdTestbarn1!!,
+                    dataBoforhold.find { testdataBarn2.ident == it.relatertPersonPersonId }!!,
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.BOFORHOLD,
+                    erBearbeidet = false,
+                    data = tilJson(endretBoforhold.toSet()),
+                    innhentet = LocalDateTime.now().minusDays(1),
+                    aktiv = LocalDateTime.now().minusDays(1),
+                    rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                ),
+            )
+
+            val bearbeidaBoforhold =
+                BoforholdApi.beregnBoforholdBarnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    endretBoforhold.tilBoforholdBarnRequest(behandling),
+                )
+
+            bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        behandling,
+                        Grunnlagsdatatype.BOFORHOLD,
+                        erBearbeidet = true,
+                        data = tilJson(it.value),
+                        innhentet = LocalDateTime.now().minusDays(1),
+                        aktiv = LocalDateTime.now().minusDays(1),
+                        rolle = behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype },
+                        gjelder = it.key,
+                    ),
+                )
+            }
+
+            stubbeHentingAvPersoninfoForTestpersoner()
+            behandlingRepository.save(behandling)
+
+            assertSoftly(behandling.grunnlag) { g ->
+                g shouldHaveSize 3
+                g.filter { behandling.bidragsmottaker == it.rolle } shouldHaveSize 3
+                g.filter { it.aktiv != null } shouldHaveSize 3
+                g.filter { it.erBearbeidet } shouldHaveSize 2
+                g.filter { !it.erBearbeidet && it.gjelder == null } shouldHaveSize 1
+                g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
+                g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
+            }
+
+            // hvis
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
+            assertSoftly(boforhold) { sb ->
+                sb.size shouldBe 5
+                sb.filter { it.aktiv != null } shouldHaveSize 3
+                sb.filter { it.erBearbeidet } shouldHaveSize 3
+            }
+        }
+
+        @Test
+        @Transactional
         open fun `skal aktivere boforholdrådata dersom bearbeida boforhold er aktivert for samtlige husstandsmedlemmer`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false, false, false)
@@ -1937,7 +1937,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.virkningstidspunktEllerSøktFomDato,
                     jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                         rådataBoforhold.data,
-                    ).tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                    ).tilBoforholdBarnRequest(behandling),
                 )
 
             bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {

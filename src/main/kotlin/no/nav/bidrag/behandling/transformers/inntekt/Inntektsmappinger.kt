@@ -38,11 +38,21 @@ fun Inntekt.bestemDatoFomForOffentligInntekt() =
         )
     }
 
+fun Inntekt.bestemOpprinneligTomVisningsverdi() =
+    opprinneligTom?.let { opprinneligTom ->
+        if (this.kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(this.type)) {
+            val maxDate = maxOf(YearMonth.now().atEndOfMonth(), behandling!!.virkningstidspunktEllerSøktFomDato)
+            if (opprinneligTom.plusMonths(1).isAfter(maxDate)) null else opprinneligTom
+        } else {
+            opprinneligTom
+        }
+    }
+
 fun Inntekt.bestemDatoTomForOffentligInntekt() =
     skalAutomatiskSettePeriode().ifTrue {
         opprinneligTom?.let { tom ->
             val maxDate = maxOf(YearMonth.now().atEndOfMonth(), behandling!!.virkningstidspunktEllerSøktFomDato)
-            if (tom.isAfter(maxDate)) null else tom
+            if (tom.plusMonths(1).isAfter(maxDate)) null else tom
         }
     }
 
@@ -176,7 +186,7 @@ fun Inntekt.tilInntektDtoV2(erHistorisk: Boolean = false) =
         inntektsposter = this.inntektsposter.tilInntektspostDtoV2().toSet(),
         inntektstyper = this.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
         opprinneligFom = this.opprinneligFom,
-        opprinneligTom = this.opprinneligTom,
+        opprinneligTom = bestemOpprinneligTomVisningsverdi(),
         historisk = erHistorisk,
     )
 

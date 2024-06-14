@@ -13,7 +13,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntekt
@@ -297,7 +297,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             val boforholdPeriodisert =
                 BoforholdApi.beregnBoforholdBarnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    grunnlag.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                    grunnlag.tilBoforholdBarnRequest(behandling),
                 )
             listOf(
                 behandling.opprettGrunnlag(
