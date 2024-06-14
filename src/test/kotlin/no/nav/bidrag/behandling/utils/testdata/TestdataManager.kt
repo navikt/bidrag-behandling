@@ -10,7 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.boforhold.BoforholdApi
@@ -222,7 +222,7 @@ class TestdataManager(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                grunnlagHusstandsmedlemmer.tilBoforholdbBarnRequest(behandling.virkningstidspunktEllerSøktFomDato),
+                grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
             )
 
         boforholdPeriodisert.filter { it.relatertPersonPersonId != null }.groupBy { it.relatertPersonPersonId }

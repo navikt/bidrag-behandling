@@ -33,7 +33,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdbBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -712,7 +712,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val boforholdPeriodisert =
                 BoforholdApi.beregnBoforholdBarnV2(
                     b.virkningstidspunktEllerSøktFomDato,
-                    grunnlagHusstandsmedlemmer.tilBoforholdbBarnRequest(b.virkningstidspunktEllerSøktFomDato),
+                    grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(b),
                 )
 
             boforholdPeriodisert

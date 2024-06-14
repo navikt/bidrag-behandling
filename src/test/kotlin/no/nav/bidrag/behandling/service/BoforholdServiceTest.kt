@@ -1039,7 +1039,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         }
 
         private fun opprettBehandlingForBoforholdTest(): Behandling {
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.husstandsbarn.clear()
             behandling.husstandsbarn.addAll(
