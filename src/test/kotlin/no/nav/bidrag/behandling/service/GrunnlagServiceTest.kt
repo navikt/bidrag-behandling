@@ -917,7 +917,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // så
             assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }) {
                 it shouldHaveSize 4
-                it.filter { it.aktiv == null } shouldHaveSize 1
+                it.filter { it.aktiv == null } shouldHaveSize 2
                 it.find { it.aktiv == null && it.erBearbeidet } shouldNotBe null
             }
         }
