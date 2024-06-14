@@ -133,14 +133,14 @@ fun List<Grunnlag>.hentEndringerSivilstand(
     virkniningstidspunkt: LocalDate,
 ): SivilstandIkkeAktivGrunnlagDto? {
     return try {
-        val aktivSivilstandGrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
-        val nySivilstandGrunnlagBearbeidet = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
-        val nySivilstandGrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
+        val aktivtSivilstandsgrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
+        val nyttBearbeidaSivilstandsgrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
+        val nyttSivilstandsgrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
         val aktiveSivilstandsdata =
-            aktivSivilstandGrunnlag.konvertereData<List<Sivilstand>>()
+            aktivtSivilstandsgrunnlag.konvertereData<List<Sivilstand>>()
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
         val nyeSivilstandsdata =
-            nySivilstandGrunnlagBearbeidet.konvertereData<List<Sivilstand>>()
+            nyttBearbeidaSivilstandsgrunnlag.konvertereData<List<Sivilstand>>()
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
         if (aktiveSivilstandsdata != null && nyeSivilstandsdata != null &&
             !nyeSivilstandsdata.erLik(
@@ -158,9 +158,9 @@ fun List<Grunnlag>.hentEndringerSivilstand(
                             Kilde.OFFENTLIG,
                         )
                     },
-                innhentetTidspunkt = nySivilstandGrunnlagBearbeidet!!.innhentet,
+                innhentetTidspunkt = nyttBearbeidaSivilstandsgrunnlag!!.innhentet,
                 grunnlag =
-                    nySivilstandGrunnlag?.konvertereData<List<SivilstandGrunnlagDto>>()
+                    nyttSivilstandsgrunnlag?.konvertereData<List<SivilstandGrunnlagDto>>()
                         ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(virkniningstidspunkt)
                         ?.toSet() ?: emptySet(),
             )

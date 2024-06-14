@@ -164,7 +164,7 @@ class BehandlingService(
     }
 
     @Transactional
-    fun aktiverGrunnlag(
+    fun aktivereGrunnlag(
         behandlingsid: Long,
         request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 {
@@ -177,8 +177,7 @@ class BehandlingService(
                 }
                 grunnlagService.aktivereGrunnlag(it, request)
                 val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.toSet().hentSisteAktiv()
-                val ikkeAktiverteEndringerIGrunnlagsdata =
-                    grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
+                val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
                 return AktivereGrunnlagResponseV2(
                     boforhold = it.tilBoforholdV2(),
                     inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),

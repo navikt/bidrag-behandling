@@ -388,6 +388,6 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 {
-        return behandlingService.aktiverGrunnlag(behandlingsid, request)
+        return behandlingService.aktivereGrunnlag(behandlingsid, request)
     }
 }

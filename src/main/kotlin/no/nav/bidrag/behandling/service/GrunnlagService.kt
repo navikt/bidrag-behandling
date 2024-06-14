@@ -204,6 +204,7 @@ class GrunnlagService(
                 Grunnlagsdatatype.BOFORHOLD -> behandling.bidragsmottaker
                 Grunnlagsdatatype.KONTANTSTØTTE -> behandling.bidragsmottaker
                 Grunnlagsdatatype.BARNETILLEGG -> behandling.bidragsmottaker
+                Grunnlagsdatatype.SIVILSTAND -> behandling.bidragsmottaker
                 else -> rolleGrunnlagErInnhentetFor
             }
 
@@ -734,7 +735,7 @@ class GrunnlagService(
         val endringerSomMåBekreftes =
             ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato)
 
-        if (endringerSomMåBekreftes?.grunnlag?.none() ?: false) {
+        if (endringerSomMåBekreftes?.sivilstand?.none() ?: false) {
             val ikkeAktiverteSivilstandsgrunnlag =
                 ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
 
@@ -753,20 +754,6 @@ class GrunnlagService(
                 it.aktiv = LocalDateTime.now()
             }
         }
-
-        behandling.sivilstand.filter { it.kilde == Kilde.OFFENTLIG }
-            .filter { endringerSomMåBekreftes?.grunnlag?.none() ?: false }
-            .forEach {
-                val ikkeAktivertGrunnlag =
-                    ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
-                        .maxBy { it.innhentet }
-
-                log.info {
-                    "Ikke-aktivert sivilstandsgrunnlag med id ${ikkeAktivertGrunnlag.id} i behandling ${behandling.id},"
-                    "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
-                }
-                ikkeAktivertGrunnlag.aktiv = LocalDateTime.now()
-            }
     }
 
     private fun innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag: HentGrunnlagDto): Boolean =
@@ -1004,21 +991,22 @@ class GrunnlagService(
             )
 
         if (erFørstegangsinnhenting && innhentetGrunnlag.isNotEmpty() || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
+            val aktivert =
+                if (nyesteGrunnlag?.aktiv != null) {
+                    aktiveringstidspunkt
+                } else {
+                    LocalDateTime.now()
+                }
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
                 grunnlagstype = grunnlagstype,
                 innhentet = LocalDateTime.now(),
-                aktiv =
-                    if (nyesteGrunnlag?.aktiv != null) {
-                        aktiveringstidspunkt
-                    } else {
-                        LocalDateTime.now()
-                    },
+                aktiv = aktivert,
                 idTilRolleInnhentetFor = innhentetForRolle.id!!,
                 gjelder = gjelderPerson,
             )
-            if (grunnlagstype.erBearbeidet) {
+            if (grunnlagstype.erBearbeidet && aktivert != null) {
                 aktivereSisteInnhentedeRådata(grunnlagstype.type, innhentetForRolle, behandling)
             }
         } else if (erGrunnlagEndret) {

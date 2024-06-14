@@ -215,7 +215,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal oppdatere automatisk innhenta husstandsbarn og overskrive manuell informasjon`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
+                val behandling = testdataManager.oppretteBehandling(false, false, true)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
                 val periode1Til = testdataBarn2.fødselsdato.plusMonths(19)
@@ -257,6 +257,17 @@ class BoforholdServiceTest : TestContainerRunner() {
                         ),
                     )
 
+                val hb1 = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }
+                hb1!!.perioder.add(
+                    Husstandsbarnperiode(
+                        datoFom = LocalDate.now().minusMonths(3),
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        husstandsbarn = hb1,
+                        datoTom = null,
+                        kilde = Kilde.MANUELL,
+                    ),
+                )
+
                 assertSoftly(behandling.husstandsbarn) { hb ->
                     hb.size shouldBe 2
                     hb.find { testdataBarn1.ident == it.ident } shouldNotBe null
@@ -277,7 +288,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // hvis
                 boforholdService.oppdatereAutomatiskInnhentetBoforhold(
                     behandling,
-                    periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn1.ident }!!,
+                    periodisertBoforhold.filter { it.relatertPersonPersonId == testdataBarn1.ident },
                     grunnlagBoforhold.groupBy { it.relatertPersonPersonId }.map { Personident(it.key!!) }.toSet(),
                     true,
                     testdataBarn1.tilPersonDto().ident,
@@ -427,7 +438,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal endre kilde til manuell for offentlig husstandsbarn som ikke finnes i nyeste grunnlag`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
+                val behandling = testdataManager.oppretteBehandling(false, false, true)
                 behandling.virkningstidspunkt = testdataBarn1.fødselsdato
                 behandling.husstandsbarn.forEach {
                     it.perioder.forEach {
@@ -505,8 +516,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }) { barn2 ->
                     barn2 shouldNotBe null
                     barn2!!.kilde shouldBe Kilde.MANUELL
-                    barn2.perioder.size shouldBe 3
-                    barn2.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 3
+                    barn2.perioder.size shouldBe 2
+                    barn2.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 2
                     barn2.perioder.last().kilde shouldBe Kilde.MANUELL
                     barn2.perioder.last().datoFom shouldBe LocalDate.of(2023, 6, 1)
                     barn2.perioder.last().datoTom shouldBe null
@@ -1028,7 +1039,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         }
 
         private fun opprettBehandlingForBoforholdTest(): Behandling {
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.husstandsbarn.clear()
             behandling.husstandsbarn.addAll(
@@ -1137,11 +1148,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal lagre periodisert sivilstand basert på førstegangsinnhenting av grunnlag`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
-
-                // Fjerner eksisterende barn for å simulere førstegangsinnhenting av grunnlag
-                behandling.sivilstand.removeAll(behandling.sivilstand)
-                entityManager.persist(behandling)
+                val behandling = testdataManager.oppretteBehandling(false, false, false)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
 
@@ -1179,7 +1186,10 @@ class BoforholdServiceTest : TestContainerRunner() {
                     )
 
                 val periodisertSivilstand =
-                    SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, grunnlagSivilstand.tilSivilstandRequest())
+                    SivilstandApi.beregnV2(
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                        grunnlagSivilstand.tilSivilstandRequest(),
+                    )
 
                 // hvis
                 boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(
@@ -1204,7 +1214,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal oppdatere automatisk innhenta sivilstand uten å ta hensyn til manuelle perioder`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
+                val behandling = testdataManager.oppretteBehandling(false, false, false)
                 val separeringstidspunkt = LocalDateTime.now().minusMonths(125)
                 val grunnlagsdataSivilstand =
                     setOf(
@@ -1267,7 +1277,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 entityManager.flush()
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 3
+                    s shouldHaveSize 1
                     s.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
                 }
 
@@ -1291,7 +1301,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal oppdatere automatisk innhenta sivilstand uten å slette manuelleperioder`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
+                val behandling = testdataManager.oppretteBehandling(false, false, false)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
                 val separeringstidspunkt = LocalDateTime.now().minusMonths(125)
@@ -1356,7 +1366,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 entityManager.flush()
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 3
+                    s shouldHaveSize 1
                     s.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
                 }
 
@@ -1385,12 +1395,11 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal legge til sivilstand manuelt`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
-                leggeTilGrunnlagForSivilstand(behandling)
+                val behandling = testdataManager.oppretteBehandling(false, true, false)
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 2
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s shouldHaveSize 1
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
                 }
 
                 assertSoftly(behandling.grunnlag) { g ->
@@ -1410,9 +1419,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 3
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
-                    s.filter { it.id != null } shouldHaveSize 3
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
+                    s.filter { it.id != null } shouldHaveSize 2
                 }
             }
 
@@ -1420,10 +1429,9 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal slette sivilstandsperiode`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
-                leggeTilGrunnlagForSivilstand(behandling)
+                val behandling = testdataManager.oppretteBehandling(false, true, false)
 
-                behandling.sivilstand shouldHaveSize 2
+                behandling.sivilstand shouldHaveSize 1
 
                 val fomdato = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(7)
                 boforholdService.oppdatereSivilstandManuelt(
@@ -1434,7 +1442,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-                behandling.sivilstand shouldHaveSize 3
+                behandling.sivilstand shouldHaveSize 2
 
                 // hvis
                 boforholdService.oppdatereSivilstandManuelt(
@@ -1444,9 +1452,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.sivilstand) {
-                    it shouldHaveSize 2
+                    it shouldHaveSize 1
                     it.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 0
-                    it.filter { it.id != null } shouldHaveSize 2
+                    it.filter { it.id != null } shouldHaveSize 1
                 }
             }
 
@@ -1454,12 +1462,11 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal tilbakestille til offentlig sivilstandshistorikk`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
-                leggeTilGrunnlagForSivilstand(behandling)
+                val behandling = testdataManager.oppretteBehandling(false, true, false)
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 2
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s shouldHaveSize 1
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
                 }
 
                 assertSoftly(behandling.grunnlag) { g ->
@@ -1477,9 +1484,9 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 3
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
-                    s.filter { it.id != null } shouldHaveSize 3
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
+                    s.filter { it.id != null } shouldHaveSize 2
                 }
 
                 // hvis
@@ -1490,9 +1497,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 2
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
-                    s.filter { it.id != null } shouldHaveSize 2
+                    s shouldHaveSize 1
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
+                    s.filter { it.id != null } shouldHaveSize 1
                 }
             }
 
@@ -1500,12 +1507,11 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal angre siste endring`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling()
-                leggeTilGrunnlagForSivilstand(behandling)
+                val behandling = testdataManager.oppretteBehandling(false, true, false)
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 2
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s shouldHaveSize 1
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
                 }
 
                 assertSoftly(behandling.grunnlag) { g ->
@@ -1533,9 +1539,9 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 4
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
-                    s.filter { it.id != null } shouldHaveSize 4
+                    s shouldHaveSize 3
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
+                    s.filter { it.id != null } shouldHaveSize 3
                 }
 
                 // hvis
@@ -1546,9 +1552,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 3
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
-                    s.filter { it.id != null } shouldHaveSize 3
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
+                    s.filter { it.id != null } shouldHaveSize 2
                 }
             }
         }

@@ -15,8 +15,6 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
-import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
@@ -26,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
@@ -34,6 +33,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -42,6 +42,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -57,21 +58,19 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
-import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
-import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -222,12 +221,13 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
         }
 
-        @Disabled("Wiremock issues - OK alene, feiler i fellesskap med andre")
         @Test
         @Transactional
         open fun `ytelser skal ikke listes som årsinntekter i DTO`() {
             // gitt
             val behandling = oppretteBehandling()
+            behandling.grunnlagSistInnhentet = LocalDateTime.now()
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.inntekter =
                 mutableSetOf(
                     Inntekt(
@@ -242,10 +242,60 @@ class BehandlingServiceTest : TestContainerRunner() {
                         opprinneligTom = LocalDate.parse("2023-09-01"),
                         behandling = behandling,
                     ),
+                    Inntekt(
+                        Inntektsrapportering.BARNETILLEGG,
+                        BigDecimal.valueOf(2450),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.KONTANTSTØTTE,
+                        BigDecimal.valueOf(3500),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.UTVIDET_BARNETRYGD,
+                        BigDecimal.valueOf(3000),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.SMÅBARNSTILLEGG,
+                        BigDecimal.valueOf(1850),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = null,
+                    ),
                 )
             testdataManager.lagreBehandling(behandling)
-
-            entityManager.refresh(behandling)
 
             // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
             kjøreStubber(behandling)
@@ -264,27 +314,70 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 behandlingDto.inntekter.årsinntekter.filter { ytelser.contains(it.rapporteringstype) }.size shouldBe 0
-                behandlingDto.inntekter.barnetillegg.size shouldBe 0
-                behandlingDto.inntekter.kontantstøtte.size shouldBe 0
+                behandlingDto.inntekter.barnetillegg.size shouldBe 1
+                behandlingDto.inntekter.kontantstøtte.size shouldBe 1
                 behandlingDto.inntekter.småbarnstillegg.size shouldBe 1
                 behandlingDto.inntekter.utvidetBarnetrygd.size shouldBe 1
-                behandlingDto.inntekter.årsinntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }.size shouldBe 3
+                behandlingDto.inntekter.årsinntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }.size shouldBe 1
             }
         }
 
         @Test
-        @Disabled("Wiremock issues - OK alene, feiler i fellesskap med andre")
         @Transactional
         open fun `skal oppdatere lista over ikke-aktiverte endringer i grunnlagsdata dersom grunnlag har blitt oppdatert`() {
             // gitt
             val behandling = oppretteBehandling()
 
-            // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
-            oppretteOgLagreGrunnlag(behandling)
+            // skrur av grunnlagsinnhenting
+            behandling.grunnlagSistInnhentet = LocalDateTime.now()
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+
             kjøreStubber(behandling)
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    aktiv = LocalDateTime.now().minusDays(5),
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
+                            ),
+                        ),
+                ),
+            )
 
             // hvis
             val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
             // så
             assertSoftly {
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
@@ -480,6 +573,183 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.hentBehandlingById(behandling.id!!)
+            }
+        }
+    }
+
+    @Nested
+    open inner class AktivereGrunnlag {
+        @Test
+        @Transactional
+        open fun `skal aktivere sivilstand`() {
+            // gitt
+            val b = testdataManager.oppretteBehandling(false)
+            kjøreStubber(b)
+
+            // ny sivilstand
+            b.grunnlag.add(
+                Grunnlag(
+                    behandling = b,
+                    innhentet = LocalDateTime.now(),
+                    erBearbeidet = false,
+                    rolle = b.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                SivilstandGrunnlagDto(
+                                    bekreftelsesdato = b.virkningstidspunktEllerSøktFomDato.minusYears(15),
+                                    gyldigFom = b.virkningstidspunktEllerSøktFomDato.minusYears(15),
+                                    historisk = false,
+                                    master = "Freg",
+                                    personId = b.bidragsmottaker!!.ident!!,
+                                    registrert = b.virkningstidspunktEllerSøktFomDato.minusYears(8).atStartOfDay(),
+                                    type = SivilstandskodePDL.GIFT,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            b.grunnlag.add(
+                Grunnlag(
+                    behandling = b,
+                    innhentet = LocalDateTime.now(),
+                    erBearbeidet = true,
+                    rolle = b.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.SIVILSTAND,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
+
+            assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.sivilstand) {
+                it shouldNotBe null
+                it!!.grunnlag shouldHaveSize 1
+                it.sivilstand shouldHaveSize 1
+            }
+
+            // hvis
+            val svar =
+                behandlingService.aktivereGrunnlag(
+                    b.id!!,
+                    AktivereGrunnlagRequestV2(Personident(b.bidragsmottaker!!.ident!!), Grunnlagsdatatype.SIVILSTAND),
+                )
+
+            // så
+            assertSoftly(svar) {
+                it.ikkeAktiverteEndringerIGrunnlagsdata.sivilstand shouldBe null
+                it.aktiveGrunnlagsdata.sivilstand shouldNotBe null
+                it.aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 1
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal aktivere boforhold for barn`() {
+            // gitt
+            val b = testdataManager.oppretteBehandling(false)
+            val personidentBarnBoforholdSkalAktiveresFor = Personident(testdataBarn2.ident)
+            kjøreStubber(b)
+
+            val grunnlagHusstandsmedlemmer =
+                setOf(
+                    RelatertPersonGrunnlagDto(
+                        relatertPersonPersonId = testdataBarn1.ident,
+                        fødselsdato = testdataBarn1.fødselsdato,
+                        erBarnAvBmBp = true,
+                        navn = "Lyrisk Sopp",
+                        partPersonId = b.bidragsmottaker!!.ident!!,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-01-01"),
+                                    periodeTil = LocalDate.parse("2023-05-31"),
+                                ),
+                            ),
+                    ),
+                    RelatertPersonGrunnlagDto(
+                        relatertPersonPersonId = personidentBarnBoforholdSkalAktiveresFor.verdi,
+                        fødselsdato = testdataBarn2.fødselsdato,
+                        erBarnAvBmBp = true,
+                        navn = "Lyrisk Sopp",
+                        partPersonId = b.bidragsmottaker!!.ident!!,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-01-01"),
+                                    periodeTil = LocalDate.parse("2023-05-31"),
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-08-01"),
+                                    periodeTil = null,
+                                ),
+                            ),
+                    ),
+                )
+            b.grunnlag.add(
+                Grunnlag(
+                    behandling = b,
+                    innhentet = LocalDateTime.now(),
+                    erBearbeidet = false,
+                    rolle = b.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.BOFORHOLD,
+                    data = commonObjectmapper.writeValueAsString(grunnlagHusstandsmedlemmer),
+                ),
+            )
+
+            val boforholdPeriodisert =
+                BoforholdApi.beregnBoforholdBarnV2(
+                    b.virkningstidspunktEllerSøktFomDato,
+                    grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(b),
+                )
+
+            boforholdPeriodisert
+                .filter { it.relatertPersonPersonId != null && it.relatertPersonPersonId == personidentBarnBoforholdSkalAktiveresFor.verdi }
+                .groupBy { it.relatertPersonPersonId }
+                .forEach {
+                    b.grunnlag.add(
+                        Grunnlag(
+                            behandling = b,
+                            innhentet = LocalDateTime.now(),
+                            erBearbeidet = true,
+                            rolle = b.bidragsmottaker!!,
+                            type = Grunnlagsdatatype.BOFORHOLD,
+                            gjelder = it.key,
+                            data = commonObjectmapper.writeValueAsString(it.value),
+                        ),
+                    )
+                }
+
+            val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
+
+            assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn) {
+                it shouldHaveSize 1
+                it.first().perioder shouldHaveSize 3
+            }
+
+            // hvis
+            val svar =
+                behandlingService.aktivereGrunnlag(
+                    b.id!!,
+                    AktivereGrunnlagRequestV2(personidentBarnBoforholdSkalAktiveresFor, Grunnlagsdatatype.BOFORHOLD),
+                )
+
+            // så
+            assertSoftly(svar) {
+                it.ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn shouldHaveSize 0
+                it.aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 2
             }
         }
     }
@@ -844,7 +1114,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere ikke aktivert sivilstand ved endring av virkningsdato fremover i tid`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -916,7 +1186,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere ikke aktivert sivilstand ved endring av virkningsdato bakover i tid`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -988,7 +1258,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere virkningstidspunkt og oppdatere gjeldende aktiverte boforhold og sivilstand`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling(false)
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
 
@@ -1244,75 +1514,6 @@ class BehandlingServiceTest : TestContainerRunner() {
         val behandling = prepareBehandling()
 
         return behandlingRepository.save(behandling)
-    }
-
-    fun oppretteOgLagreGrunnlag(behandling: Behandling) {
-        testdataManager.oppretteOgLagreGrunnlag(
-            behandling = behandling,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, true),
-            innhentet = LocalDateTime.now(),
-            grunnlagsdata =
-                SummerteInntekter(
-                    versjon = "123",
-                    inntekter =
-                        listOf(
-                            SummertMånedsinntekt(
-                                gjelderÅrMåned = YearMonth.now().minusYears(1).withMonth(12),
-                                sumInntekt = BigDecimal(45000),
-                                inntektPostListe =
-                                    listOf(
-                                        InntektPost(
-                                            beløp = BigDecimal(45000),
-                                            inntekstype = Inntektstype.LØNNSINNTEKT,
-                                            kode = "lønnFraSmåbrukarlaget",
-                                        ),
-                                    ),
-                            ),
-                        ),
-                ),
-        )
-
-        testdataManager.oppretteOgLagreGrunnlag(
-            behandling = behandling,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
-            innhentet = LocalDateTime.now(),
-            aktiv = LocalDateTime.now(),
-            grunnlagsdata =
-                SummerteInntekter(
-                    versjon = "123",
-                    inntekter =
-                        listOf(
-                            SummertÅrsinntekt(
-                                sumInntekt = BigDecimal(388000),
-                                inntektRapportering = Inntektsrapportering.LIGNINGSINNTEKT,
-                                periode =
-                                    ÅrMånedsperiode(
-                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                                        YearMonth.now().withMonth(1).atDay(1),
-                                    ),
-                                inntektPostListe = emptyList(),
-                            ),
-                        ),
-                ),
-        )
-
-        testdataManager.oppretteOgLagreGrunnlag(
-            behandling,
-            Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
-            innhentet = LocalDateTime.now(),
-            grunnlagsdata =
-                SkattepliktigeInntekter(
-                    ainntekter =
-                        listOf(
-                            AinntektGrunnlagDto(
-                                ainntektspostListe = emptyList(),
-                                personId = behandling.bidragsmottaker?.ident!!,
-                                periodeFra = behandling.søktFomDato.withDayOfMonth(1),
-                                periodeTil = behandling.søktFomDato.plusMonths(1).withDayOfMonth((1)),
-                            ),
-                        ),
-                ),
-        )
     }
 
     private fun kjøreStubber(behandling: Behandling) {

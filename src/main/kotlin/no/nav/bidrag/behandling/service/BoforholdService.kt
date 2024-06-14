@@ -485,11 +485,11 @@ class BoforholdService(
                 "Oppdaterte husstandsbarn $eksisterendeHusstandsbarn i behandling ${behandling.id} med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
             }
         } else {
-            // Legger nye offisielle husstandsbarn uten å kjøre ny periodisering
-            val nyHusstandsbarn = husstandsbarnRepository.save(nyttHusstandsbarn)
-            behandling.husstandsbarn.add(nyHusstandsbarn)
-            log.info { "Ny husstandsbarn ${nyHusstandsbarn.id} ble opprettet i behandling ${behandling.id}" }
-            secureLogger.info { "Ny husstandsbarn $nyHusstandsbarn ble opprettet i behandling ${behandling.id}" }
+            // Legger nytt offentlig husstandsbarn uten å kjøre ny periodisering
+            val nyttHusstandsbarn = husstandsbarnRepository.save(nyttHusstandsbarn)
+            behandling.husstandsbarn.add(nyttHusstandsbarn)
+            log.info { "Ny husstandsbarn ${nyttHusstandsbarn.id} ble opprettet i behandling ${behandling.id}" }
+            secureLogger.info { "Ny husstandsbarn $nyttHusstandsbarn ble opprettet i behandling ${behandling.id}" }
         }
     }
 

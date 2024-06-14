@@ -326,10 +326,10 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
-            testdataManager.oppretteOgLagreGrunnlag<SkattepliktigeInntekter>(
+            testdataManager.oppretteOgLagreGrunnlag(
                 behandling = behandling,
                 grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
                 innhentet = LocalDate.of(YearMonth.now().minusYears(1).year, 1, 1).atStartOfDay(),
@@ -449,7 +449,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
@@ -547,7 +547,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val originaltBarnetilleggsgrunnlag =
@@ -618,7 +618,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val originaltKontantstøttegrunnlag =
@@ -689,7 +689,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val originaltSmåbarnstilleggsgrunnlag =
@@ -758,7 +758,7 @@ class InntektServiceTest : TestContainerRunner() {
             stubUtils.stubKodeverkYtelsesbeskrivelser()
             stubUtils.stubKodeverkPensjonsbeskrivelser()
 
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
             val originalUtvidetBarnetrygdsgrunnlag =
@@ -828,7 +828,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         open fun `skal oppdatere eksisterende inntekt`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
 
             val kontantstøtte =
                 Inntekt(
@@ -878,7 +878,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         fun `skal slette manuelle inntekter`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
 
             val kontantstøtte =
                 Inntekt(
@@ -917,7 +917,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere periode på offentlige inntekter`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
 
             val ainntekt =
                 Inntekt(
@@ -993,7 +993,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         open fun `skal oppdatere eksisterende manuell inntekt`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
 
             val manuellInntekt =
                 Inntekt(
@@ -1050,7 +1050,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         open fun `skal slette manuell inntekt`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
 
             val kontantstøtte =
                 Inntekt(
@@ -1093,7 +1093,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ta med offentlig inntekt som er ekplisitt ytelse og sette datoFom og datoTom automatisk`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             behandling.virkningstidspunkt = LocalDate.parse("2023-05-01")
             val utvidetBarnetrygd =
                 Inntekt(
@@ -1137,7 +1137,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal legge til ny manuell inntekt`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
 
             val oppdatereInntektRequest =
                 OppdatereInntektRequest(
@@ -1168,7 +1168,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         fun `skal oppdatere periode på offentlige inntekter`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
 
             stubUtils.stubKodeverkSkattegrunnlag()
             stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
@@ -1238,7 +1238,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Test
         @Transactional
         open fun `skal oppdatere periode på inntekter etter endring i virkningstidspunkt`() {
-            val behandling = testdataManager.oppretteBehandling()
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
             val virkningstidspunkt = LocalDate.parse("2023-07-01")
             behandling.inntekter =
                 mutableSetOf(
