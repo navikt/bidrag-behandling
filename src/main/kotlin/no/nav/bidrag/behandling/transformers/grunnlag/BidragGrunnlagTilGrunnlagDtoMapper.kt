@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
@@ -49,6 +50,11 @@ import java.time.LocalDateTime
 fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
     val personnavn = navn ?: hentPersonVisningsnavn(relatertPersonPersonId)
 
+    val nyesteIdent =
+        relatertPersonPersonId.takeIf { !it.isNullOrEmpty() }?.let {
+            val ident = hentNyesteIdent(it)
+            if (ident == null && !erBarnAvBmBp) Personident(it) else ident
+        }
     return GrunnlagDto(
         referanse =
             Grunnlagstype.PERSON_HUSSTANDSMEDLEM.tilPersonreferanse(
@@ -59,9 +65,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
         innhold =
             POJONode(
                 Person(
-                    ident =
-                        relatertPersonPersonId.takeIf { !it.isNullOrEmpty() }
-                            ?.let { hentNyesteIdent(it) },
+                    ident = nyesteIdent,
                     navn = if (relatertPersonPersonId.isNullOrEmpty()) personnavn else null,
                     fødselsdato =
                         finnFødselsdato(
