@@ -60,7 +60,7 @@ fun Inntekt.skalAutomatiskSettePeriode(): Boolean {
     return kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type) && erOpprinneligPeriodeInnenforVirkningstidspunkt()
 }
 
-private fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
+fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
     opprinneligFom?.let { fom ->
         (opprinneligTom ?: LocalDate.MAX).let { tom ->
             behandling?.virkningstidspunktEllerSøktFomDato?.let { virkningstidspunkt ->

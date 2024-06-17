@@ -158,17 +158,17 @@ class InntektsmappingerTest {
     }
 
     @Test
-    fun `skal ikke sette periode hvis offentlig periode er etter virkningstidspunkt`() {
+    fun `skal ikke sette periode hvis offentlig periode er etter virkningstidspunkt 2`() {
         val behandling = oppretteBehandling()
-        behandling.virkningstidspunkt = YearMonth.now().plusMonths(12).atDay(1)
-        val periodeFom = YearMonth.now().plusMonths(24)
-        val periodeTom = YearMonth.now().plusYears(5)
+        behandling.virkningstidspunkt = YearMonth.parse("2024-05").atDay(1)
+        val periodeFom = YearMonth.parse("2024-08")
+        val periodeTom = YearMonth.parse("2026-08")
         val inntekt =
             opprettInntekt(
                 behandling = behandling,
                 opprinneligFom = periodeFom,
                 opprinneligTom = periodeTom,
-                type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                type = Inntektsrapportering.SMÅBARNSTILLEGG,
                 kilde = Kilde.OFFENTLIG,
             )
         inntekt.skalAutomatiskSettePeriode() shouldBe false
@@ -178,6 +178,23 @@ class InntektsmappingerTest {
 
     @Test
     fun `skal ikke sette periode hvis offentlig periode er før virkningstidspunkt`() {
+        val behandling = oppretteBehandling()
+        behandling.virkningstidspunkt = YearMonth.parse("2023-05").atDay(1)
+        val inntekt =
+            opprettInntekt(
+                behandling = behandling,
+                opprinneligFom = YearMonth.parse("2022-01"),
+                opprinneligTom = YearMonth.parse("2023-01"),
+                type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                kilde = Kilde.OFFENTLIG,
+            )
+        inntekt.skalAutomatiskSettePeriode() shouldBe false
+        inntekt.bestemDatoFomForOffentligInntekt() shouldBe null
+        inntekt.bestemDatoTomForOffentligInntekt() shouldBe null
+    }
+
+    @Test
+    fun `skal ikke sette periode hvis offentlig periode er etter virkningstidspunkt`() {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunkt = YearMonth.parse("2023-05").atDay(1)
         val inntekt =
