@@ -87,19 +87,28 @@ class VedtakService(
         request: OpprettBehandlingFraVedtakRequest,
         refVedtaksid: Long,
     ): OpprettBehandlingResponse {
-        val konvertertBehandling =
-            konverterVedtakTilBehandling(request, refVedtaksid)
-                ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
-        tilgangskontrollService.sjekkTilgangSak(konvertertBehandling.saksnummer)
-        val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
+        try {
+            LOGGER.info {
+                "Oppretter behandling fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
+                    "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+            }
+            val konvertertBehandling =
+                konverterVedtakTilBehandling(request, refVedtaksid)
+                    ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
+            tilgangskontrollService.sjekkTilgangSak(konvertertBehandling.saksnummer)
+            val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
 
-        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+            grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
-        LOGGER.info {
-            "Opprettet behandling ${behandlingDo.id} fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
-                "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+            LOGGER.info {
+                "Opprettet behandling ${behandlingDo.id} fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
+                    "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+            }
+            return OpprettBehandlingResponse(behandlingDo.id!!)
+        } catch (e: Exception) {
+            LOGGER.error(e) { "Det skjedde en feil ved opprettelse av behandling fra vedtak $refVedtaksid: ${e.message}" }
+            throw e
         }
-        return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
     fun konverterVedtakTilBehandling(
