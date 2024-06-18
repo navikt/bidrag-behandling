@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
+import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
@@ -65,6 +66,39 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
 import java.time.ZoneOffset
+
+fun Behandling.tilBehandlingDetaljerDtoV2() =
+    BehandlingDetaljerDtoV2(
+        id = id!!,
+        type = tilType(),
+        vedtakstype = vedtakstype,
+        stønadstype = stonadstype,
+        engangsbeløptype = engangsbeloptype,
+        erKlageEllerOmgjøring = erKlageEllerOmgjøring,
+        opprettetTidspunkt = opprettetTidspunkt,
+        erVedtakFattet = vedtaksid != null,
+        søktFomDato = søktFomDato,
+        mottattdato = mottattdato,
+        søktAv = soknadFra,
+        saksnummer = saksnummer,
+        søknadsid = soknadsid,
+        behandlerenhet = behandlerEnhet,
+        roller =
+            roller.map {
+                RolleDto(
+                    it.id!!,
+                    it.rolletype,
+                    it.ident,
+                    it.navn ?: hentPersonVisningsnavn(it.ident),
+                    it.foedselsdato,
+                )
+            }.toSet(),
+        søknadRefId = soknadRefId,
+        vedtakRefId = refVedtaksid,
+        virkningstidspunkt = virkningstidspunkt,
+        årsak = årsak,
+        avslag = avslag,
+    )
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
 @Suppress("ktlint:standard:value-argument-comment")

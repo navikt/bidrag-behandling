@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
+import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
@@ -263,6 +264,24 @@ class BehandlingControllerV2(
         }
 
         requestManglerDataException(behandlingsid, Ressurstype.BOFORHOLD)
+    }
+
+    @Suppress("unused")
+    @GetMapping("/behandling/detaljer/{behandlingsid}")
+    @Operation(
+        description = "Hente behandling detaljer for bruk i Bisys",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Hentet behandling"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+        ],
+    )
+    fun henteBehandlingDetaljer(
+        @PathVariable behandlingsid: Long,
+    ): BehandlingDetaljerDtoV2 {
+        return behandlingService.henteBehandlingDetaljer(behandlingsid)
     }
 
     @Suppress("unused")
