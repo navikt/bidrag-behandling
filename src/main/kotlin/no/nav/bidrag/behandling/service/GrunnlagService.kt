@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
-import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -18,7 +17,6 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
-import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -43,6 +41,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.commons.util.secureLogger
@@ -75,22 +74,9 @@ import java.time.LocalDateTime
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
-val grunnlagsdatatyperBm =
-    setOf(
-        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
-        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-        Grunnlagsdatatype.SMÅBARNSTILLEGG,
-        Grunnlagsdatatype.BARNETILLEGG,
-        Grunnlagsdatatype.KONTANTSTØTTE,
-        Grunnlagsdatatype.BOFORHOLD,
-        Grunnlagsdatatype.SIVILSTAND,
-        Grunnlagsdatatype.ARBEIDSFORHOLD,
-    )
 
 @Service
 class GrunnlagService(
-    private val behandlingRepository: BehandlingRepository,
     private val bidragGrunnlagConsumer: BidragGrunnlagConsumer,
     private val boforholdService: BoforholdService,
     private val grunnlagRepository: GrunnlagRepository,
@@ -102,51 +88,6 @@ class GrunnlagService(
 
     @Value("\${egenskaper.grunnlag.innhente-sivilstand-automatisk}")
     private lateinit var innhenteSivilstandAutomatisk: String
-
-    @Transactional
-    @Deprecated("Grunnlagsinnhenting og opprettelse skal gjøres automatisk med oppdatereGrunnlagForBehandling")
-    fun opprett(
-        behandlingId: Long,
-        grunnlagstype: Grunnlagsdatatype,
-        data: String,
-        innhentet: LocalDateTime,
-    ): Grunnlag {
-        behandlingRepository.findBehandlingById(behandlingId).orElseThrow { behandlingNotFoundException(behandlingId) }
-            .let {
-                val nyGrunnlagstype =
-                    when (grunnlagstype) {
-                        Grunnlagsdatatype.BOFORHOLD_BEARBEIDET ->
-                            Grunnlagstype(
-                                Grunnlagsdatatype.BOFORHOLD,
-                                true,
-                            )
-
-                        Grunnlagsdatatype.HUSSTANDSMEDLEMMER ->
-                            Grunnlagstype(
-                                Grunnlagsdatatype.BOFORHOLD,
-                                false,
-                            )
-
-                        else -> {
-                            throw HttpClientErrorException(
-                                HttpStatus.BAD_REQUEST,
-                                "Grunnlagstype $grunnlagstype støttes ikke ved oppdatering av opplysninger.",
-                            )
-                        }
-                    }
-
-                return grunnlagRepository.save<Grunnlag>(
-                    Grunnlag(
-                        it,
-                        nyGrunnlagstype.type.getOrMigrate(),
-                        erBearbeidet = nyGrunnlagstype.erBearbeidet,
-                        data = data,
-                        rolle = it.bidragsmottaker!!,
-                        innhentet = innhentet,
-                    ),
-                )
-            }
-    }
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
@@ -562,7 +503,7 @@ class GrunnlagService(
         val rolleInhentetFor = behandling.roller.first { grunnlagsrequest.key.verdi == it.ident }
 
         val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
-            grunnlagsdatatyperBm.associateWith {
+            Grunnlagsdatatype.grunnlagsdatatypeobjekter(behandling.tilType()).associateWith {
                 hentFeilrapporteringForGrunnlag(it, rolleInhentetFor, innhentetGrunnlag)
             }.filterNot { it.value == null }
 
@@ -599,7 +540,11 @@ class GrunnlagService(
 
         // Oppdatere barn_i_husstand og tilhørende periode-tabell med periodisert boforhold
         if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty() && !innhentingAvBoforholdFeilet) {
-            periodisereOgLagreBoforhold(behandling, innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet())
+            periodisereOgLagreBoforhold(
+                behandling,
+                rolleInhentetFor,
+                innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+            )
         }
 
         val innhentingAvSivilstandFeilet =
@@ -655,6 +600,7 @@ class GrunnlagService(
 
     private fun periodisereOgLagreBoforhold(
         behandling: Behandling,
+        rolleInnhentetFor: Rolle,
         husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
     ) {
         val boforholdPeriodisert =
@@ -675,22 +621,22 @@ class GrunnlagService(
             .forEach {
                 lagreGrunnlagHvisEndret<BoforholdResponse>(
                     behandling = behandling,
-                    innhentetForRolle = behandling.bidragsmottaker!!,
+                    innhentetForRolle = rolleInnhentetFor,
                     grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
                     innhentetGrunnlag = it.value.toSet(),
                     gjelderPerson = Personident(it.key!!),
                 )
             }
 
-        val bmsNyesteBearbeidaBoforholdEtterLagring =
+        val innhentetRollesNyesteBearbeidaBoforholdEtterLagring =
             sistAktiverteGrunnlag<BoforholdResponse>(
                 behandling,
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-                behandling.bidragsmottaker!!,
+                rolleInnhentetFor,
             )
 
         // oppdatere husstandsbarn og husstandsbarnperiode-tabellene hvis førstegangslagring
-        if (bmsNyesteBearbeidaBoforholdFørLagring.isEmpty() && bmsNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
+        if (bmsNyesteBearbeidaBoforholdFørLagring.isEmpty() && innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
         aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
@@ -1012,7 +958,7 @@ class GrunnlagService(
         } else if (erGrunnlagEndret) {
             val uaktiverteGrunnlag =
                 behandling.henteUaktiverteGrunnlag(grunnlagstype, innhentetForRolle)
-                    .filter { gjelderPerson == null || it.gjelder == gjelderPerson?.verdi }
+                    .filter { gjelderPerson == null || it.gjelder == gjelderPerson.verdi }
             val grunnlagSomSkalOppdateres =
                 uaktiverteGrunnlag
                     .maxBy { it.innhentet }
@@ -1091,20 +1037,22 @@ class GrunnlagService(
                 .filter { innhentetForRolle == it.rolle }
                 .maxByOrNull { it.innhentet }
 
-        if (sisteInnhentedeIkkeBearbeidaGrunnlag?.aktiv == null) {
-            when (grunnlagsdatatype) {
-                Grunnlagsdatatype.BOFORHOLD -> {
-                    if (grunnlagErAktivertForAlleHusstandsmedlemmer(
-                            behandling,
-                            sisteInnhentedeIkkeBearbeidaGrunnlag,
-                            innhentetForRolle,
-                        )
-                    ) {
-                        sisteInnhentedeIkkeBearbeidaGrunnlag?.aktiv = LocalDateTime.now()
+        sisteInnhentedeIkkeBearbeidaGrunnlag?.let {
+            if (it.aktiv == null) {
+                when (grunnlagsdatatype) {
+                    Grunnlagsdatatype.BOFORHOLD -> {
+                        if (grunnlagErAktivertForAlleHusstandsmedlemmer(
+                                behandling,
+                                sisteInnhentedeIkkeBearbeidaGrunnlag,
+                                innhentetForRolle,
+                            )
+                        ) {
+                            it.aktiv = LocalDateTime.now()
+                        }
                     }
-                }
 
-                else -> sisteInnhentedeIkkeBearbeidaGrunnlag?.aktiv = LocalDateTime.now()
+                    else -> it.aktiv = LocalDateTime.now()
+                }
             }
         }
     }
@@ -1295,41 +1243,24 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
         feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
     ) {
-        val grunnlagsdatatyper =
-            when (rolleInhentetFor.rolletype) {
-                Rolletype.BIDRAGSMOTTAKER ->
-                    setOf(
-                        Grunnlagsdatatype.ARBEIDSFORHOLD,
-                        Grunnlagsdatatype.BARNETILLEGG,
-                        Grunnlagsdatatype.BARNETILSYN,
-                        Grunnlagsdatatype.KONTANTSTØTTE,
-                        Grunnlagsdatatype.BOFORHOLD,
-                        Grunnlagsdatatype.SIVILSTAND,
-                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                    )
-
-                Rolletype.BARN -> setOf(Grunnlagsdatatype.ARBEIDSFORHOLD)
-                else -> {
+        Grunnlagsdatatype.grunnlagsdatatypeobjekter(behandling.tilType(), rolleInhentetFor.rolletype)
+            .filter {
+                !setOf(
+                    Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                ).contains(it)
+            }.forEach {
+                val feilrapportering = feilrapporteringer[it]
+                if (feilrapportering == null) {
+                    lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
+                } else {
                     log.warn {
-                        "Forsøkte å lagre grunnlag for rolle ${rolleInhentetFor.rolletype} i behandling " +
-                            "${behandling.id}"
+                        "Innhenting av $it for rolle ${rolleInhentetFor.rolletype} " + "i behandling ${behandling.id} " +
+                            "feilet for type ${feilrapportering.grunnlagstype} med begrunnelse " +
+                            "${feilrapportering.feilmelding}. Lagrer ikke grunnlag"
                     }
-                    lagringAvGrunnlagFeiletException(behandling.id!!)
                 }
             }
-        grunnlagsdatatyper.forEach {
-            val feilrapportering = feilrapporteringer[it]
-            if (feilrapportering == null) {
-                lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
-            } else {
-                log.warn {
-                    "Innhenting av $it for rolle ${rolleInhentetFor.rolletype} " + "i behandling ${behandling.id} " +
-                        "feilet for type ${feilrapportering.grunnlagstype} med begrunnelse " +
-                        "${feilrapportering.feilmelding}. Lagrer ikke grunnlag"
-                }
-            }
-        }
     }
 
     private fun harBarnRolleIBehandling(
