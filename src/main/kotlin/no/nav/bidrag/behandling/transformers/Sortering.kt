@@ -78,7 +78,7 @@ fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirk
 //            val virkningstidspunkt =
 //                it.behandling?.virkningstidspunktEllerSøktFomDato?.let { YearMonth.from(it) } ?: return@filter true
 //            periode.fom >= virkningstidspunkt || periode.til != null && periode.til!! >= virkningstidspunkt
-            it.erOpprinneligPeriodeInnenforVirkningstidspunkt()
+            it.kilde == Kilde.MANUELL || it.erOpprinneligPeriodeInnenforVirkningstidspunkt()
         } else {
             true
         }

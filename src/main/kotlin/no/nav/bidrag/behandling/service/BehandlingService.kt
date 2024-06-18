@@ -18,11 +18,13 @@ import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
+import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.toV2
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.behandling.tilAktivGrunnlagsdata
+import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
@@ -302,6 +304,12 @@ class BehandlingService(
                 it.vedtakFattetAv = it.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
                     ?: TokenUtils.hentApplikasjonsnavn()
             }
+    }
+
+    fun henteBehandlingDetaljer(behandlingsid: Long): BehandlingDetaljerDtoV2 {
+        val behandling = hentBehandlingById(behandlingsid)
+        tilgangskontrollService.sjekkTilgangBehandling(behandling)
+        return behandling.tilBehandlingDetaljerDtoV2()
     }
 
     fun henteBehandling(

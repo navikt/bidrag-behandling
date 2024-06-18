@@ -62,11 +62,16 @@ class VedtakService(
     private val unleashInstance: Unleash,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
-        LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-        tilgangskontrollService.sjekkTilgangSak(vedtak.saksnummer!!)
-        secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
-        return vedtak.tilBehandling(vedtakId, lesemodus = true)
+        try {
+            LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
+            val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+            tilgangskontrollService.sjekkTilgangSak(vedtak.saksnummer!!)
+            secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
+            return vedtak.tilBehandling(vedtakId, lesemodus = true)
+        } catch (e: Exception) {
+            LOGGER.error(e) { "Det skjedde en feil ved konvertering av vedtak $vedtakId for lesemodus" }
+            throw e
+        }
     }
 
     private fun hentOpprinneligVedtakstidspunkt(vedtak: VedtakDto): Set<LocalDateTime> {
