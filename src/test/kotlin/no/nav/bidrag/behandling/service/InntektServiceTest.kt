@@ -415,7 +415,7 @@ class InntektServiceTest : TestContainerRunner() {
                 inntektApi.transformerInntekter(transformereInntekter)
 
             // hvis
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 transformerteInntekterrespons.summertÅrsinntektListe,
@@ -479,7 +479,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             entityManager.merge(behandling)
 
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 inntektApi.transformerInntekter(transformereOriginalAinntekt).summertÅrsinntektListe,
@@ -516,7 +516,7 @@ class InntektServiceTest : TestContainerRunner() {
                 }
 
             // hvis
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 nyeManupilerteInntekter,
@@ -570,7 +570,7 @@ class InntektServiceTest : TestContainerRunner() {
             behandling.inntekter.size shouldBe 0
 
             val originalTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOriginalKontantstøtte)
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 originalTransformerteInntekterrespons.summertÅrsinntektListe,
@@ -589,7 +589,7 @@ class InntektServiceTest : TestContainerRunner() {
             val nyTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOppdatertKontantstøtte)
 
             // hvis
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 nyTransformerteInntekterrespons.summertÅrsinntektListe,
@@ -641,7 +641,7 @@ class InntektServiceTest : TestContainerRunner() {
             behandling.inntekter.size shouldBe 0
 
             val originalTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOriginalKontantstøtte)
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 originalTransformerteInntekterrespons.summertÅrsinntektListe,
@@ -660,7 +660,7 @@ class InntektServiceTest : TestContainerRunner() {
             val nyTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOppdatertKontantstøtte)
 
             // hvis
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 nyTransformerteInntekterrespons.summertÅrsinntektListe,
@@ -710,7 +710,7 @@ class InntektServiceTest : TestContainerRunner() {
             behandling.inntekter.size shouldBe 0
 
             val originalTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOriginalSmåbarnstillegg)
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 originalTransformerteInntekterrespons.summertÅrsinntektListe,
@@ -729,7 +729,7 @@ class InntektServiceTest : TestContainerRunner() {
             val nyTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOppdatertSmåbarnstillegg)
 
             // hvis
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 nyTransformerteInntekterrespons.summertÅrsinntektListe,
@@ -783,7 +783,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             val originalTransformerteInntekterrespons =
                 inntektApi.transformerInntekter(summereOriginalUtvidetBarnetrygd)
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 originalTransformerteInntekterrespons.summertÅrsinntektListe,
@@ -802,7 +802,7 @@ class InntektServiceTest : TestContainerRunner() {
             val nyTransformerteInntekterrespons = inntektApi.transformerInntekter(summereOppdatertUtvidetBarnetrygd)
 
             // hvis
-            inntektService.oppdatereAutomatiskInnhentetOffentligeInntekter(
+            inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
                 behandling,
                 behandling.bidragsmottaker!!,
                 nyTransformerteInntekterrespons.summertÅrsinntektListe,

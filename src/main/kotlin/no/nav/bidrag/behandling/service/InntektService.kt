@@ -116,7 +116,7 @@ class InntektService(
     }
 
     @Transactional
-    fun oppdatereAutomatiskInnhentetOffentligeInntekter(
+    fun oppdatereAutomatiskInnhentaOffentligeInntekter(
         behandling: Behandling,
         rolle: Rolle,
         summerteÅrsinntekter: List<SummertÅrsinntekt>,

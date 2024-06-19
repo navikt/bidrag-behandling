@@ -118,7 +118,7 @@ fun List<Grunnlag>.hentGrunnlagForType(
     it.type == type && it.rolle.ident == ident
 }
 
-fun List<Grunnlag>.hentBearbeidetInntekterForType(
+fun List<Grunnlag>.henteBearbeidaInntekterForType(
     type: Grunnlagsdatatype,
     ident: String,
 ) = find {

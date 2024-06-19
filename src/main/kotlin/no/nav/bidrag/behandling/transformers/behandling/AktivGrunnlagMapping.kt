@@ -5,7 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.hentBearbeidetInntekterForType
+import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
@@ -210,7 +210,7 @@ fun List<Grunnlag>.hentEndringerInntekter(
 ): Set<IkkeAktivInntektDto> {
     val inntekterRolle = inntekter.filter { it.ident == rolle.ident }.filtrerUtHistoriskeInntekter()
 
-    val oppdatertGrunnlag = hentBearbeidetInntekterForType(type, rolle.ident!!)?.filtrerUtHistoriskeInntekter()
+    val oppdatertGrunnlag = henteBearbeidaInntekterForType(type, rolle.ident!!)?.filtrerUtHistoriskeInntekter()
     val innhentetTidspunkt = find { it.type == type && it.erBearbeidet }?.innhentet ?: LocalDateTime.now()
     val oppdaterteEllerNyInntekter =
         oppdatertGrunnlag?.inntekter?.map { grunnlag ->

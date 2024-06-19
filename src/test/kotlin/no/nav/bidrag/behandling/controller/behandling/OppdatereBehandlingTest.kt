@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.opprettHentGrunnlagDto
-import no.nav.bidrag.behandling.service.tilSummerInntekt
+import no.nav.bidrag.behandling.service.tilSummerteInntekter
 import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnlagForHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarnMedOffentligePerioder
@@ -576,7 +576,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 grunnlagsdata =
                     opprettHentGrunnlagDto().copy(
                         skattegrunnlagListe = listOf(grunnlagLagret),
-                    ).tilSummerInntekt(behandling),
+                    ).tilSummerteInntekter(behandling.bidragsmottaker!!),
             )
 
         val aktivereGrunnlagRequest =
