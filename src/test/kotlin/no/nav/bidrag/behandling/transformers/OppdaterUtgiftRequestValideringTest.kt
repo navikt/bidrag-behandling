@@ -54,7 +54,7 @@ class OppdaterUtgiftRequestValideringTest {
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
-        exception.message shouldContain "Type er ikke gyldig for behandling av typen SÆRTILSKUDD_KONFIRMASJON"
+        exception.message shouldContain "Type OPTIKK er ikke gyldig for behandling av typen SÆRTILSKUDD_KONFIRMASJON"
     }
 
     @Test
@@ -205,7 +205,7 @@ class OppdaterUtgiftRequestValideringTest {
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
-                        dato = LocalDate.parse("2021-01-01"),
+                        dato = LocalDate.now().minusDays(2),
                         type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
@@ -216,7 +216,7 @@ class OppdaterUtgiftRequestValideringTest {
 
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
-        exception.message shouldContain "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori konfirmasjon"
+        exception.message shouldContain "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori SÆRTILSKUDD_KONFIRMASJON"
     }
 
     @Test
