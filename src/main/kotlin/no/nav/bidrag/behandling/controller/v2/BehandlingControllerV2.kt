@@ -255,7 +255,6 @@ class BehandlingControllerV2(
         }
 
         request.oppdatereSivilstand?.let {
-            log.warn { "Ikke-implementert funksjon. Oppdatering av sivilstand er ikke klart gjennom boforhold v2-endepunkt" }
             return boforholdService.oppdatereSivilstandManuelt(behandlingsid, it)!!
         }
 
@@ -264,6 +263,24 @@ class BehandlingControllerV2(
         }
 
         requestManglerDataException(behandlingsid, Ressurstype.BOFORHOLD)
+    }
+
+    @Suppress("unused")
+    @GetMapping("/behandling/detaljer/soknad/{søknadsid}")
+    @Operation(
+        description = "Hente behandling detaljer for søknadsid bruk i Bisys",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Fant behandling for søknadsid"),
+            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
+        ],
+    )
+    fun henteBehandlingDetaljerForSøknadsid(
+        @PathVariable søknadsid: Long,
+    ): BehandlingDetaljerDtoV2 {
+        return behandlingService.henteBehandlingDetaljerForSøknadsid(søknadsid)
     }
 
     @Suppress("unused")
