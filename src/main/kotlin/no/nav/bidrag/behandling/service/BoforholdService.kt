@@ -90,11 +90,11 @@ class BoforholdService(
         return OppdatereBoforholdResponse(
             oppdatertNotat = request,
             valideringsfeil =
-            BoforholdValideringsfeil(
-                husstandsbarn =
-                behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
-                    .filter { it.harFeil },
-            ),
+                BoforholdValideringsfeil(
+                    husstandsbarn =
+                        behandling.husstandsbarn.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                            .filter { it.harFeil },
+                ),
         )
     }
 
@@ -149,11 +149,11 @@ class BoforholdService(
 
         log.info {
             "Husstandsbarn ble oppdatert for behandling ${behandling.id} " +
-                    "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+                "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
         }
         secureLogger.info {
             "Husstandsbarn ${gjelderHusstandsbarn.verdi} ble oppdatert for behandling ${behandling.id} " +
-                    "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+                "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
         }
     }
 
@@ -221,13 +221,13 @@ class BoforholdService(
             if (offentligePerioder?.isEmpty() == true) {
                 husstandsbarn.oppdaterePerioder(
                     nyEllerOppdatertHusstandsbarnperiode =
-                    Husstandsbarnperiode(
-                        husstandsbarn = husstandsbarn,
-                        bostatus = Bostatuskode.MED_FORELDER,
-                        datoFom = behandling.virkningstidspunktEllerSøktFomDato,
-                        datoTom = null,
-                        kilde = Kilde.MANUELL,
-                    ),
+                        Husstandsbarnperiode(
+                            husstandsbarn = husstandsbarn,
+                            bostatus = Bostatuskode.MED_FORELDER,
+                            datoFom = behandling.virkningstidspunktEllerSøktFomDato,
+                            datoTom = null,
+                            kilde = Kilde.MANUELL,
+                        ),
                 )
             }
 
@@ -257,14 +257,14 @@ class BoforholdService(
 
             eksisterendeHusstandsbarn.oppdaterePerioder(
                 nyEllerOppdatertHusstandsbarnperiode =
-                Husstandsbarnperiode(
-                    id = bostatusperiode.idPeriode,
-                    husstandsbarn = eksisterendeHusstandsbarn,
-                    bostatus = bostatusperiode.bostatus,
-                    datoFom = bostatusperiode.datoFom,
-                    datoTom = bostatusperiode.datoTom,
-                    kilde = Kilde.MANUELL,
-                ),
+                    Husstandsbarnperiode(
+                        id = bostatusperiode.idPeriode,
+                        husstandsbarn = eksisterendeHusstandsbarn,
+                        bostatus = bostatusperiode.bostatus,
+                        datoFom = bostatusperiode.datoFom,
+                        datoTom = bostatusperiode.datoTom,
+                        kilde = Kilde.MANUELL,
+                    ),
             )
 
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, eksisterendeHusstandsbarn)
@@ -335,7 +335,7 @@ class BoforholdService(
                         jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeaktiverteSivilstand.data)
                             .tilSivilstandRequest(
                                 behandling.sivilstand.filter { Kilde.MANUELL == it.kilde }.toSet(),
-                                behandling.bidragsmottaker!!.foedselsdato
+                                behandling.bidragsmottaker!!.foedselsdato,
                             )
                     SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, request).toSet()
                 }
@@ -367,12 +367,12 @@ class BoforholdService(
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
             return OppdatereBoforholdResponse(
                 oppdatertSivilstandshistorikk =
-                sivilstandRepository.saveAll(behandling.sivilstand).toSet()
-                    .tilSivilstandDto(),
+                    sivilstandRepository.saveAll(behandling.sivilstand).toSet()
+                        .tilSivilstandDto(),
                 valideringsfeil =
-                BoforholdValideringsfeil(
-                    sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
-                ),
+                    BoforholdValideringsfeil(
+                        sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
+                    ),
             )
         }
         oppdatereSivilstand.nyEllerEndretSivilstandsperiode?.let {
@@ -381,11 +381,11 @@ class BoforholdService(
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
             return OppdatereBoforholdResponse(
                 oppdatertSivilstandshistorikk =
-                sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilSivilstandDto(),
+                    sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilSivilstandDto(),
                 valideringsfeil =
-                BoforholdValideringsfeil(
-                    sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
-                ),
+                    BoforholdValideringsfeil(
+                        sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
+                    ),
             )
         }
 
@@ -417,7 +417,7 @@ class BoforholdService(
         sletteHusstandsbarn(behandling, setOf(husstandsbarnSomSkalSlettes))
         secureLogger.info {
             "Slettet $husstandsbarnSomSkalSlettes husstandsbarn fra behandling ${behandling.id} i " +
-                    "forbindelse med førstegangsoppdatering av boforhold."
+                "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 
@@ -429,7 +429,7 @@ class BoforholdService(
         behandling.husstandsbarn.removeAll(husstandsbarnSomSkalSlettes)
         log.info {
             "Slettet ${husstandsbarnSomSkalSlettes.size} husstandsbarn fra behandling ${behandling.id} i " +
-                    "forbindelse med førstegangsoppdatering av boforhold."
+                "forbindelse med førstegangsoppdatering av boforhold."
         }
     }
 
@@ -516,8 +516,8 @@ class BoforholdService(
                         fødselsdato = offisieltBarn.fødselsdato,
                         erBarnAvBmBp = true,
                         innhentedeOffentligeOpplysninger =
-                        offisieltBarn.perioder.map { it.tilBostatus() }
-                            .sortedBy { it.periodeFom },
+                            offisieltBarn.perioder.map { it.tilBostatus() }
+                                .sortedBy { it.periodeFom },
                         behandledeBostatusopplysninger = emptyList(),
                         endreBostatus = null,
                     )
@@ -619,20 +619,20 @@ class BoforholdService(
         val perioderDetaljer =
             husstandsbarn.perioder.map {
                 "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
-                        "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
+                    "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
             }.joinToString(", ", prefix = "[", postfix = "]")
         oppdatereHusstandsmedlem.angreSisteStegForHusstandsmedlem?.let {
             log.info { "Angret siste steg for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." }
             secureLogger.info {
                 "Angret siste steg for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}. " +
-                        "Gjeldende perioder etter endring: $perioderDetaljer"
+                    "Gjeldende perioder etter endring: $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.tilbakestillPerioderForHusstandsmedlem?.let {
             log.info { "Tilbakestilte perioder for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." }
             secureLogger.info {
                 "Tilbakestilte perioder for husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}." +
-                        "Gjeldende perioder etter endring: $perioderDetaljer"
+                    "Gjeldende perioder etter endring: $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.opprettHusstandsmedlem?.let { personalia ->
@@ -642,22 +642,22 @@ class BoforholdService(
             log.info { "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling ${behandling.id}." }
             secureLogger.info {
                 "Slettet husstandsbarnperiode med id $idHusstandsbarnperiode fra behandling ${behandling.id}." +
-                        "Gjeldende perioder etter endring: $perioderDetaljer"
+                    "Gjeldende perioder etter endring: $perioderDetaljer"
             }
         }
         oppdatereHusstandsmedlem.oppdaterPeriode?.let { bostatusperiode ->
             val detaljer =
                 "datoFom: ${bostatusperiode.datoFom}, datoTom: ${bostatusperiode.datoTom}, " +
-                        "bostatus: ${bostatusperiode.bostatus}"
+                    "bostatus: ${bostatusperiode.bostatus}"
             if (bostatusperiode.idPeriode != null) {
                 log.info {
                     "Oppdaterte periode ${bostatusperiode.idPeriode} for husstandsbarn ${bostatusperiode.idHusstandsbarn} til $detaljer " +
-                            " i behandling ${behandling.id}"
+                        " i behandling ${behandling.id}"
                 }
             } else {
                 log.info {
                     "Ny periode $detaljer ble lagt til husstandsbarn ${bostatusperiode.idHusstandsbarn} i behandling med " +
-                            "${behandling.id}."
+                        "${behandling.id}."
                 }
             }
         }
@@ -674,20 +674,20 @@ class BoforholdService(
         val historikkstreng =
             historikk.map {
                 "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
-                        "sivilstand: ${it.sivilstand}, kilde: ${it.kilde} }"
+                    "sivilstand: ${it.sivilstand}, kilde: ${it.kilde} }"
             }.joinToString(", ", prefix = "[", postfix = "]")
         oppdatereSivilstand.angreSisteEndring.let {
             log.info { "Angret siste endring i sivilstand for behandling ${behandling.id}." }
             secureLogger.info {
                 "Angret siste endring i sivilstandshistorikk for behandling ${behandling.id}. " +
-                        "Gjeldende historikk etter endring: $historikkstreng"
+                    "Gjeldende historikk etter endring: $historikkstreng"
             }
         }
         oppdatereSivilstand.tilbakestilleHistorikk?.let {
             log.info { "Tilbakestilte sivilstandshistorikk for behandling ${behandling.id}." }
             secureLogger.info {
                 "Tilbakestilte sivilstandshistorikk til offentlige kilder for behandling  ${behandling.id}." +
-                        "Gjeldende historikk etter endring: $historikkstreng"
+                    "Gjeldende historikk etter endring: $historikkstreng"
             }
         }
 
@@ -695,13 +695,13 @@ class BoforholdService(
             log.info { "Slettet sivilstandsperiode med id $idSivilstandsperiode fra behandling ${behandling.id}." }
             secureLogger.info {
                 "Slettet sivilstandsperiode med id $idSivilstandsperiode fra behandling ${behandling.id}." +
-                        "Gjeldende historikk etter endring: $historikkstreng"
+                    "Gjeldende historikk etter endring: $historikkstreng"
             }
         }
         oppdatereSivilstand.nyEllerEndretSivilstandsperiode?.let { sivilstandsperiode ->
             val detaljer =
                 "datoFom: ${sivilstandsperiode.fraOgMed}, datoTom: ${sivilstandsperiode.tilOgMed}, " +
-                        "sivilstand: ${sivilstandsperiode.sivilstand}"
+                    "sivilstand: ${sivilstandsperiode.sivilstand}"
             if (sivilstandsperiode.id != null) {
                 log.info {
                     "Oppdaterte sivilstandsperiode ${sivilstandsperiode.id} i behandling ${behandling.id} til: $detaljer"
@@ -721,11 +721,12 @@ class BoforholdService(
         nyttEllerEndretInnslag: Sivilstandsperiode? = null,
         sletteInnslag: Long? = null,
     ) {
-        val request = this.sivilstand.tilSvilstandRequest(
-            nyttEllerEndretInnslag,
-            sletteInnslag,
-            this.bidragsmottaker!!.foedselsdato
-        )
+        val request =
+            this.sivilstand.tilSvilstandRequest(
+                nyttEllerEndretInnslag,
+                sletteInnslag,
+                this.bidragsmottaker!!.foedselsdato,
+            )
         val resultat = SivilstandApi.beregnV2(this.virkningstidspunktEllerSøktFomDato, request).toSet()
         this.overskriveMedBearbeidaSivilstandshistorikk(resultat)
     }
@@ -747,7 +748,7 @@ class BoforholdService(
 
         throw IllegalArgumentException(
             "Mangler data til å avgjøre endringstype. Motttok input: nyEllerOppdatertHusstandsbarnperiode: " +
-                    "$nyEllerOppdatertHusstandsbarnperiode, sletteHusstandsbarnperiode: $sletteHusstandsbarnperiode",
+                "$nyEllerOppdatertHusstandsbarnperiode, sletteHusstandsbarnperiode: $sletteHusstandsbarnperiode",
         )
     }
 
@@ -793,16 +794,16 @@ class BoforholdService(
                 typeEndring = bestemmeEndringstype(nyEllerOppdatertHusstandsbarnperiode, sletteHusstandsbarnperiode),
                 nyBostatus = bestemmeNyBostatus(nyEllerOppdatertHusstandsbarnperiode),
                 originalBostatus =
-                bestemmeOriginalBostatus(
-                    nyEllerOppdatertHusstandsbarnperiode,
-                    sletteHusstandsbarnperiode,
-                ),
+                    bestemmeOriginalBostatus(
+                        nyEllerOppdatertHusstandsbarnperiode,
+                        sletteHusstandsbarnperiode,
+                    ),
             )
         } catch (illegalArgumentException: IllegalArgumentException) {
             log.warn {
                 "Mottok mangelfulle opplysninger ved oppdatering av boforhold i behandling ${this.behandling.id}. " +
-                        "Mottatt input: nyEllerOppdatertHusstandsbarnperiode=$nyEllerOppdatertHusstandsbarnperiode, " +
-                        "sletteHusstandsbarnperiode=$sletteHusstandsbarnperiode"
+                    "Mottatt input: nyEllerOppdatertHusstandsbarnperiode=$nyEllerOppdatertHusstandsbarnperiode, " +
+                    "sletteHusstandsbarnperiode=$sletteHusstandsbarnperiode"
             }
             oppdateringAvBoforholdFeilet(
                 "Oppdatering av boforhold i behandling ${this.behandling.id} feilet pga mangelfulle inputdata",

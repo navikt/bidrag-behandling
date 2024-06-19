@@ -342,16 +342,16 @@ class BehandlingServiceTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(13),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -362,16 +362,16 @@ class BehandlingServiceTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(15),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -413,18 +413,18 @@ class BehandlingServiceTest : TestContainerRunner() {
                         stønadstype = Stønadstype.FORSKUDD,
                         engangsbeløpstype = null,
                         roller =
-                        setOf(
-                            OpprettRolleDto(
-                                rolletype = Rolletype.BARN,
-                                ident = Personident(testdataBarn1.ident),
-                                fødselsdato = LocalDate.parse("2005-01-01"),
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident(testdataBarn1.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSMOTTAKER,
+                                    ident = Personident(testdataBM.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
                             ),
-                            OpprettRolleDto(
-                                rolletype = Rolletype.BIDRAGSMOTTAKER,
-                                ident = Personident(testdataBM.ident),
-                                fødselsdato = LocalDate.parse("2005-01-01"),
-                            ),
-                        ),
                     ),
                 )
 
@@ -463,23 +463,23 @@ class BehandlingServiceTest : TestContainerRunner() {
                         stønadstype = null,
                         engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
                         roller =
-                        setOf(
-                            OpprettRolleDto(
-                                rolletype = Rolletype.BARN,
-                                ident = Personident(testdataBarn1.ident),
-                                fødselsdato = LocalDate.parse("2005-01-01"),
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident(testdataBarn1.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSMOTTAKER,
+                                    ident = Personident(testdataBM.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSPLIKTIG,
+                                    ident = Personident(testdataBP.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
                             ),
-                            OpprettRolleDto(
-                                rolletype = Rolletype.BIDRAGSMOTTAKER,
-                                ident = Personident(testdataBM.ident),
-                                fødselsdato = LocalDate.parse("2005-01-01"),
-                            ),
-                            OpprettRolleDto(
-                                rolletype = Rolletype.BIDRAGSPLIKTIG,
-                                ident = Personident(testdataBP.ident),
-                                fødselsdato = LocalDate.parse("2005-01-01"),
-                            ),
-                        ),
                     ),
                 )
 
@@ -517,13 +517,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                         stønadstype = Stønadstype.FORSKUDD,
                         engangsbeløpstype = null,
                         roller =
-                        setOf(
-                            OpprettRolleDto(
-                                rolletype = Rolletype.BARN,
-                                ident = Personident("213"),
-                                fødselsdato = LocalDate.parse("2005-01-01"),
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident("213"),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
                             ),
-                        ),
                     ),
                 )
 
@@ -595,19 +595,19 @@ class BehandlingServiceTest : TestContainerRunner() {
                     rolle = b.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            SivilstandGrunnlagDto(
-                                bekreftelsesdato = b.virkningstidspunktEllerSøktFomDato.minusYears(15),
-                                gyldigFom = b.virkningstidspunktEllerSøktFomDato.minusYears(15),
-                                historisk = false,
-                                master = "Freg",
-                                personId = b.bidragsmottaker!!.ident!!,
-                                registrert = b.virkningstidspunktEllerSøktFomDato.minusYears(8).atStartOfDay(),
-                                type = SivilstandskodePDL.GIFT,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                SivilstandGrunnlagDto(
+                                    bekreftelsesdato = b.virkningstidspunktEllerSøktFomDato.minusYears(15),
+                                    gyldigFom = b.virkningstidspunktEllerSøktFomDato.minusYears(15),
+                                    historisk = false,
+                                    master = "Freg",
+                                    personId = b.bidragsmottaker!!.ident!!,
+                                    registrert = b.virkningstidspunktEllerSøktFomDato.minusYears(8).atStartOfDay(),
+                                    type = SivilstandskodePDL.GIFT,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -619,16 +619,16 @@ class BehandlingServiceTest : TestContainerRunner() {
                     rolle = b.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(15),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -672,12 +672,12 @@ class BehandlingServiceTest : TestContainerRunner() {
                         navn = "Lyrisk Sopp",
                         partPersonId = b.bidragsmottaker!!.ident!!,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = LocalDate.parse("2023-01-01"),
-                                periodeTil = LocalDate.parse("2023-05-31"),
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-01-01"),
+                                    periodeTil = LocalDate.parse("2023-05-31"),
+                                ),
                             ),
-                        ),
                     ),
                     RelatertPersonGrunnlagDto(
                         relatertPersonPersonId = personidentBarnBoforholdSkalAktiveresFor.verdi,
@@ -686,16 +686,16 @@ class BehandlingServiceTest : TestContainerRunner() {
                         navn = "Lyrisk Sopp",
                         partPersonId = b.bidragsmottaker!!.ident!!,
                         borISammeHusstandDtoListe =
-                        listOf(
-                            BorISammeHusstandDto(
-                                periodeFra = LocalDate.parse("2023-01-01"),
-                                periodeTil = LocalDate.parse("2023-05-31"),
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-01-01"),
+                                    periodeTil = LocalDate.parse("2023-05-31"),
+                                ),
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.parse("2023-08-01"),
+                                    periodeTil = null,
+                                ),
                             ),
-                            BorISammeHusstandDto(
-                                periodeFra = LocalDate.parse("2023-08-01"),
-                                periodeTil = null,
-                            ),
-                        ),
                     ),
                 )
             b.grunnlag.add(
@@ -937,14 +937,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                 createdBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
-                    OppdatereVirkningstidspunkt(
-                        årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
-                        virkningstidspunkt = null,
-                        notat =
-                        OppdaterNotat(
-                            notat,
+                        OppdatereVirkningstidspunkt(
+                            årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
+                            virkningstidspunkt = null,
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                ),
                         ),
-                    ),
                 ),
             )
 
@@ -961,12 +961,12 @@ class BehandlingServiceTest : TestContainerRunner() {
                     1234,
                     OppdaterBehandlingRequestV2(
                         virkningstidspunkt =
-                        OppdatereVirkningstidspunkt(
-                            notat =
-                            OppdaterNotat(
-                                "New Notat",
+                            OppdatereVirkningstidspunkt(
+                                notat =
+                                    OppdaterNotat(
+                                        "New Notat",
+                                    ),
                             ),
-                        ),
                     ),
                 )
             }
@@ -1013,14 +1013,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                 createdBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     boforhold =
-                    OppdaterBoforholdRequest(
-                        husstandsBarn,
-                        sivilstand,
-                        notat =
-                        OppdaterNotat(
-                            kunINotat = notat,
+                        OppdaterBoforholdRequest(
+                            husstandsBarn,
+                            sivilstand,
+                            notat =
+                                OppdaterNotat(
+                                    kunINotat = notat,
+                                ),
                         ),
-                    ),
                 ),
             )
 
@@ -1046,26 +1046,26 @@ class BehandlingServiceTest : TestContainerRunner() {
                 createdBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     virkningstidspunkt =
-                    OppdatereVirkningstidspunkt(
-                        notat =
-                        OppdaterNotat(
-                            notat,
+                        OppdatereVirkningstidspunkt(
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                ),
                         ),
-                    ),
                     inntekter =
-                    OppdatereInntekterRequestV2(
-                        notat =
-                        OppdaterNotat(
-                            notat,
+                        OppdatereInntekterRequestV2(
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                ),
                         ),
-                    ),
                     boforhold =
-                    OppdaterBoforholdRequest(
-                        notat =
-                        OppdaterNotat(
-                            notat,
+                        OppdaterBoforholdRequest(
+                            notat =
+                                OppdaterNotat(
+                                    notat,
+                                ),
                         ),
-                    ),
                 ),
             )
 
@@ -1092,10 +1092,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             val opppdatereBehandlingRequest =
                 OppdaterBehandlingRequestV2(
                     aktivereGrunnlagForPerson =
-                    AktivereGrunnlagRequest(
-                        Personident(behandling.bidragsmottaker?.ident!!),
-                        setOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
-                    ),
+                        AktivereGrunnlagRequest(
+                            Personident(behandling.bidragsmottaker?.ident!!),
+                            setOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
+                        ),
                 )
 
             // hvis
@@ -1315,31 +1315,31 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     inntekter =
-                    OppdatereInntekterRequestV2(
-                        oppdatereManuelleInntekter =
-                        mutableSetOf(
-                            OppdatereManuellInntekt(
-                                type = Inntektsrapportering.KAPITALINNTEKT,
-                                beløp = BigDecimal.valueOf(4000),
-                                datoFom = LocalDate.now().minusMonths(4),
-                                datoTom = LocalDate.now().plusMonths(4),
-                                ident = Personident("123"),
-                            ),
-                            OppdatereManuellInntekt(
-                                type = Inntektsrapportering.BARNETILLEGG,
-                                beløp = BigDecimal.valueOf(4000),
-                                datoFom = LocalDate.now().minusMonths(4),
-                                datoTom = LocalDate.now().plusMonths(4),
-                                ident = Personident("123"),
-                                gjelderBarn = Personident("1233"),
-                                inntektstype = Inntektstype.BARNETILLEGG_AAP,
-                            ),
+                        OppdatereInntekterRequestV2(
+                            oppdatereManuelleInntekter =
+                                mutableSetOf(
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.KAPITALINNTEKT,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = Personident("123"),
+                                    ),
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.BARNETILLEGG,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = Personident("123"),
+                                        gjelderBarn = Personident("1233"),
+                                        inntektstype = Inntektstype.BARNETILLEGG_AAP,
+                                    ),
+                                ),
+                            notat =
+                                OppdaterNotat(
+                                    "Kun i Notat",
+                                ),
                         ),
-                        notat =
-                        OppdaterNotat(
-                            "Kun i Notat",
-                        ),
-                    ),
                 ),
             )
 
@@ -1359,22 +1359,22 @@ class BehandlingServiceTest : TestContainerRunner() {
                         actualBehandling.id!!,
                         OppdaterBehandlingRequestV2(
                             inntekter =
-                            OppdatereInntekterRequestV2(
-                                oppdatereManuelleInntekter =
-                                mutableSetOf(
-                                    OppdatereManuellInntekt(
-                                        type = Inntektsrapportering.BARNETILLEGG,
-                                        beløp = BigDecimal.valueOf(4000),
-                                        datoFom = LocalDate.now().minusMonths(4),
-                                        datoTom = LocalDate.now().plusMonths(4),
-                                        ident = Personident("123"),
-                                    ),
+                                OppdatereInntekterRequestV2(
+                                    oppdatereManuelleInntekter =
+                                        mutableSetOf(
+                                            OppdatereManuellInntekt(
+                                                type = Inntektsrapportering.BARNETILLEGG,
+                                                beløp = BigDecimal.valueOf(4000),
+                                                datoFom = LocalDate.now().minusMonths(4),
+                                                datoTom = LocalDate.now().plusMonths(4),
+                                                ident = Personident("123"),
+                                            ),
+                                        ),
+                                    notat =
+                                        OppdaterNotat(
+                                            "Kun i Notat",
+                                        ),
                                 ),
-                                notat =
-                                OppdaterNotat(
-                                    "Kun i Notat",
-                                ),
-                            ),
                         ),
                     )
                 }
@@ -1396,22 +1396,22 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     inntekter =
-                    OppdatereInntekterRequestV2(
-                        oppdatereManuelleInntekter =
-                        mutableSetOf(
-                            OppdatereManuellInntekt(
-                                type = Inntektsrapportering.KAPITALINNTEKT,
-                                beløp = BigDecimal.valueOf(4000),
-                                datoFom = LocalDate.now().minusMonths(4),
-                                datoTom = LocalDate.now().plusMonths(4),
-                                ident = Personident("123"),
-                            ),
+                        OppdatereInntekterRequestV2(
+                            oppdatereManuelleInntekter =
+                                mutableSetOf(
+                                    OppdatereManuellInntekt(
+                                        type = Inntektsrapportering.KAPITALINNTEKT,
+                                        beløp = BigDecimal.valueOf(4000),
+                                        datoFom = LocalDate.now().minusMonths(4),
+                                        datoTom = LocalDate.now().plusMonths(4),
+                                        ident = Personident("123"),
+                                    ),
+                                ),
+                            notat =
+                                OppdaterNotat(
+                                    "not null",
+                                ),
                         ),
-                        notat =
-                        OppdaterNotat(
-                            "not null",
-                        ),
-                    ),
                 ),
             )
 
@@ -1425,9 +1425,9 @@ class BehandlingServiceTest : TestContainerRunner() {
                 actualBehandling.id!!,
                 OppdaterBehandlingRequestV2(
                     inntekter =
-                    OppdatereInntekterRequestV2(
-                        sletteInntekter = expectedBehandling.inntekter.map { it.id!! }.toSet(),
-                    ),
+                        OppdatereInntekterRequestV2(
+                            sletteInntekter = expectedBehandling.inntekter.map { it.id!! }.toSet(),
+                        ),
                 ),
             )
 

@@ -1602,7 +1602,7 @@ fun leggeTilGrunnlagForSivilstand(behandling: Behandling) {
             behandledeSivilstandsopplysninger = emptyList(),
             innhentedeOffentligeOpplysninger = behandling.sivilstand.tilSivilstandGrunnlagDto(),
             endreSivilstand = null,
-            fødselsdatoBM = behandling.bidragsmottaker!!.foedselsdato
+            fødselsdatoBM = behandling.bidragsmottaker!!.foedselsdato,
         )
 
     val førstegangsperiodisering =

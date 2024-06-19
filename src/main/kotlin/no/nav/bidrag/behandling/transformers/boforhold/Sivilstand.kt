@@ -20,13 +20,15 @@ import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
 
-fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(lagretSivilstand: Set<Sivilstand>? = emptySet(), fødselsdatoBm: LocalDate) =
-    SivilstandRequest(
-        innhentedeOffentligeOpplysninger = this.toList(),
-        behandledeSivilstandsopplysninger = lagretSivilstand?.toList()?.tilSivilstandBeregnV2Dto() ?: emptyList(),
-        fødselsdatoBM = fødselsdatoBm,
-        endreSivilstand = null,
-    )
+fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(
+    lagretSivilstand: Set<Sivilstand>? = emptySet(),
+    fødselsdatoBm: LocalDate,
+) = SivilstandRequest(
+    innhentedeOffentligeOpplysninger = this.toList(),
+    behandledeSivilstandsopplysninger = lagretSivilstand?.toList()?.tilSivilstandBeregnV2Dto() ?: emptyList(),
+    fødselsdatoBM = fødselsdatoBm,
+    endreSivilstand = null,
+)
 
 fun Set<Sivilstand>.henteNyesteGrunnlagsdata(): List<SivilstandGrunnlagDto> {
     return if (this.isNotEmpty()) {
@@ -46,7 +48,7 @@ fun Set<Sivilstand>.tilSvilstandRequest(
     innhentedeOffentligeOpplysninger = this.henteNyesteGrunnlagsdata(),
     behandledeSivilstandsopplysninger = toList().tilSivilstandBeregnV2Dto(),
     endreSivilstand = tilEndreSivilstand(nyttEllerEndretInnslag, sletteInnslag),
-    fødselsdatoBM = fødselsdatoBm
+    fødselsdatoBM = fødselsdatoBm,
 )
 
 fun Sivilstandskode.tilSivilstandskodePDL() =
