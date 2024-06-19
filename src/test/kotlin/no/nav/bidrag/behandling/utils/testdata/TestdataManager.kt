@@ -272,6 +272,7 @@ class TestdataManager(
                 behandledeSivilstandsopplysninger = emptyList(),
                 endreSivilstand = null,
                 innhentedeOffentligeOpplysninger = sivilstandshistorikk,
+                fødselsdatoBM = behandling.bidragsmottaker!!.foedselsdato
             )
 
         val periodisertHistorikk =
