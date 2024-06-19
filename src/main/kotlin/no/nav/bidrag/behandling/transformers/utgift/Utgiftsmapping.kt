@@ -11,7 +11,10 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
+import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 
 val Behandling.kanInneholdeUtgiftBetaltAvBp get() = engangsbeloptype == Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
@@ -27,6 +30,7 @@ val Utgift.totalBeløpBetaltAvBp
 fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
     if (behandling.avslag != null) {
         OppdatereUtgiftResponse(
+            avslag = behandling.avslag,
             notat = BehandlingNotatDto(behandling.utgiftsbegrunnelseKunINotat ?: ""),
         )
     } else {
@@ -50,7 +54,7 @@ fun Utgiftspost.tilDto() =
     UtgiftspostDto(
         id = id!!,
         begrunnelse = begrunnelse ?: "",
-        beskrivelse = beskrivelse,
+        type = type,
         godkjentBeløp = godkjentBeløp,
         kravbeløp = kravbeløp,
         betaltAvBp = betaltAvBp,
@@ -66,7 +70,13 @@ fun OppdatereUtgift.tilUtgiftspost(utgift: Utgift) =
             } else {
                 begrunnelse
             },
-        beskrivelse = beskrivelse,
+        type =
+            when (utgift.behandling.engangsbeloptype) {
+                Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON -> type!!
+                Engangsbeløptype.SÆRTILSKUDD_OPTIKK -> Utgiftstype.OPTIKK
+                Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING -> Utgiftstype.TANNREGULERING
+                else -> throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Kunne ikke bestemme type for utgiftspost")
+            },
         godkjentBeløp =
             if (utgift.behandling.erDatoForUtgiftForeldet(dato)) {
                 BigDecimal.ZERO

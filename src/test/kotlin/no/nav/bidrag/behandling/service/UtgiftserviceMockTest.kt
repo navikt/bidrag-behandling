@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.database.repository.UtgiftRepository
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -66,7 +67,7 @@ class UtgiftserviceMockTest {
                 Utgiftspost(
                     id = 1,
                     dato = LocalDate.parse("2021-01-01"),
-                    beskrivelse = "Beskrivelse",
+                    type = Utgiftstype.OPTIKK,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -79,8 +80,7 @@ class UtgiftserviceMockTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         id = 1,
-                        dato = LocalDate.parse("2021-01-01"),
-                        beskrivelse = "Beskrivelse",
+                        dato = LocalDate.now().minusDays(1),
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -90,7 +90,47 @@ class UtgiftserviceMockTest {
         val exception =
             shouldThrow<HttpClientErrorException> { utgiftService.oppdatereUtgift(behandling.id!!, forespørsel) }
 
-        exception.message shouldContain "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori konfirmasjon"
+        exception.message shouldContain "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori SÆRTILSKUDD_KONFIRMASJON"
+    }
+
+    @Test
+    fun `skal ikke kunne sette utgiftspost type hvis kategori er av typen SÆRTILSKUDD_OPTIKK`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+                beløpDirekteBetaltAvBp = BigDecimal(0),
+            )
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    id = 1,
+                    dato = LocalDate.parse("2021-01-01"),
+                    type = Utgiftstype.OPTIKK,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(500),
+                    begrunnelse = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        id = 1,
+                        dato = LocalDate.now().minusDays(1),
+                        type = Utgiftstype.OPTIKK,
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Test",
+                    ),
+            )
+        val exception =
+            shouldThrow<HttpClientErrorException> { utgiftService.oppdatereUtgift(behandling.id!!, forespørsel) }
+
+        exception.message shouldContain "Type kan ikke settes hvis behandling er av typen SÆRTILSKUDD_OPTIKK"
     }
 
     @Nested

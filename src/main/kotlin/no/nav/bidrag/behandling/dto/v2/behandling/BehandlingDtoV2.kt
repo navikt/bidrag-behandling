@@ -18,6 +18,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -95,6 +96,7 @@ data class BehandlingDtoV2(
 )
 
 data class SærtilskuddUtgifterDto(
+    val avslag: Resultatkode? = null,
     val beregning: UtgiftBeregningDto? = null,
     val notat: BehandlingNotatDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
@@ -114,8 +116,8 @@ data class UtgiftBeregningDto(
 data class UtgiftspostDto(
     @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
     val dato: LocalDate,
-    @Schema(description = "Beskrivelse av utgiften. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)")
-    val beskrivelse: String,
+    @Schema(description = "Type utgift. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)")
+    val type: Utgiftstype,
     @Schema(description = "Beløp som er betalt for utgiften det gjelder")
     val kravbeløp: BigDecimal,
     @Schema(description = "Beløp som er godkjent for beregningen")
