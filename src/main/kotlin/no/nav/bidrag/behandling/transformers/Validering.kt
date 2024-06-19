@@ -121,7 +121,8 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
                 }
                 if (nyEllerEndretUtgift.type?.kategori != Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON) {
                     feilliste.add(
-                        "Type ${nyEllerEndretUtgift.type} er ikke gyldig for behandling av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}",
+                        "Type ${nyEllerEndretUtgift.type} er ikke gyldig for" +
+                            " behandling av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}",
                     )
                 }
             }
@@ -137,12 +138,6 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
                     feilliste.add("Type kan ikke settes hvis behandling er av typen ${behandling.engangsbeloptype}")
                 }
             }
-        }
-        if (behandling.engangsbeloptype == Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON) {
-            if (nyEllerEndretUtgift.type == null && behandling.engangsbeloptype == Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON) {
-                feilliste.add("Type må settes hvis behandling er av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}")
-            }
-        } else {
         }
     }
 
