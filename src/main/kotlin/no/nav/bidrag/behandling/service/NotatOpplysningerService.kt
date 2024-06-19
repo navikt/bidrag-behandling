@@ -34,6 +34,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
@@ -336,7 +337,13 @@ private fun Inntekt.tilNotatInntektDto() =
             ),
         // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         periode = periode,
-        opprinneligPeriode = opprinneligPeriode,
+        opprinneligPeriode =
+            opprinneligFom?.let {
+                ÅrMånedsperiode(
+                    it,
+                    bestemOpprinneligTomVisningsverdi(),
+                )
+            },
         type = type,
         kilde = kilde,
         medIBeregning = taMed,
