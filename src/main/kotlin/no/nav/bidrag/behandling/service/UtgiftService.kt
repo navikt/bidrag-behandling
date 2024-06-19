@@ -93,7 +93,7 @@ class UtgiftService(
         return utgiftRepository.save(this)
     }
 
-    private fun Utgift.hentForrigeLagredePerioder(): Set<Utgiftspost> {
+    private fun Utgift.hentForrigeLagredePerioder(): List<Utgiftspost> {
         val forrigePerioder: Set<JsonNode> =
             commonObjectmapper.readValue(
                 forrigeUtgiftsposterHistorikk
@@ -108,6 +108,6 @@ class UtgiftService(
                 begrunnelse = it[Utgiftspost::begrunnelse.name].textValue(),
                 type = Utgiftstype.valueOf(it[Utgiftspost::type.name].textValue()),
             )
-        }.toSet()
+        }
     }
 }
