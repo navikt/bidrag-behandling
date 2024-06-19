@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsbarn
 import no.nav.bidrag.behandling.transformers.toRolle
@@ -310,6 +311,18 @@ class BehandlingService(
         val behandling = hentBehandlingById(behandlingsid)
         tilgangskontrollService.sjekkTilgangBehandling(behandling)
         return behandling.tilBehandlingDetaljerDtoV2()
+    }
+
+    fun henteBehandlingDetaljerForSøknadsid(søknadsid: Long): BehandlingDetaljerDtoV2 {
+        log.info { "Henter behandling for søknadsId $søknadsid." }
+        return behandlingRepository.findFirstBySoknadsid(søknadsid)?.let {
+            log.info { "Fant behandling ${it.id} for søknadsId $søknadsid med type ${it.tilType()}." }
+            tilgangskontrollService.sjekkTilgangBehandling(it)
+            it.tilBehandlingDetaljerDtoV2()
+        } ?: run {
+            log.info { "Fant ingen behandling for søknadsId $søknadsid." }
+            behandlingNotFoundException(søknadsid)
+        }
     }
 
     fun henteBehandling(
