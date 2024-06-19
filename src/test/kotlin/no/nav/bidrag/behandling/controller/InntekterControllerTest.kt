@@ -107,7 +107,7 @@ class InntekterControllerTest : KontrollerTestRunner() {
                 r1.body?.aktiveGrunnlagsdata shouldNotBe null
                 r1.body!!.aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
                 r1.body!!.aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 2
-                r1.body!!.aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 1
+                r1.body!!.aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 2
                 r1.body?.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
                 r1.body?.ikkeAktiverteEndringerIGrunnlagsdata!!.inntekter.årsinntekter shouldHaveSize 0
             }
