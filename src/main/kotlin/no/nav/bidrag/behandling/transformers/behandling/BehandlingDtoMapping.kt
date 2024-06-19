@@ -155,6 +155,7 @@ fun Behandling.tilBehandlingDtoV2(
     utgift =
         utgift?.let { utgift ->
             SærtilskuddUtgifterDto(
+                avslag = avslag,
                 beregning = utgift.tilBeregningDto(),
                 notat =
                     BehandlingNotatDto(
@@ -164,6 +165,7 @@ fun Behandling.tilBehandlingDtoV2(
             )
         } ?: if (erSærligeUtgifter()) {
             SærtilskuddUtgifterDto(
+                avslag = avslag,
                 notat =
                     BehandlingNotatDto(
                         kunINotat = utgiftsbegrunnelseKunINotat,
