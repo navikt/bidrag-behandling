@@ -947,10 +947,10 @@ class BoforholdServiceTest : TestContainerRunner() {
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
                         opprettHusstandsmedlem =
-                        OpprettHusstandsstandsmedlem(
-                            fødselsdato = LocalDate.parse("2020-02-01"),
-                            navn = "Navn Navnesen",
-                        ),
+                            OpprettHusstandsstandsmedlem(
+                                fødselsdato = LocalDate.parse("2020-02-01"),
+                                navn = "Navn Navnesen",
+                            ),
                     ),
                 )
 
