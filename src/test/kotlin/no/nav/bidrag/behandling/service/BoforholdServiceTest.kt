@@ -936,6 +936,39 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
+            open fun `skal opprette husstandsmedlem uten personident`() {
+                // gitt
+                val behandling = opprettBehandlingForBoforholdTest()
+
+                behandling.husstandsbarn.shouldHaveSize(1)
+
+                // hvis
+                boforholdService.oppdatereHusstandsbarnManuelt(
+                    behandling.id!!,
+                    OppdatereHusstandsmedlem(
+                        opprettHusstandsmedlem =
+                            OpprettHusstandsstandsmedlem(
+                                fødselsdato = LocalDate.parse("2020-02-01"),
+                                navn = "Navn Navnesen",
+                            ),
+                    ),
+                )
+
+                // så
+                assertSoftly(behandling.husstandsbarn.find { it.ident == null }!!) {
+                    it.perioder.shouldHaveSize(1)
+                    it.navn shouldBe "Navn Navnesen"
+                    it.fødselsdato shouldBe LocalDate.parse("2020-02-01")
+                    val periode = it.perioder.first()
+                    periode.kilde shouldBe Kilde.MANUELL
+                    periode.datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
+                    periode.datoTom shouldBe null
+                    periode.bostatus shouldBe Bostatuskode.MED_FORELDER
+                }
+            }
+
+            @Test
+            @Transactional
             open fun `skal slette husstandsmedlem`() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()

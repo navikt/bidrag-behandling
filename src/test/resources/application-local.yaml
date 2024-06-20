@@ -1,12 +1,10 @@
-PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
-BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
-BIDRAG_PERSON_URL: https://bidrag-person-feature.dev.adeo.no
-#BIDRAG_FORSENDELSE_URL: http://localhost:8999
+
+BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
+BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
 BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
-BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll.intern.dev.nav.no
-BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll
-BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag
-BIDRAG_GRUNNLAG_URL: https://bidrag-grunnlag.intern.dev.nav.no
+BIDRAG_GRUNNLAG_URL: https://bidrag-grunnlag-feature.intern.dev.nav.no
+BIDRAG_PERSON_URL: https://bidrag-person-feature.dev.adeo.no
+BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll-feature.intern.dev.nav.no
 GRUNNLAG_INNHENTE_SIVILSTAND_AUTOMATISK: true
 GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 1
 AZURE_APP_TENANT_ID: 966ac572-f5b7-4bbe-aa88-c76419c0f851

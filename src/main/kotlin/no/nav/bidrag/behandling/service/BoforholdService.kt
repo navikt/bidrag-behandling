@@ -218,7 +218,7 @@ class BoforholdService(
                     respons
                 }
 
-            if (offentligePerioder?.isEmpty() == true) {
+            if (offentligePerioder == null || offentligePerioder.isEmpty()) {
                 husstandsbarn.oppdaterePerioder(
                     nyEllerOppdatertHusstandsbarnperiode =
                         Husstandsbarnperiode(
