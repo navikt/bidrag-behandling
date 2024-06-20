@@ -1188,7 +1188,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertSivilstand =
                     SivilstandApi.beregnV2(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        grunnlagSivilstand.tilSivilstandRequest(),
+                        grunnlagSivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
                     )
 
                 // hvis
@@ -1255,7 +1255,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertSivilstand =
                     SivilstandApi.beregnV2(
                         minOf(behandling.virkningstidspunktEllerSøktFomDato),
-                        grunnlagsdataSivilstand.tilSivilstandRequest(),
+                        grunnlagsdataSivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
                     )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -1344,7 +1344,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertSivilstand =
                     SivilstandApi.beregnV2(
                         minOf(behandling.virkningstidspunktEllerSøktFomDato),
-                        grunnlagsdataSivilstand.tilSivilstandRequest(),
+                        grunnlagsdataSivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
                     )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -1602,6 +1602,7 @@ fun leggeTilGrunnlagForSivilstand(behandling: Behandling) {
             behandledeSivilstandsopplysninger = emptyList(),
             innhentedeOffentligeOpplysninger = behandling.sivilstand.tilSivilstandGrunnlagDto(),
             endreSivilstand = null,
+            fødselsdatoBM = behandling.bidragsmottaker!!.foedselsdato,
         )
 
     val førstegangsperiodisering =

@@ -110,7 +110,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 25
+    val totaltAntallGrunnlag = 26
 
     @BeforeEach
     fun setup() {
@@ -133,6 +133,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste oppdatereGrunnlagForBehandling")
     open inner class OppdatereGrunnlagForBehandling {
+
         @Nested
         open inner class Forskudd {
             @Test

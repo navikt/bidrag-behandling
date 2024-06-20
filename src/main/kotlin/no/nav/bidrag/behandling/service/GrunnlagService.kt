@@ -30,7 +30,9 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.filtrerPerioderEtterVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandBeregnetEtterVirkningstidspunktV2
 import no.nav.bidrag.behandling.transformers.behandling.finnEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
@@ -55,6 +57,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
+import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
@@ -85,9 +88,6 @@ class GrunnlagService(
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
     private lateinit var grenseInnhenting: String
-
-    @Value("\${egenskaper.grunnlag.innhente-sivilstand-automatisk}")
-    private lateinit var innhenteSivilstandAutomatisk: String
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
@@ -192,7 +192,7 @@ class GrunnlagService(
         val sivilstandPeriodisert =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                sivilstandBeregnet.tilSivilstandRequest(),
+                sivilstandBeregnet.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
             )
         behandling.henteNyesteAktiveGrunnlag(
             Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
@@ -217,7 +217,7 @@ class GrunnlagService(
         val periodisertHistorikk =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                sivilstand.tilSivilstandRequest(),
+                sivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
             )
 
         behandling.henteNyesteIkkeAktiveGrunnlag(
@@ -539,9 +539,7 @@ class GrunnlagService(
             feilrapporteringer.filter { Grunnlagsdatatype.SIVILSTAND == it.key }.isNotEmpty()
 
         // Oppdatere sivilstandstabell med periodisert sivilstand
-        if (innhentetGrunnlag.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet &&
-            innhenteSivilstandAutomatisk.toBoolean()
-        ) {
+        if (innhentetGrunnlag.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
             periodisereOgLagreSivilstand(behandling, innhentetGrunnlag)
         }
 
@@ -555,7 +553,8 @@ class GrunnlagService(
         val sivilstandPeriodisert =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                innhentetGrunnlag.sivilstandListe.toSet().tilSivilstandRequest(),
+                innhentetGrunnlag.sivilstandListe.toSet()
+                    .tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
             ).toSet()
 
         val bmsNyesteBearbeidaSivilstandFørLagring =
@@ -579,7 +578,6 @@ class GrunnlagService(
                 behandling.bidragsmottaker!!,
             )
 
-        // oppdatere husstandsbarn og husstandsbarnperiode-tabellene hvis førstegangslagring
         if (bmsNyesteBearbeidaSivilstandFørLagring.isEmpty() && bmsNyesteBearbeidaSivilstandEtterLagring.isNotEmpty()) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(behandling, sivilstandPeriodisert)
         }
@@ -669,7 +667,7 @@ class GrunnlagService(
         val endringerSomMåBekreftes =
             ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato)
 
-        if (endringerSomMåBekreftes?.sivilstand?.none() ?: false) {
+        if (endringerSomMåBekreftes == null) {
             val ikkeAktiverteSivilstandsgrunnlag =
                 ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.SIVILSTAND, rolleInhentetFor.ident!!)
 
@@ -1009,7 +1007,19 @@ class GrunnlagService(
             if (aktivtGrunnlag.isEmpty() && behandling.sivilstand.isNotEmpty()) {
                 return true
             }
-            aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
+            try {
+                val nyinnhentetGrunnlag =
+                    (nyttGrunnlag as Set<Sivilstand>).toList()
+                        .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(behandling.virkningstidspunktEllerSøktFomDato)
+                val aktiveGrunnlag =
+                    (aktivtGrunnlag as Set<Sivilstand>).toList()
+                        .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(behandling.virkningstidspunktEllerSøktFomDato)
+                !nyinnhentetGrunnlag
+                    .erLik(aktiveGrunnlag)
+            } catch (e: Exception) {
+                log.error(e) { "Det skjedde en feil ved sjekk mot sivilstand diff ved grunnlagsinnhenting" }
+                aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
+            }
         } else {
             aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
         }

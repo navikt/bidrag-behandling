@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -43,14 +44,19 @@ data class OppdatereUtgiftResponse(
     val utgiftposter: List<UtgiftspostDto> = emptyList(),
     val notat: BehandlingNotatDto,
     val beregning: UtgiftBeregningDto? = null,
+    val avslag: Resultatkode? = null,
 )
 
 data class OppdatereUtgift(
     @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
     @field:PastOrPresent(message = "Dato for utgiftspost kan ikke være fram i tid")
     val dato: LocalDate,
-    @Schema(description = "Beskrivelse av utgiften. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)")
-    val beskrivelse: String,
+    @Schema(
+        description =
+            "Type utgift. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc). " +
+                "Skal bare settes for kategori konfirmasjon",
+    )
+    val type: Utgiftstype? = null,
     @Schema(description = "Beløp som er betalt for utgiften det gjelder")
     @field:PositiveOrZero(message = "Kravbeløp kan ikke være negativ")
     val kravbeløp: BigDecimal,

@@ -1145,7 +1145,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val periodisertSivilstandshistorikk =
                 SivilstandApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    nyttSivilstandsgrunnlag.tilSivilstandRequest(),
+                    nyttSivilstandsgrunnlag.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
                 )
             behandling.grunnlag.add(
                 Grunnlag(
@@ -1217,7 +1217,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val periodisertSivilstandshistorikk =
                 SivilstandApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    nyttSivilstandsgrunnlag.tilSivilstandRequest(),
+                    nyttSivilstandsgrunnlag.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
                 )
             behandling.grunnlag.add(
                 Grunnlag(

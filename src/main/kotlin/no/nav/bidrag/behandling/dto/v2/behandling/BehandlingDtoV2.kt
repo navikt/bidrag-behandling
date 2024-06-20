@@ -13,14 +13,17 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
 import no.nav.bidrag.behandling.transformers.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Periode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -29,6 +32,37 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+
+data class BehandlingDetaljerDtoV2(
+    val id: Long,
+    val type: TypeBehandling,
+    val vedtakstype: Vedtakstype,
+    val stønadstype: Stønadstype? = null,
+    val engangsbeløptype: Engangsbeløptype? = null,
+    val erVedtakFattet: Boolean,
+    val erKlageEllerOmgjøring: Boolean,
+    val opprettetTidspunkt: LocalDateTime,
+    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val søktFomDato: LocalDate,
+    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val mottattdato: LocalDate,
+    val søktAv: SøktAvType,
+    val saksnummer: String,
+    val søknadsid: Long,
+    val søknadRefId: Long? = null,
+    val vedtakRefId: Long? = null,
+    val behandlerenhet: String,
+    val roller: Set<RolleDto>,
+    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val virkningstidspunkt: LocalDate? = null,
+    @Schema(name = "årsak", enumAsRef = true)
+    val årsak: VirkningstidspunktÅrsakstype? = null,
+    @Schema(enumAsRef = true)
+    val avslag: Resultatkode? = null,
+)
 
 data class BehandlingDtoV2(
     val id: Long,
@@ -63,6 +97,7 @@ data class BehandlingDtoV2(
 )
 
 data class SærtilskuddUtgifterDto(
+    val avslag: Resultatkode? = null,
     val beregning: UtgiftBeregningDto? = null,
     val notat: BehandlingNotatDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
@@ -82,8 +117,8 @@ data class UtgiftBeregningDto(
 data class UtgiftspostDto(
     @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
     val dato: LocalDate,
-    @Schema(description = "Beskrivelse av utgiften. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)")
-    val beskrivelse: String,
+    @Schema(description = "Type utgift. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)")
+    val type: Utgiftstype,
     @Schema(description = "Beløp som er betalt for utgiften det gjelder")
     val kravbeløp: BigDecimal,
     @Schema(description = "Beløp som er godkjent for beregningen")

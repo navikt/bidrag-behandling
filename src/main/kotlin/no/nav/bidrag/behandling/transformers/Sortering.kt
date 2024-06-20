@@ -4,10 +4,10 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.transformers.inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
-import java.time.YearMonth
 
 fun Set<Utgiftspost>.sorter() = sortedBy { it.dato }
 
@@ -74,10 +74,11 @@ fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirk
                 it.type,
             )
         ) {
-            val periode = it.opprinneligPeriode ?: return@filter true
-            val virkningstidspunkt =
-                it.behandling?.virkningstidspunktEllerSøktFomDato?.let { YearMonth.from(it) } ?: return@filter true
-            periode.fom >= virkningstidspunkt || periode.til != null && periode.til!! >= virkningstidspunkt
+//            val periode = it.opprinneligPeriode ?: return@filter true
+//            val virkningstidspunkt =
+//                it.behandling?.virkningstidspunktEllerSøktFomDato?.let { YearMonth.from(it) } ?: return@filter true
+//            periode.fom >= virkningstidspunkt || periode.til != null && periode.til!! >= virkningstidspunkt
+            it.kilde == Kilde.MANUELL || it.erOpprinneligPeriodeInnenforVirkningstidspunkt()
         } else {
             true
         }

@@ -113,8 +113,31 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
         if (sletteUtgift != null && (utgift == null || utgift.utgiftsposter.none { it.id == sletteUtgift })) {
             feilliste.add("Utgiftspost med id $sletteUtgift finnes ikke i behandling ${behandling.id}")
         }
-        if (nyEllerEndretUtgift.betaltAvBp && behandling.engangsbeloptype != Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON) {
-            feilliste.add("Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori konfirmasjon")
+
+        when (behandling.engangsbeloptype) {
+            Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON -> {
+                if (nyEllerEndretUtgift.type == null) {
+                    feilliste.add("Type må settes hvis behandling er av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}")
+                }
+                if (nyEllerEndretUtgift.type?.kategori != Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON) {
+                    feilliste.add(
+                        "Type ${nyEllerEndretUtgift.type} er ikke gyldig for" +
+                            " behandling av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}",
+                    )
+                }
+            }
+
+            else -> {
+                if (nyEllerEndretUtgift.betaltAvBp) {
+                    feilliste.add(
+                        "Kan ikke legge til utgift betalt av BP for " +
+                            "særlige utgifter behandling som ikke har kategori ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}",
+                    )
+                }
+                if (nyEllerEndretUtgift.type != null) {
+                    feilliste.add("Type kan ikke settes hvis behandling er av typen ${behandling.engangsbeloptype}")
+                }
+            }
         }
     }
 

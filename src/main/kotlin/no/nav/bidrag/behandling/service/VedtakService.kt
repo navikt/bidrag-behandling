@@ -62,11 +62,16 @@ class VedtakService(
     private val unleashInstance: Unleash,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
-        LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-        tilgangskontrollService.sjekkTilgangSak(vedtak.saksnummer!!)
-        secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
-        return vedtak.tilBehandling(vedtakId, lesemodus = true)
+        try {
+            LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
+            val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+            tilgangskontrollService.sjekkTilgangSak(vedtak.saksnummer!!)
+            secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
+            return vedtak.tilBehandling(vedtakId, lesemodus = true)
+        } catch (e: Exception) {
+            LOGGER.error(e) { "Det skjedde en feil ved konvertering av vedtak $vedtakId for lesemodus" }
+            throw e
+        }
     }
 
     private fun hentOpprinneligVedtakstidspunkt(vedtak: VedtakDto): Set<LocalDateTime> {
@@ -87,19 +92,28 @@ class VedtakService(
         request: OpprettBehandlingFraVedtakRequest,
         refVedtaksid: Long,
     ): OpprettBehandlingResponse {
-        val konvertertBehandling =
-            konverterVedtakTilBehandling(request, refVedtaksid)
-                ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
-        tilgangskontrollService.sjekkTilgangSak(konvertertBehandling.saksnummer)
-        val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
+        try {
+            LOGGER.info {
+                "Oppretter behandling fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
+                    "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+            }
+            val konvertertBehandling =
+                konverterVedtakTilBehandling(request, refVedtaksid)
+                    ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
+            tilgangskontrollService.sjekkTilgangSak(konvertertBehandling.saksnummer)
+            val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
 
-        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+            grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
-        LOGGER.info {
-            "Opprettet behandling ${behandlingDo.id} fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
-                "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+            LOGGER.info {
+                "Opprettet behandling ${behandlingDo.id} fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
+                    "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+            }
+            return OpprettBehandlingResponse(behandlingDo.id!!)
+        } catch (e: Exception) {
+            LOGGER.error(e) { "Det skjedde en feil ved opprettelse av behandling fra vedtak $refVedtaksid: ${e.message}" }
+            throw e
         }
-        return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
     fun konverterVedtakTilBehandling(

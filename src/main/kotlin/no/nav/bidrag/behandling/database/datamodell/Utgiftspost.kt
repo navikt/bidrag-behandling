@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -9,6 +11,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
+import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -25,7 +28,8 @@ open class Utgiftspost(
     )
     open var id: Long? = null,
     open var dato: LocalDate,
-    open var beskrivelse: String,
+    @Enumerated(EnumType.STRING)
+    open var type: Utgiftstype,
     open var kravbeløp: BigDecimal,
     open var godkjentBeløp: BigDecimal,
     open var begrunnelse: String? = null,
@@ -35,7 +39,7 @@ open class Utgiftspost(
     open var utgift: Utgift,
 ) {
     override fun toString(): String {
-        return "Utgiftspost(id=$id, dato=$dato, beskrivelse=$beskrivelse, kravbeløp=$kravbeløp, betaltAvBp=$betaltAvBp" +
+        return "Utgiftspost(id=$id, dato=$dato, type=$type, kravbeløp=$kravbeløp, betaltAvBp=$betaltAvBp" +
             "godkjentBeløp=$godkjentBeløp, begrunnelse=$begrunnelse)"
     }
 }

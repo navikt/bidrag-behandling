@@ -16,8 +16,8 @@
     <properties>
         <java.version>21</java.version>
         <kotlin.version>2.0.0</kotlin.version>
-        <bidrag-felles.version>2024.06.17.132609</bidrag-felles.version>
-        <bidrag-beregn-felles.version>2024.06.11.152052</bidrag-beregn-felles.version>
+        <bidrag-felles.version>2024.06.19.131819</bidrag-felles.version>
+        <bidrag-beregn-felles.version>2024.06.19.140153</bidrag-beregn-felles.version>
         <h2.version>2.2.224</h2.version>
         <logback-encoder.version>7.4</logback-encoder.version>
         <token-support.version>3.2.0</token-support.version>

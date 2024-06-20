@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import org.junit.jupiter.api.Test
@@ -37,6 +38,66 @@ class OppdaterUtgiftRequestValideringTest {
     }
 
     @Test
+    fun `skal validere at utgiftstype er gyldig for konfirmasjon`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+        val request =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusDays(2),
+                        type = Utgiftstype.OPTIKK,
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Test",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Type OPTIKK er ikke gyldig for behandling av typen SÆRTILSKUDD_KONFIRMASJON"
+    }
+
+    @Test
+    fun `skal validere at utgiftstype er ikke kan settes for kategori SÆRTILSKUDD_OPTIKK`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        val request =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusDays(2),
+                        type = Utgiftstype.OPTIKK,
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Test",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Type kan ikke settes hvis behandling er av typen SÆRTILSKUDD_OPTIKK"
+    }
+
+    @Test
+    fun `skal validere at utgiftstype er ikke kan settes for kategori SÆRTILSKUDD_TANNREGULERING`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING
+        val request =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusDays(2),
+                        type = Utgiftstype.TANNREGULERING,
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Test",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Type kan ikke settes hvis behandling er av typen SÆRTILSKUDD_TANNREGULERING"
+    }
+
+    @Test
     fun `skal ikke kunne oppdatere utgift hvis avslag er satt`() {
         val behandling = opprettBehandlingSærligeUtgifter()
         behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRLIGE_UTGIFTER
@@ -45,7 +106,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.parse("2021-01-01"),
-                        beskrivelse = "Beskrivelse",
+                        type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -65,7 +126,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().plusDays(1),
-                        beskrivelse = "Beskrivelse",
+                        type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -85,7 +146,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now(),
-                        beskrivelse = "Beskrivelse",
+                        type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -105,7 +166,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.parse("2021-01-01"),
-                        beskrivelse = "Beskrivelse",
+                        type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(2500),
                         begrunnelse = "Test",
@@ -125,7 +186,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.parse("2021-01-01"),
-                        beskrivelse = "Beskrivelse",
+                        type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                     ),
@@ -144,8 +205,8 @@ class OppdaterUtgiftRequestValideringTest {
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
-                        dato = LocalDate.parse("2021-01-01"),
-                        beskrivelse = "Beskrivelse",
+                        dato = LocalDate.now().minusDays(2),
+                        type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         betaltAvBp = true,
@@ -155,7 +216,7 @@ class OppdaterUtgiftRequestValideringTest {
 
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
-        exception.message shouldContain "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori konfirmasjon"
+        exception.message shouldContain "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori SÆRTILSKUDD_KONFIRMASJON"
     }
 
     @Test
@@ -171,7 +232,7 @@ class OppdaterUtgiftRequestValideringTest {
                 Utgiftspost(
                     id = 1,
                     dato = LocalDate.parse("2021-01-01"),
-                    beskrivelse = "Beskrivelse",
+                    type = Utgiftstype.KONFIRMASJONSLEIR,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -185,7 +246,7 @@ class OppdaterUtgiftRequestValideringTest {
                     OppdatereUtgift(
                         id = 2,
                         dato = LocalDate.parse("2022-01-01"),
-                        beskrivelse = "Beskrivelse",
+                        type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "asd",
@@ -206,7 +267,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.parse("2022-01-01"),
-                        beskrivelse = "Beskrivelse",
+                        type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Begrunnelse",

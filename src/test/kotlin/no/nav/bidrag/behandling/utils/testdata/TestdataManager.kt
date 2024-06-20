@@ -64,7 +64,6 @@ class TestdataManager(
         inkludereBp: Boolean = false,
         behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
     ): Behandling {
-
         val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
         when (behandlingstype) {
             TypeBehandling.FORSKUDD -> {
@@ -75,6 +74,7 @@ class TestdataManager(
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
                 behandling.stonadstype = null
             }
+
             else -> throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
         }
 
@@ -274,19 +274,28 @@ class TestdataManager(
                 SivilstandGrunnlagDto(
                     bekreftelsesdato = behandling.virkningstidspunktEllerSøktFomDato.minusYears(8),
                     gyldigFom = behandling.virkningstidspunktEllerSøktFomDato.minusYears(8),
-                    historisk = false,
+                    historisk = true,
                     master = "Freg",
                     personId = behandling.bidragsmottaker!!.ident!!,
                     registrert = behandling.virkningstidspunktEllerSøktFomDato.minusYears(8).atStartOfDay(),
+                    type = SivilstandskodePDL.UGIFT,
+                ),
+                SivilstandGrunnlagDto(
+                    bekreftelsesdato = behandling.virkningstidspunktEllerSøktFomDato.minusYears(5),
+                    gyldigFom = behandling.virkningstidspunktEllerSøktFomDato.minusYears(5),
+                    historisk = true,
+                    master = "Freg",
+                    personId = behandling.bidragsmottaker!!.ident!!,
+                    registrert = behandling.virkningstidspunktEllerSøktFomDato.minusYears(5).atStartOfDay(),
                     type = SivilstandskodePDL.GIFT,
                 ),
                 SivilstandGrunnlagDto(
-                    bekreftelsesdato = behandling.virkningstidspunktEllerSøktFomDato.minusMonths(9),
-                    gyldigFom = behandling.virkningstidspunktEllerSøktFomDato.minusMonths(9),
+                    bekreftelsesdato = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(3),
+                    gyldigFom = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(3),
                     historisk = false,
                     master = "Freg",
                     personId = behandling.bidragsmottaker!!.ident!!,
-                    registrert = behandling.virkningstidspunktEllerSøktFomDato.minusMonths(9).atStartOfDay(),
+                    registrert = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(9).atStartOfDay(),
                     type = SivilstandskodePDL.SKILT,
                 ),
             )
@@ -296,6 +305,7 @@ class TestdataManager(
                 behandledeSivilstandsopplysninger = emptyList(),
                 endreSivilstand = null,
                 innhentedeOffentligeOpplysninger = sivilstandshistorikk,
+                fødselsdatoBM = behandling.bidragsmottaker!!.foedselsdato,
             )
 
         val periodisertHistorikk =

@@ -1,11 +1,13 @@
 package no.nav.bidrag.behandling.transformers
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -408,5 +410,172 @@ class SorteringTest {
         val filtrertInntekter = inntekter.filtrerUtHistoriskeInntekter()
 
         filtrertInntekter shouldHaveSize 6
+    }
+
+    @Test
+    fun `skal eksludere ytelser før og etter virkningstidspunkt når virkning er i fremtiden`() {
+        val behandling = oppretteBehandling()
+        val virkningstidspunkt = YearMonth.now().plusMonths(2)
+        behandling.virkningstidspunkt = virkningstidspunkt.atDay(1)
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    opprinneligFom = virkningstidspunkt,
+                    opprinneligTom = YearMonth.now().plusMonths(3),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                    taMed = false,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = virkningstidspunkt,
+                    opprinneligTom = YearMonth.now().plusMonths(3),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    taMed = false,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = virkningstidspunkt.minusMonths(3),
+                    opprinneligTom = virkningstidspunkt.minusMonths(1),
+                    type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = virkningstidspunkt.minusMonths(3),
+                    opprinneligTom = virkningstidspunkt.plusMonths(3),
+                    type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = virkningstidspunkt.minusMonths(5),
+                    opprinneligTom = virkningstidspunkt.minusMonths(3),
+                    type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = virkningstidspunkt.minusMonths(5),
+                    opprinneligTom = virkningstidspunkt.plusYears(3),
+                    type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = virkningstidspunkt.plusMonths(5),
+                    opprinneligTom = virkningstidspunkt.plusYears(8),
+                    type = Inntektsrapportering.OVERGANGSSTØNAD,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = virkningstidspunkt.minusMonths(5),
+                    opprinneligTom = virkningstidspunkt.plusYears(8),
+                    type = Inntektsrapportering.FORELDREPENGER,
+                    taMed = false,
+                    behandling = behandling,
+                ),
+            )
+
+        val filtrertInntekter = inntekter.toList().ekskluderYtelserFørVirkningstidspunkt()
+
+        filtrertInntekter shouldHaveSize 5
+        filtrertInntekter.map { it.type }
+            .shouldContainAll(
+                listOf(
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                    Inntektsrapportering.FORELDREPENGER,
+                ),
+            )
+    }
+
+    @Test
+    fun `skal eksludere ytelser før virkningstidspunkt`() {
+        val behandling = oppretteBehandling()
+        behandling.virkningstidspunkt = LocalDate.parse("2022-01-01")
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                    taMed = false,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2023-01"),
+                    opprinneligTom = YearMonth.parse("2023-12"),
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    taMed = false,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2021-01"),
+                    opprinneligTom = YearMonth.parse("2021-12"),
+                    type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2024-01"),
+                    opprinneligTom = YearMonth.parse("2024-12"),
+                    type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2021-01"),
+                    opprinneligTom = YearMonth.parse("2021-12"),
+                    type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2024-01"),
+                    opprinneligTom = YearMonth.parse("2024-12"),
+                    type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2021-01"),
+                    opprinneligTom = YearMonth.parse("2021-12"),
+                    type = Inntektsrapportering.OVERGANGSSTØNAD,
+                    taMed = true,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2021-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.FORELDREPENGER,
+                    taMed = false,
+                    behandling = behandling,
+                ),
+            )
+
+        val filtrertInntekter = inntekter.toList().ekskluderYtelserFørVirkningstidspunkt()
+
+        filtrertInntekter shouldHaveSize 5
+        filtrertInntekter.map { it.type }
+            .shouldContainAll(
+                listOf(
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                    Inntektsrapportering.FORELDREPENGER,
+                ),
+            )
+        assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }) {
+            shouldHaveSize(1)
+            this[0].opprinneligFom shouldBe YearMonth.parse("2024-01").atDay(1)
+        }
+        assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }) {
+            shouldHaveSize(1)
+            this[0].opprinneligFom shouldBe YearMonth.parse("2024-01").atDay(1)
+        }
     }
 }
