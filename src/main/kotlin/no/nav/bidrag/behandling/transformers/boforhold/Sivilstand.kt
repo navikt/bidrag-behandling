@@ -15,16 +15,20 @@ import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.sivilstand.dto.EndreSivilstand
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import java.time.LocalDate
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
 
-fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(lagretSivilstand: Set<Sivilstand>? = emptySet()) =
-    SivilstandRequest(
-        this.toList(),
-        lagretSivilstand?.toList()?.tilSivilstandBeregnV2Dto() ?: emptyList(),
-        null,
-    )
+fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(
+    lagretSivilstand: Set<Sivilstand>? = emptySet(),
+    fødselsdatoBm: LocalDate,
+) = SivilstandRequest(
+    innhentedeOffentligeOpplysninger = this.toList(),
+    behandledeSivilstandsopplysninger = lagretSivilstand?.toList()?.tilSivilstandBeregnV2Dto() ?: emptyList(),
+    fødselsdatoBM = fødselsdatoBm,
+    endreSivilstand = null,
+)
 
 fun Set<Sivilstand>.henteNyesteGrunnlagsdata(): List<SivilstandGrunnlagDto> {
     return if (this.isNotEmpty()) {
@@ -39,10 +43,12 @@ fun Set<Sivilstand>.henteNyesteGrunnlagsdata(): List<SivilstandGrunnlagDto> {
 fun Set<Sivilstand>.tilSvilstandRequest(
     nyttEllerEndretInnslag: Sivilstandsperiode? = null,
     sletteInnslag: Long? = null,
+    fødselsdatoBm: LocalDate,
 ) = SivilstandRequest(
     innhentedeOffentligeOpplysninger = this.henteNyesteGrunnlagsdata(),
     behandledeSivilstandsopplysninger = toList().tilSivilstandBeregnV2Dto(),
     endreSivilstand = tilEndreSivilstand(nyttEllerEndretInnslag, sletteInnslag),
+    fødselsdatoBM = fødselsdatoBm,
 )
 
 fun Sivilstandskode.tilSivilstandskodePDL() =

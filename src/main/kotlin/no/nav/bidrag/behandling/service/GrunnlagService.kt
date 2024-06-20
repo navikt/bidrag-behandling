@@ -264,7 +264,7 @@ class GrunnlagService(
         val sivilstandPeriodisert =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                sivilstandBeregnet.tilSivilstandRequest(),
+                sivilstandBeregnet.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
             )
         behandling.henteNyesteAktiveGrunnlag(
             Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
@@ -289,7 +289,7 @@ class GrunnlagService(
         val periodisertHistorikk =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                sivilstand.tilSivilstandRequest(),
+                sivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
             )
 
         behandling.henteNyesteIkkeAktiveGrunnlag(
@@ -620,7 +620,8 @@ class GrunnlagService(
         val sivilstandPeriodisert =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                innhentetGrunnlag.sivilstandListe.toSet().tilSivilstandRequest(),
+                innhentetGrunnlag.sivilstandListe.toSet()
+                    .tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
             ).toSet()
 
         val bmsNyesteBearbeidaSivilstandFørLagring =
@@ -644,7 +645,6 @@ class GrunnlagService(
                 behandling.bidragsmottaker!!,
             )
 
-        // oppdatere husstandsbarn og husstandsbarnperiode-tabellene hvis førstegangslagring
         if (bmsNyesteBearbeidaSivilstandFørLagring.isEmpty() && bmsNyesteBearbeidaSivilstandEtterLagring.isNotEmpty()) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(behandling, sivilstandPeriodisert)
         }

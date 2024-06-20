@@ -107,7 +107,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
-    val totaltAntallGrunnlag = 25
+    val totaltAntallGrunnlag = 26
 
     @BeforeEach
     fun setup() {
@@ -825,7 +825,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
             // så
-            behandling.grunnlag.size shouldBe 26
+            behandling.grunnlag.size shouldBe 27
 
             val småbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
 

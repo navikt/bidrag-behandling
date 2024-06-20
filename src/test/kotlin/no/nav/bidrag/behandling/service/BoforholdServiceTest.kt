@@ -1188,7 +1188,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertSivilstand =
                     SivilstandApi.beregnV2(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        grunnlagSivilstand.tilSivilstandRequest(),
+                        grunnlagSivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
                     )
 
                 // hvis
@@ -1255,7 +1255,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertSivilstand =
                     SivilstandApi.beregnV2(
                         minOf(behandling.virkningstidspunktEllerSøktFomDato),
-                        grunnlagsdataSivilstand.tilSivilstandRequest(),
+                        grunnlagsdataSivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
                     )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -1344,7 +1344,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertSivilstand =
                     SivilstandApi.beregnV2(
                         minOf(behandling.virkningstidspunktEllerSøktFomDato),
-                        grunnlagsdataSivilstand.tilSivilstandRequest(),
+                        grunnlagsdataSivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
                     )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -1398,8 +1398,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val behandling = testdataManager.oppretteBehandling(false, true, false)
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 1
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
                 }
 
                 assertSoftly(behandling.grunnlag) { g ->
@@ -1419,9 +1419,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 2
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
-                    s.filter { it.id != null } shouldHaveSize 2
+                    s shouldHaveSize 3
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 3
                 }
             }
 
@@ -1431,7 +1431,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, true, false)
 
-                behandling.sivilstand shouldHaveSize 1
+                behandling.sivilstand shouldHaveSize 2
 
                 val fomdato = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(7)
                 boforholdService.oppdatereSivilstandManuelt(
@@ -1442,7 +1442,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-                behandling.sivilstand shouldHaveSize 2
+                behandling.sivilstand shouldHaveSize 3
 
                 // hvis
                 boforholdService.oppdatereSivilstandManuelt(
@@ -1452,9 +1452,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.sivilstand) {
-                    it shouldHaveSize 1
+                    it shouldHaveSize 2
                     it.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 0
-                    it.filter { it.id != null } shouldHaveSize 1
+                    it.filter { it.id != null } shouldHaveSize 2
                 }
             }
 
@@ -1465,8 +1465,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val behandling = testdataManager.oppretteBehandling(false, true, false)
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 1
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
                 }
 
                 assertSoftly(behandling.grunnlag) { g ->
@@ -1484,9 +1484,9 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 2
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
-                    s.filter { it.id != null } shouldHaveSize 2
+                    s shouldHaveSize 3
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 3
                 }
 
                 // hvis
@@ -1497,9 +1497,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 1
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
-                    s.filter { it.id != null } shouldHaveSize 1
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 2
                 }
             }
 
@@ -1510,8 +1510,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val behandling = testdataManager.oppretteBehandling(false, true, false)
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 1
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
+                    s shouldHaveSize 2
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
                 }
 
                 assertSoftly(behandling.grunnlag) { g ->
@@ -1539,9 +1539,9 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 3
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
-                    s.filter { it.id != null } shouldHaveSize 3
+                    s shouldHaveSize 4
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 4
                 }
 
                 // hvis
@@ -1552,9 +1552,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.sivilstand) { s ->
-                    s shouldHaveSize 2
-                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 1
-                    s.filter { it.id != null } shouldHaveSize 2
+                    s shouldHaveSize 3
+                    s.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    s.filter { it.id != null } shouldHaveSize 3
                 }
             }
         }
@@ -1602,6 +1602,7 @@ fun leggeTilGrunnlagForSivilstand(behandling: Behandling) {
             behandledeSivilstandsopplysninger = emptyList(),
             innhentedeOffentligeOpplysninger = behandling.sivilstand.tilSivilstandGrunnlagDto(),
             endreSivilstand = null,
+            fødselsdatoBM = behandling.bidragsmottaker!!.foedselsdato,
         )
 
     val førstegangsperiodisering =
