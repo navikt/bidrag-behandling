@@ -316,7 +316,7 @@ class BoforholdService(
             ikkeAktiverteGrunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }
 
-        if (nyesteIkkeaktivertePeriodiserteSivilstand == null || nyesteIkkeaktiverteSivilstand == null) {
+        if (nyesteIkkeaktivertePeriodiserteSivilstand == null && nyesteIkkeaktiverteSivilstand == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ingen grunnlag av type SIVILSTAND å aktivere for  behandling $behandling.id",
@@ -326,28 +326,32 @@ class BoforholdService(
         val data =
             when (overskriveManuelleOpplysninger) {
                 true -> {
-                    nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
-                    jsonListeTilObjekt<SivilstandBeregnV2Dto>(nyesteIkkeaktivertePeriodiserteSivilstand.data)
+                    nyesteIkkeaktivertePeriodiserteSivilstand?.let {
+                        jsonListeTilObjekt<SivilstandBeregnV2Dto>(it.data)
+                    }
                 }
 
                 false -> {
-                    val request =
-                        jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeaktiverteSivilstand.data)
-                            .tilSivilstandRequest(
-                                behandling.sivilstand.filter { Kilde.MANUELL == it.kilde }.toSet(),
-                                behandling.bidragsmottaker!!.foedselsdato,
-                            )
-                    SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, request).toSet()
+                    nyesteIkkeaktiverteSivilstand?.let { g ->
+                        val request =
+                            jsonListeTilObjekt<SivilstandGrunnlagDto>(g.data)
+                                .tilSivilstandRequest(
+                                    behandling.sivilstand.filter { Kilde.MANUELL == it.kilde }.toSet(),
+                                    behandling.bidragsmottaker!!.foedselsdato,
+                                )
+                        SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, request).toSet()
+                    }
                 }
             }
+        data?.let {
+            behandling.sivilstand.clear()
+            behandling.sivilstand.addAll(
+                it.tilSivilstand(behandling),
+            )
 
-        behandling.sivilstand.clear()
-        behandling.sivilstand.addAll(
-            data.tilSivilstand(behandling),
-        )
-
-        nyesteIkkeaktiverteSivilstand.aktiv = LocalDateTime.now()
-        nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
+            nyesteIkkeaktiverteSivilstand?.aktiv = LocalDateTime.now()
+            nyesteIkkeaktivertePeriodiserteSivilstand?.aktiv = LocalDateTime.now()
+        }
     }
 
     @Transactional
