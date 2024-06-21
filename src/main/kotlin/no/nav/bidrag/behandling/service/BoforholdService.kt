@@ -392,12 +392,12 @@ class BoforholdService(
         if (oppdatereSivilstand.angreSisteEndring) {
             behandling.gjenoppretteForrigeSivilstandshistorikk(behandling.bidragsmottaker!!)
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
-            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse()
+            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse(behandling)
         } else if (oppdatereSivilstand.tilbakestilleHistorikk) {
             behandling.bidragsmottaker!!.lagreSivilstandshistorikk(behandling.sivilstand)
             behandling.tilbakestilleTilOffentligSivilstandshistorikk()
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
-            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse()
+            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse(behandling)
         }
 
         oppdateringAvBoforholdFeiletException(behandlingsid)
@@ -726,6 +726,7 @@ class BoforholdService(
                 nyttEllerEndretInnslag,
                 sletteInnslag,
                 this.bidragsmottaker!!.foedselsdato,
+                this,
             )
         val resultat = SivilstandApi.beregnV2(this.virkningstidspunktEllerSøktFomDato, request).toSet()
         this.overskriveMedBearbeidaSivilstandshistorikk(resultat)
