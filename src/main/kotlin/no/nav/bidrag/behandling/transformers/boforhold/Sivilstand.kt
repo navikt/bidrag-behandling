@@ -30,22 +30,19 @@ fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(
     endreSivilstand = null,
 )
 
-fun Set<Sivilstand>.henteNyesteGrunnlagsdata(): List<SivilstandGrunnlagDto> {
-    return if (this.isNotEmpty()) {
-        this.first().behandling.grunnlag.hentSisteAktiv()
-            .find { !it.erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
-            .konvertereData<List<SivilstandGrunnlagDto>>() ?: emptyList()
-    } else {
-        emptyList()
-    }
+fun Behandling.henteNyesteSivilstandGrunnlagsdata(): List<SivilstandGrunnlagDto> {
+    return grunnlag.hentSisteAktiv()
+        .find { !it.erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
+        .konvertereData<List<SivilstandGrunnlagDto>>() ?: emptyList()
 }
 
 fun Set<Sivilstand>.tilSvilstandRequest(
     nyttEllerEndretInnslag: Sivilstandsperiode? = null,
     sletteInnslag: Long? = null,
     fødselsdatoBm: LocalDate,
+    behandling: Behandling,
 ) = SivilstandRequest(
-    innhentedeOffentligeOpplysninger = this.henteNyesteGrunnlagsdata(),
+    innhentedeOffentligeOpplysninger = behandling.henteNyesteSivilstandGrunnlagsdata(),
     behandledeSivilstandsopplysninger = toList().tilSivilstandBeregnV2Dto(),
     endreSivilstand = tilEndreSivilstand(nyttEllerEndretInnslag, sletteInnslag),
     fødselsdatoBM = fødselsdatoBm,
