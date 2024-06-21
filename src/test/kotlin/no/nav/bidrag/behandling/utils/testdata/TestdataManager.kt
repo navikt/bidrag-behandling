@@ -52,8 +52,10 @@ class TestdataManager(
         inkluderInntekter: Boolean = false,
         inkludereSivilstand: Boolean = true,
         inkludereBoforhold: Boolean = true,
+        inkludereBp: Boolean = false,
+        behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
     ): Behandling {
-        return oppretteBehandling(inkluderInntekter, inkludereSivilstand, inkludereBoforhold)
+        return oppretteBehandling(inkluderInntekter, inkludereSivilstand, inkludereBoforhold, inkludereBp, behandlingstype)
     }
 
     @Transactional
@@ -146,15 +148,15 @@ class TestdataManager(
                 grunnlagstype.type.getOrMigrate(),
                 grunnlagstype.erBearbeidet,
                 data =
-                if (grunnlagsdata != null) {
-                    tilJson(grunnlagsdata)
-                } else {
-                    oppretteGrunnlagInntektsdata(
-                        grunnlagstype.type.getOrMigrate(),
-                        rolle!!.ident!!,
-                        behandling.søktFomDato,
-                    )
-                },
+                    if (grunnlagsdata != null) {
+                        tilJson(grunnlagsdata)
+                    } else {
+                        oppretteGrunnlagInntektsdata(
+                            grunnlagstype.type.getOrMigrate(),
+                            rolle!!.ident!!,
+                            behandling.søktFomDato,
+                        )
+                    },
                 innhentet = innhentet,
                 aktiv = aktiv,
                 rolle = rolle!!,
@@ -177,13 +179,13 @@ class TestdataManager(
                             periodeFra = søktFomDato.withDayOfMonth(1),
                             periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
                             ainntektspostListe =
-                            listOf(
-                                tilAinntektspostDto(
-                                    beløp = BigDecimal(70000),
-                                    fomDato = søktFomDato,
-                                    tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                                listOf(
+                                    tilAinntektspostDto(
+                                        beløp = BigDecimal(70000),
+                                        fomDato = søktFomDato,
+                                        tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                                    ),
                                 ),
-                            ),
                         ),
                     ),
                 ),
@@ -208,12 +210,12 @@ class TestdataManager(
                     navn = "Lyrisk Sopp",
                     partPersonId = behandling.rolleBoforholdSkalHentesFor!!.ident,
                     borISammeHusstandDtoListe =
-                    listOf(
-                        BorISammeHusstandDto(
-                            periodeFra = LocalDate.parse("2023-01-01"),
-                            periodeTil = LocalDate.parse("2023-05-31"),
+                        listOf(
+                            BorISammeHusstandDto(
+                                periodeFra = LocalDate.parse("2023-01-01"),
+                                periodeTil = LocalDate.parse("2023-05-31"),
+                            ),
                         ),
-                    ),
                 ),
                 RelatertPersonGrunnlagDto(
                     relatertPersonPersonId = testdataBarn2.ident,
@@ -222,12 +224,12 @@ class TestdataManager(
                     navn = "Lyrisk Sopp",
                     partPersonId = behandling.rolleBoforholdSkalHentesFor!!.ident,
                     borISammeHusstandDtoListe =
-                    listOf(
-                        BorISammeHusstandDto(
-                            periodeFra = LocalDate.parse("2023-01-01"),
-                            periodeTil = LocalDate.parse("2023-05-31"),
+                        listOf(
+                            BorISammeHusstandDto(
+                                periodeFra = LocalDate.parse("2023-01-01"),
+                                periodeTil = LocalDate.parse("2023-05-31"),
+                            ),
                         ),
-                    ),
                 ),
             )
 

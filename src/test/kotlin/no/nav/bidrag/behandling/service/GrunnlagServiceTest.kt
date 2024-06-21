@@ -133,7 +133,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste oppdatereGrunnlagForBehandling")
     open inner class OppdatereGrunnlagForBehandling {
-
         @Nested
         open inner class Forskudd {
             @Test
@@ -336,14 +335,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         periodeTil = YearMonth.now().withMonth(1).atDay(1),
                         personId = behandling.bidragsmottaker!!.ident!!,
                         skattegrunnlagspostListe =
-                        listOf(
-                            SkattegrunnlagspostDto(
-                                beløp = BigDecimal(450000),
-                                belop = BigDecimal(450000),
-                                inntektType = "renteinntektAvObligasjon",
-                                skattegrunnlagType = "ORINÆR",
+                            listOf(
+                                SkattegrunnlagspostDto(
+                                    beløp = BigDecimal(450000),
+                                    belop = BigDecimal(450000),
+                                    inntektType = "renteinntektAvObligasjon",
+                                    skattegrunnlagType = "ORINÆR",
+                                ),
                             ),
-                        ),
                     )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -359,12 +358,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             stubUtils.stubHenteGrunnlag(
                                 rolle = it,
                                 responsobjekt =
-                                tilHentGrunnlagDto(
-                                    skattegrunnlag =
-                                    listOf(
-                                        skattegrunnlag,
+                                    tilHentGrunnlagDto(
+                                        skattegrunnlag =
+                                            listOf(
+                                                skattegrunnlag,
+                                            ),
                                     ),
-                                ),
                             )
 
                         else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
@@ -420,14 +419,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         periodeTil = YearMonth.now().withMonth(1).atDay(1),
                         personId = behandling.bidragsmottaker!!.ident!!,
                         skattegrunnlagspostListe =
-                        listOf(
-                            SkattegrunnlagspostDto(
-                                beløp = BigDecimal(450000),
-                                belop = BigDecimal(450000),
-                                inntektType = "renteinntektAvObligasjon",
-                                skattegrunnlagType = "ORINÆR",
+                            listOf(
+                                SkattegrunnlagspostDto(
+                                    beløp = BigDecimal(450000),
+                                    belop = BigDecimal(450000),
+                                    inntektType = "renteinntektAvObligasjon",
+                                    skattegrunnlagType = "ORINÆR",
+                                ),
                             ),
-                        ),
                     )
                 val skattegrunnlagNy =
                     SkattegrunnlagGrunnlagDto(
@@ -435,14 +434,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         periodeTil = YearMonth.now().withMonth(1).atDay(1),
                         personId = behandling.bidragsmottaker!!.ident!!,
                         skattegrunnlagspostListe =
-                        listOf(
-                            SkattegrunnlagspostDto(
-                                beløp = BigDecimal(450000),
-                                belop = BigDecimal(450000),
-                                inntektType = "renteinntektAvObligasjon",
-                                skattegrunnlagType = "Something else",
+                            listOf(
+                                SkattegrunnlagspostDto(
+                                    beløp = BigDecimal(450000),
+                                    belop = BigDecimal(450000),
+                                    inntektType = "renteinntektAvObligasjon",
+                                    skattegrunnlagType = "Something else",
+                                ),
                             ),
-                        ),
                     )
                 testdataManager.oppretteOgLagreGrunnlag(
                     behandling,
@@ -457,9 +456,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentingstidspunkt,
                     innhentingstidspunkt,
                     grunnlagsdata =
-                    opprettHentGrunnlagDto().copy(
-                        skattegrunnlagListe = listOf(skattegrunnlag),
-                    ).tilSummerteInntekter(behandling.bidragsmottaker!!),
+                        opprettHentGrunnlagDto().copy(
+                            skattegrunnlagListe = listOf(skattegrunnlag),
+                        ).tilSummerteInntekter(behandling.bidragsmottaker!!),
                 )
                 behandling.roller.forEach {
                     when (it.rolletype) {
@@ -467,12 +466,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             stubUtils.stubHenteGrunnlag(
                                 rolle = it,
                                 responsobjekt =
-                                tilHentGrunnlagDto(
-                                    skattegrunnlag =
-                                    listOf(
-                                        skattegrunnlagNy,
+                                    tilHentGrunnlagDto(
+                                        skattegrunnlag =
+                                            listOf(
+                                                skattegrunnlagNy,
+                                            ),
                                     ),
-                                ),
                             )
 
                         else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
@@ -509,14 +508,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         periodeTil = YearMonth.now().withMonth(1).atDay(1),
                         personId = behandling.bidragsmottaker!!.ident!!,
                         skattegrunnlagspostListe =
-                        listOf(
-                            SkattegrunnlagspostDto(
-                                beløp = BigDecimal(450000),
-                                belop = BigDecimal(450000),
-                                inntektType = "renteinntektAvObligasjon",
-                                skattegrunnlagType = "ORINÆR",
+                            listOf(
+                                SkattegrunnlagspostDto(
+                                    beløp = BigDecimal(450000),
+                                    belop = BigDecimal(450000),
+                                    inntektType = "renteinntektAvObligasjon",
+                                    skattegrunnlagType = "ORINÆR",
+                                ),
                             ),
-                        ),
                     )
                 val skattegrunnlagNy =
                     SkattegrunnlagGrunnlagDto(
@@ -524,20 +523,20 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         periodeTil = YearMonth.now().withMonth(1).atDay(1),
                         personId = behandling.bidragsmottaker!!.ident!!,
                         skattegrunnlagspostListe =
-                        listOf(
-                            SkattegrunnlagspostDto(
-                                beløp = BigDecimal(450000),
-                                belop = BigDecimal(450000),
-                                inntektType = "renteinntektAvObligasjon",
-                                skattegrunnlagType = "Something else",
+                            listOf(
+                                SkattegrunnlagspostDto(
+                                    beløp = BigDecimal(450000),
+                                    belop = BigDecimal(450000),
+                                    inntektType = "renteinntektAvObligasjon",
+                                    skattegrunnlagType = "Something else",
+                                ),
+                                SkattegrunnlagspostDto(
+                                    beløp = BigDecimal(100000),
+                                    belop = BigDecimal(100000),
+                                    inntektType = "gevinstVedRealisasjonAvAksje",
+                                    skattegrunnlagType = "Something else",
+                                ),
                             ),
-                            SkattegrunnlagspostDto(
-                                beløp = BigDecimal(100000),
-                                belop = BigDecimal(100000),
-                                inntektType = "gevinstVedRealisasjonAvAksje",
-                                skattegrunnlagType = "Something else",
-                            ),
-                        ),
                     )
                 testdataManager.oppretteOgLagreGrunnlag(
                     behandling,
@@ -552,9 +551,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentingstidspunkt,
                     innhentingstidspunkt,
                     grunnlagsdata =
-                    opprettHentGrunnlagDto().copy(
-                        skattegrunnlagListe = listOf(skattegrunnlag),
-                    ).tilSummerteInntekter(behandling.bidragsmottaker!!),
+                        opprettHentGrunnlagDto().copy(
+                            skattegrunnlagListe = listOf(skattegrunnlag),
+                        ).tilSummerteInntekter(behandling.bidragsmottaker!!),
                 )
                 behandling.roller.forEach {
                     when (it.rolletype) {
@@ -562,12 +561,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             stubUtils.stubHenteGrunnlag(
                                 rolle = it,
                                 responsobjekt =
-                                tilHentGrunnlagDto(
-                                    skattegrunnlag =
-                                    listOf(
-                                        skattegrunnlagNy,
+                                    tilHentGrunnlagDto(
+                                        skattegrunnlag =
+                                            listOf(
+                                                skattegrunnlagNy,
+                                            ),
                                     ),
-                                ),
                             )
 
                         else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
@@ -621,12 +620,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             stubUtils.stubHenteGrunnlag(
                                 it,
                                 responsobjekt =
-                                tilHentGrunnlagDto(
-                                    småbarnstillegg =
-                                    listOf(
-                                        småbarnstillegg,
+                                    tilHentGrunnlagDto(
+                                        småbarnstillegg =
+                                            listOf(
+                                                småbarnstillegg,
+                                            ),
                                     ),
-                                ),
                             )
 
                         Rolletype.BARN -> stubUtils.stubHenteGrunnlag(it, tomRespons = true)
@@ -831,7 +830,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                behandling.grunnlag.size shouldBe 26
+                behandling.grunnlag.size shouldBe 27
 
                 val småbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
 
@@ -1044,11 +1043,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     husstandsmedlemmer.size shouldBe 2
                     husstandsmedlemmer.filter { h ->
                         h.navn == "Småstein Nilsen" && h.fødselsdato ==
-                                LocalDate.of(
-                                    2020,
-                                    1,
-                                    24,
-                                ) && h.erBarnAvBmBp
+                            LocalDate.of(
+                                2020,
+                                1,
+                                24,
+                            ) && h.erBarnAvBmBp
                     }.toSet().size shouldBe 1
                 }
             }
@@ -1117,21 +1116,21 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     sivilstand.size shouldBe 2
                     sivilstand.filter { s ->
                         s.personId == testdataBM.ident && s.bekreftelsesdato ==
-                                LocalDate.of(
-                                    2021,
-                                    1,
-                                    1,
-                                ) && s.gyldigFom ==
-                                LocalDate.of(
-                                    2021,
-                                    1,
-                                    1,
-                                ) && s.master == "FREG" &&
-                                s.historisk == true && s.registrert ==
-                                LocalDateTime.parse(
-                                    "2022-01-01T10:03:57.285",
-                                    DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-                                ) && s.type == SivilstandskodePDL.GIFT
+                            LocalDate.of(
+                                2021,
+                                1,
+                                1,
+                            ) && s.gyldigFom ==
+                            LocalDate.of(
+                                2021,
+                                1,
+                                1,
+                            ) && s.master == "FREG" &&
+                            s.historisk == true && s.registrert ==
+                            LocalDateTime.parse(
+                                "2022-01-01T10:03:57.285",
+                                DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                            ) && s.type == SivilstandskodePDL.GIFT
                     }.toSet().size shouldBe 1
                 }
             }
@@ -1269,22 +1268,22 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     arbeidsforhold.size shouldBe 3
                     arbeidsforhold.filter { a ->
                         a.partPersonId == "99057812345" && a.sluttdato == null && a.startdato ==
-                                LocalDate.of(
-                                    2002,
-                                    11,
-                                    3,
-                                ) && a.arbeidsgiverNavn == "SAUEFABRIKK" &&
-                                a.arbeidsgiverOrgnummer == "896929119"
+                            LocalDate.of(
+                                2002,
+                                11,
+                                3,
+                            ) && a.arbeidsgiverNavn == "SAUEFABRIKK" &&
+                            a.arbeidsgiverOrgnummer == "896929119"
                     }.toSet().size shouldBe 1
                 }
             }
         }
 
         @Nested
-        open inner class Særtilskudd {
+        open inner class SærligeUtgifter {
             @Test
             @Transactional
-            open fun `skal hente  grunnlag for særtilskuddsbehandling`() {
+            open fun `skal hente  grunnlag for behandling av særlige utgifter`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false)
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
@@ -1333,14 +1332,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
 
                 assertSoftly(grunnlagBm) { gbm ->
-                    gbm shouldHaveSize 14
+                    gbm shouldHaveSize 15
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 6
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 4
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
-                    gbm.filter { it.erBearbeidet } shouldHaveSize 9
+                    gbm.filter { it.erBearbeidet } shouldHaveSize 10
                 }
 
                 val grunnlagBp = behandling.grunnlag.filter { it.rolle == behandling.bidragspliktig }
@@ -1362,11 +1361,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste aktivering av grunnlag")
     open inner class AktivereGrunnlag {
-
         @Nested
         @DisplayName("Teste aktivering av grunnlag for særlige utgifter")
         open inner class SærligeUtgifter {
-
             @Test
             @Transactional
             open fun `skal aktivere grunnlag av type inntekt for bp i behandling av særlige utgifter`() {
@@ -1383,57 +1380,57 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val skattepliktigeInntekter =
                     SkattepliktigeInntekter(
                         ainntekter =
-                        listOf(
-                            AinntektGrunnlagDto(
-                                personId = behandling.bidragspliktig!!.ident!!,
-                                periodeFra = YearMonth.now().minusMonths(2).atDay(1),
-                                periodeTil = YearMonth.now().minusMonths(1).atDay(1),
-                                ainntektspostListe =
-                                listOf(
-                                    tilAinntektspostDto(
-                                        beskrivelse = "fastloenn",
-                                        beløp = BigDecimal(368000),
-                                        inntektstype = "FASTLOENN",
-                                        utbetalingsperiode =
-                                        YearMonth.now().minusMonths(2)
-                                            .format(DateTimeFormatter.ofPattern("yyyy-MM")),
-                                    ),
+                            listOf(
+                                AinntektGrunnlagDto(
+                                    personId = behandling.bidragspliktig!!.ident!!,
+                                    periodeFra = YearMonth.now().minusMonths(2).atDay(1),
+                                    periodeTil = YearMonth.now().minusMonths(1).atDay(1),
+                                    ainntektspostListe =
+                                        listOf(
+                                            tilAinntektspostDto(
+                                                beskrivelse = "fastloenn",
+                                                beløp = BigDecimal(368000),
+                                                inntektstype = "FASTLOENN",
+                                                utbetalingsperiode =
+                                                    YearMonth.now().minusMonths(2)
+                                                        .format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                                            ),
+                                        ),
                                 ),
                             ),
-                        ),
                         skattegrunnlag =
-                        listOf(
-                            SkattegrunnlagGrunnlagDto(
-                                personId = behandling.bidragspliktig!!.ident!!,
-                                periodeFra = skattegrunlagFraDato,
-                                periodeTil = skattegrunlagFraDato.plusYears(1),
-                                skattegrunnlagspostListe =
-                                listOf(
-                                    SkattegrunnlagspostDto(
-                                        skattegrunnlagType = "ORDINÆR",
-                                        beløp = BigDecimal(368000),
-                                        belop = BigDecimal(368000),
-                                        inntektType = "andelIFellesTapVedSalgAvAndelISDF",
-                                        kode = "andelIFellesTapVedSalgAvAndelISDF",
-                                    ),
+                            listOf(
+                                SkattegrunnlagGrunnlagDto(
+                                    personId = behandling.bidragspliktig!!.ident!!,
+                                    periodeFra = skattegrunlagFraDato,
+                                    periodeTil = skattegrunlagFraDato.plusYears(1),
+                                    skattegrunnlagspostListe =
+                                        listOf(
+                                            SkattegrunnlagspostDto(
+                                                skattegrunnlagType = "ORDINÆR",
+                                                beløp = BigDecimal(368000),
+                                                belop = BigDecimal(368000),
+                                                inntektType = "andelIFellesTapVedSalgAvAndelISDF",
+                                                kode = "andelIFellesTapVedSalgAvAndelISDF",
+                                            ),
+                                        ),
+                                ),
+                                SkattegrunnlagGrunnlagDto(
+                                    personId = behandling.bidragspliktig!!.ident!!,
+                                    periodeFra = skattegrunlagFraDato,
+                                    periodeTil = skattegrunlagFraDato.plusYears(1),
+                                    skattegrunnlagspostListe =
+                                        listOf(
+                                            SkattegrunnlagspostDto(
+                                                skattegrunnlagType = "ORDINÆR",
+                                                beløp = BigDecimal(1368000),
+                                                belop = BigDecimal(1368000),
+                                                inntektType = "samletLoennsinntekt",
+                                                kode = "samletLoennsinntekt",
+                                            ),
+                                        ),
                                 ),
                             ),
-                            SkattegrunnlagGrunnlagDto(
-                                personId = behandling.bidragspliktig!!.ident!!,
-                                periodeFra = skattegrunlagFraDato,
-                                periodeTil = skattegrunlagFraDato.plusYears(1),
-                                skattegrunnlagspostListe =
-                                listOf(
-                                    SkattegrunnlagspostDto(
-                                        skattegrunnlagType = "ORDINÆR",
-                                        beløp = BigDecimal(1368000),
-                                        belop = BigDecimal(1368000),
-                                        inntektType = "samletLoennsinntekt",
-                                        kode = "samletLoennsinntekt",
-                                    ),
-                                ),
-                            ),
-                        ),
                     )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -1519,9 +1516,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                     aktiv = null,
                     grunnlagsdata =
-                    opprettHentGrunnlagDto().copy(
-                        barnetilleggListe = barnetilleggGrunnlag.toList(),
-                    ).tilSummerteInntekter(behandling.bidragspliktig!!),
+                        opprettHentGrunnlagDto().copy(
+                            barnetilleggListe = barnetilleggGrunnlag.toList(),
+                        ).tilSummerteInntekter(behandling.bidragspliktig!!),
                 )
 
                 val aktivereGrunnlagRequest =
@@ -1568,22 +1565,22 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                     aktiv = null,
                     grunnlagsdata =
-                    setOf(
-                        RelatertPersonGrunnlagDto(
-                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
-                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
-                            erBarnAvBmBp = true,
-                            navn = null,
-                            partPersonId = behandling.bidragspliktig!!.ident!!,
-                            borISammeHusstandDtoListe =
-                            listOf(
-                                BorISammeHusstandDto(
-                                    testdataHusstandsmedlem1.fødselsdato,
-                                    periodeTil = null,
-                                ),
+                        setOf(
+                            RelatertPersonGrunnlagDto(
+                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                                erBarnAvBmBp = true,
+                                navn = null,
+                                partPersonId = behandling.bidragspliktig!!.ident!!,
+                                borISammeHusstandDtoListe =
+                                    listOf(
+                                        BorISammeHusstandDto(
+                                            testdataHusstandsmedlem1.fødselsdato,
+                                            periodeTil = null,
+                                        ),
+                                    ),
                             ),
                         ),
-                    ),
                 )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -1594,16 +1591,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     aktiv = null,
                     gjelderIdent = testdataHusstandsmedlem1.ident,
                     grunnlagsdata =
-                    setOf(
-                        BoforholdResponse(
-                            bostatus = Bostatuskode.MED_FORELDER,
-                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
-                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
-                            kilde = Kilde.OFFENTLIG,
-                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
-                            periodeTom = null,
+                        setOf(
+                            BoforholdResponse(
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                                periodeTom = null,
+                            ),
                         ),
-                    ),
                 )
 
                 val aktivereGrunnlagRequest =
@@ -1637,7 +1634,28 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val behandling =
                     testdataManager.oppretteBehandling(false, false, true, true, TypeBehandling.SÆRLIGE_UTGIFTER)
 
-                val rådataBoforhold = behandling.grunnlag.filter{!it.erBearbeidet}.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.first()
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSPLIKTIG ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-su-bp.json",
+                            )
+
+                        Rolletype.BARN ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                            )
+
+                        else -> throw Exception()
+                    }
+                }
+
+                val rådataBoforhold =
+                    behandling.grunnlag.filter { !it.erBearbeidet }.filter { Grunnlagsdatatype.BOFORHOLD == it.type }
+                        .first()
 
                 val nyeBorhosperioder =
                     listOf(
@@ -1670,7 +1688,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         erBearbeidet = false,
                         data = tilJson(endretBoforhold.toSet()),
                         innhentet = LocalDateTime.now().minusDays(1),
-                        aktiv = LocalDateTime.now().minusDays(1),
+                        aktiv = null,
                         rolle = behandling.bidragspliktig!!,
                     ),
                 )
@@ -1689,7 +1707,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             erBearbeidet = true,
                             data = tilJson(it.value),
                             innhentet = LocalDateTime.now().minusDays(1),
-                            aktiv = LocalDateTime.now().minusDays(1),
+                            aktiv = null,
                             rolle = behandling.bidragspliktig!!,
                             gjelder = it.key,
                         ),
@@ -1700,25 +1718,453 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandlingRepository.save(behandling)
 
                 assertSoftly(behandling.grunnlag) { g ->
-                    g shouldHaveSize 3
-                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 3
+                    g shouldHaveSize 6
+                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 6
                     g.filter { it.aktiv != null } shouldHaveSize 3
-                    g.filter { it.erBearbeidet } shouldHaveSize 2
-                    g.filter { !it.erBearbeidet && it.gjelder == null } shouldHaveSize 1
-                    g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
-                    g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
+                    g.filter { it.erBearbeidet } shouldHaveSize 4
+                    g.filter { !it.erBearbeidet && it.gjelder == null } shouldHaveSize 2
+                    g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 2
+                    g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 2
                 }
 
                 // hvis
-                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+                grunnlagService.aktivereGrunnlag(
+                    behandling,
+                    AktivereGrunnlagRequestV2(Personident(testdataBarn1.ident), Grunnlagsdatatype.BOFORHOLD),
+                )
 
                 // så
                 val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
                 assertSoftly(boforhold) { sb ->
-                    sb.size shouldBe 5
-                    sb.filter { it.aktiv != null } shouldHaveSize 3
-                    sb.filter { it.erBearbeidet } shouldHaveSize 3
+                    sb.size shouldBe 6
+                    sb.filter { it.aktiv != null } shouldHaveSize 4
+                    sb.filter { it.erBearbeidet } shouldHaveSize 4
+                    sb.filter { !it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
+                    sb.filter { it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
                 }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal aktivere boforholdrådata dersom bearbeida boforhold er aktivert for samtlige husstandsmedlemmer`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandling(false, false, true, true, TypeBehandling.SÆRLIGE_UTGIFTER)
+
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSPLIKTIG ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-su-bp.json",
+                            )
+
+                        Rolletype.BARN ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                            )
+
+                        else -> throw Exception()
+                    }
+                }
+
+                val rådataBoforhold =
+                    behandling.grunnlag.filter { !it.erBearbeidet }.filter { Grunnlagsdatatype.BOFORHOLD == it.type }
+                        .first()
+
+                val nyeBorhosperioder =
+                    listOf(
+                        BorISammeHusstandDto(
+                            periodeFra = behandling.virkningstidspunktEllerSøktFomDato,
+                            periodeTil = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(7),
+                        ),
+                        BorISammeHusstandDto(
+                            periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(10),
+                            periodeTil = null,
+                        ),
+                    )
+
+                val dataBoforhold = jsonListeTilObjekt<RelatertPersonGrunnlagDto>(rådataBoforhold.data)
+
+                val endretBoforholdTestbarn1 =
+                    dataBoforhold.find { testdataBarn1.ident == it.relatertPersonPersonId }
+                        ?.copy(borISammeHusstandDtoListe = nyeBorhosperioder)
+
+                val endretBoforhold =
+                    listOf(
+                        endretBoforholdTestbarn1!!,
+                        dataBoforhold.find { testdataBarn2.ident == it.relatertPersonPersonId }!!,
+                    )
+
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        behandling,
+                        Grunnlagsdatatype.BOFORHOLD,
+                        erBearbeidet = false,
+                        data = tilJson(endretBoforhold.toSet()),
+                        innhentet = LocalDateTime.now().minusDays(1),
+                        aktiv = null,
+                        rolle = behandling.bidragspliktig!!,
+                    ),
+                )
+
+                val bearbeidaBoforhold =
+                    BoforholdApi.beregnBoforholdBarnV2(
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                        endretBoforhold.tilBoforholdBarnRequest(behandling),
+                    )
+
+                bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
+                    val aktivert = if (it.key == testdataBarn2.ident) null else LocalDateTime.now().minusDays(1)
+                    behandling.grunnlag.add(
+                        Grunnlag(
+                            behandling,
+                            Grunnlagsdatatype.BOFORHOLD,
+                            erBearbeidet = true,
+                            data = tilJson(it.value),
+                            innhentet = LocalDateTime.now().minusDays(1),
+                            aktiv = aktivert,
+                            rolle = behandling.bidragspliktig!!,
+                            gjelder = it.key,
+                        ),
+                    )
+                }
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                behandlingRepository.save(behandling)
+
+                assertSoftly(behandling.grunnlag) { g ->
+                    g shouldHaveSize 6
+                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 6
+                    g.filter { it.aktiv != null } shouldHaveSize 4
+                    g.filter { it.erBearbeidet } shouldHaveSize 4
+                    g.filter { !it.erBearbeidet && it.gjelder == null && it.aktiv === null } shouldHaveSize 1
+                    g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet && it.aktiv != null } shouldHaveSize 2
+                    g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
+                }
+
+                assertSoftly(behandling.husstandsbarn) { hb ->
+                    hb shouldHaveSize 2
+                    hb.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                }
+
+                // hvis
+                grunnlagService.aktivereGrunnlag(
+                    behandling,
+                    AktivereGrunnlagRequestV2(Personident(testdataBarn2.ident), Grunnlagsdatatype.BOFORHOLD, false),
+                )
+
+                // så
+                val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
+                assertSoftly(boforhold) { b ->
+                    b.size shouldBe 6
+                    b.filter { it.aktiv != null } shouldHaveSize 6
+                    b.filter { it.erBearbeidet } shouldHaveSize 4
+                    b.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 0
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type utvidet barnetrygd for særtilskuddsbehandling`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandling(
+                        false,
+                        false,
+                        false,
+                        true,
+                        behandlingstype = TypeBehandling.SÆRLIGE_UTGIFTER,
+                    )
+
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+                val grunnlag =
+                    setOf(
+                        UtvidetBarnetrygdGrunnlagDto(
+                            personId = behandling.bidragspliktig!!.ident!!,
+                            periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                            periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                            beløp = BigDecimal(37500),
+                            manueltBeregnet = false,
+                        ),
+                    )
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.UTVIDET_BARNETRYGD, false),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata = grunnlag,
+                )
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.UTVIDET_BARNETRYGD, true),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata =
+                        opprettHentGrunnlagDto().copy(
+                            utvidetBarnetrygdListe = grunnlag.toList(),
+                        ).tilSummerteInntekter(behandling.bidragspliktig!!),
+                )
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        Personident(behandling.bidragspliktig!!.ident!!),
+                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    )
+
+                // hvis
+                val respons =
+                    assertFailsWith<HttpClientErrorException> {
+                        grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
+                    }
+
+                // så
+                respons.statusCode shouldBe HttpStatus.NOT_FOUND
+            }
+
+            @Test
+            @Transactional
+            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type småbarnstillegg for særtilskuddsbehandling`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandling(
+                        false,
+                        false,
+                        false,
+                        true,
+                        behandlingstype = TypeBehandling.SÆRLIGE_UTGIFTER,
+                    )
+
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
+
+                val grunnlag =
+                    setOf(
+                        SmåbarnstilleggGrunnlagDto(
+                            personId = behandling.bidragspliktig!!.ident!!,
+                            periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                            periodeTil = YearMonth.now().withMonth(1).atDay(1),
+                            beløp = BigDecimal(35000),
+                            manueltBeregnet = false,
+                        ),
+                    )
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SMÅBARNSTILLEGG, false),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata = grunnlag,
+                )
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SMÅBARNSTILLEGG, true),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata =
+                        opprettHentGrunnlagDto().copy(
+                            småbarnstilleggListe = grunnlag.toList(),
+                        ).tilSummerteInntekter(behandling.bidragspliktig!!),
+                )
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        Personident(behandling.bidragspliktig!!.ident!!),
+                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                    )
+
+                // hvis
+                val respons =
+                    assertFailsWith<HttpClientErrorException> {
+                        grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
+                    }
+
+                // så
+                respons.statusCode shouldBe HttpStatus.NOT_FOUND
+            }
+
+            @Test
+            @Transactional
+            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type kontantstøtte for særtilskuddsbehandling`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandling(false, false, false, true, TypeBehandling.SÆRLIGE_UTGIFTER)
+
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
+
+                val grunnlag =
+                    setOf(
+                        KontantstøtteGrunnlagDto(
+                            behandling.bidragspliktig!!.ident!!,
+                            behandling.søknadsbarn.first().ident!!,
+                            YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                            YearMonth.now().withMonth(1).atDay(1),
+                            50000,
+                        ),
+                    )
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.KONTANTSTØTTE, false),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata = grunnlag,
+                )
+
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.KONTANTSTØTTE, true),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata =
+                        opprettHentGrunnlagDto()
+                            .copy(
+                                kontantstøtteListe = grunnlag.toList(),
+                            ).tilSummerteInntekter(behandling.bidragspliktig!!),
+                )
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        Personident(behandling.bidragspliktig?.ident!!),
+                        Grunnlagsdatatype.KONTANTSTØTTE,
+                    )
+
+                // hvis
+                val respons =
+                    assertFailsWith<HttpClientErrorException> {
+                        grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
+                    }
+
+                // så
+                respons.statusCode shouldBe HttpStatus.NOT_FOUND
+            }
+
+            @Test
+            @Transactional
+            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type sivilstand for særtilskuddsbehandling`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandlingINyTransaksjon(
+                        false,
+                        false,
+                        false,
+                        true,
+                        TypeBehandling.SÆRLIGE_UTGIFTER,
+                    )
+
+                assertSoftly(behandling.sivilstand) {
+                    it.size shouldBe 0
+                }
+
+                testdataManager.oppretteOgLagreGrunnlagINyTransaksjon(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, false),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata =
+                        setOf(
+                            SivilstandGrunnlagDto(
+                                personId = behandling.bidragspliktig!!.ident!!,
+                                type = SivilstandskodePDL.SKILT,
+                                gyldigFom = LocalDate.now().minusMonths(29),
+                                master = "FREG",
+                                historisk = false,
+                                registrert = LocalDateTime.now().minusMonths(29),
+                                bekreftelsesdato = null,
+                            ),
+                        ),
+                )
+
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    gjelderIdent = testdataHusstandsmedlem1.ident,
+                    grunnlagsdata =
+                        setOf(
+                            Sivilstand(
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
+                            ),
+                        ),
+                )
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        Personident(behandling.bidragspliktig?.ident!!),
+                        Grunnlagsdatatype.SIVILSTAND,
+                    )
+
+                // hvis
+                val respons =
+                    assertFailsWith<HttpClientErrorException> {
+                        grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
+                    }
+
+                // så
+                respons.statusCode shouldBe HttpStatus.NOT_FOUND
+            }
+
+            @Test
+            @Transactional
+            open fun `skal gi 404-svar hvis ingen grunnlag å aktivere`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandling(
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.SÆRLIGE_UTGIFTER,
+                    )
+                stubbeHentingAvPersoninfoForTestpersoner()
+                Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
+                    .thenReturn(testdataBarn1.tilPersonDto())
+
+                assertSoftly(behandling.husstandsbarn) {
+                    it.size shouldBe 2
+                }
+
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = LocalDateTime.now(),
+                    gjelderIdent = testdataHusstandsmedlem1.ident,
+                    grunnlagsdata =
+                        setOf(
+                            BoforholdResponse(
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                                periodeTom = null,
+                            ),
+                        ),
+                )
+
+                entityManager.flush()
+                entityManager.refresh(behandling)
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        Personident(testdataHusstandsmedlem1.ident),
+                        Grunnlagsdatatype.BOFORHOLD,
+                    )
+
+                // hvis
+                val respons =
+                    assertFailsWith<HttpClientErrorException> {
+                        grunnlagService.aktivereGrunnlag(
+                            behandling,
+                            aktivereGrunnlagRequest,
+                        )
+                    }
+
+                // så
+                respons.statusCode shouldBe HttpStatus.NOT_FOUND
             }
         }
 
@@ -1740,57 +2186,57 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val skattepliktigeInntekter =
                     SkattepliktigeInntekter(
                         ainntekter =
-                        listOf(
-                            AinntektGrunnlagDto(
-                                personId = behandling.bidragsmottaker!!.ident!!,
-                                periodeFra = YearMonth.now().minusMonths(2).atDay(1),
-                                periodeTil = YearMonth.now().minusMonths(1).atDay(1),
-                                ainntektspostListe =
-                                listOf(
-                                    tilAinntektspostDto(
-                                        beskrivelse = "fastloenn",
-                                        beløp = BigDecimal(368000),
-                                        inntektstype = "FASTLOENN",
-                                        utbetalingsperiode =
-                                        YearMonth.now().minusMonths(2)
-                                            .format(DateTimeFormatter.ofPattern("yyyy-MM")),
-                                    ),
+                            listOf(
+                                AinntektGrunnlagDto(
+                                    personId = behandling.bidragsmottaker!!.ident!!,
+                                    periodeFra = YearMonth.now().minusMonths(2).atDay(1),
+                                    periodeTil = YearMonth.now().minusMonths(1).atDay(1),
+                                    ainntektspostListe =
+                                        listOf(
+                                            tilAinntektspostDto(
+                                                beskrivelse = "fastloenn",
+                                                beløp = BigDecimal(368000),
+                                                inntektstype = "FASTLOENN",
+                                                utbetalingsperiode =
+                                                    YearMonth.now().minusMonths(2)
+                                                        .format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                                            ),
+                                        ),
                                 ),
                             ),
-                        ),
                         skattegrunnlag =
-                        listOf(
-                            SkattegrunnlagGrunnlagDto(
-                                personId = behandling.bidragsmottaker!!.ident!!,
-                                periodeFra = skattegrunlagFraDato,
-                                periodeTil = skattegrunlagFraDato.plusYears(1),
-                                skattegrunnlagspostListe =
-                                listOf(
-                                    SkattegrunnlagspostDto(
-                                        skattegrunnlagType = "ORDINÆR",
-                                        beløp = BigDecimal(368000),
-                                        belop = BigDecimal(368000),
-                                        inntektType = "andelIFellesTapVedSalgAvAndelISDF",
-                                        kode = "andelIFellesTapVedSalgAvAndelISDF",
-                                    ),
+                            listOf(
+                                SkattegrunnlagGrunnlagDto(
+                                    personId = behandling.bidragsmottaker!!.ident!!,
+                                    periodeFra = skattegrunlagFraDato,
+                                    periodeTil = skattegrunlagFraDato.plusYears(1),
+                                    skattegrunnlagspostListe =
+                                        listOf(
+                                            SkattegrunnlagspostDto(
+                                                skattegrunnlagType = "ORDINÆR",
+                                                beløp = BigDecimal(368000),
+                                                belop = BigDecimal(368000),
+                                                inntektType = "andelIFellesTapVedSalgAvAndelISDF",
+                                                kode = "andelIFellesTapVedSalgAvAndelISDF",
+                                            ),
+                                        ),
+                                ),
+                                SkattegrunnlagGrunnlagDto(
+                                    personId = behandling.bidragsmottaker!!.ident!!,
+                                    periodeFra = skattegrunlagFraDato,
+                                    periodeTil = skattegrunlagFraDato.plusYears(1),
+                                    skattegrunnlagspostListe =
+                                        listOf(
+                                            SkattegrunnlagspostDto(
+                                                skattegrunnlagType = "ORDINÆR",
+                                                beløp = BigDecimal(1368000),
+                                                belop = BigDecimal(1368000),
+                                                inntektType = "samletLoennsinntekt",
+                                                kode = "samletLoennsinntekt",
+                                            ),
+                                        ),
                                 ),
                             ),
-                            SkattegrunnlagGrunnlagDto(
-                                personId = behandling.bidragsmottaker!!.ident!!,
-                                periodeFra = skattegrunlagFraDato,
-                                periodeTil = skattegrunlagFraDato.plusYears(1),
-                                skattegrunnlagspostListe =
-                                listOf(
-                                    SkattegrunnlagspostDto(
-                                        skattegrunnlagType = "ORDINÆR",
-                                        beløp = BigDecimal(1368000),
-                                        belop = BigDecimal(1368000),
-                                        inntektType = "samletLoennsinntekt",
-                                        kode = "samletLoennsinntekt",
-                                    ),
-                                ),
-                            ),
-                        ),
                     )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -1874,9 +2320,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                     aktiv = null,
                     grunnlagsdata =
-                    opprettHentGrunnlagDto().copy(
-                        barnetilleggListe = barnetilleggGrunnlag.toList(),
-                    ).tilSummerteInntekter(behandling.bidragsmottaker!!),
+                        opprettHentGrunnlagDto().copy(
+                            barnetilleggListe = barnetilleggGrunnlag.toList(),
+                        ).tilSummerteInntekter(behandling.bidragsmottaker!!),
                 )
 
                 val aktivereGrunnlagRequest =
@@ -1935,10 +2381,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                     aktiv = null,
                     grunnlagsdata =
-                    opprettHentGrunnlagDto()
-                        .copy(
-                            kontantstøtteListe = grunnlag.toList(),
-                        ).tilSummerteInntekter(behandling.bidragsmottaker!!),
+                        opprettHentGrunnlagDto()
+                            .copy(
+                                kontantstøtteListe = grunnlag.toList(),
+                            ).tilSummerteInntekter(behandling.bidragsmottaker!!),
                 )
 
                 val aktivereGrunnlagRequest =
@@ -1998,9 +2444,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                     aktiv = null,
                     grunnlagsdata =
-                    opprettHentGrunnlagDto().copy(
-                        småbarnstilleggListe = grunnlag.toList(),
-                    ).tilSummerteInntekter(behandling.bidragsmottaker!!),
+                        opprettHentGrunnlagDto().copy(
+                            småbarnstilleggListe = grunnlag.toList(),
+                        ).tilSummerteInntekter(behandling.bidragsmottaker!!),
                 )
 
                 val aktivereGrunnlagRequest =
@@ -2058,9 +2504,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                     aktiv = null,
                     grunnlagsdata =
-                    opprettHentGrunnlagDto().copy(
-                        utvidetBarnetrygdListe = grunnlag.toList(),
-                    ).tilSummerteInntekter(behandling.bidragsmottaker!!),
+                        opprettHentGrunnlagDto().copy(
+                            utvidetBarnetrygdListe = grunnlag.toList(),
+                        ).tilSummerteInntekter(behandling.bidragsmottaker!!),
                 )
                 val aktivereGrunnlagRequest =
                     AktivereGrunnlagRequestV2(
@@ -2105,22 +2551,22 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                     aktiv = null,
                     grunnlagsdata =
-                    setOf(
-                        RelatertPersonGrunnlagDto(
-                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
-                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
-                            erBarnAvBmBp = true,
-                            navn = null,
-                            partPersonId = behandling.bidragsmottaker!!.ident!!,
-                            borISammeHusstandDtoListe =
-                            listOf(
-                                BorISammeHusstandDto(
-                                    testdataHusstandsmedlem1.fødselsdato,
-                                    periodeTil = null,
-                                ),
+                        setOf(
+                            RelatertPersonGrunnlagDto(
+                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                                erBarnAvBmBp = true,
+                                navn = null,
+                                partPersonId = behandling.bidragsmottaker!!.ident!!,
+                                borISammeHusstandDtoListe =
+                                    listOf(
+                                        BorISammeHusstandDto(
+                                            testdataHusstandsmedlem1.fødselsdato,
+                                            periodeTil = null,
+                                        ),
+                                    ),
                             ),
                         ),
-                    ),
                 )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -2130,16 +2576,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     aktiv = null,
                     gjelderIdent = testdataHusstandsmedlem1.ident,
                     grunnlagsdata =
-                    setOf(
-                        BoforholdResponse(
-                            bostatus = Bostatuskode.MED_FORELDER,
-                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
-                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
-                            kilde = Kilde.OFFENTLIG,
-                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
-                            periodeTom = null,
+                        setOf(
+                            BoforholdResponse(
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                                periodeTom = null,
+                            ),
                         ),
-                    ),
                 )
 
                 val aktivereGrunnlagRequest =
@@ -2182,17 +2628,17 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
                     aktiv = null,
                     grunnlagsdata =
-                    setOf(
-                        SivilstandGrunnlagDto(
-                            personId = behandling.bidragsmottaker!!.ident!!,
-                            type = SivilstandskodePDL.SKILT,
-                            gyldigFom = LocalDate.now().minusMonths(29),
-                            master = "FREG",
-                            historisk = false,
-                            registrert = LocalDateTime.now().minusMonths(29),
-                            bekreftelsesdato = null,
+                        setOf(
+                            SivilstandGrunnlagDto(
+                                personId = behandling.bidragsmottaker!!.ident!!,
+                                type = SivilstandskodePDL.SKILT,
+                                gyldigFom = LocalDate.now().minusMonths(29),
+                                master = "FREG",
+                                historisk = false,
+                                registrert = LocalDateTime.now().minusMonths(29),
+                                bekreftelsesdato = null,
+                            ),
                         ),
-                    ),
                 )
 
                 testdataManager.oppretteOgLagreGrunnlag(
@@ -2202,14 +2648,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     aktiv = null,
                     gjelderIdent = testdataHusstandsmedlem1.ident,
                     grunnlagsdata =
-                    setOf(
-                        Sivilstand(
-                            kilde = Kilde.OFFENTLIG,
-                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
-                            periodeTom = null,
-                            sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
+                        setOf(
+                            Sivilstand(
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
+                            ),
                         ),
-                    ),
                 )
 
                 val aktivereGrunnlagRequest =
@@ -2460,16 +2906,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     aktiv = LocalDateTime.now(),
                     gjelderIdent = testdataHusstandsmedlem1.ident,
                     grunnlagsdata =
-                    setOf(
-                        BoforholdResponse(
-                            bostatus = Bostatuskode.MED_FORELDER,
-                            relatertPersonPersonId = testdataHusstandsmedlem1.ident,
-                            fødselsdato = testdataHusstandsmedlem1.fødselsdato,
-                            kilde = Kilde.OFFENTLIG,
-                            periodeFom = testdataHusstandsmedlem1.fødselsdato,
-                            periodeTom = null,
+                        setOf(
+                            BoforholdResponse(
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                fødselsdato = testdataHusstandsmedlem1.fødselsdato,
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = testdataHusstandsmedlem1.fødselsdato,
+                                periodeTom = null,
+                            ),
                         ),
-                    ),
                 )
 
                 entityManager.flush()
@@ -2553,16 +2999,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(13),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -2575,16 +3021,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(15),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -2616,18 +3062,18 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            BoforholdResponse(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(13),
-                                periodeTom = null,
-                                bostatus = Bostatuskode.MED_FORELDER,
-                                fødselsdato = LocalDate.now().minusYears(13),
-                                relatertPersonPersonId = testdataBarn1.ident,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BoforholdResponse(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    bostatus = Bostatuskode.MED_FORELDER,
+                                    fødselsdato = LocalDate.now().minusYears(13),
+                                    relatertPersonPersonId = testdataBarn1.ident,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -2642,18 +3088,18 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            BoforholdResponse(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = nyFomdato,
-                                periodeTom = null,
-                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                                fødselsdato = LocalDate.now().minusYears(13),
-                                relatertPersonPersonId = testdataBarn1.ident,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BoforholdResponse(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = nyFomdato,
+                                    periodeTom = null,
+                                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                    fødselsdato = LocalDate.now().minusYears(13),
+                                    relatertPersonPersonId = testdataBarn1.ident,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -2805,6 +3251,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
     private fun stubbeHentingAvPersoninfoForTestpersoner() {
         Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBM.ident)).thenReturn(testdataBM.tilPersonDto())
+        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBP.ident)).thenReturn(testdataBP.tilPersonDto())
         Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
             .thenReturn(testdataBarn1.tilPersonDto())
         Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn2.ident))
