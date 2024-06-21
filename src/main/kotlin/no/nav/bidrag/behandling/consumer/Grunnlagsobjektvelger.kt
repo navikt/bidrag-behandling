@@ -35,11 +35,7 @@ enum class Grunnlagsobjektvelger(
             TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
-    BARNETILSYN(
-        mapOf(
-            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-        ),
-    ),
+    BARNETILSYN(emptyMap()),
     KONTANTSTØTTE(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
@@ -48,14 +44,13 @@ enum class Grunnlagsobjektvelger(
     ),
     HUSSTANDSMEDLEMMER_OG_EGNE_BARN(
         mapOf(
-            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
-            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
     SIVILSTAND(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
     SKATTEGRUNNLAG(
