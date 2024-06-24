@@ -849,7 +849,8 @@ class BoforholdService(
      * Brukes til å hente evnt. husstandsmedlem som mangler relasjon til BM.
      */
     private fun Behandling.henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(personident: Personident): Set<RelatertPersonGrunnlagDto> {
-        return this.grunnlag.filter { !it.erBearbeidet }.filter { it.aktiv != null }.maxByOrNull { it.aktiv!! }
+        return this.grunnlag.filter { !it.erBearbeidet }.filter { it.aktiv != null }
+            .filter { Grunnlagsdatatype.BOFORHOLD == it.type }.maxByOrNull { it.aktiv!! }
             .konvertereData<Set<RelatertPersonGrunnlagDto>>()?.filter { personident.verdi == it.relatertPersonPersonId }
             ?.map { it.copy(erBarnAvBmBp = true) }
             ?.toSet() ?: emptySet()

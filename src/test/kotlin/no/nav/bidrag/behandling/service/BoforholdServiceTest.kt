@@ -904,7 +904,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal opprette husstandsmedlem`() {
                 // gitt
-                val behandling = opprettBehandlingForBoforholdTest()
+                val behandling = opprettBehandlingForBoforholdTest(inkludereBoforhold = false, inkludereSivilstand = true)
 
                 behandling.husstandsbarn.shouldHaveSize(1)
 
@@ -1071,8 +1071,13 @@ class BoforholdServiceTest : TestContainerRunner() {
             }
         }
 
-        private fun opprettBehandlingForBoforholdTest(): Behandling {
-            val behandling = testdataManager.oppretteBehandling(false, false, false)
+        private fun opprettBehandlingForBoforholdTest(
+            inkludereInntekter: Boolean = false,
+            inkludereSivilstand: Boolean = false,
+            inkludereBoforhold: Boolean = false,
+        ): Behandling {
+            val behandling =
+                testdataManager.oppretteBehandling(inkludereInntekter, inkludereSivilstand, inkludereBoforhold)
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             behandling.husstandsbarn.clear()
             behandling.husstandsbarn.addAll(
