@@ -180,7 +180,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                     "en12",
                     roller,
                     12312312321,
-                ).copy(stønadstype = Stønadstype.BIDRAG)
+                ).copy(stønadstype = Stønadstype.FORSKUDD)
 
             val responseMedNull =
                 httpHeaderTestRestTemplate.exchange(
@@ -263,8 +263,9 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                     "1900000",
                     "en12",
                     roller,
-                ).copy(stønadstype = Stønadstype.BIDRAG)
+                ).copy(stønadstype = Stønadstype.FORSKUDD)
 
+            // hvis
             val responseMedNull =
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUriV2()}/behandling",
@@ -272,17 +273,11 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                     HttpEntity(testBehandlingMedNull),
                     Void::class.java,
                 )
-            Assertions.assertEquals(HttpStatus.OK, responseMedNull.statusCode)
-            /*
-            stubUtils.Verify()
-                .opprettForsendelseKaltMed("\"gjelderIdent\":\"12345678911\"")
-            stubUtils.Verify()
-                .opprettForsendelseKaltMed("\"barnIBehandling\":[\"12345678910\"]")
 
-             */
+            // så
+            Assertions.assertEquals(HttpStatus.OK, responseMedNull.statusCode)
         }
 
-        //        @Disabled("Wiremock-problem kun på Github")
         @Test
         fun `skal opprette behandling som inkluderer barn med navn men uten ident`() {
             // gitt

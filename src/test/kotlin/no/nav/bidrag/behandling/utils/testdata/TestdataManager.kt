@@ -4,18 +4,22 @@ import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
@@ -48,8 +52,10 @@ class TestdataManager(
         inkluderInntekter: Boolean = false,
         inkludereSivilstand: Boolean = true,
         inkludereBoforhold: Boolean = true,
+        inkludereBp: Boolean = false,
+        behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
     ): Behandling {
-        return oppretteBehandling(inkluderInntekter, inkludereSivilstand, inkludereBoforhold)
+        return oppretteBehandling(inkluderInntekter, inkludereSivilstand, inkludereBoforhold, inkludereBp, behandlingstype)
     }
 
     @Transactional
@@ -57,8 +63,23 @@ class TestdataManager(
         inkludereInntekter: Boolean = false,
         inkludereSivilstand: Boolean = true,
         inkludereBoforhold: Boolean = true,
+        inkludereBp: Boolean = false,
+        behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
     ): Behandling {
         val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
+        when (behandlingstype) {
+            TypeBehandling.FORSKUDD -> {
+                behandling.stonadstype = Stønadstype.FORSKUDD
+            }
+
+            TypeBehandling.SÆRLIGE_UTGIFTER -> {
+                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
+                behandling.stonadstype = null
+            }
+
+            else -> throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
+        }
+
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
         behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
 
@@ -68,6 +89,10 @@ class TestdataManager(
                 opprettRolle(behandling, testdataBarn2),
                 opprettRolle(behandling, testdataBM),
             )
+
+        if (inkludereBp) {
+            behandling.roller.add(opprettRolle(behandling, testdataBP))
+        }
 
         if (inkludereBoforhold) {
             oppretteBoforhold(behandling)
@@ -115,6 +140,7 @@ class TestdataManager(
         aktiv: LocalDateTime? = null,
         grunnlagsdata: T? = null,
         gjelderIdent: String? = null,
+        rolle: Rolle? = behandling.roller.first { r -> Rolletype.BIDRAGSMOTTAKER == r.rolletype },
     ) {
         behandling.grunnlag.add(
             Grunnlag(
@@ -127,13 +153,13 @@ class TestdataManager(
                     } else {
                         oppretteGrunnlagInntektsdata(
                             grunnlagstype.type.getOrMigrate(),
-                            behandling.bidragsmottaker!!.ident!!,
+                            rolle!!.ident!!,
                             behandling.søktFomDato,
                         )
                     },
                 innhentet = innhentet,
                 aktiv = aktiv,
-                rolle = behandling.roller.first { r -> Rolletype.BIDRAGSMOTTAKER == r.rolletype },
+                rolle = rolle!!,
                 gjelder = gjelderIdent,
             ),
         )
@@ -182,7 +208,7 @@ class TestdataManager(
                     fødselsdato = testdataBarn1.fødselsdato,
                     erBarnAvBmBp = true,
                     navn = "Lyrisk Sopp",
-                    partPersonId = behandling.bidragsmottaker!!.ident!!,
+                    partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                     borISammeHusstandDtoListe =
                         listOf(
                             BorISammeHusstandDto(
@@ -196,7 +222,7 @@ class TestdataManager(
                     fødselsdato = testdataBarn2.fødselsdato,
                     erBarnAvBmBp = true,
                     navn = "Lyrisk Sopp",
-                    partPersonId = behandling.bidragsmottaker!!.ident!!,
+                    partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                     borISammeHusstandDtoListe =
                         listOf(
                             BorISammeHusstandDto(
@@ -213,7 +239,7 @@ class TestdataManager(
                 behandling = behandling,
                 innhentet = LocalDateTime.now().minusDays(3),
                 data = commonObjectmapper.writeValueAsString(grunnlagHusstandsmedlemmer),
-                rolle = behandling.bidragsmottaker!!,
+                rolle = behandling.rolleGrunnlagSkalHentesFor!!,
                 type = Grunnlagsdatatype.BOFORHOLD,
                 erBearbeidet = false,
             ),
@@ -233,7 +259,7 @@ class TestdataManager(
                         behandling = behandling,
                         innhentet = LocalDateTime.now().minusDays(3),
                         data = commonObjectmapper.writeValueAsString(it.value),
-                        rolle = behandling.bidragsmottaker!!,
+                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
                         type = Grunnlagsdatatype.BOFORHOLD,
                         gjelder = it.key,
                         erBearbeidet = true,

@@ -316,7 +316,7 @@ class BoforholdService(
             ikkeAktiverteGrunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }
 
-        if (nyesteIkkeaktivertePeriodiserteSivilstand == null || nyesteIkkeaktiverteSivilstand == null) {
+        if (nyesteIkkeaktivertePeriodiserteSivilstand == null && nyesteIkkeaktiverteSivilstand == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ingen grunnlag av type SIVILSTAND å aktivere for  behandling $behandling.id",
@@ -326,28 +326,32 @@ class BoforholdService(
         val data =
             when (overskriveManuelleOpplysninger) {
                 true -> {
-                    nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
-                    jsonListeTilObjekt<SivilstandBeregnV2Dto>(nyesteIkkeaktivertePeriodiserteSivilstand.data)
+                    nyesteIkkeaktivertePeriodiserteSivilstand?.let {
+                        jsonListeTilObjekt<SivilstandBeregnV2Dto>(it.data)
+                    }
                 }
 
                 false -> {
-                    val request =
-                        jsonListeTilObjekt<SivilstandGrunnlagDto>(nyesteIkkeaktiverteSivilstand.data)
-                            .tilSivilstandRequest(
-                                behandling.sivilstand.filter { Kilde.MANUELL == it.kilde }.toSet(),
-                                behandling.bidragsmottaker!!.foedselsdato,
-                            )
-                    SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, request).toSet()
+                    nyesteIkkeaktiverteSivilstand?.let { g ->
+                        val request =
+                            jsonListeTilObjekt<SivilstandGrunnlagDto>(g.data)
+                                .tilSivilstandRequest(
+                                    behandling.sivilstand.filter { Kilde.MANUELL == it.kilde }.toSet(),
+                                    behandling.bidragsmottaker!!.foedselsdato,
+                                )
+                        SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, request).toSet()
+                    }
                 }
             }
+        data?.let {
+            behandling.sivilstand.clear()
+            behandling.sivilstand.addAll(
+                it.tilSivilstand(behandling),
+            )
 
-        behandling.sivilstand.clear()
-        behandling.sivilstand.addAll(
-            data.tilSivilstand(behandling),
-        )
-
-        nyesteIkkeaktiverteSivilstand.aktiv = LocalDateTime.now()
-        nyesteIkkeaktivertePeriodiserteSivilstand.aktiv = LocalDateTime.now()
+            nyesteIkkeaktiverteSivilstand?.aktiv = LocalDateTime.now()
+            nyesteIkkeaktivertePeriodiserteSivilstand?.aktiv = LocalDateTime.now()
+        }
     }
 
     @Transactional
@@ -392,12 +396,12 @@ class BoforholdService(
         if (oppdatereSivilstand.angreSisteEndring) {
             behandling.gjenoppretteForrigeSivilstandshistorikk(behandling.bidragsmottaker!!)
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
-            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse()
+            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse(behandling)
         } else if (oppdatereSivilstand.tilbakestilleHistorikk) {
             behandling.bidragsmottaker!!.lagreSivilstandshistorikk(behandling.sivilstand)
             behandling.tilbakestilleTilOffentligSivilstandshistorikk()
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
-            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse()
+            return sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilOppdatereBoforholdResponse(behandling)
         }
 
         oppdateringAvBoforholdFeiletException(behandlingsid)
@@ -726,6 +730,7 @@ class BoforholdService(
                 nyttEllerEndretInnslag,
                 sletteInnslag,
                 this.bidragsmottaker!!.foedselsdato,
+                this,
             )
         val resultat = SivilstandApi.beregnV2(this.virkningstidspunktEllerSøktFomDato, request).toSet()
         this.overskriveMedBearbeidaSivilstandshistorikk(resultat)
@@ -844,7 +849,8 @@ class BoforholdService(
      * Brukes til å hente evnt. husstandsmedlem som mangler relasjon til BM.
      */
     private fun Behandling.henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(personident: Personident): Set<RelatertPersonGrunnlagDto> {
-        return this.grunnlag.filter { !it.erBearbeidet }.filter { it.aktiv != null }.maxByOrNull { it.aktiv!! }
+        return this.grunnlag.filter { !it.erBearbeidet }.filter { it.aktiv != null }
+            .filter { Grunnlagsdatatype.BOFORHOLD == it.type }.maxByOrNull { it.aktiv!! }
             .konvertereData<Set<RelatertPersonGrunnlagDto>>()?.filter { personident.verdi == it.relatertPersonPersonId }
             ?.map { it.copy(erBarnAvBmBp = true) }
             ?.toSet() ?: emptySet()

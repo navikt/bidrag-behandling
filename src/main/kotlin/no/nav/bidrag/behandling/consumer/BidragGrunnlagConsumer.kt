@@ -1,8 +1,11 @@
 package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.transformers.TypeBehandling
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
@@ -10,9 +13,11 @@ import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDt
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpStatus
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Component
+import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
@@ -26,43 +31,15 @@ class BidragGrunnlagConsumer(
     private val bidragGrunnlagUri get() = UriComponentsBuilder.fromUri(bidragGrunnlagUrl)
 
     companion object {
-        val grunnlagstyperBm =
-            setOf(
-                GrunnlagRequestType.AINNTEKT,
-                GrunnlagRequestType.SKATTEGRUNNLAG,
-                GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
-                GrunnlagRequestType.BARNETILLEGG,
-                GrunnlagRequestType.KONTANTSTØTTE,
-                GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
-                GrunnlagRequestType.SIVILSTAND,
-                GrunnlagRequestType.ARBEIDSFORHOLD,
-            )
-
-        val grunnlagstyperBarn =
-            setOf(
-                GrunnlagRequestType.ARBEIDSFORHOLD,
-                GrunnlagRequestType.SKATTEGRUNNLAG,
-                GrunnlagRequestType.AINNTEKT,
-            )
-
-        fun oppretteGrunnlagsobjekterBarn(
-            personidentBarn: Personident,
-            virkningstidspunktEllerSøktFra: LocalDate,
+        fun oppretteGrunnlagsobjekter(
+            personident: Personident,
+            rolletype: Rolletype,
+            behandling: Behandling,
         ): List<GrunnlagRequestDto> =
             henteGrunnlag(
-                personidentBarn,
-                grunnlagstyperBarn,
-                virkningstidspunktEllerSøktFra,
-            )
-
-        fun oppretteGrunnlagsobjekterBm(
-            personidentBm: Personident,
-            virkningstidspunktEllerSøktFra: LocalDate,
-        ): List<GrunnlagRequestDto> =
-            henteGrunnlag(
-                personidentBm,
-                grunnlagstyperBm,
-                virkningstidspunktEllerSøktFra,
+                personident,
+                Grunnlagsobjektvelger.requestobjekter(behandling.tilType(), rolletype),
+                behandling.virkningstidspunktEllerSøktFomDato,
             )
 
         private fun henteGrunnlag(
@@ -96,21 +73,41 @@ class BidragGrunnlagConsumer(
     }
 
     fun henteGrunnlagRequestobjekterForBehandling(behandling: Behandling): MutableMap<Personident, List<GrunnlagRequestDto>> {
+        val behandlingstype = behandling.tilType()
+
         val requestobjekterGrunnlag: MutableMap<Personident, List<GrunnlagRequestDto>> =
             mutableMapOf(
                 Personident(
                     behandling.bidragsmottaker!!.ident!!,
                 ) to
-                    oppretteGrunnlagsobjekterBm(
+                    oppretteGrunnlagsobjekter(
                         Personident(behandling.bidragsmottaker!!.ident!!),
-                        behandling.virkningstidspunktEllerSøktFomDato,
+                        Rolletype.BIDRAGSMOTTAKER,
+                        behandling,
                     ),
             )
-
-        behandling.søknadsbarn.filter { sb -> sb.ident != null }.map { Personident(it.ident!!) }
+        behandling.søknadsbarn.filter { sb -> sb.ident != null }
+            .map { Personident(it.ident!!) }
             .forEach {
                 requestobjekterGrunnlag[it] =
-                    oppretteGrunnlagsobjekterBarn(Personident(it.verdi), behandling.virkningstidspunktEllerSøktFomDato)
+                    oppretteGrunnlagsobjekter(
+                        Personident(it.verdi),
+                        Rolletype.BARN,
+                        behandling,
+                    )
+                if (TypeBehandling.SÆRLIGE_UTGIFTER == behandlingstype) {
+                    requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
+                        oppretteGrunnlagsobjekter(
+                            Personident(behandling.bidragspliktig!!.ident!!),
+                            Rolletype.BIDRAGSPLIKTIG,
+                            behandling,
+                        )
+                } else if (TypeBehandling.BIDRAG == behandlingstype) {
+                    throw HttpClientErrorException(
+                        HttpStatus.BAD_REQUEST,
+                        "Behandlingstype ${TypeBehandling.BIDRAG} støttes foreløpig ikke i denne løsningen.",
+                    )
+                }
             }
 
         return requestobjekterGrunnlag

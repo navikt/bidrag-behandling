@@ -50,11 +50,11 @@ fun Sivilstand.tilHusstandsbarnperiodeDto() = SivilstandDto(this.id, this.datoFo
 
 fun Set<Sivilstand>.tilSivilstandDto() = this.map { it.tilHusstandsbarnperiodeDto() }.toSet()
 
-fun Set<Sivilstand>.tilOppdatereBoforholdResponse() =
+fun Set<Sivilstand>.tilOppdatereBoforholdResponse(behandling: Behandling) =
     OppdatereBoforholdResponse(
         oppdatertSivilstandshistorikk = this.tilSivilstandDto(),
         valideringsfeil =
             BoforholdValideringsfeil(
-                sivilstand = this.validereSivilstand(this.first().behandling.virkningstidspunktEllerSøktFomDato),
+                sivilstand = this.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
             ),
     )

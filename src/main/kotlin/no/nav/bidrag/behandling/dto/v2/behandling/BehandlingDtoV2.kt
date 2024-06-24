@@ -17,6 +17,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -232,20 +233,66 @@ data class Grunnlagstype(
 )
 
 @Schema(enumAsRef = true, name = "OpplysningerType")
-enum class Grunnlagsdatatype {
-    ARBEIDSFORHOLD,
-    BARNETILLEGG,
-    BARNETILSYN,
-    BOFORHOLD,
-    KONTANTSTØTTE,
-    SIVILSTAND,
-    UTVIDET_BARNETRYGD,
-    SMÅBARNSTILLEGG,
-    SKATTEPLIKTIGE_INNTEKTER,
-    SUMMERTE_MÅNEDSINNTEKTER,
+enum class Grunnlagsdatatype(
+    val behandlinstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
+) {
+    ARBEIDSFORHOLD(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
+            TypeBehandling.SÆRLIGE_UTGIFTER to
+                setOf(
+                    Rolletype.BIDRAGSMOTTAKER,
+                    Rolletype.BIDRAGSPLIKTIG,
+                    Rolletype.BARN,
+                ),
+        ),
+    ),
+    BARNETILLEGG(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
+            TypeBehandling.SÆRLIGE_UTGIFTER to
+                setOf(
+                    Rolletype.BIDRAGSMOTTAKER,
+                    Rolletype.BIDRAGSPLIKTIG,
+                    Rolletype.BARN,
+                ),
+        ),
+    ),
+    BARNETILSYN(emptyMap()),
+    BOFORHOLD(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRLIGE_UTGIFTER to
+                setOf(
+                    Rolletype.BIDRAGSMOTTAKER,
+                    Rolletype.BIDRAGSPLIKTIG,
+                ),
+        ),
+    ),
+    KONTANTSTØTTE(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    SIVILSTAND(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    UTVIDET_BARNETRYGD(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    SMÅBARNSTILLEGG(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    SKATTEPLIKTIGE_INNTEKTER(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
+            TypeBehandling.SÆRLIGE_UTGIFTER to
+                setOf(
+                    Rolletype.BIDRAGSMOTTAKER,
+                    Rolletype.BIDRAGSPLIKTIG,
+                    Rolletype.BARN,
+                ),
+        ),
+    ),
+    SUMMERTE_MÅNEDSINNTEKTER(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+        ),
+    ),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
-    AINNTEKT,
+    AINNTEKT(),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
     SKATTEGRUNNLAG,
@@ -264,6 +311,23 @@ enum class Grunnlagsdatatype {
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
     SUMMERTE_ÅRSINNTEKTER,
+
+    ;
+
+    companion object {
+        fun grunnlagsdatatypeobjekter(
+            behandlingstype: TypeBehandling,
+            rolletype: Rolletype? = null,
+        ): Set<Grunnlagsdatatype> {
+            return when (rolletype != null) {
+                true ->
+                    entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
+                        .filter { it.behandlinstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }.toSet()
+
+                false -> entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
+            }
+        }
+    }
 }
 
 fun Grunnlagsdatatype.getOrMigrate() =

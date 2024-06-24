@@ -1,7 +1,7 @@
 {
   "ainntektListe": [
     {
-      "personId": " 12345678910",
+      "personId": "1344124",
       "periodeFra": "2021-01-01",
       "periodeTil": "2021-02-01",
       "aktiv": true,
@@ -28,7 +28,7 @@
   ],
   "arbeidsforholdListe": [
     {
-      "partPersonId": " 12345678910",
+      "partPersonId": "1344124",
       "startdato": "2002-11-03",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -52,7 +52,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.087233848"
     },
     {
-      "partPersonId": " 12345678910",
+      "partPersonId": "1344124",
       "startdato": "2022-12-07",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -76,7 +76,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.119823886"
     },
     {
-      "partPersonId": " 12345678910",
+      "partPersonId": "1344124",
       "startdato": "2003-12-08",
       "sluttdato": null,
       "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
@@ -108,7 +108,7 @@
   "sivilstandListe": [],
   "skattegrunnlagListe": [
     {
-      "personId": " 12345678910",
+      "personId": "1344124",
       "periodeFra": "2024-01-01",
       "periodeTil": "2025-01-01",
       "skattegrunnlagspostListe": [

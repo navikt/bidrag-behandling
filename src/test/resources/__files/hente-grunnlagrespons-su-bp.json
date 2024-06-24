@@ -1,7 +1,7 @@
 {
   "ainntektListe": [
     {
-      "personId": "54545454545",
+      "personId": "213244124",
       "periodeFra": "2021-01-01",
       "periodeTil": "2021-02-01",
       "aktiv": true,
@@ -28,7 +28,7 @@
   ],
   "arbeidsforholdListe": [
     {
-      "partPersonId": "54545454545",
+      "partPersonId": "213244124",
       "startdato": "2002-11-03",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -52,7 +52,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.087233848"
     },
     {
-      "partPersonId": "54545454545",
+      "partPersonId": "213244124",
       "startdato": "2022-12-07",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -76,7 +76,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.119823886"
     },
     {
-      "partPersonId": "54545454545",
+      "partPersonId": "213244124",
       "startdato": "2003-12-08",
       "sluttdato": null,
       "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
@@ -100,15 +100,51 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.151722999"
     }
   ],
-  "barnetilleggListe": [],
+  "barnetilleggListe": [
+    {
+      "barnPersonId": "01057812300",
+      "partPersonId": "213244124",
+      "periodeFra": "2021-01-01",
+      "periodeTil": "2021-02-01",
+      "barnetilleggType": "PENSJON",
+      "beløpBrutto": 3450,
+      "barnType": "FELLES",
+      "hentetTidspunkt": "2023-12-20T15:03:29.888769"
+    }
+  ],
   "barnetilsynListe": [],
   "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
-  "husstandsmedlemmerOgEgneBarnListe": [],
+  "husstandsmedlemmerOgEgneBarnListe": [
+    {
+      "partPersonId": "213244124",
+      "relatertPersonPersonId": "1344124",
+      "navn": "Småstein Nilsen",
+      "fødselsdato": "2020-01-24",
+      "erBarnAvBmBp": true,
+      "borISammeHusstandDtoListe": [
+        {
+          "periodeFra": "2020-01-24"
+        }
+      ]
+    },
+    {
+      "partPersonId": "213244124",
+      "relatertPersonPersonId": "54545454545",
+      "navn": "Brostein Nilsen",
+      "fødselsdato": "2022-01-24",
+      "erBarnAvBmBp": true,
+      "borISammeHusstandDtoListe": [
+        {
+          "periodeFra": "2022-01-24"
+        }
+      ]
+    }
+  ],
   "kontantstøtteListe": [],
   "sivilstandListe": [],
   "skattegrunnlagListe": [
     {
-      "personId": "54545454545",
+      "personId": "213244124",
       "periodeFra": "2024-01-01",
       "periodeTil": "2025-01-01",
       "skattegrunnlagspostListe": [
