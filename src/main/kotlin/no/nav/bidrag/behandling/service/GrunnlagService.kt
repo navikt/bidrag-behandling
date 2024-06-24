@@ -132,10 +132,12 @@ class GrunnlagService(
     ) {
         val rolleGrunnlagErInnhentetFor =
             when (request.grunnlagstype) {
-                Grunnlagsdatatype.BOFORHOLD -> behandling.rolleBoforholdSkalHentesFor
+                Grunnlagsdatatype.BARNETILLEGG -> behandling.rolleGrunnlagSkalHentesFor
+                Grunnlagsdatatype.BOFORHOLD -> behandling.rolleGrunnlagSkalHentesFor
+                Grunnlagsdatatype.KONTANTSTØTTE -> behandling.rolleGrunnlagSkalHentesFor
                 else ->
                     behandling.roller.find { request.personident.verdi == it.ident }
-                        ?: behandling.rolleBoforholdSkalHentesFor
+                        ?: behandling.rolleGrunnlagSkalHentesFor
             }
 
         if (Grunnlagsdatatype.BOFORHOLD != request.grunnlagstype) {
@@ -155,7 +157,7 @@ class GrunnlagService(
                     " for oppgitt person."
             }
             ressursIkkeFunnetException(
-                "Fant ikke grunnlag av tye ${request.grunnlagstype} å aktivere i behandling ${behandling.id} " +
+                "Fant ikke grunnlag av type ${request.grunnlagstype} å aktivere i behandling ${behandling.id} " +
                     "for oppgitt personident.",
             )
         }
@@ -238,7 +240,7 @@ class GrunnlagService(
         val sisteIkkeAktiveGrunnlag =
             behandling.henteNyesteIkkeAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
-                behandling.rolleBoforholdSkalHentesFor!!,
+                behandling.rolleGrunnlagSkalHentesFor!!,
             ) ?: run {
                 log.debug { "Fant ingen ikke-aktive boforholdsgrunnlag. Gjør ingen endringer" }
                 return
@@ -251,7 +253,7 @@ class GrunnlagService(
         val sisteAktiveGrunnlag =
             behandling.henteNyesteAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
-                behandling.rolleBoforholdSkalHentesFor!!,
+                behandling.rolleGrunnlagSkalHentesFor!!,
             ) ?: run {
                 log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
                 return
@@ -282,12 +284,12 @@ class GrunnlagService(
             if (rekalkulerOgOverskriveAktiverte) {
                 behandling.henteAktiverteGrunnlag(
                     Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-                    behandling.rolleBoforholdSkalHentesFor!!,
+                    behandling.rolleGrunnlagSkalHentesFor!!,
                 )
             } else {
                 behandling.henteUaktiverteGrunnlag(
                     Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-                    behandling.rolleBoforholdSkalHentesFor!!,
+                    behandling.rolleGrunnlagSkalHentesFor!!,
                 )
             }
         grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let {
@@ -362,7 +364,7 @@ class GrunnlagService(
                     aktiveGrunnlag,
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsbarn,
-                    behandling.rolleBoforholdSkalHentesFor!!,
+                    behandling.rolleGrunnlagSkalHentesFor!!,
                 ),
             sivilstand =
                 nyinnhentetGrunnlag.hentEndringerSivilstand(
@@ -412,18 +414,18 @@ class GrunnlagService(
         val bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting =
             behandling
                 .grunnlag.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(
-                    behandling.rolleBoforholdSkalHentesFor!!,
+                    behandling.rolleGrunnlagSkalHentesFor!!,
                 )
 
         // TOOD: Vurdere å trigge ny grunnlagsinnhenting
         if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.isNullOrEmpty()) {
             log.error {
-                "Fant ingen husstandsmedlemmer som er barn av ${behandling.rolleBoforholdSkalHentesFor!!.rolletype} i nyeste boforholdsgrunnlag i behandling ${behandling.id}"
+                "Fant ingen husstandsmedlemmer som er barn av ${behandling.rolleGrunnlagSkalHentesFor!!.rolletype} i nyeste boforholdsgrunnlag i behandling ${behandling.id}"
             }
             throw HttpClientErrorException(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Fant ingen husstandsmedlemmer som er barn av " +
-                    "${behandling.rolleBoforholdSkalHentesFor!!.rolletype} i nyeste boforholdsgrunnlag i behandling ${behandling.id}",
+                    "${behandling.rolleGrunnlagSkalHentesFor!!.rolletype} i nyeste boforholdsgrunnlag i behandling ${behandling.id}",
             )
         }
 
@@ -443,7 +445,7 @@ class GrunnlagService(
         val nyesteIkkeBearbeidaBoforholdsgrunnlag =
             behandling.henteNyesteGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
-                behandling.rolleBoforholdSkalHentesFor!!,
+                behandling.rolleGrunnlagSkalHentesFor!!,
             )
 
         nyesteIkkeBearbeidaBoforholdsgrunnlag?.let {
@@ -466,7 +468,7 @@ class GrunnlagService(
                 val nyesteGrunnlagForHusstandsmedlem =
                     behandling.henteNyesteGrunnlag(
                         Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-                        behandling.rolleBoforholdSkalHentesFor!!,
+                        behandling.rolleGrunnlagSkalHentesFor!!,
                         Personident(it.key!!),
                     )
                 if (nyesteGrunnlagForHusstandsmedlem?.aktiv == null) {
@@ -483,8 +485,8 @@ class GrunnlagService(
     }
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean {
-        return behandling.grunnlagSistInnhentet == null || LocalDateTime.now()
-            .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+        return behandling.grunnlagSistInnhentet == null || behandling.grunnlagsinnhentingFeilet != null ||
+            LocalDateTime.now().minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
     }
 
     private fun henteOglagreGrunnlag(

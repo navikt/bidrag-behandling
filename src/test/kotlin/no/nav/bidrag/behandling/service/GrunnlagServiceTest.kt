@@ -1483,8 +1483,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal aktivere grunnlag av type barnetillegg for BP i behandling av særlige utgifter, og oppdatere inntektstabell`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling(false, false, false, true)
-                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+                val behandling =
+                    testdataManager.oppretteBehandling(false, false, false, true, TypeBehandling.SÆRLIGE_UTGIFTER)
 
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
 
@@ -3160,6 +3160,50 @@ class GrunnlagServiceTest : TestContainerRunner() {
             assertSoftly(behandling) { b ->
                 b.grunnlag shouldHaveSize 0
                 b.grunnlagsinnhentingFeilet shouldNotBe null
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke lagre`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
+
+            behandling.grunnlag shouldBe emptySet()
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            assertSoftly(behandling) { b ->
+                b.grunnlag shouldHaveSize 0
+                b.grunnlagsinnhentingFeilet shouldNotBe null
+            }
+
+            // gitt
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(opprettHentGrunnlagDto())
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            assertSoftly(behandling) { b ->
+                b.grunnlag shouldHaveSize 0
+                b.grunnlagsinnhentingFeilet shouldBe null
             }
         }
     }

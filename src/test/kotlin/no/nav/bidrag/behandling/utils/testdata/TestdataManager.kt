@@ -208,7 +208,7 @@ class TestdataManager(
                     fødselsdato = testdataBarn1.fødselsdato,
                     erBarnAvBmBp = true,
                     navn = "Lyrisk Sopp",
-                    partPersonId = behandling.rolleBoforholdSkalHentesFor!!.ident,
+                    partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                     borISammeHusstandDtoListe =
                         listOf(
                             BorISammeHusstandDto(
@@ -222,7 +222,7 @@ class TestdataManager(
                     fødselsdato = testdataBarn2.fødselsdato,
                     erBarnAvBmBp = true,
                     navn = "Lyrisk Sopp",
-                    partPersonId = behandling.rolleBoforholdSkalHentesFor!!.ident,
+                    partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                     borISammeHusstandDtoListe =
                         listOf(
                             BorISammeHusstandDto(
@@ -239,7 +239,7 @@ class TestdataManager(
                 behandling = behandling,
                 innhentet = LocalDateTime.now().minusDays(3),
                 data = commonObjectmapper.writeValueAsString(grunnlagHusstandsmedlemmer),
-                rolle = behandling.rolleBoforholdSkalHentesFor!!,
+                rolle = behandling.rolleGrunnlagSkalHentesFor!!,
                 type = Grunnlagsdatatype.BOFORHOLD,
                 erBearbeidet = false,
             ),
@@ -259,7 +259,7 @@ class TestdataManager(
                         behandling = behandling,
                         innhentet = LocalDateTime.now().minusDays(3),
                         data = commonObjectmapper.writeValueAsString(it.value),
-                        rolle = behandling.rolleBoforholdSkalHentesFor!!,
+                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
                         type = Grunnlagsdatatype.BOFORHOLD,
                         gjelder = it.key,
                         erBearbeidet = true,
