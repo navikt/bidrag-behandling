@@ -71,7 +71,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
                         finnFødselsdato(
                             relatertPersonPersonId,
                             fødselsdato,
-                        ) // Avbryter prosesering dersom fødselsdato til husstandsbarn er ukjent
+                        ) // Avbryter prosesering dersom fødselsdato til husstandsmedlem er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
                 ).valider(),
             ),

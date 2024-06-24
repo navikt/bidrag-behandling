@@ -12,7 +12,7 @@ import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -28,7 +28,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
@@ -382,7 +382,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly {
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.inntekter.årsinntekter shouldHaveSize 0
-                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn shouldHaveSize 0
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.husstandsmedlem shouldHaveSize 0
             }
         }
     }
@@ -734,7 +734,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
 
-            assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn) {
+            assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.husstandsmedlem) {
                 it shouldHaveSize 1
                 it.first().perioder shouldHaveSize 3
             }
@@ -748,8 +748,8 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly(svar) {
-                it.ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn shouldHaveSize 0
-                it.aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 2
+                it.ikkeAktiverteEndringerIGrunnlagsdata.husstandsmedlem shouldHaveSize 0
+                it.aktiveGrunnlagsdata.husstandsmedlem shouldHaveSize 2
             }
         }
     }
@@ -776,9 +776,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
             val behandlingEtter = behandlingService.hentBehandlingById(b.id!!)
             behandlingEtter.roller shouldHaveSize 4
-            behandlingEtter.husstandsbarn shouldHaveSize 1
-            behandlingEtter.husstandsbarn.first().ident shouldBe "newident"
-            behandlingEtter.husstandsbarn.first().kilde shouldBe Kilde.OFFENTLIG
+            behandlingEtter.husstandsmedlem shouldHaveSize 1
+            behandlingEtter.husstandsmedlem.first().ident shouldBe "newident"
+            behandlingEtter.husstandsmedlem.first().kilde shouldBe Kilde.OFFENTLIG
         }
 
         @Test
@@ -830,15 +830,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                         foedselsdato = LocalDate.parse("2021-01-01"),
                     ),
                 )
-            behandling.husstandsbarn =
+            behandling.husstandsmedlem =
                 mutableSetOf(
-                    Husstandsbarn(
+                    Husstandsmedlem(
                         behandling,
                         kilde = Kilde.MANUELL,
                         ident = identOriginaltIkkeMedISaken,
                         fødselsdato = LocalDate.parse("2021-01-01"),
                     ),
-                    Husstandsbarn(
+                    Husstandsmedlem(
                         behandling,
                         kilde = Kilde.OFFENTLIG,
                         ident = identOriginaltMedISaken,
@@ -883,10 +883,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
             behandlingEtter.søknadsbarn shouldHaveSize 3
-            behandlingEtter.husstandsbarn shouldHaveSize 3
-            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltMedISaken }!!.kilde shouldBe Kilde.OFFENTLIG
-            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltIkkeMedISaken }!!.kilde shouldBe Kilde.MANUELL
-            behandlingEtter.husstandsbarn.find { it.ident == "1111234" }!!.kilde shouldBe Kilde.OFFENTLIG
+            behandlingEtter.husstandsmedlem shouldHaveSize 3
+            behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltMedISaken }!!.kilde shouldBe Kilde.OFFENTLIG
+            behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltIkkeMedISaken }!!.kilde shouldBe Kilde.MANUELL
+            behandlingEtter.husstandsmedlem.find { it.ident == "1111234" }!!.kilde shouldBe Kilde.OFFENTLIG
         }
 
         @Test
@@ -983,12 +983,12 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertNotNull(createdBehandling.id)
             assertNull(createdBehandling.årsak)
-            assertEquals(0, createdBehandling.husstandsbarn.size)
+            assertEquals(0, createdBehandling.husstandsmedlem.size)
             assertEquals(0, createdBehandling.sivilstand.size)
 
-            val husstandsBarn =
+            val husstandsmedlem =
                 setOf(
-                    HusstandsbarnDtoV2(
+                    HusstandsmedlemDtoV2(
                         null,
                         Kilde.OFFENTLIG,
                         true,
@@ -1014,7 +1014,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 OppdaterBehandlingRequestV2(
                     boforhold =
                         OppdaterBoforholdRequest(
-                            husstandsBarn,
+                            husstandsmedlem,
                             sivilstand,
                             notat =
                                 OppdaterNotat(
@@ -1026,7 +1026,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
 
-            assertEquals(1, updatedBehandling.husstandsbarn.size)
+            assertEquals(1, updatedBehandling.husstandsmedlem.size)
             assertEquals(1, updatedBehandling.sivilstand.size)
             assertEquals(notat, updatedBehandling.boforholdsbegrunnelseKunINotat)
         }

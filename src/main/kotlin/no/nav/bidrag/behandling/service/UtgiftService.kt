@@ -97,7 +97,7 @@ class UtgiftService(
         val forrigePerioder: Set<JsonNode> =
             commonObjectmapper.readValue(
                 forrigeUtgiftsposterHistorikk
-                    ?: oppdateringAvBoforholdFeilet("Mangler forrige perioder for husstandsbarn $id i behandling ${behandling.id}"),
+                    ?: oppdateringAvBoforholdFeilet("Mangler forrige perioder for husstandsmedlem $id i behandling ${behandling.id}"),
             )
         return forrigePerioder.map {
             Utgiftspost(

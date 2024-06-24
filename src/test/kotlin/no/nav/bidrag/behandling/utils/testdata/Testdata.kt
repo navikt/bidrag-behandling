@@ -7,9 +7,9 @@ import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -264,43 +264,43 @@ fun oppretteRequestForOppdateringAvManuellInntekt(idInntekt: Long? = null) =
         gjelderBarn = Personident("01234567891"),
     )
 
-fun opprettHusstandsbarn(
+fun oppretteHusstandsmedlem(
     behandling: Behandling,
     data: TestDataPerson,
-): Husstandsbarn {
-    val husstandsbarn =
-        Husstandsbarn(
+): Husstandsmedlem {
+    val husstandsmedlem =
+        Husstandsmedlem(
             navn = data.navn,
             ident = data.ident,
             kilde = Kilde.OFFENTLIG,
             behandling = behandling,
             fødselsdato = data.fødselsdato,
         )
-    husstandsbarn.perioder =
+    husstandsmedlem.perioder =
         mutableSetOf(
-            Husstandsbarnperiode(
+            Bostatusperiode(
                 datoFom = LocalDate.parse("2022-01-01"),
                 datoTom = LocalDate.parse("2022-12-31"),
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                 kilde = Kilde.MANUELL,
-                husstandsbarn = husstandsbarn,
+                husstandsmedlem = husstandsmedlem,
             ),
-            Husstandsbarnperiode(
+            Bostatusperiode(
                 datoFom = LocalDate.parse("2023-01-01"),
                 datoTom = LocalDate.parse("2023-05-31"),
                 bostatus = Bostatuskode.MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
-                husstandsbarn = husstandsbarn,
+                husstandsmedlem = husstandsmedlem,
             ),
-            Husstandsbarnperiode(
+            Bostatusperiode(
                 datoFom = LocalDate.parse("2023-06-01"),
                 datoTom = null,
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
-                husstandsbarn = husstandsbarn,
+                husstandsmedlem = husstandsmedlem,
             ),
         )
-    return husstandsbarn
+    return husstandsmedlem
 }
 
 fun oppretteBehandlingRoller(
@@ -393,9 +393,9 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
     // given
     val behandling = oppretteBehandling(if (generateId) 1 else null, vedtakstype = vedtakstype)
     behandling.roller = oppretteBehandlingRoller(behandling, generateId)
-    val husstandsbarn =
+    val husstandsmedlem =
         mutableSetOf(
-            behandling.opprettHusstandsbarn(
+            behandling.oppretteHusstandsmedlem(
                 if (generateId) 1 else null,
                 testdataBarn1.ident,
                 testdataBarn1.navn,
@@ -403,7 +403,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 behandling.virkningstidspunkt,
                 behandling.virkningstidspunkt!!.plusMonths(5),
             ),
-            behandling.opprettHusstandsbarn(
+            behandling.oppretteHusstandsmedlem(
                 if (generateId) 2 else null,
                 testdataBarn2.ident,
                 testdataBarn2.navn,
@@ -411,7 +411,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 behandling.virkningstidspunkt,
                 behandling.virkningstidspunkt!!.plusMonths(8),
             ),
-            behandling.opprettHusstandsbarn(
+            behandling.oppretteHusstandsmedlem(
                 if (generateId) 3 else null,
                 testdataHusstandsmedlem1.ident,
                 testdataHusstandsmedlem1.navn,
@@ -502,22 +502,22 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
     inntekter.add(aInntekt)
     inntekter.add(barnetillegg)
     inntekter.add(barnInntekt)
-    behandling.husstandsbarn = husstandsbarn
+    behandling.husstandsmedlem = husstandsmedlem
     behandling.inntekter = inntekter
     behandling.sivilstand = mutableSetOf(sivilstand)
     return behandling
 }
 
-fun Behandling.opprettHusstandsbarn(
+fun Behandling.oppretteHusstandsmedlem(
     index: Int?,
     ident: String,
     navn: String?,
     fødselsdato: LocalDate?,
     førstePeriodeFra: LocalDate? = null,
     førstePeridoeTil: LocalDate? = null,
-): Husstandsbarn {
-    val husstandsbarn =
-        Husstandsbarn(
+): Husstandsmedlem {
+    val husstandsmedlem =
+        Husstandsmedlem(
             behandling = this,
             kilde = Kilde.OFFENTLIG,
             ident = ident,
@@ -533,18 +533,18 @@ fun Behandling.opprettHusstandsbarn(
         } else {
             YearMonth.from(søktFomDato.plusMonths(3)).atEndOfMonth()
         }
-    husstandsbarn.perioder =
+    husstandsmedlem.perioder =
         mutableSetOf(
-            Husstandsbarnperiode(
-                husstandsbarn = husstandsbarn,
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlem,
                 datoFom = førstePeriodeFra ?: søktFomDato,
                 datoTom = førsteDatoTom,
                 bostatus = Bostatuskode.MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
                 id = if (index != null) (index + 1).toLong() else null,
             ),
-            Husstandsbarnperiode(
-                husstandsbarn = husstandsbarn,
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlem,
                 datoFom = YearMonth.from(førsteDatoTom).plusMonths(1).atDay(1),
                 datoTom = null,
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
@@ -552,7 +552,7 @@ fun Behandling.opprettHusstandsbarn(
                 id = if (index != null) (index + 1).toLong() else null,
             ),
         )
-    return husstandsbarn
+    return husstandsmedlem
 }
 
 fun opprettAlleAktiveGrunnlagFraFil(
@@ -702,9 +702,9 @@ fun tilAinntektspostDto(
     virksomhetId = "995277670",
 )
 
-fun opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(husstandsbarnSet: Set<Husstandsbarn>): List<Grunnlag> {
-    return husstandsbarnSet.groupBy { it.ident }.map { (ident, husstandsbarn) ->
-        val behandling = husstandsbarn.first().behandling!!
+fun oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(husstandsmedlemSet: Set<Husstandsmedlem>): List<Grunnlag> {
+    return husstandsmedlemSet.groupBy { it.ident }.map { (ident, husstandsmedlem) ->
+        val behandling = husstandsmedlem.first().behandling!!
         Grunnlag(
             behandling = behandling,
             type = Grunnlagsdatatype.BOFORHOLD,
@@ -715,7 +715,7 @@ fun opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(husstandsbarnSet: Set<Hus
             innhentet = LocalDateTime.now(),
             data =
                 commonObjectmapper.writeValueAsString(
-                    husstandsbarn.flatMap { hb ->
+                    husstandsmedlem.flatMap { hb ->
                         hb.perioder.map {
                             BoforholdResponse(
                                 relatertPersonPersonId = hb.ident,
@@ -732,73 +732,44 @@ fun opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(husstandsbarnSet: Set<Hus
     }
 }
 
-fun opprettBoforholdBearbeidetGrunnlag(behandling: Behandling): List<Grunnlag> {
-    return behandling.husstandsbarn.groupBy { it.ident }.map { (ident, husstandsbarn) ->
-        Grunnlag(
-            behandling = behandling,
-            type = Grunnlagsdatatype.BOFORHOLD,
-            erBearbeidet = true,
-            gjelder = ident,
-            aktiv = LocalDateTime.now(),
-            rolle = behandling.bidragsmottaker!!,
-            innhentet = LocalDateTime.now(),
-            data =
-                commonObjectmapper.writeValueAsString(
-                    husstandsbarn.flatMap { hb ->
-                        hb.perioder.map {
-                            BoforholdResponse(
-                                relatertPersonPersonId = hb.ident,
-                                periodeFom = it.datoFom!!,
-                                periodeTom = it.datoTom,
-                                kilde = it.kilde,
-                                bostatus = it.bostatus,
-                                fødselsdato = hb.fødselsdato,
-                            )
-                        }
-                    },
-                ),
-        )
-    }
-}
-
-fun opprettHusstandsbarnMedOffentligePerioder(behandling: Behandling): Set<Husstandsbarn> {
+fun oppretteHusstandsmedlemMedOffentligePerioder(behandling: Behandling): Set<Husstandsmedlem> {
     return setOf(
-        opprettHusstandsbarn(behandling, testdataBarn1).let {
+        oppretteHusstandsmedlem(behandling, testdataBarn1).let {
             it.perioder =
                 mutableSetOf(
-                    Husstandsbarnperiode(
+                    Bostatusperiode(
                         datoFom = LocalDate.parse("2023-01-01"),
                         datoTom = LocalDate.parse("2023-05-31"),
                         bostatus = Bostatuskode.MED_FORELDER,
                         kilde = Kilde.OFFENTLIG,
-                        husstandsbarn = it,
+                        husstandsmedlem = it,
                     ),
-                    Husstandsbarnperiode(
+                    Bostatusperiode(
                         datoFom = LocalDate.parse("2023-06-01"),
                         datoTom = null,
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         kilde = Kilde.OFFENTLIG,
-                        husstandsbarn = it,
+                        husstandsmedlem = it,
                     ),
                 )
             it
         },
-        opprettHusstandsbarn(behandling, testdataBarn2).let {
+        oppretteHusstandsmedlem(behandling, testdataBarn2).let {
             it.perioder =
                 mutableSetOf(
-                    Husstandsbarnperiode(
+                    Bostatusperiode(
                         datoFom = LocalDate.parse("2023-01-01"),
                         datoTom = LocalDate.parse("2023-10-31"),
                         bostatus = Bostatuskode.MED_FORELDER,
                         kilde = Kilde.OFFENTLIG,
-                        husstandsbarn = it,
+                        husstandsmedlem = it,
                     ),
-                    Husstandsbarnperiode(
+                    Bostatusperiode(
                         datoFom = LocalDate.parse("2023-11-01"),
                         datoTom = null,
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         kilde = Kilde.OFFENTLIG,
-                        husstandsbarn = it,
+                        husstandsmedlem = it,
                     ),
                 )
             it

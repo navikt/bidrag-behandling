@@ -10,7 +10,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.ident.Personident
 import java.time.LocalDate
 
-@Schema(description = "Oppdaterer husstandsbarn, sivilstand, eller notat")
+@Schema(description = "Oppdaterer husstandsmedlem, sivilstand, eller notat")
 data class OppdatereBoforholdRequestV2(
     val oppdatereHusstandsmedlem: OppdatereHusstandsmedlem? = null,
     val oppdatereSivilstand: OppdatereSivilstand? = null,
@@ -18,8 +18,8 @@ data class OppdatereBoforholdRequestV2(
 )
 
 data class OppdatereBoforholdResponse(
-    @Schema(description = "Husstandsbarn som ble opprettet")
-    val oppdatertHusstandsbarn: HusstandsbarnDtoV2? = null,
+    @Schema(description = "Husstandsmedlem som ble opprettet")
+    val oppdatertHusstandsmedlem: HusstandsmedlemDtoV2? = null,
     val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
     val oppdatertNotat: OppdaterNotat? = null,
     val valideringsfeil: BoforholdValideringsfeil,
@@ -44,8 +44,8 @@ data class OppdatereHusstandsmedlem(
 )
 
 data class OppdaterHusstandsmedlemPeriode(
-    @Schema(type = "Long", description = "Id til husstandsbarnet perioden skal gjelde for")
-    val idHusstandsbarn: Long,
+    @Schema(type = "Long", description = "Id til husstandsmedlemmet perioden skal gjelde for")
+    val idHusstandsmedlem: Long,
     @Schema(type = "Long", description = "Id til perioden som skal oppdateres")
     val idPeriode: Long? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")

@@ -251,7 +251,7 @@ class BehandlingControllerV2(
         secureLogger.info { "Oppdaterer boforhold for behandling $behandlingsid med forespørsel $request" }
 
         request.oppdatereHusstandsmedlem?.let {
-            return boforholdService.oppdatereHusstandsbarnManuelt(behandlingsid, it)
+            return boforholdService.oppdatereHusstandsmedlemManuelt(behandlingsid, it)
         }
 
         request.oppdatereSivilstand?.let {

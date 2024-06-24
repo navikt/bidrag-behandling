@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.grunnlag.GrunnlagsdataDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
+import no.nav.bidrag.behandling.dto.v1.husstandsmedlem.HusstandsmedlemDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
@@ -58,14 +58,14 @@ data class VirkningstidspunktDto(
 )
 
 data class BoforholdDto(
-    val husstandsbarn: Set<HusstandsbarnDto>,
+    val husstandsmedlem: Set<HusstandsmedlemDto>,
     val sivilstand: Set<SivilstandDto>,
     val notat: BehandlingNotatDto,
     val valideringsfeil: BoforholdValideringsfeil,
 )
 
 data class BoforholdValideringsfeil(
-    val husstandsbarn: List<BoforholdPeriodeseringsfeil>? = emptyList(),
+    val husstandsmedlem: List<BoforholdPeriodeseringsfeil>? = emptyList(),
     val sivilstand: SivilstandPeriodeseringsfeil? = null,
 )
 

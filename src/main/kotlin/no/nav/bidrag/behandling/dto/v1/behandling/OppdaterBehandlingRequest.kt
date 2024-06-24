@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
@@ -55,14 +55,14 @@ data class OppdatereVirkningstidspunkt(
 )
 @Schema(
     description = """
-For `husstandsbarn` og `sivilstand`
+For `husstandsmedlem` og `sivilstand`
 * Hvis feltet er null eller ikke satt vil det ikke bli gjort noe endringer. 
 * Hvis feltet er tom liste vil alt bli slettet
 * Innholdet i listen vil erstatte alt som er lagret. Det er derfor ikke mulig å endre på deler av informasjon i listene.
 """,
 )
 data class OppdaterBoforholdRequest(
-    val husstandsbarn: Set<HusstandsbarnDtoV2>? = null,
+    val husstandsmedlem: Set<HusstandsmedlemDtoV2>? = null,
     val sivilstand: Set<SivilstandDto>? = null,
     val notat: OppdaterNotat? = null,
 )

@@ -2,9 +2,9 @@ package no.nav.bidrag.behandling.transformers.grunnlag
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
@@ -112,16 +112,16 @@ fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
 }
 
 fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
-    val personobjekterHusstandsbarn = mutableSetOf<GrunnlagDto>()
+    val personobjekterHusstandsmedlem = mutableSetOf<GrunnlagDto>()
 
-    fun Husstandsbarn.opprettPersonGrunnlag(): GrunnlagDto {
+    fun Husstandsmedlem.opprettPersonGrunnlag(): GrunnlagDto {
         val relatertPersonGrunnlag = tilGrunnlagPerson()
-        personobjekterHusstandsbarn.add(relatertPersonGrunnlag)
+        personobjekterHusstandsmedlem.add(relatertPersonGrunnlag)
         return relatertPersonGrunnlag
     }
 
     val grunnlagBosstatus =
-        husstandsbarn.flatMap {
+        husstandsmedlem.flatMap {
             val barn = personobjekter.hentPersonNyesteIdent(it.ident) ?: it.opprettPersonGrunnlag()
             val part =
                 (if (stonadstype == Stønadstype.FORSKUDD) personobjekter.bidragsmottaker else personobjekter.bidragspliktig)
@@ -132,7 +132,7 @@ fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<Grunnl
             )
         }.toSet()
 
-    return grunnlagBosstatus + personobjekterHusstandsbarn
+    return grunnlagBosstatus + personobjekterHusstandsmedlem
 }
 
 fun Behandling.tilGrunnlagInntekt(
@@ -168,7 +168,7 @@ fun Behandling.tilGrunnlagInntekt(
         }.toSet()
 }
 
-fun Husstandsbarn.tilGrunnlagPerson(): GrunnlagDto {
+fun Husstandsmedlem.tilGrunnlagPerson(): GrunnlagDto {
     val rolle = behandling.roller.find { it.ident == ident }
     val grunnlagstype = rolle?.rolletype?.tilGrunnlagstype() ?: Grunnlagstype.PERSON_HUSSTANDSMEDLEM
     return GrunnlagDto(
@@ -259,9 +259,9 @@ fun finnFødselsdato(
 private fun opprettGrunnlagForBostatusperioder(
     barnreferanse: String,
     relatertTilPartReferanse: String,
-    husstandsbarnperioder: Set<Husstandsbarnperiode>,
+    bostatusperioder: Set<Bostatusperiode>,
 ): Set<GrunnlagDto> =
-    husstandsbarnperioder.map {
+    bostatusperioder.map {
         GrunnlagDto(
             referanse = "bostatus_${barnreferanse}_${it.datoFom?.toCompactString()}",
             type = Grunnlagstype.BOSTATUS_PERIODE,

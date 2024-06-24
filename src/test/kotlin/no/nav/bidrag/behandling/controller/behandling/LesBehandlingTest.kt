@@ -69,7 +69,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
         }
 
         assertSoftly(behandling.boforhold) {
-            husstandsbarn shouldHaveSize 6
+            husstandsmedlem shouldHaveSize 6
             sivilstand shouldHaveSize 2
             notat.kunINotat shouldBe "Notat boforhold"
             notat.medIVedtaket shouldBe "Notat boforhold med i vedtak"
@@ -78,7 +78,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
         val aktiveGrunnlagsdata = behandling.aktiveGrunnlagsdata
         aktiveGrunnlagsdata shouldNotBe null
         aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
-        aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 5
+        aktiveGrunnlagsdata.husstandsmedlem shouldHaveSize 5
         aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 2
     }
 

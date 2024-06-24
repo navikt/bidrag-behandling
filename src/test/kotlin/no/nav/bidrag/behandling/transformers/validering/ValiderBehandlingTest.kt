@@ -50,7 +50,7 @@ class ValiderBehandlingTest {
             virkningstidspunkt shouldNotBe null
             inntekter shouldBe null
             sivilstand shouldBe null
-            husstandsbarn shouldBe null
+            husstandsmedlem shouldBe null
             assertSoftly(virkningstidspunkt!!) {
                 harFeil shouldBe true
                 manglerVirkningstidspunkt shouldBe true
@@ -72,7 +72,7 @@ class ValiderBehandlingTest {
             virkningstidspunkt shouldNotBe null
             inntekter shouldBe null
             sivilstand shouldBe null
-            husstandsbarn shouldBe null
+            husstandsmedlem shouldBe null
             assertSoftly(virkningstidspunkt!!) {
                 harFeil shouldBe true
                 manglerVirkningstidspunkt shouldBe true
@@ -109,7 +109,7 @@ class ValiderBehandlingTest {
             virkningstidspunkt shouldBe null
             inntekter shouldBe null
             sivilstand shouldNotBe null
-            husstandsbarn shouldBe null
+            husstandsmedlem shouldBe null
             assertSoftly(sivilstand!!) {
                 harFeil shouldBe true
 
@@ -133,11 +133,11 @@ class ValiderBehandlingTest {
     }
 
     @Test
-    fun `skal feile validering hvis husstandsbarn perioder er ugyldig`() {
+    fun `skal feile validering hvis bostatusperiode er ugyldig`() {
         val behandling = opprettGyldigBehandling()
-        behandling.husstandsbarn =
+        behandling.husstandsmedlem =
             mutableSetOf(
-                opprettHusstandsbarn(
+                opprettHusstandsmedlem(
                     listOf(
                         Datoperiode(
                             YearMonth.parse("2022-02").atDay(1),
@@ -160,8 +160,8 @@ class ValiderBehandlingTest {
             virkningstidspunkt shouldBe null
             inntekter shouldBe null
             sivilstand shouldBe null
-            husstandsbarn!! shouldHaveSize 1
-            assertSoftly(husstandsbarn!![0]) {
+            husstandsmedlem!! shouldHaveSize 1
+            assertSoftly(husstandsmedlem!![0]) {
                 harFeil shouldBe true
 
                 hullIPerioder shouldHaveSize 1
@@ -242,7 +242,7 @@ class ValiderBehandlingTest {
             virkningstidspunkt shouldBe null
             inntekter shouldNotBe null
             sivilstand shouldBe null
-            husstandsbarn shouldBe null
+            husstandsmedlem shouldBe null
             assertSoftly(inntekter!!) {
                 harFeil shouldBe true
                 utvidetBarnetrygd shouldBe null
@@ -285,7 +285,7 @@ class ValiderBehandlingTest {
             virkningstidspunkt shouldBe null
             inntekter shouldNotBe null
             sivilstand shouldBe null
-            husstandsbarn shouldBe null
+            husstandsmedlem shouldBe null
             assertSoftly(inntekter!!) {
                 harFeil shouldBe true
                 utvidetBarnetrygd shouldBe null
@@ -315,9 +315,9 @@ class ValiderBehandlingTest {
                 opprettRolle(barnIdent, Rolletype.BARN),
                 opprettRolle(barn2Ident, Rolletype.BARN),
             )
-        behandling.husstandsbarn =
+        behandling.husstandsmedlem =
             mutableSetOf(
-                opprettHusstandsbarn(
+                opprettHusstandsmedlem(
                     listOf(
                         Datoperiode(
                             YearMonth.parse("2022-01").atDay(1),
@@ -328,7 +328,7 @@ class ValiderBehandlingTest {
                     barnIdent,
                     fødselsdato = LocalDate.parse("2023-01-01"),
                 ),
-                opprettHusstandsbarn(
+                opprettHusstandsmedlem(
                     listOf(
                         Datoperiode(
                             YearMonth.parse("2022-01").atDay(1),

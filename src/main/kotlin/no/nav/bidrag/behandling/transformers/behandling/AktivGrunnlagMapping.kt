@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -10,7 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
@@ -87,14 +87,14 @@ fun InntektPost.erLik(inntektPost: Inntektspost): Boolean {
 fun List<Grunnlag>.hentEndringerBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     virkniningstidspunkt: LocalDate,
-    husstandsbarn: Set<Husstandsbarn>,
+    husstandsmedlem: Set<Husstandsmedlem>,
     rolle: Rolle,
-): Set<HusstandsbarnGrunnlagDto> {
+): Set<HusstandsmedlemGrunnlagDto> {
     val aktiveBoforholdsdata =
-        aktiveGrunnlag.hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
+        aktiveGrunnlag.hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlem, rolle).toSet()
     // Hent første for å finne innhentet tidspunkt
     val nyeBoforholdsgrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val nyeBoforholdsdata = hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsbarn, rolle).toSet()
+    val nyeBoforholdsdata = hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlem, rolle).toSet()
 
     return nyeBoforholdsdata.finnEndringerBoforhold(
         virkniningstidspunkt,
@@ -110,15 +110,15 @@ fun Set<BoforholdResponse>.finnEndringerBoforhold(
 ) = groupBy { it.relatertPersonPersonId }.map { (barnId, oppdaterGrunnlag) ->
     val aktivGrunnlag = aktivBoforholdData.filter { it.relatertPersonPersonId == barnId }
     if (aktivGrunnlag.erLik(oppdaterGrunnlag, virkniningstidspunkt)) return@map null
-    oppdaterGrunnlag.tilHusstandsbarnGrunnlagDto(barnId, innhentetTidspunkt)
+    oppdaterGrunnlag.tilHusstandsmedlemGrunnlagDto(barnId, innhentetTidspunkt)
 }.filterNotNull().toSet()
 
-private fun List<BoforholdResponse>.tilHusstandsbarnGrunnlagDto(
+private fun List<BoforholdResponse>.tilHusstandsmedlemGrunnlagDto(
     barnId: String?,
     innhentetTidspunkt: LocalDateTime,
-) = HusstandsbarnGrunnlagDto(
+) = HusstandsmedlemGrunnlagDto(
     map {
-        HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
+        HusstandsmedlemGrunnlagDto.BostatusperiodeGrunnlagDto(
             it.periodeFom,
             it.periodeTom,
             it.bostatus,

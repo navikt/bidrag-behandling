@@ -1,23 +1,23 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdDto
 import no.nav.bidrag.behandling.dto.v1.behandling.InntekterDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereInntekterRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnDto
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
+import no.nav.bidrag.behandling.dto.v1.husstandsmedlem.BostatusperiodeDto
+import no.nav.bidrag.behandling.dto.v1.husstandsmedlem.HusstandsmedlemDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.BarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.InntektDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.KontantstøtteDto
 import no.nav.bidrag.behandling.dto.v1.inntekt.UtvidetBarnetrygdDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
@@ -132,15 +132,15 @@ fun Set<InntektspostDtoV2>.tilInntektspostDto() =
 
 fun BoforholdDtoV2.tilBoforholdDto() =
     BoforholdDto(
-        husstandsbarn = this.husstandsbarn.tilHusstandsbarnDto(),
+        husstandsmedlem = this.husstandsmedlem.tilHusstandsmedlemDto(),
         sivilstand = this.sivilstand,
         notat = this.notat,
         valideringsfeil = this.valideringsfeil,
     )
 
-fun Set<HusstandsbarnDtoV2>.tilHusstandsbarnDto() =
+fun Set<HusstandsmedlemDtoV2>.tilHusstandsmedlemDto() =
     this.map {
-        HusstandsbarnDto(
+        HusstandsmedlemDto(
             id = it.id,
             kilde = it.kilde,
             fødselsdato = it.fødselsdato,
@@ -258,11 +258,11 @@ fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
         Sivilstand(behandling, it.datoFom, it.datoTom, it.sivilstand, it.kilde, it.id)
     }.toMutableSet()
 
-@Deprecated("Utgår når manuell oppdatering av husstandsbarn kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
-fun Set<HusstandsbarnDtoV2>.toDomain(behandling: Behandling) =
+@Deprecated("Utgår når manuell oppdatering av husstandsmedlem kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
+fun Set<HusstandsmedlemDtoV2>.toDomain(behandling: Behandling) =
     this.map {
         val barn =
-            Husstandsbarn(
+            Husstandsmedlem(
                 behandling,
                 it.kilde,
                 it.id,
@@ -274,11 +274,11 @@ fun Set<HusstandsbarnDtoV2>.toDomain(behandling: Behandling) =
         barn
     }.toMutableSet()
 
-@Deprecated("Utgår når manuell oppdatering av husstandsbarn kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
-fun Set<HusstandsbarnperiodeDto>.toDomain(husstandsBarn: Husstandsbarn) =
+@Deprecated("Utgår når manuell oppdatering av husstandsmedlem kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
+fun Set<BostatusperiodeDto>.toDomain(husstandsmedlem: Husstandsmedlem) =
     this.map {
-        Husstandsbarnperiode(
-            husstandsBarn,
+        Bostatusperiode(
+            husstandsmedlem,
             it.datoFom,
             it.datoTom,
             it.bostatus,

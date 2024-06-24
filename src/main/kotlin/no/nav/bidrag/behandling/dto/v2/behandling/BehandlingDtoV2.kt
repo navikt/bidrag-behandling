@@ -132,13 +132,13 @@ data class UtgiftspostDto(
 
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
-    val husstandsbarn: Set<HusstandsbarnGrunnlagDto>,
+    val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
     val sivilstand: SivilstandAktivGrunnlagDto?,
 )
 
 data class IkkeAktiveGrunnlagsdata(
     val inntekter: IkkeAktiveInntekter = IkkeAktiveInntekter(),
-    val husstandsbarn: Set<HusstandsbarnGrunnlagDto> = emptySet(),
+    val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
 )
 
@@ -210,12 +210,12 @@ data class SivilstandIkkeAktivGrunnlagDto(
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )
 
-data class HusstandsbarnGrunnlagDto(
-    val perioder: Set<HusstandsbarnGrunnlagPeriodeDto>,
+data class HusstandsmedlemGrunnlagDto(
+    val perioder: Set<BostatusperiodeGrunnlagDto>,
     val ident: String? = null,
     val innhentetTidspunkt: LocalDateTime,
 ) {
-    data class HusstandsbarnGrunnlagPeriodeDto(
+    data class BostatusperiodeGrunnlagDto(
         @Schema(type = "string", format = "date", example = "2025-01-25")
         @JsonFormat(pattern = "yyyy-MM-dd")
         val datoFom: LocalDate?,

@@ -9,22 +9,22 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.v1.husstandsbarn.HusstandsbarnperiodeDto
+import no.nav.bidrag.behandling.dto.v1.husstandsmedlem.BostatusperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdaterHusstandsmedlemPeriode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
-import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnlagForHusstandsbarn
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarnMedOffentligePerioder
+import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
+import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
+import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlemMedOffentligePerioder
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -53,10 +53,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             // 1. Create new behandling
             val behandling = testdataManager.oppretteBehandling()
 
-            // 2.1 Prepare husstandsBarn
+            // 2.1 Prepare husstandsmed
             val perioder =
                 setOf(
-                    HusstandsbarnperiodeDto(
+                    BostatusperiodeDto(
                         null,
                         LocalDate.parse("2022-01-01"),
                         null,
@@ -65,9 +65,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     ),
                 )
 
-            val husstandsBarn =
+            val husstandsmedlem =
                 setOf(
-                    HusstandsbarnDtoV2(
+                    HusstandsmedlemDtoV2(
                         behandling.id,
                         Kilde.OFFENTLIG,
                         true,
@@ -81,7 +81,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             // 2.2
             val boforholddata =
                 OppdaterBoforholdRequest(
-                    husstandsBarn,
+                    husstandsmedlem,
                     emptySet(),
                     notat =
                         OppdaterNotat(
@@ -96,9 +96,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     BehandlingDtoV2::class.java,
                 )
 
-            assertEquals(1, boforholdResponse.body!!.boforhold.husstandsbarn.size)
-            val husstandsBarnDto = boforholdResponse.body!!.boforhold.husstandsbarn.iterator().next()
-            assertEquals(1, husstandsBarnDto.perioder.size)
+            assertEquals(1, boforholdResponse.body!!.boforhold.husstandsmedlem.size)
+            val husstandsmedlemDto = boforholdResponse.body!!.boforhold.husstandsmedlem.iterator().next()
+            assertEquals(1, husstandsmedlemDto.perioder.size)
         }
     }
 
@@ -107,52 +107,52 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         private fun opprettBehandling(): Behandling {
             val behandling = testdataManager.oppretteBehandling()
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
-            behandling.husstandsbarn.clear()
-            behandling.husstandsbarn.addAll(
+            behandling.husstandsmedlem.clear()
+            behandling.husstandsmedlem.addAll(
                 setOf(
-                    opprettHusstandsbarn(behandling, testdataBarn1).let {
+                    oppretteHusstandsmedlem(behandling, testdataBarn1).let {
                         it.perioder =
                             mutableSetOf(
-                                Husstandsbarnperiode(
+                                Bostatusperiode(
                                     datoFom = LocalDate.parse("2023-01-01"),
                                     datoTom = LocalDate.parse("2023-05-31"),
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     kilde = Kilde.OFFENTLIG,
-                                    husstandsbarn = it,
+                                    husstandsmedlem = it,
                                 ),
-                                Husstandsbarnperiode(
+                                Bostatusperiode(
                                     datoFom = LocalDate.parse("2023-06-01"),
                                     datoTom = null,
                                     bostatus = Bostatuskode.IKKE_MED_FORELDER,
                                     kilde = Kilde.OFFENTLIG,
-                                    husstandsbarn = it,
+                                    husstandsmedlem = it,
                                 ),
                             )
                         it
                     },
-                    opprettHusstandsbarn(behandling, testdataBarn2).let {
+                    oppretteHusstandsmedlem(behandling, testdataBarn2).let {
                         it.perioder =
                             mutableSetOf(
-                                Husstandsbarnperiode(
+                                Bostatusperiode(
                                     datoFom = LocalDate.parse("2023-01-01"),
                                     datoTom = LocalDate.parse("2023-10-31"),
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     kilde = Kilde.OFFENTLIG,
-                                    husstandsbarn = it,
+                                    husstandsmedlem = it,
                                 ),
-                                Husstandsbarnperiode(
+                                Bostatusperiode(
                                     datoFom = LocalDate.parse("2023-11-01"),
                                     datoTom = LocalDate.parse("2023-12-31"),
                                     bostatus = Bostatuskode.IKKE_MED_FORELDER,
                                     kilde = Kilde.OFFENTLIG,
-                                    husstandsbarn = it,
+                                    husstandsmedlem = it,
                                 ),
-                                Husstandsbarnperiode(
+                                Bostatusperiode(
                                     datoFom = LocalDate.parse("2024-01-01"),
                                     datoTom = null,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     kilde = Kilde.MANUELL,
-                                    husstandsbarn = it,
+                                    husstandsmedlem = it,
                                 ),
                             )
                         it
@@ -160,8 +160,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 ),
             )
             behandling.grunnlag.addAll(
-                opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                    opprettHusstandsbarnMedOffentligePerioder(behandling),
+                oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                    oppretteHusstandsmedlemMedOffentligePerioder(behandling),
                 ),
             )
             return testdataManager.lagreBehandlingNewTransaction(behandling)
@@ -172,9 +172,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             // gitt
             val behandling = opprettBehandling()
 
-            val eksisterendeHusstandsbarn = behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }
-            val sistePeriode = eksisterendeHusstandsbarn!!.perioder.maxBy { it.datoFom!! }
-            eksisterendeHusstandsbarn.perioder.shouldHaveSize(2)
+            val eksisterendeHusstandsmedlem = behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }
+            val sistePeriode = eksisterendeHusstandsmedlem!!.perioder.maxBy { it.datoFom!! }
+            eksisterendeHusstandsmedlem.perioder.shouldHaveSize(2)
 
             val request =
                 OppdatereBoforholdRequestV2(
@@ -182,7 +182,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                         OppdatereHusstandsmedlem(
                             oppdaterPeriode =
                                 OppdaterHusstandsmedlemPeriode(
-                                    idHusstandsbarn = eksisterendeHusstandsbarn.id!!,
+                                    idHusstandsmedlem = eksisterendeHusstandsmedlem.id!!,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     datoFom = sistePeriode.datoFom!!.plusMonths(2),
                                     datoTom = null,
@@ -203,22 +203,22 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsbarn shouldBe emptyList()
-                it.body?.oppdatertHusstandsbarn shouldNotBe null
+                it.body?.valideringsfeil?.husstandsmedlem shouldBe emptyList()
+                it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
-            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                oppdatertHusstandsbarn?.perioder.shouldNotBeEmpty()
-                oppdatertHusstandsbarn!!.perioder shouldHaveSize 3
-                oppdatertHusstandsbarn.perioder.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
-                val sisteOppdatertPeriode = oppdatertHusstandsbarn.perioder.maxBy { it.datoFom!! }
+            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                oppdatertHusstandsmedlem?.perioder.shouldNotBeEmpty()
+                oppdatertHusstandsmedlem!!.perioder shouldHaveSize 3
+                oppdatertHusstandsmedlem.perioder.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
+                val sisteOppdatertPeriode = oppdatertHusstandsmedlem.perioder.maxBy { it.datoFom!! }
                 sisteOppdatertPeriode.datoFom shouldBe request.oppdatereHusstandsmedlem!!.oppdaterPeriode!!.datoFom
                 sisteOppdatertPeriode.kilde shouldBe Kilde.MANUELL
                 sisteOppdatertPeriode.bostatus shouldBe Bostatuskode.MED_FORELDER
             }
 
             assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
-                val oppdaterHusstandsmedlem = it.husstandsbarn.find { it.id == eksisterendeHusstandsbarn.id }
+                val oppdaterHusstandsmedlem = it.husstandsmedlem.find { it.id == eksisterendeHusstandsmedlem.id }
                 oppdaterHusstandsmedlem!!.perioder shouldHaveSize 3
                 oppdaterHusstandsmedlem.forrigePerioder.shouldNotBeNull()
             }
@@ -229,9 +229,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             // gitt
             val behandling = opprettBehandling()
 
-            val eksisterendeHusstandsbarn = behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }
-            val manuellPeriode = eksisterendeHusstandsbarn!!.perioder.find { it.kilde == Kilde.MANUELL }!!
-            eksisterendeHusstandsbarn.perioder.shouldHaveSize(3)
+            val eksisterendeHusstandsmedlem = behandling.husstandsmedlem.find { it.ident == testdataBarn2.ident }
+            val manuellPeriode = eksisterendeHusstandsmedlem!!.perioder.find { it.kilde == Kilde.MANUELL }!!
+            eksisterendeHusstandsmedlem.perioder.shouldHaveSize(3)
 
             val request =
                 OppdatereBoforholdRequestV2(
@@ -239,7 +239,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                         OppdatereHusstandsmedlem(
                             oppdaterPeriode =
                                 OppdaterHusstandsmedlemPeriode(
-                                    idHusstandsbarn = eksisterendeHusstandsbarn.id!!,
+                                    idHusstandsmedlem = eksisterendeHusstandsmedlem.id!!,
                                     idPeriode = manuellPeriode.id,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     datoFom = manuellPeriode.datoFom!!.plusMonths(1),
@@ -261,39 +261,39 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsbarn.shouldBeEmpty()
-                it.body?.oppdatertHusstandsbarn shouldNotBe null
+                it.body?.valideringsfeil?.husstandsmedlem.shouldBeEmpty()
+                it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
-            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                oppdatertHusstandsbarn?.perioder.shouldNotBeEmpty()
-                oppdatertHusstandsbarn!!.perioder shouldHaveSize 3
-                oppdatertHusstandsbarn.perioder.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
-                val sisteOppdatertPeriode = oppdatertHusstandsbarn.perioder.maxBy { it.datoFom!! }
+            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                oppdatertHusstandsmedlem?.perioder.shouldNotBeEmpty()
+                oppdatertHusstandsmedlem!!.perioder shouldHaveSize 3
+                oppdatertHusstandsmedlem.perioder.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
+                val sisteOppdatertPeriode = oppdatertHusstandsmedlem.perioder.maxBy { it.datoFom!! }
                 sisteOppdatertPeriode.datoFom shouldBe request.oppdatereHusstandsmedlem!!.oppdaterPeriode!!.datoFom
                 sisteOppdatertPeriode.kilde shouldBe Kilde.MANUELL
                 sisteOppdatertPeriode.bostatus shouldBe Bostatuskode.MED_FORELDER
             }
 
             assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
-                val oppdaterHusstandsmedlem = it.husstandsbarn.find { it.id == eksisterendeHusstandsbarn.id }
+                val oppdaterHusstandsmedlem = it.husstandsmedlem.find { it.id == eksisterendeHusstandsmedlem.id }
                 oppdaterHusstandsmedlem!!.perioder shouldHaveSize 3
                 oppdaterHusstandsmedlem.forrigePerioder.shouldNotBeNull()
             }
         }
 
         @Test
-        fun `skal kunne slette husstandsbarnperiode`() {
+        fun `skal kunne slette husstandsmedlemperiode`() {
             // gitt
             val behandling = opprettBehandling()
-            val eksisterendeHusstandsbarn = behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }!!
-            eksisterendeHusstandsbarn.perioder.shouldHaveSize(3)
+            val eksisterendeHusstandsmedlem = behandling.husstandsmedlem.find { it.ident == testdataBarn2.ident }!!
+            eksisterendeHusstandsmedlem.perioder.shouldHaveSize(3)
 
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
                         OppdatereHusstandsmedlem(
-                            slettPeriode = eksisterendeHusstandsbarn!!.perioder.first { Kilde.MANUELL == it.kilde }.id,
+                            slettPeriode = eksisterendeHusstandsmedlem!!.perioder.first { Kilde.MANUELL == it.kilde }.id,
                         ),
                 )
 
@@ -310,18 +310,18 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsbarn shouldBe emptyList()
-                it.body?.oppdatertHusstandsbarn shouldNotBe null
+                it.body?.valideringsfeil?.husstandsmedlem shouldBe emptyList()
+                it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
-            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                oppdatertHusstandsbarn?.perioder.shouldNotBeEmpty()
-                oppdatertHusstandsbarn!!.perioder shouldHaveSize 2
-                oppdatertHusstandsbarn.perioder.find { Kilde.MANUELL == it.kilde } shouldBe null
-                oppdatertHusstandsbarn.perioder.maxBy { it.datoFom!! }.kilde shouldBe Kilde.OFFENTLIG
+            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                oppdatertHusstandsmedlem?.perioder.shouldNotBeEmpty()
+                oppdatertHusstandsmedlem!!.perioder shouldHaveSize 2
+                oppdatertHusstandsmedlem.perioder.find { Kilde.MANUELL == it.kilde } shouldBe null
+                oppdatertHusstandsmedlem.perioder.maxBy { it.datoFom!! }.kilde shouldBe Kilde.OFFENTLIG
             }
             assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
-                val oppdaterHusstandsmedlem = it.husstandsbarn.find { it.id == eksisterendeHusstandsbarn.id }
+                val oppdaterHusstandsmedlem = it.husstandsmedlem.find { it.id == eksisterendeHusstandsmedlem.id }
                 oppdaterHusstandsmedlem!!.perioder shouldHaveSize 2
                 oppdaterHusstandsmedlem.forrigePerioder.shouldNotBeNull()
             }
@@ -331,7 +331,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         open fun `skal kunne legge til et nytt husstandsmedlem`() {
             // gitt
             val behandling = opprettBehandling()
-            behandling.husstandsbarn.shouldHaveSize(2)
+            behandling.husstandsmedlem.shouldHaveSize(2)
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
@@ -358,22 +358,22 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsbarn.shouldBeEmpty()
-                it.body?.oppdatertHusstandsbarn shouldNotBe null
+                it.body?.valideringsfeil?.husstandsmedlem.shouldBeEmpty()
+                it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
-            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                oppdatertHusstandsbarn!!.kilde shouldBe Kilde.MANUELL
-                oppdatertHusstandsbarn.ident shouldBe
+            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                oppdatertHusstandsmedlem!!.kilde shouldBe Kilde.MANUELL
+                oppdatertHusstandsmedlem.ident shouldBe
                     request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.personident!!.verdi
-                oppdatertHusstandsbarn.navn shouldBe request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.navn
-                oppdatertHusstandsbarn.perioder.shouldHaveSize(1)
-                oppdatertHusstandsbarn.perioder.first().kilde shouldBe Kilde.MANUELL
-                oppdatertHusstandsbarn.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
-                oppdatertHusstandsbarn.perioder.first().datoTom.shouldBeNull()
+                oppdatertHusstandsmedlem.navn shouldBe request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.navn
+                oppdatertHusstandsmedlem.perioder.shouldHaveSize(1)
+                oppdatertHusstandsmedlem.perioder.first().kilde shouldBe Kilde.MANUELL
+                oppdatertHusstandsmedlem.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
+                oppdatertHusstandsmedlem.perioder.first().datoTom.shouldBeNull()
             }
 
-            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsbarn) {
+            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsmedlem) {
                 it.size shouldBe 3
                 it.find { nyttBarn ->
                     nyttBarn.ident ==
@@ -383,20 +383,20 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         }
 
         @Test
-        fun `skal kunne slette manuelt husstandsbarn`() {
+        fun `skal kunne slette manuelt husstandsmedlem`() {
             // gitt
             val behandling = opprettBehandling()
 
-            val manueltHusstandsbarn = behandling.husstandsbarn.first()
-            manueltHusstandsbarn.kilde = Kilde.MANUELL
+            val manueltHusstandsmedlem = behandling.husstandsmedlem.first()
+            manueltHusstandsmedlem.kilde = Kilde.MANUELL
             testdataManager.lagreBehandlingNewTransaction(behandling)
-            behandling.husstandsbarn.shouldHaveSize(2)
+            behandling.husstandsmedlem.shouldHaveSize(2)
 
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
                         OppdatereHusstandsmedlem(
-                            slettHusstandsmedlem = behandling.husstandsbarn.first { Kilde.MANUELL == it.kilde }.id,
+                            slettHusstandsmedlem = behandling.husstandsmedlem.first { Kilde.MANUELL == it.kilde }.id,
                         ),
                 )
 
@@ -413,16 +413,16 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsbarn shouldBe emptyList()
-                it.body?.oppdatertHusstandsbarn shouldNotBe null
+                it.body?.valideringsfeil?.husstandsmedlem shouldBe emptyList()
+                it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
-            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                oppdatertHusstandsbarn!!.kilde shouldBe Kilde.MANUELL
-                oppdatertHusstandsbarn.id shouldBe request.oppdatereHusstandsmedlem!!.slettHusstandsmedlem
+            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                oppdatertHusstandsmedlem!!.kilde shouldBe Kilde.MANUELL
+                oppdatertHusstandsmedlem.id shouldBe request.oppdatereHusstandsmedlem!!.slettHusstandsmedlem
             }
 
-            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsbarn) {
+            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsmedlem) {
                 it.size shouldBe 1
                 it.find { slettetBarn ->
                     slettetBarn.id == request.oppdatereHusstandsmedlem!!.slettHusstandsmedlem
@@ -435,35 +435,35 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             // gitt
             val behandling = opprettBehandling()
 
-            val oppdaterHusstandsmedlem = behandling.husstandsbarn.first()
+            val oppdaterHusstandsmedlem = behandling.husstandsmedlem.first()
             oppdaterHusstandsmedlem.perioder.clear()
             oppdaterHusstandsmedlem.perioder.addAll(
                 setOf(
-                    Husstandsbarnperiode(
+                    Bostatusperiode(
                         datoFom = LocalDate.parse("2023-01-01"),
                         datoTom = LocalDate.parse("2023-03-31"),
                         bostatus = Bostatuskode.MED_FORELDER,
                         kilde = Kilde.OFFENTLIG,
-                        husstandsbarn = oppdaterHusstandsmedlem,
+                        husstandsmedlem = oppdaterHusstandsmedlem,
                     ),
-                    Husstandsbarnperiode(
+                    Bostatusperiode(
                         datoFom = LocalDate.parse("2023-04-01"),
                         datoTom = LocalDate.parse("2023-04-30"),
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         kilde = Kilde.MANUELL,
-                        husstandsbarn = oppdaterHusstandsmedlem,
+                        husstandsmedlem = oppdaterHusstandsmedlem,
                     ),
-                    Husstandsbarnperiode(
+                    Bostatusperiode(
                         datoFom = LocalDate.parse("2023-05-01"),
                         datoTom = null,
                         bostatus = Bostatuskode.MED_FORELDER,
                         kilde = Kilde.MANUELL,
-                        husstandsbarn = oppdaterHusstandsmedlem,
+                        husstandsmedlem = oppdaterHusstandsmedlem,
                     ),
                 ),
             )
             testdataManager.lagreBehandlingNewTransaction(behandling)
-            behandling.husstandsbarn.shouldHaveSize(2)
+            behandling.husstandsmedlem.shouldHaveSize(2)
 
             val request =
                 OppdatereBoforholdRequestV2(
@@ -486,15 +486,15 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsbarn shouldBe emptyList()
-                it.body?.oppdatertHusstandsbarn shouldNotBe null
+                it.body?.valideringsfeil?.husstandsmedlem shouldBe emptyList()
+                it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
-            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                oppdatertHusstandsbarn!!.perioder.shouldHaveSize(2)
-                oppdatertHusstandsbarn.perioder.filter { it.kilde == Kilde.MANUELL }.shouldBeEmpty()
+            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                oppdatertHusstandsmedlem!!.perioder.shouldHaveSize(2)
+                oppdatertHusstandsmedlem.perioder.filter { it.kilde == Kilde.MANUELL }.shouldBeEmpty()
             }
-            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsbarn) {
+            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsmedlem) {
                 it.size shouldBe 2
                 val oppdatertHusstandsmedlem = it.find { it.id == oppdaterHusstandsmedlem.id }!!
                 oppdatertHusstandsmedlem.perioder.shouldHaveSize(2)
@@ -508,7 +508,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             // gitt
             val behandling = opprettBehandling()
 
-            val oppdaterHusstandsmedlem = behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }!!
+            val oppdaterHusstandsmedlem = behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }!!
 
             val nyPeriodeRequest =
                 OppdatereBoforholdRequestV2(
@@ -516,7 +516,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                         OppdatereHusstandsmedlem(
                             oppdaterPeriode =
                                 OppdaterHusstandsmedlemPeriode(
-                                    idHusstandsbarn = oppdaterHusstandsmedlem.id!!,
+                                    idHusstandsmedlem = oppdaterHusstandsmedlem.id!!,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     datoFom = LocalDate.parse("2024-01-01"),
                                     datoTom = null,
@@ -535,9 +535,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(responsNyPeriode) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                assertSoftly(body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                    oppdatertHusstandsbarn!!.perioder.filter { it.kilde == Kilde.MANUELL }.shouldHaveSize(1)
-                    oppdatertHusstandsbarn.perioder.shouldHaveSize(3)
+                assertSoftly(body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                    oppdatertHusstandsmedlem!!.perioder.filter { it.kilde == Kilde.MANUELL }.shouldHaveSize(1)
+                    oppdatertHusstandsmedlem.perioder.shouldHaveSize(3)
                 }
             }
 
@@ -559,13 +559,13 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(angreRespons) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                assertSoftly(body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                    oppdatertHusstandsbarn!!.perioder.filter { it.kilde == Kilde.MANUELL }.shouldHaveSize(0)
-                    oppdatertHusstandsbarn.perioder.shouldHaveSize(2)
+                assertSoftly(body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                    oppdatertHusstandsmedlem!!.perioder.filter { it.kilde == Kilde.MANUELL }.shouldHaveSize(0)
+                    oppdatertHusstandsmedlem.perioder.shouldHaveSize(2)
                 }
             }
 
-            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsbarn) {
+            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsmedlem) {
                 it.size shouldBe 2
                 val oppdatertHusstandsmedlem = it.find { it.id == oppdaterHusstandsmedlem.id }!!
                 oppdatertHusstandsmedlem.perioder.shouldHaveSize(2)
@@ -592,9 +592,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(angreRespons2) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                assertSoftly(body!!.oppdatertHusstandsbarn) { oppdatertHusstandsbarn ->
-                    oppdatertHusstandsbarn!!.perioder.filter { it.kilde == Kilde.MANUELL }.shouldHaveSize(1)
-                    oppdatertHusstandsbarn.perioder.shouldHaveSize(3)
+                assertSoftly(body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                    oppdatertHusstandsmedlem!!.perioder.filter { it.kilde == Kilde.MANUELL }.shouldHaveSize(1)
+                    oppdatertHusstandsmedlem.perioder.shouldHaveSize(3)
                 }
             }
         }

@@ -3,13 +3,13 @@ package no.nav.bidrag.behandling.transformers.validering
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -28,7 +28,7 @@ class ValiderBoforholdSivilstandPerioderTest {
         fun `skal validere boforhold`() {
             val boforholdListe =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(
                             Datoperiode(
                                 YearMonth.parse("2022-01").atDay(1),
@@ -46,7 +46,7 @@ class ValiderBoforholdSivilstandPerioderTest {
                         "barn1",
                         fødselsdato = LocalDate.parse("2020-01-01"),
                     ),
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(
                             Datoperiode(
                                 YearMonth.parse("2022-01").atDay(1),
@@ -64,12 +64,12 @@ class ValiderBoforholdSivilstandPerioderTest {
                         "barn2",
                         fødselsdato = LocalDate.parse("2020-01-01"),
                     ),
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(),
                         "barn3",
                         fødselsdato = LocalDate.parse("2020-01-02"),
                     ),
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(
                             Datoperiode(
                                 YearMonth.parse("2022-02").atDay(1),
@@ -134,7 +134,7 @@ class ValiderBoforholdSivilstandPerioderTest {
         fun `skal validere boforhold hvis barn er født etter virkningstidspunkt`() {
             val boforholdListe =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(
                             Datoperiode(
                                 YearMonth.parse("2023-01").atDay(1),
@@ -166,7 +166,7 @@ class ValiderBoforholdSivilstandPerioderTest {
         fun `skal validere boforhold hvis periode starter senere enn dagens dato`() {
             val boforholdListe =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(
                             Datoperiode(
                                 YearMonth.now().plusMonths(1).atDay(1),
@@ -198,7 +198,7 @@ class ValiderBoforholdSivilstandPerioderTest {
         fun `skal validere boforhold hvis en eller flere perioder overlapper`() {
             val boforholdListe =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(
                             Datoperiode(
                                 YearMonth.parse("2022-01").atDay(1),
@@ -258,7 +258,7 @@ class ValiderBoforholdSivilstandPerioderTest {
         fun `skal validere boforhold hvis en eller flere perioder overlapper scenarie 2`() {
             val boforholdListe =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(
                             Datoperiode(
                                 YearMonth.parse("2022-01").atDay(1),
@@ -318,7 +318,7 @@ class ValiderBoforholdSivilstandPerioderTest {
         fun `skal validere boforhold hvis en eller flere perioder overlapper scenarie 3`() {
             val boforholdListe =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    opprettHusstandsmedlem(
                         listOf(
                             Datoperiode(
                                 YearMonth.parse("2023-01").atDay(1),
@@ -578,12 +578,12 @@ fun opprettSivilstand(perioder: List<Pair<Datoperiode, Sivilstandskode>>): Mutab
     }.toMutableSet()
 }
 
-fun opprettHusstandsbarn(
+fun opprettHusstandsmedlem(
     perioder: List<Pair<Datoperiode, Bostatuskode?>>,
     ident: String,
     fødselsdato: LocalDate = LocalDate.parse("2022-01-01"),
-): Husstandsbarn =
-    Husstandsbarn(
+): Husstandsmedlem =
+    Husstandsmedlem(
         behandling = oppretteBehandling(),
         kilde = Kilde.MANUELL,
         id = Random.nextLong(1000),
@@ -592,8 +592,8 @@ fun opprettHusstandsbarn(
         fødselsdato = fødselsdato,
         perioder =
             perioder.map {
-                Husstandsbarnperiode(
-                    husstandsbarn = opprettHusstandsbarn(oppretteBehandling(), testdataBP),
+                Bostatusperiode(
+                    husstandsmedlem = oppretteHusstandsmedlem(oppretteBehandling(), testdataBP),
                     datoFom = it.first.fom,
                     datoTom = it.first.til,
                     bostatus = it.second ?: Bostatuskode.DELT_BOSTED,

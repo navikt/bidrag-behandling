@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -41,8 +41,8 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
         navn = this.navn,
     )
 
-fun OpprettRolleDto.toHusstandsbarn(behandling: Behandling): Husstandsbarn =
-    Husstandsbarn(
+fun OpprettRolleDto.toHusstandsmedlem(behandling: Behandling): Husstandsmedlem =
+    Husstandsmedlem(
         behandling,
         Kilde.OFFENTLIG,
         ident = this.ident?.verdi,

@@ -31,7 +31,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toDomain
-import no.nav.bidrag.behandling.transformers.toHusstandsbarn
+import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.valider
@@ -280,9 +280,9 @@ class BehandlingService(
                         it.sivilstand.clear()
                         it.sivilstand.addAll(bf.sivilstand.toSivilstandDomain(it))
                     }
-                    bf.husstandsbarn?.run {
-                        it.husstandsbarn.clear()
-                        it.husstandsbarn.addAll(bf.husstandsbarn.toDomain(it))
+                    bf.husstandsmedlem?.run {
+                        it.husstandsmedlem.clear()
+                        it.husstandsmedlem.addAll(bf.husstandsmedlem.toDomain(it))
                     }
                     entityManager.merge(it)
                     it.boforholdsbegrunnelseKunINotat =
@@ -398,7 +398,7 @@ class BehandlingService(
             skalSlettes
         }
 
-        oppdaterHusstandsbarnForRoller(behandling, rollerSomLeggesTil)
+        oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
 
         behandlingRepository.save(behandling)
 
@@ -411,18 +411,16 @@ class BehandlingService(
         return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
     }
 
-    private fun oppdaterHusstandsbarnForRoller(
+    private fun oppdatereHusstandsmedlemmerForRoller(
         behandling: Behandling,
         rollerSomLeggesTil: List<OpprettRolleDto>,
     ) {
-        val nyeRollerSomIkkeHarHusstandsbarn =
-            rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsbarn.none { it.ident == nyRolle.ident?.verdi } }
-        behandling.husstandsbarn.addAll(
-            nyeRollerSomIkkeHarHusstandsbarn.map {
-                secureLogger.info { "Legger til husstandsbarn med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
-                it.toHusstandsbarn(
-                    behandling,
-                )
+        val nyeRollerSomIkkeHarHusstandsmedlemmer =
+            rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
+        behandling.husstandsmedlem.addAll(
+            nyeRollerSomIkkeHarHusstandsmedlemmer.map {
+                secureLogger.info { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
+                it.toHusstandsmedlem(behandling)
             },
         )
     }

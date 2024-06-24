@@ -139,7 +139,7 @@ class VedtakTilBehandlingTest {
             inntektsbegrunnelseIVedtakOgNotat shouldBe "Notat inntekt med i vedtak"
             inntektsbegrunnelseKunINotat shouldBe "Notat inntekt"
             validerRoller()
-            validerHusstandsbarn()
+            validerHusstandsmedlem()
             validerSivilstand()
             validerInntekter()
             validerGrunnlag()
@@ -412,7 +412,7 @@ class VedtakTilBehandlingTest {
             this[1].datoTom shouldBe null
         }
 
-        assertSoftly(behandling.husstandsbarn.toList()) {
+        assertSoftly(behandling.husstandsmedlem.toList()) {
             this shouldHaveSize 6
             assertSoftly(filter { Kilde.OFFENTLIG == it.kilde }) {
                 this shouldHaveSize 5
@@ -523,11 +523,11 @@ class VedtakTilBehandlingTest {
         }
     }
 
-    fun Behandling.validerHusstandsbarn() {
-        assertSoftly(husstandsbarn) {
+    fun Behandling.validerHusstandsmedlem() {
+        assertSoftly(husstandsmedlem) {
             size shouldBe 6
-            val barn1 = husstandsbarn.find { it.ident == testdataBarn1.ident }
-            val barn2 = husstandsbarn.find { it.ident == testdataBarn2.ident }
+            val barn1 = husstandsmedlem.find { it.ident == testdataBarn1.ident }
+            val barn2 = husstandsmedlem.find { it.ident == testdataBarn2.ident }
             assertSoftly(barn1!!) {
                 it.ident shouldBe testdataBarn1.ident
                 it.fødselsdato shouldBe testdataBarn1.fødselsdato
