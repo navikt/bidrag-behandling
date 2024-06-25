@@ -22,7 +22,6 @@ import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandlingMedReelMottaker
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -118,12 +117,6 @@ class VedtakserviceTest {
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
-        every {
-            behandlingService.oppdaterBehandling(
-                any(),
-                any(),
-            )
-        } returns oppretteBehandling()
         every {
             behandlingService.oppdaterVedtakFattetStatus(
                 any(),

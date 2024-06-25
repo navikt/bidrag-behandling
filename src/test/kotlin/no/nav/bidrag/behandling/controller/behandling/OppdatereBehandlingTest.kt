@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.opprettHentGrunnlagDto
 import no.nav.bidrag.behandling.service.tilSummerteInntekter
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
@@ -45,38 +44,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class OppdatereBehandlingTest : BehandlingControllerTest() {
-    @Test
-    fun `skal oppdatere behandling for API v2`() {
-        // gitt
-        val b = testdataManager.oppretteBehandling(true, false, false)
-
-        // hvis
-        val behandlingRes =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/" + b.id,
-                HttpMethod.PUT,
-                HttpEntity(
-                    OppdaterBehandlingRequestV2(
-                        virkningstidspunkt =
-                            OppdatereVirkningstidspunkt(
-                                virkningstidspunkt = LocalDate.parse("2024-03-02"),
-                            ),
-                    ),
-                ),
-                BehandlingDtoV2::class.java,
-            )
-        Assertions.assertEquals(HttpStatus.CREATED, behandlingRes.statusCode)
-        val responseBody = behandlingRes.body!!
-        responseBody.inntekter.beregnetInntekter shouldHaveSize 3
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2024-03-02")
-
-        // så
-        val oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!)
-
-        assertNotNull(oppdatertBehandling)
-        oppdatertBehandling.get().virkningstidspunkt shouldBe LocalDate.parse("2024-03-02")
-    }
-
     @Test
     fun `skal oppdatere årsak`() {
         // gitt

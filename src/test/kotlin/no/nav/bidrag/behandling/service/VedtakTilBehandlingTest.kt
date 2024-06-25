@@ -21,7 +21,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.hentFil
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -94,12 +93,6 @@ class VedtakTilBehandlingTest {
                 sakConsumer,
                 unleash,
             )
-        every {
-            behandlingService.oppdaterBehandling(
-                any(),
-                any(),
-            )
-        } returns oppretteBehandling()
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit

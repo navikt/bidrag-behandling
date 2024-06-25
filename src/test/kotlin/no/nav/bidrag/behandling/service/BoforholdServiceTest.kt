@@ -22,7 +22,7 @@ import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdaterHusstandsmedlemPeriode
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBostatusperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
@@ -854,7 +854,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
                         oppdaterPeriode =
-                            OppdaterHusstandsmedlemPeriode(
+                            OppdatereBostatusperiode(
                                 idHusstandsmedlem = husstandsmedlem.id!!,
                                 idPeriode = periodeSomSkalOppdateres.id,
                                 datoFom = LocalDate.parse("2024-02-01"),

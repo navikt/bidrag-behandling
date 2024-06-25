@@ -18,6 +18,8 @@ data class OppdatereBoforholdRequestV2(
 )
 
 data class OppdatereBoforholdResponse(
+    @Deprecated("Erstattes av oppdatertHusstandsmedlem")
+    val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = null,
     @Schema(description = "Husstandsmedlem som ble opprettet")
     val oppdatertHusstandsmedlem: HusstandsmedlemDtoV2? = null,
     val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
@@ -28,7 +30,7 @@ data class OppdatereBoforholdResponse(
 data class OppdatereHusstandsmedlem(
     @Schema(description = "Informasjon om husstandsmedlem som skal opprettes")
     val opprettHusstandsmedlem: OpprettHusstandsstandsmedlem? = null,
-    val oppdaterPeriode: OppdaterHusstandsmedlemPeriode? = null,
+    val oppdaterPeriode: OppdatereBostatusperiode? = null,
     @Schema(type = "Long", description = "Id til perioden som skal slettes")
     val slettPeriode: Long? = null,
     @Schema(type = "Long", description = "Id til husstandsmedlemmet som skal slettes")
@@ -43,9 +45,12 @@ data class OppdatereHusstandsmedlem(
     val angreSisteStegForHusstandsmedlem: Long? = null,
 )
 
-data class OppdaterHusstandsmedlemPeriode(
+data class OppdatereBostatusperiode(
+    @Deprecated("Erstattes av idHusstandsmedlem")
+    @Schema(type = "Long", description = "Id til husstandsbarnet perioden skal gjelde for")
+    var idHusstandsbarn: Long = 0L,
     @Schema(type = "Long", description = "Id til husstandsmedlemmet perioden skal gjelde for")
-    val idHusstandsmedlem: Long,
+    var idHusstandsmedlem: Long = 0L,
     @Schema(type = "Long", description = "Id til perioden som skal oppdateres")
     val idPeriode: Long? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
@@ -56,7 +61,24 @@ data class OppdaterHusstandsmedlemPeriode(
     val datoTom: LocalDate?,
     @Schema(required = true)
     val bostatus: Bostatuskode,
-)
+) {
+    // TODO: Slette når migrering fra idHusstandsbarn til idHusstandsmedlem er fullført
+    init {
+        idHusstandsbarn =
+            if (idHusstandsbarn == 0L && idHusstandsmedlem > 0L) {
+                idHusstandsmedlem
+            } else {
+                idHusstandsbarn
+            }
+
+        idHusstandsmedlem =
+            if (idHusstandsmedlem == 0L && idHusstandsbarn > 0L) {
+                idHusstandsbarn
+            } else {
+                idHusstandsmedlem
+            }
+    }
+}
 
 data class OpprettHusstandsstandsmedlem(
     val personident: Personident? = null,

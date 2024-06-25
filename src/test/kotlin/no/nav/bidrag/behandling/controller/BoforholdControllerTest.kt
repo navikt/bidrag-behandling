@@ -11,15 +11,9 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
-import no.nav.bidrag.behandling.dto.v1.husstandsmedlem.BostatusperiodeDto
-import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdaterHusstandsmedlemPeriode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBostatusperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
@@ -39,68 +33,11 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
-import kotlin.test.assertEquals
 
 @RunWith(Enclosed::class)
 class BoforholdControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
-
-    @Nested
-    open inner class OppdatereBehandling {
-        @Test
-        fun `skal lagre boforhold data`() {
-            // 1. Create new behandling
-            val behandling = testdataManager.oppretteBehandling()
-
-            // 2.1 Prepare husstandsmed
-            val perioder =
-                setOf(
-                    BostatusperiodeDto(
-                        null,
-                        LocalDate.parse("2022-01-01"),
-                        null,
-                        Bostatuskode.IKKE_MED_FORELDER,
-                        Kilde.OFFENTLIG,
-                    ),
-                )
-
-            val husstandsmedlem =
-                setOf(
-                    HusstandsmedlemDtoV2(
-                        behandling.id,
-                        Kilde.OFFENTLIG,
-                        true,
-                        perioder,
-                        "ident",
-                        null,
-                        fødselsdato = LocalDate.now().minusMonths(687),
-                    ),
-                )
-
-            // 2.2
-            val boforholddata =
-                OppdaterBoforholdRequest(
-                    husstandsmedlem,
-                    emptySet(),
-                    notat =
-                        OppdaterNotat(
-                            "med i vedtak",
-                        ),
-                )
-            val boforholdResponse =
-                httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV2()}/behandling/${behandling.id}",
-                    HttpMethod.PUT,
-                    HttpEntity(OppdaterBehandlingRequestV2(boforhold = boforholddata)),
-                    BehandlingDtoV2::class.java,
-                )
-
-            assertEquals(1, boforholdResponse.body!!.boforhold.husstandsmedlem.size)
-            val husstandsmedlemDto = boforholdResponse.body!!.boforhold.husstandsmedlem.iterator().next()
-            assertEquals(1, husstandsmedlemDto.perioder.size)
-        }
-    }
 
     @Nested
     open inner class OppdatereBoforhold {
@@ -181,7 +118,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     oppdatereHusstandsmedlem =
                         OppdatereHusstandsmedlem(
                             oppdaterPeriode =
-                                OppdaterHusstandsmedlemPeriode(
+                                OppdatereBostatusperiode(
                                     idHusstandsmedlem = eksisterendeHusstandsmedlem.id!!,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     datoFom = sistePeriode.datoFom!!.plusMonths(2),
@@ -238,7 +175,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     oppdatereHusstandsmedlem =
                         OppdatereHusstandsmedlem(
                             oppdaterPeriode =
-                                OppdaterHusstandsmedlemPeriode(
+                                OppdatereBostatusperiode(
                                     idHusstandsmedlem = eksisterendeHusstandsmedlem.id!!,
                                     idPeriode = manuellPeriode.id,
                                     bostatus = Bostatuskode.MED_FORELDER,
@@ -515,7 +452,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     oppdatereHusstandsmedlem =
                         OppdatereHusstandsmedlem(
                             oppdaterPeriode =
-                                OppdaterHusstandsmedlemPeriode(
+                                OppdatereBostatusperiode(
                                     idHusstandsmedlem = oppdaterHusstandsmedlem.id!!,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     datoFom = LocalDate.parse("2024-01-01"),

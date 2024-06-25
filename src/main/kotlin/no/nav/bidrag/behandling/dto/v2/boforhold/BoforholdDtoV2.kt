@@ -14,7 +14,10 @@ data class BoforholdDtoV2(
     val sivilstand: Set<SivilstandDto>,
     val notat: BehandlingNotatDto,
     val valideringsfeil: BoforholdValideringsfeil,
-)
+) {
+    @Deprecated("Erstattes av husstandsmedlem")
+    val husstandsbarn = husstandsmedlem
+}
 
 data class HusstandsmedlemDtoV2(
     val id: Long?,

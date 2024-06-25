@@ -134,10 +134,15 @@ data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
     val sivilstand: SivilstandAktivGrunnlagDto?,
-)
+) {
+    @Deprecated("Erstattes av husstandsmedlem")
+    val husstandsbarn = husstandsmedlem
+}
 
 data class IkkeAktiveGrunnlagsdata(
     val inntekter: IkkeAktiveInntekter = IkkeAktiveInntekter(),
+    @Deprecated("Erstattes av husstandsmedlem")
+    val husstandsbarn: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
 )

@@ -32,7 +32,7 @@ enum class Grunnlagsobjektvelger(
     BARNETILLEGG(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
-            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
     BARNETILSYN(emptyMap()),

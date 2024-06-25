@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -33,9 +32,6 @@ import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.ident.Personident
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -77,52 +73,6 @@ class BehandlingControllerV2(
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
         return resultat.tilBehandlingDtoV2(resultat.grunnlagListe)
-    }
-
-    @Suppress("unused")
-    @PutMapping("/behandling/{behandlingsid}")
-    @Operation(
-        description = "Oppdatere behandling",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "201",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-            ApiResponse(responseCode = "400", description = "Feil opplysninger oppgitt"),
-            ApiResponse(
-                responseCode = "401",
-                description = "Sikkerhetstoken mangler, er utløpt, eller av andre årsaker ugyldig",
-            ),
-            ApiResponse(responseCode = "404", description = "Fant ikke behandling"),
-            ApiResponse(
-                responseCode = "500",
-                description = "Serverfeil",
-            ),
-            ApiResponse(responseCode = "503", description = "Tjeneste utilgjengelig"),
-        ],
-    )
-    @Deprecated("Bruk heller egne endepunkter")
-    fun oppdatereBehandlingV2(
-        @PathVariable behandlingsid: Long,
-        @Valid @RequestBody(required = true) request: OppdaterBehandlingRequestV2,
-    ): ResponseEntity<BehandlingDtoV2> {
-        val behandlingFørOppdatering = behandlingService.hentBehandlingById(behandlingsid)
-
-        behandlingFørOppdatering.bidragsmottaker?.ident?.let { Personident(it) }
-            ?: throw IllegalArgumentException("Behandling mangler BM!")
-
-        val behandling = behandlingService.oppdaterBehandling(behandlingsid, request)
-
-        return ResponseEntity(
-            behandling.tilBehandlingDtoV2(
-                behandling.grunnlag.hentSisteAktiv(),
-                grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
-            ),
-            HttpStatus.CREATED,
-        )
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")

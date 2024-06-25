@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityManager
-import no.nav.bidrag.behandling.SECURE_LOGGER
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
@@ -20,8 +19,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.behandling.toV2
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.behandling.tilAktivGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
@@ -30,12 +27,9 @@ import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.transformers.toDomain
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.toRolle
-import no.nav.bidrag.behandling.transformers.toSivilstandDomain
 import no.nav.bidrag.behandling.transformers.valider
-import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -232,64 +226,6 @@ class BehandlingService(
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)
         }
-    }
-
-    @Transactional
-    fun oppdaterBehandling(
-        behandlingsid: Long,
-        request: OppdaterBehandlingRequestV2,
-    ): Behandling {
-        return behandlingRepository.findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
-                it.validerKanOppdatere()
-                log.info { "Oppdatere behandling $behandlingsid" }
-                SECURE_LOGGER.info("Oppdatere behandling $behandlingsid for forespørsel $request")
-                request.aktivereGrunnlagForPerson.let { aktivereGrunnlagRequest ->
-                    if (aktivereGrunnlagRequest != null) {
-                        log.info { "Aktivere nyinnhenta grunnlag for behandling med id $behandlingsid" }
-                        grunnlagService.aktivereGrunnlag(it, aktivereGrunnlagRequest.toV2())
-                    }
-                }
-                request.virkningstidspunkt?.let { vt ->
-                    log.info { "Oppdatere informasjon om virkningstidspunkt for behandling $behandlingsid" }
-                    vt.valider(it)
-                    val erVirkningstidspunktEndret = vt.virkningstidspunkt != it.virkningstidspunkt
-                    it.årsak = vt.årsak
-                    it.avslag = vt.avslag
-                    it.virkningstidspunkt = vt.virkningstidspunkt
-                    it.virkningstidspunktbegrunnelseKunINotat =
-                        vt.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
-
-                    if (erVirkningstidspunktEndret) {
-                        log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter behandling $behandlingsid" }
-                        inntektService.rekalkulerPerioderInntekter(behandlingsid)
-                    }
-                }
-                // TODO: Fjerne når boforhold v2-migrering er fullført
-                request.inntekter?.let { inntekter ->
-                    log.info { "Bakoverkompatibilitet - Oppdatere inntekter for behandling $behandlingsid" }
-                    inntektService.oppdatereInntekterManuelt(behandlingsid, request.inntekter)
-                    entityManager.refresh(it)
-                    it.inntektsbegrunnelseKunINotat =
-                        inntekter.notat?.kunINotat ?: it.inntektsbegrunnelseKunINotat
-                }
-                // TODO: Fjerne når boforhold v2-migrering er fullført
-                request.boforhold?.let { bf ->
-                    log.info { "Bakoverkompatibilitet - Oppdatere informasjon om boforhold for behandling $behandlingsid" }
-                    bf.sivilstand?.run {
-                        it.sivilstand.clear()
-                        it.sivilstand.addAll(bf.sivilstand.toSivilstandDomain(it))
-                    }
-                    bf.husstandsmedlem?.run {
-                        it.husstandsmedlem.clear()
-                        it.husstandsmedlem.addAll(bf.husstandsmedlem.toDomain(it))
-                    }
-                    entityManager.merge(it)
-                    it.boforholdsbegrunnelseKunINotat =
-                        bf.notat?.kunINotat ?: it.boforholdsbegrunnelseKunINotat
-                }
-                it
-            }
     }
 
     @Transactional
