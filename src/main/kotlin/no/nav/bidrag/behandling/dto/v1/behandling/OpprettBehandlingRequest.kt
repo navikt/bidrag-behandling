@@ -41,7 +41,7 @@ data class OpprettBehandlingRequest(
 
 fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)
 
-fun OpprettBehandlingRequest.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRBIDRAG
+fun OpprettBehandlingRequest.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG
 
 fun OpprettBehandlingRequest.erForskudd() = tilType() == TypeBehandling.FORSKUDD
 

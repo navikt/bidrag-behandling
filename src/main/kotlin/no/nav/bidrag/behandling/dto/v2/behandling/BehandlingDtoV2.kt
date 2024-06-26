@@ -141,7 +141,7 @@ data class UtgiftspostDto(
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
-    val andreVoksneIHusstanden: AndreVoksneIHusstanden? = null,
+    val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
@@ -153,7 +153,7 @@ data class IkkeAktiveGrunnlagsdata(
     @Deprecated("Erstattes av husstandsmedlem")
     val husstandsbarn: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
-    val andreVoksneIHusstanden: AndreVoksneIHusstanden? = null,
+    val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
 )
 
@@ -250,7 +250,10 @@ data class Grunnlagstype(
     val erBearbeidet: Boolean,
 )
 
-data class AndreVoksneIHusstanden(val perioder: Set<PeriodeAndreVoksneIHusstanden>, val innhenntet: LocalDateTime)
+data class AndreVoksneIHusstandenGrunnlagDto(
+    val perioder: Set<PeriodeAndreVoksneIHusstanden>,
+    val innhentet: LocalDateTime,
+)
 
 data class PeriodeAndreVoksneIHusstanden(
     val periode: ÅrMånedsperiode,

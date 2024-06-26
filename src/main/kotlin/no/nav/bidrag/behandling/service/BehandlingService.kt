@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
@@ -52,7 +51,6 @@ class BehandlingService(
     private val tilgangskontrollService: TilgangskontrollService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
-    private val entityManager: EntityManager,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {

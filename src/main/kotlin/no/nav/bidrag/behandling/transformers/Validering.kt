@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.erSærligeUtgifter
+import no.nav.bidrag.behandling.dto.v1.behandling.erSærbidrag
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -62,7 +62,7 @@ fun OpprettBehandlingRequest.valider() {
     (stønadstype == null && engangsbeløpstype == null).ifTrue {
         feilliste.add("Stønadstype eller engangsbeløpstype må settes")
     }
-    if (erSærligeUtgifter()) {
+    if (erSærbidrag()) {
         when {
             roller.none { it.rolletype == Rolletype.BIDRAGSPLIKTIG } ->
                 feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSPLIKTIG}")
@@ -77,7 +77,7 @@ fun OpprettBehandlingRequest.valider() {
 
             SærbidragKategori.entries.none { it.name == kategori?.kategori } ->
                 feilliste.add(
-                    "Kategori er ikke en gyldig særlige utgifter kategori",
+                    "Kategori ${kategori?.kategori} er ikke en gyldig særbidrag kategori",
                 )
 
             kategori?.kategori == SærbidragKategori.ANNET.name && kategori.beskrivelse.isNullOrEmpty() ->

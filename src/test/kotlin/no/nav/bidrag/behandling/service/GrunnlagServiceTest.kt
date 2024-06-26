@@ -2046,7 +2046,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type småbarnstillegg for særtilskuddsbehandling`() {
+            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type småbarnstillegg for særbidragbehandling`() {
                 // gitt
                 val behandling =
                     testdataManager.oppretteBehandling(
@@ -2111,7 +2111,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type kontantstøtte for særtilskuddsbehandling`() {
+            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type kontantstøtte for særbidragbehandling`() {
                 // gitt
                 val behandling =
                     testdataManager.oppretteBehandling(false, false, false, true, TypeBehandling.SÆRBIDRAG)
@@ -2170,7 +2170,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type sivilstand for særtilskuddsbehandling`() {
+            open fun `skal gi 404-respons ved forsøk på å aktivere grunnlag av type sivilstand for særbidragbehandling`() {
                 // gitt
                 val behandling =
                     testdataManager.oppretteBehandlingINyTransaksjon(
