@@ -1,9 +1,9 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -172,7 +172,7 @@ fun VedtakDto.tilBehandling(
         )
     behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
     behandling.inntekter = grunnlagListe.mapInntekter(behandling, lesemodus)
-    behandling.husstandsbarn = grunnlagListe.mapHusstandsbarn(behandling)
+    behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling)
     behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
     behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
@@ -199,10 +199,10 @@ private fun List<GrunnlagDto>.mapRoller(
         .mapIndexed { i, it -> it.tilRolle(behandling, if (lesemodus) i.toLong() else null) }
         .toMutableSet()
 
-private fun List<GrunnlagDto>.mapHusstandsbarn(behandling: Behandling): MutableSet<Husstandsbarn> =
+private fun List<GrunnlagDto>.mapHusstandsmedlem(behandling: Behandling): MutableSet<Husstandsmedlem> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
         .groupBy { it.gjelderReferanse }.map {
-            it.value.tilHusstandsbarn(it.key!!, behandling, this)
+            it.value.tilHusstandsmedlem(it.key!!, behandling, this)
         }.toMutableSet()
 
 private fun List<GrunnlagDto>.mapSivilstand(
@@ -454,11 +454,11 @@ private fun VedtakDto.hentSøknad(): SøknadGrunnlag {
         .innholdTilObjekt<SøknadGrunnlag>()
 }
 
-private fun List<BaseGrunnlag>.tilHusstandsbarn(
+private fun List<BaseGrunnlag>.tilHusstandsmedlem(
     gjelderReferanse: Grunnlagsreferanse,
     behandling: Behandling,
     grunnlagsListe: List<GrunnlagDto>,
-): Husstandsbarn {
+): Husstandsmedlem {
     val gjelderBarnGrunnlag =
         grunnlagsListe.hentPersonMedReferanse(gjelderReferanse) ?: manglerPersonGrunnlag(
             gjelderReferanse,
@@ -468,26 +468,26 @@ private fun List<BaseGrunnlag>.tilHusstandsbarn(
     val erOffentligKilde =
         grunnlagsListe.hentInnhentetHusstandsmedlem()
             .any { it.relatertPersonPersonId == gjelderBarnGrunnlag.personIdent }
-    val husstandsbarnBO =
-        Husstandsbarn(
+    val husstandsmedlemBO =
+        Husstandsmedlem(
             ident = gjelderBarnGrunnlag.personIdent,
             navn = gjelderBarn.navn,
             fødselsdato = gjelderBarn.fødselsdato,
             kilde = if (erOffentligKilde) Kilde.OFFENTLIG else Kilde.MANUELL,
             behandling = behandling,
         )
-    husstandsbarnBO.perioder =
+    husstandsmedlemBO.perioder =
         this.map {
             val bosstatusPeriode = it.innholdTilObjekt<BostatusPeriode>()
-            Husstandsbarnperiode(
-                husstandsbarn = husstandsbarnBO,
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlemBO,
                 datoFom = bosstatusPeriode.periode.fom.atDay(1),
                 datoTom = bosstatusPeriode.periode.til?.atDay(1)?.minusDays(1),
                 bostatus = bosstatusPeriode.bostatus,
                 kilde = if (bosstatusPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
             )
         }.toMutableSet()
-    return husstandsbarnBO
+    return husstandsmedlemBO
 }
 
 private fun BaseGrunnlag.tilSivilstand(

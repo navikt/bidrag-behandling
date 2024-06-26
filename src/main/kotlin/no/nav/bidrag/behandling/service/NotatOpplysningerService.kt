@@ -4,7 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragDokumentConsumer
 import no.nav.bidrag.behandling.consumer.BidragDokumentProduksjonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
@@ -131,7 +131,7 @@ class NotatOpplysningerService(
             behandling.grunnlag.hentSisteAktiv()
                 .hentAlleBearbeidaBoforhold(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.husstandsbarn,
+                    behandling.husstandsmedlem,
                     behandling.bidragsmottaker!!,
                 )
 
@@ -159,7 +159,7 @@ class NotatOpplysningerService(
                     notat = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
                     barn =
-                        behandling.husstandsbarn.sortert()
+                        behandling.husstandsmedlem.sortert()
                             .map { it.tilBoforholdBarn(opplysningerBoforhold) },
                 ),
             roller = behandling.roller.map(Rolle::tilNotatRolle),
@@ -282,7 +282,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         notat = tilNotatVirkningstidspunkt(),
     )
 
-private fun Husstandsbarn.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdResponse>) =
+private fun Husstandsmedlem.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdResponse>) =
     BoforholdBarn(
         gjelder =
             PersonNotatDto(

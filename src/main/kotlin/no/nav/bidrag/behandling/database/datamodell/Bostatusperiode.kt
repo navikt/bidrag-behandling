@@ -15,11 +15,11 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import java.time.LocalDate
 
 @Entity
-@JsonIgnoreProperties(value = ["husstandsbarn", "id"])
-open class Husstandsbarnperiode(
+@JsonIgnoreProperties(value = ["husstandsmedlem", "id"])
+open class Bostatusperiode(
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "husstandsbarn_id", nullable = false)
-    open var husstandsbarn: Husstandsbarn,
+    @JoinColumn(name = "husstandsmedlem_id", nullable = false)
+    open var husstandsmedlem: Husstandsmedlem,
     open val datoFom: LocalDate?,
     open val datoTom: LocalDate?,
     @Enumerated(EnumType.STRING)
@@ -31,6 +31,6 @@ open class Husstandsbarnperiode(
     open var id: Long? = null,
 ) {
     override fun toString(): String {
-        return "Husstandsbarnperiode(id=$id, datoFom=$datoFom, datoTom=$datoTom, bostatus=$bostatus, kilde=$kilde)"
+        return "Bostatusperiode(id=$id, datoFom=$datoFom, datoTom=$datoTom, bostatus=$bostatus, kilde=$kilde)"
     }
 }

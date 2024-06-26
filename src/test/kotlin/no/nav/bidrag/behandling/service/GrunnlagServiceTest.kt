@@ -1008,7 +1008,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false)
 
-                behandling.husstandsbarn.clear()
+                behandling.husstandsmedlem.clear()
                 behandling.grunnlag.clear()
                 entityManager.persist(behandling)
                 entityManager.flush()
@@ -1028,7 +1028,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }.size shouldBe 3
                     it.get().grunnlag.filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
                         .filter { g -> g.erBearbeidet }.size shouldBe 2
-                    it.get().husstandsbarn.size shouldBe 2
+                    it.get().husstandsmedlem.size shouldBe 2
                 }
 
                 val grunnlag =
@@ -1545,7 +1545,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal aktivere grunnlag av type boforhold for barn av BP i behandling av særlige utgifter, og oppdatere husstandsbarntabell`() {
+            open fun `skal aktivere grunnlag av type boforhold for barn av BP i behandling av særlige utgifter, og oppdatere husstandsmedlemtabell`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, false, true)
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
@@ -1556,7 +1556,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                     .thenReturn(testdataBarn1.tilPersonDto())
 
-                assertSoftly(behandling.husstandsbarn) {
+                assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
                 }
 
@@ -1623,7 +1623,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     g.filter { LocalDate.now() == it.aktiv!!.toLocalDate() }.size shouldBe 2
                 }
 
-                assertSoftly(behandling.husstandsbarn) {
+                assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 1
                     it.first().perioder.size shouldBe 1
                 }
@@ -1847,7 +1847,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
                 }
 
-                assertSoftly(behandling.husstandsbarn) { hb ->
+                assertSoftly(behandling.husstandsmedlem) { hb ->
                     hb shouldHaveSize 2
                     hb.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
                 }
@@ -2124,7 +2124,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                     .thenReturn(testdataBarn1.tilPersonDto())
 
-                assertSoftly(behandling.husstandsbarn) {
+                assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 2
                 }
 
@@ -2536,14 +2536,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal aktivere grunnlag av type boforhold, og oppdatere husstandsbarntabell`() {
+            open fun `skal aktivere grunnlag av type boforhold, og oppdatere husstandsmedlemtabell`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, false)
                 stubbeHentingAvPersoninfoForTestpersoner()
                 Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                     .thenReturn(testdataBarn1.tilPersonDto())
 
-                assertSoftly(behandling.husstandsbarn) {
+                assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
                 }
 
@@ -2608,7 +2608,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     g.filter { LocalDate.now() == it.aktiv!!.toLocalDate() }.size shouldBe 2
                 }
 
-                assertSoftly(behandling.husstandsbarn) {
+                assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 1
                     it.first().perioder.size shouldBe 1
                 }
@@ -2863,7 +2863,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
                 }
 
-                assertSoftly(behandling.husstandsbarn) { hb ->
+                assertSoftly(behandling.husstandsmedlem) { hb ->
                     hb shouldHaveSize 0
                     hb.filter { Kilde.OFFENTLIG == it.kilde }
                 }
@@ -2882,7 +2882,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     b.filter { it.erBearbeidet } shouldHaveSize 2
                 }
 
-                assertSoftly(behandling.husstandsbarn) { hb ->
+                assertSoftly(behandling.husstandsmedlem) { hb ->
                     hb shouldHaveSize 1
                     hb.filter { Kilde.OFFENTLIG == it.kilde }
                 }
@@ -2897,7 +2897,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                     .thenReturn(testdataBarn1.tilPersonDto())
 
-                assertSoftly(behandling.husstandsbarn) {
+                assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 2
                 }
 
@@ -3110,14 +3110,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly(ikkeAktivereGrunnlagsdata) { resultat ->
-                resultat.husstandsbarn shouldNotBe null
-                resultat.husstandsbarn shouldHaveSize 1
-                resultat.husstandsbarn.find { testdataBarn1.ident == it.ident } shouldNotBe null
-                resultat.husstandsbarn.find { testdataBarn1.ident == it.ident }?.perioder?.shouldHaveSize(1)
-                resultat.husstandsbarn.find {
+                resultat.husstandsmedlem shouldNotBe null
+                resultat.husstandsmedlem shouldHaveSize 1
+                resultat.husstandsmedlem.find { testdataBarn1.ident == it.ident } shouldNotBe null
+                resultat.husstandsmedlem.find { testdataBarn1.ident == it.ident }?.perioder?.shouldHaveSize(1)
+                resultat.husstandsmedlem.find {
                     testdataBarn1.ident == it.ident
                 }?.perioder?.maxBy { it.datoFom!! }!!.datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
-                resultat.husstandsbarn.find {
+                resultat.husstandsmedlem.find {
                     testdataBarn1.ident == it.ident
                 }?.perioder?.maxBy { it.datoFom!! }!!.bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
             }

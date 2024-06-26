@@ -13,7 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
-import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarn
+import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
@@ -195,11 +195,11 @@ class TestdataManager(
     }
 
     private fun oppretteBoforhold(behandling: Behandling) {
-        val husstandsbarn1 = opprettHusstandsbarn(behandling, testdataBarn1)
-        husstandsbarn1.perioder.clear()
+        val husstandsmedlem1 = oppretteHusstandsmedlem(behandling, testdataBarn1)
+        husstandsmedlem1.perioder.clear()
 
-        val husstandsbarn2 = opprettHusstandsbarn(behandling, testdataBarn2)
-        husstandsbarn2.perioder.clear()
+        val husstandsmedlem2 = oppretteHusstandsmedlem(behandling, testdataBarn2)
+        husstandsmedlem2.perioder.clear()
 
         val grunnlagHusstandsmedlemmer =
             setOf(
@@ -267,7 +267,7 @@ class TestdataManager(
                 )
             }
 
-        behandling.husstandsbarn.addAll(boforholdPeriodisert.tilHusstandsbarn(behandling))
+        behandling.husstandsmedlem.addAll(boforholdPeriodisert.tilHusstandsmedlem(behandling))
     }
 
     private fun oppretteSivilstand(behandling: Behandling) {

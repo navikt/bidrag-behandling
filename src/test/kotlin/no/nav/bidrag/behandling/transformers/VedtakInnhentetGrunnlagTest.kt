@@ -387,9 +387,9 @@ class VedtakInnhentetGrunnlagTest {
                 val personGrunnlagHusstandsmedlemListe = it.hentGrunnlagPersonHusstandsmedlem()
                 val husstandGrunnlag = it.hentGrunnlagHusstand()
                 husstandGrunnlag shouldHaveSize 4
-                husstandGrunnlag.hentHusstandsbarnMedReferanse(søknadsbarnGrunnlag2.referanse)
+                husstandGrunnlag.hentHusstandsmedlemMedReferanse(søknadsbarnGrunnlag2.referanse)
                     .shouldHaveSize(1)
-                husstandGrunnlag.hentHusstandsbarnMedReferanse(personGrunnlagHusstandsmedlemListe[0].referanse)
+                husstandGrunnlag.hentHusstandsmedlemMedReferanse(personGrunnlagHusstandsmedlemListe[0].referanse)
                     .shouldHaveSize(1)
 
                 assertSoftly(husstandGrunnlag[0]) {
@@ -453,7 +453,7 @@ class VedtakInnhentetGrunnlagTest {
             }
         }
 
-        fun List<GrunnlagDto>.hentHusstandsbarnMedReferanse(referanse: String) =
+        fun List<GrunnlagDto>.hentHusstandsmedlemMedReferanse(referanse: String) =
             this.filter { it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.relatertPerson == referanse }
 
         fun List<GrunnlagDto>.hentGrunnlagHusstand() = filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }

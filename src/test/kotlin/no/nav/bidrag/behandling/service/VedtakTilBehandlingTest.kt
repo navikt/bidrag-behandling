@@ -21,7 +21,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.hentFil
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -94,12 +93,6 @@ class VedtakTilBehandlingTest {
                 sakConsumer,
                 unleash,
             )
-        every {
-            behandlingService.oppdaterBehandling(
-                any(),
-                any(),
-            )
-        } returns oppretteBehandling()
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
@@ -139,7 +132,7 @@ class VedtakTilBehandlingTest {
             inntektsbegrunnelseIVedtakOgNotat shouldBe "Notat inntekt med i vedtak"
             inntektsbegrunnelseKunINotat shouldBe "Notat inntekt"
             validerRoller()
-            validerHusstandsbarn()
+            validerHusstandsmedlem()
             validerSivilstand()
             validerInntekter()
             validerGrunnlag()
@@ -412,7 +405,7 @@ class VedtakTilBehandlingTest {
             this[1].datoTom shouldBe null
         }
 
-        assertSoftly(behandling.husstandsbarn.toList()) {
+        assertSoftly(behandling.husstandsmedlem.toList()) {
             this shouldHaveSize 6
             assertSoftly(filter { Kilde.OFFENTLIG == it.kilde }) {
                 this shouldHaveSize 5
@@ -523,11 +516,11 @@ class VedtakTilBehandlingTest {
         }
     }
 
-    fun Behandling.validerHusstandsbarn() {
-        assertSoftly(husstandsbarn) {
+    fun Behandling.validerHusstandsmedlem() {
+        assertSoftly(husstandsmedlem) {
             size shouldBe 6
-            val barn1 = husstandsbarn.find { it.ident == testdataBarn1.ident }
-            val barn2 = husstandsbarn.find { it.ident == testdataBarn2.ident }
+            val barn1 = husstandsmedlem.find { it.ident == testdataBarn1.ident }
+            val barn2 = husstandsmedlem.find { it.ident == testdataBarn2.ident }
             assertSoftly(barn1!!) {
                 it.ident shouldBe testdataBarn1.ident
                 it.fødselsdato shouldBe testdataBarn1.fødselsdato

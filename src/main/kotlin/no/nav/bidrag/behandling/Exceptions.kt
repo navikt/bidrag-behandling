@@ -19,14 +19,13 @@ fun aktiveringAvGrunnlagFeiletException(behandlingsid: Long): Nothing =
 fun inntektIkkeFunnetException(idInntekt: Long): Nothing =
     throw HttpClientErrorException(HttpStatus.NOT_FOUND, "Fant ikke inntekt med id $idInntekt")
 
-fun husstandsbarnIkkeFunnetException(
-    idHusstandsbarn: Long,
+fun husstandsmedlemIkkeFunnetException(
+    idHusstandsmedlem: Long,
     behandlingsid: Long,
 ): Nothing =
     throw HttpClientErrorException(
         HttpStatus.NOT_FOUND,
-        "Fant ikke husstandsbarn med id $idHusstandsbarn knyttet " +
-            "til behandling $behandlingsid",
+        "Fant ikke husstandsmedlem med id $idHusstandsmedlem knyttet til behandling $behandlingsid",
     )
 
 fun ressursIkkeFunnetException(feilmelding: String): Nothing =

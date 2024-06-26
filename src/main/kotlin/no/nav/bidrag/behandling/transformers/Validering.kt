@@ -2,13 +2,15 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleHusstandsmedlemPerioder
 import no.nav.bidrag.behandling.database.datamodell.særligeutgifterKategori
+import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.erSærligeUtgifter
@@ -19,12 +21,12 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
-import no.nav.bidrag.behandling.dto.v2.validering.HusstandsbarnOverlappendePeriode
+import no.nav.bidrag.behandling.dto.v2.validering.OverlappendeBostatusperiode
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandOverlappendePeriode
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.behandling.finnesFraFørException
-import no.nav.bidrag.behandling.husstandsbarnIkkeFunnetException
+import no.nav.bidrag.behandling.husstandsmedlemIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.ressursHarFeilKildeException
@@ -184,7 +186,7 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     }
 }
 
-fun Husstandsbarn.validereBoforhold(
+fun Husstandsmedlem.validereBoforhold(
     virkniningstidspunkt: LocalDate,
     valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>,
     validerePerioder: Boolean = true,
@@ -198,7 +200,7 @@ fun Husstandsbarn.validereBoforhold(
             BoforholdPeriodeseringsfeil(
                 this,
                 hullIPerioder,
-                overlappendePerioder = this.perioder.finnHusstandsbarnOverlappendePerioder(),
+                overlappendePerioder = this.perioder.finneOverlappendeBostatusperioder(),
                 manglerPerioder = this.perioder.isEmpty(),
                 fremtidigPeriode = this.inneholderFremtidigeBoforholdsperioder(),
             ),
@@ -208,7 +210,7 @@ fun Husstandsbarn.validereBoforhold(
     return valideringsfeil.toSet()
 }
 
-fun Set<Husstandsbarn>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<BoforholdPeriodeseringsfeil> {
+fun Set<Husstandsmedlem>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<BoforholdPeriodeseringsfeil> {
     val valideringsfeil = mutableListOf<BoforholdPeriodeseringsfeil>()
 
     forEach {
@@ -246,18 +248,18 @@ private fun Set<Sivilstand>.finnSivilstandOverlappendePerioder() =
         }
     }
 
-private fun Set<Husstandsbarnperiode>.finnHusstandsbarnOverlappendePerioder() =
-    sortedBy { it.datoFom }.flatMapIndexed { index, husstandsbarnPeriode ->
+private fun Set<Bostatusperiode>.finneOverlappendeBostatusperioder() =
+    sortedBy { it.datoFom }.flatMapIndexed { index, bostatusperiode ->
         sortedBy { it.datoFom }.drop(index + 1).filter { nesteHusstandsperiode ->
-            nesteHusstandsperiode.tilDatoperiode().overlapper(husstandsbarnPeriode.tilDatoperiode())
+            nesteHusstandsperiode.tilDatoperiode().overlapper(bostatusperiode.tilDatoperiode())
         }
-            .map { nesteHusstandsperiode ->
-                HusstandsbarnOverlappendePeriode(
+            .map { nesteBostatusperiode ->
+                OverlappendeBostatusperiode(
                     Datoperiode(
-                        maxOf(husstandsbarnPeriode.datoFom!!, nesteHusstandsperiode.datoFom!!),
-                        minOfNullable(husstandsbarnPeriode.datoTom, nesteHusstandsperiode.datoTom),
+                        maxOf(bostatusperiode.datoFom!!, nesteBostatusperiode.datoFom!!),
+                        minOfNullable(bostatusperiode.datoTom, nesteBostatusperiode.datoTom),
                     ),
-                    setOf(husstandsbarnPeriode.bostatus, nesteHusstandsperiode.bostatus),
+                    setOf(bostatusperiode.bostatus, nesteBostatusperiode.bostatus),
                 )
             }
     }
@@ -395,60 +397,61 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
         ) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
-                "Kan ikke opprette husstandsbarn som mangler både navn og personident.",
+                "Kan ikke opprette husstandsmedlem som mangler både navn og personident.",
             )
         } else if (this.opprettHusstandsmedlem.personident != null) {
-            val eksisterendeHusstandsbarn =
-                behandling.husstandsbarn.find { it.ident != null && it.ident == this.opprettHusstandsmedlem.personident.verdi }
+            val eksisterendeHusstandsmedlem =
+                behandling.husstandsmedlem.find { it.ident != null && it.ident == this.opprettHusstandsmedlem.personident.verdi }
 
-            if (eksisterendeHusstandsbarn != null) {
+            if (eksisterendeHusstandsmedlem != null) {
                 finnesFraFørException(behandling.id!!)
             }
         }
     }
 
     this.oppdaterPeriode?.let {
-        val husstandsbarn = behandling.husstandsbarn.find { this.oppdaterPeriode.idHusstandsbarn == it.id }
+        val husstandsmedlem = behandling.husstandsmedlem.find { this.oppdaterPeriode.idHusstandsmedlem == it.id }
 
-        if (husstandsbarn == null) {
-            husstandsbarnIkkeFunnetException(this.oppdaterPeriode.idHusstandsbarn, behandling.id!!)
+        if (husstandsmedlem == null) {
+            husstandsmedlemIkkeFunnetException(this.oppdaterPeriode.idHusstandsmedlem, behandling.id!!)
         }
 
-        husstandsbarn.validereNyPeriode(it.datoFom, it.datoTom)
+        husstandsmedlem.validereNyPeriode(it.datoFom, it.datoTom)
 
         if (it.idPeriode != null) {
-            val husstandsperiode = behandling.finnHusstandsbarnperiode(it.idPeriode)
-            if (husstandsperiode == null) {
-                ressursIkkeFunnetException("Fant ikke husstandsbarnsperiode med id ${it.idPeriode}.")
-            } else if (husstandsbarn.id != husstandsperiode.husstandsbarn.id) {
+            val bostatusperiode = behandling.finnBostatusperiode(it.idPeriode)
+            if (bostatusperiode == null) {
+                ressursIkkeFunnetException("Fant ikke bostatusperiode med id ${it.idPeriode}.")
+            } else if (husstandsmedlem.id != bostatusperiode.husstandsmedlem.id) {
                 ressursIkkeTilknyttetBehandling(
-                    "Husstandsbarnperiode ${it.idPeriode} hører ikke til husstandsbarn ${husstandsbarn.id} i behandling ${behandling.id}.",
+                    "Bostatusperiode ${it.idPeriode} er ikke tilknyttet husstandsmedlem ${husstandsmedlem.id}" +
+                        " i behandling ${behandling.id}.",
                 )
             }
         }
     }
 
     this.slettPeriode?.let { id ->
-        val husstandsbarnperiode = behandling.hentAlleHusstandsmedlemPerioder().find { it.id == id }
-        if (husstandsbarnperiode == null) {
-            ressursIkkeFunnetException("Fant ikke husstandsbarnsperiode med id $id.")
-        } else if (husstandsbarnperiode.husstandsbarn.perioder.none { it.id != id }) {
+        val husstandsmedlemsperiode = behandling.henteAlleBostatusperioder().find { it.id == id }
+        if (husstandsmedlemsperiode == null) {
+            ressursIkkeFunnetException("Fant ikke husstandsmedlemsperiode med id $id.")
+        } else if (husstandsmedlemsperiode.husstandsmedlem.perioder.none { it.id != id }) {
             ressursIkkeTilknyttetBehandling(
                 "Kan ikke slette alle perioder " +
-                    "fra husstandsmedlem ${husstandsbarnperiode.husstandsbarn.id} i behandling ${behandling.id}.",
+                    "fra husstandsmedlem ${husstandsmedlemsperiode.husstandsmedlem.id} i behandling ${behandling.id}.",
             )
-        } else if (behandling.id != husstandsbarnperiode.husstandsbarn.behandling.id) {
+        } else if (behandling.id != husstandsmedlemsperiode.husstandsmedlem.behandling.id) {
             ressursIkkeTilknyttetBehandling(
-                "Husstandsbarnperiode $id hører ikke til behandling med id" +
+                "Husstandsmedlemperiode $id hører ikke til behandling med id" +
                     "${behandling.id}.",
             )
         }
     }
 
     this.slettHusstandsmedlem?.let {
-        val husstandsmedlem = behandling.husstandsbarn.find { this.slettHusstandsmedlem == it.id }
+        val husstandsmedlem = behandling.husstandsmedlem.find { this.slettHusstandsmedlem == it.id }
         if (husstandsmedlem == null) {
-            husstandsbarnIkkeFunnetException(this.slettHusstandsmedlem, behandling.id!!)
+            husstandsmedlemIkkeFunnetException(this.slettHusstandsmedlem, behandling.id!!)
         } else if (Kilde.OFFENTLIG == husstandsmedlem.kilde) {
             ressursHarFeilKildeException(
                 "Husstandsmedlem med id ${husstandsmedlem.id} i behandling ${husstandsmedlem.behandling.id} " +
@@ -463,9 +466,9 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
     }
 
     this.tilbakestillPerioderForHusstandsmedlem?.let {
-        val husstandsmedlem = behandling.husstandsbarn.find { this.tilbakestillPerioderForHusstandsmedlem == it.id }
+        val husstandsmedlem = behandling.husstandsmedlem.find { this.tilbakestillPerioderForHusstandsmedlem == it.id }
         if (husstandsmedlem == null) {
-            husstandsbarnIkkeFunnetException(it, behandling.id!!)
+            husstandsmedlemIkkeFunnetException(it, behandling.id!!)
         } else if (husstandsmedlem.kilde == Kilde.MANUELL) {
             oppdateringAvBoforholdFeilet("Kan ikke tilbakestille manuell lagt inn husstandsmedlem til offentlige perioder")
         } else if (behandling.id != husstandsmedlem.behandling.id) {
@@ -477,9 +480,9 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
     }
 
     this.angreSisteStegForHusstandsmedlem?.let {
-        val husstandsmedlem = behandling.husstandsbarn.find { this.angreSisteStegForHusstandsmedlem == it.id }
+        val husstandsmedlem = behandling.husstandsmedlem.find { this.angreSisteStegForHusstandsmedlem == it.id }
         if (husstandsmedlem == null) {
-            husstandsbarnIkkeFunnetException(it, behandling.id!!)
+            husstandsmedlemIkkeFunnetException(it, behandling.id!!)
         } else if (husstandsmedlem.forrigePerioder.isNullOrEmpty()) {
             oppdateringAvBoforholdFeilet("Kan ikke angre siste steg for husstandsmedlem. Det mangler informasjon om siste steg")
         } else if (behandling.id != husstandsmedlem.behandling.id) {
@@ -528,7 +531,7 @@ fun OppdatereManuellInntekt.validerHarInnteksttype(feilliste: MutableList<String
 
 fun Sivilstand.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 
-fun Husstandsbarnperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
+fun Bostatusperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 
 fun finnSenesteDato(
     dato1: LocalDate?,
@@ -642,7 +645,7 @@ private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
     return sammenstiltePerioder.toSet()
 }
 
-private fun Husstandsbarn.inneholderFremtidigeBoforholdsperioder(): Boolean {
+private fun Husstandsmedlem.inneholderFremtidigeBoforholdsperioder(): Boolean {
     val kanIkkeVæreSenereEnnDato = this.senestePeriodeFomDato()
 
     return this.perioder.any {
@@ -656,7 +659,7 @@ private fun Husstandsbarn.inneholderFremtidigeBoforholdsperioder(): Boolean {
     }
 }
 
-private fun Husstandsbarn.validereNyPeriode(
+private fun Husstandsmedlem.validereNyPeriode(
     nyFomDato: LocalDate?,
     nyTomDato: LocalDate?,
 ) {
@@ -672,7 +675,7 @@ private fun Husstandsbarn.validereNyPeriode(
     }
 }
 
-private fun Husstandsbarn.senestePeriodeFomDato(): LocalDate {
+private fun Husstandsmedlem.senestePeriodeFomDato(): LocalDate {
     val virkningsdato = this.behandling.virkningstidspunktEllerSøktFomDato
     return if (virkningsdato.isAfter(LocalDate.now())) {
         maxOf(this.fødselsdato, virkningsdato.withDayOfMonth(1))

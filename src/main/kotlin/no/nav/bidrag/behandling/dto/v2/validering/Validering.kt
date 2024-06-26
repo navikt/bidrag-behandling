@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.dto.v2.validering
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -81,18 +81,18 @@ data class OverlappendePeriode(
 
 data class BoforholdPeriodeseringsfeil(
     @JsonIgnore
-    val husstandsbarn: Husstandsbarn?,
+    val husstandsmedlem: Husstandsmedlem?,
     val hullIPerioder: List<Datoperiode>,
-    val overlappendePerioder: List<HusstandsbarnOverlappendePeriode>,
-    @Schema(description = "Er sann hvis husstandsbarn har en periode som starter senere enn starten av dagens måned.")
+    val overlappendePerioder: List<OverlappendeBostatusperiode>,
+    @Schema(description = "Er sann hvis husstandsmedlem har en periode som starter senere enn starten av dagens måned.")
     val fremtidigPeriode: Boolean,
     @Schema(
-        description = """Er sann hvis husstandsbarn mangler perioder. 
-        Dette vil si at husstandsbarn ikke har noen perioder i det hele tatt."""",
+        description = """Er sann hvis husstandsmedlem mangler perioder. 
+        Dette vil si at husstandsmedlem ikke har noen perioder i det hele tatt."""",
     )
     val manglerPerioder: Boolean,
 ) {
-    @Schema(description = "Er sann hvis husstandsbarn ikke har noen løpende periode. Det vil si en periode hvor datoTom er null")
+    @Schema(description = "Er sann hvis husstandsmedlem ikke har noen løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 
     @get:JsonIgnore
@@ -101,26 +101,26 @@ data class BoforholdPeriodeseringsfeil(
             hullIPerioder.isNotEmpty() || overlappendePerioder.isNotEmpty() ||
                 fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
     val barn
-        get(): HusstandsbarnPeriodiseringsfeilDto =
-            husstandsbarn?.let {
-                HusstandsbarnPeriodiseringsfeilDto(
-                    hentPersonVisningsnavn(husstandsbarn.ident) ?: husstandsbarn.navn,
-                    husstandsbarn.ident,
-                    husstandsbarn.fødselsdato,
-                    husstandsbarn.id ?: -1,
+        get(): HusstandsmedlemPeriodiseringsfeilDto =
+            husstandsmedlem?.let {
+                HusstandsmedlemPeriodiseringsfeilDto(
+                    hentPersonVisningsnavn(husstandsmedlem.ident) ?: husstandsmedlem.navn,
+                    husstandsmedlem.ident,
+                    husstandsmedlem.fødselsdato,
+                    husstandsmedlem.id ?: -1,
                 )
-            } ?: HusstandsbarnPeriodiseringsfeilDto("", "", LocalDate.now(), -1)
+            } ?: HusstandsmedlemPeriodiseringsfeilDto("", "", LocalDate.now(), -1)
 
-    data class HusstandsbarnPeriodiseringsfeilDto(
+    data class HusstandsmedlemPeriodiseringsfeilDto(
         val navn: String?,
         val ident: String?,
         val fødselsdato: LocalDate,
-        @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil")
-        val husstandsbarnId: Long,
+        @Schema(description = "Teknisk id på husstandsmedlem som har periodiseringsfeil")
+        val husstandsmedlemId: Long,
     )
 }
 
-data class HusstandsbarnOverlappendePeriode(
+data class OverlappendeBostatusperiode(
     val periode: Datoperiode,
     val bosstatus: Set<Bostatuskode>,
 )
@@ -152,7 +152,7 @@ data class SivilstandOverlappendePeriode(
 data class BeregningValideringsfeil(
     val virkningstidspunkt: VirkningstidspunktFeilDto?,
     val inntekter: InntektValideringsfeilDto? = null,
-    val husstandsbarn: List<BoforholdPeriodeseringsfeil>? = null,
+    val husstandsmedlem: List<BoforholdPeriodeseringsfeil>? = null,
     val sivilstand: SivilstandPeriodeseringsfeil?,
     val måBekrefteNyeOpplysninger: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )
@@ -160,27 +160,27 @@ data class BeregningValideringsfeil(
 data class MåBekrefteNyeOpplysninger(
     val type: Grunnlagsdatatype,
     @JsonIgnore
-    val husstandsbarn: Husstandsbarn? = null,
+    val husstandsmedlem: Husstandsmedlem? = null,
 ) {
     @get:Schema(
         description = "Barn som det må bekreftes nye opplysninger for. Vil bare være satt hvis type = BOFORHOLD",
     )
-    val gjelderBarn: HusstandsbarnDto?
+    val gjelderBarn: HusstandsmedlemDto?
         get() =
-            husstandsbarn?.let {
-                HusstandsbarnDto(
+            husstandsmedlem?.let {
+                HusstandsmedlemDto(
                     navn = it.navn ?: hentPersonVisningsnavn(it.ident),
                     ident = it.ident,
                     fødselsdato = it.fødselsdato,
-                    husstandsbarnId = it.id ?: -1,
+                    husstandsmedlemId = it.id ?: -1,
                 )
             }
 
-    data class HusstandsbarnDto(
+    data class HusstandsmedlemDto(
         val navn: String?,
         val ident: String?,
         val fødselsdato: LocalDate,
-        @Schema(description = "Teknisk id på husstandsbarn som har periodiseringsfeil")
-        val husstandsbarnId: Long,
+        @Schema(description = "Teknisk id på husstandsmedlem som har periodiseringsfeil")
+        val husstandsmedlemId: Long,
     )
 }

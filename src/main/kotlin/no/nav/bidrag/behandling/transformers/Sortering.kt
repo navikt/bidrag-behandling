@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -121,11 +121,11 @@ fun Set<Inntekt>.årsinntekterSortert(
             },
     )
 
-fun Husstandsbarn.erSøknadsbarn() = this.behandling.søknadsbarn.map { it.ident }.contains(this.ident)
+fun Husstandsmedlem.erSøknadsbarn() = this.behandling.søknadsbarn.map { it.ident }.contains(this.ident)
 
-fun Set<Husstandsbarn>.sortert() =
+fun Set<Husstandsmedlem>.sortert() =
     sortedWith(
-        compareByDescending<Husstandsbarn> { it.erSøknadsbarn() }
+        compareByDescending<Husstandsmedlem> { it.erSøknadsbarn() }
             .thenByDescending { it.kilde == Kilde.OFFENTLIG }
             .thenBy { it.fødselsdato },
     )

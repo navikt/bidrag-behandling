@@ -128,7 +128,7 @@ open class Behandling(
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
-    open var husstandsbarn: MutableSet<Husstandsbarn> = mutableSetOf(),
+    open var husstandsmedlem: MutableSet<Husstandsmedlem> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
@@ -173,9 +173,9 @@ val Behandling.særligeutgifterKategori
             }
         } ?: SærligeutgifterKategori.ANNET
 
-fun Behandling.hentAlleHusstandsmedlemPerioder() = husstandsbarn.flatMap { it.perioder }
+fun Behandling.henteAlleBostatusperioder() = husstandsmedlem.flatMap { it.perioder }
 
-fun Behandling.finnHusstandsbarnperiode(id: Long?) = hentAlleHusstandsmedlemPerioder().find { it.id == id }
+fun Behandling.finnBostatusperiode(id: Long?) = henteAlleBostatusperioder().find { it.id == id }
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
@@ -193,28 +193,28 @@ fun Behandling.validerForBeregning() {
         if (avslag == null) {
             val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
             val sivilstandFeil = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil }
-            val husstandsbarnFeil =
-                husstandsbarn.validerBoforhold(
+            val husstandsmedlemsfeil =
+                husstandsmedlem.validerBoforhold(
                     virkningstidspunktEllerSøktFomDato,
                 ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
             val måBekrefteOpplysninger =
                 grunnlag.hentAlleSomMåBekreftes().map { grunnlagSomMåBekreftes ->
                     MåBekrefteNyeOpplysninger(
                         grunnlagSomMåBekreftes.type,
-                        husstandsbarn =
+                        husstandsmedlem =
                             (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                husstandsbarn.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                                husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
                             },
                     )
                 }.toSet()
             val harFeil =
-                inntekterFeil != null || sivilstandFeil != null || husstandsbarnFeil != null ||
+                inntekterFeil != null || sivilstandFeil != null || husstandsmedlemsfeil != null ||
                     virkningstidspunktFeil != null || måBekrefteOpplysninger.isNotEmpty()
             harFeil.ifTrue {
                 BeregningValideringsfeil(
                     virkningstidspunktFeil,
                     inntekterFeil,
-                    husstandsbarnFeil,
+                    husstandsmedlemsfeil,
                     sivilstandFeil,
                     måBekrefteOpplysninger,
                 )

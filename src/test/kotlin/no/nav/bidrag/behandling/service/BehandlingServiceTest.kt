@@ -12,27 +12,18 @@ import jakarta.persistence.PersistenceContext
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.særligeutgifterKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsbarnDtoV2
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
@@ -50,7 +41,6 @@ import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -63,7 +53,6 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
-import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -72,7 +61,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -385,7 +373,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly {
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.inntekter.årsinntekter shouldHaveSize 0
-                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn shouldHaveSize 0
+                behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.husstandsmedlem shouldHaveSize 0
             }
         }
     }
@@ -742,7 +730,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
 
-            assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn) {
+            assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.husstandsmedlem) {
                 it shouldHaveSize 1
                 it.first().perioder shouldHaveSize 3
             }
@@ -756,8 +744,8 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly(svar) {
-                it.ikkeAktiverteEndringerIGrunnlagsdata.husstandsbarn shouldHaveSize 0
-                it.aktiveGrunnlagsdata.husstandsbarn shouldHaveSize 2
+                it.ikkeAktiverteEndringerIGrunnlagsdata.husstandsmedlem shouldHaveSize 0
+                it.aktiveGrunnlagsdata.husstandsmedlem shouldHaveSize 2
             }
         }
     }
@@ -784,9 +772,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
             val behandlingEtter = behandlingService.hentBehandlingById(b.id!!)
             behandlingEtter.roller shouldHaveSize 4
-            behandlingEtter.husstandsbarn shouldHaveSize 1
-            behandlingEtter.husstandsbarn.first().ident shouldBe "newident"
-            behandlingEtter.husstandsbarn.first().kilde shouldBe Kilde.OFFENTLIG
+            behandlingEtter.husstandsmedlem shouldHaveSize 1
+            behandlingEtter.husstandsmedlem.first().ident shouldBe "newident"
+            behandlingEtter.husstandsmedlem.first().kilde shouldBe Kilde.OFFENTLIG
         }
 
         @Test
@@ -838,15 +826,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                         foedselsdato = LocalDate.parse("2021-01-01"),
                     ),
                 )
-            behandling.husstandsbarn =
+            behandling.husstandsmedlem =
                 mutableSetOf(
-                    Husstandsbarn(
+                    Husstandsmedlem(
                         behandling,
                         kilde = Kilde.MANUELL,
                         ident = identOriginaltIkkeMedISaken,
                         fødselsdato = LocalDate.parse("2021-01-01"),
                     ),
-                    Husstandsbarn(
+                    Husstandsmedlem(
                         behandling,
                         kilde = Kilde.OFFENTLIG,
                         ident = identOriginaltMedISaken,
@@ -891,10 +879,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
             behandlingEtter.søknadsbarn shouldHaveSize 3
-            behandlingEtter.husstandsbarn shouldHaveSize 3
-            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltMedISaken }!!.kilde shouldBe Kilde.OFFENTLIG
-            behandlingEtter.husstandsbarn.find { it.ident == identOriginaltIkkeMedISaken }!!.kilde shouldBe Kilde.MANUELL
-            behandlingEtter.husstandsbarn.find { it.ident == "1111234" }!!.kilde shouldBe Kilde.OFFENTLIG
+            behandlingEtter.husstandsmedlem shouldHaveSize 3
+            behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltMedISaken }!!.kilde shouldBe Kilde.OFFENTLIG
+            behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltIkkeMedISaken }!!.kilde shouldBe Kilde.MANUELL
+            behandlingEtter.husstandsmedlem.find { it.ident == "1111234" }!!.kilde shouldBe Kilde.OFFENTLIG
         }
 
         @Test
@@ -925,194 +913,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                     )
                 }
             exception.message shouldContain "Kan ikke oppdatere behandling hvor vedtak er fattet"
-        }
-    }
-
-    @Nested
-    open inner class OppdatereBehandling {
-        @Test
-        fun `skal oppdatere virkningstidspunkt data`() {
-            val behandling = prepareBehandling()
-
-            val notat = "New Notat"
-
-            val createdBehandling = behandlingRepository.save(behandling)
-
-            assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.årsak)
-
-            behandlingService.oppdaterBehandling(
-                createdBehandling.id!!,
-                OppdaterBehandlingRequestV2(
-                    virkningstidspunkt =
-                        OppdatereVirkningstidspunkt(
-                            årsak = VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL,
-                            virkningstidspunkt = null,
-                            notat =
-                                OppdaterNotat(
-                                    notat,
-                                ),
-                        ),
-                ),
-            )
-
-            val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
-
-            assertEquals(VirkningstidspunktÅrsakstype.FRA_BARNETS_FØDSEL, updatedBehandling.årsak)
-            assertEquals(notat, updatedBehandling.virkningstidspunktbegrunnelseKunINotat)
-        }
-
-        @Test
-        fun `skal caste 404 exception hvis behandlingen ikke er der - oppdater`() {
-            Assertions.assertThrows(HttpClientErrorException::class.java) {
-                behandlingService.oppdaterBehandling(
-                    1234,
-                    OppdaterBehandlingRequestV2(
-                        virkningstidspunkt =
-                            OppdatereVirkningstidspunkt(
-                                notat =
-                                    OppdaterNotat(
-                                        "New Notat",
-                                    ),
-                            ),
-                    ),
-                )
-            }
-        }
-
-        @Test
-        @Transactional
-        open fun `skal oppdatere boforhold data`() {
-            val behandling = prepareBehandling()
-
-            val notat = "New Notat"
-
-            val createdBehandling = behandlingRepository.save(behandling)
-
-            assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.årsak)
-            assertEquals(0, createdBehandling.husstandsbarn.size)
-            assertEquals(0, createdBehandling.sivilstand.size)
-
-            val husstandsBarn =
-                setOf(
-                    HusstandsbarnDtoV2(
-                        null,
-                        Kilde.OFFENTLIG,
-                        true,
-                        emptySet(),
-                        ident = "Manuelt",
-                        navn = "ident!",
-                        fødselsdato = LocalDate.now().minusMonths(156),
-                    ),
-                )
-            val sivilstand =
-                setOf(
-                    SivilstandDto(
-                        null,
-                        LocalDate.now(),
-                        LocalDate.now(),
-                        Sivilstandskode.BOR_ALENE_MED_BARN,
-                        Kilde.OFFENTLIG,
-                    ),
-                )
-
-            behandlingService.oppdaterBehandling(
-                createdBehandling.id!!,
-                OppdaterBehandlingRequestV2(
-                    boforhold =
-                        OppdaterBoforholdRequest(
-                            husstandsBarn,
-                            sivilstand,
-                            notat =
-                                OppdaterNotat(
-                                    kunINotat = notat,
-                                ),
-                        ),
-                ),
-            )
-
-            val updatedBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
-
-            assertEquals(1, updatedBehandling.husstandsbarn.size)
-            assertEquals(1, updatedBehandling.sivilstand.size)
-            assertEquals(notat, updatedBehandling.boforholdsbegrunnelseKunINotat)
-        }
-
-        @Test
-        fun `skal oppdatere behandling`() {
-            val behandling = prepareBehandling()
-
-            val notat = "New Notat"
-
-            val createdBehandling = behandlingRepository.save(behandling)
-
-            assertNotNull(createdBehandling.id)
-            assertNull(createdBehandling.årsak)
-
-            behandlingService.oppdaterBehandling(
-                createdBehandling.id!!,
-                OppdaterBehandlingRequestV2(
-                    virkningstidspunkt =
-                        OppdatereVirkningstidspunkt(
-                            notat =
-                                OppdaterNotat(
-                                    notat,
-                                ),
-                        ),
-                    inntekter =
-                        OppdatereInntekterRequestV2(
-                            notat =
-                                OppdaterNotat(
-                                    notat,
-                                ),
-                        ),
-                    boforhold =
-                        OppdaterBoforholdRequest(
-                            notat =
-                                OppdaterNotat(
-                                    notat,
-                                ),
-                        ),
-                ),
-            )
-
-            val oppdatertBehandling = behandlingService.hentBehandlingById(createdBehandling.id!!)
-
-            assertEquals(3, oppdatertBehandling.roller.size)
-            assertEquals(notat, oppdatertBehandling.virkningstidspunktbegrunnelseKunINotat)
-        }
-
-        @Test
-        @Transactional
-        open fun `skal aktivere valgte nyinnhenta grunnlag`() {
-            // gitt
-            val behandling = behandlingRepository.save(prepareBehandling())
-            kjøreStubber(behandling)
-
-            testdataManager.oppretteOgLagreGrunnlag<AinntektGrunnlagDto>(
-                behandling = behandling,
-                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
-                innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
-                aktiv = null,
-            )
-
-            val opppdatereBehandlingRequest =
-                OppdaterBehandlingRequestV2(
-                    aktivereGrunnlagForPerson =
-                        AktivereGrunnlagRequest(
-                            Personident(behandling.bidragsmottaker?.ident!!),
-                            setOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
-                        ),
-                )
-
-            // hvis
-            behandlingService.oppdaterBehandling(behandling.id!!, opppdatereBehandlingRequest)
-
-            // så
-            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
-
-            oppdatertBehandling.get().grunnlag.first().aktiv shouldNotBe null
         }
     }
 
@@ -1305,145 +1105,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                 jsonListeTilObjekt<Sivilstand>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
                     .first().periodeFom shouldBeEqual nyVirkningsdato
             }
-        }
-    }
-
-    @Nested
-    open inner class OppdatereInntekter {
-        @Test
-        fun `skal legge til inntekter manuelt`() {
-            val actualBehandling = oppretteBehandling()
-
-            assertNotNull(actualBehandling.id)
-
-            assertEquals(0, actualBehandling.inntekter.size)
-            assertNull(actualBehandling.inntektsbegrunnelseKunINotat)
-
-            behandlingService.oppdaterBehandling(
-                actualBehandling.id!!,
-                OppdaterBehandlingRequestV2(
-                    inntekter =
-                        OppdatereInntekterRequestV2(
-                            oppdatereManuelleInntekter =
-                                mutableSetOf(
-                                    OppdatereManuellInntekt(
-                                        type = Inntektsrapportering.KAPITALINNTEKT,
-                                        beløp = BigDecimal.valueOf(4000),
-                                        datoFom = LocalDate.now().minusMonths(4),
-                                        datoTom = LocalDate.now().plusMonths(4),
-                                        ident = Personident("123"),
-                                    ),
-                                    OppdatereManuellInntekt(
-                                        type = Inntektsrapportering.BARNETILLEGG,
-                                        beløp = BigDecimal.valueOf(4000),
-                                        datoFom = LocalDate.now().minusMonths(4),
-                                        datoTom = LocalDate.now().plusMonths(4),
-                                        ident = Personident("123"),
-                                        gjelderBarn = Personident("1233"),
-                                        inntektstype = Inntektstype.BARNETILLEGG_AAP,
-                                    ),
-                                ),
-                            notat =
-                                OppdaterNotat(
-                                    "Kun i Notat",
-                                ),
-                        ),
-                ),
-            )
-
-            val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
-
-            assertEquals(2, expectedBehandling.inntekter.size)
-            assertEquals("Kun i Notat", expectedBehandling.inntektsbegrunnelseKunINotat)
-        }
-
-        @Test
-        fun `skal feile ved validering hvis barnetillegg legges til uten gjelder barn`() {
-            val actualBehandling = oppretteBehandling()
-
-            val error =
-                assertThrows<HttpClientErrorException> {
-                    behandlingService.oppdaterBehandling(
-                        actualBehandling.id!!,
-                        OppdaterBehandlingRequestV2(
-                            inntekter =
-                                OppdatereInntekterRequestV2(
-                                    oppdatereManuelleInntekter =
-                                        mutableSetOf(
-                                            OppdatereManuellInntekt(
-                                                type = Inntektsrapportering.BARNETILLEGG,
-                                                beløp = BigDecimal.valueOf(4000),
-                                                datoFom = LocalDate.now().minusMonths(4),
-                                                datoTom = LocalDate.now().plusMonths(4),
-                                                ident = Personident("123"),
-                                            ),
-                                        ),
-                                    notat =
-                                        OppdaterNotat(
-                                            "Kun i Notat",
-                                        ),
-                                ),
-                        ),
-                    )
-                }
-            error.message shouldContain "Ugyldig data ved oppdatering av inntekter: BARNETILLEGG må ha gyldig ident for gjelder barn, Barnetillegg må ha gyldig inntektstype"
-        }
-
-        @Test
-        @Transactional
-        open fun `skal slette manuelt oppretta inntekter`() {
-            stubUtils.stubOpprettForsendelse()
-
-            val actualBehandling = oppretteBehandling()
-
-            assertNotNull(actualBehandling.id)
-
-            assertEquals(0, actualBehandling.inntekter.size)
-
-            behandlingService.oppdaterBehandling(
-                actualBehandling.id!!,
-                OppdaterBehandlingRequestV2(
-                    inntekter =
-                        OppdatereInntekterRequestV2(
-                            oppdatereManuelleInntekter =
-                                mutableSetOf(
-                                    OppdatereManuellInntekt(
-                                        type = Inntektsrapportering.KAPITALINNTEKT,
-                                        beløp = BigDecimal.valueOf(4000),
-                                        datoFom = LocalDate.now().minusMonths(4),
-                                        datoTom = LocalDate.now().plusMonths(4),
-                                        ident = Personident("123"),
-                                    ),
-                                ),
-                            notat =
-                                OppdaterNotat(
-                                    "not null",
-                                ),
-                        ),
-                ),
-            )
-
-            val expectedBehandling = behandlingService.hentBehandlingById(actualBehandling.id!!)
-            entityManager.refresh(expectedBehandling)
-
-            assertEquals(1, expectedBehandling.inntekter.size)
-            assertNotNull(expectedBehandling.inntektsbegrunnelseKunINotat)
-
-            behandlingService.oppdaterBehandling(
-                actualBehandling.id!!,
-                OppdaterBehandlingRequestV2(
-                    inntekter =
-                        OppdatereInntekterRequestV2(
-                            sletteInntekter = expectedBehandling.inntekter.map { it.id!! }.toSet(),
-                        ),
-                ),
-            )
-
-            val expectedBehandlingWithoutInntekter =
-                behandlingService.hentBehandlingById(actualBehandling.id!!)
-
-            assertEquals(0, expectedBehandlingWithoutInntekter.inntekter.size)
-            assertNotNull(expectedBehandlingWithoutInntekter.inntektsbegrunnelseKunINotat)
         }
     }
 
