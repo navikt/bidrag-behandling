@@ -19,8 +19,8 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
-import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
+import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -63,6 +63,7 @@ data class BehandlingDetaljerDtoV2(
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
+    val kategori: SærbidragKategoriDto? = null,
 )
 
 data class BehandlingDtoV2(
@@ -93,20 +94,20 @@ data class BehandlingDtoV2(
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
-    @Schema(description = "Utgiftsgrunnlag for særtilskudd. Vil alltid være null for forskudd og bidrag")
-    val utgift: SærtilskuddUtgifterDto? = null,
+    @Schema(description = "Utgiftsgrunnlag for særbidrag. Vil alltid være null for forskudd og bidrag")
+    val utgift: SærbidragUtgifterDto? = null,
 )
 
-data class SærtilskuddUtgifterDto(
+data class SærbidragUtgifterDto(
     val avslag: Resultatkode? = null,
-    val kategori: SærligeutgifterKategoriDto,
+    val kategori: SærbidragKategoriDto,
     val beregning: UtgiftBeregningDto? = null,
     val notat: BehandlingNotatDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
 )
 
-data class SærligeutgifterKategoriDto(
-    val kategori: SærligeutgifterKategori,
+data class SærbidragKategoriDto(
+    val kategori: SærbidragKategori,
     val beskrivelse: String? = null,
 )
 
@@ -165,8 +166,11 @@ data class IkkeAktiveInntekter(
     @get:JsonIgnore
     val ingenEndringer
         get() =
-            barnetillegg.isEmpty() && utvidetBarnetrygd.isEmpty() &&
-                kontantstøtte.isEmpty() && småbarnstillegg.isEmpty() && årsinntekter.isEmpty()
+            barnetillegg.isEmpty() &&
+                utvidetBarnetrygd.isEmpty() &&
+                kontantstøtte.isEmpty() &&
+                småbarnstillegg.isEmpty() &&
+                årsinntekter.isEmpty()
 }
 
 data class Grunnlagsinnhentingsfeil(
@@ -251,7 +255,7 @@ enum class Grunnlagsdatatype(
     ARBEIDSFORHOLD(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
-            TypeBehandling.SÆRLIGE_UTGIFTER to
+            TypeBehandling.SÆRBIDRAG to
                 setOf(
                     Rolletype.BIDRAGSMOTTAKER,
                     Rolletype.BIDRAGSPLIKTIG,
@@ -262,7 +266,7 @@ enum class Grunnlagsdatatype(
     BARNETILLEGG(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
-            TypeBehandling.SÆRLIGE_UTGIFTER to
+            TypeBehandling.SÆRBIDRAG to
                 setOf(
                     Rolletype.BIDRAGSMOTTAKER,
                     Rolletype.BIDRAGSPLIKTIG,
@@ -274,7 +278,7 @@ enum class Grunnlagsdatatype(
     BOFORHOLD(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-            TypeBehandling.SÆRLIGE_UTGIFTER to
+            TypeBehandling.SÆRBIDRAG to
                 setOf(
                     Rolletype.BIDRAGSMOTTAKER,
                     Rolletype.BIDRAGSPLIKTIG,
@@ -288,7 +292,7 @@ enum class Grunnlagsdatatype(
     SKATTEPLIKTIGE_INNTEKTER(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
-            TypeBehandling.SÆRLIGE_UTGIFTER to
+            TypeBehandling.SÆRBIDRAG to
                 setOf(
                     Rolletype.BIDRAGSMOTTAKER,
                     Rolletype.BIDRAGSPLIKTIG,
@@ -299,7 +303,7 @@ enum class Grunnlagsdatatype(
     SUMMERTE_MÅNEDSINNTEKTER(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
 
@@ -330,16 +334,16 @@ enum class Grunnlagsdatatype(
         fun grunnlagsdatatypeobjekter(
             behandlingstype: TypeBehandling,
             rolletype: Rolletype? = null,
-        ): Set<Grunnlagsdatatype> {
-            return when (rolletype != null) {
+        ): Set<Grunnlagsdatatype> =
+            when (rolletype != null) {
                 true ->
-                    entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
+                    entries
+                        .filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
                         .filter { it.behandlinstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
                         .toSet()
 
                 false -> entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
             }
-        }
     }
 }
 

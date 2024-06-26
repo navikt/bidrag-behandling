@@ -38,14 +38,10 @@ class TestdataManager(
     private val entityManager: EntityManager,
 ) {
     @Transactional
-    fun lagreBehandling(behandling: Behandling): Behandling {
-        return behandlingRepository.save(behandling)
-    }
+    fun lagreBehandling(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
-        return behandlingRepository.save(behandling)
-    }
+    fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun oppretteBehandlingINyTransaksjon(
@@ -54,9 +50,14 @@ class TestdataManager(
         inkludereBoforhold: Boolean = true,
         inkludereBp: Boolean = false,
         behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
-    ): Behandling {
-        return oppretteBehandling(inkluderInntekter, inkludereSivilstand, inkludereBoforhold, inkludereBp, behandlingstype)
-    }
+    ): Behandling =
+        oppretteBehandling(
+            inkluderInntekter,
+            inkludereSivilstand,
+            inkludereBoforhold,
+            inkludereBp,
+            behandlingstype,
+        )
 
     @Transactional
     fun oppretteBehandling(
@@ -66,14 +67,16 @@ class TestdataManager(
         inkludereBp: Boolean = false,
         behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
     ): Behandling {
-        val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
+        val behandling =
+            no.nav.bidrag.behandling.utils.testdata
+                .oppretteBehandling()
         when (behandlingstype) {
             TypeBehandling.FORSKUDD -> {
                 behandling.stonadstype = Stønadstype.FORSKUDD
             }
 
-            TypeBehandling.SÆRLIGE_UTGIFTER -> {
-                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
+            TypeBehandling.SÆRBIDRAG -> {
+                behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
                 behandling.stonadstype = null
             }
 
@@ -251,7 +254,9 @@ class TestdataManager(
                 grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
             )
 
-        boforholdPeriodisert.filter { it.relatertPersonPersonId != null }.groupBy { it.relatertPersonPersonId }
+        boforholdPeriodisert
+            .filter { it.relatertPersonPersonId != null }
+            .groupBy { it.relatertPersonPersonId }
             .forEach {
                 behandling.grunnlag.add(
                     Grunnlag(
@@ -340,12 +345,11 @@ class TestdataManager(
         behandling.sivilstand.addAll(periodisertHistorikk.toSet().tilSivilstand(behandling))
     }
 
-    fun hentBehandling(id: Long): Behandling? {
-        return entityManager.createNativeQuery(
-            "SELECT * FROM behandling WHERE id = $id",
-            Behandling::class.java,
-        )
-            .resultList
+    fun hentBehandling(id: Long): Behandling? =
+        entityManager
+            .createNativeQuery(
+                "SELECT * FROM behandling WHERE id = $id",
+                Behandling::class.java,
+            ).resultList
             .firstOrNull() as Behandling?
-    }
 }

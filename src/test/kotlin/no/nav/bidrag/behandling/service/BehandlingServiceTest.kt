@@ -15,7 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.særligeutgifterKategori
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
@@ -45,7 +45,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
+import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -304,12 +304,17 @@ class BehandlingServiceTest : TestContainerRunner() {
                 )
 
             assertSoftly {
-                behandlingDto.inntekter.årsinntekter.filter { ytelser.contains(it.rapporteringstype) }.size shouldBe 0
+                behandlingDto.inntekter.årsinntekter
+                    .filter { ytelser.contains(it.rapporteringstype) }
+                    .size shouldBe 0
                 behandlingDto.inntekter.barnetillegg.size shouldBe 1
                 behandlingDto.inntekter.kontantstøtte.size shouldBe 1
                 behandlingDto.inntekter.småbarnstillegg.size shouldBe 1
                 behandlingDto.inntekter.utvidetBarnetrygd.size shouldBe 1
-                behandlingDto.inntekter.årsinntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }.size shouldBe 1
+                behandlingDto.inntekter.årsinntekter
+                    .filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }
+                    .size shouldBe
+                    1
             }
         }
 
@@ -452,10 +457,10 @@ class BehandlingServiceTest : TestContainerRunner() {
                         søknadsid = søknadsid,
                         behandlerenhet = "1233",
                         stønadstype = null,
-                        engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD,
+                        engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
                         kategori =
                             OpprettKategoriRequestDto(
-                                SærligeutgifterKategori.KONFIRMASJON.name,
+                                SærbidragKategori.KONFIRMASJON.name,
                             ),
                         roller =
                             setOf(
@@ -482,8 +487,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingService.hentBehandlingById(opprettetBehandling.id)
 
             opprettetBehandlingAfter.stonadstype shouldBe null
-            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRTILSKUDD
-            opprettetBehandlingAfter.særligeutgifterKategori shouldBe SærligeutgifterKategori.KONFIRMASJON
+            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            opprettetBehandlingAfter.særbidragKategori shouldBe SærbidragKategori.KONFIRMASJON
             opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
             opprettetBehandlingAfter.årsak shouldBe null
             opprettetBehandlingAfter.roller shouldHaveSize 3
@@ -555,7 +560,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertEquals(1, actualBehandlingFetched.inntekter.size)
             assertEquals(
                 BigDecimal.valueOf(555.55),
-                actualBehandlingFetched.inntekter.iterator().next().belop,
+                actualBehandlingFetched.inntekter
+                    .iterator()
+                    .next()
+                    .belop,
             )
         }
     }
@@ -1080,7 +1088,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g.filter { it.aktiv != null } shouldHaveSize 3
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
                 jsonListeTilObjekt<BoforholdResponse>(g.first { it.erBearbeidet }.data)
-                    .first().periodeFom shouldBeEqual behandling.virkningstidspunkt!!
+                    .first()
+                    .periodeFom shouldBeEqual behandling.virkningstidspunkt!!
             }
 
             // hvis
@@ -1095,7 +1104,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
                 g.filter { it.aktiv != null } shouldHaveSize 3
                 jsonListeTilObjekt<BoforholdResponse>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
-                    .first().periodeFom shouldBeEqual nyVirkningsdato
+                    .first()
+                    .periodeFom shouldBeEqual nyVirkningsdato
             }
             val sivilstandgrunnlag = behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }
             assertSoftly(sivilstandgrunnlag) { g ->
@@ -1103,7 +1113,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
                 g.filter { it.aktiv != null } shouldHaveSize 2
                 jsonListeTilObjekt<Sivilstand>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
-                    .first().periodeFom shouldBeEqual nyVirkningsdato
+                    .first()
+                    .periodeFom shouldBeEqual nyVirkningsdato
             }
         }
     }
@@ -1121,13 +1132,15 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertEquals(2, updatedBehandling.roller.size)
 
         val realCount =
-            entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id)
+            entityManager
+                .createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id)
                 .singleResult
 
         val deletedCount =
-            entityManager.createNativeQuery(
-                "select count(*) from rolle r where r.behandling_id = ${behandling.id} and r.deleted = true",
-            ).singleResult
+            entityManager
+                .createNativeQuery(
+                    "select count(*) from rolle r where r.behandling_id = ${behandling.id} and r.deleted = true",
+                ).singleResult
 
         assertEquals(3L, realCount)
         assertEquals(1L, deletedCount)
@@ -1170,13 +1183,12 @@ class BehandlingServiceTest : TestContainerRunner() {
             return behandling
         }
 
-        fun prepareRoles(behandling: Behandling): Set<Rolle> {
-            return setOf(
+        fun prepareRoles(behandling: Behandling): Set<Rolle> =
+            setOf(
                 testdataBM.tilRolle(behandling),
                 testdataBP.tilRolle(behandling),
                 testdataBarn1.tilRolle(behandling),
             )
-        }
     }
 
     fun oppretteBehandling(): Behandling {

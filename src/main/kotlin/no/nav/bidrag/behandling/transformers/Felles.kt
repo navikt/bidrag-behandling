@@ -48,13 +48,13 @@ fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
 
 fun Behandling.erForskudd() = tilType() == TypeBehandling.FORSKUDD
 
-fun Behandling.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRLIGE_UTGIFTER
+fun Behandling.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRBIDRAG
 
 fun bestemTypeBehandling(
     stønadstype: Stønadstype?,
     engangsbeløptype: Engangsbeløptype?,
-) = if (engangsbeløptype != null && engangsbeløptype == Engangsbeløptype.SÆRTILSKUDD) {
-    TypeBehandling.SÆRLIGE_UTGIFTER
+) = if (engangsbeløptype != null && engangsbeløptype == Engangsbeløptype.SÆRBIDRAG) {
+    TypeBehandling.SÆRBIDRAG
 } else if (stønadstype == Stønadstype.FORSKUDD) {
     TypeBehandling.FORSKUDD
 } else {
@@ -64,15 +64,15 @@ fun bestemTypeBehandling(
 @Schema(enumAsRef = true)
 enum class TypeBehandling {
     FORSKUDD,
-    SÆRLIGE_UTGIFTER,
+    SÆRBIDRAG,
     BIDRAG,
 }
 
 fun <T : Comparable<T>> minOfNullable(
     a: T?,
     b: T?,
-): T? {
-    return if (a == null && b == null) {
+): T? =
+    if (a == null && b == null) {
         null
     } else if (a == null) {
         b
@@ -81,7 +81,6 @@ fun <T : Comparable<T>> minOfNullable(
     } else {
         minOf(a, b)
     }
-}
 
 fun finnCutoffDatoFom(
     virkningstidspunkt: LocalDate,

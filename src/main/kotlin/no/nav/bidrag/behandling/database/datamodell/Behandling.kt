@@ -28,7 +28,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
+import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -163,15 +163,15 @@ open class Behandling(
     val erKlageEllerOmgjøring get() = refVedtaksid != null
 }
 
-val Behandling.særligeutgifterKategori
+val Behandling.særbidragKategori
     get() =
         kategori.isNullOrEmpty().ifFalse {
             try {
-                SærligeutgifterKategori.valueOf(kategori!!)
+                SærbidragKategori.valueOf(kategori!!)
             } catch (e: Exception) {
-                SærligeutgifterKategori.ANNET
+                SærbidragKategori.ANNET
             }
-        } ?: SærligeutgifterKategori.ANNET
+        } ?: SærbidragKategori.ANNET
 
 fun Behandling.henteAlleBostatusperioder() = husstandsmedlem.flatMap { it.perioder }
 
@@ -181,7 +181,8 @@ fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.na
 
 fun Behandling.validerForBeregning() {
     val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-        erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
+        erKlageEllerOmgjøring &&
+            opprinneligVirkningstidspunkt != null &&
             virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
     val virkningstidspunktFeil =
         VirkningstidspunktFeilDto(
@@ -194,22 +195,29 @@ fun Behandling.validerForBeregning() {
             val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
             val sivilstandFeil = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil }
             val husstandsmedlemsfeil =
-                husstandsmedlem.validerBoforhold(
-                    virkningstidspunktEllerSøktFomDato,
-                ).filter { it.harFeil }.takeIf { it.isNotEmpty() }
+                husstandsmedlem
+                    .validerBoforhold(
+                        virkningstidspunktEllerSøktFomDato,
+                    ).filter { it.harFeil }
+                    .takeIf { it.isNotEmpty() }
             val måBekrefteOpplysninger =
-                grunnlag.hentAlleSomMåBekreftes().map { grunnlagSomMåBekreftes ->
-                    MåBekrefteNyeOpplysninger(
-                        grunnlagSomMåBekreftes.type,
-                        husstandsmedlem =
-                            (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
-                            },
-                    )
-                }.toSet()
+                grunnlag
+                    .hentAlleSomMåBekreftes()
+                    .map { grunnlagSomMåBekreftes ->
+                        MåBekrefteNyeOpplysninger(
+                            grunnlagSomMåBekreftes.type,
+                            husstandsmedlem =
+                                (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
+                                    husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                                },
+                        )
+                    }.toSet()
             val harFeil =
-                inntekterFeil != null || sivilstandFeil != null || husstandsmedlemsfeil != null ||
-                    virkningstidspunktFeil != null || måBekrefteOpplysninger.isNotEmpty()
+                inntekterFeil != null ||
+                    sivilstandFeil != null ||
+                    husstandsmedlemsfeil != null ||
+                    virkningstidspunktFeil != null ||
+                    måBekrefteOpplysninger.isNotEmpty()
             harFeil.ifTrue {
                 BeregningValideringsfeil(
                     virkningstidspunktFeil,
@@ -241,11 +249,7 @@ fun Behandling.validerForBeregning() {
 
 @Converter
 open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {
-    override fun convertToDatabaseColumn(attribute: VirkningstidspunktÅrsakstype?): String? {
-        return attribute?.name
-    }
+    override fun convertToDatabaseColumn(attribute: VirkningstidspunktÅrsakstype?): String? = attribute?.name
 
-    override fun convertToEntityAttribute(dbData: String?): VirkningstidspunktÅrsakstype? {
-        return dbData?.tilÅrsakstype()
-    }
+    override fun convertToEntityAttribute(dbData: String?): VirkningstidspunktÅrsakstype? = dbData?.tilÅrsakstype()
 }

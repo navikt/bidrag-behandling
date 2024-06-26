@@ -91,7 +91,8 @@ class BehandlingService(
         val opprettetAv =
             TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"
         val opprettetAvNavn =
-            TokenUtils.hentSaksbehandlerIdent()
+            TokenUtils
+                .hentSaksbehandlerIdent()
                 ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         val behandling =
             Behandling(
@@ -100,12 +101,12 @@ class BehandlingService(
                 virkningstidspunkt =
                     when (opprettBehandling.tilType()) {
                         TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> opprettBehandling.søktFomDato
-                        TypeBehandling.SÆRLIGE_UTGIFTER -> LocalDate.now().withDayOfMonth(1)
+                        TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
                     },
                 årsak =
                     when (opprettBehandling.tilType()) {
                         TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-                        TypeBehandling.SÆRLIGE_UTGIFTER -> null
+                        TypeBehandling.SÆRBIDRAG -> null
                     },
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
@@ -118,8 +119,8 @@ class BehandlingService(
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = TokenUtils.hentApplikasjonsnavn() ?: "ukjent",
-                kategori = opprettBehandling.kategori!!.kategori,
-                kategoriBeskrivelse = opprettBehandling.kategori.beskrivelse,
+                kategori = opprettBehandling.kategori?.kategori,
+                kategoriBeskrivelse = opprettBehandling.kategori?.beskrivelse,
             )
 
         val roller =
@@ -167,8 +168,10 @@ class BehandlingService(
         behandlingsid: Long,
         request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 {
-        behandlingRepository.findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+        behandlingRepository
+            .findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            .let {
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
                 secureLogger.info {
                     "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
@@ -190,9 +193,11 @@ class BehandlingService(
     fun oppdatereVirkningstidspunkt(
         behandlingsid: Long,
         request: OppdatereVirkningstidspunkt,
-    ): Behandling {
-        return behandlingRepository.findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+    ): Behandling =
+        behandlingRepository
+            .findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            .let {
                 log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
                 secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
                 request.valider(it)
@@ -203,7 +208,6 @@ class BehandlingService(
                 oppdaterVirkningstidspunkt(request, it)
                 it
             }
-    }
 
     @Transactional
     fun oppdaterVirkningstidspunkt(
@@ -235,8 +239,10 @@ class BehandlingService(
         behandlingsid: Long,
         vedtaksid: Long,
     ) {
-        behandlingRepository.findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }.let {
+        behandlingRepository
+            .findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            .let {
                 log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
                 it.vedtaksid = vedtaksid
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()
@@ -284,7 +290,8 @@ class BehandlingService(
 
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingId)
+            behandlingRepository
+                .findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
         tilgangskontrollService.sjekkTilgangBehandling(behandling)
         if (behandling.deleted) behandlingNotFoundException(behandlingId)

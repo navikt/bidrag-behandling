@@ -10,7 +10,7 @@ enum class Grunnlagsobjektvelger(
     AINNTEKT(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
-            TypeBehandling.SÆRLIGE_UTGIFTER to
+            TypeBehandling.SÆRBIDRAG to
                 setOf(
                     Rolletype.BIDRAGSMOTTAKER,
                     Rolletype.BIDRAGSPLIKTIG,
@@ -21,7 +21,7 @@ enum class Grunnlagsobjektvelger(
     ARBEIDSFORHOLD(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
-            TypeBehandling.SÆRLIGE_UTGIFTER to
+            TypeBehandling.SÆRBIDRAG to
                 setOf(
                     Rolletype.BIDRAGSMOTTAKER,
                     Rolletype.BIDRAGSPLIKTIG,
@@ -32,20 +32,20 @@ enum class Grunnlagsobjektvelger(
     BARNETILLEGG(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
-            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
     BARNETILSYN(emptyMap()),
     KONTANTSTØTTE(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
     HUSSTANDSMEDLEMMER_OG_EGNE_BARN(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
     SIVILSTAND(
@@ -56,7 +56,7 @@ enum class Grunnlagsobjektvelger(
     SKATTEGRUNNLAG(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
-            TypeBehandling.SÆRLIGE_UTGIFTER to
+            TypeBehandling.SÆRBIDRAG to
                 setOf(
                     Rolletype.BIDRAGSMOTTAKER,
                     Rolletype.BIDRAGSPLIKTIG,
@@ -67,7 +67,7 @@ enum class Grunnlagsobjektvelger(
     UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-            TypeBehandling.SÆRLIGE_UTGIFTER to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
     ;
@@ -76,10 +76,14 @@ enum class Grunnlagsobjektvelger(
         fun requestobjekter(
             behandlingstype: TypeBehandling,
             rolletype: Rolletype,
-        ): Set<GrunnlagRequestType> {
-            return entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
-                .filter { it.behandlinstypeMotRolletyper.values.first().contains(rolletype) }
-                .map { GrunnlagRequestType.valueOf(it.name) }.toSet()
-        }
+        ): Set<GrunnlagRequestType> =
+            entries
+                .filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
+                .filter {
+                    it.behandlinstypeMotRolletyper.values
+                        .first()
+                        .contains(rolletype)
+                }.map { GrunnlagRequestType.valueOf(it.name) }
+                .toSet()
     }
 }

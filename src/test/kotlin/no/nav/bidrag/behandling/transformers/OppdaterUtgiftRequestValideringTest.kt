@@ -9,8 +9,8 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
-import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
-import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
+import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import org.junit.jupiter.api.Test
@@ -21,8 +21,8 @@ import java.time.LocalDate
 class OppdaterUtgiftRequestValideringTest {
     fun opprettBehandlingSærligeUtgifter(): Behandling {
         val behandling = oppretteBehandling(1)
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
-        behandling.kategori = SærligeutgifterKategori.KONFIRMASJON.name
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+        behandling.kategori = SærbidragKategori.KONFIRMASJON.name
         return behandling
     }
 
@@ -36,13 +36,14 @@ class OppdaterUtgiftRequestValideringTest {
 
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
-        exception.message shouldContain "Kan ikke oppdatere utgift for behandling som ikke er av typen [SÆRTILSKUDD, SÆRTILSKUDD_KONFIRMASJON, SÆRTILSKUDD_OPTIKK, SÆRTILSKUDD_TANNREGULERING]"
+        exception.message shouldContain
+            "Kan ikke oppdatere utgift for behandling som ikke er av typen SÆRBIDRAG"
     }
 
     @Test
     fun `skal validere at utgiftstype er gyldig for konfirmasjon`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.kategori = SærligeutgifterKategori.KONFIRMASJON.name
+        behandling.kategori = SærbidragKategori.KONFIRMASJON.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -56,13 +57,13 @@ class OppdaterUtgiftRequestValideringTest {
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
-        exception.message shouldContain "Type OPTIKK er ikke gyldig for behandling av typen SÆRTILSKUDD_KONFIRMASJON"
+        exception.message shouldContain "Type OPTIKK er ikke gyldig for behandling med kategori KONFIRMASJON"
     }
 
     @Test
-    fun `skal validere at utgiftstype er ikke kan settes for kategori SÆRTILSKUDD_OPTIKK`() {
+    fun `skal validere at utgiftstype er ikke kan settes for kategori OPTIKK`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
+        behandling.kategori = SærbidragKategori.OPTIKK.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -76,13 +77,13 @@ class OppdaterUtgiftRequestValideringTest {
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
-        exception.message shouldContain "Type kan ikke settes hvis behandling er av typen SÆRTILSKUDD_OPTIKK"
+        exception.message shouldContain "Type kan ikke settes hvis behandling har kategori OPTIKK"
     }
 
     @Test
-    fun `skal validere at utgiftstype er ikke kan settes for kategori SÆRTILSKUDD_TANNREGULERING`() {
+    fun `skal validere at utgiftstype er ikke kan settes for kategori TANNREGULERING`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.kategori = SærligeutgifterKategori.TANNREGULERING.name
+        behandling.kategori = SærbidragKategori.TANNREGULERING.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -96,7 +97,7 @@ class OppdaterUtgiftRequestValideringTest {
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
-        exception.message shouldContain "Type kan ikke settes hvis behandling er av typen SÆRTILSKUDD_TANNREGULERING"
+        exception.message shouldContain "Type kan ikke settes hvis behandling har kategori TANNREGULERING"
     }
 
     @Test
@@ -202,7 +203,7 @@ class OppdaterUtgiftRequestValideringTest {
     @Test
     fun `skal ikke kunne legge til utgift for bp hvis kategori ikke er konfirmasjon`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
+        behandling.kategori = SærbidragKategori.OPTIKK.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -218,7 +219,8 @@ class OppdaterUtgiftRequestValideringTest {
 
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
-        exception.message shouldContain "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori SÆRTILSKUDD_KONFIRMASJON"
+        exception.message shouldContain
+            "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori KONFIRMASJON"
     }
 
     @Test
@@ -241,7 +243,7 @@ class OppdaterUtgiftRequestValideringTest {
                     utgift = behandling.utgift!!,
                 ),
             )
-        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
+        behandling.kategori = SærbidragKategori.OPTIKK.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =

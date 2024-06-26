@@ -7,7 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
-import no.nav.bidrag.behandling.database.datamodell.særligeutgifterKategori
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
@@ -21,8 +21,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
-import no.nav.bidrag.behandling.dto.v2.behandling.SærligeutgifterKategoriDto
-import no.nav.bidrag.behandling.dto.v2.behandling.SærtilskuddUtgifterDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
@@ -86,20 +86,26 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         søknadsid = soknadsid,
         behandlerenhet = behandlerEnhet,
         roller =
-            roller.map {
-                RolleDto(
-                    it.id!!,
-                    it.rolletype,
-                    it.ident,
-                    it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.foedselsdato,
-                )
-            }.toSet(),
+            roller
+                .map {
+                    RolleDto(
+                        it.id!!,
+                        it.rolletype,
+                        it.ident,
+                        it.navn ?: hentPersonVisningsnavn(it.ident),
+                        it.foedselsdato,
+                    )
+                }.toSet(),
         søknadRefId = soknadRefId,
         vedtakRefId = refVedtaksid,
         virkningstidspunkt = virkningstidspunkt,
         årsak = årsak,
         avslag = avslag,
+        kategori =
+            when (engangsbeloptype) {
+                Engangsbeløptype.SÆRBIDRAG -> tilSærbidragKategoriDto()
+                else -> null
+            },
     )
 
 // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
@@ -124,15 +130,16 @@ fun Behandling.tilBehandlingDtoV2(
     søknadsid = soknadsid,
     behandlerenhet = behandlerEnhet,
     roller =
-        roller.map {
-            RolleDto(
-                it.id!!,
-                it.rolletype,
-                it.ident,
-                it.navn ?: hentPersonVisningsnavn(it.ident),
-                it.foedselsdato,
-            )
-        }.toSet(),
+        roller
+            .map {
+                RolleDto(
+                    it.id!!,
+                    it.rolletype,
+                    it.ident,
+                    it.navn ?: hentPersonVisningsnavn(it.ident),
+                    it.foedselsdato,
+                )
+            }.toSet(),
     søknadRefId = soknadRefId,
     vedtakRefId = refVedtaksid,
     virkningstidspunkt =
@@ -156,10 +163,10 @@ fun Behandling.tilBehandlingDtoV2(
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
     utgift =
         utgift?.let { utgift ->
-            SærtilskuddUtgifterDto(
+            SærbidragUtgifterDto(
                 avslag = avslag,
                 beregning = utgift.tilBeregningDto(),
-                kategori = tilSærligeutgifterKategoriDto(),
+                kategori = tilSærbidragKategoriDto(),
                 notat =
                     BehandlingNotatDto(
                         kunINotat = utgiftsbegrunnelseKunINotat,
@@ -167,9 +174,9 @@ fun Behandling.tilBehandlingDtoV2(
                 utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
             )
         } ?: if (erSærligeUtgifter()) {
-            SærtilskuddUtgifterDto(
+            SærbidragUtgifterDto(
                 avslag = avslag,
-                kategori = tilSærligeutgifterKategoriDto(),
+                kategori = tilSærbidragKategoriDto(),
                 notat =
                     BehandlingNotatDto(
                         kunINotat = utgiftsbegrunnelseKunINotat,
@@ -190,21 +197,22 @@ fun Behandling.tilBehandlingDtoV2(
         },
 )
 
-private fun Behandling.tilSærligeutgifterKategoriDto() =
-    SærligeutgifterKategoriDto(
-        kategori = særligeutgifterKategori,
+private fun Behandling.tilSærbidragKategoriDto() =
+    SærbidragKategoriDto(
+        kategori = særbidragKategori,
         beskrivelse = kategoriBeskrivelse,
     )
 
 private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
-    this.map { feil ->
-        Grunnlagsinnhentingsfeil(
-            rolleid = behandling.roller.find { feil.value.personId == it.ident }!!.id!!,
-            feilmelding = feil.value.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
-            grunnlagsdatatype = feil.key,
-            periode = feil.value.periodeFra?.let { Datoperiode(feil.value.periodeFra!!, feil.value.periodeTil) },
-        )
-    }.toSet()
+    this
+        .map { feil ->
+            Grunnlagsinnhentingsfeil(
+                rolleid = behandling.roller.find { feil.value.personId == it.ident }!!.id!!,
+                feilmelding = feil.value.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
+                grunnlagsdatatype = feil.key,
+                periode = feil.value.periodeFra?.let { Datoperiode(feil.value.periodeFra!!, feil.value.periodeTil) },
+            )
+        }.toSet()
 
 fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     if (this == null) return null
@@ -222,20 +230,23 @@ fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
 }
 
 fun List<Grunnlag>.tilHusstandsmedlem() =
-    this.map {
-        HusstandsmedlemGrunnlagDto(
-            innhentetTidspunkt = it.innhentet,
-            ident = it.gjelder,
-            perioder =
-                it.konvertereData<List<BoforholdResponse>>()?.map { boforholdrespons ->
-                    HusstandsmedlemGrunnlagDto.BostatusperiodeGrunnlagDto(
-                        boforholdrespons.periodeFom,
-                        boforholdrespons.periodeTom,
-                        boforholdrespons.bostatus,
-                    )
-                }?.toSet() ?: emptySet(),
-        )
-    }.toSet()
+    this
+        .map {
+            HusstandsmedlemGrunnlagDto(
+                innhentetTidspunkt = it.innhentet,
+                ident = it.gjelder,
+                perioder =
+                    it
+                        .konvertereData<List<BoforholdResponse>>()
+                        ?.map { boforholdrespons ->
+                            HusstandsmedlemGrunnlagDto.BostatusperiodeGrunnlagDto(
+                                boforholdrespons.periodeFom,
+                                boforholdrespons.periodeTom,
+                                boforholdrespons.bostatus,
+                            )
+                        }?.toSet() ?: emptySet(),
+            )
+        }.toSet()
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
@@ -248,7 +259,10 @@ fun Behandling.tilBoforholdV2() =
             ),
         valideringsfeil =
             BoforholdValideringsfeil(
-                husstandsmedlem = husstandsmedlem.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
+                husstandsmedlem =
+                    husstandsmedlem
+                        .validerBoforhold(virkningstidspunktEllerSøktFomDato)
+                        .filter { it.harFeil },
                 sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
             ),
     )
@@ -258,28 +272,36 @@ fun Behandling.tilInntektDtoV2(
     inkluderHistoriskeInntekter: Boolean = false,
 ) = InntekterDtoV2(
     barnetillegg =
-        inntekter.filter { it.type == Inntektsrapportering.BARNETILLEGG }
+        inntekter
+            .filter { it.type == Inntektsrapportering.BARNETILLEGG }
             .sorterEtterDatoOgBarn()
             .ekskluderYtelserFørVirkningstidspunkt()
-            .tilInntektDtoV2().toSet(),
+            .tilInntektDtoV2()
+            .toSet(),
     utvidetBarnetrygd =
-        inntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+        inntekter
+            .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
             .sorterEtterDato()
             .ekskluderYtelserFørVirkningstidspunkt()
             .tilInntektDtoV2()
             .toSet(),
     kontantstøtte =
-        inntekter.filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+        inntekter
+            .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
             .sorterEtterDatoOgBarn()
             .ekskluderYtelserFørVirkningstidspunkt()
-            .tilInntektDtoV2().toSet(),
+            .tilInntektDtoV2()
+            .toSet(),
     småbarnstillegg =
-        inntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+        inntekter
+            .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
             .sorterEtterDato()
             .ekskluderYtelserFørVirkningstidspunkt()
-            .tilInntektDtoV2().toSet(),
+            .tilInntektDtoV2()
+            .toSet(),
     månedsinntekter =
-        gjeldendeAktiveGrunnlagsdata.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
+        gjeldendeAktiveGrunnlagsdata
+            .filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
             .flatMap { grunnlag ->
                 grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
                     it.tilInntektDtoV2(
@@ -288,7 +310,8 @@ fun Behandling.tilInntektDtoV2(
                 } ?: emptyList()
             }.toSet(),
     årsinntekter =
-        inntekter.årsinntekterSortert(inkluderHistoriskeInntekter = inkluderHistoriskeInntekter)
+        inntekter
+            .årsinntekterSortert(inkluderHistoriskeInntekter = inkluderHistoriskeInntekter)
             .tilInntektDtoV2()
             .toSet(),
     beregnetInntekter = hentBeregnetInntekter(),
@@ -311,19 +334,21 @@ fun List<Grunnlag>.tilAktivGrunnlagsdata() =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )
 
-fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto {
-    return InntektValideringsfeilDto(
+fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
+    InntektValideringsfeilDto(
         årsinntekter =
-            inntekter.mapValideringsfeilForÅrsinntekter(
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ).takeIf { it.isNotEmpty() },
+            inntekter
+                .mapValideringsfeilForÅrsinntekter(
+                    virkningstidspunktEllerSøktFomDato,
+                    roller,
+                ).takeIf { it.isNotEmpty() },
         barnetillegg =
-            inntekter.mapValideringsfeilForYtelseSomGjelderBarn(
-                Inntektsrapportering.BARNETILLEGG,
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ).takeIf { it.isNotEmpty() },
+            inntekter
+                .mapValideringsfeilForYtelseSomGjelderBarn(
+                    Inntektsrapportering.BARNETILLEGG,
+                    virkningstidspunktEllerSøktFomDato,
+                    roller,
+                ).takeIf { it.isNotEmpty() },
         småbarnstillegg =
             inntekter.mapValideringsfeilForYtelse(
                 Inntektsrapportering.SMÅBARNSTILLEGG,
@@ -337,43 +362,45 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto {
                 roller,
             ),
         kontantstøtte =
-            inntekter.mapValideringsfeilForYtelseSomGjelderBarn(
-                Inntektsrapportering.KONTANTSTØTTE,
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ).takeIf { it.isNotEmpty() },
+            inntekter
+                .mapValideringsfeilForYtelseSomGjelderBarn(
+                    Inntektsrapportering.KONTANTSTØTTE,
+                    virkningstidspunktEllerSøktFomDato,
+                    roller,
+                ).takeIf { it.isNotEmpty() },
     )
-}
 
 fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
 ): Set<InntektValideringsfeil> {
     val inntekterSomSkalSjekkes = filter { !eksplisitteYtelser.contains(it.type) }.filter { it.taMed }
-    return roller.map { rolle ->
-        val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
-        if (inntekterTaMed.isEmpty() && (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER || rolle.rolletype == Rolletype.BIDRAGSPLIKTIG)) {
-            InntektValideringsfeil(
-                hullIPerioder = emptyList(),
-                overlappendePerioder = emptySet(),
-                fremtidigPeriode = false,
-                manglerPerioder = true,
-                ident = rolle.ident!!,
-                rolle = rolle.rolletype,
-            )
-        } else {
-            InntektValideringsfeil(
-                hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt),
-                overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
-                fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
-                manglerPerioder =
-                    (rolle.rolletype != Rolletype.BARN)
-                        .ifTrue { this.isEmpty() } ?: false,
-                ident = rolle.ident!!,
-                rolle = rolle.rolletype,
-            )
-        }
-    }.filter { it.harFeil }.toSet()
+    return roller
+        .map { rolle ->
+            val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
+            if (inntekterTaMed.isEmpty() && (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER || rolle.rolletype == Rolletype.BIDRAGSPLIKTIG)) {
+                InntektValideringsfeil(
+                    hullIPerioder = emptyList(),
+                    overlappendePerioder = emptySet(),
+                    fremtidigPeriode = false,
+                    manglerPerioder = true,
+                    ident = rolle.ident!!,
+                    rolle = rolle.rolletype,
+                )
+            } else {
+                InntektValideringsfeil(
+                    hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt),
+                    overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
+                    fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+                    manglerPerioder =
+                        (rolle.rolletype != Rolletype.BARN)
+                            .ifTrue { this.isEmpty() } ?: false,
+                    ident = rolle.ident!!,
+                    rolle = rolle.rolletype,
+                )
+            }
+        }.filter { it.harFeil }
+        .toSet()
 }
 
 fun Set<Inntekt>.mapValideringsfeilForYtelse(
@@ -401,14 +428,16 @@ fun Set<Inntekt>.mapValideringsfeilForYtelseSomGjelderBarn(
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
 ) = filter { inntekstrapporteringerSomKreverGjelderBarn.contains(type) }
-    .groupBy { it.gjelderBarn }.map { (gjelderBarn, inntekter) ->
+    .groupBy { it.gjelderBarn }
+    .map { (gjelderBarn, inntekter) ->
         inntekter.toSet().mapValideringsfeilForYtelse(
             type,
             virkningstidspunkt,
             roller,
             gjelderBarn,
         )
-    }.filterNotNull().toSet()
+    }.filterNotNull()
+    .toSet()
 
 fun List<Inntekt>.inneholderFremtidigPeriode(virkningstidspunkt: LocalDate) =
     any {
@@ -416,23 +445,26 @@ fun List<Inntekt>.inneholderFremtidigPeriode(virkningstidspunkt: LocalDate) =
     }
 
 fun Behandling.hentBeregnetInntekter() =
-    BeregnApi().beregnInntekt(tilInntektberegningDto()).inntektPerBarnListe.sortedBy {
-        it.inntektGjelderBarnIdent?.verdi
-    }.map {
-        it.copy(
-            summertInntektListe =
-                it.summertInntektListe.map { delberegning ->
-                    delberegning.copy(
-                        barnetillegg = delberegning.barnetillegg?.nærmesteHeltall,
-                        småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
-                        kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
-                        utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
-                        skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
-                        totalinntekt = delberegning.totalinntekt.nærmesteHeltall,
-                    )
-                },
-        )
-    }
+    BeregnApi()
+        .beregnInntekt(tilInntektberegningDto())
+        .inntektPerBarnListe
+        .sortedBy {
+            it.inntektGjelderBarnIdent?.verdi
+        }.map {
+            it.copy(
+                summertInntektListe =
+                    it.summertInntektListe.map { delberegning ->
+                        delberegning.copy(
+                            barnetillegg = delberegning.barnetillegg?.nærmesteHeltall,
+                            småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
+                            kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
+                            utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
+                            skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
+                            totalinntekt = delberegning.totalinntekt.nærmesteHeltall,
+                        )
+                    },
+            )
+        }
 
 fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
 
@@ -468,12 +500,14 @@ fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
                 ?: return@flatMap perioder
         val perioderFiltrert =
             perioder.sortedBy { it.periodeFom }.slice(
-                perioder.map { it.periodeFom }
+                perioder
+                    .map { it.periodeFom }
                     .hentIndekserEtterVirkningstidspunkt(virkningstidspunkt, barn.fødselsdato),
             )
         val cutoffPeriodeFom = finnCutoffDatoFom(virkningstidspunkt, barn.fødselsdato)
         perioderFiltrert.map { periode ->
-            periode.takeIf { it == perioderFiltrert.first() }
+            periode
+                .takeIf { it == perioderFiltrert.first() }
                 ?.copy(periodeFom = maxOf(periode.periodeFom, cutoffPeriodeFom)) ?: periode
         }
     }
@@ -510,20 +544,21 @@ fun List<LocalDate?>.hentIndekserEtterVirkningstidspunkt(
     }
 }
 
-fun SivilstandBeregnet.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkningstidspunkt: LocalDate): SivilstandBeregnet {
-    return copy(
+fun SivilstandBeregnet.filtrerSivilstandBeregnetEtterVirkningstidspunktV1(virkningstidspunkt: LocalDate): SivilstandBeregnet =
+    copy(
         sivilstandListe =
             sivilstandListe.sortedBy { it.periodeFom }.slice(
-                sivilstandListe.map {
-                    it.periodeFom
-                }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt),
+                sivilstandListe
+                    .map {
+                        it.periodeFom
+                    }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt),
             ),
     )
-}
 
-fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkningstidspunkt: LocalDate): List<Sivilstand> {
-    return sortedBy { it.periodeFom }.slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
-}
+fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkningstidspunkt: LocalDate): List<Sivilstand> =
+    sortedBy {
+        it.periodeFom
+    }.slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
 
 fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     virkniningstidspunkt: LocalDate,
@@ -532,7 +567,10 @@ fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
 ) = asSequence()
     .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
     .mapNotNull { it.konvertereData<List<BoforholdResponse>>() }
-    .flatten().distinct().toList().filtrerPerioderEtterVirkningstidspunkt(
+    .flatten()
+    .distinct()
+    .toList()
+    .filtrerPerioderEtterVirkningstidspunkt(
         husstandsmedlem,
         virkniningstidspunkt,
     ).sortedBy { it.periodeFom }
