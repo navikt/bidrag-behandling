@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import org.junit.jupiter.api.BeforeEach
@@ -36,7 +37,8 @@ class UtgiftserviceTest : TestContainerRunner() {
 
     fun opprettBehandlingSærligeUtgifter(): Behandling {
         val behandling = oppretteBehandling()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
+        behandling.kategori = SærligeutgifterKategori.KONFIRMASJON.name
         return behandling
     }
 
@@ -140,7 +142,7 @@ class UtgiftserviceTest : TestContainerRunner() {
     @Transactional
     fun `skal opprette utgiftspost for kategori OPTIKK`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val forespørsel =
             OppdatereUtgiftRequest(
@@ -175,7 +177,7 @@ class UtgiftserviceTest : TestContainerRunner() {
     @Transactional
     fun `skal opprette utgiftspost for kategori TANNREGULERING`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING
+        behandling.kategori = SærligeutgifterKategori.TANNREGULERING.name
         behandling.utgift =
             Utgift(
                 behandling = behandling,

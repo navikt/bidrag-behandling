@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -20,7 +21,8 @@ import java.time.LocalDate
 class OppdaterUtgiftRequestValideringTest {
     fun opprettBehandlingSærligeUtgifter(): Behandling {
         val behandling = oppretteBehandling(1)
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
+        behandling.kategori = SærligeutgifterKategori.KONFIRMASJON.name
         return behandling
     }
 
@@ -40,7 +42,7 @@ class OppdaterUtgiftRequestValideringTest {
     @Test
     fun `skal validere at utgiftstype er gyldig for konfirmasjon`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+        behandling.kategori = SærligeutgifterKategori.KONFIRMASJON.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -60,7 +62,7 @@ class OppdaterUtgiftRequestValideringTest {
     @Test
     fun `skal validere at utgiftstype er ikke kan settes for kategori SÆRTILSKUDD_OPTIKK`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -80,7 +82,7 @@ class OppdaterUtgiftRequestValideringTest {
     @Test
     fun `skal validere at utgiftstype er ikke kan settes for kategori SÆRTILSKUDD_TANNREGULERING`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING
+        behandling.kategori = SærligeutgifterKategori.TANNREGULERING.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -200,7 +202,7 @@ class OppdaterUtgiftRequestValideringTest {
     @Test
     fun `skal ikke kunne legge til utgift for bp hvis kategori ikke er konfirmasjon`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -239,7 +241,7 @@ class OppdaterUtgiftRequestValideringTest {
                     utgift = behandling.utgift!!,
                 ),
             )
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =

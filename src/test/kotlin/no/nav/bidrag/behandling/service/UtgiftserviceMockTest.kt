@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.database.repository.UtgiftRepository
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import org.junit.jupiter.api.BeforeEach
@@ -49,14 +50,14 @@ class UtgiftserviceMockTest {
 
     fun opprettBehandlingSærligeUtgifter(): Behandling {
         val behandling = oppretteBehandling(1)
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
         return behandling
     }
 
     @Test
     fun `skal ikke kunne sette utgiftspost betalt av BP hvis engangsbeløptype ikke er av typen konfirmasjon `() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
         behandling.utgift =
             Utgift(
                 behandling = behandling,
@@ -96,7 +97,7 @@ class UtgiftserviceMockTest {
     @Test
     fun `skal ikke kunne sette utgiftspost type hvis kategori er av typen SÆRTILSKUDD_OPTIKK`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        behandling.kategori = SærligeutgifterKategori.OPTIKK.name
         behandling.utgift =
             Utgift(
                 behandling = behandling,

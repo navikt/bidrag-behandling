@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleHusstandsmedlemPerioder
+import no.nav.bidrag.behandling.database.datamodell.særligeutgifterKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.erSærligeUtgifter
@@ -34,6 +35,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
@@ -67,6 +69,19 @@ fun OpprettBehandlingRequest.valider() {
 
             roller.none { it.rolletype == Rolletype.BIDRAGSMOTTAKER } ->
                 feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSMOTTAKER}")
+
+            kategori?.kategori.isNullOrEmpty() ->
+                feilliste.add(
+                    "Kategori må settes for ${Engangsbeløptype.SÆRTILSKUDD}",
+                )
+
+            SærligeutgifterKategori.entries.none { it.name == kategori?.kategori } ->
+                feilliste.add(
+                    "Kategori er ikke en gyldig særlige utgifter kategori",
+                )
+
+            kategori?.kategori == SærligeutgifterKategori.ANNET.name && kategori.beskrivelse.isNullOrEmpty() ->
+                feilliste.add("Beskrivelse må settes hvis kategori er ${SærligeutgifterKategori.ANNET}")
         }
     }
     roller.any { it.rolletype == Rolletype.BARN && (it.ident?.verdi.isNullOrBlank() && it.navn.isNullOrBlank()) }
@@ -85,8 +100,8 @@ fun OpprettBehandlingRequest.valider() {
 
 fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
-    if (!engangsbeløpSærligeutgifter.contains(behandling.engangsbeloptype)) {
-        feilliste.add("Kan ikke oppdatere utgift for behandling som ikke er av typen $engangsbeløpSærligeutgifter")
+    if (Engangsbeløptype.SÆRTILSKUDD != behandling.engangsbeloptype) {
+        feilliste.add("Kan ikke oppdatere utgift for behandling som ikke er av typen ${Engangsbeløptype.SÆRTILSKUDD}")
     }
     val erAvslag = (avslag != null || behandling.avslag != null)
     if (erAvslag && (nyEllerEndretUtgift != null || sletteUtgift != null || angreSisteEndring)) {
@@ -114,15 +129,15 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
             feilliste.add("Utgiftspost med id $sletteUtgift finnes ikke i behandling ${behandling.id}")
         }
 
-        when (behandling.engangsbeloptype) {
-            Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON -> {
+        when (behandling.særligeutgifterKategori) {
+            SærligeutgifterKategori.KONFIRMASJON -> {
                 if (nyEllerEndretUtgift.type == null) {
-                    feilliste.add("Type må settes hvis behandling er av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}")
+                    feilliste.add("Type må settes hvis behandling har kategori ${SærligeutgifterKategori.KONFIRMASJON}")
                 }
-                if (nyEllerEndretUtgift.type?.kategori != Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON) {
+                if (nyEllerEndretUtgift.type?.kategori != SærligeutgifterKategori.KONFIRMASJON) {
                     feilliste.add(
                         "Type ${nyEllerEndretUtgift.type} er ikke gyldig for" +
-                            " behandling av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}",
+                            " behandling med kategori ${SærligeutgifterKategori.KONFIRMASJON}",
                     )
                 }
             }
@@ -131,7 +146,7 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
                 if (nyEllerEndretUtgift.betaltAvBp) {
                     feilliste.add(
                         "Kan ikke legge til utgift betalt av BP for " +
-                            "særlige utgifter behandling som ikke har kategori ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}",
+                            "særlige utgifter behandling som ikke har kategori ${SærligeutgifterKategori.KONFIRMASJON}",
                     )
                 }
                 if (nyEllerEndretUtgift.type != null) {

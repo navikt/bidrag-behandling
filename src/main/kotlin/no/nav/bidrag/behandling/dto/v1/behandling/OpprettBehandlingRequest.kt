@@ -36,6 +36,7 @@ data class OpprettBehandlingRequest(
     @Schema(required = true)
     val søknadsid: Long,
     val søknadsreferanseid: Long? = null,
+    val kategori: OpprettKategoriRequestDto? = null,
 )
 
 fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)
@@ -43,3 +44,10 @@ fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, enga
 fun OpprettBehandlingRequest.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRLIGE_UTGIFTER
 
 fun OpprettBehandlingRequest.erForskudd() = tilType() == TypeBehandling.FORSKUDD
+
+data class OpprettKategoriRequestDto(
+    @Schema(required = true)
+    val kategori: String,
+    @Schema(required = false, description = "Beskrivelse på hvorfor kategorien ")
+    val beskrivelse: String? = null,
+)

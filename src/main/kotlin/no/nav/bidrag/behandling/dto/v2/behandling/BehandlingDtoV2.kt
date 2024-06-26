@@ -19,6 +19,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -98,9 +99,15 @@ data class BehandlingDtoV2(
 
 data class SærtilskuddUtgifterDto(
     val avslag: Resultatkode? = null,
+    val kategori: SærligeutgifterKategoriDto,
     val beregning: UtgiftBeregningDto? = null,
     val notat: BehandlingNotatDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
+)
+
+data class SærligeutgifterKategoriDto(
+    val kategori: SærligeutgifterKategori,
+    val beskrivelse: String? = null,
 )
 
 data class UtgiftBeregningDto(
@@ -322,7 +329,8 @@ enum class Grunnlagsdatatype(
             return when (rolletype != null) {
                 true ->
                     entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
-                        .filter { it.behandlinstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }.toSet()
+                        .filter { it.behandlinstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
+                        .toSet()
 
                 false -> entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
             }

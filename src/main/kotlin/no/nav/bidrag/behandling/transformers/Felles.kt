@@ -43,13 +43,6 @@ val eksplisitteYtelser =
     )
 
 val inntekterSomKanHaHullIPerioder = eksplisitteYtelser
-val engangsbeløpSærligeutgifter =
-    listOf(
-        Engangsbeløptype.SÆRTILSKUDD,
-        Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
-        Engangsbeløptype.SÆRTILSKUDD_OPTIKK,
-        Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING,
-    )
 
 fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
 
@@ -60,11 +53,7 @@ fun Behandling.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRLIGE_UTGIF
 fun bestemTypeBehandling(
     stønadstype: Stønadstype?,
     engangsbeløptype: Engangsbeløptype?,
-) = if (engangsbeløptype != null &&
-    engangsbeløpSærligeutgifter.contains(
-        engangsbeløptype,
-    )
-) {
+) = if (engangsbeløptype != null && engangsbeløptype == Engangsbeløptype.SÆRTILSKUDD) {
     TypeBehandling.SÆRLIGE_UTGIFTER
 } else if (stønadstype == Stønadstype.FORSKUDD) {
     TypeBehandling.FORSKUDD

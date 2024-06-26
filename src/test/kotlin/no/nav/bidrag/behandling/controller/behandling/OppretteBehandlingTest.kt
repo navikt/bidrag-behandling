@@ -3,9 +3,11 @@ package no.nav.bidrag.behandling.controller.behandling
 import io.kotest.matchers.shouldBe
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -129,9 +131,13 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             val testBehandlingMedNull =
                 oppretteBehandlingRequestTest("1900000", "en12", roller, søknadsid = 1239988330001323)
                     .copy(
-                        engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
+                        engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD,
                         stønadstype = null,
                         vedtakstype = Vedtakstype.FASTSETTELSE,
+                        kategori =
+                            OpprettKategoriRequestDto(
+                                kategori = SærligeutgifterKategori.KONFIRMASJON.name,
+                            ),
                     )
 
             stubUtils.stubHenteGrunnlag()
@@ -147,7 +153,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             val behandling = testdataManager.hentBehandling(responseMedNull.body!!.id)!!
 
             behandling.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
-            behandling.engangsbeloptype shouldBe Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+            behandling.engangsbeloptype shouldBe Engangsbeløptype.SÆRTILSKUDD
             behandling.stonadstype shouldBe null
             behandling.utgift shouldBe null
         }

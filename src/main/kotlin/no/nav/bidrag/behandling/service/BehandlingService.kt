@@ -124,6 +124,8 @@ class BehandlingService(
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = TokenUtils.hentApplikasjonsnavn() ?: "ukjent",
+                kategori = opprettBehandling.kategori!!.kategori,
+                kategoriBeskrivelse = opprettBehandling.kategori.beskrivelse,
             )
 
         val roller =

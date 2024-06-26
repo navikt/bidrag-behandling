@@ -15,12 +15,14 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.særligeutgifterKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBoforholdRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequest
@@ -53,6 +55,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -461,7 +464,11 @@ class BehandlingServiceTest : TestContainerRunner() {
                         søknadsid = søknadsid,
                         behandlerenhet = "1233",
                         stønadstype = null,
-                        engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
+                        engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD,
+                        kategori =
+                            OpprettKategoriRequestDto(
+                                SærligeutgifterKategori.KONFIRMASJON.name,
+                            ),
                         roller =
                             setOf(
                                 OpprettRolleDto(
@@ -487,7 +494,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingService.hentBehandlingById(opprettetBehandling.id)
 
             opprettetBehandlingAfter.stonadstype shouldBe null
-            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRTILSKUDD
+            opprettetBehandlingAfter.særligeutgifterKategori shouldBe SærligeutgifterKategori.KONFIRMASJON
             opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
             opprettetBehandlingAfter.årsak shouldBe null
             opprettetBehandlingAfter.roller shouldHaveSize 3

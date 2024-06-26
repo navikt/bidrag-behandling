@@ -42,6 +42,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
@@ -1286,7 +1287,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal hente  grunnlag for behandling av særlige utgifter`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false)
-                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
                 behandling.roller.add(opprettRolle(behandling, testdataBP))
 
                 stubbeHentingAvPersoninfoForTestpersoner()
@@ -1369,7 +1370,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal aktivere grunnlag av type inntekt for bp i behandling av særlige utgifter`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, inkludereBp = true)
-                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
 
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
                 stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
@@ -1547,7 +1548,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal aktivere grunnlag av type boforhold for barn av BP i behandling av særlige utgifter, og oppdatere husstandsbarntabell`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, false, true)
-                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+                behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD
+                behandling.kategori = SærligeutgifterKategori.KONFIRMASJON.name
                 behandling.stonadstype = null
 
                 stubbeHentingAvPersoninfoForTestpersoner()
@@ -3195,7 +3197,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             // gitt
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(opprettHentGrunnlagDto())
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList()))
+                .thenReturn(opprettHentGrunnlagDto())
 
             // hvis
             grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)

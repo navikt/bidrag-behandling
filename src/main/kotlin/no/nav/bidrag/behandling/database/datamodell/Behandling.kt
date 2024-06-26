@@ -22,11 +22,13 @@ import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValiderings
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
+import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.særligeutgifter.SærligeutgifterKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -77,6 +79,8 @@ open class Behandling(
     open var slettetTidspunkt: LocalDateTime? = null,
     open var opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
     open var vedtakFattetAv: String? = null,
+    open var kategori: String? = null,
+    open var kategoriBeskrivelse: String? = null,
     @Column(name = "aarsak")
     @Convert(converter = ÅrsakConverter::class)
     open var årsak: VirkningstidspunktÅrsakstype? = null,
@@ -158,6 +162,16 @@ open class Behandling(
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = refVedtaksid != null
 }
+
+val Behandling.særligeutgifterKategori
+    get() =
+        kategori.isNullOrEmpty().ifFalse {
+            try {
+                SærligeutgifterKategori.valueOf(kategori!!)
+            } catch (e: Exception) {
+                SærligeutgifterKategori.ANNET
+            }
+        } ?: SærligeutgifterKategori.ANNET
 
 fun Behandling.hentAlleHusstandsmedlemPerioder() = husstandsbarn.flatMap { it.perioder }
 

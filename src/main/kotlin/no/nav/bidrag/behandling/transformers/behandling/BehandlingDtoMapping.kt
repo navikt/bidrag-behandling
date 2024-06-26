@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.særligeutgifterKategori
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SærligeutgifterKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærtilskuddUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
@@ -157,6 +159,7 @@ fun Behandling.tilBehandlingDtoV2(
             SærtilskuddUtgifterDto(
                 avslag = avslag,
                 beregning = utgift.tilBeregningDto(),
+                kategori = tilSærligeutgifterKategoriDto(),
                 notat =
                     BehandlingNotatDto(
                         kunINotat = utgiftsbegrunnelseKunINotat,
@@ -166,6 +169,7 @@ fun Behandling.tilBehandlingDtoV2(
         } ?: if (erSærligeUtgifter()) {
             SærtilskuddUtgifterDto(
                 avslag = avslag,
+                kategori = tilSærligeutgifterKategoriDto(),
                 notat =
                     BehandlingNotatDto(
                         kunINotat = utgiftsbegrunnelseKunINotat,
@@ -185,6 +189,12 @@ fun Behandling.tilBehandlingDtoV2(
             objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
         },
 )
+
+private fun Behandling.tilSærligeutgifterKategoriDto() =
+    SærligeutgifterKategoriDto(
+        kategori = særligeutgifterKategori,
+        beskrivelse = kategoriBeskrivelse,
+    )
 
 private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this.map { feil ->
