@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.transformers.behandling
 import com.fasterxml.jackson.core.type.TypeReference
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
-import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsbarnGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærtilskuddUtgifterDto
@@ -27,7 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsbarnperiodeDto
+import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erSærligeUtgifter
@@ -211,14 +211,14 @@ fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     )
 }
 
-fun List<Grunnlag>.tilHusstandsbarn() =
+fun List<Grunnlag>.tilHusstandsmedlem() =
     this.map {
-        HusstandsbarnGrunnlagDto(
+        HusstandsmedlemGrunnlagDto(
             innhentetTidspunkt = it.innhentet,
             ident = it.gjelder,
             perioder =
                 it.konvertereData<List<BoforholdResponse>>()?.map { boforholdrespons ->
-                    HusstandsbarnGrunnlagDto.HusstandsbarnGrunnlagPeriodeDto(
+                    HusstandsmedlemGrunnlagDto.BostatusperiodeGrunnlagDto(
                         boforholdrespons.periodeFom,
                         boforholdrespons.periodeTom,
                         boforholdrespons.bostatus,
@@ -229,7 +229,7 @@ fun List<Grunnlag>.tilHusstandsbarn() =
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
-        husstandsbarn = husstandsbarn.sortert().map { it.tilHusstandsbarnperiodeDto() }.toSet(),
+        husstandsmedlem = husstandsmedlem.sortert().map { it.tilBostatusperiode() }.toSet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
             BehandlingNotatDto(
@@ -238,7 +238,7 @@ fun Behandling.tilBoforholdV2() =
             ),
         valideringsfeil =
             BoforholdValideringsfeil(
-                husstandsbarn = husstandsbarn.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
+                husstandsmedlem = husstandsmedlem.validerBoforhold(virkningstidspunktEllerSøktFomDato).filter { it.harFeil },
                 sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
             ),
     )
@@ -295,8 +295,8 @@ fun List<Grunnlag>.tilAktivGrunnlagsdata() =
         arbeidsforhold =
             find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
                 ?: emptySet(),
-        husstandsbarn =
-            filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsbarn(),
+        husstandsmedlem =
+            filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
         sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )
@@ -449,12 +449,12 @@ fun Behandling.notatTittel(): String {
 }
 
 fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
-    husstandsbarnListe: Set<Husstandsbarn>,
+    husstandsmedlemListe: Set<Husstandsmedlem>,
     virkningstidspunkt: LocalDate,
 ): List<BoforholdResponse> {
     return groupBy { it.relatertPersonPersonId }.flatMap { (barnId, perioder) ->
         val barn =
-            husstandsbarnListe.find { it.ident == barnId }
+            husstandsmedlemListe.find { it.ident == barnId }
                 ?: return@flatMap perioder
         val perioderFiltrert =
             perioder.sortedBy { it.periodeFom }.slice(
@@ -517,12 +517,12 @@ fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkning
 
 fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     virkniningstidspunkt: LocalDate,
-    husstandsbarn: Set<Husstandsbarn>,
+    husstandsmedlem: Set<Husstandsmedlem>,
     rolle: Rolle,
 ) = asSequence()
     .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
     .mapNotNull { it.konvertereData<List<BoforholdResponse>>() }
     .flatten().distinct().toList().filtrerPerioderEtterVirkningstidspunkt(
-        husstandsbarn,
+        husstandsmedlem,
         virkniningstidspunkt,
     ).sortedBy { it.periodeFom }

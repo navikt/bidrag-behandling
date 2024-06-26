@@ -359,11 +359,11 @@ class GrunnlagService(
                             )
                         }.toSet(),
                 ),
-            husstandsbarn =
+            husstandsmedlem =
                 nyinnhentetGrunnlag.hentEndringerBoforhold(
                     aktiveGrunnlag,
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.husstandsbarn,
+                    behandling.husstandsmedlem,
                     behandling.rolleGrunnlagSkalHentesFor!!,
                 ),
             sivilstand =
@@ -395,12 +395,12 @@ class GrunnlagService(
     private fun aktivereBoforhold(
         behandling: Behandling,
         grunnlagstype: Grunnlagsdatatype,
-        gjelderHusstandsbarn: Personident,
+        gjelderHusstandsmedlem: Personident,
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
             behandling.grunnlag.hentSisteIkkeAktiv()
-                .filter { gjelderHusstandsbarn.verdi == it.gjelder && grunnlagstype == it.type }
+                .filter { gjelderHusstandsmedlem.verdi == it.gjelder && grunnlagstype == it.type }
                 .firstOrNull { it.erBearbeidet }
 
         if (nyesteIkkeAktiverteBoforholdForHusstandsmedlem == null) {
@@ -434,7 +434,7 @@ class GrunnlagService(
             jsonTilObjekt<List<BoforholdResponse>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem.data),
             bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
             overskriveManuelleOpplysninger,
-            gjelderHusstandsbarn,
+            gjelderHusstandsmedlem,
         )
 
         nyesteIkkeAktiverteBoforholdForHusstandsmedlem.aktiv = LocalDateTime.now()
@@ -627,7 +627,7 @@ class GrunnlagService(
                 rolleInnhentetFor,
             )
 
-        // oppdatere husstandsbarn og husstandsbarnperiode-tabellene hvis førstegangslagring
+        // oppdatere husstandsmedlem og bostatusperiode-tabellene hvis førstegangslagring
         if (bmsNyesteBearbeidaBoforholdFørLagring.isEmpty() && innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
@@ -643,11 +643,11 @@ class GrunnlagService(
             ikkeAktiveGrunnlag.hentEndringerBoforhold(
                 aktiveGrunnlag,
                 behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.husstandsbarn,
+                behandling.husstandsmedlem,
                 rolleInhentetFor,
             )
 
-        behandling.husstandsbarn.filter { it.kilde == Kilde.OFFENTLIG }
+        behandling.husstandsmedlem.filter { it.kilde == Kilde.OFFENTLIG }
             .filter { hb -> endringerSomMåBekreftes.none { it.ident == hb.ident } }
             .forEach { hb ->
                 val ikkeAktivGrunnlag =
@@ -994,7 +994,7 @@ class GrunnlagService(
                 (aktivtGrunnlag as Set<BoforholdResponse>)
                     .toList()
                     .filtrerPerioderEtterVirkningstidspunkt(
-                        behandling.husstandsbarn,
+                        behandling.husstandsmedlem,
                         behandling.virkningstidspunktEllerSøktFomDato,
                     )
                     .toSet()
@@ -1002,7 +1002,7 @@ class GrunnlagService(
                 (nyttGrunnlag as Set<BoforholdResponse>)
                     .toList()
                     .filtrerPerioderEtterVirkningstidspunkt(
-                        behandling.husstandsbarn,
+                        behandling.husstandsmedlem,
                         behandling.virkningstidspunktEllerSøktFomDato,
                     )
                     .toSet()

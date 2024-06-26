@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.transformers.boforhold
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
@@ -49,7 +49,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandli
                         )
                 },
             erBarnAvBmBp =
-                if (behandling.husstandsbarn.find {
+                if (behandling.husstandsmedlem.find {
                         it.ident != null && it.ident == g.relatertPersonPersonId
                     } != null
                 ) {
@@ -65,7 +65,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandli
     }
 }
 
-fun Husstandsbarn.tilBoforholdBarnRequest(
+fun Husstandsmedlem.tilBoforholdBarnRequest(
     endreBostatus: EndreBostatus? = null,
     erBarnAvBmBp: Boolean = true,
 ): BoforholdBarnRequest {
@@ -80,7 +80,7 @@ fun Husstandsbarn.tilBoforholdBarnRequest(
     )
 }
 
-fun Husstandsbarn.henteOffentligePerioder(): Set<Husstandsbarnperiode> =
+fun Husstandsmedlem.henteOffentligePerioder(): Set<Bostatusperiode> =
     hentSisteBearbeidetBoforhold()?.tilPerioder(this) ?: if (kilde == Kilde.OFFENTLIG) {
         log.warn {
             "Fant ikke originale bearbeidet perioder for offentlig husstandsmedlem $id i behandling ${behandling.id}. Lagt til initiell periode "
@@ -90,7 +90,7 @@ fun Husstandsbarn.henteOffentligePerioder(): Set<Husstandsbarnperiode> =
         setOf()
     }
 
-fun Husstandsbarnperiode.tilBostatus() =
+fun Bostatusperiode.tilBostatus() =
     Bostatus(
         bostatusKode = this.bostatus,
         kilde = this.kilde,
@@ -110,38 +110,38 @@ fun List<BorISammeHusstandDto>.tilBostatus(
     )
 }
 
-fun List<BoforholdResponse>.tilPerioder(husstandsbarn: Husstandsbarn) =
-    this.find { it.relatertPersonPersonId == husstandsbarn.ident }?.let {
+fun List<BoforholdResponse>.tilPerioder(husstandsmedlem: Husstandsmedlem) =
+    this.find { it.relatertPersonPersonId == husstandsmedlem.ident }?.let {
         map { boforhold ->
-            boforhold.tilPeriode(husstandsbarn)
+            boforhold.tilPeriode(husstandsmedlem)
         }.toMutableSet()
     } ?: setOf()
 
-fun BoforholdResponse.tilPeriode(husstandsbarn: Husstandsbarn) =
-    Husstandsbarnperiode(
+fun BoforholdResponse.tilPeriode(husstandsmedlem: Husstandsmedlem) =
+    Bostatusperiode(
         bostatus = bostatus,
         datoFom = periodeFom,
         datoTom = periodeTom,
         kilde = kilde,
-        husstandsbarn = husstandsbarn,
+        husstandsmedlem = husstandsmedlem,
     )
 
-fun List<BoforholdResponse>.tilHusstandsbarn(behandling: Behandling): Set<Husstandsbarn> {
+fun List<BoforholdResponse>.tilHusstandsmedlem(behandling: Behandling): Set<Husstandsmedlem> {
     return this.groupBy { it.relatertPersonPersonId }.map {
         val fødselsdatoFraRespons = it.value.first().fødselsdato
-        val husstandsbarn =
-            Husstandsbarn(
+        val husstandsmedlem =
+            Husstandsmedlem(
                 behandling = behandling,
                 kilde = it.value.first().kilde,
                 ident = it.key,
                 fødselsdato = finnFødselsdato(it.key, fødselsdatoFraRespons) ?: fødselsdatoFraRespons,
             )
-        husstandsbarn.overskriveMedBearbeidaPerioder(it.value)
-        husstandsbarn
+        husstandsmedlem.overskriveMedBearbeidaPerioder(it.value)
+        husstandsmedlem
     }.toSet()
 }
 
-fun Husstandsbarn.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResponse>) {
+fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResponse>) {
     perioder.clear()
     perioder.addAll(nyePerioder.tilPerioder(this))
     if (perioder.isEmpty()) {
@@ -149,9 +149,9 @@ fun Husstandsbarn.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResp
     }
 }
 
-fun Husstandsbarn.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
-    Husstandsbarnperiode(
-        husstandsbarn = this,
+fun Husstandsmedlem.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
+    Bostatusperiode(
+        husstandsmedlem = this,
         datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato),
         datoTom = null,
         bostatus = Bostatuskode.IKKE_MED_FORELDER,

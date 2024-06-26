@@ -17,7 +17,7 @@ import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDate
 
 @Entity
-open class Husstandsbarn(
+open class Husstandsmedlem(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
     open val behandling: Behandling,
@@ -31,17 +31,17 @@ open class Husstandsbarn(
     open val fødselsdato: LocalDate,
     @OneToMany(
         fetch = FetchType.EAGER,
-        mappedBy = "husstandsbarn",
+        mappedBy = "husstandsmedlem",
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
     )
-    open var perioder: MutableSet<Husstandsbarnperiode> = mutableSetOf(),
+    open var perioder: MutableSet<Bostatusperiode> = mutableSetOf(),
     @Column(name = "forrige_perioder", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var forrigePerioder: String? = null,
 ) {
     override fun toString(): String {
-        return "Husstandsbarn(id=$id, behandlingId=${behandling.id}, ident=$ident, navn=$navn, fødselsdato=$fødselsdato," +
+        return "Husstandsmedlem(id=$id, behandlingId=${behandling.id}, ident=$ident, navn=$navn, fødselsdato=$fødselsdato," +
             " perioder(size)=${perioder.size}, kilde=$kilde, " +
             "forrigePerioder=${forrigePerioder?.substring(0, maxOf(forrigePerioder!!.length, 10)) ?: ""}...)"
     }

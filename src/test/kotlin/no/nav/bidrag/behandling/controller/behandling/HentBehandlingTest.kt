@@ -12,10 +12,10 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
 import no.nav.bidrag.behandling.utils.testdata.opprettSivilstand
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -190,10 +190,10 @@ class HentBehandlingTest : BehandlingControllerTest() {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
         behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
-        behandling.husstandsbarn =
+        behandling.husstandsmedlem =
             mutableSetOf(
-                opprettHusstandsbarn(behandling, testdataBarn1),
-                opprettHusstandsbarn(behandling, testdataBarn2),
+                oppretteHusstandsmedlem(behandling, testdataBarn1),
+                oppretteHusstandsmedlem(behandling, testdataBarn2),
             )
         behandling.roller =
             mutableSetOf(

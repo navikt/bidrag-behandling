@@ -12,9 +12,9 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
 import io.mockk.clearAllMocks
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -508,7 +508,7 @@ class GrunnlagMappingTest {
         fun `skal mappe husstandsmedlem til grunnlag`() {
             val behandling = oppretteBehandling()
             assertSoftly(
-                Husstandsbarn(
+                Husstandsmedlem(
                     behandling = behandling,
                     ident = "12345678901",
                     fødselsdato = fødslesdato,
@@ -551,7 +551,7 @@ class GrunnlagMappingTest {
         fun `skal mappe husstandsmedlem uten ident til grunnlag`() {
             val behandling = oppretteBehandling()
             assertSoftly(
-                Husstandsbarn(
+                Husstandsmedlem(
                     behandling = behandling,
                     ident = "",
                     navn = "Navn navnesen",
@@ -597,7 +597,7 @@ class GrunnlagMappingTest {
             val behandling = oppretteBehandling()
             stubHentPersonNyIdent("12345678901", "1231232131")
             assertSoftly(
-                Husstandsbarn(
+                Husstandsmedlem(
                     behandling = behandling,
                     ident = "12345678901",
                     navn = "Navn navnesen",
@@ -912,9 +912,9 @@ class GrunnlagMappingTest {
 
                 ).toSet(),
             )
-            val personobjekterSøknadsbarn = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1)
+            val personobjektersøknadsbarn = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1)
             assertSoftly(
-                behandling.tilGrunnlagInntekt(personobjekterSøknadsbarn, søknadsbarnGrunnlag1)
+                behandling.tilGrunnlagInntekt(personobjektersøknadsbarn, søknadsbarnGrunnlag1)
                     .toList(),
             ) {
                 it shouldHaveSize 11
@@ -1207,14 +1207,14 @@ class GrunnlagMappingTest {
 
     @Nested
     inner class BosstatusGrunnlagTest {
-        fun opprettHusstandsbarn(
+        fun oppretteHusstandsmedlem(
             behandling: Behandling,
             ident: String?,
             fødselsdato: LocalDate = LocalDate.parse("2024-04-03"),
             navn: String? = null,
-        ): Husstandsbarn {
-            val husstandsbarn =
-                Husstandsbarn(
+        ): Husstandsmedlem {
+            val husstandsmedlem =
+                Husstandsmedlem(
                     behandling = behandling,
                     ident = ident,
                     navn = navn,
@@ -1224,38 +1224,38 @@ class GrunnlagMappingTest {
                     id = 1L,
                 )
 
-            husstandsbarn.perioder = opprettPerioder(husstandsbarn)
-            return husstandsbarn
+            husstandsmedlem.perioder = opprettPerioder(husstandsmedlem)
+            return husstandsmedlem
         }
 
-        fun opprettPerioder(husstandsbarn: Husstandsbarn) =
+        fun opprettPerioder(husstandsmedlem: Husstandsmedlem) =
             mutableSetOf(
-                Husstandsbarnperiode(
-                    husstandsbarn = husstandsbarn,
+                Bostatusperiode(
+                    husstandsmedlem = husstandsmedlem,
                     datoFom = LocalDate.parse("2023-01-01"),
                     datoTom = LocalDate.parse("2023-06-30"),
                     bostatus = Bostatuskode.MED_FORELDER,
                     kilde = Kilde.OFFENTLIG,
                     id = 1,
                 ),
-                Husstandsbarnperiode(
-                    husstandsbarn = husstandsbarn,
+                Bostatusperiode(
+                    husstandsmedlem = husstandsmedlem,
                     datoFom = LocalDate.parse("2023-07-01"),
                     datoTom = LocalDate.parse("2023-08-31"),
                     bostatus = Bostatuskode.IKKE_MED_FORELDER,
                     kilde = Kilde.OFFENTLIG,
                     id = 2,
                 ),
-                Husstandsbarnperiode(
-                    husstandsbarn = husstandsbarn,
+                Bostatusperiode(
+                    husstandsmedlem = husstandsmedlem,
                     datoFom = LocalDate.parse("2023-09-01"),
                     datoTom = LocalDate.parse("2023-12-31"),
                     bostatus = Bostatuskode.MED_FORELDER,
                     kilde = Kilde.MANUELL,
                     id = 3,
                 ),
-                Husstandsbarnperiode(
-                    husstandsbarn = husstandsbarn,
+                Bostatusperiode(
+                    husstandsmedlem = husstandsmedlem,
                     datoFom = LocalDate.parse("2024-01-01"),
                     datoTom = null,
                     bostatus = Bostatuskode.REGNES_IKKE_SOM_BARN,
@@ -1265,7 +1265,7 @@ class GrunnlagMappingTest {
             )
 
         @Test
-        fun `skal opprette grunnlag for husstandsbarn`() {
+        fun `skal opprette grunnlag for husstandsmedlem`() {
             val behandling = oppretteBehandling(1)
 
             behandling.roller =
@@ -1274,27 +1274,27 @@ class GrunnlagMappingTest {
                     opprettRolle(behandling, testdataBarn1),
                     opprettRolle(behandling, testdataBarn2),
                 )
-            val husstandsbarn =
+            val husstandsmedlem =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    oppretteHusstandsmedlem(
                         behandling,
                         testdataBarn1.ident,
                         testdataBarn1.fødselsdato,
                     ),
-                    opprettHusstandsbarn(
+                    oppretteHusstandsmedlem(
                         behandling,
                         testdataBarn2.ident,
                         testdataBarn2.fødselsdato,
                     ),
-                    opprettHusstandsbarn(behandling, "123213123123"),
-                    opprettHusstandsbarn(
+                    oppretteHusstandsmedlem(behandling, "123213123123"),
+                    oppretteHusstandsmedlem(
                         behandling,
                         "4124214124",
                         fødselsdato = LocalDate.parse("2023-03-03"),
                     ),
                 )
 
-            behandling.husstandsbarn = husstandsbarn
+            behandling.husstandsmedlem = husstandsmedlem
 
             assertSoftly(
                 behandling.tilGrunnlagBostatus(personobjekter)
@@ -1316,7 +1316,7 @@ class GrunnlagMappingTest {
         }
 
         @Test
-        fun `skal opprette grunnlag for husstandsbarn uten ident`() {
+        fun `skal opprette grunnlag for husstandsmedlem uten ident`() {
             val behandling = oppretteBehandling(1)
 
             behandling.roller =
@@ -1325,9 +1325,9 @@ class GrunnlagMappingTest {
                     opprettRolle(behandling, testdataBarn1),
                     opprettRolle(behandling, testdataBarn2),
                 )
-            val husstandsbarn =
+            val husstandsmedlem =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    oppretteHusstandsmedlem(
                         behandling,
                         null,
                         fødselsdato = LocalDate.parse("2023-03-03"),
@@ -1335,12 +1335,12 @@ class GrunnlagMappingTest {
                     ),
                 )
 
-            behandling.husstandsbarn = husstandsbarn
+            behandling.husstandsmedlem = husstandsmedlem
 
-            val husstandsbarnGrunnlag =
+            val husstandsmedlemGrunnlag =
                 behandling.tilGrunnlagBostatus(personobjekter)
                     .toList()
-            assertSoftly(husstandsbarnGrunnlag) {
+            assertSoftly(husstandsmedlemGrunnlag) {
                 it shouldHaveSize 5
                 val husstandsmedlemmer =
                     filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)
@@ -1359,7 +1359,7 @@ class GrunnlagMappingTest {
         }
 
         @Test
-        fun `skal mappe husstandsbarn til bosstatus`() {
+        fun `skal mappe husstandsmedlem til bosstatus`() {
             val behandling = oppretteBehandling()
 
             behandling.roller =
@@ -1368,27 +1368,27 @@ class GrunnlagMappingTest {
                     opprettRolle(behandling, testdataBarn1),
                     opprettRolle(behandling, testdataBarn2),
                 )
-            val husstandsbarn =
+            val husstandsmedlem =
                 mutableSetOf(
-                    opprettHusstandsbarn(
+                    oppretteHusstandsmedlem(
                         behandling,
                         testdataBarn1.ident,
                         testdataBarn1.fødselsdato,
                     ),
-                    opprettHusstandsbarn(
+                    oppretteHusstandsmedlem(
                         behandling,
                         testdataBarn2.ident,
                         testdataBarn2.fødselsdato,
                     ),
-                    opprettHusstandsbarn(behandling, "123213123123"),
-                    opprettHusstandsbarn(
+                    oppretteHusstandsmedlem(behandling, "123213123123"),
+                    oppretteHusstandsmedlem(
                         behandling,
                         "4124214124",
                         fødselsdato = LocalDate.parse("2023-03-03"),
                     ),
                 )
 
-            behandling.husstandsbarn = husstandsbarn
+            behandling.husstandsmedlem = husstandsmedlem
 
             assertSoftly(behandling.tilGrunnlagBostatus(personobjekter).toList()) {
                 it shouldHaveSize 18

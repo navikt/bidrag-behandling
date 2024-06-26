@@ -109,7 +109,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
     }
 
     @Test
-    fun `skal returnere httpkode 400 dersom behandling mangler informasjon om husstandsbarn`() {
+    fun `skal returnere httpkode 400 dersom behandling mangler informasjon om husstandsmedlem`() {
         // given
         val behandling = lagreBehandlingMedRoller()
 
@@ -128,7 +128,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
             returnert.statusCode shouldBe HttpStatus.BAD_REQUEST
             returnert.body shouldNotBe null
             returnert.body!!.virkningstidspunkt shouldBe null
-            returnert.body!!.husstandsbarn shouldBe null
+            returnert.body!!.husstandsmedlem shouldBe null
             returnert.body!!.sivilstand shouldNotBe null
             assertSoftly(returnert.body!!.sivilstand!!) {
                 hullIPerioder shouldHaveSize 0

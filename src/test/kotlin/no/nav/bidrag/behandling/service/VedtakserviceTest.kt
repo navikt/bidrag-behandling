@@ -16,13 +16,12 @@ import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandlingMedReelMottaker
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -118,12 +117,6 @@ class VedtakserviceTest {
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
-        every {
-            behandlingService.oppdaterBehandling(
-                any(),
-                any(),
-            )
-        } returns oppretteBehandling()
         every {
             behandlingService.oppdaterVedtakFattetStatus(
                 any(),
@@ -289,8 +282,8 @@ class VedtakserviceTest {
         stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, mock)
         stubHentPersonNyIdent(testdataHusstandsmedlem1.ident, nyIdentHusstandsmedlem, mock)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-        val husstandsbarnUtenIdent =
-            Husstandsbarn(
+        val husstandsmedlemUtenIdent =
+            Husstandsmedlem(
                 behandling = behandling,
                 kilde = Kilde.MANUELL,
                 ident = null,
@@ -298,10 +291,10 @@ class VedtakserviceTest {
                 fødselsdato = LocalDate.parse("2020-01-01"),
                 id = 8,
             )
-        husstandsbarnUtenIdent.perioder =
+        husstandsmedlemUtenIdent.perioder =
             mutableSetOf(
-                Husstandsbarnperiode(
-                    husstandsbarn = husstandsbarnUtenIdent,
+                Bostatusperiode(
+                    husstandsmedlem = husstandsmedlemUtenIdent,
                     datoFom = behandling.søktFomDato,
                     datoTom = null,
                     bostatus = Bostatuskode.MED_FORELDER,
@@ -309,7 +302,7 @@ class VedtakserviceTest {
                     id = 2,
                 ),
             )
-        behandling.husstandsbarn.add(husstandsbarnUtenIdent)
+        behandling.husstandsmedlem.add(husstandsmedlemUtenIdent)
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -641,7 +634,7 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
     val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
     val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
     val søknadsbarn2Grunnlag = grunnlagListe.hentPerson(testdataBarn2.ident)!!
-    val husstandsbarnGrunnlag = grunnlagListe.hentPerson(testdataHusstandsmedlem1.ident)!!
+    val husstandsmedlemGrunnlag = grunnlagListe.hentPerson(testdataHusstandsmedlem1.ident)!!
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.BOSTATUS_PERIODE)) {
         shouldHaveSize(6)
         val bostatusSøknadsbarn1 =
@@ -651,8 +644,8 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
         it[1].gjelderReferanse shouldBe søknadsbarn1Grunnlag.referanse
         it[2].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
         it[3].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
-        it[4].gjelderReferanse shouldBe husstandsbarnGrunnlag.referanse
-        it[5].gjelderReferanse shouldBe husstandsbarnGrunnlag.referanse
+        it[4].gjelderReferanse shouldBe husstandsmedlemGrunnlag.referanse
+        it[5].gjelderReferanse shouldBe husstandsmedlemGrunnlag.referanse
         assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
             bostatus shouldBe Bostatuskode.MED_FORELDER
             periode.fom shouldBe YearMonth.parse("2023-02")
@@ -668,7 +661,7 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
 
         it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag.referanse)
             .shouldHaveSize(2)
-        it.filtrerBasertPåFremmedReferanse(referanse = husstandsbarnGrunnlag.referanse)
+        it.filtrerBasertPåFremmedReferanse(referanse = husstandsmedlemGrunnlag.referanse)
             .shouldHaveSize(2)
     }
 }

@@ -14,15 +14,15 @@ import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarn
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.finnHusstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdaterHusstandsmedlemPeriode
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBostatusperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
@@ -33,9 +33,9 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandskodePDL
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
-import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnlagForHusstandsbarn
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarnMedOffentligePerioder
+import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
+import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
+import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlemMedOffentligePerioder
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -85,7 +85,7 @@ class BoforholdServiceTest : TestContainerRunner() {
     lateinit var entityManager: EntityManager
 
     @Nested
-    open inner class Husstandsbarnstester {
+    open inner class Husstandsmedlemstester {
         @Nested
         open inner class Førstegangsinnhenting {
             @Test
@@ -95,7 +95,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val behandling = testdataManager.oppretteBehandling()
 
                 // Fjerner eksisterende barn for å simulere førstegangsinnhenting av grunnlag
-                behandling.husstandsbarn.removeAll(behandling.husstandsbarn)
+                behandling.husstandsmedlem.removeAll(behandling.husstandsmedlem)
                 entityManager.persist(behandling)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
@@ -154,7 +154,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // så
                 entityManager.refresh(behandling)
 
-                assertSoftly(behandling.husstandsbarn) {
+                assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 2
                     it.first { barn -> testdataBarn2.ident == barn.ident }.perioder.size shouldBe 3
                 }
@@ -162,7 +162,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal erstatte lagrede offentlige husstandsbarn med nye fra grunnlag ved førstegangsinnhenting `() {
+            open fun `skal erstatte lagrede offentlige husstandsmedlem med nye fra grunnlag ved førstegangsinnhenting `() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling()
 
@@ -192,7 +192,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
-                behandling.husstandsbarn.size shouldBe 2
+                behandling.husstandsmedlem.size shouldBe 2
 
                 // hvis
                 boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(
@@ -204,7 +204,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 entityManager.refresh(behandling)
 
                 assertSoftly {
-                    behandling.husstandsbarn.size shouldBe 1
+                    behandling.husstandsmedlem.size shouldBe 1
                 }
             }
         }
@@ -213,7 +213,7 @@ class BoforholdServiceTest : TestContainerRunner() {
         open inner class OppdatereAutomatisk {
             @Test
             @Transactional
-            open fun `skal oppdatere automatisk innhenta husstandsbarn og overskrive manuell informasjon`() {
+            open fun `skal oppdatere automatisk innhenta husstandsmedlem og overskrive manuell informasjon`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, true)
 
@@ -257,23 +257,23 @@ class BoforholdServiceTest : TestContainerRunner() {
                         ),
                     )
 
-                val hb1 = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }
+                val hb1 = behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident }
                 hb1!!.perioder.add(
-                    Husstandsbarnperiode(
+                    Bostatusperiode(
                         datoFom = LocalDate.now().minusMonths(3),
                         bostatus = Bostatuskode.MED_FORELDER,
-                        husstandsbarn = hb1,
+                        husstandsmedlem = hb1,
                         datoTom = null,
                         kilde = Kilde.MANUELL,
                     ),
                 )
 
-                assertSoftly(behandling.husstandsbarn) { hb ->
+                assertSoftly(behandling.husstandsmedlem) { hb ->
                     hb.size shouldBe 2
                     hb.find { testdataBarn1.ident == it.ident } shouldNotBe null
-                    hb.find { testdataBarn1.ident == it.ident }?.perioder shouldNotBe emptySet<Husstandsbarnperiode>()
+                    hb.find { testdataBarn1.ident == it.ident }?.perioder shouldNotBe emptySet<Bostatusperiode>()
                 }
-                assertSoftly(behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }?.perioder) { p ->
+                assertSoftly(behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident }?.perioder) { p ->
                     p?.size shouldBe 3
                     p?.filter { Kilde.MANUELL == it.kilde }?.size shouldBe 1
                 }
@@ -304,17 +304,17 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // så
                 entityManager.refresh(behandling)
 
-                assertSoftly(behandling.husstandsbarn) { husstandsbarn ->
-                    husstandsbarn.size shouldBe 2
+                assertSoftly(behandling.husstandsmedlem) { husstandsmedlem ->
+                    husstandsmedlem.size shouldBe 2
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }) { barn1 ->
                     barn1 shouldNotBe null
                     barn1!!.perioder.size shouldBe 1
                     barn1.perioder.filter { Kilde.MANUELL == it.kilde } shouldBe emptyList()
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }) { barn2 ->
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == testdataBarn2.ident }) { barn2 ->
                     barn2 shouldNotBe null
                     barn2!!.perioder.size shouldBe 3
                     barn2.perioder.filter { Kilde.MANUELL == it.kilde } shouldBe emptyList()
@@ -323,12 +323,12 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal oppdatere automatisk innhenta husstandsbarn og slette manuelle perioder`() {
+            open fun `skal oppdatere automatisk innhenta husstandsmedlem og slette manuelle perioder`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling()
                 val virkningstidspunkt = testdataBarn1.fødselsdato
                 behandling.virkningstidspunkt = virkningstidspunkt
-                behandling.husstandsbarn.forEach {
+                behandling.husstandsmedlem.forEach {
                     it.perioder.forEach {
                         it.kilde = Kilde.MANUELL
                     }
@@ -410,11 +410,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // så
                 entityManager.refresh(behandling)
 
-                assertSoftly(behandling.husstandsbarn) { husstandsbarn ->
-                    husstandsbarn.size shouldBe 2
+                assertSoftly(behandling.husstandsmedlem) { husstandsmedlem ->
+                    husstandsmedlem.size shouldBe 2
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }) { barn1 ->
                     barn1 shouldNotBe null
                     barn1!!.perioder.size shouldBe 1
                     barn1.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 0
@@ -423,7 +423,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     barn1.perioder.last().bostatus shouldBe Bostatuskode.MED_FORELDER
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }) { barn2 ->
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == testdataBarn2.ident }) { barn2 ->
                     barn2 shouldNotBe null
                     barn2!!.perioder.size shouldBe 3
                     barn2.perioder.filter { Kilde.MANUELL == it.kilde }.size shouldBe 0
@@ -436,17 +436,17 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal endre kilde til manuell for offentlig husstandsbarn som ikke finnes i nyeste grunnlag`() {
+            open fun `skal endre kilde til manuell for offentlig husstandsmedlem som ikke finnes i nyeste grunnlag`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, true)
                 behandling.virkningstidspunkt = testdataBarn1.fødselsdato
-                behandling.husstandsbarn.forEach {
+                behandling.husstandsmedlem.forEach {
                     it.perioder.forEach {
                         it.kilde = Kilde.MANUELL
                     }
                 }
 
-                assertSoftly(behandling.husstandsbarn) { hb ->
+                assertSoftly(behandling.husstandsmedlem) { hb ->
                     hb shouldHaveSize 2
                     hb.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
                 }
@@ -498,11 +498,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // så
                 entityManager.refresh(behandling)
 
-                assertSoftly(behandling.husstandsbarn) { husstandsbarn ->
-                    husstandsbarn.size shouldBe 2
+                assertSoftly(behandling.husstandsmedlem) { husstandsmedlem ->
+                    husstandsmedlem.size shouldBe 2
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }) { barn1 ->
                     barn1 shouldNotBe null
                     barn1!!.kilde shouldBe Kilde.OFFENTLIG
                     barn1.perioder.size shouldBe 1
@@ -513,7 +513,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     barn1.perioder.last().bostatus shouldBe Bostatuskode.MED_FORELDER
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn2.ident }) { barn2 ->
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == testdataBarn2.ident }) { barn2 ->
                     barn2 shouldNotBe null
                     barn2!!.kilde shouldBe Kilde.MANUELL
                     barn2.perioder.size shouldBe 2
@@ -527,17 +527,17 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal slette offentlige husstandsbarn som ikke finnes i nyeste grunnlag hvis overskriving er valgt`() {
+            open fun `skal slette offentlige husstandsmedlem som ikke finnes i nyeste grunnlag hvis overskriving er valgt`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling()
                 behandling.virkningstidspunkt = testdataBarn1.fødselsdato
-                behandling.husstandsbarn.forEach {
+                behandling.husstandsmedlem.forEach {
                     it.perioder.forEach {
                         it.kilde = Kilde.MANUELL
                     }
                 }
 
-                assertSoftly(behandling.husstandsbarn) { hb ->
+                assertSoftly(behandling.husstandsmedlem) { hb ->
                     hb shouldHaveSize 2
                     hb.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
                 }
@@ -581,11 +581,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // så
                 entityManager.refresh(behandling)
 
-                assertSoftly(behandling.husstandsbarn) { husstandsbarn ->
-                    husstandsbarn.size shouldBe 1
+                assertSoftly(behandling.husstandsmedlem) { husstandsmedlem ->
+                    husstandsmedlem.size shouldBe 1
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == testdataBarn1.ident }) { barn1 ->
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }) { barn1 ->
                     barn1 shouldNotBe null
                     barn1!!.kilde shouldBe Kilde.OFFENTLIG
                     barn1.perioder.size shouldBe 1
@@ -655,10 +655,10 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-                behandling.husstandsbarn.shouldHaveSize(1)
+                behandling.husstandsmedlem.shouldHaveSize(1)
 
                 // hvis
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
                         opprettHusstandsmedlem =
@@ -677,7 +677,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     g.filter { it.erBearbeidet && personidentBarnMedDNummer == it.gjelder } shouldHaveSize 1
                 }
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == personidentBarnMedDNummer }!!) {
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == personidentBarnMedDNummer }!!) {
                     it.perioder.shouldHaveSize(2)
                     it.navn shouldBe navnBarnMedDNummer
                     it.fødselsdato shouldBe fødselsdatoBarnMedDNummer
@@ -691,48 +691,48 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal få slette både manuelle og offentlige husstandsbarnperioder`() {
+            open fun `skal få slette både manuelle og offentlige bostatusperioder`() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
                 stubbeHentingAvPersoninfoForTestpersoner()
 
-                val husstandsbarnperiodeSomSkalSlettes = behandling.husstandsbarn.first().perioder.first()
+                val bostatusperiodeSomSkalSlettes = behandling.husstandsmedlem.first().perioder.first()
                 assertSoftly {
-                    husstandsbarnperiodeSomSkalSlettes shouldNotBe null
-                    behandling.finnHusstandsbarnperiode(husstandsbarnperiodeSomSkalSlettes.id).shouldNotBeNull()
+                    bostatusperiodeSomSkalSlettes shouldNotBe null
+                    behandling.finnBostatusperiode(bostatusperiodeSomSkalSlettes.id).shouldNotBeNull()
                 }
 
                 // hvis
                 val oppdatereBoforholdResponse =
-                    boforholdService.oppdatereHusstandsbarnManuelt(
+                    boforholdService.oppdatereHusstandsmedlemManuelt(
                         behandling.id!!,
-                        OppdatereHusstandsmedlem(slettPeriode = husstandsbarnperiodeSomSkalSlettes.id!!),
+                        OppdatereHusstandsmedlem(slettPeriode = bostatusperiodeSomSkalSlettes.id!!),
                     )
 
                 // så
                 assertSoftly(oppdatereBoforholdResponse) {
-                    it.oppdatertHusstandsbarn shouldNotBe null
-                    it.oppdatertHusstandsbarn!!.ident shouldBe husstandsbarnperiodeSomSkalSlettes.husstandsbarn.ident
+                    it.oppdatertHusstandsmedlem shouldNotBe null
+                    it.oppdatertHusstandsmedlem!!.ident shouldBe bostatusperiodeSomSkalSlettes.husstandsmedlem.ident
                 }
-                assertSoftly(behandling.husstandsbarn.find { it == husstandsbarnperiodeSomSkalSlettes.husstandsbarn }) {
+                assertSoftly(behandling.husstandsmedlem.find { it == bostatusperiodeSomSkalSlettes.husstandsmedlem }) {
                     it.shouldNotBeNull()
-                    it.perioder.find { it == husstandsbarnperiodeSomSkalSlettes } shouldBe null
-                    behandling.finnHusstandsbarnperiode(husstandsbarnperiodeSomSkalSlettes.id).shouldBeNull()
+                    it.perioder.find { it == bostatusperiodeSomSkalSlettes } shouldBe null
+                    behandling.finnBostatusperiode(bostatusperiodeSomSkalSlettes.id).shouldBeNull()
                 }
             }
 
             @Test
             @Transactional
-            open fun `skal ikke få slette husstandsbarn med kilde offentlig`() {
+            open fun `skal ikke få slette husstandsmedlem med kilde offentlig`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling()
 
                 // hvis, så
                 assertFailsWith<HttpClientErrorException> {
-                    boforholdService.oppdatereHusstandsbarnManuelt(
+                    boforholdService.oppdatereHusstandsmedlemManuelt(
                         behandling.id!!,
                         OppdatereHusstandsmedlem(
-                            slettHusstandsmedlem = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!.id,
+                            slettHusstandsmedlem = behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident }!!.id,
                         ),
                     )
                 }
@@ -740,20 +740,22 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal kunne slette manuelt husstandsbarn`() {
+            open fun `skal kunne slette manuelt husstandsmedlem`() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
 
-                val husstandsbarn = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }
-                husstandsbarn?.kilde = Kilde.MANUELL
+                val husstandsmedlem = behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident }
+                husstandsmedlem?.kilde = Kilde.MANUELL
 
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
-                    OppdatereHusstandsmedlem(slettHusstandsmedlem = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!.id),
+                    OppdatereHusstandsmedlem(
+                        slettHusstandsmedlem = behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident }!!.id,
+                    ),
                 )
 
                 assertSoftly {
-                    behandling.husstandsbarn.find { testdataBarn1.ident == it.ident } shouldBe null
+                    behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident } shouldBe null
                 }
             }
 
@@ -763,17 +765,17 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
 
-                val husstandsbarn = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!
-                husstandsbarn.perioder.shouldHaveSize(3)
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                val husstandsmedlem = behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident }!!
+                husstandsmedlem.perioder.shouldHaveSize(3)
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
-                    OppdatereHusstandsmedlem(tilbakestillPerioderForHusstandsmedlem = husstandsbarn.id),
+                    OppdatereHusstandsmedlem(tilbakestillPerioderForHusstandsmedlem = husstandsmedlem.id),
                 )
 
                 assertSoftly {
-                    husstandsbarn.perioder.shouldHaveSize(2)
-                    husstandsbarn.perioder.filter { it.kilde == Kilde.MANUELL }.shouldBeEmpty()
-                    husstandsbarn.forrigePerioder.shouldNotBeEmpty()
+                    husstandsmedlem.perioder.shouldHaveSize(2)
+                    husstandsmedlem.perioder.filter { it.kilde == Kilde.MANUELL }.shouldBeEmpty()
+                    husstandsmedlem.forrigePerioder.shouldNotBeEmpty()
                 }
             }
 
@@ -783,17 +785,17 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
 
-                val husstandsbarn = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!
-                husstandsbarn.perioder.shouldHaveSize(3)
+                val husstandsmedlem = behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident }!!
+                husstandsmedlem.perioder.shouldHaveSize(3)
 
                 // hvis
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
-                    OppdatereHusstandsmedlem(slettPeriode = husstandsbarn.perioder.find { it.kilde == Kilde.MANUELL }!!.id),
+                    OppdatereHusstandsmedlem(slettPeriode = husstandsmedlem.perioder.find { it.kilde == Kilde.MANUELL }!!.id),
                 )
 
                 // så
-                husstandsbarn.perioder.shouldHaveSize(2)
+                husstandsmedlem.perioder.shouldHaveSize(2)
             }
 
             @Test
@@ -803,30 +805,30 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 val fødselsdato = LocalDate.now().minusYears(5)
                 val ident = "213123"
-                val husstandsbarn =
-                    Husstandsbarn(
+                val husstandsmedlem =
+                    Husstandsmedlem(
                         behandling = behandling,
                         kilde = Kilde.MANUELL,
                         perioder = mutableSetOf(),
                         ident = ident,
                         fødselsdato = fødselsdato,
                     )
-                husstandsbarn.perioder.add(
-                    Husstandsbarnperiode(
-                        husstandsbarn = husstandsbarn,
+                husstandsmedlem.perioder.add(
+                    Bostatusperiode(
+                        husstandsmedlem = husstandsmedlem,
                         datoFom = LocalDate.parse("2020-01-01"),
                         datoTom = null,
                         kilde = Kilde.MANUELL,
                         bostatus = Bostatuskode.MED_FORELDER,
                     ),
                 )
-                behandling.husstandsbarn.add(husstandsbarn)
+                behandling.husstandsmedlem.add(husstandsmedlem)
                 behandling = testdataManager.lagreBehandling(behandling)
-                val husstandsmedlemPersisted = behandling.husstandsbarn.find { it.ident == ident }
+                val husstandsmedlemPersisted = behandling.husstandsmedlem.find { it.ident == ident }
 
                 val exception =
                     assertThrows<HttpClientErrorException> {
-                        boforholdService.oppdatereHusstandsbarnManuelt(
+                        boforholdService.oppdatereHusstandsmedlemManuelt(
                             behandling.id!!,
                             OppdatereHusstandsmedlem(
                                 slettPeriode = husstandsmedlemPersisted!!.perioder.first().id,
@@ -844,16 +846,16 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
 
-                val husstandsbarn = behandling.husstandsbarn.find { testdataBarn1.ident == it.ident }!!
-                val periodeSomSkalOppdateres = husstandsbarn.perioder.maxByOrNull { it.datoFom!! }!!
-                husstandsbarn.perioder.shouldHaveSize(3)
+                val husstandsmedlem = behandling.husstandsmedlem.find { testdataBarn1.ident == it.ident }!!
+                val periodeSomSkalOppdateres = husstandsmedlem.perioder.maxByOrNull { it.datoFom!! }!!
+                husstandsmedlem.perioder.shouldHaveSize(3)
 
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
                         oppdaterPeriode =
-                            OppdaterHusstandsmedlemPeriode(
-                                idHusstandsbarn = husstandsbarn.id!!,
+                            OppdatereBostatusperiode(
+                                idHusstandsmedlem = husstandsmedlem.id!!,
                                 idPeriode = periodeSomSkalOppdateres.id,
                                 datoFom = LocalDate.parse("2024-02-01"),
                                 datoTom = null,
@@ -863,41 +865,41 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 assertSoftly("Resultat etter første oppdatering") {
-                    husstandsbarn.perioder.shouldHaveSize(4)
-                    husstandsbarn.forrigePerioder.shouldNotBeEmpty()
-                    val førstePeriode = husstandsbarn.perioder.minBy { it.datoFom!! }
-                    val andrePeriode = husstandsbarn.perioder.maxBy { it.datoFom!! }
+                    husstandsmedlem.perioder.shouldHaveSize(4)
+                    husstandsmedlem.forrigePerioder.shouldNotBeEmpty()
+                    val førstePeriode = husstandsmedlem.perioder.minBy { it.datoFom!! }
+                    val andrePeriode = husstandsmedlem.perioder.maxBy { it.datoFom!! }
                     førstePeriode!!.datoFom shouldBe LocalDate.parse("2023-01-01")
                     andrePeriode!!.datoFom shouldBe LocalDate.parse("2024-02-01")
                 }
 
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
-                        angreSisteStegForHusstandsmedlem = husstandsbarn.id,
+                        angreSisteStegForHusstandsmedlem = husstandsmedlem.id,
                     ),
                 )
 
                 assertSoftly("Resultat etter angre forrige steg") {
-                    husstandsbarn.perioder.shouldHaveSize(3)
-                    husstandsbarn.forrigePerioder.shouldNotBeEmpty()
-                    val førstePeriode = husstandsbarn.perioder.minBy { it.datoFom!! }
-                    val sistePeriode = husstandsbarn.perioder.maxBy { it.datoFom!! }
+                    husstandsmedlem.perioder.shouldHaveSize(3)
+                    husstandsmedlem.forrigePerioder.shouldNotBeEmpty()
+                    val førstePeriode = husstandsmedlem.perioder.minBy { it.datoFom!! }
+                    val sistePeriode = husstandsmedlem.perioder.maxBy { it.datoFom!! }
                     førstePeriode.datoFom shouldBe LocalDate.parse("2023-01-01")
                     sistePeriode.datoFom shouldBe LocalDate.parse("2024-01-01")
                     sistePeriode.kilde shouldBe Kilde.MANUELL
                 }
 
                 // hvis
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
-                        angreSisteStegForHusstandsmedlem = husstandsbarn.id,
+                        angreSisteStegForHusstandsmedlem = husstandsmedlem.id,
                     ),
                 )
 
                 // så
-                husstandsbarn.perioder.shouldHaveSize(4)
+                husstandsmedlem.perioder.shouldHaveSize(4)
             }
 
             @Test
@@ -906,10 +908,10 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest(inkludereBoforhold = false, inkludereSivilstand = true)
 
-                behandling.husstandsbarn.shouldHaveSize(1)
+                behandling.husstandsmedlem.shouldHaveSize(1)
 
                 // hvis
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
                         opprettHusstandsmedlem =
@@ -922,7 +924,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                assertSoftly(behandling.husstandsbarn.find { it.ident == "213123" }!!) {
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == "213123" }!!) {
                     it.perioder.shouldHaveSize(1)
                     it.navn shouldBe "Navn Navnesen"
                     it.fødselsdato shouldBe LocalDate.parse("2020-02-01")
@@ -940,10 +942,10 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
 
-                behandling.husstandsbarn.shouldHaveSize(1)
+                behandling.husstandsmedlem.shouldHaveSize(1)
 
                 // hvis
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
                         opprettHusstandsmedlem =
@@ -955,7 +957,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                assertSoftly(behandling.husstandsbarn.find { it.ident == null }!!) {
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == null }!!) {
                     it.perioder.shouldHaveSize(1)
                     it.navn shouldBe "Navn Navnesen"
                     it.fødselsdato shouldBe LocalDate.parse("2020-02-01")
@@ -973,8 +975,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
 
-                behandling.husstandsbarn.shouldHaveSize(1)
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                behandling.husstandsmedlem.shouldHaveSize(1)
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
                         opprettHusstandsmedlem =
@@ -985,14 +987,14 @@ class BoforholdServiceTest : TestContainerRunner() {
                             ),
                     ),
                 )
-                behandling.husstandsbarn.shouldHaveSize(2)
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                behandling.husstandsmedlem.shouldHaveSize(2)
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
-                        slettHusstandsmedlem = behandling.husstandsbarn.find { it.ident == "213123" }!!.id,
+                        slettHusstandsmedlem = behandling.husstandsmedlem.find { it.ident == "213123" }!!.id,
                     ),
                 )
-                behandling.husstandsbarn.shouldHaveSize(1)
+                behandling.husstandsmedlem.shouldHaveSize(1)
             }
 
             @Test
@@ -1002,9 +1004,9 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
 
-                behandling.husstandsbarn.shouldHaveSize(1)
+                behandling.husstandsmedlem.shouldHaveSize(1)
                 val fødselsdato = LocalDate.now().minusYears(17).minusMonths(7)
-                boforholdService.oppdatereHusstandsbarnManuelt(
+                boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
                         opprettHusstandsmedlem =
@@ -1016,7 +1018,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-                assertSoftly(behandling.husstandsbarn.find { it.ident == "213123" }!!) {
+                assertSoftly(behandling.husstandsmedlem.find { it.ident == "213123" }!!) {
                     it.perioder.shouldHaveSize(2)
                     it.navn shouldBe "Navn Navnesen"
                     it.fødselsdato shouldBe fødselsdato
@@ -1042,8 +1044,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val fødselsdato = LocalDate.now().minusYears(5)
 
                 val ident = "213123"
-                behandling.husstandsbarn.add(
-                    Husstandsbarn(
+                behandling.husstandsmedlem.add(
+                    Husstandsmedlem(
                         behandling = behandling,
                         kilde = Kilde.MANUELL,
                         perioder = mutableSetOf(),
@@ -1053,7 +1055,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
                 val exception =
                     assertThrows<HttpClientErrorException> {
-                        boforholdService.oppdatereHusstandsbarnManuelt(
+                        boforholdService.oppdatereHusstandsmedlemManuelt(
                             behandling.id!!,
                             OppdatereHusstandsmedlem(
                                 opprettHusstandsmedlem =
@@ -1079,32 +1081,32 @@ class BoforholdServiceTest : TestContainerRunner() {
             val behandling =
                 testdataManager.oppretteBehandling(inkludereInntekter, inkludereSivilstand, inkludereBoforhold)
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
-            behandling.husstandsbarn.clear()
-            behandling.husstandsbarn.addAll(
+            behandling.husstandsmedlem.clear()
+            behandling.husstandsmedlem.addAll(
                 setOf(
-                    opprettHusstandsbarn(behandling, testdataBarn1).let {
+                    oppretteHusstandsmedlem(behandling, testdataBarn1).let {
                         it.perioder =
                             mutableSetOf(
-                                Husstandsbarnperiode(
+                                Bostatusperiode(
                                     datoFom = LocalDate.parse("2023-01-01"),
                                     datoTom = LocalDate.parse("2023-05-31"),
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     kilde = Kilde.OFFENTLIG,
-                                    husstandsbarn = it,
+                                    husstandsmedlem = it,
                                 ),
-                                Husstandsbarnperiode(
+                                Bostatusperiode(
                                     datoFom = LocalDate.parse("2023-06-01"),
                                     datoTom = null,
                                     bostatus = Bostatuskode.IKKE_MED_FORELDER,
                                     kilde = Kilde.OFFENTLIG,
-                                    husstandsbarn = it,
+                                    husstandsmedlem = it,
                                 ),
-                                Husstandsbarnperiode(
+                                Bostatusperiode(
                                     datoFom = LocalDate.parse("2024-01-01"),
                                     datoTom = null,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     kilde = Kilde.MANUELL,
-                                    husstandsbarn = it,
+                                    husstandsmedlem = it,
                                 ),
                             )
                         it
@@ -1112,8 +1114,8 @@ class BoforholdServiceTest : TestContainerRunner() {
                 ),
             )
             behandling.grunnlag.addAll(
-                opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                    opprettHusstandsbarnMedOffentligePerioder(behandling),
+                oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                    oppretteHusstandsmedlemMedOffentligePerioder(behandling),
                 ),
             )
             return testdataManager.lagreBehandling(behandling)
@@ -1121,7 +1123,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal returnere riktig kilde på husstandsbarnperiode`() {
+        open fun `skal returnere riktig kilde på bostatusperiode`() {
             // gitt
             val behandling = opprettBehandlingForBoforholdTest()
             val grunnlagBoforhold =

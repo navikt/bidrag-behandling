@@ -106,7 +106,7 @@ fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
         .find { it.erBearbeidet == erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
         .konvertereData<Set<Sivilstand>>()
 
-fun Husstandsbarn.hentSisteBearbeidetBoforhold() =
+fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
     behandling.grunnlag.hentSisteAktiv()
         .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
         .konvertereData<List<BoforholdResponse>>()

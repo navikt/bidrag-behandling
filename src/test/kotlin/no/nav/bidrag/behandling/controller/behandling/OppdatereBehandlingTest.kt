@@ -6,7 +6,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
-import no.nav.bidrag.behandling.database.datamodell.Husstandsbarnperiode
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
@@ -15,13 +15,12 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdaterBehandlingRequestV2
 import no.nav.bidrag.behandling.service.opprettHentGrunnlagDto
 import no.nav.bidrag.behandling.service.tilSummerteInntekter
-import no.nav.bidrag.behandling.utils.testdata.opprettBoforholdBearbeidetGrunnlagForHusstandsbarn
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarn
-import no.nav.bidrag.behandling.utils.testdata.opprettHusstandsbarnMedOffentligePerioder
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
+import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
+import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
+import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlemMedOffentligePerioder
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -46,44 +45,12 @@ import kotlin.test.assertTrue
 
 class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
-    fun `skal oppdatere behandling for API v2`() {
-        // gitt
-        val b = testdataManager.oppretteBehandling(true, false, false)
-
-        // hvis
-        val behandlingRes =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUriV2()}/behandling/" + b.id,
-                HttpMethod.PUT,
-                HttpEntity(
-                    OppdaterBehandlingRequestV2(
-                        virkningstidspunkt =
-                            OppdatereVirkningstidspunkt(
-                                virkningstidspunkt = LocalDate.parse("2024-03-02"),
-                            ),
-                    ),
-                ),
-                BehandlingDtoV2::class.java,
-            )
-        Assertions.assertEquals(HttpStatus.CREATED, behandlingRes.statusCode)
-        val responseBody = behandlingRes.body!!
-        responseBody.inntekter.beregnetInntekter shouldHaveSize 3
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2024-03-02")
-
-        // så
-        val oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!)
-
-        assertNotNull(oppdatertBehandling)
-        oppdatertBehandling.get().virkningstidspunkt shouldBe LocalDate.parse("2024-03-02")
-    }
-
-    @Test
     fun `skal oppdatere årsak`() {
         // gitt
         val behandling = testdataManager.oppretteBehandling(true)
         behandling.grunnlag.addAll(
-            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                oppretteHusstandsmedlemMedOffentligePerioder(behandling),
             ),
         )
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
@@ -127,8 +94,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         // gitt
         val behandling = testdataManager.oppretteBehandling(true)
         behandling.grunnlag.addAll(
-            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                oppretteHusstandsmedlemMedOffentligePerioder(behandling),
             ),
         )
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
@@ -172,8 +139,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         // gitt
         val behandling = testdataManager.oppretteBehandling(true)
         behandling.grunnlag.addAll(
-            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                oppretteHusstandsmedlemMedOffentligePerioder(behandling),
             ),
         )
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
@@ -217,8 +184,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         // gitt
         val behandling = testdataManager.oppretteBehandling(true)
         behandling.grunnlag.addAll(
-            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                oppretteHusstandsmedlemMedOffentligePerioder(behandling),
             ),
         )
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
@@ -263,8 +230,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val behandling = testdataManager.oppretteBehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
-            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                oppretteHusstandsmedlemMedOffentligePerioder(behandling),
             ),
         )
 
@@ -357,8 +324,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val behandling = testdataManager.oppretteBehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
-            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                oppretteHusstandsmedlemMedOffentligePerioder(behandling),
             ),
         )
 
@@ -445,29 +412,29 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val behandling = testdataManager.oppretteBehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
-            opprettBoforholdBearbeidetGrunnlagForHusstandsbarn(
-                opprettHusstandsbarnMedOffentligePerioder(behandling),
+            oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                oppretteHusstandsmedlemMedOffentligePerioder(behandling),
             ),
         )
-        behandling.husstandsbarn.clear()
-        behandling.husstandsbarn.addAll(
+        behandling.husstandsmedlem.clear()
+        behandling.husstandsmedlem.addAll(
             setOf(
-                opprettHusstandsbarn(behandling, testdataBarn1).let {
+                oppretteHusstandsmedlem(behandling, testdataBarn1).let {
                     it.perioder =
                         mutableSetOf(
-                            Husstandsbarnperiode(
+                            Bostatusperiode(
                                 datoFom = LocalDate.parse("2023-01-01"),
                                 datoTom = LocalDate.parse("2023-05-31"),
                                 bostatus = Bostatuskode.MED_FORELDER,
                                 kilde = Kilde.OFFENTLIG,
-                                husstandsbarn = it,
+                                husstandsmedlem = it,
                             ),
-                            Husstandsbarnperiode(
+                            Bostatusperiode(
                                 datoFom = LocalDate.parse("2023-06-01"),
                                 datoTom = null,
                                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                                 kilde = Kilde.OFFENTLIG,
-                                husstandsbarn = it,
+                                husstandsmedlem = it,
                             ),
                         )
                     it
@@ -498,7 +465,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
         oppdatertBehandling.get().virkningstidspunkt shouldBe nyttVirkningstidspunkt
-        assertSoftly(oppdatertBehandling.get().husstandsbarn.first()) {
+        assertSoftly(oppdatertBehandling.get().husstandsmedlem.first()) {
             perioder shouldHaveSize 3
             perioder.minByOrNull { it.datoFom!! }!!.datoFom shouldBe nyttVirkningstidspunkt
             perioder.maxByOrNull { it.datoFom!! }!!.datoFom shouldBe LocalDate.parse("2023-06-01")
