@@ -5,12 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v1.husstandsmedlem.BostatusperiodeDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import java.time.LocalDate
 
 data class BoforholdDtoV2(
     val husstandsmedlem: Set<HusstandsmedlemDtoV2>,
+    val andreVoksneIHusstanden: Set<BostatusperiodeDto> = emptySet(),
     val sivilstand: Set<SivilstandDto>,
     val notat: BehandlingNotatDto,
     val valideringsfeil: BoforholdValideringsfeil,

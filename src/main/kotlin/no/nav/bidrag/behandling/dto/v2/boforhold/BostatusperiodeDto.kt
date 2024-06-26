@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.dto.v1.husstandsmedlem
+package no.nav.bidrag.behandling.dto.v2.boforhold
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema

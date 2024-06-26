@@ -5,7 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v1.husstandsmedlem.BostatusperiodeDto
+import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 
 /**

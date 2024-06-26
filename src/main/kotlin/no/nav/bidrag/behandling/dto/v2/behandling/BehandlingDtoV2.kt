@@ -133,7 +133,8 @@ data class UtgiftspostDto(
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
-    val sivilstand: SivilstandAktivGrunnlagDto?,
+    val andreVoksneIHusstanden: AndreVoksneIHusstanden? = null,
+    val sivilstand: SivilstandAktivGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
     val husstandsbarn = husstandsmedlem
@@ -144,6 +145,7 @@ data class IkkeAktiveGrunnlagsdata(
     @Deprecated("Erstattes av husstandsmedlem")
     val husstandsbarn: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
+    val andreVoksneIHusstanden: AndreVoksneIHusstanden? = null,
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
 )
 
@@ -237,6 +239,20 @@ data class Grunnlagstype(
     val erBearbeidet: Boolean,
 )
 
+data class AndreVoksneIHusstanden(val perioder: Set<PeriodeAndreVoksneIHusstanden>, val innhenntet: LocalDateTime)
+
+data class PeriodeAndreVoksneIHusstanden(
+    val periode: ÅrMånedsperiode,
+    val status: Bostatuskode,
+    val husstandsmedlemmer: Set<VoksenIHusstand>,
+)
+
+data class VoksenIHusstand(
+    val navn: String,
+    val fødselsdato: LocalDate,
+    val harRelasjonTilBmBp: Boolean = false,
+)
+
 @Schema(enumAsRef = true, name = "OpplysningerType")
 enum class Grunnlagsdatatype(
     val behandlinstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
@@ -327,7 +343,8 @@ enum class Grunnlagsdatatype(
             return when (rolletype != null) {
                 true ->
                     entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
-                        .filter { it.behandlinstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }.toSet()
+                        .filter { it.behandlinstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
+                        .toSet()
 
                 false -> entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
             }
