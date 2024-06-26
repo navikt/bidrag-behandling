@@ -251,6 +251,8 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
         husstandsmedlem = husstandsmedlem.sortert().map { it.tilBostatusperiode() }.toSet(),
+        // TODO: Implementere
+        andreVoksneIHusstanden = emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
             BehandlingNotatDto(
@@ -332,6 +334,7 @@ fun List<Grunnlag>.tilAktivGrunnlagsdata() =
             filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
         sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
+        andreVoksneIHusstanden = null,
     )
 
 fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =

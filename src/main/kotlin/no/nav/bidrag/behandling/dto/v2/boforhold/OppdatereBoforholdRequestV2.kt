@@ -18,14 +18,15 @@ data class OppdatereBoforholdRequestV2(
 )
 
 data class OppdatereBoforholdResponse(
-    @Deprecated("Erstattes av oppdatertHusstandsmedlem")
-    val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = null,
     @Schema(description = "Husstandsmedlem som ble opprettet")
     val oppdatertHusstandsmedlem: HusstandsmedlemDtoV2? = null,
     val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
     val oppdatertNotat: OppdaterNotat? = null,
     val valideringsfeil: BoforholdValideringsfeil,
-)
+) {
+    @Deprecated("Erstattes av oppdatertHusstandsmedlem")
+    val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = oppdatertHusstandsmedlem
+}
 
 data class OppdatereHusstandsmedlem(
     @Schema(description = "Informasjon om husstandsmedlem som skal opprettes")
