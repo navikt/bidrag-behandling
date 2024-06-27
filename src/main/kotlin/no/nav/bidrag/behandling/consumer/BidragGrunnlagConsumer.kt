@@ -47,14 +47,25 @@ class BidragGrunnlagConsumer(
             grunnlagstyper: Set<GrunnlagRequestType>,
             virkningstidspunktEllerSøktFra: LocalDate,
         ) = grunnlagstyper.map {
-            val fraDato = finneFraDato(it, virkningstidspunktEllerSøktFra)
-            val tilDato = LocalDate.now().plusDays(1)
+            var fradato = finneFraDato(it, virkningstidspunktEllerSøktFra)
+            val tildato = LocalDate.now().plusDays(1)
+
+            fradato =
+                if (GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG == it &&
+                    fradato.isBefore(
+                        LocalDate.now().minusYears(5),
+                    )
+                ) {
+                    LocalDate.now().minusYears(5)
+                } else {
+                    fradato
+                }
 
             GrunnlagRequestDto(
                 type = it,
                 personId = personident.verdi,
-                periodeFra = fraDato,
-                periodeTil = tilDato,
+                periodeFra = fradato,
+                periodeTil = tildato,
             )
         }.toList().sortedBy { personident }
 
