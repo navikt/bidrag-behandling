@@ -142,12 +142,13 @@ data class AktiveGrunnlagsdata(
 
 data class IkkeAktiveGrunnlagsdata(
     val inntekter: IkkeAktiveInntekter = IkkeAktiveInntekter(),
-    @Deprecated("Erstattes av husstandsmedlem")
-    val husstandsbarn: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstanden? = null,
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
-)
+) {
+    @Deprecated("Erstattes av husstandsmedlem")
+    val husstandsbarn = husstandsmedlem
+}
 
 data class IkkeAktiveInntekter(
     val barnetillegg: Set<IkkeAktivInntektDto> = emptySet(),
