@@ -19,7 +19,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.web.client.HttpStatusCodeException
 import java.time.LocalDate
 
-class ValideringOpprettBehandlningBehandlingTest {
+class ValideringOpprettBehandlingTest {
     private fun opprettOpprettBehandlingRequest() =
         OpprettBehandlingRequest(
             Vedtakstype.FASTSETTELSE,
@@ -51,6 +51,34 @@ class ValideringOpprettBehandlningBehandlingTest {
         )
 
     @Test
+    fun `Skal BP er satt for særbidrag`() {
+        val request =
+            opprettOpprettBehandlingRequest().copy(
+                kategori =
+                    OpprettKategoriRequestDto(
+                        kategori = SærbidragKategori.KONFIRMASJON.name,
+                        beskrivelse = null,
+                    ),
+                roller =
+                    setOf(
+                        OpprettRolleDto(
+                            Rolletype.BARN,
+                            Personident(testdataBarn1.ident),
+                            fødselsdato = LocalDate.now().minusMonths(136),
+                        ),
+                        OpprettRolleDto(
+                            Rolletype.BIDRAGSMOTTAKER,
+                            Personident(testdataBM.ident),
+                            fødselsdato = LocalDate.now().minusMonths(555),
+                        ),
+                    ),
+            )
+
+        val exception = assertThrows<HttpStatusCodeException> { request.valider() }
+        exception.message shouldContain "Behandling av typen SÆRBIDRAG må ha en rolle av typen BIDRAGSPLIKTIG"
+    }
+
+    @Test
     fun `Skal validere at kategorien er satt for særbidrag`() {
         val request =
             opprettOpprettBehandlingRequest().copy(
@@ -74,5 +102,20 @@ class ValideringOpprettBehandlningBehandlingTest {
 
         val exception = assertThrows<HttpStatusCodeException> { request.valider() }
         exception.message shouldContain "Beskrivelse må settes hvis kategori er ANNET"
+    }
+
+    @Test
+    fun `Skal validere at kategori er ugyldig`() {
+        val request =
+            opprettOpprettBehandlingRequest().copy(
+                kategori =
+                    OpprettKategoriRequestDto(
+                        kategori = "ADasdsad",
+                        beskrivelse = null,
+                    ),
+            )
+
+        val exception = assertThrows<HttpStatusCodeException> { request.valider() }
+        exception.message shouldContain "Kategori ADasdsad er ikke en gyldig særbidrag kategori"
     }
 }

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -440,7 +441,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal opprette en særlige utgifter behandling`() {
+        open fun `skal opprette en særbidrag behandling`() {
             val søknadsid = 123213L
             stubUtils.stubHenteGrunnlag()
             stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
@@ -489,6 +490,69 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandlingAfter.stonadstype shouldBe null
             opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
             opprettetBehandlingAfter.særbidragKategori shouldBe SærbidragKategori.KONFIRMASJON
+            opprettetBehandlingAfter.kategoriBeskrivelse.shouldBeNull()
+            opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
+            opprettetBehandlingAfter.årsak shouldBe null
+            opprettetBehandlingAfter.roller shouldHaveSize 3
+            opprettetBehandlingAfter.soknadsid shouldBe søknadsid
+            opprettetBehandlingAfter.saksnummer shouldBe "12312"
+            opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
+            opprettetBehandlingAfter.utgift shouldBe null
+        }
+
+        @Test
+        @Transactional
+        open fun `skal opprette en særbidrag behandling med kategori ANNET`() {
+            val søknadsid = 123213L
+            stubUtils.stubHenteGrunnlag()
+            stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
+            stubKodeverkProvider()
+
+            val opprettetBehandling =
+                behandlingService.opprettBehandling(
+                    OpprettBehandlingRequest(
+                        vedtakstype = Vedtakstype.FASTSETTELSE,
+                        søktFomDato = LocalDate.parse("2023-01-01"),
+                        mottattdato = LocalDate.parse("2023-01-01"),
+                        søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                        saksnummer = "12312",
+                        søknadsid = søknadsid,
+                        behandlerenhet = "1233",
+                        stønadstype = null,
+                        engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
+                        kategori =
+                            OpprettKategoriRequestDto(
+                                SærbidragKategori.ANNET.name,
+                                "Dette er test",
+                            ),
+                        roller =
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident(testdataBarn1.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSMOTTAKER,
+                                    ident = Personident(testdataBM.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSPLIKTIG,
+                                    ident = Personident(testdataBP.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                            ),
+                    ),
+                )
+
+            val opprettetBehandlingAfter =
+                behandlingService.hentBehandlingById(opprettetBehandling.id)
+
+            opprettetBehandlingAfter.stonadstype shouldBe null
+            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            opprettetBehandlingAfter.særbidragKategori shouldBe SærbidragKategori.ANNET
+            opprettetBehandlingAfter.kategoriBeskrivelse shouldBe "Dette er test"
             opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
             opprettetBehandlingAfter.årsak shouldBe null
             opprettetBehandlingAfter.roller shouldHaveSize 3

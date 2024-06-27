@@ -92,7 +92,7 @@ class UtgiftserviceMockTest {
             shouldThrow<HttpClientErrorException> { utgiftService.oppdatereUtgift(behandling.id!!, forespørsel) }
 
         exception.message shouldContain
-            "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori KONFIRMASJON"
+            "Kan ikke legge til utgift betalt av BP for særbidrag behandling som ikke har kategori KONFIRMASJON"
     }
 
     @Test

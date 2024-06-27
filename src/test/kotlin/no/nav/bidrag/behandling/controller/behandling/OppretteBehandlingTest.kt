@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.matchers.shouldBe
 import jakarta.transaction.Transactional
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -105,7 +106,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
         }
 
         @Test
-        fun `skal opprette en behandling for særlige utgifter`() {
+        fun `skal opprette en behandling for særbidrag`() {
             val personidentBp = Personident("12345678912")
             val personidentBm = Personident("213213")
             val personidentBarn = Personident("123213123")
@@ -154,6 +155,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
 
             behandling.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
             behandling.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            behandling.særbidragKategori shouldBe SærbidragKategori.KONFIRMASJON
             behandling.stonadstype shouldBe null
             behandling.utgift shouldBe null
         }

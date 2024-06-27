@@ -148,7 +148,7 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
                 if (nyEllerEndretUtgift.betaltAvBp) {
                     feilliste.add(
                         "Kan ikke legge til utgift betalt av BP for " +
-                            "særlige utgifter behandling som ikke har kategori ${SærbidragKategori.KONFIRMASJON}",
+                            "særbidrag behandling som ikke har kategori ${SærbidragKategori.KONFIRMASJON}",
                     )
                 }
                 if (nyEllerEndretUtgift.type != null) {

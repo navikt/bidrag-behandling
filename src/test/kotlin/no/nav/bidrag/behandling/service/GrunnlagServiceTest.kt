@@ -1369,7 +1369,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open inner class SærligeUtgifter {
             @Test
             @Transactional
-            open fun `skal hente  grunnlag for behandling av særlige utgifter`() {
+            open fun `skal hente  grunnlag for behandling av særbidrag`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false)
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
@@ -1448,11 +1448,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @DisplayName("Teste aktivering av grunnlag")
     open inner class AktivereGrunnlag {
         @Nested
-        @DisplayName("Teste aktivering av grunnlag for særlige utgifter")
+        @DisplayName("Teste aktivering av grunnlag for særbidrag")
         open inner class SærligeUtgifter {
             @Test
             @Transactional
-            open fun `skal aktivere grunnlag av type inntekt for bp i behandling av særlige utgifter`() {
+            open fun `skal aktivere grunnlag av type inntekt for bp i behandling av særbidrag`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, inkludereBp = true)
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
@@ -1579,7 +1579,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal aktivere grunnlag av type barnetillegg for BP i behandling av særlige utgifter, og oppdatere inntektstabell`() {
+            open fun `skal aktivere grunnlag av type barnetillegg for BP i behandling av særbidrag, og oppdatere inntektstabell`() {
                 // gitt
                 val behandling =
                     testdataManager.oppretteBehandling(false, false, false, true, TypeBehandling.SÆRBIDRAG)
@@ -1649,7 +1649,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal aktivere grunnlag av type boforhold for barn av BP i behandling av særlige utgifter, og oppdatere husstandsmedlemtabell`() {
+            open fun `skal aktivere grunnlag av type boforhold for barn av BP i behandling av særbidrag, og oppdatere husstandsmedlemtabell`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, false, true)
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
@@ -1736,7 +1736,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            open fun `skal ikke aktivere boforholdrådata i behandling av særlige utgifter dersom bearbeida boforhold er ikke er aktivert for samtlige husstandsmedlemmer`() {
+            open fun `skal ikke aktivere boforholdrådata i behandling av særbidrag dersom bearbeida boforhold er ikke er aktivert for samtlige husstandsmedlemmer`() {
                 // gitt
                 val behandling =
                     testdataManager.oppretteBehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG)

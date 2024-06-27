@@ -27,7 +27,7 @@ class OppdaterUtgiftRequestValideringTest {
     }
 
     @Test
-    fun `skal ikke kunne oppdatere utgift for behandling som ikke er særlige utgifter`() {
+    fun `skal ikke kunne oppdatere utgift for behandling som ikke er særbidrag`() {
         val behandling = opprettBehandlingSærligeUtgifter()
         behandling.engangsbeloptype = null
         behandling.stonadstype = Stønadstype.FORSKUDD
@@ -220,7 +220,7 @@ class OppdaterUtgiftRequestValideringTest {
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
         exception.message shouldContain
-            "Kan ikke legge til utgift betalt av BP for særlige utgifter behandling som ikke har kategori KONFIRMASJON"
+            "Kan ikke legge til utgift betalt av BP for særbidrag behandling som ikke har kategori KONFIRMASJON"
     }
 
     @Test
