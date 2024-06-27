@@ -11,7 +11,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
-import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -38,8 +38,7 @@ open class Utgiftspost(
     @JoinColumn(name = "utgift_id", nullable = false)
     open var utgift: Utgift,
 ) {
-    override fun toString(): String {
-        return "Utgiftspost(id=$id, dato=$dato, type=$type, kravbeløp=$kravbeløp, betaltAvBp=$betaltAvBp" +
+    override fun toString(): String =
+        "Utgiftspost(id=$id, dato=$dato, type=$type, kravbeløp=$kravbeløp, betaltAvBp=$betaltAvBp" +
             "godkjentBeløp=$godkjentBeløp, begrunnelse=$begrunnelse)"
-    }
 }

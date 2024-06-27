@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.utgift
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
@@ -11,13 +12,13 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
-import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
-import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 
-val Behandling.kanInneholdeUtgiftBetaltAvBp get() = engangsbeloptype == Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+val Behandling.kanInneholdeUtgiftBetaltAvBp get() = særbidragKategori == SærbidragKategori.KONFIRMASJON
 val Utgift.totalGodkjentBeløpBp
     get() =
         behandling.kanInneholdeUtgiftBetaltAvBp.ifTrue {
@@ -71,10 +72,10 @@ fun OppdatereUtgift.tilUtgiftspost(utgift: Utgift) =
                 begrunnelse
             },
         type =
-            when (utgift.behandling.engangsbeloptype) {
-                Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON -> type!!
-                Engangsbeløptype.SÆRTILSKUDD_OPTIKK -> Utgiftstype.OPTIKK
-                Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING -> Utgiftstype.TANNREGULERING
+            when (utgift.behandling.særbidragKategori) {
+                SærbidragKategori.KONFIRMASJON -> type!!
+                SærbidragKategori.OPTIKK -> Utgiftstype.OPTIKK
+                SærbidragKategori.TANNREGULERING -> Utgiftstype.TANNREGULERING
                 else -> throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Kunne ikke bestemme type for utgiftspost")
             },
         godkjentBeløp =

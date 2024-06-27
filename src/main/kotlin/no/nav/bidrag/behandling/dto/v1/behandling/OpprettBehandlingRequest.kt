@@ -30,16 +30,27 @@ data class OpprettBehandlingRequest(
     @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
     val roller: Set<@Valid OpprettRolleDto>,
     @Schema(required = true)
-    var stønadstype: Stønadstype?,
+    var stønadstype: Stønadstype? = null,
     @Schema(required = true)
-    var engangsbeløpstype: Engangsbeløptype?,
+    var engangsbeløpstype: Engangsbeløptype? = null,
     @Schema(required = true)
     val søknadsid: Long,
     val søknadsreferanseid: Long? = null,
+    val kategori: OpprettKategoriRequestDto? = null,
 )
 
 fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)
 
-fun OpprettBehandlingRequest.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRLIGE_UTGIFTER
+fun OpprettBehandlingRequest.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG
 
 fun OpprettBehandlingRequest.erForskudd() = tilType() == TypeBehandling.FORSKUDD
+
+data class OpprettKategoriRequestDto(
+    @Schema(required = true)
+    val kategori: String,
+    @Schema(
+        required = false,
+        description = "Beskrivelse av kategorien som er valgt. Er påkrevd hvis kategori er ANNET ",
+    )
+    val beskrivelse: String? = null,
+)

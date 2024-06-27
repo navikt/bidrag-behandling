@@ -8,9 +8,10 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.erSærligeUtgifter
+import no.nav.bidrag.behandling.dto.v1.behandling.erSærbidrag
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -34,6 +35,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
@@ -60,33 +62,48 @@ fun OpprettBehandlingRequest.valider() {
     (stønadstype == null && engangsbeløpstype == null).ifTrue {
         feilliste.add("Stønadstype eller engangsbeløpstype må settes")
     }
-    if (erSærligeUtgifter()) {
+    if (erSærbidrag()) {
         when {
             roller.none { it.rolletype == Rolletype.BIDRAGSPLIKTIG } ->
                 feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSPLIKTIG}")
 
             roller.none { it.rolletype == Rolletype.BIDRAGSMOTTAKER } ->
                 feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSMOTTAKER}")
+
+            kategori?.kategori.isNullOrEmpty() ->
+                feilliste.add(
+                    "Kategori må settes for ${Engangsbeløptype.SÆRBIDRAG}",
+                )
+
+            SærbidragKategori.entries.none { it.name == kategori?.kategori } ->
+                feilliste.add(
+                    "Kategori ${kategori?.kategori} er ikke en gyldig særbidrag kategori",
+                )
+
+            kategori?.kategori == SærbidragKategori.ANNET.name && kategori.beskrivelse.isNullOrEmpty() ->
+                feilliste.add("Beskrivelse må settes hvis kategori er ${SærbidragKategori.ANNET}")
         }
     }
-    roller.any { it.rolletype == Rolletype.BARN && (it.ident?.verdi.isNullOrBlank() && it.navn.isNullOrBlank()) }
+    roller
+        .any { it.rolletype == Rolletype.BARN && (it.ident?.verdi.isNullOrBlank() && it.navn.isNullOrBlank()) }
         .ifTrue { feilliste.add("Barn må ha enten ident eller navn") }
 
-    roller.any { it.rolletype != Rolletype.BARN && it.ident?.verdi.isNullOrBlank() }
+    roller
+        .any { it.rolletype != Rolletype.BARN && it.ident?.verdi.isNullOrBlank() }
         .ifTrue { feilliste.add("Voksne må ha ident") }
 
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Ugyldig data ved oppdatering av utgift: ${feilliste.joinToString(", ")}",
+            "Ugyldig data ved opprettelse av behandling: ${feilliste.joinToString(", ")}",
         )
     }
 }
 
 fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
-    if (!engangsbeløpSærligeutgifter.contains(behandling.engangsbeloptype)) {
-        feilliste.add("Kan ikke oppdatere utgift for behandling som ikke er av typen $engangsbeløpSærligeutgifter")
+    if (Engangsbeløptype.SÆRBIDRAG != behandling.engangsbeloptype) {
+        feilliste.add("Kan ikke oppdatere utgift for behandling som ikke er av typen ${Engangsbeløptype.SÆRBIDRAG}")
     }
     val erAvslag = (avslag != null || behandling.avslag != null)
     if (erAvslag && (nyEllerEndretUtgift != null || sletteUtgift != null || angreSisteEndring)) {
@@ -114,15 +131,15 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
             feilliste.add("Utgiftspost med id $sletteUtgift finnes ikke i behandling ${behandling.id}")
         }
 
-        when (behandling.engangsbeloptype) {
-            Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON -> {
+        when (behandling.særbidragKategori) {
+            SærbidragKategori.KONFIRMASJON -> {
                 if (nyEllerEndretUtgift.type == null) {
-                    feilliste.add("Type må settes hvis behandling er av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}")
+                    feilliste.add("Type må settes hvis behandling har kategori ${SærbidragKategori.KONFIRMASJON}")
                 }
-                if (nyEllerEndretUtgift.type?.kategori != Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON) {
+                if (nyEllerEndretUtgift.type?.kategori != SærbidragKategori.KONFIRMASJON) {
                     feilliste.add(
                         "Type ${nyEllerEndretUtgift.type} er ikke gyldig for" +
-                            " behandling av typen ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}",
+                            " behandling med kategori ${SærbidragKategori.KONFIRMASJON}",
                     )
                 }
             }
@@ -131,11 +148,11 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
                 if (nyEllerEndretUtgift.betaltAvBp) {
                     feilliste.add(
                         "Kan ikke legge til utgift betalt av BP for " +
-                            "særlige utgifter behandling som ikke har kategori ${Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON}",
+                            "særbidrag behandling som ikke har kategori ${SærbidragKategori.KONFIRMASJON}",
                     )
                 }
                 if (nyEllerEndretUtgift.type != null) {
-                    feilliste.add("Type kan ikke settes hvis behandling er av typen ${behandling.engangsbeloptype}")
+                    feilliste.add("Type kan ikke settes hvis behandling har kategori ${behandling.særbidragKategori}")
                 }
             }
         }
@@ -175,9 +192,10 @@ fun Husstandsmedlem.validereBoforhold(
     validerePerioder: Boolean = true,
 ): Set<BoforholdPeriodeseringsfeil> {
     val hullIPerioder =
-        this.perioder.map {
-            Datoperiode(it.datoFom!!, it.datoTom)
-        }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato))
+        this.perioder
+            .map {
+                Datoperiode(it.datoFom!!, it.datoTom)
+            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato))
     if (validerePerioder) {
         valideringsfeil.add(
             BoforholdPeriodeseringsfeil(
@@ -233,10 +251,11 @@ private fun Set<Sivilstand>.finnSivilstandOverlappendePerioder() =
 
 private fun Set<Bostatusperiode>.finneOverlappendeBostatusperioder() =
     sortedBy { it.datoFom }.flatMapIndexed { index, bostatusperiode ->
-        sortedBy { it.datoFom }.drop(index + 1).filter { nesteHusstandsperiode ->
-            nesteHusstandsperiode.tilDatoperiode().overlapper(bostatusperiode.tilDatoperiode())
-        }
-            .map { nesteBostatusperiode ->
+        sortedBy { it.datoFom }
+            .drop(index + 1)
+            .filter { nesteHusstandsperiode ->
+                nesteHusstandsperiode.tilDatoperiode().overlapper(bostatusperiode.tilDatoperiode())
+            }.map { nesteBostatusperiode ->
                 OverlappendeBostatusperiode(
                     Datoperiode(
                         maxOf(bostatusperiode.datoFom!!, nesteBostatusperiode.datoFom!!),
@@ -293,7 +312,8 @@ fun List<Inntekt>.finnOverlappendePerioder(): Set<OverlappendePeriode> {
 @JvmName("finnHullIPerioderInntekt")
 fun List<Inntekt>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
     val perioderSomSkalSjekkes =
-        filter { it.taMed && !it.kanHaHullIPerioder() }.sortedBy { it.datoFom }
+        filter { it.taMed && !it.kanHaHullIPerioder() }
+            .sortedBy { it.datoFom }
             .map { Datoperiode(it.datoFom!!, it.datoTom) }
     return perioderSomSkalSjekkes.finnHullIPerioder(virkniningstidspunkt)
 }
@@ -307,9 +327,10 @@ val Inntekt.inntektstypeListe
         } else if (kilde == Kilde.MANUELL || inntektsposter.isEmpty()) {
             type.inneholderInntektstypeListe
         } else {
-            inntektsposter.mapNotNull {
-                it.inntektstype
-            }.ifEmpty { type.inneholderInntektstypeListe }
+            inntektsposter
+                .mapNotNull {
+                    it.inntektstype
+                }.ifEmpty { type.inneholderInntektstypeListe }
         }
 
 fun Inntekt.validerOverlapperMedInntekt(sammenlignMedInntekt: Inntekt): OverlappendePeriode? {
@@ -493,8 +514,10 @@ fun OppdatereSivilstand.validere(behandling: Behandling) {
         }
     }
 
-    if (this.sletteSivilstandsperiode == null && this.nyEllerEndretSivilstandsperiode == null &&
-        !this.tilbakestilleHistorikk && !this.angreSisteEndring
+    if (this.sletteSivilstandsperiode == null &&
+        this.nyEllerEndretSivilstandsperiode == null &&
+        !this.tilbakestilleHistorikk &&
+        !this.angreSisteEndring
     ) {
         requestManglerDataException(behandling.id!!, Ressurstype.SIVILSTAND)
     }
@@ -519,8 +542,8 @@ fun Bostatusperiode.tilDatoperiode() = Datoperiode(datoFom!!, datoTom)
 fun finnSenesteDato(
     dato1: LocalDate?,
     dato2: LocalDate?,
-): LocalDate? {
-    return if (dato1 == null || dato2 == null) {
+): LocalDate? =
+    if (dato1 == null || dato2 == null) {
         null
     } else {
         maxOf(
@@ -528,14 +551,13 @@ fun finnSenesteDato(
             dato2,
         )
     }
-}
 
 fun finnSenesteDato(
     dato1: LocalDate?,
     dato2: LocalDate?,
     dato3: LocalDate?,
-): LocalDate? {
-    return if (dato1 == null || dato2 == null || dato3 == null) {
+): LocalDate? =
+    if (dato1 == null || dato2 == null || dato3 == null) {
         null
     } else {
         maxOf(
@@ -544,7 +566,6 @@ fun finnSenesteDato(
             dato3,
         )
     }
-}
 
 private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
     val sammenstiltePerioder = mutableListOf<OverlappendePeriode>()
@@ -610,13 +631,16 @@ private fun Set<OverlappendePeriode>.mergePerioder(): Set<OverlappendePeriode> {
                                 finnSenesteDato(annenOverlappendePeriode.periode.til, overlappendePeriode.periode.til),
                             ),
                         rapporteringTyper =
-                            (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper).sorted()
+                            (annenOverlappendePeriode.rapporteringTyper + overlappendePeriode.rapporteringTyper)
+                                .sorted()
                                 .toMutableSet(),
                         idListe =
-                            (annenOverlappendePeriode.idListe + overlappendePeriode.idListe).sorted()
+                            (annenOverlappendePeriode.idListe + overlappendePeriode.idListe)
+                                .sorted()
                                 .toMutableSet(),
                         inntektstyper =
-                            (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper).sorted()
+                            (annenOverlappendePeriode.inntektstyper + overlappendePeriode.inntektstyper)
+                                .sorted()
                                 .toMutableSet(),
                     ),
                 )
@@ -648,7 +672,8 @@ private fun Husstandsmedlem.validereNyPeriode(
 ) {
     val kanIkkeVæreSenereEnnDato = this.senestePeriodeFomDato()
 
-    if (nyFomDato != null && nyFomDato.isAfter(kanIkkeVæreSenereEnnDato) ||
+    if (nyFomDato != null &&
+        nyFomDato.isAfter(kanIkkeVæreSenereEnnDato) ||
         (nyTomDato != null && nyTomDato.isAfter(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)))
     ) {
         oppdateringAvBoforholdFeilet(

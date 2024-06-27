@@ -29,7 +29,7 @@ val bmIdent = "313213213"
 val barnIdent = "1344124"
 val barn2Ident = "44444"
 
-class ValiderBehandlingTest {
+class ValiderBeregningTest {
     @Test
     fun `skal validere behandling`() {
         val behandling = opprettGyldigBehandling()
@@ -45,7 +45,8 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
+        val responseBody =
+            commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldNotBe null
             inntekter shouldBe null
@@ -67,7 +68,8 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
+        val responseBody =
+            commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldNotBe null
             inntekter shouldBe null
@@ -104,7 +106,8 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
+        val responseBody =
+            commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldBe null
             inntekter shouldBe null
@@ -155,7 +158,8 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
+        val responseBody =
+            commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldBe null
             inntekter shouldBe null
@@ -237,7 +241,8 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
+        val responseBody =
+            commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldBe null
             inntekter shouldNotBe null
@@ -280,7 +285,8 @@ class ValiderBehandlingTest {
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning"
-        val responseBody = commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
+        val responseBody =
+            commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
         assertSoftly(responseBody) {
             virkningstidspunkt shouldBe null
             inntekter shouldNotBe null

@@ -15,7 +15,8 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
-import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
+import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -36,7 +37,8 @@ class UtgiftserviceTest : TestContainerRunner() {
 
     fun opprettBehandlingSærligeUtgifter(): Behandling {
         val behandling = oppretteBehandling()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+        behandling.kategori = SærbidragKategori.KONFIRMASJON.name
         return behandling
     }
 
@@ -140,7 +142,7 @@ class UtgiftserviceTest : TestContainerRunner() {
     @Transactional
     fun `skal opprette utgiftspost for kategori OPTIKK`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_OPTIKK
+        behandling.kategori = SærbidragKategori.OPTIKK.name
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val forespørsel =
             OppdatereUtgiftRequest(
@@ -175,7 +177,7 @@ class UtgiftserviceTest : TestContainerRunner() {
     @Transactional
     fun `skal opprette utgiftspost for kategori TANNREGULERING`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.engangsbeloptype = Engangsbeløptype.SÆRTILSKUDD_TANNREGULERING
+        behandling.kategori = SærbidragKategori.TANNREGULERING.name
         behandling.utgift =
             Utgift(
                 behandling = behandling,
@@ -243,7 +245,11 @@ class UtgiftserviceTest : TestContainerRunner() {
                 ),
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
-        val utgiftspostId = behandling.utgift!!.utgiftsposter.first().id
+        val utgiftspostId =
+            behandling.utgift!!
+                .utgiftsposter
+                .first()
+                .id
         val forespørsel =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
@@ -408,8 +414,15 @@ class UtgiftserviceTest : TestContainerRunner() {
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val utgiftspostSlettId =
-            behandling.utgift!!.utgiftsposter.find { it.dato == LocalDate.parse("2022-01-01") }!!.id
-        val utgiftspostId = behandling.utgift!!.utgiftsposter.find { it.dato == LocalDate.parse("2021-01-01") }!!.id
+            behandling.utgift!!
+                .utgiftsposter
+                .find { it.dato == LocalDate.parse("2022-01-01") }!!
+                .id
+        val utgiftspostId =
+            behandling.utgift!!
+                .utgiftsposter
+                .find { it.dato == LocalDate.parse("2021-01-01") }!!
+                .id
         val forespørsel =
             OppdatereUtgiftRequest(
                 sletteUtgift = utgiftspostSlettId,
@@ -456,7 +469,10 @@ class UtgiftserviceTest : TestContainerRunner() {
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val utgiftspostSlettId =
-            behandling.utgift!!.utgiftsposter.find { it.dato == LocalDate.parse("2022-01-01") }!!.id
+            behandling.utgift!!
+                .utgiftsposter
+                .find { it.dato == LocalDate.parse("2022-01-01") }!!
+                .id
         val forespørsel =
             OppdatereUtgiftRequest(
                 sletteUtgift = utgiftspostSlettId,
@@ -497,7 +513,11 @@ class UtgiftserviceTest : TestContainerRunner() {
                 ),
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
-        val utgiftspostId = behandling.utgift!!.utgiftsposter.first().id
+        val utgiftspostId =
+            behandling.utgift!!
+                .utgiftsposter
+                .first()
+                .id
         val forespørsel =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =

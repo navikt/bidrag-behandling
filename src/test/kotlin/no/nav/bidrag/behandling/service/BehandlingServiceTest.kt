@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -15,10 +16,12 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -43,6 +46,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -301,12 +305,17 @@ class BehandlingServiceTest : TestContainerRunner() {
                 )
 
             assertSoftly {
-                behandlingDto.inntekter.årsinntekter.filter { ytelser.contains(it.rapporteringstype) }.size shouldBe 0
+                behandlingDto.inntekter.årsinntekter
+                    .filter { ytelser.contains(it.rapporteringstype) }
+                    .size shouldBe 0
                 behandlingDto.inntekter.barnetillegg.size shouldBe 1
                 behandlingDto.inntekter.kontantstøtte.size shouldBe 1
                 behandlingDto.inntekter.småbarnstillegg.size shouldBe 1
                 behandlingDto.inntekter.utvidetBarnetrygd.size shouldBe 1
-                behandlingDto.inntekter.årsinntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }.size shouldBe 1
+                behandlingDto.inntekter.årsinntekter
+                    .filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }
+                    .size shouldBe
+                    1
             }
         }
 
@@ -432,7 +441,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal opprette en særlige utgifter behandling`() {
+        open fun `skal opprette en særbidrag behandling`() {
             val søknadsid = 123213L
             stubUtils.stubHenteGrunnlag()
             stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
@@ -449,7 +458,11 @@ class BehandlingServiceTest : TestContainerRunner() {
                         søknadsid = søknadsid,
                         behandlerenhet = "1233",
                         stønadstype = null,
-                        engangsbeløpstype = Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON,
+                        engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
+                        kategori =
+                            OpprettKategoriRequestDto(
+                                SærbidragKategori.KONFIRMASJON.name,
+                            ),
                         roller =
                             setOf(
                                 OpprettRolleDto(
@@ -475,7 +488,71 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingService.hentBehandlingById(opprettetBehandling.id)
 
             opprettetBehandlingAfter.stonadstype shouldBe null
-            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRTILSKUDD_KONFIRMASJON
+            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            opprettetBehandlingAfter.særbidragKategori shouldBe SærbidragKategori.KONFIRMASJON
+            opprettetBehandlingAfter.kategoriBeskrivelse.shouldBeNull()
+            opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
+            opprettetBehandlingAfter.årsak shouldBe null
+            opprettetBehandlingAfter.roller shouldHaveSize 3
+            opprettetBehandlingAfter.soknadsid shouldBe søknadsid
+            opprettetBehandlingAfter.saksnummer shouldBe "12312"
+            opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
+            opprettetBehandlingAfter.utgift shouldBe null
+        }
+
+        @Test
+        @Transactional
+        open fun `skal opprette en særbidrag behandling med kategori ANNET`() {
+            val søknadsid = 123213L
+            stubUtils.stubHenteGrunnlag()
+            stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
+            stubKodeverkProvider()
+
+            val opprettetBehandling =
+                behandlingService.opprettBehandling(
+                    OpprettBehandlingRequest(
+                        vedtakstype = Vedtakstype.FASTSETTELSE,
+                        søktFomDato = LocalDate.parse("2023-01-01"),
+                        mottattdato = LocalDate.parse("2023-01-01"),
+                        søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                        saksnummer = "12312",
+                        søknadsid = søknadsid,
+                        behandlerenhet = "1233",
+                        stønadstype = null,
+                        engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
+                        kategori =
+                            OpprettKategoriRequestDto(
+                                SærbidragKategori.ANNET.name,
+                                "Dette er test",
+                            ),
+                        roller =
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident(testdataBarn1.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSMOTTAKER,
+                                    ident = Personident(testdataBM.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSPLIKTIG,
+                                    ident = Personident(testdataBP.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                            ),
+                    ),
+                )
+
+            val opprettetBehandlingAfter =
+                behandlingService.hentBehandlingById(opprettetBehandling.id)
+
+            opprettetBehandlingAfter.stonadstype shouldBe null
+            opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            opprettetBehandlingAfter.særbidragKategori shouldBe SærbidragKategori.ANNET
+            opprettetBehandlingAfter.kategoriBeskrivelse shouldBe "Dette er test"
             opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
             opprettetBehandlingAfter.årsak shouldBe null
             opprettetBehandlingAfter.roller shouldHaveSize 3
@@ -547,7 +624,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertEquals(1, actualBehandlingFetched.inntekter.size)
             assertEquals(
                 BigDecimal.valueOf(555.55),
-                actualBehandlingFetched.inntekter.iterator().next().belop,
+                actualBehandlingFetched.inntekter
+                    .iterator()
+                    .next()
+                    .belop,
             )
         }
     }
@@ -1072,7 +1152,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g.filter { it.aktiv != null } shouldHaveSize 3
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
                 jsonListeTilObjekt<BoforholdResponse>(g.first { it.erBearbeidet }.data)
-                    .first().periodeFom shouldBeEqual behandling.virkningstidspunkt!!
+                    .first()
+                    .periodeFom shouldBeEqual behandling.virkningstidspunkt!!
             }
 
             // hvis
@@ -1087,7 +1168,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
                 g.filter { it.aktiv != null } shouldHaveSize 3
                 jsonListeTilObjekt<BoforholdResponse>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
-                    .first().periodeFom shouldBeEqual nyVirkningsdato
+                    .first()
+                    .periodeFom shouldBeEqual nyVirkningsdato
             }
             val sivilstandgrunnlag = behandling.grunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }
             assertSoftly(sivilstandgrunnlag) { g ->
@@ -1095,7 +1177,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
                 g.filter { it.aktiv != null } shouldHaveSize 2
                 jsonListeTilObjekt<Sivilstand>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
-                    .first().periodeFom shouldBeEqual nyVirkningsdato
+                    .first()
+                    .periodeFom shouldBeEqual nyVirkningsdato
             }
         }
     }
@@ -1113,13 +1196,15 @@ class BehandlingServiceTest : TestContainerRunner() {
         assertEquals(2, updatedBehandling.roller.size)
 
         val realCount =
-            entityManager.createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id)
+            entityManager
+                .createNativeQuery("select count(*) from rolle r where r.behandling_id = " + behandling.id)
                 .singleResult
 
         val deletedCount =
-            entityManager.createNativeQuery(
-                "select count(*) from rolle r where r.behandling_id = ${behandling.id} and r.deleted = true",
-            ).singleResult
+            entityManager
+                .createNativeQuery(
+                    "select count(*) from rolle r where r.behandling_id = ${behandling.id} and r.deleted = true",
+                ).singleResult
 
         assertEquals(3L, realCount)
         assertEquals(1L, deletedCount)
@@ -1162,13 +1247,12 @@ class BehandlingServiceTest : TestContainerRunner() {
             return behandling
         }
 
-        fun prepareRoles(behandling: Behandling): Set<Rolle> {
-            return setOf(
+        fun prepareRoles(behandling: Behandling): Set<Rolle> =
+            setOf(
                 testdataBM.tilRolle(behandling),
                 testdataBP.tilRolle(behandling),
                 testdataBarn1.tilRolle(behandling),
             )
-        }
     }
 
     fun oppretteBehandling(): Behandling {

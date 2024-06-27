@@ -15,7 +15,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftResponse
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftspost
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.særligeutgifter.Utgiftstype
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -64,7 +64,11 @@ class UtgiftService(
 
             utgift.utgiftsposter.add(nyUtgiftspost)
             behandling.utgift = utgiftRepository.save(utgift)
-            val utgiftspostId = request.nyEllerEndretUtgift.id ?: behandling.utgift!!.utgiftsposter.maxBy { it.id!! }.id
+            val utgiftspostId =
+                request.nyEllerEndretUtgift.id ?: behandling.utgift!!
+                    .utgiftsposter
+                    .maxBy { it.id!! }
+                    .id
             return utgift.tilUtgiftResponse(utgiftspostId)
         } else if (request.sletteUtgift != null) {
             utgift.lagreHistorikk()

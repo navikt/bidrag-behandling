@@ -46,17 +46,19 @@ class BidragGrunnlagConsumer(
             personident: Personident,
             grunnlagstyper: Set<GrunnlagRequestType>,
             virkningstidspunktEllerSøktFra: LocalDate,
-        ) = grunnlagstyper.map {
-            val fradato = finneFraDato(it, virkningstidspunktEllerSøktFra)
-            val tildato = LocalDate.now().plusDays(1)
+        ) = grunnlagstyper
+            .map {
+                val fradato = finneFraDato(it, virkningstidspunktEllerSøktFra)
+                val tildato = LocalDate.now().plusDays(1)
 
-            GrunnlagRequestDto(
-                type = it,
-                personId = personident.verdi,
-                periodeFra = fradato,
-                periodeTil = tildato,
-            )
-        }.toList().sortedBy { personident }
+                GrunnlagRequestDto(
+                    type = it,
+                    personId = personident.verdi,
+                    periodeFra = fradato,
+                    periodeTil = tildato,
+                )
+            }.toList()
+            .sortedBy { personident }
 
         private fun finneFraDato(
             type: GrunnlagRequestType,
@@ -94,7 +96,8 @@ class BidragGrunnlagConsumer(
                         behandling,
                     ),
             )
-        behandling.søknadsbarn.filter { sb -> sb.ident != null }
+        behandling.søknadsbarn
+            .filter { sb -> sb.ident != null }
             .map { Personident(it.ident!!) }
             .forEach {
                 requestobjekterGrunnlag[it] =
@@ -103,7 +106,7 @@ class BidragGrunnlagConsumer(
                         Rolletype.BARN,
                         behandling,
                     )
-                if (TypeBehandling.SÆRLIGE_UTGIFTER == behandlingstype) {
+                if (TypeBehandling.SÆRBIDRAG == behandlingstype) {
                     requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
                         oppretteGrunnlagsobjekter(
                             Personident(behandling.bidragspliktig!!.ident!!),
@@ -122,10 +125,9 @@ class BidragGrunnlagConsumer(
     }
 
     @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
-    fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentGrunnlagDto {
-        return postForNonNullEntity(
+    fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentGrunnlagDto =
+        postForNonNullEntity(
             bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),
             HentGrunnlagRequestDto(formaal = Formål.FORSKUDD, grunnlagRequestDtoListe = grunnlag),
         )
-    }
 }
