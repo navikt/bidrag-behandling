@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
@@ -56,6 +57,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -879,3 +881,16 @@ class BoforholdService(
         )
     }
 }
+
+// TODO: Fjerne når felleskomponent er klar
+fun beregneVoksneIHusstanden(
+    virkningsdato: LocalDate,
+    grunnlag: Set<RelatertPersonGrunnlagDto>,
+): Set<BoforholdAndreVoksneIHusstanden> = emptySet()
+
+// TODO: Fjerne når felleskomponent er klar
+data class BoforholdAndreVoksneIHusstanden(
+    val bostatus: Bostatuskode,
+    val periode: ÅrMånedsperiode,
+    val voksneIHusstanden: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
+)

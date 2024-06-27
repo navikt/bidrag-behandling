@@ -259,13 +259,7 @@ data class AndreVoksneIHusstandenGrunnlagDto(
 data class PeriodeAndreVoksneIHusstanden(
     val periode: ÅrMånedsperiode,
     val status: Bostatuskode,
-    val husstandsmedlemmer: Set<VoksenIHusstand>,
-)
-
-data class VoksenIHusstand(
-    val navn: String,
-    val fødselsdato: LocalDate,
-    val harRelasjonTilBmBp: Boolean = false,
+    val husstandsmedlemmer: Set<HusstandsmedlemGrunnlagDto>,
 )
 
 @Schema(enumAsRef = true, name = "OpplysningerType")
@@ -305,6 +299,7 @@ enum class Grunnlagsdatatype(
                 ),
         ),
     ),
+    BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN(mapOf(TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG))),
     KONTANTSTØTTE(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
     SIVILSTAND(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
     UTVIDET_BARNETRYGD(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),

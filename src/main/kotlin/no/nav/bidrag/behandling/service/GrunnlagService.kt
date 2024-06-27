@@ -134,6 +134,7 @@ class GrunnlagService(
             when (request.grunnlagstype) {
                 Grunnlagsdatatype.BARNETILLEGG -> behandling.rolleGrunnlagSkalHentesFor
                 Grunnlagsdatatype.BOFORHOLD -> behandling.rolleGrunnlagSkalHentesFor
+                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> behandling.rolleGrunnlagSkalHentesFor
                 Grunnlagsdatatype.KONTANTSTØTTE -> behandling.rolleGrunnlagSkalHentesFor
                 else ->
                     behandling.roller.find { request.personident.verdi == it.ident }
@@ -631,11 +632,11 @@ class GrunnlagService(
         if (bmsNyesteBearbeidaBoforholdFørLagring.isEmpty() && innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
-        aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
+        aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
     }
 
-    fun aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling: Behandling) {
-        val rolleInhentetFor = behandling.bidragsmottaker!! // TODO: Dette skal være BP i særtilskudd
+    fun aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+        val rolleInhentetFor = behandling.rolleGrunnlagSkalHentesFor
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
@@ -644,7 +645,7 @@ class GrunnlagService(
                 aktiveGrunnlag,
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.husstandsmedlem,
-                rolleInhentetFor,
+                rolleInhentetFor!!,
             )
 
         behandling.husstandsmedlem.filter { it.kilde == Kilde.OFFENTLIG }
@@ -1390,6 +1391,19 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                )
+            }
+
+            Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
+                lagreGrunnlagHvisEndret(
+                    behandling,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, true),
+                    // TODO: Bytte ut med ny BoforholdApi-tjeneste når denne er klar
+                    beregneVoksneIHusstanden(
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                        innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                    ),
                 )
             }
 

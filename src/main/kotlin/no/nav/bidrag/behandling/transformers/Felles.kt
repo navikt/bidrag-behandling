@@ -46,9 +46,7 @@ val inntekterSomKanHaHullIPerioder = eksplisitteYtelser
 
 fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
 
-fun Behandling.erForskudd() = tilType() == TypeBehandling.FORSKUDD
-
-fun Behandling.erSærligeUtgifter() = tilType() == TypeBehandling.SÆRBIDRAG
+fun Behandling.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG
 
 fun bestemTypeBehandling(
     stønadstype: Stønadstype?,
