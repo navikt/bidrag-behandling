@@ -77,4 +77,34 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
             }
         }
     }
+
+    @Test
+    fun `skal ikke bruke fradato som er lengre enn fem år tilbake i tid ved henting av utvidet barnetrygd og småbarnstillegg`() {
+        // gitt
+        val behandling = testdataManager.oppretteBehandling(false)
+        behandling.virkningstidspunkt = LocalDate.now().minusYears(6)
+
+        // hvis
+        val grunnlagRequest = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+
+        // så
+        val periodeFra = LocalDate.now().minusYears(6)
+
+        assertSoftly {
+            grunnlagRequest.entries.forEach {
+                it.value.forEach { request ->
+                    request.periodeTil shouldBe LocalDate.now().plusDays(1)
+                    if (GrunnlagRequestType.AINNTEKT == request.type) {
+                        request.periodeFra shouldBe periodeFra.minusYears(1).withMonth(1).withDayOfMonth(1)
+                    } else if (GrunnlagRequestType.SKATTEGRUNNLAG == request.type) {
+                        request.periodeFra shouldBe periodeFra.minusYears(3).withMonth(1).withDayOfMonth(1)
+                    } else if (GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG == request.type) {
+                        request.periodeFra shouldBe periodeFra.plusYears(1)
+                    } else {
+                        request.periodeFra shouldBe periodeFra
+                    }
+                }
+            }
+        }
+    }
 }
