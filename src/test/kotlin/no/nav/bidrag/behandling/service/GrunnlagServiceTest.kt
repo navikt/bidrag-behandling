@@ -1112,7 +1112,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                     1,
                                     24,
                                 ) &&
-                                h.erBarnAvBmBp
+                                h.erBarn
                         }.toSet()
                         .size shouldBe 1
                 }

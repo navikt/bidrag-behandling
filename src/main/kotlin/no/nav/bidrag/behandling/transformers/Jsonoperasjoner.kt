@@ -10,6 +10,7 @@ import com.google.gson.reflect.TypeToken
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.Periode
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.lang.reflect.Type
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -23,35 +24,29 @@ class Jsonoperasjoner {
             GsonBuilder()
                 .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
                 .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter())
+                .create()
                 .toJson(
                     objekt,
                 )
 
-        inline fun <reified T> tilJson(sett: Set<T>): String {
-            val gson =
-                GsonBuilder()
-                    .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
-                    .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                    .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-
-            val a = ArrayList<T>()
-            a.addAll(sett)
-            return gson.toJson(a, kolleksjon<T>())
-        }
+        inline fun <reified T> tilJson(sett: Set<T>): String = commonObjectmapper.writeValueAsString(sett)
 
         inline fun <reified T> jsonListeTilObjekt(json: String) =
             GsonBuilder()
                 .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
                 .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
-                .fromJsonList<T>(json).toSet()
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter())
+                .create()
+                .fromJsonList<T>(json)
+                .toSet()
 
         inline fun <reified T> jsonTilObjekt(json: String) =
             GsonBuilder()
                 .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
                 .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeTypeAdapter())
-                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter()).create()
+                .registerTypeAdapter(YearMonth::class.java, YearMonthTypeAdapter())
+                .create()
                 .fromJson<T>(json, genericType<T>())
     }
 }

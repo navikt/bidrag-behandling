@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -47,14 +48,13 @@ open class Grunnlag(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
 ) {
-    override fun toString(): String {
-        return try {
+    override fun toString(): String =
+        try {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
                 "id=$id, behandling=${behandling.id}, innhentet=$innhentet, gjelder=$gjelder)"
         } catch (e: Exception) {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
-    }
 
     val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
 }
@@ -68,7 +68,9 @@ fun Set<Grunnlag>.henteNyesteGrunnlag(
     rolle: Rolle,
     gjelder: Personident?,
 ) = filter {
-    it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
+    it.type == grunnlagstype.type &&
+        it.rolle.id == rolle.id &&
+        grunnlagstype.erBearbeidet == it.erBearbeidet &&
         it.gjelder == gjelder?.verdi
 }.toSet().maxByOrNull { it.innhentet }
 
@@ -81,13 +83,15 @@ fun Set<Grunnlag>.henteNyesteGrunnlag(
     }.toSet().maxByOrNull { it.innhentet }
 
 fun Set<Grunnlag>.hentSisteIkkeAktiv() =
-    hentAlleIkkeAktiv().groupBy { it.identifikator }
+    hentAlleIkkeAktiv()
+        .groupBy { it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
 
 fun Set<Grunnlag>.hentSisteAktiv() =
-    hentAlleAktiv().groupBy { it.identifikator }
+    hentAlleAktiv()
+        .groupBy { it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
@@ -96,10 +100,12 @@ fun Set<Grunnlag>.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(rolleInnhen
     henteNyesteGrunnlag(
         Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
         rolleInnhentetFor,
-    )
-        ?.data?.let { jsonListeTilObjekt<RelatertPersonGrunnlagDto>(it) }
-        ?.filter { it.erBarnAvBmBp && it.relatertPersonPersonId != null }
-        ?.groupBy { it.relatertPersonPersonId!! }?.map { Personident(it.key) }?.toSet()
+    )?.data
+        ?.let { jsonListeTilObjekt<RelatertPersonGrunnlagDto>(it) }
+        ?.filter { it.relasjon == Familierelasjon.BARN && it.gjelderPersonId != null }
+        ?.groupBy { it.gjelderPersonId!! }
+        ?.map { Personident(it.key) }
+        ?.toSet()
 
 fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
     hentSisteAktiv()
@@ -107,7 +113,8 @@ fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
         .konvertereData<Set<Sivilstand>>()
 
 fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
-    behandling.grunnlag.hentSisteAktiv()
+    behandling.grunnlag
+        .hentSisteAktiv()
         .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
         .konvertereData<List<BoforholdResponse>>()
 
@@ -125,6 +132,4 @@ fun List<Grunnlag>.henteBearbeidaInntekterForType(
     it.type == type && it.erBearbeidet && it.rolle.ident == ident
 }.konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
 
-inline fun <reified T> Grunnlag?.konvertereData(): T? {
-    return this?.data?.let { objectmapper.readValue(it) }
-}
+inline fun <reified T> Grunnlag?.konvertereData(): T? = this?.data?.let { objectmapper.readValue(it) }
