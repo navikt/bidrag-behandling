@@ -65,18 +65,18 @@ class UtgiftserviceTest : TestContainerRunner() {
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val forespørsel =
             OppdatereUtgiftRequest(
-                avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRLIGE_UTGIFTER,
+                avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG,
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
         response.utgiftposter shouldHaveSize 0
-        response.avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRLIGE_UTGIFTER
+        response.avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
     }
 
     @Test
     @Transactional
     fun `skal fjerne avslag`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRLIGE_UTGIFTER
+        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
         behandling.utgift =
             Utgift(
                 behandling = behandling,
