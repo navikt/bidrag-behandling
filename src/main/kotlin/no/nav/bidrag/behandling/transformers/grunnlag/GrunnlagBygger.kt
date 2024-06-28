@@ -92,7 +92,6 @@ fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
     val personobjekterMedHusstandsmedlemmer =
         (personobjekter + bostatus.husstandsmedlemmer()).toMutableSet()
     val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekterMedHusstandsmedlemmer)
-    // TODO: Er dette for BP i bidrag?
     val sivilstand =
         tilGrunnlagSivilstand(
             personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),

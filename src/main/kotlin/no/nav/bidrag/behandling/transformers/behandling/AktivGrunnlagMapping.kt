@@ -8,12 +8,15 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
+import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
+import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
+import no.nav.bidrag.behandling.service.BoforholdAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -84,6 +87,46 @@ fun InntektPost.erLik(inntektPost: Inntektspost): Boolean {
     return kode == inntektPost.kode && inntekstype == inntektPost.inntektstype
 }
 
+// TODO: SÆRBIDRAG - Implementere
+fun List<Grunnlag>.henteEndringerIAndreVoksneIHusstanden(aktiveGrunnlag: List<Grunnlag>): AndreVoksneIHusstandenGrunnlagDto? {
+    val aktivtGrunnlag =
+        aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet }
+    val nyttGrunnlag = find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+    val aktiveData = aktivtGrunnlag.konvertereData<Set<BoforholdAndreVoksneIHusstanden>>()?.toSet()
+    val nyeData = nyttGrunnlag.konvertereData<Set<BoforholdAndreVoksneIHusstanden>>()?.toSet()
+    if (aktiveData != null && nyeData != null && !nyeData.erLik(aktiveData)) {
+        return AndreVoksneIHusstandenGrunnlagDto(
+            perioder =
+                nyeData.asSequence().map {
+                    PeriodeAndreVoksneIHusstanden(
+                        periode = it.periode,
+                        status = it.bostatus,
+                        husstandsmedlemmer = it.voksneIHusstanden,
+                    )
+                }.toSet(),
+            innhentet = nyttGrunnlag?.innhentet ?: LocalDateTime.now(),
+        )
+    }
+    return null
+}
+
+// TODO: SÆRBIDRAG - Implementere
+fun Set<BoforholdAndreVoksneIHusstanden>.erLik(detAndreSettet: Set<BoforholdAndreVoksneIHusstanden>): Boolean {
+    if (size != detAndreSettet.size) return false
+    return asSequence().sortedBy { it.periode.fom }.all { gjeldendeData ->
+        detAndreSettet.asSequence().sortedBy { it.periode.fom }.any {
+            it.periode.fom == gjeldendeData.periode.fom && it.periode.til == gjeldendeData.periode.til &&
+                it.bostatus == gjeldendeData.bostatus && it.voksneIHusstanden.erIdentiskMed(gjeldendeData.voksneIHusstanden)
+        }
+    }
+}
+
+// TODO: SÆRBIDRAG - Implementere
+fun Set<HusstandsmedlemGrunnlagDto>.erIdentiskMed(detAndreSettet: Set<HusstandsmedlemGrunnlagDto>): Boolean {
+    if (size != detAndreSettet.size) return false
+    return true
+}
+
 fun List<Grunnlag>.hentEndringerBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     virkniningstidspunkt: LocalDate,
@@ -133,7 +176,8 @@ fun List<Grunnlag>.hentEndringerSivilstand(
     virkniningstidspunkt: LocalDate,
 ): SivilstandIkkeAktivGrunnlagDto? {
     return try {
-        val aktivtSivilstandsgrunnlag = aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
+        val aktivtSivilstandsgrunnlag =
+            aktiveGrunnlag.find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nyttBearbeidaSivilstandsgrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && it.erBearbeidet }
         val nyttSivilstandsgrunnlag = find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
         val aktiveSivilstandsdata =

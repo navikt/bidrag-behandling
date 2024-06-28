@@ -252,14 +252,14 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
             )
         }.toSet()
 
-// TODO: Oppdatere når BoforholdApi for andre voksne i husstanden er klart
+// TODO: SÆRBIDRAG - Oppdatere når BoforholdApi for andre voksne i husstanden er klart
 fun Grunnlag.tilAndreVoksneIHusstanden() =
     AndreVoksneIHusstandenGrunnlagDto(
         perioder = this.tilPeriodeAndreVoksneIHusstanden(),
         innhentet = LocalDateTime.now(),
     )
 
-// TODO: Oppdatere når BoforholdApi for andre voksne i husstanden er klart
+// TODO: SÆRBIDRAG - Oppdatere når BoforholdApi for andre voksne i husstanden er klart
 fun Grunnlag.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> {
     return this.konvertereData<Set<BoforholdAndreVoksneIHusstanden>>()?.map {
         PeriodeAndreVoksneIHusstanden(

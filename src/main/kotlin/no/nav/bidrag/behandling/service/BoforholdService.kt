@@ -882,13 +882,13 @@ class BoforholdService(
     }
 }
 
-// TODO: Fjerne når felleskomponent er klar
+// TODO: SÆRBIDRAG - Fjerne når felleskomponent er klar
 fun beregneVoksneIHusstanden(
     virkningsdato: LocalDate,
     grunnlag: Set<RelatertPersonGrunnlagDto>,
 ): Set<BoforholdAndreVoksneIHusstanden> = emptySet()
 
-// TODO: Fjerne når felleskomponent er klar
+// TODO: SÆRBIDRAG- Fjerne når felleskomponent er klar
 data class BoforholdAndreVoksneIHusstanden(
     val bostatus: Bostatuskode,
     val periode: ÅrMånedsperiode,
