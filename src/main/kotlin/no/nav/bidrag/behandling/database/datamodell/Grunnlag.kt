@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
-import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -102,7 +101,7 @@ fun Set<Grunnlag>.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(rolleInnhen
         rolleInnhentetFor,
     )?.data
         ?.let { jsonListeTilObjekt<RelatertPersonGrunnlagDto>(it) }
-        ?.filter { it.relasjon == Familierelasjon.BARN && it.gjelderPersonId != null }
+        ?.filter { it.erBarn && it.gjelderPersonId != null }
         ?.groupBy { it.gjelderPersonId!! }
         ?.map { Personident(it.key) }
         ?.toSet()
