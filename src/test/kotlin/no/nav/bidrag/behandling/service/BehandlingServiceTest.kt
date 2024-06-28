@@ -46,7 +46,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -461,7 +461,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
                         kategori =
                             OpprettKategoriRequestDto(
-                                SærbidragKategori.KONFIRMASJON.name,
+                                Særbidragskategori.KONFIRMASJON.name,
                             ),
                         roller =
                             setOf(
@@ -489,7 +489,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             opprettetBehandlingAfter.stonadstype shouldBe null
             opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
-            opprettetBehandlingAfter.særbidragKategori shouldBe SærbidragKategori.KONFIRMASJON
+            opprettetBehandlingAfter.særbidragKategori shouldBe Særbidragskategori.KONFIRMASJON
             opprettetBehandlingAfter.kategoriBeskrivelse.shouldBeNull()
             opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
             opprettetBehandlingAfter.årsak shouldBe null
@@ -522,7 +522,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
                         kategori =
                             OpprettKategoriRequestDto(
-                                SærbidragKategori.ANNET.name,
+                                Særbidragskategori.ANNET.name,
                                 "Dette er test",
                             ),
                         roller =
@@ -551,7 +551,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             opprettetBehandlingAfter.stonadstype shouldBe null
             opprettetBehandlingAfter.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
-            opprettetBehandlingAfter.særbidragKategori shouldBe SærbidragKategori.ANNET
+            opprettetBehandlingAfter.særbidragKategori shouldBe Særbidragskategori.ANNET
             opprettetBehandlingAfter.kategoriBeskrivelse shouldBe "Dette er test"
             opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
             opprettetBehandlingAfter.årsak shouldBe null

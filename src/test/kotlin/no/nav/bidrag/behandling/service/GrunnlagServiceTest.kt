@@ -42,7 +42,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
@@ -1653,7 +1653,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, false, true)
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
-                behandling.kategori = SærbidragKategori.KONFIRMASJON.name
+                behandling.kategori = Særbidragskategori.KONFIRMASJON.name
                 behandling.stonadstype = null
 
                 stubbeHentingAvPersoninfoForTestpersoner()

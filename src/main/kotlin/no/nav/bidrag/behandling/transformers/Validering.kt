@@ -35,7 +35,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
@@ -75,13 +75,13 @@ fun OpprettBehandlingRequest.valider() {
                     "Kategori må settes for ${Engangsbeløptype.SÆRBIDRAG}",
                 )
 
-            SærbidragKategori.entries.none { it.name == kategori?.kategori } ->
+            Særbidragskategori.entries.none { it.name == kategori?.kategori } ->
                 feilliste.add(
                     "Kategori ${kategori?.kategori} er ikke en gyldig særbidrag kategori",
                 )
 
-            kategori?.kategori == SærbidragKategori.ANNET.name && kategori.beskrivelse.isNullOrEmpty() ->
-                feilliste.add("Beskrivelse må settes hvis kategori er ${SærbidragKategori.ANNET}")
+            kategori?.kategori == Særbidragskategori.ANNET.name && kategori.beskrivelse.isNullOrEmpty() ->
+                feilliste.add("Beskrivelse må settes hvis kategori er ${Særbidragskategori.ANNET}")
         }
     }
     roller
@@ -132,14 +132,14 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
         }
 
         when (behandling.særbidragKategori) {
-            SærbidragKategori.KONFIRMASJON -> {
+            Særbidragskategori.KONFIRMASJON -> {
                 if (nyEllerEndretUtgift.type == null) {
-                    feilliste.add("Type må settes hvis behandling har kategori ${SærbidragKategori.KONFIRMASJON}")
+                    feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.KONFIRMASJON}")
                 }
-                if (nyEllerEndretUtgift.type?.kategori != SærbidragKategori.KONFIRMASJON) {
+                if (nyEllerEndretUtgift.type?.kategori != Særbidragskategori.KONFIRMASJON) {
                     feilliste.add(
                         "Type ${nyEllerEndretUtgift.type} er ikke gyldig for" +
-                            " behandling med kategori ${SærbidragKategori.KONFIRMASJON}",
+                            " behandling med kategori ${Særbidragskategori.KONFIRMASJON}",
                     )
                 }
             }
@@ -148,7 +148,7 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
                 if (nyEllerEndretUtgift.betaltAvBp) {
                     feilliste.add(
                         "Kan ikke legge til utgift betalt av BP for " +
-                            "særbidrag behandling som ikke har kategori ${SærbidragKategori.KONFIRMASJON}",
+                            "særbidrag behandling som ikke har kategori ${Særbidragskategori.KONFIRMASJON}",
                     )
                 }
                 if (nyEllerEndretUtgift.type != null) {

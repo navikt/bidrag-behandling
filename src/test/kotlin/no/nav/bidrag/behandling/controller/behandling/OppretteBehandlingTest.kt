@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -137,7 +137,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                         vedtakstype = Vedtakstype.FASTSETTELSE,
                         kategori =
                             OpprettKategoriRequestDto(
-                                kategori = SærbidragKategori.KONFIRMASJON.name,
+                                kategori = Særbidragskategori.KONFIRMASJON.name,
                             ),
                     )
 
@@ -155,7 +155,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
 
             behandling.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
             behandling.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
-            behandling.særbidragKategori shouldBe SærbidragKategori.KONFIRMASJON
+            behandling.særbidragKategori shouldBe Særbidragskategori.KONFIRMASJON
             behandling.stonadstype shouldBe null
             behandling.utgift shouldBe null
         }
