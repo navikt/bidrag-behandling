@@ -1782,13 +1782,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val endretBoforholdTestbarn1 =
                     dataBoforhold
-                        .find { testdataBarn1.ident == it.relatertPersonPersonId }
+                        .find { testdataBarn1.ident == it.gjelderPersonId }
                         ?.copy(borISammeHusstandDtoListe = nyeBorhosperioder)
 
                 val endretBoforhold =
                     listOf(
                         endretBoforholdTestbarn1!!,
-                        dataBoforhold.find { testdataBarn2.ident == it.relatertPersonPersonId }!!,
+                        dataBoforhold.find { testdataBarn2.ident == it.gjelderPersonId }!!,
                     )
 
                 behandling.grunnlag.add(
@@ -1902,13 +1902,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val endretBoforholdTestbarn1 =
                     dataBoforhold
-                        .find { testdataBarn1.ident == it.relatertPersonPersonId }
+                        .find { testdataBarn1.ident == it.gjelderPersonId }
                         ?.copy(borISammeHusstandDtoListe = nyeBorhosperioder)
 
                 val endretBoforhold =
                     listOf(
                         endretBoforholdTestbarn1!!,
-                        dataBoforhold.find { testdataBarn2.ident == it.relatertPersonPersonId }!!,
+                        dataBoforhold.find { testdataBarn2.ident == it.gjelderPersonId }!!,
                     )
 
                 behandling.grunnlag.add(
