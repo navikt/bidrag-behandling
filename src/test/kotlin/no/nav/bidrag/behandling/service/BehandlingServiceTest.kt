@@ -1130,7 +1130,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 s shouldHaveSize 4
                 jsonListeTilObjekt<Sivilstand>(
                     s.first { it.erBearbeidet && it.aktiv == null }.data,
-                ).first().periodeFom shouldBeEqual nyVirkningsdato
+                ).minByOrNull { it.periodeFom }!!.periodeFom shouldBeEqual nyVirkningsdato
             }
         }
 
