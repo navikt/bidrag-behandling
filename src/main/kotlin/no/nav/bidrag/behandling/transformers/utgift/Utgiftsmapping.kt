@@ -76,7 +76,7 @@ fun OppdatereUtgift.tilUtgiftspost(utgift: Utgift) =
                 Særbidragskategori.KONFIRMASJON -> type!!
                 Særbidragskategori.OPTIKK -> Utgiftstype.OPTIKK
                 Særbidragskategori.TANNREGULERING -> Utgiftstype.TANNREGULERING
-                Særbidragskategori.ANNET -> type!!
+                Særbidragskategori.ANNET -> Utgiftstype.ANNET
                 else -> throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Kunne ikke bestemme type for utgiftspost")
             },
         godkjentBeløp =
