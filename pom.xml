@@ -27,7 +27,7 @@
         <mockk.version>4.0.2</mockk.version>
         <kotlin-logging-jvm.version>7.0.0</kotlin-logging-jvm.version>
         <flyway.version>10.15.0</flyway.version>
-        <jackson.version>2.17.1</jackson.version>
+        <jackson.version>2.17.2</jackson.version>
         <testcontainers.version>1.19.7</testcontainers.version>
         <spring-boot-testcontainers.version>3.3.1</spring-boot-testcontainers.version>
         <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
