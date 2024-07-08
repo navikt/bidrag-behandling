@@ -41,7 +41,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandli
                     false ->
                         listOf(
                             Bostatus(
-                                bostatusKode = Bostatuskode.IKKE_MED_FORELDER,
+                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
                                 kilde = Kilde.OFFENTLIG,
                                 periodeFom = maxOf(g.fødselsdato!!, behandling.virkningstidspunktEllerSøktFomDato),
                                 periodeTom = null,
@@ -91,7 +91,7 @@ fun Husstandsmedlem.henteOffentligePerioder(): Set<Bostatusperiode> =
 
 fun Bostatusperiode.tilBostatus() =
     Bostatus(
-        bostatusKode = this.bostatus,
+        bostatus = this.bostatus,
         kilde = this.kilde,
         periodeFom = this.datoFom,
         periodeTom = this.datoTom,
@@ -102,7 +102,7 @@ fun List<BorISammeHusstandDto>.tilBostatus(
     kilde: Kilde,
 ) = this.map {
     Bostatus(
-        bostatusKode = bostatus,
+        bostatus = bostatus,
         kilde = kilde,
         periodeFom = it.periodeFra,
         periodeTom = it.periodeTil,

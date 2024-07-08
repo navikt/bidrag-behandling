@@ -849,7 +849,7 @@ class BoforholdService(
             Bostatus(
                 periodeFom = it.datoFom,
                 periodeTom = it.datoTom,
-                bostatusKode = it.bostatus,
+                bostatus = it.bostatus,
                 kilde = it.kilde,
             )
         }
