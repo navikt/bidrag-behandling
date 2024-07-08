@@ -5,7 +5,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.util.visningsnavn
@@ -22,6 +22,6 @@ class VisningsnavnController {
             Resultatkode.entries.associate { it.name to it.visningsnavn.intern } +
             Bostatuskode.entries.associate { it.name to it.visningsnavn.intern } +
             Sivilstandskode.entries.associate { it.name to it.visningsnavn.intern } +
-            SærbidragKategori.entries.associate { it.name to it.visningsnavn.intern } +
+            Særbidragskategori.entries.associate { it.name to it.visningsnavn.intern } +
             Utgiftstype.entries.associate { it.name to it.visningsnavn.intern }
 }

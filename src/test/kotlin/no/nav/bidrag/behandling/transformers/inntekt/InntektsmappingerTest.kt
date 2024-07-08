@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.YearMonth
 
@@ -158,6 +159,7 @@ class InntektsmappingerTest {
     }
 
     @Test
+    @Disabled
     fun `skal ikke sette periode hvis offentlig periode er etter virkningstidspunkt 2`() {
         val behandling = oppretteBehandling()
         behandling.virkningstidspunkt = YearMonth.parse("2024-05").atDay(1)

@@ -19,7 +19,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -107,7 +107,7 @@ data class SærbidragUtgifterDto(
 )
 
 data class SærbidragKategoriDto(
-    val kategori: SærbidragKategori,
+    val kategori: Særbidragskategori,
     val beskrivelse: String? = null,
 )
 

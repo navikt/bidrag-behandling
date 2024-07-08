@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
@@ -48,28 +49,28 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
-    val personnavn = navn ?: hentPersonVisningsnavn(relatertPersonPersonId)
+    val personnavn = navn ?: hentPersonVisningsnavn(gjelderPersonId)
 
     val nyesteIdent =
-        relatertPersonPersonId.takeIf { !it.isNullOrEmpty() }?.let {
+        gjelderPersonId.takeIf { !it.isNullOrEmpty() }?.let {
             val ident = hentNyesteIdent(it)
-            if (ident == null && !erBarnAvBmBp) Personident(it) else ident
+            if (ident == null && !erBarn) Personident(it) else ident
         }
     return GrunnlagDto(
         referanse =
             Grunnlagstype.PERSON_HUSSTANDSMEDLEM.tilPersonreferanse(
                 (fødselsdato?.toCompactString() ?: LocalDate.MIN.toCompactString()) + "_innhentet",
-                (relatertPersonPersonId + 1).hashCode(),
+                (gjelderPersonId + 1).hashCode(),
             ),
         type = Grunnlagstype.PERSON_HUSSTANDSMEDLEM,
         innhold =
             POJONode(
                 Person(
                     ident = nyesteIdent,
-                    navn = if (relatertPersonPersonId.isNullOrEmpty()) personnavn else null,
+                    navn = if (gjelderPersonId.isNullOrEmpty()) personnavn else null,
                     fødselsdato =
                         finnFødselsdato(
-                            relatertPersonPersonId,
+                            gjelderPersonId,
                             fødselsdato,
                         ) // Avbryter prosesering dersom fødselsdato til husstandsmedlem er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
@@ -81,12 +82,12 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
 fun RelatertPersonGrunnlagDto.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
-    relatertTilPersonReferanse: String,
+    gjelderPersonReferanse: String,
 ) = GrunnlagDto(
     referanse =
         opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
             gjelderReferanse,
-            referanseRelatertTil = relatertTilPersonReferanse,
+            referanseRelatertTil = gjelderPersonReferanse,
         ),
     type = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM,
     gjelderReferanse = gjelderReferanse,
@@ -96,8 +97,14 @@ fun RelatertPersonGrunnlagDto.tilGrunnlagsobjekt(
                 hentetTidspunkt = hentetTidspunkt,
                 grunnlag =
                     InnhentetHusstandsmedlem.HusstandsmedlemPDL(
-                        relatertPerson = relatertTilPersonReferanse,
-                        erBarnAvBmBp = erBarnAvBmBp,
+                        relatertPerson = gjelderPersonReferanse,
+                        gjelderPerson = gjelderPersonReferanse,
+                        erBarnAvBmBp = erBarn,
+                        relasjon =
+                            when (erBarn) { // TODO: Endre dette når ny boforhold api er klar
+                                true -> Familierelasjon.BARN
+                                false -> Familierelasjon.UKJENT
+                            },
                         navn = navn,
                         fødselsdato = fødselsdato,
                         perioder =

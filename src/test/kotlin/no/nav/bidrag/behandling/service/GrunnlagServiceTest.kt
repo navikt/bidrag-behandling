@@ -42,7 +42,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
@@ -1112,7 +1112,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                     1,
                                     24,
                                 ) &&
-                                h.erBarnAvBmBp
+                                h.erBarn
                         }.toSet()
                         .size shouldBe 1
                 }
@@ -1653,7 +1653,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, false, true)
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
-                behandling.kategori = SærbidragKategori.KONFIRMASJON.name
+                behandling.kategori = Særbidragskategori.KONFIRMASJON.name
                 behandling.stonadstype = null
 
                 stubbeHentingAvPersoninfoForTestpersoner()
@@ -1782,13 +1782,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val endretBoforholdTestbarn1 =
                     dataBoforhold
-                        .find { testdataBarn1.ident == it.relatertPersonPersonId }
+                        .find { testdataBarn1.ident == it.gjelderPersonId }
                         ?.copy(borISammeHusstandDtoListe = nyeBorhosperioder)
 
                 val endretBoforhold =
                     listOf(
                         endretBoforholdTestbarn1!!,
-                        dataBoforhold.find { testdataBarn2.ident == it.relatertPersonPersonId }!!,
+                        dataBoforhold.find { testdataBarn2.ident == it.gjelderPersonId }!!,
                     )
 
                 behandling.grunnlag.add(
@@ -1902,13 +1902,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val endretBoforholdTestbarn1 =
                     dataBoforhold
-                        .find { testdataBarn1.ident == it.relatertPersonPersonId }
+                        .find { testdataBarn1.ident == it.gjelderPersonId }
                         ?.copy(borISammeHusstandDtoListe = nyeBorhosperioder)
 
                 val endretBoforhold =
                     listOf(
                         endretBoforholdTestbarn1!!,
-                        dataBoforhold.find { testdataBarn2.ident == it.relatertPersonPersonId }!!,
+                        dataBoforhold.find { testdataBarn2.ident == it.gjelderPersonId }!!,
                     )
 
                 behandling.grunnlag.add(

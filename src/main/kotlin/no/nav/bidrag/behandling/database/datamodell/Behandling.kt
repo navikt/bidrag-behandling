@@ -28,7 +28,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -167,11 +167,11 @@ val Behandling.særbidragKategori
     get() =
         kategori.isNullOrEmpty().ifFalse {
             try {
-                SærbidragKategori.valueOf(kategori!!)
+                Særbidragskategori.valueOf(kategori!!)
             } catch (e: Exception) {
-                SærbidragKategori.ANNET
+                Særbidragskategori.ANNET
             }
-        } ?: SærbidragKategori.ANNET
+        } ?: Særbidragskategori.ANNET
 
 fun Behandling.henteAlleBostatusperioder() = husstandsmedlem.flatMap { it.perioder }
 

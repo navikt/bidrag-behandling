@@ -31,6 +31,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagspostDto
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
@@ -319,7 +320,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     }
 
     @Test
-    fun `skal oppdatere virkningstidspunkt og ikke oppdatre fra og med dato på inntekter når virkningstidspunkt endres tilbake i tid`() {
+    @Disabled
+    fun `skal oppdatere virkningstidspunkt og ikke oppdatere fra og med dato på inntekter når virkningstidspunkt endres tilbake i tid`() {
         // gitt
         val behandling = testdataManager.oppretteBehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")

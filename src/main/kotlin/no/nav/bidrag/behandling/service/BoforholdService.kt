@@ -56,6 +56,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -84,7 +85,8 @@ class BoforholdService(
         request: OppdaterNotat,
     ): OppdatereBoforholdResponse {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid)
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         behandling.boforholdsbegrunnelseKunINotat = request.kunINotat ?: behandling.boforholdsbegrunnelseKunINotat
@@ -94,7 +96,8 @@ class BoforholdService(
             valideringsfeil =
                 BoforholdValideringsfeil(
                     husstandsmedlem =
-                        behandling.husstandsmedlem.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                        behandling.husstandsmedlem
+                            .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
                             .filter { it.harFeil },
                 ),
         )
@@ -166,7 +169,8 @@ class BoforholdService(
     @Transactional
     fun rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid: Long) {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid)
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
         val oppdaterHusstandsmedlemmer =
             behandling.husstandsmedlem.map { husstandsmedlem ->
@@ -184,7 +188,8 @@ class BoforholdService(
         oppdatereHusstandsmedlem: OppdatereHusstandsmedlem,
     ): OppdatereBoforholdResponse {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid)
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereHusstandsmedlem.validere(behandling)
@@ -213,7 +218,8 @@ class BoforholdService(
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV2(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
+                            behandling
+                                .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
                                 .tilBoforholdBarnRequest(behandling),
                         )
 
@@ -315,11 +321,15 @@ class BoforholdService(
         val ikkeAktiverteGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
 
         val nyesteIkkeaktivertePeriodiserteSivilstand =
-            ikkeAktiverteGrunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { it.erBearbeidet }
+            ikkeAktiverteGrunnlag
+                .filter { Grunnlagsdatatype.SIVILSTAND == it.type }
+                .filter { it.erBearbeidet }
                 .maxByOrNull { it.innhentet }
 
         val nyesteIkkeaktiverteSivilstand =
-            ikkeAktiverteGrunnlag.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.filter { !it.erBearbeidet }
+            ikkeAktiverteGrunnlag
+                .filter { Grunnlagsdatatype.SIVILSTAND == it.type }
+                .filter { !it.erBearbeidet }
                 .maxByOrNull { it.innhentet }
 
         if (nyesteIkkeaktivertePeriodiserteSivilstand == null && nyesteIkkeaktiverteSivilstand == null) {
@@ -366,7 +376,8 @@ class BoforholdService(
         oppdatereSivilstand: OppdatereSivilstand,
     ): OppdatereBoforholdResponse? {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid)
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereSivilstand.validere(behandling)
@@ -377,7 +388,9 @@ class BoforholdService(
             loggeEndringSivilstand(behandling, oppdatereSivilstand, behandling.sivilstand)
             return OppdatereBoforholdResponse(
                 oppdatertSivilstandshistorikk =
-                    sivilstandRepository.saveAll(behandling.sivilstand).toSet()
+                    sivilstandRepository
+                        .saveAll(behandling.sivilstand)
+                        .toSet()
                         .tilSivilstandDto(),
                 valideringsfeil =
                     BoforholdValideringsfeil(
@@ -450,7 +463,8 @@ class BoforholdService(
     ) {
         if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsmedlem.verdi }) return
 
-        behandling.husstandsmedlem.find { i -> Kilde.OFFENTLIG == i.kilde && i.ident == gjelderHusstandsmedlem.verdi }
+        behandling.husstandsmedlem
+            .find { i -> Kilde.OFFENTLIG == i.kilde && i.ident == gjelderHusstandsmedlem.verdi }
             ?.let { eksisterendeHusstandsmedlem ->
                 eksisterendeHusstandsmedlem.perioder.clear()
                 sletteHusstandsmedlem(behandling, eksisterendeHusstandsmedlem)
@@ -463,7 +477,10 @@ class BoforholdService(
         overskriveManuelleOpplysninger: Boolean = false,
     ) {
         val husstandsmedlemSomSkalOppdateres =
-            behandling.husstandsmedlem.asSequence().filter { i -> Kilde.OFFENTLIG == i.kilde }.toSet()
+            behandling.husstandsmedlem
+                .asSequence()
+                .filter { i -> Kilde.OFFENTLIG == i.kilde }
+                .toSet()
 
         val eksisterendeHusstandsmedlem =
             husstandsmedlemSomSkalOppdateres.find { it.ident == nyttHusstandsmedlem.ident }
@@ -477,15 +494,17 @@ class BoforholdService(
                     }
                     nyttHusstandsmedlem.perioder
                 } // Kjør ny periodisering for å oppdatere kilde på periodene basert på nye opplysninger
-                    ?: BoforholdApi.beregnBoforholdBarnV2(
-                        behandling.virkningstidspunktEllerSøktFomDato,
-                        listOf(
-                            eksisterendeHusstandsmedlem.tilBoforholdBarnRequest()
-                                .copy(
-                                    innhentedeOffentligeOpplysninger = nyttHusstandsmedlem.perioder.map { it.tilBostatus() },
-                                ),
-                        ),
-                    ).tilPerioder(eksisterendeHusstandsmedlem)
+                    ?: BoforholdApi
+                        .beregnBoforholdBarnV2(
+                            behandling.virkningstidspunktEllerSøktFomDato,
+                            listOf(
+                                eksisterendeHusstandsmedlem
+                                    .tilBoforholdBarnRequest()
+                                    .copy(
+                                        innhentedeOffentligeOpplysninger = nyttHusstandsmedlem.perioder.map { it.tilBostatus() },
+                                    ),
+                            ),
+                        ).tilPerioder(eksisterendeHusstandsmedlem)
 
             eksisterendeHusstandsmedlem.lagreEksisterendePerioder()
             eksisterendeHusstandsmedlem.perioder.clear()
@@ -526,7 +545,8 @@ class BoforholdService(
                         fødselsdato = offisieltHusstandsmedlem.fødselsdato,
                         erBarnAvBmBp = true,
                         innhentedeOffentligeOpplysninger =
-                            offisieltHusstandsmedlem.perioder.map { it.tilBostatus() }
+                            offisieltHusstandsmedlem.perioder
+                                .map { it.tilBostatus() }
                                 .sortedBy { it.periodeFom },
                         behandledeBostatusopplysninger = emptyList(),
                         endreBostatus = null,
@@ -563,7 +583,8 @@ class BoforholdService(
     ) {
         if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsmedlem.verdi }) return
 
-        behandling.husstandsmedlem.find { Kilde.OFFENTLIG == it.kilde && it.ident == gjelderHusstandsmedlem.verdi }
+        behandling.husstandsmedlem
+            .find { Kilde.OFFENTLIG == it.kilde && it.ident == gjelderHusstandsmedlem.verdi }
             ?.let { eksisterendeHusstandsmedlem ->
                 log.info { "Endret husstandsbmedlem ${eksisterendeHusstandsmedlem.id} til kilde MANUELL i behandling ${behandling.id}" }
                 secureLogger.info { "Endret husstandsmedlem $eksisterendeHusstandsmedlem til kilde MANUELL i behandling ${behandling.id}" }
@@ -605,15 +626,16 @@ class BoforholdService(
                     forrigePerioder
                         ?: oppdateringAvBoforholdFeilet("Mangler forrige perioder for husstandsmedlem $id i behandling ${behandling.id}"),
                 )
-            return forrigePerioder.map {
-                Bostatusperiode(
-                    husstandsmedlem = this,
-                    datoFom = LocalDate.parse(it["datoFom"].textValue()),
-                    datoTom = it["datoTom"]?.textValue()?.let { LocalDate.parse(it) },
-                    bostatus = Bostatuskode.valueOf(it["bostatus"].textValue()),
-                    kilde = Kilde.valueOf(it["kilde"].textValue()),
-                )
-            }.toSet()
+            return forrigePerioder
+                .map {
+                    Bostatusperiode(
+                        husstandsmedlem = this,
+                        datoFom = LocalDate.parse(it["datoFom"].textValue()),
+                        datoTom = it["datoTom"]?.textValue()?.let { LocalDate.parse(it) },
+                        bostatus = Bostatuskode.valueOf(it["bostatus"].textValue()),
+                        kilde = Kilde.valueOf(it["kilde"].textValue()),
+                    )
+                }.toSet()
         }
 
         fun Husstandsmedlem.lagreEksisterendePerioder() {
@@ -627,10 +649,11 @@ class BoforholdService(
         husstandsmedlem: Husstandsmedlem,
     ) {
         val perioderDetaljer =
-            husstandsmedlem.perioder.map {
-                "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
-                    "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
-            }.joinToString(", ", prefix = "[", postfix = "]")
+            husstandsmedlem.perioder
+                .map {
+                    "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
+                        "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
+                }.joinToString(", ", prefix = "[", postfix = "]")
         oppdatereHusstandsmedlem.angreSisteStegForHusstandsmedlem?.let {
             log.info { "Angret siste steg for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." }
             secureLogger.info {
@@ -682,10 +705,11 @@ class BoforholdService(
         historikk: Set<Sivilstand>,
     ) {
         val historikkstreng =
-            historikk.map {
-                "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
-                    "sivilstand: ${it.sivilstand}, kilde: ${it.kilde} }"
-            }.joinToString(", ", prefix = "[", postfix = "]")
+            historikk
+                .map {
+                    "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
+                        "sivilstand: ${it.sivilstand}, kilde: ${it.kilde} }"
+                }.joinToString(", ", prefix = "[", postfix = "]")
         oppdatereSivilstand.angreSisteEndring.let {
             log.info { "Angret siste endring i sivilstand for behandling ${behandling.id}." }
             secureLogger.info {
@@ -822,16 +846,15 @@ class BoforholdService(
         }
     }
 
-    private fun bestemmeNyBostatus(nyEllerOppdatertBostatusperiode: Bostatusperiode? = null): Bostatus? {
-        return nyEllerOppdatertBostatusperiode?.let {
+    private fun bestemmeNyBostatus(nyEllerOppdatertBostatusperiode: Bostatusperiode? = null): Bostatus? =
+        nyEllerOppdatertBostatusperiode?.let {
             Bostatus(
                 periodeFom = it.datoFom,
                 periodeTom = it.datoTom,
-                bostatusKode = it.bostatus,
+                bostatus = it.bostatus,
                 kilde = it.kilde,
             )
         }
-    }
 
     private fun Husstandsmedlem.bestemmeOriginalBostatus(
         nyBostatusperiode: Bostatusperiode? = null,
@@ -851,16 +874,19 @@ class BoforholdService(
     }
 
     /**
-     * Henter eksisterende boforholdsgrunnlag i gitt behandling for oppgitt personident. Setter erBarnAvBp til sann.
+     * Henter eksisterende boforholdsgrunnlag i gitt behandling for oppgitt personident. Setter relasjon til BARN.
      * Brukes til å hente evnt. husstandsmedlem som mangler relasjon til BM.
      */
-    private fun Behandling.henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(personident: Personident): Set<RelatertPersonGrunnlagDto> {
-        return this.grunnlag.filter { !it.erBearbeidet }.filter { it.aktiv != null }
-            .filter { Grunnlagsdatatype.BOFORHOLD == it.type }.maxByOrNull { it.aktiv!! }
-            .konvertereData<Set<RelatertPersonGrunnlagDto>>()?.filter { personident.verdi == it.relatertPersonPersonId }
-            ?.map { it.copy(erBarnAvBmBp = true) }
+    private fun Behandling.henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(personident: Personident): Set<RelatertPersonGrunnlagDto> =
+        this.grunnlag
+            .filter { !it.erBearbeidet }
+            .filter { it.aktiv != null }
+            .filter { Grunnlagsdatatype.BOFORHOLD == it.type }
+            .maxByOrNull { it.aktiv!! }
+            .konvertereData<Set<RelatertPersonGrunnlagDto>>()
+            ?.filter { personident.verdi == it.gjelderPersonId }
+            ?.map { it.copy(relasjon = Familierelasjon.BARN) }
             ?.toSet() ?: emptySet()
-    }
 
     private fun lagreBearbeidaBoforholdsgrunnlag(
         behandling: Behandling,
