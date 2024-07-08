@@ -55,47 +55,47 @@ data class SummerteInntekt(
     val inntekt: SummertÅrsinntekt,
 )
 
-fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<SummertMånedsinntekt>> {
-    return filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT).groupBy {
-        val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
-        gjelder.personIdent
-    }.map { (ident, beregnetInntekt) ->
-        val innhold = beregnetInntekt.innholdTilObjekt<BeregnetInntekt>().first()
-        ident to
-            SummerteInntekter(
-                versjon = innhold.versjon,
-                inntekter =
-                    innhold.summertMånedsinntektListe
-                        .map {
-                            SummertMånedsinntekt(
-                                gjelderÅrMåned = it.gjelderÅrMåned,
-                                sumInntekt = it.sumInntekt,
-                                inntektPostListe =
-                                    it.inntektPostListe.map {
-                                        InntektPost(
-                                            kode = it.kode,
-                                            beløp = it.beløp,
-                                            inntekstype = it.inntekstype,
-                                        )
-                                    },
-                            )
-                        },
-            )
-    }.associate { it.first!! to it.second }
-}
+fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<SummertMånedsinntekt>> =
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.BEREGNET_INNTEKT)
+        .groupBy {
+            val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
+            gjelder.personIdent
+        }.map { (ident, beregnetInntekt) ->
+            val innhold = beregnetInntekt.innholdTilObjekt<BeregnetInntekt>().first()
+            ident to
+                SummerteInntekter(
+                    versjon = innhold.versjon,
+                    inntekter =
+                        innhold.summertMånedsinntektListe
+                            .map {
+                                SummertMånedsinntekt(
+                                    gjelderÅrMåned = it.gjelderÅrMåned,
+                                    sumInntekt = it.sumInntekt,
+                                    inntektPostListe =
+                                        it.inntektPostListe.map {
+                                            InntektPost(
+                                                kode = it.kode,
+                                                beløp = it.beløp,
+                                                inntekstype = it.inntekstype,
+                                            )
+                                        },
+                                )
+                            },
+                )
+        }.associate { it.first!! to it.second }
 
 fun List<GrunnlagDto>.hentInnhentetHusstandsmedlem(): List<RelatertPersonGrunnlagDto> =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM)
         .map {
-            val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
+            val part = hentPersonMedReferanse(it.gjelderReferanse)!!
             val innhold = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-            val relatertPerson = hentPersonMedReferanse(innhold.grunnlag.relatertPerson)!!
+            val gjelderPerson = hentPersonMedReferanse(innhold.grunnlag.gjelderPerson)!!
             RelatertPersonGrunnlagDto(
-                partPersonId = gjelder.personIdent!!,
-                relatertPersonPersonId = relatertPerson.personIdent,
+                partPersonId = part.personIdent!!,
+                relatertPersonPersonId = gjelderPerson.personIdent,
                 navn = innhold.grunnlag.navn,
                 fødselsdato = innhold.grunnlag.fødselsdato,
-                erBarnAvBmBp = innhold.grunnlag.erBarnAvBmBp,
+                relasjon = innhold.grunnlag.relasjon,
                 borISammeHusstandDtoListe =
                     innhold.grunnlag.perioder.map {
                         BorISammeHusstandDto(it.fom, it.til)
@@ -328,15 +328,14 @@ fun List<GrunnlagDto>.hentGrunnlagArbeidsforhold() =
 fun List<GrunnlagDto>.hentInnntekterBearbeidet(
     behandling: Behandling,
     lesemodus: Boolean = false,
-): MutableSet<Grunnlag> {
-    return filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+): MutableSet<Grunnlag> =
+    filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
         .filter { !it.innholdTilObjekt<InntektsrapporteringPeriode>().manueltRegistrert }
         .groupBy {
             hentPersonMedReferanse(it.gjelderReferanse) ?: manglerPersonGrunnlag(
                 it.gjelderReferanse,
             )
-        }
-        .flatMap { (gjelder, grunnlagListe) ->
+        }.flatMap { (gjelder, grunnlagListe) ->
             val årsinntekter =
                 grunnlagListe.map {
                     it.tilInntektBearbeidet(this)
@@ -351,7 +350,8 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                 SummerteInntekter(
                     versjon = årsinntekter.versjon(inntektsrapportering),
                     inntekter =
-                        årsinntekter.filter { it.inntekt.inntektRapportering == inntektsrapportering }
+                        årsinntekter
+                            .filter { it.inntekt.inntektRapportering == inntektsrapportering }
                             .map { it.inntekt },
                 ),
                 rolleIdent = gjelder.personIdent!!,
@@ -399,9 +399,7 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                     lesemodus = lesemodus,
                 ),
             )
-        }
-        .toMutableSet()
-}
+        }.toMutableSet()
 
 fun List<SummerteInntekt>.versjon(type: Inntektsrapportering) =
     find { it.inntekt.inntektRapportering == type }?.versjon ?: find { it.versjon.isNotEmpty() }?.versjon ?: ""
@@ -418,7 +416,11 @@ private fun BaseGrunnlag.tilInntektBearbeidet(grunnlagsListe: List<GrunnlagDto>)
         inntektPeriode.opprinneligPeriode?.fom?.atDay(1) ?: vedtakmappingFeilet(
             "Inntekt ${inntektPeriode.inntektsrapportering} mangler opprinnelig periode",
         )
-    val opprinneligTom = inntektPeriode.opprinneligPeriode?.til?.atDay(1)?.minusDays(1)
+    val opprinneligTom =
+        inntektPeriode.opprinneligPeriode
+            ?.til
+            ?.atDay(1)
+            ?.minusDays(1)
 
     return SummerteInntekt(
         inntektPeriode.versjon ?: "", // TODO: Midlertidlig for å støtte eldre vedtak i Q2

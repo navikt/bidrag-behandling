@@ -610,22 +610,24 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val navnBarnMedDNummer = "Bark E. Bille"
 
                 val dataFraGrunnlag =
-                    behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type && it.erBearbeidet }.groupBy {
-                        it.gjelder
-                    }.map {
-                        val t = it.value.filter { it.aktiv != null }.maxBy { it.aktiv!! }
-                        val data = t.konvertereData<Set<BoforholdResponse>>()
-                        RelatertPersonGrunnlagDto(
-                            relatertPersonPersonId = it.key,
-                            borISammeHusstandDtoListe =
-                                data?.map { BorISammeHusstandDto(it.periodeFom, it.periodeTom) }
-                                    ?: emptyList(),
-                            erBarnAvBmBp = true,
-                            fødselsdato = data?.first()?.fødselsdato,
-                            navn = null,
-                            partPersonId = behandling.bidragsmottaker!!.ident,
-                        )
-                    } +
+                    behandling.grunnlag
+                        .filter { Grunnlagsdatatype.BOFORHOLD == it.type && it.erBearbeidet }
+                        .groupBy {
+                            it.gjelder
+                        }.map {
+                            val t = it.value.filter { it.aktiv != null }.maxBy { it.aktiv!! }
+                            val data = t.konvertereData<Set<BoforholdResponse>>()
+                            RelatertPersonGrunnlagDto(
+                                relatertPersonPersonId = it.key,
+                                borISammeHusstandDtoListe =
+                                    data?.map { BorISammeHusstandDto(it.periodeFom, it.periodeTom) }
+                                        ?: emptyList(),
+                                erBarnAvBmBp = true,
+                                fødselsdato = data?.first()?.fødselsdato,
+                                navn = null,
+                                partPersonId = behandling.bidragsmottaker!!.ident,
+                            )
+                        } +
                         listOf(
                             RelatertPersonGrunnlagDto(
                                 relatertPersonPersonId = personidentBarnMedDNummer,
@@ -696,7 +698,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val behandling = opprettBehandlingForBoforholdTest()
                 stubbeHentingAvPersoninfoForTestpersoner()
 
-                val bostatusperiodeSomSkalSlettes = behandling.husstandsmedlem.first().perioder.first()
+                val bostatusperiodeSomSkalSlettes =
+                    behandling.husstandsmedlem
+                        .first()
+                        .perioder
+                        .first()
                 assertSoftly {
                     bostatusperiodeSomSkalSlettes shouldNotBe null
                     behandling.finnBostatusperiode(bostatusperiodeSomSkalSlettes.id).shouldNotBeNull()
@@ -906,7 +912,8 @@ class BoforholdServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal opprette husstandsmedlem`() {
                 // gitt
-                val behandling = opprettBehandlingForBoforholdTest(inkludereBoforhold = false, inkludereSivilstand = true)
+                val behandling =
+                    opprettBehandlingForBoforholdTest(inkludereBoforhold = false, inkludereSivilstand = true)
 
                 behandling.husstandsmedlem.shouldHaveSize(1)
 
@@ -1030,7 +1037,12 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                     val periode2 = it.perioder.toList()[1]
                     periode2.kilde shouldBe Kilde.MANUELL
-                    periode2.datoFom shouldBe LocalDate.now().minusYears(18).plusMonths(1).withDayOfMonth(1)
+                    periode2.datoFom shouldBe
+                        LocalDate
+                            .now()
+                            .minusYears(18)
+                            .plusMonths(1)
+                            .withDayOfMonth(1)
                     periode2.datoTom shouldBe null
                     periode2.bostatus shouldBe Bostatuskode.REGNES_IKKE_SOM_BARN
                 }
@@ -1149,13 +1161,14 @@ class BoforholdServiceTest : TestContainerRunner() {
                 Bostatus(
                     periodeFom = LocalDate.now().minusMonths(5),
                     periodeTom = null,
-                    bostatusKode = Bostatuskode.IKKE_MED_FORELDER,
+                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
                     kilde = Kilde.MANUELL,
                 )
             val offentligeBostatuser =
                 boforholdsrequest.find { it.relatertPersonPersonId == testdataBarn2.ident }!!.innhentedeOffentligeOpplysninger
             val request =
-                boforholdsrequest.find { it.relatertPersonPersonId == testdataBarn2.ident }!!
+                boforholdsrequest
+                    .find { it.relatertPersonPersonId == testdataBarn2.ident }!!
                     .copy(behandledeBostatusopplysninger = offentligeBostatuser + manuellPeriode)
 
             val periodiseringsrequest =
@@ -1446,7 +1459,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                     g shouldHaveSize 2
                 }
 
-                val fomdato = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(7)
+                val fomdato =
+                    behandling.sivilstand
+                        .maxBy { it.datoFom }
+                        .datoFom
+                        .plusMonths(7)
 
                 // hvis
                 boforholdService.oppdatereSivilstandManuelt(
@@ -1473,7 +1490,11 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 behandling.sivilstand shouldHaveSize 2
 
-                val fomdato = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(7)
+                val fomdato =
+                    behandling.sivilstand
+                        .maxBy { it.datoFom }
+                        .datoFom
+                        .plusMonths(7)
                 boforholdService.oppdatereSivilstandManuelt(
                     behandling.id!!,
                     OppdatereSivilstand(
@@ -1513,7 +1534,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                     g shouldHaveSize 2
                 }
 
-                val fomdato = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(7)
+                val fomdato =
+                    behandling.sivilstand
+                        .maxBy { it.datoFom }
+                        .datoFom
+                        .plusMonths(7)
 
                 boforholdService.oppdatereSivilstandManuelt(
                     behandling.id!!,
@@ -1558,7 +1583,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                     g shouldHaveSize 2
                 }
 
-                val fomdato1 = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(7)
+                val fomdato1 =
+                    behandling.sivilstand
+                        .maxBy { it.datoFom }
+                        .datoFom
+                        .plusMonths(7)
 
                 boforholdService.oppdatereSivilstandManuelt(
                     behandling.id!!,
@@ -1568,7 +1597,11 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
-                val fomdato2 = behandling.sivilstand.maxBy { it.datoFom }.datoFom.plusMonths(1)
+                val fomdato2 =
+                    behandling.sivilstand
+                        .maxBy { it.datoFom }
+                        .datoFom
+                        .plusMonths(1)
 
                 boforholdService.oppdatereSivilstandManuelt(
                     behandling.id!!,
@@ -1602,9 +1635,11 @@ class BoforholdServiceTest : TestContainerRunner() {
 
     private fun stubbeHentingAvPersoninfoForTestpersoner() {
         Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBM.ident)).thenReturn(testdataBM.tilPersonDto())
-        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
+        Mockito
+            .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
             .thenReturn(testdataBarn1.tilPersonDto())
-        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBarn2.ident))
+        Mockito
+            .`when`(bidragPersonConsumer.hentPerson(testdataBarn2.ident))
             .thenReturn(testdataBarn2.tilPersonDto())
     }
 }

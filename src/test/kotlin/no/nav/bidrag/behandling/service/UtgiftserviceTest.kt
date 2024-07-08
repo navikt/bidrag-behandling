@@ -15,7 +15,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
-import no.nav.bidrag.domene.enums.særbidrag.SærbidragKategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import org.junit.jupiter.api.BeforeEach
@@ -38,7 +38,7 @@ class UtgiftserviceTest : TestContainerRunner() {
     fun opprettBehandlingSærligeUtgifter(): Behandling {
         val behandling = oppretteBehandling()
         behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
-        behandling.kategori = SærbidragKategori.KONFIRMASJON.name
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         return behandling
     }
 
@@ -65,18 +65,18 @@ class UtgiftserviceTest : TestContainerRunner() {
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val forespørsel =
             OppdatereUtgiftRequest(
-                avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRLIGE_UTGIFTER,
+                avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG,
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
         response.utgiftposter shouldHaveSize 0
-        response.avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRLIGE_UTGIFTER
+        response.avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
     }
 
     @Test
     @Transactional
     fun `skal fjerne avslag`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRLIGE_UTGIFTER
+        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
         behandling.utgift =
             Utgift(
                 behandling = behandling,
@@ -142,7 +142,7 @@ class UtgiftserviceTest : TestContainerRunner() {
     @Transactional
     fun `skal opprette utgiftspost for kategori OPTIKK`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.kategori = SærbidragKategori.OPTIKK.name
+        behandling.kategori = Særbidragskategori.OPTIKK.name
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val forespørsel =
             OppdatereUtgiftRequest(
@@ -177,7 +177,7 @@ class UtgiftserviceTest : TestContainerRunner() {
     @Transactional
     fun `skal opprette utgiftspost for kategori TANNREGULERING`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.kategori = SærbidragKategori.TANNREGULERING.name
+        behandling.kategori = Særbidragskategori.TANNREGULERING.name
         behandling.utgift =
             Utgift(
                 behandling = behandling,
