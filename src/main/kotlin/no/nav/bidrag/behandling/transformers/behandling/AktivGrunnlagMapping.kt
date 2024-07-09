@@ -16,7 +16,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
-import no.nav.bidrag.behandling.service.BoforholdAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -25,9 +24,11 @@ import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektspostEndring
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -87,21 +88,19 @@ fun InntektPost.erLik(inntektPost: Inntektspost): Boolean {
     return kode == inntektPost.kode && inntekstype == inntektPost.inntektstype
 }
 
-// TODO: SÆRBIDRAG - Implementere
 fun List<Grunnlag>.henteEndringerIAndreVoksneIHusstanden(aktiveGrunnlag: List<Grunnlag>): AndreVoksneIHusstandenGrunnlagDto? {
     val aktivtGrunnlag =
         aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet }
     val nyttGrunnlag = find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
-    val aktiveData = aktivtGrunnlag.konvertereData<Set<BoforholdAndreVoksneIHusstanden>>()?.toSet()
-    val nyeData = nyttGrunnlag.konvertereData<Set<BoforholdAndreVoksneIHusstanden>>()?.toSet()
+    val aktiveData = aktivtGrunnlag.konvertereData<Set<Bostatus>>()?.toSet()
+    val nyeData = nyttGrunnlag.konvertereData<Set<Bostatus>>()?.toSet()
     if (aktiveData != null && nyeData != null && !nyeData.erLik(aktiveData)) {
         return AndreVoksneIHusstandenGrunnlagDto(
             perioder =
-                nyeData.asSequence().map {
+                nyeData.asSequence().filter { it.bostatus != null }.map {
                     PeriodeAndreVoksneIHusstanden(
-                        periode = it.periode,
-                        status = it.bostatus,
-                        husstandsmedlemmer = it.voksneIHusstanden,
+                        periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                        status = it.bostatus!!,
                     )
                 }.toSet(),
             innhentet = nyttGrunnlag?.innhentet ?: LocalDateTime.now(),
@@ -110,21 +109,14 @@ fun List<Grunnlag>.henteEndringerIAndreVoksneIHusstanden(aktiveGrunnlag: List<Gr
     return null
 }
 
-// TODO: SÆRBIDRAG - Implementere
-fun Set<BoforholdAndreVoksneIHusstanden>.erLik(detAndreSettet: Set<BoforholdAndreVoksneIHusstanden>): Boolean {
+fun Set<Bostatus>.erLik(detAndreSettet: Set<Bostatus>): Boolean {
     if (size != detAndreSettet.size) return false
-    return asSequence().sortedBy { it.periode.fom }.all { gjeldendeData ->
-        detAndreSettet.asSequence().sortedBy { it.periode.fom }.any {
-            it.periode.fom == gjeldendeData.periode.fom && it.periode.til == gjeldendeData.periode.til &&
-                it.bostatus == gjeldendeData.bostatus && it.voksneIHusstanden.erIdentiskMed(gjeldendeData.voksneIHusstanden)
+    return asSequence().sortedBy { it.periodeFom }.all { gjeldendeData ->
+        detAndreSettet.asSequence().sortedBy { it.periodeFom }.any {
+            it.periodeFom == gjeldendeData.periodeFom && it.periodeTom == gjeldendeData.periodeTom &&
+                it.bostatus == gjeldendeData.bostatus
         }
     }
-}
-
-// TODO: SÆRBIDRAG - Implementere
-fun Set<HusstandsmedlemGrunnlagDto>.erIdentiskMed(detAndreSettet: Set<HusstandsmedlemGrunnlagDto>): Boolean {
-    if (size != detAndreSettet.size) return false
-    return true
 }
 
 fun List<Grunnlag>.hentEndringerBoforhold(

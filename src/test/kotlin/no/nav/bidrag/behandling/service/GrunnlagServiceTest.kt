@@ -1366,10 +1366,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
         }
 
         @Nested
-        open inner class SærligeUtgifter {
+        open inner class Særbidrag {
             @Test
             @Transactional
-            open fun `skal hente  grunnlag for behandling av særbidrag`() {
+            open fun `skal hente grunnlag for behandling av særbidrag`() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false)
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
@@ -1449,7 +1449,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     open inner class AktivereGrunnlag {
         @Nested
         @DisplayName("Teste aktivering av grunnlag for særbidrag")
-        open inner class SærligeUtgifter {
+        open inner class Særbidrag {
             @Test
             @Transactional
             open fun `skal aktivere grunnlag av type inntekt for bp i behandling av særbidrag`() {

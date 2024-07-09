@@ -259,7 +259,6 @@ data class AndreVoksneIHusstandenGrunnlagDto(
 data class PeriodeAndreVoksneIHusstanden(
     val periode: ÅrMånedsperiode,
     val status: Bostatuskode,
-    val husstandsmedlemmer: Set<HusstandsmedlemGrunnlagDto>,
 )
 
 @Schema(enumAsRef = true, name = "OpplysningerType")

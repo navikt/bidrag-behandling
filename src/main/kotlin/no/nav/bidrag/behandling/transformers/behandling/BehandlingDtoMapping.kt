@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -30,9 +31,9 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
-import no.nav.bidrag.behandling.service.BoforholdAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
+import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiodeDto
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erSærbidrag
@@ -57,12 +58,14 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.Datoperiode
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -252,20 +255,17 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
             )
         }.toSet()
 
-// TODO: SÆRBIDRAG - Oppdatere når BoforholdApi for andre voksne i husstanden er klart
 fun Grunnlag.tilAndreVoksneIHusstanden() =
     AndreVoksneIHusstandenGrunnlagDto(
         perioder = this.tilPeriodeAndreVoksneIHusstanden(),
         innhentet = LocalDateTime.now(),
     )
 
-// TODO: SÆRBIDRAG - Oppdatere når BoforholdApi for andre voksne i husstanden er klart
 fun Grunnlag.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> {
-    return this.konvertereData<Set<BoforholdAndreVoksneIHusstanden>>()?.map {
+    return this.konvertereData<Set<Bostatus>>()?.map {
         PeriodeAndreVoksneIHusstanden(
-            periode = it.periode,
-            husstandsmedlemmer = it.voksneIHusstanden,
-            status = it.bostatus,
+            periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+            status = it.bostatus!!,
         )
     }?.toSet() ?: emptySet()
 }
@@ -273,8 +273,10 @@ fun Grunnlag.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstand
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
         husstandsmedlem = husstandsmedlem.sortert().map { it.tilBostatusperiode() }.toSet(),
-        // TODO: Implementere
-        andreVoksneIHusstanden = emptySet(),
+        andreVoksneIHusstanden =
+            grunnlag.hentSisteAktiv()
+                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }.konvertereData<Set<Bostatus>>()
+                ?.tilBostatusperiodeDto() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
             BehandlingNotatDto(

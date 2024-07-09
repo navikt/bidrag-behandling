@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
@@ -1461,11 +1462,10 @@ class GrunnlagService(
                     behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, true),
-                    // TODO: SÆRBIDRAG - Bytte ut med ny BoforholdApi-tjeneste når denne er klar
-                    beregneVoksneIHusstanden(
+                    BoforholdApi.beregnBoforholdAndreVoksne(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
-                    ),
+                        innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.tilBoforholdVoksneRequest(),
+                    ).toSet(),
                 )
             }
 
