@@ -188,7 +188,7 @@ class OppdaterUtgiftRequestValideringTest {
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
-                        dato = LocalDate.parse("2021-01-01"),
+                        dato = LocalDate.now().minusDays(2),
                         type = Utgiftstype.KONFIRMASJONSLEIR,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
