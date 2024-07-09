@@ -114,7 +114,12 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
         if (nyEllerEndretUtgift.dato >= LocalDate.now()) {
             feilliste.add("Dato for utgift kan ikke være senere enn eller lik dagens dato")
         }
-        if (nyEllerEndretUtgift.godkjentBeløp != nyEllerEndretUtgift.kravbeløp && nyEllerEndretUtgift.begrunnelse.isNullOrEmpty()) {
+        if (nyEllerEndretUtgift.godkjentBeløp != nyEllerEndretUtgift.kravbeløp &&
+            nyEllerEndretUtgift.begrunnelse.isNullOrEmpty() &&
+            !behandling.erDatoForUtgiftForeldet(
+                nyEllerEndretUtgift.dato,
+            )
+        ) {
             feilliste.add("Begrunnelse må settes hvis kravbeløp er ulik godkjent beløp")
         }
         if (nyEllerEndretUtgift.godkjentBeløp > nyEllerEndretUtgift.kravbeløp) {
