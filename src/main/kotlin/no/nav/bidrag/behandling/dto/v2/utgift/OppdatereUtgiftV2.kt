@@ -34,7 +34,7 @@ data class OppdatereUtgiftRequest(
         type = "Boolean",
         description = "Angre siste endring som ble gjort. Siste endring kan ikke angres hvis avslag er satt",
     )
-    val angreSisteEndring: Boolean = false,
+    val angreSisteEndring: Boolean? = false,
     val notat: OppdaterNotat? = null,
 )
 

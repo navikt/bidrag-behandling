@@ -76,7 +76,7 @@ class UtgiftService(
                 secureLogger.info { "Sletter utgift $it fra behandling $behandlingsid" }
                 utgift.utgiftsposter.remove(it)
             }
-        } else if (request.angreSisteEndring) {
+        } else if (request.angreSisteEndring == true) {
             log.info { "Angrer siste endring i utgiftsposter for behandling $behandlingsid" }
             behandling.utgift = utgift.gjenopprettHistorikk()
         }
