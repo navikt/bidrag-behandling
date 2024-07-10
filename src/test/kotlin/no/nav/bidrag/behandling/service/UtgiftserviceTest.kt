@@ -226,6 +226,58 @@ class UtgiftserviceTest : TestContainerRunner() {
 
     @Test
     @Transactional
+    fun `skal opprette utgiftspost for kategori ANNET`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.ANNET.name
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+                beløpDirekteBetaltAvBp = BigDecimal(0),
+            )
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusDays(3),
+                    type = "Kvittering for medisiner",
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(500),
+                    begrunnelse = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusMonths(1),
+                        type = "Kvittering for medisiner 2",
+                        kravbeløp = BigDecimal(1000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Test",
+                    ),
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        response shouldNotBe null
+        response.oppdatertUtgiftspost shouldNotBe null
+        assertSoftly(response.beregning!!) {
+            totalBeløpBetaltAvBp shouldBe BigDecimal(0)
+            totalGodkjentBeløp shouldBe BigDecimal(1000)
+            beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
+        }
+
+        assertSoftly(response.oppdatertUtgiftspost!!) {
+            dato shouldBe LocalDate.now().minusMonths(1)
+            type shouldBe "Kvittering for medisiner 2"
+            kravbeløp shouldBe BigDecimal(1000)
+            godkjentBeløp shouldBe BigDecimal(500)
+            begrunnelse shouldBe "Test"
+        }
+    }
+
+    @Test
+    @Transactional
     fun `skal oppdatere utgiftspost`() {
         val behandling = opprettBehandlingSærligeUtgifter()
         behandling.utgift =

@@ -282,4 +282,24 @@ class OppdaterUtgiftRequestValideringTest {
 
         exception.message shouldContain "Godkjent beløp må være 0 når dato på utgiften er 1 år etter mottatt dato"
     }
+
+    @Test
+    fun `skal validere at utgiftstype er satt for kategori ANNET`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.ANNET.name
+        val request =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusDays(2),
+                        type = "",
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "asdsad",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Type må settes hvis behandling har kategori ANNET"
+    }
 }
