@@ -55,7 +55,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -86,7 +86,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -112,7 +112,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().minusMonths(1),
-                        type = Utgiftstype.KLÆR,
+                        type = Utgiftstype.KLÆR.name,
                         kravbeløp = BigDecimal(1000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -131,7 +131,7 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         assertSoftly(response.oppdatertUtgiftspost!!) {
             dato shouldBe LocalDate.now().minusMonths(1)
-            type shouldBe Utgiftstype.KLÆR
+            type shouldBe Utgiftstype.KLÆR.name
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
             begrunnelse shouldBe "Test"
@@ -166,7 +166,7 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         assertSoftly(response.oppdatertUtgiftspost!!) {
             dato shouldBe LocalDate.now().minusMonths(1)
-            type shouldBe Utgiftstype.OPTIKK
+            type shouldBe Utgiftstype.OPTIKK.name
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
             begrunnelse shouldBe "Test"
@@ -187,7 +187,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.TANNREGULERING,
+                    type = Utgiftstype.TANNREGULERING.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -217,7 +217,7 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         assertSoftly(response.oppdatertUtgiftspost!!) {
             dato shouldBe LocalDate.now().minusMonths(1)
-            type shouldBe Utgiftstype.TANNREGULERING
+            type shouldBe Utgiftstype.TANNREGULERING.name
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
             begrunnelse shouldBe "Test"
@@ -237,7 +237,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -256,7 +256,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     OppdatereUtgift(
                         id = utgiftspostId,
                         dato = LocalDate.now().minusMonths(1),
-                        type = Utgiftstype.KONFIRMASJONSAVGIFT,
+                        type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -276,7 +276,7 @@ class UtgiftserviceTest : TestContainerRunner() {
         assertSoftly(response.oppdatertUtgiftspost!!) {
             id shouldBe utgiftspostId
             dato shouldBe LocalDate.now().minusMonths(1)
-            type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT
+            type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
             begrunnelse shouldBe "Test"
@@ -296,7 +296,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -309,7 +309,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().minusMonths(1),
-                        type = Utgiftstype.REISEUTGIFT,
+                        type = Utgiftstype.REISEUTGIFT.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -330,7 +330,7 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.utgiftposter shouldHaveSize 2
         assertSoftly(response.oppdatertUtgiftspost!!) {
             dato shouldBe LocalDate.now().minusMonths(1)
-            type shouldBe Utgiftstype.REISEUTGIFT
+            type shouldBe Utgiftstype.REISEUTGIFT.name
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
             begrunnelse shouldBe "Test"
@@ -350,7 +350,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -358,7 +358,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 ),
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -397,7 +397,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -405,7 +405,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 ),
                 Utgiftspost(
                     dato = LocalDate.parse("2022-01-01"),
-                    type = Utgiftstype.REISEUTGIFT,
+                    type = Utgiftstype.REISEUTGIFT.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -452,7 +452,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -460,7 +460,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 ),
                 Utgiftspost(
                     dato = LocalDate.parse("2022-01-01"),
-                    type = Utgiftstype.REISEUTGIFT,
+                    type = Utgiftstype.REISEUTGIFT.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -505,7 +505,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             mutableSetOf(
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(2),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -524,7 +524,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     OppdatereUtgift(
                         id = utgiftspostId,
                         dato = LocalDate.now().minusMonths(1),
-                        type = Utgiftstype.REISEUTGIFT,
+                        type = Utgiftstype.REISEUTGIFT.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -534,7 +534,7 @@ class UtgiftserviceTest : TestContainerRunner() {
         assertSoftly(responseOppdater.utgiftposter[0]) {
             id shouldBe utgiftspostId
             dato shouldBe LocalDate.now().minusMonths(1)
-            type shouldBe Utgiftstype.REISEUTGIFT
+            type shouldBe Utgiftstype.REISEUTGIFT.name
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
             begrunnelse shouldBe "Test"
@@ -546,7 +546,7 @@ class UtgiftserviceTest : TestContainerRunner() {
         val responseAngre = utgiftService.oppdatereUtgift(behandling.id!!, forespørselAngre)
         assertSoftly(responseAngre.utgiftposter[0]) {
             dato shouldBe LocalDate.now().minusMonths(2)
-            type shouldBe Utgiftstype.KONFIRMASJONSLEIR
+            type shouldBe Utgiftstype.KONFIRMASJONSLEIR.name
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
             begrunnelse shouldBe "Test"

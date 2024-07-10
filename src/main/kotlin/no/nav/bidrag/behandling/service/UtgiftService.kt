@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftResponse
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftspost
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -110,7 +109,7 @@ class UtgiftService(
                 godkjentBeløp = it[Utgiftspost::godkjentBeløp.name].decimalValue(),
                 kravbeløp = it[Utgiftspost::kravbeløp.name].decimalValue(),
                 begrunnelse = it[Utgiftspost::begrunnelse.name].textValue(),
-                type = Utgiftstype.valueOf(it[Utgiftspost::type.name].textValue()),
+                type = it[Utgiftspost::type.name].textValue(),
             )
         }
     }

@@ -55,8 +55,9 @@ data class OppdatereUtgift(
         description =
             "Type utgift. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc). " +
                 "Skal bare settes for kategori konfirmasjon",
+        oneOf = [Utgiftstype::class, String::class],
     )
-    val type: Utgiftstype? = null,
+    val type: String? = null,
     @Schema(description = "Beløp som er betalt for utgiften det gjelder")
     @field:PositiveOrZero(message = "Kravbeløp kan ikke være negativ")
     val kravbeløp: BigDecimal,
@@ -69,3 +70,10 @@ data class OppdatereUtgift(
     val betaltAvBp: Boolean = false,
     val id: Long? = null,
 )
+
+fun String.tilUtgiftstype(): Utgiftstype? =
+    try {
+        Utgiftstype.valueOf(this)
+    } catch (e: Exception) {
+        null
+    }

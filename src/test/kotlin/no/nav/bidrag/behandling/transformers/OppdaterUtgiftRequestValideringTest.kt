@@ -49,7 +49,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().minusDays(2),
-                        type = Utgiftstype.OPTIKK,
+                        type = Utgiftstype.OPTIKK.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -69,7 +69,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().minusDays(2),
-                        type = Utgiftstype.OPTIKK,
+                        type = Utgiftstype.OPTIKK.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -89,7 +89,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().minusDays(2),
-                        type = Utgiftstype.TANNREGULERING,
+                        type = Utgiftstype.TANNREGULERING.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -109,7 +109,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.parse("2021-01-01"),
-                        type = Utgiftstype.KONFIRMASJONSLEIR,
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -129,7 +129,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().plusDays(1),
-                        type = Utgiftstype.KONFIRMASJONSLEIR,
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -149,7 +149,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now(),
-                        type = Utgiftstype.KONFIRMASJONSLEIR,
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
@@ -169,7 +169,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.parse("2021-01-01"),
-                        type = Utgiftstype.KONFIRMASJONSLEIR,
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(2500),
                         begrunnelse = "Test",
@@ -189,7 +189,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().minusDays(2),
-                        type = Utgiftstype.KONFIRMASJONSLEIR,
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                     ),
@@ -209,7 +209,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.now().minusDays(2),
-                        type = Utgiftstype.KONFIRMASJONSLEIR,
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         betaltAvBp = true,
@@ -236,7 +236,7 @@ class OppdaterUtgiftRequestValideringTest {
                 Utgiftspost(
                     id = 1,
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.KONFIRMASJONSLEIR,
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -250,7 +250,7 @@ class OppdaterUtgiftRequestValideringTest {
                     OppdatereUtgift(
                         id = 2,
                         dato = LocalDate.parse("2022-01-01"),
-                        type = Utgiftstype.KONFIRMASJONSLEIR,
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "asd",
@@ -271,7 +271,7 @@ class OppdaterUtgiftRequestValideringTest {
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
                         dato = LocalDate.parse("2022-01-01"),
-                        type = Utgiftstype.KONFIRMASJONSLEIR,
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Begrunnelse",

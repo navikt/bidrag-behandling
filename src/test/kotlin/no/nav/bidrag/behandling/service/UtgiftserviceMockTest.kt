@@ -68,7 +68,7 @@ class UtgiftserviceMockTest {
                 Utgiftspost(
                     id = 1,
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.OPTIKK,
+                    type = Utgiftstype.OPTIKK.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -109,7 +109,7 @@ class UtgiftserviceMockTest {
                 Utgiftspost(
                     id = 1,
                     dato = LocalDate.parse("2021-01-01"),
-                    type = Utgiftstype.OPTIKK,
+                    type = Utgiftstype.OPTIKK.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
                     begrunnelse = "Test",
@@ -123,7 +123,7 @@ class UtgiftserviceMockTest {
                     OppdatereUtgift(
                         id = 1,
                         dato = LocalDate.now().minusDays(1),
-                        type = Utgiftstype.OPTIKK,
+                        type = Utgiftstype.OPTIKK.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         begrunnelse = "Test",
