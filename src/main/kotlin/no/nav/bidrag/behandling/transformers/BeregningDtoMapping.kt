@@ -72,10 +72,10 @@ fun List<GrunnlagDto>.finnSivilstandForPeriode(grunnlagsreferanseListe: List<Gru
     return sivilstandPeriode?.innholdTilObjekt<SivilstandPeriode>()?.sivilstand
 }
 
-fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Double {
+fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int {
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
-            ?: return 0.0
+            ?: return 0
     val delberegningBarnIHusstanden =
         find {
             it.type == Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND &&
@@ -84,7 +84,7 @@ fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Gr
                 )
         }
     return delberegningBarnIHusstanden?.innholdTilObjekt<DelberegningBarnIHusstand>()?.antallBarn
-        ?: 0.0
+        ?: 0
 }
 
 fun List<GrunnlagDto>.finnTotalInntekt(grunnlagsreferanseListe: List<Grunnlagsreferanse>): BigDecimal {
