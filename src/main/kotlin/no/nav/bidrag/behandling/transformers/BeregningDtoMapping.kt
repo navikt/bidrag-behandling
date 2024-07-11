@@ -19,8 +19,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
 
-fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag {
-    return BeregnValgteInntekterGrunnlag(
+fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag =
+    BeregnValgteInntekterGrunnlag(
         periode =
             ÅrMånedsperiode(
                 virkningstidspunktEllerSøktFomDato,
@@ -39,7 +39,6 @@ fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag {
                 )
             },
     )
-}
 
 fun List<ResultatForskuddsberegningBarn>.tilDto() =
     map { resultat ->

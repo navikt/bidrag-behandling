@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
+import no.nav.bidrag.behandling.dto.v2.utgift.tilUtgiftstype
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendeBostatusperiode
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendePeriode
@@ -106,7 +107,7 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
         feilliste.add("Kan ikke oppdatere utgift for behandling som ikke er av typen ${Engangsbeløptype.SÆRBIDRAG}")
     }
     val erAvslag = (avslag != null || behandling.avslag != null)
-    if (erAvslag && (nyEllerEndretUtgift != null || sletteUtgift != null || angreSisteEndring)) {
+    if (erAvslag && (nyEllerEndretUtgift != null || sletteUtgift != null || angreSisteEndring == true)) {
         feilliste.add("Kan ikke oppdatere eller opprette utgift hvis avslag er satt")
     }
 
@@ -138,14 +139,20 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
 
         when (behandling.særbidragKategori) {
             Særbidragskategori.KONFIRMASJON -> {
-                if (nyEllerEndretUtgift.type == null) {
+                if (nyEllerEndretUtgift.type.isNullOrEmpty()) {
                     feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.KONFIRMASJON}")
                 }
-                if (nyEllerEndretUtgift.type?.kategori != Særbidragskategori.KONFIRMASJON) {
+                if (nyEllerEndretUtgift.type?.tilUtgiftstype()?.kategori != Særbidragskategori.KONFIRMASJON) {
                     feilliste.add(
                         "Type ${nyEllerEndretUtgift.type} er ikke gyldig for" +
                             " behandling med kategori ${Særbidragskategori.KONFIRMASJON}",
                     )
+                }
+            }
+
+            Særbidragskategori.ANNET -> {
+                if (nyEllerEndretUtgift.type.isNullOrEmpty()) {
+                    feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.ANNET}")
                 }
             }
 

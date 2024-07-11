@@ -14,6 +14,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.Utgift
+import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -154,8 +156,8 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
 fun oppretteBehandling(
     id: Long? = null,
     vedtakstype: Vedtakstype = Vedtakstype.FASTSETTELSE,
-): Behandling {
-    return Behandling(
+): Behandling =
+    Behandling(
         vedtakstype,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
@@ -174,7 +176,6 @@ fun oppretteBehandling(
         virkningstidspunkt = LocalDate.parse("2023-02-01"),
         id = id,
     )
-}
 
 fun opprettInntekter(
     behandling: Behandling,
@@ -227,22 +228,21 @@ fun opprettSivilstand(
     datoFom: LocalDate = LocalDate.parse("2023-01-01"),
     datoTom: LocalDate? = null,
     sivilstand: Sivilstandskode = Sivilstandskode.BOR_ALENE_MED_BARN,
-): Sivilstand {
-    return Sivilstand(
+): Sivilstand =
+    Sivilstand(
         behandling = behandling,
         datoFom = datoFom,
         datoTom = datoTom,
         sivilstand = sivilstand,
         kilde = Kilde.OFFENTLIG,
     )
-}
 
 fun opprettRolle(
     behandling: Behandling,
     data: TestDataPerson,
     id: Long? = null,
-): Rolle {
-    return Rolle(
+): Rolle =
+    Rolle(
         id = id,
         navn = data.navn,
         ident = data.ident,
@@ -251,7 +251,6 @@ fun opprettRolle(
         foedselsdato = data.fødselsdato,
         opprettet = LocalDateTime.now(),
     )
-}
 
 fun oppretteRequestForOppdateringAvManuellInntekt(idInntekt: Long? = null) =
     OppdatereManuellInntekt(
@@ -259,7 +258,12 @@ fun oppretteRequestForOppdateringAvManuellInntekt(idInntekt: Long? = null) =
         type = Inntektsrapportering.KONTANTSTØTTE,
         beløp = BigDecimal(305203),
         datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
-        datoTom = LocalDate.now().minusYears(1).withMonth(12).withDayOfMonth(31),
+        datoTom =
+            LocalDate
+                .now()
+                .minusYears(1)
+                .withMonth(12)
+                .withDayOfMonth(31),
         ident = Personident("12345678910"),
         gjelderBarn = Personident("01234567891"),
     )
@@ -347,8 +351,8 @@ fun oppretteBehandlingRoller(
     return roller
 }
 
-fun opprettSakForBehandling(behandling: Behandling): BidragssakDto {
-    return BidragssakDto(
+fun opprettSakForBehandling(behandling: Behandling): BidragssakDto =
+    BidragssakDto(
         eierfogd = Enhetsnummer(behandling.behandlerEnhet),
         saksnummer = Saksnummer(behandling.saksnummer),
         saksstatus = Bidragssakstatus.IN,
@@ -364,10 +368,9 @@ fun opprettSakForBehandling(behandling: Behandling): BidragssakDto {
                 )
             },
     )
-}
 
-fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDto {
-    return BidragssakDto(
+fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDto =
+    BidragssakDto(
         eierfogd = Enhetsnummer(behandling.behandlerEnhet),
         saksnummer = Saksnummer(behandling.saksnummer),
         saksstatus = Bidragssakstatus.IN,
@@ -384,7 +387,6 @@ fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDt
                 )
             },
     )
-}
 
 fun opprettGyldigBehandlingForBeregningOgVedtak(
     generateId: Boolean = false,
@@ -527,9 +529,10 @@ fun Behandling.oppretteHusstandsmedlem(
         )
     val førsteDatoTom =
         if (førstePeridoeTil != null) {
-            YearMonth.from(
-                førstePeridoeTil,
-            ).atEndOfMonth()
+            YearMonth
+                .from(
+                    førstePeridoeTil,
+                ).atEndOfMonth()
         } else {
             YearMonth.from(søktFomDato.plusMonths(3)).atEndOfMonth()
         }
@@ -558,8 +561,8 @@ fun Behandling.oppretteHusstandsmedlem(
 fun opprettAlleAktiveGrunnlagFraFil(
     behandling: Behandling,
     filnavn: String,
-): MutableSet<Grunnlag> {
-    return listOf(
+): MutableSet<Grunnlag> =
+    listOf(
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
         opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.ARBEIDSFORHOLD),
@@ -573,7 +576,6 @@ fun opprettAlleAktiveGrunnlagFraFil(
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn1),
         opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn2),
     ).flatten().toMutableSet()
-}
 
 fun opprettBeregnetInntektFraGrunnlag(
     behandling: Behandling,
@@ -617,7 +619,9 @@ fun opprettBeregnetInntektFraGrunnlag(
                     POJONode(
                         SummerteInntekter(
                             versjon = inntekterBearbeidet.versjon,
-                            inntekter = inntekterBearbeidet.summertÅrsinntektListe.ainntektListe + inntekterBearbeidet.summertÅrsinntektListe.skattegrunnlagListe,
+                            inntekter =
+                                inntekterBearbeidet.summertÅrsinntektListe.ainntektListe +
+                                    inntekterBearbeidet.summertÅrsinntektListe.skattegrunnlagListe,
                         ),
                     ),
                 ),
@@ -702,8 +706,8 @@ fun tilAinntektspostDto(
     virksomhetId = "995277670",
 )
 
-fun oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(husstandsmedlemSet: Set<Husstandsmedlem>): List<Grunnlag> {
-    return husstandsmedlemSet.groupBy { it.ident }.map { (ident, husstandsmedlem) ->
+fun oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(husstandsmedlemSet: Set<Husstandsmedlem>): List<Grunnlag> =
+    husstandsmedlemSet.groupBy { it.ident }.map { (ident, husstandsmedlem) ->
         val behandling = husstandsmedlem.first().behandling!!
         Grunnlag(
             behandling = behandling,
@@ -730,10 +734,9 @@ fun oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(husstandsmedlemSet: Se
                 ),
         )
     }
-}
 
-fun oppretteHusstandsmedlemMedOffentligePerioder(behandling: Behandling): Set<Husstandsmedlem> {
-    return setOf(
+fun oppretteHusstandsmedlemMedOffentligePerioder(behandling: Behandling): Set<Husstandsmedlem> =
+    setOf(
         oppretteHusstandsmedlem(behandling, testdataBarn1).let {
             it.perioder =
                 mutableSetOf(
@@ -775,7 +778,6 @@ fun oppretteHusstandsmedlemMedOffentligePerioder(behandling: Behandling): Set<Hu
             it
         },
     )
-}
 
 fun opprettInntekt(
     datoFom: YearMonth? = null,
@@ -828,4 +830,29 @@ fun opprettInntekt(
                 }
         ).toMutableSet()
     return inntekt
+}
+
+fun oppretteUtgift(
+    behandling: Behandling,
+    utgiftstype: String,
+): Utgift {
+    val utgift =
+        Utgift(
+            id = 1,
+            behandling = behandling,
+            beløpDirekteBetaltAvBp = BigDecimal(0),
+        )
+    utgift.utgiftsposter =
+        mutableSetOf(
+            Utgiftspost(
+                id = 1,
+                dato = LocalDate.now().minusDays(3),
+                type = utgiftstype,
+                kravbeløp = BigDecimal(1000),
+                godkjentBeløp = BigDecimal(500),
+                begrunnelse = "Trekker fra alkohol",
+                utgift = utgift,
+            ),
+        )
+    return utgift
 }
