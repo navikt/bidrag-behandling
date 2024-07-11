@@ -12,6 +12,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -37,7 +38,7 @@ open class Rolle(
     @Enumerated(EnumType.STRING)
     open val rolletype: Rolletype,
     open val ident: String?,
-    open val foedselsdato: LocalDate,
+    open val fødselsdato: LocalDate,
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,6 +55,13 @@ open class Rolle(
         orphanRemoval = true,
     )
     open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
+    @OneToOne(
+        fetch = FetchType.LAZY,
+        mappedBy = "rolle",
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = true,
+    )
+    open val husstandsmedlem: Husstandsmedlem? = null,
 )
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }

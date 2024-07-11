@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
@@ -13,12 +14,14 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
+import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
+import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
@@ -27,6 +30,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
+import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiodeDto
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
@@ -49,12 +53,14 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.Datoperiode
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -62,6 +68,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
@@ -88,7 +95,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
                         it.rolletype,
                         it.ident,
                         it.navn ?: hentPersonVisningsnavn(it.ident),
-                        it.foedselsdato,
+                        it.fødselsdato,
                     )
                 }.toSet(),
         søknadRefId = soknadRefId,
@@ -132,7 +139,7 @@ fun Behandling.tilBehandlingDtoV2(
                     it.rolletype,
                     it.ident,
                     it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.foedselsdato,
+                    it.fødselsdato,
                 )
             }.toSet(),
     søknadRefId = soknadRefId,
@@ -155,7 +162,7 @@ fun Behandling.tilBehandlingDtoV2(
             gjeldendeAktiveGrunnlagsdata,
             inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
         ),
-    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktiveGrunnlagsdata(),
     utgift = tilUtgiftDto(),
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata
@@ -214,11 +221,28 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
             )
         }.toSet()
 
+fun Grunnlag.tilAndreVoksneIHusstanden() =
+    AndreVoksneIHusstandenGrunnlagDto(
+        perioder = this.tilPeriodeAndreVoksneIHusstanden(),
+        innhentet = LocalDateTime.now(),
+    )
+
+fun Grunnlag.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> {
+    return this.konvertereData<Set<Bostatus>>()?.map {
+        PeriodeAndreVoksneIHusstanden(
+            periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+            status = it.bostatus!!,
+        )
+    }?.toSet() ?: emptySet()
+}
+
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
         husstandsmedlem = husstandsmedlem.sortert().map { it.tilBostatusperiode() }.toSet(),
-        // TODO: Implementere
-        andreVoksneIHusstanden = emptySet(),
+        andreVoksneIHusstanden =
+            grunnlag.hentSisteAktiv()
+                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }.konvertereData<Set<Bostatus>>()
+                ?.tilBostatusperiodeDto() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
             BehandlingNotatDto(
@@ -291,16 +315,16 @@ fun Behandling.tilInntektDtoV2(
     valideringsfeil = hentInntekterValideringsfeil(),
 )
 
-fun List<Grunnlag>.tilAktivGrunnlagsdata() =
+fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
     AktiveGrunnlagsdata(
         arbeidsforhold =
             find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
                 ?: emptySet(),
         husstandsmedlem =
             filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
+        andreVoksneIHusstanden = find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }?.tilAndreVoksneIHusstanden(),
         sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
-        andreVoksneIHusstanden = null,
     )
 
 fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =

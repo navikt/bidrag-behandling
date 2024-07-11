@@ -19,7 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.TypeBehandling
-import no.nav.bidrag.behandling.transformers.behandling.tilAktivGrunnlagsdata
+import no.nav.bidrag.behandling.transformers.behandling.tilAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
@@ -181,7 +181,7 @@ class BehandlingService(
                 return AktivereGrunnlagResponseV2(
                     boforhold = it.tilBoforholdV2(),
                     inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
-                    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktivGrunnlagsdata(),
+                    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktiveGrunnlagsdata(),
                     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
                 )
             }
@@ -219,7 +219,7 @@ class BehandlingService(
             grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
-            grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringMåAksepteres(behandling)
+            grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
 
             log.info { "Virkningstidspunkt er endret. Bygger sivilstandshistorikk på ny for behandling ${behandling.id}" }
             grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)

@@ -213,7 +213,7 @@ fun Behandling.opprettGrunnlag(
                 ident = personId,
                 behandling = this,
                 rolletype = Rolletype.FEILREGISTRERT,
-                foedselsdato = LocalDate.parse("2020-01-01"),
+                fødselsdato = LocalDate.parse("2020-01-01"),
             ),
     )
 }

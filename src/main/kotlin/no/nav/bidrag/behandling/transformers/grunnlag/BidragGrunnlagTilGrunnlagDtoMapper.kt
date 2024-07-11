@@ -7,7 +7,6 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
-import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
@@ -100,11 +99,7 @@ fun RelatertPersonGrunnlagDto.tilGrunnlagsobjekt(
                         relatertPerson = gjelderPersonReferanse,
                         gjelderPerson = gjelderPersonReferanse,
                         erBarnAvBmBp = erBarn,
-                        relasjon =
-                            when (erBarn) { // TODO: Endre dette når ny boforhold api er klar
-                                true -> Familierelasjon.BARN
-                                false -> Familierelasjon.UKJENT
-                            },
+                        relasjon = relasjon,
                         navn = navn,
                         fødselsdato = fødselsdato,
                         perioder =

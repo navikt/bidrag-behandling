@@ -123,7 +123,7 @@ data class BoforholdPeriodeseringsfeil(
                 HusstandsmedlemPeriodiseringsfeilDto(
                     hentPersonVisningsnavn(husstandsmedlem.ident) ?: husstandsmedlem.navn,
                     husstandsmedlem.ident,
-                    husstandsmedlem.fødselsdato,
+                    husstandsmedlem.fødselsdato ?: husstandsmedlem.rolle!!.fødselsdato,
                     husstandsmedlem.id ?: -1,
                 )
             } ?: HusstandsmedlemPeriodiseringsfeilDto("", "", LocalDate.now(), -1)
@@ -193,7 +193,7 @@ data class MåBekrefteNyeOpplysninger(
                 HusstandsmedlemDto(
                     navn = it.navn ?: hentPersonVisningsnavn(it.ident),
                     ident = it.ident,
-                    fødselsdato = it.fødselsdato,
+                    fødselsdato = it.fødselsdato ?: it.rolle!!.fødselsdato,
                     husstandsmedlemId = it.id ?: -1,
                 )
             }

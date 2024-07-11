@@ -79,11 +79,8 @@ enum class Grunnlagsobjektvelger(
         ): Set<GrunnlagRequestType> =
             entries
                 .filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
-                .filter {
-                    it.behandlinstypeMotRolletyper.values
-                        .first()
-                        .contains(rolletype)
-                }.map { GrunnlagRequestType.valueOf(it.name) }
+                .filter { it.behandlinstypeMotRolletyper[behandlingstype]?.contains(rolletype) ?: false }
+                .map { GrunnlagRequestType.valueOf(it.name) }
                 .toSet()
     }
 }

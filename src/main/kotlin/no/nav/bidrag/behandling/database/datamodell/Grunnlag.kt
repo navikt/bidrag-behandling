@@ -64,17 +64,6 @@ fun Set<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter {
 
 fun Set<Grunnlag>.henteNyesteGrunnlag(
     grunnlagstype: Grunnlagstype,
-    rolle: Rolle,
-    gjelder: Personident?,
-) = filter {
-    it.type == grunnlagstype.type &&
-        it.rolle.id == rolle.id &&
-        grunnlagstype.erBearbeidet == it.erBearbeidet &&
-        it.gjelder == gjelder?.verdi
-}.toSet().maxByOrNull { it.innhentet }
-
-fun Set<Grunnlag>.henteNyesteGrunnlag(
-    grunnlagstype: Grunnlagstype,
     rolleInnhentetFor: Rolle,
 ): Grunnlag? =
     filter {
