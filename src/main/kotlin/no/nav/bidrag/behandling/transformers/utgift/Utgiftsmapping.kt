@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
-import no.nav.bidrag.behandling.transformers.erSærligeUtgifter
+import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -57,7 +57,7 @@ fun Behandling.tilUtgiftDto() =
                 utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
             )
         }
-    } ?: if (erSærligeUtgifter()) {
+    } ?: if (erSærbidrag()) {
         SærbidragUtgifterDto(
             avslag = avslag,
             kategori = tilSærbidragKategoriDto(),
