@@ -430,6 +430,29 @@ class VedtakTilBehandlingTest {
         }
     }
 
+    @Test
+    fun `Skal konvertere vedtak for beregning`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
+        val resultat =
+            vedtakService.konverterVedtakTilBeregningResultat(1)
+
+        resultat shouldHaveSize 2
+        assertSoftly(resultat[0]) {
+            perioder shouldHaveSize 8
+            perioder[0].antallBarnIHusstanden shouldBe 4
+            perioder[0].inntekt shouldBe BigDecimal.valueOf(2859987)
+            perioder[0].beløp shouldBe BigDecimal.valueOf(0)
+            perioder[0].resultatKode shouldBe Resultatkode.AVSLAG
+        }
+        assertSoftly(resultat[1]) {
+            perioder shouldHaveSize 6
+            perioder[0].antallBarnIHusstanden shouldBe 4
+            perioder[0].inntekt shouldBe BigDecimal.valueOf(2859987)
+            perioder[0].beløp shouldBe BigDecimal.valueOf(2200)
+            perioder[0].resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_11_ÅR_125_PROSENT
+        }
+    }
+
     private fun Inntekt.isEqual(other: Inntekt) {
         opprinneligFom shouldBe other.opprinneligFom
         opprinneligTom shouldBe other.opprinneligTom
@@ -467,12 +490,11 @@ class VedtakTilBehandlingTest {
         }
     }
 
-    fun filTilVedtakDto(filnavn: String): VedtakDto {
-        return commonObjectmapper.readValue(
+    fun filTilVedtakDto(filnavn: String): VedtakDto =
+        commonObjectmapper.readValue(
             hentFil("/__files/$filnavn.json"),
             VedtakDto::class.java,
         )
-    }
 
     private fun Behandling.validerInntekter() {
         assertSoftly(inntekter) {

@@ -125,8 +125,11 @@ data class UtgiftBeregningDto(
 data class UtgiftspostDto(
     @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
     val dato: LocalDate,
-    @Schema(description = "Type utgift. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)")
-    val type: Utgiftstype,
+    @Schema(
+        description = "Type utgift. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)",
+        oneOf = [Utgiftstype::class, String::class],
+    )
+    val type: String,
     @Schema(description = "Beløp som er betalt for utgiften det gjelder")
     val kravbeløp: BigDecimal,
     @Schema(description = "Beløp som er godkjent for beregningen")

@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
-import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
@@ -24,8 +23,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
-import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
-import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
@@ -36,22 +33,20 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiodeDto
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
-import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
-import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
-import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
-import no.nav.bidrag.behandling.transformers.utgift.tilDto
+import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
+import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
@@ -168,30 +163,7 @@ fun Behandling.tilBehandlingDtoV2(
             inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
         ),
     aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktiveGrunnlagsdata(),
-    utgift =
-        utgift?.let { utgift ->
-            SærbidragUtgifterDto(
-                avslag = avslag,
-                beregning = utgift.tilBeregningDto(),
-                kategori = tilSærbidragKategoriDto(),
-                notat =
-                    BehandlingNotatDto(
-                        kunINotat = utgiftsbegrunnelseKunINotat,
-                    ),
-                utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
-            )
-        } ?: if (erSærbidrag()) {
-            SærbidragUtgifterDto(
-                avslag = avslag,
-                kategori = tilSærbidragKategoriDto(),
-                notat =
-                    BehandlingNotatDto(
-                        kunINotat = utgiftsbegrunnelseKunINotat,
-                    ),
-            )
-        } else {
-            null
-        },
+    utgift = tilUtgiftDto(),
     ikkeAktiverteEndringerIGrunnlagsdata =
         ikkeAktiverteEndringerIGrunnlagsdata
             ?: IkkeAktiveGrunnlagsdata(),
@@ -203,12 +175,6 @@ fun Behandling.tilBehandlingDtoV2(
             objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
         },
 )
-
-private fun Behandling.tilSærbidragKategoriDto() =
-    SærbidragKategoriDto(
-        kategori = særbidragKategori,
-        beskrivelse = kategoriBeskrivelse,
-    )
 
 private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this
