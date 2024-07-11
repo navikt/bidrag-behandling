@@ -542,15 +542,15 @@ class GrunnlagService(
         grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
     ): Map<Grunnlagsdatatype, FeilrapporteringDto?> {
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
-        val rolleInnhentetFor = behandling.roller.first { grunnlagsrequest.key.verdi == it.ident }
 
         val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
             Grunnlagsdatatype
                 .grunnlagsdatatypeobjekter(behandling.tilType())
                 .associateWith {
-                    hentFeilrapporteringForGrunnlag(it, rolleInnhentetFor, innhentetGrunnlag)
+                    hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, innhentetGrunnlag)
                 }.filterNot { it.value == null }
 
+        val rolleInnhentetFor = behandling.roller.find { it.ident == grunnlagsrequest.key.verdi }!!
         lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, innhentetGrunnlag, feilrapporteringer)
 
         val feilSkattepliktig = feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
@@ -1437,59 +1437,59 @@ class GrunnlagService(
 
     private fun hentFeilrapporteringForGrunnlag(
         grunnlagsdatatype: Grunnlagsdatatype,
-        rolleInhentetFor: Rolle,
+        innhentetFor: Personident,
         innhentetGrunnlag: HentGrunnlagDto,
     ): FeilrapporteringDto? =
         when (grunnlagsdatatype) {
             Grunnlagsdatatype.ARBEIDSFORHOLD ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.ARBEIDSFORHOLD,
-                    rolleInhentetFor,
+                    innhentetFor,
                 )
 
             Grunnlagsdatatype.BARNETILLEGG ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.BARNETILLEGG,
-                    rolleInhentetFor,
+                    innhentetFor,
                 )
 
             Grunnlagsdatatype.SMÅBARNSTILLEGG ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
-                    rolleInhentetFor,
+                    innhentetFor,
                 )
 
             Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.SKATTEGRUNNLAG,
-                    rolleInhentetFor,
+                    innhentetFor,
                 ) ?: innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.AINNTEKT,
-                    rolleInhentetFor,
+                    innhentetFor,
                 )
 
             Grunnlagsdatatype.KONTANTSTØTTE ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.KONTANTSTØTTE,
-                    rolleInhentetFor,
+                    innhentetFor,
                 )
 
             Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
-                    rolleInhentetFor,
+                    innhentetFor,
                 )
 
             Grunnlagsdatatype.BOFORHOLD ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
-                    rolleInhentetFor,
+                    innhentetFor,
                 )
 
             Grunnlagsdatatype.SIVILSTAND ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.SIVILSTAND,
-                    rolleInhentetFor,
+                    innhentetFor,
                 )
 
             else -> null
@@ -1497,9 +1497,9 @@ class GrunnlagService(
 
     private fun HentGrunnlagDto.hentFeilFor(
         type: GrunnlagRequestType,
-        rolle: Rolle,
+        personident: Personident,
     ) = feilrapporteringListe.find {
-        it.grunnlagstype == type && it.personId == rolle.ident
+        it.grunnlagstype == type && it.personId == personident.verdi
     }
 
     private fun lagreGrunnlagHvisEndret(
