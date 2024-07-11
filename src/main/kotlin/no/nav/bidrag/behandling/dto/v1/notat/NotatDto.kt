@@ -208,7 +208,7 @@ data class NotatResultatBeregningBarnDto(
         val sivilstand: Sivilstandskode?,
         val inntekt: BigDecimal,
         val vedtakstype: Vedtakstype?,
-        val antallBarnIHusstanden: Double,
+        val antallBarnIHusstanden: Int,
     ) {
         val resultatKodeVisningsnavn
             get() = vedtakstype?.let { resultatKode.visningsnavnIntern(it) } ?: resultatKode.visningsnavn.intern
