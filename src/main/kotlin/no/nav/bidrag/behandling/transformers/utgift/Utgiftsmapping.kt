@@ -5,11 +5,14 @@ import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
+import no.nav.bidrag.behandling.transformers.erSærligeUtgifter
 import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -27,6 +30,45 @@ val Utgift.totalGodkjentBeløpBp
 val Utgift.totalGodkjentBeløp get() = utgiftsposter.sumOf { it.godkjentBeløp }
 val Utgift.totalBeløpBetaltAvBp
     get() = utgiftsposter.filter { it.betaltAvBp }.sumOf { it.godkjentBeløp } + beløpDirekteBetaltAvBp
+
+fun Behandling.tilSærbidragKategoriDto() =
+    SærbidragKategoriDto(
+        kategori = særbidragKategori,
+        beskrivelse = kategoriBeskrivelse,
+    )
+
+fun Behandling.tilUtgiftDto() =
+    utgift?.let { utgift ->
+        if (avslag != null) {
+            SærbidragUtgifterDto(
+                avslag = avslag,
+                kategori = tilSærbidragKategoriDto(),
+                notat = BehandlingNotatDto(utgiftsbegrunnelseKunINotat ?: ""),
+            )
+        } else {
+            SærbidragUtgifterDto(
+                avslag = avslag,
+                beregning = utgift.tilBeregningDto(),
+                kategori = tilSærbidragKategoriDto(),
+                notat =
+                    BehandlingNotatDto(
+                        kunINotat = utgiftsbegrunnelseKunINotat,
+                    ),
+                utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
+            )
+        }
+    } ?: if (erSærligeUtgifter()) {
+        SærbidragUtgifterDto(
+            avslag = avslag,
+            kategori = tilSærbidragKategoriDto(),
+            notat =
+                BehandlingNotatDto(
+                    kunINotat = utgiftsbegrunnelseKunINotat,
+                ),
+        )
+    } else {
+        null
+    }
 
 fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
     if (behandling.avslag != null) {

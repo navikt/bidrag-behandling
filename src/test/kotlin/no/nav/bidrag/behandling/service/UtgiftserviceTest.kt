@@ -104,6 +104,76 @@ class UtgiftserviceTest : TestContainerRunner() {
 
     @Test
     @Transactional
+    fun `skal skal sortere utgiftsposter i responsen etter oppdatering`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+                beløpDirekteBetaltAvBp = BigDecimal(0),
+            )
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(5),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(500),
+                    begrunnelse = "Eldste post",
+                    utgift = behandling.utgift!!,
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusDays(5),
+                    type = Utgiftstype.REISEUTGIFT.name,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(500),
+                    begrunnelse = "Nyeste post",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusMonths(1),
+                        type = Utgiftstype.KLÆR.name,
+                        kravbeløp = BigDecimal(1000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Ny post",
+                    ),
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        assertSoftly(response.utgiftposter) {
+            shouldHaveSize(3)
+            this[0].begrunnelse shouldBe "Eldste post"
+            this[1].begrunnelse shouldBe "Ny post"
+            this[2].begrunnelse shouldBe "Nyeste post"
+        }
+
+        val forespørsel2 =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusDays(1),
+                        type = Utgiftstype.KLÆR.name,
+                        id = response.oppdatertUtgiftspost?.id,
+                        kravbeløp = BigDecimal(1000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Ny post",
+                    ),
+            )
+        val response2 = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel2)
+        assertSoftly(response2.utgiftposter) {
+            shouldHaveSize(3)
+            this[0].begrunnelse shouldBe "Eldste post"
+            this[1].begrunnelse shouldBe "Nyeste post"
+            this[2].begrunnelse shouldBe "Ny post"
+        }
+    }
+
+    @Test
+    @Transactional
     fun `skal opprette utgift og utgiftspost`() {
         val behandling = opprettBehandlingSærligeUtgifter()
         testdataManager.lagreBehandlingNewTransaction(behandling)

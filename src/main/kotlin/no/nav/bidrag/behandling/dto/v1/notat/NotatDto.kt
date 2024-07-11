@@ -105,8 +105,8 @@ data class OpplysningerBruktTilBeregning<T>(
     val statusVisningsnavn get() = toVisningsnavn(status)
 }
 
-private fun <T> toVisningsnavn(value: T): String? {
-    return when (val enum = value) {
+private fun <T> toVisningsnavn(value: T): String? =
+    when (val enum = value) {
         is Bostatuskode -> enum.visningsnavn.intern
         is Inntektsrapportering -> enum.visningsnavn.intern
         is Resultatkode -> enum.visningsnavn.intern
@@ -125,7 +125,6 @@ private fun <T> toVisningsnavn(value: T): String? {
 
         else -> null
     }
-}
 
 data class PersonNotatDto(
     val rolle: Rolletype?,
@@ -209,7 +208,7 @@ data class NotatResultatBeregningBarnDto(
         val sivilstand: Sivilstandskode?,
         val inntekt: BigDecimal,
         val vedtakstype: Vedtakstype?,
-        val antallBarnIHusstanden: Int,
+        val antallBarnIHusstanden: Double,
     ) {
         val resultatKodeVisningsnavn
             get() = vedtakstype?.let { resultatKode.visningsnavnIntern(it) } ?: resultatKode.visningsnavn.intern

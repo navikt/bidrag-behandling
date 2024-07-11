@@ -19,8 +19,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
 
-fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag {
-    return BeregnValgteInntekterGrunnlag(
+fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag =
+    BeregnValgteInntekterGrunnlag(
         periode =
             ÅrMånedsperiode(
                 virkningstidspunktEllerSøktFomDato,
@@ -39,7 +39,6 @@ fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag {
                 )
             },
     )
-}
 
 fun List<ResultatForskuddsberegningBarn>.tilDto() =
     map { resultat ->
@@ -73,10 +72,10 @@ fun List<GrunnlagDto>.finnSivilstandForPeriode(grunnlagsreferanseListe: List<Gru
     return sivilstandPeriode?.innholdTilObjekt<SivilstandPeriode>()?.sivilstand
 }
 
-fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int {
+fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Double {
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
-            ?: return 0
+            ?: return 0.0
     val delberegningBarnIHusstanden =
         find {
             it.type == Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND &&
@@ -85,7 +84,7 @@ fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Gr
                 )
         }
     return delberegningBarnIHusstanden?.innholdTilObjekt<DelberegningBarnIHusstand>()?.antallBarn
-        ?: 0
+        ?: 0.0
 }
 
 fun List<GrunnlagDto>.finnTotalInntekt(grunnlagsreferanseListe: List<Grunnlagsreferanse>): BigDecimal {
