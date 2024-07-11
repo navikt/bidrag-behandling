@@ -13,8 +13,12 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.tilDto
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.client.HttpClientErrorException
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -25,7 +29,7 @@ class BehandlingBeregnController(
     private val vedtakService: VedtakService,
 ) {
     @Suppress("unused")
-    @PostMapping("/behandling/{behandlingsid}/beregn")
+    @PostMapping("/behandling/{behandlingsid}/beregn", "/behandling/{behandlingsid}/beregn/forskudd")
     @Operation(
         description = "Beregn forskudd",
         security = [SecurityRequirement(name = "bearer-key")],
@@ -52,6 +56,50 @@ class BehandlingBeregnController(
         LOGGER.info { "Beregner forskudd for behandling med id $behandlingsid" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        if (behandling.stonadstype != Stønadstype.FORSKUDD) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Behandling $behandlingsid er ikke en forskudd behandling",
+            )
+        }
+        return beregningService.beregneForskudd(behandling.id!!).tilDto()
+    }
+
+    @Suppress("unused")
+    @PostMapping("/behandling/{behandlingsid}/beregn/sarbidrag")
+    @Operation(
+        description = "Beregn særbidrag",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Validering av grunnlag feilet for beregning",
+                content = [
+                    Content(
+                        schema = Schema(implementation = BeregningValideringsfeil::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun beregnSærbidrag(
+        @PathVariable behandlingsid: Long,
+    ): List<ResultatBeregningBarnDto> {
+        LOGGER.info { "Beregner særbidrag for behandling med id $behandlingsid" }
+
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+
+        if (behandling.engangsbeloptype != Engangsbeløptype.SÆRBIDRAG) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Behandling $behandlingsid er ikke en særbidrag behandling",
+            )
+        }
 
         return beregningService.beregneForskudd(behandling.id!!).tilDto()
     }

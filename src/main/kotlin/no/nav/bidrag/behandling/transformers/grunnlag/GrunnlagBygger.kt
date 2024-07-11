@@ -60,7 +60,26 @@ fun ResultatForskuddsberegningBarn.byggStønadsendringerForVedtak(behandling: Be
     )
 }
 
-fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnlag {
+fun Behandling.byggGrunnlagForBeregningSærbidrag(søknadsbarnRolle: Rolle): BeregnGrunnlag {
+    val personobjekter = tilPersonobjekter(søknadsbarnRolle)
+    val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
+    val bostatusBarn = tilGrunnlagBostatus(personobjekter)
+    val utgift = tilGrunnlagUtgift()
+
+    val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
+    return BeregnGrunnlag(
+        periode =
+            ÅrMånedsperiode(
+                virkningstidspunkt!!,
+                finnBeregnTilDato(virkningstidspunkt!!),
+            ),
+        søknadsbarnReferanse = søknadsbarn.referanse,
+        grunnlagListe =
+            (personobjekter + bostatusBarn + inntekter + utgift).toList(),
+    )
+}
+
+fun Behandling.byggGrunnlagForBeregningForskudd(søknadsbarnRolle: Rolle): BeregnGrunnlag {
     val personobjekter = tilPersonobjekter(søknadsbarnRolle)
     val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
     val bostatusBarn = tilGrunnlagBostatus(personobjekter)
@@ -101,10 +120,8 @@ fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
     return (personobjekter + bostatus + inntekter + sivilstand + innhentetGrunnlagListe).toSet()
 }
 
-fun Behandling.byggGrunnlagForStønad(): Set<GrunnlagDto> {
-    return (byggGrunnlagNotater() + byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSøknad()).toSet()
-}
+fun Behandling.byggGrunnlagForStønad(): Set<GrunnlagDto> =
+    (byggGrunnlagNotater() + byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSøknad()).toSet()
 
-fun Behandling.byggGrunnlagForStønadAvslag(): Set<GrunnlagDto> {
-    return (byggGrunnlagNotater() + byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSøknad()).toSet()
-}
+fun Behandling.byggGrunnlagForStønadAvslag(): Set<GrunnlagDto> =
+    (byggGrunnlagNotater() + byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSøknad()).toSet()

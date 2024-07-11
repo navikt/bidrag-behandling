@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
+import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.ident.Personident
@@ -32,4 +33,16 @@ data class ResultatRolle(
     val ident: Personident?,
     val navn: String,
     val fødselsdato: LocalDate,
+)
+
+data class ResultatSærbidragsberegning(
+    val inntektBM: BigDecimal,
+    val inntektBP: BigDecimal,
+    val inntektBarn: BigDecimal,
+    val andelBp: Double,
+    val beregning: UtgiftBeregningDto,
+    val resultat: BigDecimal,
+    val resultatKode: Resultatkode,
+    val antallBarnIHusstanden: Double,
+    val voksenIHusstanden: Boolean,
 )

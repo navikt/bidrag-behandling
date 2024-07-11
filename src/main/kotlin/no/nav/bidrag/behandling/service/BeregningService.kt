@@ -5,9 +5,10 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
+import no.nav.bidrag.behandling.database.datamodell.validerForBeregningSærbidrag
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
-import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregningForskudd
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -39,7 +40,7 @@ class BeregningService(
             }
         } else {
             behandling.søknadsbarn.map {
-                val beregnForskudd = behandling.byggGrunnlagForBeregning(it)
+                val beregnForskudd = behandling.byggGrunnlagForBeregningForskudd(it)
 
                 try {
                     ResultatForskuddsberegningBarn(
@@ -54,7 +55,35 @@ class BeregningService(
         }
     }
 
+    fun beregneSærbidrag(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
+        behandling.validerForBeregningSærbidrag()
+        return if (behandling.avslag != null) {
+            behandling.søknadsbarn.map {
+                behandling.tilResultatAvslag(it)
+            }
+        } else {
+            behandling.søknadsbarn.map {
+                val beregnForskudd = behandling.byggGrunnlagForBeregningForskudd(it)
+
+                try {
+                    ResultatForskuddsberegningBarn(
+                        it.mapTilResultatBarn(),
+                        beregnApi.beregn(beregnForskudd),
+                    )
+                } catch (e: Exception) {
+                    LOGGER.warn(e) { "Det skjedde en feil ved beregning av særbidrag: ${e.message}" }
+                    throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
+                }
+            }
+        }
+    }
+
     fun beregneForskudd(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        return beregneForskudd(behandling)
+    }
+
+    fun beregneSærbidrag(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return beregneForskudd(behandling)
     }

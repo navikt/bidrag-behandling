@@ -17,6 +17,7 @@ import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
+import no.nav.bidrag.behandling.dto.v2.validering.UtgiftFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
@@ -221,6 +222,7 @@ fun Behandling.validerForBeregning() {
             harFeil.ifTrue {
                 BeregningValideringsfeil(
                     virkningstidspunktFeil,
+                    null,
                     inntekterFeil,
                     husstandsmedlemsfeil,
                     sivilstandFeil,
@@ -228,7 +230,7 @@ fun Behandling.validerForBeregning() {
                 )
             }
         } else if (virkningstidspunktFeil != null) {
-            BeregningValideringsfeil(virkningstidspunktFeil, null, null, null)
+            BeregningValideringsfeil(virkningstidspunktFeil, null, null, null, null)
         } else {
             null
         }
@@ -241,6 +243,67 @@ fun Behandling.validerForBeregning() {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
             "Feil ved validering av behandling for beregning",
+            commonObjectmapper.writeValueAsBytes(feil),
+            Charset.defaultCharset(),
+        )
+    }
+}
+
+fun Behandling.validerForBeregningSærbidrag() {
+    val utgiftFeil =
+        UtgiftFeilDto(
+            manglerUtgifter = utgift == null || utgift!!.utgiftsposter.isEmpty(),
+        ).takeIf { it.harFeil }
+    val feil =
+        if (avslag == null) {
+            val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
+            val husstandsmedlemsfeil =
+                husstandsmedlem
+                    .validerBoforhold(
+                        virkningstidspunktEllerSøktFomDato,
+                    ).filter { it.harFeil }
+                    .takeIf { it.isNotEmpty() }
+            val måBekrefteOpplysninger =
+                grunnlag
+                    .hentAlleSomMåBekreftes()
+                    .map { grunnlagSomMåBekreftes ->
+                        MåBekrefteNyeOpplysninger(
+                            grunnlagSomMåBekreftes.type,
+                            husstandsmedlem =
+                                (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
+                                    husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                                },
+                        )
+                    }.toSet()
+            val harFeil =
+                inntekterFeil != null ||
+                    husstandsmedlemsfeil != null ||
+                    utgiftFeil != null ||
+                    måBekrefteOpplysninger.isNotEmpty()
+            harFeil.ifTrue {
+                BeregningValideringsfeil(
+                    null,
+                    utgiftFeil,
+                    inntekterFeil,
+                    husstandsmedlemsfeil,
+                    null,
+                    måBekrefteOpplysninger,
+                )
+            }
+        } else if (utgiftFeil != null) {
+            BeregningValideringsfeil(null, utgiftFeil, null, null, null)
+        } else {
+            null
+        }
+
+    if (feil != null) {
+        secureLogger.warn {
+            "Feil ved validering av behandling for beregning av særbidrag" +
+                commonObjectmapper.writeValueAsString(feil)
+        }
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Feil ved validering av behandling for beregning av særbidrag",
             commonObjectmapper.writeValueAsBytes(feil),
             Charset.defaultCharset(),
         )
