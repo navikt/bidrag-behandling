@@ -160,7 +160,63 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             behandling.utgift shouldBe null
         }
 
-        //        @Disabled("Wiremock-problem kun på Github")
+        @Test
+        fun `skal opprette en behandling for særbidrag med kategori ANNET`() {
+            val personidentBp = Personident("12345678912")
+            val personidentBm = Personident("213213")
+            val personidentBarn = Personident("123213123")
+
+            val roller =
+                setOf(
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        personidentBarn,
+                        fødselsdato = LocalDate.now().minusMonths(136),
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BIDRAGSMOTTAKER,
+                        personidentBm,
+                        fødselsdato = LocalDate.now().minusMonths(499),
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BIDRAGSPLIKTIG,
+                        personidentBp,
+                        fødselsdato = LocalDate.now().minusMonths(499),
+                    ),
+                )
+            val testBehandlingMedNull =
+                oppretteBehandlingRequestTest("1900000", "en12", roller, søknadsid = 1239988330001323)
+                    .copy(
+                        engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
+                        stønadstype = null,
+                        vedtakstype = Vedtakstype.FASTSETTELSE,
+                        kategori =
+                            OpprettKategoriRequestDto(
+                                kategori = Særbidragskategori.ANNET.name,
+                                beskrivelse = "Batteri til høreapparat",
+                            ),
+                    )
+
+            stubUtils.stubHenteGrunnlag()
+            val responseMedNull =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUriV2()}/behandling",
+                    HttpMethod.POST,
+                    HttpEntity(testBehandlingMedNull),
+                    OpprettBehandlingResponse::class.java,
+                )
+            Assertions.assertEquals(HttpStatus.OK, responseMedNull.statusCode)
+
+            val behandling = testdataManager.hentBehandling(responseMedNull.body!!.id)!!
+
+            behandling.virkningstidspunkt shouldBe LocalDate.now().withDayOfMonth(1)
+            behandling.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            behandling.særbidragKategori shouldBe Særbidragskategori.ANNET
+            behandling.stonadstype shouldBe null
+            behandling.kategoriBeskrivelse shouldBe "Batteri til høreapparat"
+            behandling.utgift shouldBe null
+        }
+
         @Test
         fun `skal opprette en behandling og forsendelse for stonadType BIDRAG`() {
             // gitt
@@ -207,7 +263,6 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
              */
         }
 
-        //        @Disabled("Wiremock-problem kun på Github")
         @Test
         fun `skal opprette en behandling og ikke opprette forsendelse for forskudd`() {
             // gitt
