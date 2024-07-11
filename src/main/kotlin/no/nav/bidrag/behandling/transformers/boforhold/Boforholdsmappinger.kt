@@ -32,7 +32,7 @@ fun Husstandsmedlem.tilBostatusperiode() =
         this.perioder.sortedBy { it.datoFom }.toSet().tilBostatusperiode(),
         this.ident,
         this.navn ?: hentPersonVisningsnavn(this.ident),
-        this.fødselsdato,
+        this.fødselsdato ?: this.rolle!!.fødselsdato,
     )
 
 fun Husstandsmedlem.tilOppdatereBoforholdResponse(behandling: Behandling) =

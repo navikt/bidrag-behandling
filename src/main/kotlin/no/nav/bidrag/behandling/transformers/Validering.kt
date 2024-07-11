@@ -195,7 +195,7 @@ fun Husstandsmedlem.validereBoforhold(
         this.perioder
             .map {
                 Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato))
+            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato ?: this.rolle!!.fødselsdato))
     if (validerePerioder) {
         valideringsfeil.add(
             BoforholdPeriodeseringsfeil(
@@ -686,7 +686,7 @@ private fun Husstandsmedlem.validereNyPeriode(
 private fun Husstandsmedlem.senestePeriodeFomDato(): LocalDate {
     val virkningsdato = this.behandling.virkningstidspunktEllerSøktFomDato
     return if (virkningsdato.isAfter(LocalDate.now())) {
-        maxOf(this.fødselsdato, virkningsdato.withDayOfMonth(1))
+        maxOf(this.fødselsdato ?: this.rolle!!.fødselsdato, virkningsdato.withDayOfMonth(1))
     } else {
         LocalDate.now().withDayOfMonth(1)
     }

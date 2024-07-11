@@ -899,13 +899,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                         behandling,
                         ident = identOriginaltMedISaken,
                         rolletype = Rolletype.BARN,
-                        foedselsdato = LocalDate.parse("2021-01-01"),
+                        fødselsdato = LocalDate.parse("2021-01-01"),
                     ),
                     Rolle(
                         behandling,
                         ident = "123123123",
                         rolletype = Rolletype.BARN,
-                        foedselsdato = LocalDate.parse("2021-01-01"),
+                        fødselsdato = LocalDate.parse("2021-01-01"),
                     ),
                 )
             behandling.husstandsmedlem =
@@ -1035,7 +1035,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val periodisertSivilstandshistorikk =
                 SivilstandApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    nyttSivilstandsgrunnlag.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
+                    nyttSivilstandsgrunnlag.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
                 )
             behandling.grunnlag.add(
                 Grunnlag(
@@ -1107,7 +1107,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val periodisertSivilstandshistorikk =
                 SivilstandApi.beregnV2(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    nyttSivilstandsgrunnlag.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
+                    nyttSivilstandsgrunnlag.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
                 )
             behandling.grunnlag.add(
                 Grunnlag(
@@ -1247,7 +1247,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                             behandling,
                             it.rolletype,
                             it.ident,
-                            it.foedselsdato,
+                            it.fødselsdato,
                             it.opprettet,
                         )
                     },

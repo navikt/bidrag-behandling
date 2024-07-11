@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -13,9 +14,14 @@ import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.BoforholdApi
+import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -50,6 +56,7 @@ class TestdataManager(
         inkludereBoforhold: Boolean = true,
         inkludereBp: Boolean = false,
         behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
+        inkludereVoksneIBpsHusstand: Boolean = true,
     ): Behandling =
         oppretteBehandling(
             inkluderInntekter,
@@ -57,6 +64,7 @@ class TestdataManager(
             inkludereBoforhold,
             inkludereBp,
             behandlingstype,
+            inkludereVoksneIBpsHusstand,
         )
 
     @Transactional
@@ -66,6 +74,7 @@ class TestdataManager(
         inkludereBoforhold: Boolean = true,
         inkludereBp: Boolean = false,
         behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
+        inkludereVoksneIBpsHusstand: Boolean = false,
     ): Behandling {
         val behandling =
             no.nav.bidrag.behandling.utils.testdata
@@ -98,7 +107,7 @@ class TestdataManager(
         }
 
         if (inkludereBoforhold) {
-            oppretteBoforhold(behandling)
+            oppretteBoforhold(behandling, inkludereVoksneIBpsHusstand)
         }
 
         if (inkludereSivilstand) {
@@ -197,7 +206,10 @@ class TestdataManager(
         else -> ""
     }
 
-    private fun oppretteBoforhold(behandling: Behandling) {
+    private fun oppretteBoforhold(
+        behandling: Behandling,
+        inkludereVoksneIBpsHusstand: Boolean,
+    ) {
         val husstandsmedlem1 = oppretteHusstandsmedlem(behandling, testdataBarn1)
         husstandsmedlem1.perioder.clear()
 
@@ -205,11 +217,12 @@ class TestdataManager(
         husstandsmedlem2.perioder.clear()
 
         val grunnlagHusstandsmedlemmer =
-            setOf(
+            mutableSetOf(
                 RelatertPersonGrunnlagDto(
                     relatertPersonPersonId = testdataBarn1.ident,
                     fødselsdato = testdataBarn1.fødselsdato,
                     erBarnAvBmBp = true,
+                    relasjon = Familierelasjon.BARN,
                     navn = "Lyrisk Sopp",
                     partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                     borISammeHusstandDtoListe =
@@ -224,6 +237,7 @@ class TestdataManager(
                     relatertPersonPersonId = testdataBarn2.ident,
                     fødselsdato = testdataBarn2.fødselsdato,
                     erBarnAvBmBp = true,
+                    relasjon = Familierelasjon.BARN,
                     navn = "Lyrisk Sopp",
                     partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                     borISammeHusstandDtoListe =
@@ -235,6 +249,47 @@ class TestdataManager(
                         ),
                 ),
             )
+
+        if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && inkludereVoksneIBpsHusstand) {
+            grunnlagHusstandsmedlemmer.add(
+                RelatertPersonGrunnlagDto(
+                    relatertPersonPersonId = voksenPersonIBpsHusstand.personident,
+                    fødselsdato = voksenPersonIBpsHusstand.fødselsdato,
+                    erBarnAvBmBp = false,
+                    relasjon = Familierelasjon.INGEN,
+                    navn = voksenPersonIBpsHusstand.navn,
+                    partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
+                    borISammeHusstandDtoListe =
+                        listOf(
+                            BorISammeHusstandDto(
+                                periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(2).withDayOfMonth(1),
+                                periodeTil =
+                                    behandling.virkningstidspunktEllerSøktFomDato.plusMonths(6).withDayOfMonth(1)
+                                        .minusDays(1),
+                            ),
+                        ),
+                ),
+            )
+
+            val periodisertVoksneIBpsHusstand =
+                BoforholdApi.beregnBoforholdAndreVoksne(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    grunnlagHusstandsmedlemmer.tilBoforholdVoksneRequest(),
+                )
+
+            behandling.grunnlag.add(
+                Grunnlag(
+                    aktiv = LocalDateTime.now(),
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now().minusDays(3),
+                    data = commonObjectmapper.writeValueAsString(periodisertVoksneIBpsHusstand),
+                    rolle = behandling.bidragspliktig!!,
+                    type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    gjelder = behandling.bidragspliktig!!.ident,
+                    erBearbeidet = true,
+                ),
+            )
+        }
 
         behandling.grunnlag.add(
             Grunnlag(
@@ -273,6 +328,27 @@ class TestdataManager(
             }
 
         behandling.husstandsmedlem.addAll(boforholdPeriodisert.tilHusstandsmedlem(behandling))
+
+        if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && inkludereVoksneIBpsHusstand) {
+            leggeTilAndreVoksneIBpsHusstand(behandling, grunnlagHusstandsmedlemmer)
+        }
+    }
+
+    private fun leggeTilAndreVoksneIBpsHusstand(
+        behandling: Behandling,
+        grunnlag: Set<RelatertPersonGrunnlagDto>,
+    ) {
+        val husstandsmedlemBp =
+            Husstandsmedlem(behandling = behandling, kilde = Kilde.OFFENTLIG, rolle = behandling.bidragspliktig)
+
+        val andreVoksneIBpsHusstand =
+            BoforholdApi.beregnBoforholdAndreVoksne(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                grunnlag.tilBoforholdVoksneRequest(),
+            )
+
+        husstandsmedlemBp.perioder.addAll(andreVoksneIBpsHusstand.toSet().tilBostatusperiode(husstandsmedlemBp))
+        behandling.husstandsmedlem.add(husstandsmedlemBp)
     }
 
     private fun oppretteSivilstand(behandling: Behandling) {
@@ -312,7 +388,7 @@ class TestdataManager(
                 behandledeSivilstandsopplysninger = emptyList(),
                 endreSivilstand = null,
                 innhentedeOffentligeOpplysninger = sivilstandshistorikk,
-                fødselsdatoBM = behandling.bidragsmottaker!!.foedselsdato,
+                fødselsdatoBM = behandling.bidragsmottaker!!.fødselsdato,
             )
 
         val periodisertHistorikk =

@@ -100,7 +100,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
                         it.rolletype,
                         it.ident,
                         it.navn ?: hentPersonVisningsnavn(it.ident),
-                        it.foedselsdato,
+                        it.fødselsdato,
                     )
                 }.toSet(),
         søknadRefId = soknadRefId,
@@ -144,7 +144,7 @@ fun Behandling.tilBehandlingDtoV2(
                     it.rolletype,
                     it.ident,
                     it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.foedselsdato,
+                    it.fødselsdato,
                 )
             }.toSet(),
     søknadRefId = soknadRefId,

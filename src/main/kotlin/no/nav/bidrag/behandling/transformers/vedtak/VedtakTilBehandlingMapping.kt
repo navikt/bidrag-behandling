@@ -586,7 +586,7 @@ private fun GrunnlagDto.tilRolle(
                 )
         },
     ident = personIdent,
-    foedselsdato = personObjekt.fødselsdato,
+    fødselsdato = personObjekt.fødselsdato,
 )
 
 private fun Inntekt.copy(

@@ -578,7 +578,7 @@ class VedtakTilBehandlingTest {
             bidragsmotaker shouldNotBe null
             assertSoftly(bidragsmotaker!!) {
                 it.ident shouldBe testdataBM.ident
-                it.foedselsdato shouldBe testdataBM.fødselsdato
+                it.fødselsdato shouldBe testdataBM.fødselsdato
                 it.navn shouldBe null
                 it.deleted shouldBe false
             }
@@ -591,14 +591,14 @@ class VedtakTilBehandlingTest {
 
         assertSoftly(søknadsbarn1) {
             it.ident shouldBe testdataBarn1.ident
-            it.foedselsdato shouldBe testdataBarn1.fødselsdato
+            it.fødselsdato shouldBe testdataBarn1.fødselsdato
             it.navn shouldBe null
             it.deleted shouldBe false
         }
 
         assertSoftly(søknadsbarn2) {
             it.ident shouldBe testdataBarn2.ident
-            it.foedselsdato shouldBe testdataBarn2.fødselsdato
+            it.fødselsdato shouldBe testdataBarn2.fødselsdato
             it.navn shouldBe null
             it.deleted shouldBe false
         }

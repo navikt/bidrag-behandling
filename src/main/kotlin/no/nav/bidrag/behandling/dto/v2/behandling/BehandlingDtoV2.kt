@@ -267,35 +267,21 @@ enum class Grunnlagsdatatype(
 ) {
     ARBEIDSFORHOLD(
         mapOf(
-            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
-            TypeBehandling.SÆRBIDRAG to
-                setOf(
-                    Rolletype.BIDRAGSMOTTAKER,
-                    Rolletype.BIDRAGSPLIKTIG,
-                    Rolletype.BARN,
-                ),
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
         ),
     ),
     BARNETILLEGG(
         mapOf(
-            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
-            TypeBehandling.SÆRBIDRAG to
-                setOf(
-                    Rolletype.BIDRAGSMOTTAKER,
-                    Rolletype.BIDRAGSPLIKTIG,
-                    Rolletype.BARN,
-                ),
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
     BARNETILSYN(emptyMap()),
     BOFORHOLD(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-            TypeBehandling.SÆRBIDRAG to
-                setOf(
-                    Rolletype.BIDRAGSMOTTAKER,
-                    Rolletype.BIDRAGSPLIKTIG,
-                ),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
     BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN(mapOf(TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG))),
@@ -305,13 +291,8 @@ enum class Grunnlagsdatatype(
     SMÅBARNSTILLEGG(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
     SKATTEPLIKTIGE_INNTEKTER(
         mapOf(
-            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
-            TypeBehandling.SÆRBIDRAG to
-                setOf(
-                    Rolletype.BIDRAGSMOTTAKER,
-                    Rolletype.BIDRAGSPLIKTIG,
-                    Rolletype.BARN,
-                ),
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
         ),
     ),
     SUMMERTE_MÅNEDSINNTEKTER(
@@ -322,7 +303,7 @@ enum class Grunnlagsdatatype(
     ),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
-    AINNTEKT(),
+    AINNTEKT,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
     SKATTEGRUNNLAG,

@@ -899,7 +899,7 @@ fun opprettRolle(
     ident = ident,
     rolletype = rolletype,
     behandling = oppretteBehandling(),
-    foedselsdato = LocalDate.parse("2020-01-01"),
+    fødselsdato = LocalDate.parse("2020-01-01"),
     opprettet = LocalDateTime.now(),
 )
 

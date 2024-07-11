@@ -97,6 +97,16 @@ val testdataHusstandsmedlem1 =
         fødselsdato = LocalDate.parse("2001-05-09"),
     )
 
+val voksenPersonIBpsHusstand =
+    Testperson(navn = "Gillinger Owa", personident = "01010012345", fødselsdato = LocalDate.of(2000, 1, 1))
+
+data class Testperson(
+    val personident: String,
+    val navn: String,
+    val fødselsdato: LocalDate,
+    val rolletype: Rolletype? = null,
+)
+
 data class TestDataPerson(
     val ident: String,
     val navn: String,
@@ -108,7 +118,7 @@ data class TestDataPerson(
             id = behandling.roller.find { it.ident == ident }?.id ?: 1,
             ident = ident,
             navn = navn,
-            foedselsdato = fødselsdato,
+            fødselsdato = fødselsdato,
             rolletype = rolletype,
             opprettet = LocalDateTime.now(),
             behandling = behandling,
@@ -248,7 +258,7 @@ fun opprettRolle(
         ident = data.ident,
         rolletype = data.rolletype,
         behandling = behandling,
-        foedselsdato = data.fødselsdato,
+        fødselsdato = data.fødselsdato,
         opprettet = LocalDateTime.now(),
     )
 }
@@ -314,21 +324,21 @@ fun oppretteBehandlingRoller(
                 ident = testdataBM.ident,
                 rolletype = Rolletype.BIDRAGSMOTTAKER,
                 behandling = behandling,
-                foedselsdato = testdataBM.fødselsdato,
+                fødselsdato = testdataBM.fødselsdato,
                 id = if (generateId) (1).toLong() else null,
             ),
             Rolle(
                 ident = testdataBarn1.ident,
                 rolletype = Rolletype.BARN,
                 behandling = behandling,
-                foedselsdato = testdataBarn1.fødselsdato,
+                fødselsdato = testdataBarn1.fødselsdato,
                 id = if (generateId) (2).toLong() else null,
             ),
             Rolle(
                 ident = testdataBarn2.ident,
                 rolletype = Rolletype.BARN,
                 behandling = behandling,
-                foedselsdato = testdataBarn2.fødselsdato,
+                fødselsdato = testdataBarn2.fødselsdato,
                 id = if (generateId) (3).toLong() else null,
             ),
         )
@@ -339,7 +349,7 @@ fun oppretteBehandlingRoller(
                 ident = testdataBP.ident,
                 rolletype = Rolletype.BIDRAGSPLIKTIG,
                 behandling = behandling,
-                foedselsdato = testdataBP.fødselsdato,
+                fødselsdato = testdataBP.fødselsdato,
                 id = if (generateId) (4).toLong() else null,
             ),
         )
@@ -723,7 +733,7 @@ fun oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(husstandsmedlemSet: Se
                                 periodeTom = it.datoTom,
                                 kilde = it.kilde,
                                 bostatus = it.bostatus,
-                                fødselsdato = hb.fødselsdato,
+                                fødselsdato = hb.fødselsdato!!,
                             )
                         }
                     },

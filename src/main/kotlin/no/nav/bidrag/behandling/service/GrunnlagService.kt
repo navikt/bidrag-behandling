@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.filtrerPerioderEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandBeregnetEtterVirkningstidspunktV2
@@ -37,7 +38,7 @@ import no.nav.bidrag.behandling.transformers.behandling.finnEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
-import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIAndreVoksneIHusstanden
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIAndreVoksneIBpsHusstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -48,6 +49,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekter
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
@@ -176,6 +178,8 @@ class GrunnlagService(
                 request.personident,
                 request.overskriveManuelleOpplysninger,
             )
+        } else if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == request.grunnlagstype) {
+            aktivereBoforholdAndreVoksneIHusstanden(behandling, request.overskriveManuelleOpplysninger)
         } else if (Grunnlagsdatatype.SIVILSTAND == request.grunnlagstype) {
             boforholdService.oppdatereAutomatiskInnhentaSivilstand(
                 behandling,
@@ -204,7 +208,7 @@ class GrunnlagService(
         val sivilstandPeriodisert =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                sivilstandBeregnet.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
+                sivilstandBeregnet.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
             )
         behandling
             .henteNyesteAktiveGrunnlag(
@@ -230,7 +234,7 @@ class GrunnlagService(
         val periodisertHistorikk =
             SivilstandApi.beregnV2(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                sivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
+                sivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
             )
 
         behandling
@@ -379,7 +383,7 @@ class GrunnlagService(
                     behandling.husstandsmedlem,
                     behandling.rolleGrunnlagSkalHentesFor!!,
                 ),
-            andreVoksneIHusstanden = nyinnhentetGrunnlag.henteEndringerIAndreVoksneIHusstanden(aktiveGrunnlag),
+            andreVoksneIHusstanden = nyinnhentetGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag),
             sivilstand =
                 nyinnhentetGrunnlag.hentEndringerSivilstand(
                     aktiveGrunnlag,
@@ -404,6 +408,33 @@ class GrunnlagService(
             grunnlagstype,
         )
         ikkeAktiveGrunnlag.hentGrunnlagForType(grunnlagstype, rolle.ident!!).oppdaterStatusTilAktiv(LocalDateTime.now())
+    }
+
+    private fun aktivereBoforholdAndreVoksneIHusstanden(
+        behandling: Behandling,
+        overskriveManuelleOpplysninger: Boolean = false,
+    ) {
+        val nyesteIkkeaktiverteBoforhold =
+            behandling.grunnlag
+                .hentSisteIkkeAktiv()
+                .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+                .firstOrNull { it.erBearbeidet }
+
+        if (nyesteIkkeaktiverteBoforhold == null) {
+            throw HttpClientErrorException(
+                HttpStatus.NOT_FOUND,
+                "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
+                    "å aktivere for BP i  behandling ${behandling.id}",
+            )
+        }
+
+        boforholdService.oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
+            behandling,
+            commonObjectmapper.readValue<Set<Bostatus>>(nyesteIkkeaktiverteBoforhold.data),
+            overskriveManuelleOpplysninger,
+        )
+
+        nyesteIkkeaktiverteBoforhold.aktiv = LocalDateTime.now()
     }
 
     private fun aktivereBoforhold(
@@ -511,23 +542,23 @@ class GrunnlagService(
         grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
     ): Map<Grunnlagsdatatype, FeilrapporteringDto?> {
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
-        val rolleInhentetFor = behandling.roller.first { grunnlagsrequest.key.verdi == it.ident }
+        val rolleInnhentetFor = behandling.roller.first { grunnlagsrequest.key.verdi == it.ident }
 
         val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
             Grunnlagsdatatype
                 .grunnlagsdatatypeobjekter(behandling.tilType())
                 .associateWith {
-                    hentFeilrapporteringForGrunnlag(it, rolleInhentetFor, innhentetGrunnlag)
+                    hentFeilrapporteringForGrunnlag(it, rolleInnhentetFor, innhentetGrunnlag)
                 }.filterNot { it.value == null }
 
-        lagreGrunnlagHvisEndret(behandling, rolleInhentetFor, innhentetGrunnlag, feilrapporteringer)
+        lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, innhentetGrunnlag, feilrapporteringer)
 
         val feilSkattepliktig = feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
 
         if (feilSkattepliktig == null) {
             lagreGrunnlagHvisEndret(
                 behandling,
-                rolleInhentetFor,
+                rolleInnhentetFor,
                 Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
                 SkattepliktigeInntekter(
                     innhentetGrunnlag.ainntektListe,
@@ -537,7 +568,7 @@ class GrunnlagService(
             )
         } else {
             log.warn {
-                "Innhenting av ${Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER} for rolle ${rolleInhentetFor.rolletype} " +
+                "Innhenting av ${Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER} for rolle ${rolleInnhentetFor.rolletype} " +
                     "i behandling ${behandling.id} feilet for type ${feilSkattepliktig.grunnlagstype} " +
                     "med begrunnelse ${feilSkattepliktig.feilmelding}. Lagrer ikke grunnlag"
             }
@@ -545,19 +576,25 @@ class GrunnlagService(
 
         // Oppdatere inntektstabell med sammenstilte inntekter
         if (innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag)) {
-            sammenstilleOgLagreInntekter(behandling, innhentetGrunnlag, rolleInhentetFor, feilrapporteringer)
+            sammenstilleOgLagreInntekter(behandling, innhentetGrunnlag, rolleInnhentetFor, feilrapporteringer)
         }
 
         val innhentingAvBoforholdFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
 
-        // Oppdatere barn_i_husstand og tilhørende periode-tabell med periodisert boforhold
+        // Husstandsmedlem og bostedsperiode
         if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty() && !innhentingAvBoforholdFeilet) {
             periodisereOgLagreBoforhold(
                 behandling,
-                rolleInhentetFor,
                 innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
             )
+
+            if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
+                periodisereOgLagreBpsBoforholdAndreVoksne(
+                    behandling,
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                )
+            }
         }
 
         val innhentingAvSivilstandFeilet =
@@ -581,7 +618,7 @@ class GrunnlagService(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     innhentetGrunnlag.sivilstandListe
                         .toSet()
-                        .tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.foedselsdato),
+                        .tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
                 ).toSet()
 
         val bmsNyesteBearbeidaSivilstandFørLagring =
@@ -611,9 +648,46 @@ class GrunnlagService(
         aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
     }
 
+    private fun periodisereOgLagreBpsBoforholdAndreVoksne(
+        behandling: Behandling,
+        husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
+    ) {
+        val andreVoksneIHusstanden =
+            BoforholdApi.beregnBoforholdAndreVoksne(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(),
+            ).toSet()
+
+        val bpsNyesteBearbeidaBoforholdFørLagring =
+            sistAktiverteGrunnlag<Bostatus>(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, true),
+                behandling.bidragspliktig!!,
+            )
+
+        lagreGrunnlagHvisEndret(
+            behandling,
+            behandling.bidragspliktig!!,
+            Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, true),
+            andreVoksneIHusstanden,
+        )
+
+        val bpsNyesteBearbeidaBoforholdEtterLagring =
+            sistAktiverteGrunnlag<Bostatus>(
+                behandling,
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, true),
+                behandling.bidragspliktig!!,
+            )
+
+        if (bpsNyesteBearbeidaBoforholdFørLagring.isEmpty() && bpsNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
+            boforholdService.lagreFørstegangsinnhentingAvAndreVoksneIBpsHusstand(behandling, andreVoksneIHusstanden)
+        }
+
+        aktiverGrunnlagForBpsBoforholdHvisIngenEndringerMåAksepteres(behandling)
+    }
+
     private fun periodisereOgLagreBoforhold(
         behandling: Behandling,
-        rolleInnhentetFor: Rolle,
         husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
     ) {
         val boforholdPeriodisert =
@@ -622,11 +696,11 @@ class GrunnlagService(
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling),
             )
 
-        val bmsNyesteBearbeidaBoforholdFørLagring =
+        val nyesteBearbeidaBoforholdFørLagring =
             sistAktiverteGrunnlag<BoforholdResponse>(
                 behandling,
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-                behandling.bidragsmottaker!!,
+                behandling.rolleGrunnlagSkalHentesFor!!,
             )
 
         // lagre bearbeidet grunnlag per husstandsmedlem i grunnlagstabellen
@@ -636,7 +710,7 @@ class GrunnlagService(
             .forEach {
                 lagreGrunnlagHvisEndret<BoforholdResponse>(
                     behandling = behandling,
-                    innhentetForRolle = rolleInnhentetFor,
+                    innhentetForRolle = behandling.rolleGrunnlagSkalHentesFor!!,
                     grunnlagstype = Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
                     innhentetGrunnlag = it.value.toSet(),
                     gjelderPerson = Personident(it.key!!),
@@ -647,14 +721,40 @@ class GrunnlagService(
             sistAktiverteGrunnlag<BoforholdResponse>(
                 behandling,
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, true),
-                rolleInnhentetFor,
+                behandling.rolleGrunnlagSkalHentesFor!!,
             )
 
         // oppdatere husstandsmedlem og bostatusperiode-tabellene hvis førstegangslagring
-        if (bmsNyesteBearbeidaBoforholdFørLagring.isEmpty() && innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
+        if (nyesteBearbeidaBoforholdFørLagring.isEmpty() && innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
+
         aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+    }
+
+    fun aktiverGrunnlagForBpsBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+        val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+        if (ikkeAktiveGrunnlag.isEmpty()) return
+
+        val endringerSomMåBekreftes = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
+
+        if (endringerSomMåBekreftes == null || endringerSomMåBekreftes.perioder.isEmpty()) {
+            val ikkeAktivtBoforholdBp =
+                ikkeAktiveGrunnlag.hentGrunnlagForType(
+                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    behandling.bidragspliktig!!.ident!!,
+                ).firstOrNull()
+            ikkeAktivtBoforholdBp?.let {
+                log.info {
+                    "Bps ikke aktive boforholdsgrunnlag ${ikkeAktivtBoforholdBp.id} med type " +
+                        "${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN} i behandling ${behandling.id} har " +
+                        "ingen endringer som må bekreftes av saksbehandler. Automatisk aktiverer ny innhentet " +
+                        "grunnlag."
+                }
+                it.aktiv = LocalDateTime.now()
+            }
+        }
     }
 
     fun aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {
@@ -1457,18 +1557,6 @@ class GrunnlagService(
                 )
             }
 
-            Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
-                lagreGrunnlagHvisEndret(
-                    behandling,
-                    rolleInhentetFor,
-                    Grunnlagstype(grunnlagsdatatype, true),
-                    BoforholdApi.beregnBoforholdAndreVoksne(
-                        behandling.virkningstidspunktEllerSøktFomDato,
-                        innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.tilBoforholdVoksneRequest(),
-                    ).toSet(),
-                )
-            }
-
             Grunnlagsdatatype.SIVILSTAND -> {
                 lagreGrunnlagHvisEndret(
                     behandling,
@@ -1497,11 +1585,13 @@ class GrunnlagService(
             }
 
             else -> {
-                log.warn {
-                    "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
-                        "i behandling ${behandling.id}"
+                if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN != grunnlagsdatatype) {
+                    log.warn {
+                        "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
+                            "i behandling ${behandling.id}"
+                    }
+                    lagringAvGrunnlagFeiletException(behandling.id!!)
                 }
-                lagringAvGrunnlagFeiletException(behandling.id!!)
             }
         }
     }

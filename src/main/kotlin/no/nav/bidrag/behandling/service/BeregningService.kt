@@ -23,7 +23,7 @@ private val LOGGER = KotlinLogging.logger {}
 
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
-private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), foedselsdato)
+private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), fødselsdato)
 
 @Service
 class BeregningService(

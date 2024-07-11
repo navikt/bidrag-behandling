@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -23,15 +24,16 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilOb
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
-import no.nav.bidrag.behandling.utils.testdata.opprettRolle
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.testdata.tilTransformerInntekterRequest
+import no.nav.bidrag.behandling.utils.testdata.voksenPersonIBpsHusstand
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -1223,7 +1225,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         behandling = behandling,
                         rolletype = Rolletype.BARN,
                         ident = barnFraHenteGrunnlagresponsJson,
-                        foedselsdato = LocalDate.now().minusYears(14),
+                        fødselsdato = LocalDate.now().minusYears(14),
                     ),
                 )
 
@@ -1371,19 +1373,22 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal hente grunnlag for behandling av særbidrag`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling(false)
-                behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
-                behandling.roller.add(opprettRolle(behandling, testdataBP))
+                val behandling = testdataManager.oppretteBehandling(false, false, false, true, TypeBehandling.SÆRBIDRAG)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
+                            )
+
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
                                 rolle = it,
-                                navnResponsfil = "hente-grunnlagrespons-su-bp.json",
+                                navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                             )
 
                         Rolletype.BARN ->
@@ -1418,27 +1423,27 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
 
                 assertSoftly(grunnlagBm) { gbm ->
-                    gbm shouldHaveSize 15
+                    gbm shouldHaveSize 6
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
-                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 6
-                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 4
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
-                    gbm.filter { it.erBearbeidet } shouldHaveSize 10
+                    gbm.filter { it.erBearbeidet } shouldHaveSize 4
                 }
 
                 val grunnlagBp = behandling.grunnlag.filter { it.rolle == behandling.bidragspliktig }
 
                 assertSoftly(grunnlagBp) { gbp ->
-                    gbp shouldHaveSize 7
+                    gbp shouldHaveSize 8
                     gbp.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 3
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
-                    gbp.filter { it.erBearbeidet } shouldHaveSize 4
+                    gbp.filter { it.erBearbeidet } shouldHaveSize 5
                 }
             }
         }
@@ -1747,7 +1752,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
                                 rolle = it,
-                                navnResponsfil = "hente-grunnlagrespons-su-bp.json",
+                                navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                             )
 
                         Rolletype.BARN ->
@@ -1863,11 +1868,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
+                            )
+
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
                                 rolle = it,
-                                navnResponsfil = "hente-grunnlagrespons-su-bp.json",
+                                navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                             )
 
                         Rolletype.BARN ->
@@ -1976,6 +1986,94 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     b.filter { it.aktiv != null } shouldHaveSize 6
                     b.filter { it.erBearbeidet } shouldHaveSize 4
                     b.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 0
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal aktivere BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG, true)
+
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
+                            )
+
+                        Rolletype.BIDRAGSPLIKTIG ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
+                            )
+
+                        Rolletype.BARN ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                            )
+
+                        else -> throw Exception()
+                    }
+                }
+
+                val bfg = behandling.grunnlag.find { Grunnlagsdatatype.BOFORHOLD == it.type && !it.erBearbeidet }
+
+                val relatertPerson =
+                    bfg.konvertereData<List<RelatertPersonGrunnlagDto>>()
+                        ?.find { voksenPersonIBpsHusstand.personident == it.gjelderPersonId }
+
+                val borHosperioder = relatertPerson?.borISammeHusstandDtoListe?.toMutableList()
+                borHosperioder?.add(BorISammeHusstandDto(LocalDate.now().plusMonths(4), LocalDate.now().minusMonths(2)))
+                val oppdatertVoksenIBpsHusstand =
+                    setOf(relatertPerson!!.copy(borISammeHusstandDtoListe = borHosperioder?.toList()!!))
+
+                val voksneIBpsHusstand =
+                    BoforholdApi.beregnBoforholdAndreVoksne(
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                        oppdatertVoksenIBpsHusstand.tilBoforholdVoksneRequest(),
+                    )
+
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        aktiv = null,
+                        behandling = behandling,
+                        innhentet = LocalDateTime.now().minusDays(3),
+                        data = commonObjectmapper.writeValueAsString(voksneIBpsHusstand),
+                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                        erBearbeidet = true,
+                    ),
+                )
+
+                assertSoftly(
+                    behandling.grunnlag
+                        .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type },
+                ) { voksne ->
+                    voksne shouldHaveSize 2
+                    voksne.filter { it.aktiv == null } shouldHaveSize 1
+                }
+
+                // hvis
+                grunnlagService.aktivereGrunnlag(
+                    behandling,
+                    AktivereGrunnlagRequestV2(
+                        Personident(testdataBP.ident),
+                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                        false,
+                    ),
+                )
+
+                // så
+                assertSoftly(
+                    behandling.grunnlag
+                        .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type },
+                ) { voksne ->
+                    voksne shouldHaveSize 2
+                    voksne.filter { it.aktiv == null } shouldHaveSize 0
                 }
             }
 

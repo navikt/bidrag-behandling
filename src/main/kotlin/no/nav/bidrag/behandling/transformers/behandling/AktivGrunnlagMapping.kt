@@ -88,7 +88,7 @@ fun InntektPost.erLik(inntektPost: Inntektspost): Boolean {
     return kode == inntektPost.kode && inntekstype == inntektPost.inntektstype
 }
 
-fun List<Grunnlag>.henteEndringerIAndreVoksneIHusstanden(aktiveGrunnlag: List<Grunnlag>): AndreVoksneIHusstandenGrunnlagDto? {
+fun List<Grunnlag>.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag: List<Grunnlag>): AndreVoksneIHusstandenGrunnlagDto? {
     val aktivtGrunnlag =
         aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet }
     val nyttGrunnlag = find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }

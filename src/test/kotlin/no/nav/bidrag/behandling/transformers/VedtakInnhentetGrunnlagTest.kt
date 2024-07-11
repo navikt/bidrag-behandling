@@ -76,7 +76,7 @@ class VedtakInnhentetGrunnlagTest {
             behandling = oppretteBehandling(),
             ident = testdataBM.ident,
             rolletype = Rolletype.BIDRAGSMOTTAKER,
-            foedselsdato = testdataBM.fødselsdato,
+            fødselsdato = testdataBM.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val grunnlagBp =
@@ -84,7 +84,7 @@ class VedtakInnhentetGrunnlagTest {
             behandling = oppretteBehandling(),
             ident = testdataBP.ident,
             rolletype = Rolletype.BIDRAGSPLIKTIG,
-            foedselsdato = testdataBP.fødselsdato,
+            fødselsdato = testdataBP.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag1 =
@@ -92,7 +92,7 @@ class VedtakInnhentetGrunnlagTest {
             behandling = oppretteBehandling(),
             ident = testdataBarn1.ident,
             rolletype = Rolletype.BARN,
-            foedselsdato = testdataBarn1.fødselsdato,
+            fødselsdato = testdataBarn1.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag2 =
@@ -100,7 +100,7 @@ class VedtakInnhentetGrunnlagTest {
             behandling = oppretteBehandling(),
             ident = testdataBarn2.ident,
             rolletype = Rolletype.BARN,
-            foedselsdato = testdataBarn2.fødselsdato,
+            fødselsdato = testdataBarn2.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val personobjekter = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)

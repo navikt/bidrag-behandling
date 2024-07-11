@@ -93,7 +93,7 @@ fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
     val grunnlagstype = rolletype.tilGrunnlagstype()
     return GrunnlagDto(
         referanse =
-            grunnlagstype.tilPersonreferanse(foedselsdato.toCompactString(), id!!.toInt()),
+            grunnlagstype.tilPersonreferanse(fødselsdato.toCompactString(), id!!.toInt()),
         type = grunnlagstype,
         innhold =
             POJONode(
@@ -103,7 +103,7 @@ fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
                     fødselsdato =
                         finnFødselsdato(
                             ident,
-                            foedselsdato,
+                            fødselsdato,
                         ) // Avbryter prosesering dersom fødselsdato til søknadsbarn er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(behandling.id ?: -1),
                 ).valider(rolletype),
@@ -174,7 +174,7 @@ fun Husstandsmedlem.tilGrunnlagPerson(): GrunnlagDto {
     return GrunnlagDto(
         referanse =
             grunnlagstype.tilPersonreferanse(
-                rolle?.foedselsdato?.toCompactString() ?: fødselsdato.toCompactString(),
+                rolle?.fødselsdato?.toCompactString() ?: fødselsdato.toCompactString(),
                 (rolle?.id ?: id!!).toInt(),
             ),
         type = grunnlagstype,

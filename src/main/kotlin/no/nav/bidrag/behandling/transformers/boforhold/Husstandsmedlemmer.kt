@@ -25,7 +25,7 @@ private val log = KotlinLogging.logger {}
 
 fun Set<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandling) = this.toList().tilBoforholdBarnRequest(behandling)
 
-fun List<RelatertPersonGrunnlagDto>.tilBoforholdVoksneRequest(): BoforholdVoksneRequest {
+fun Set<RelatertPersonGrunnlagDto>.tilBoforholdVoksneRequest(): BoforholdVoksneRequest {
     return BoforholdVoksneRequest(
         behandledeBostatusopplysninger = emptyList(),
         endreBostatus = null,
@@ -94,7 +94,7 @@ fun Husstandsmedlem.tilBoforholdBarnRequest(
 ): BoforholdBarnRequest =
     BoforholdBarnRequest(
         relatertPersonPersonId = ident,
-        fødselsdato = fødselsdato,
+        fødselsdato = fødselsdato ?: rolle!!.fødselsdato,
         erBarnAvBmBp = erBarnAvBmBp,
         innhentedeOffentligeOpplysninger =
             henteOffentligePerioder().map { it.tilBostatus() }.sortedBy { it.periodeFom },
@@ -130,6 +130,17 @@ fun Bostatusperiode.tilBostatus() =
         periodeFom = this.datoFom,
         periodeTom = this.datoTom,
     )
+
+fun Set<Bostatus>.tilBostatusperiode(husstandsmedlem: Husstandsmedlem) =
+    this.filter { it.bostatus != null }.map {
+        Bostatusperiode(
+            husstandsmedlem = husstandsmedlem,
+            bostatus = it.bostatus!!,
+            datoFom = it.periodeFom,
+            datoTom = it.periodeTom,
+            kilde = it.kilde,
+        )
+    }.toMutableSet()
 
 fun List<BorISammeHusstandDto>.tilBostatus(
     bostatus: Bostatuskode,
@@ -221,7 +232,7 @@ fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdRe
 fun Husstandsmedlem.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
     Bostatusperiode(
         husstandsmedlem = this,
-        datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato),
+        datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato ?: rolle!!.fødselsdato),
         datoTom = null,
         bostatus = Bostatuskode.IKKE_MED_FORELDER,
         kilde = Kilde.OFFENTLIG,
