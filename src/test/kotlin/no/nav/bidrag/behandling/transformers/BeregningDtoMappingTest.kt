@@ -260,7 +260,7 @@ class BeregningDtoMappingTest {
                                     POJONode(
                                         DelberegningBarnIHusstand(
                                             periode = ÅrMånedsperiode("2021-01", "2021-12"),
-                                            antallBarn = 3.0,
+                                            antallBarn = 3,
                                         ),
                                     ),
                             ),
