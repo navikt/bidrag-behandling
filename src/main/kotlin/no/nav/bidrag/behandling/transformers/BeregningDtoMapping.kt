@@ -114,10 +114,7 @@ fun List<ResultatForskuddsberegningBarn>.tilDto() =
                         regel = periode.resultat.regel,
                         sivilstand = grunnlagsListe.finnSivilstandForPeriode(periode.grunnlagsreferanseListe),
                         inntekt =
-                            grunnlagsListe.finnTotalInntektForRolle(
-                                periode.grunnlagsreferanseListe,
-                                Rolletype.BIDRAGSMOTTAKER,
-                            ),
+                            grunnlagsListe.finnTotalInntektForRolle(periode.grunnlagsreferanseListe),
                         antallBarnIHusstanden =
                             grunnlagsListe
                                 .finnAntallBarnIHusstanden(periode.grunnlagsreferanseListe)
@@ -209,7 +206,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
 
 fun List<GrunnlagDto>.finnTotalInntektForRolle(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
-    rolletype: Rolletype = Rolletype.BIDRAGSMOTTAKER,
+    rolletype: Rolletype? = null,
 ): BigDecimal {
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
@@ -217,7 +214,7 @@ fun List<GrunnlagDto>.finnTotalInntektForRolle(
     val delberegningSumInntekt =
         find {
             it.type == Grunnlagstype.DELBEREGNING_SUM_INNTEKT &&
-                inntektTilhørerRolle(it.grunnlagsreferanseListe, rolletype) &&
+                rolletype?.let { type -> inntektTilhørerRolle(it.grunnlagsreferanseListe, type) } ?: true &&
                 sluttberegning.grunnlagsreferanseListe.contains(
                     it.referanse,
                 )

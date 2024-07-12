@@ -646,7 +646,7 @@ class VedtakTilBehandlingTest {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 23
+            size shouldBe 24
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 testdataBarn2.ident,
@@ -724,7 +724,11 @@ class VedtakTilBehandlingTest {
                 testdataBM.ident,
                 true,
             ) shouldHaveSize 1
-
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.SIVILSTAND,
+                testdataBM.ident,
+                true,
+            ) shouldHaveSize 1
             val skattepliktig =
                 filtrerEtterTypeOgIdent(
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
