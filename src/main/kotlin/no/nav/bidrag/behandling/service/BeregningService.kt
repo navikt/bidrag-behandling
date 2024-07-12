@@ -5,7 +5,6 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
-import no.nav.bidrag.behandling.database.datamodell.validerForBeregningSærbidrag
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
@@ -61,7 +60,7 @@ class BeregningService(
     }
 
     fun beregneSærbidrag(behandling: Behandling): BeregnetSærbidragResultat {
-        behandling.validerForBeregningSærbidrag()
+//        behandling.validerForBeregningSærbidrag()
         val søknasdbarn = behandling.søknadsbarn.first()
         return if (behandling.avslag != null) {
             behandling.tilResultatAvslagSærbidrag()

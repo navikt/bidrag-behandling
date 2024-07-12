@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
@@ -23,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmott
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
 import no.nav.bidrag.behandling.transformers.vedtak.tilBeregningResultat
+import no.nav.bidrag.behandling.transformers.vedtak.tilBeregningResultatSærbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.tilOpprettRequestDto
 import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
@@ -147,6 +149,11 @@ class VedtakService(
     fun konverterVedtakTilBeregningResultat(vedtakId: Long): List<ResultatBeregningBarnDto> {
         val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return emptyList()
         return vedtak.tilBeregningResultat()
+    }
+
+    fun konverterVedtakTilBeregningResultatSærbidrag(vedtakId: Long): ResultatSærbidragsberegningDto? {
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+        return vedtak.tilBeregningResultatSærbidrag()
     }
 
     fun fatteVedtak(behandlingId: Long): Int {

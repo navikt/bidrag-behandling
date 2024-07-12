@@ -106,7 +106,7 @@ class BehandlingBeregnController(
     }
 
     @Suppress("unused")
-    @PostMapping("/vedtak/{vedtaksId}/beregn")
+    @PostMapping("/vedtak/{vedtaksId}/beregn", "/vedtak/{vedtaksId}/beregn/forskudd")
     @Operation(
         description = "Beregn forskudd",
         security = [SecurityRequirement(name = "bearer-key")],
@@ -117,5 +117,19 @@ class BehandlingBeregnController(
         LOGGER.info { "Henter resultat for $vedtaksId" }
 
         return vedtakService.konverterVedtakTilBeregningResultat(vedtaksId)
+    }
+
+    @Suppress("unused")
+    @PostMapping("/vedtak/{vedtaksId}/beregn/sarbidrag")
+    @Operation(
+        description = "Beregn forskudd",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun hentVedtakBeregningResultatSærbidrag(
+        @PathVariable vedtaksId: Long,
+    ): ResultatSærbidragsberegningDto? {
+        LOGGER.info { "Henter resultat for $vedtaksId" }
+
+        return vedtakService.konverterVedtakTilBeregningResultatSærbidrag(vedtaksId)
     }
 }

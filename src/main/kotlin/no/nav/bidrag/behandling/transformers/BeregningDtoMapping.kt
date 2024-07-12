@@ -4,11 +4,13 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningInntekterDto
 import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
-import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
@@ -23,8 +25,11 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningVoksneIHus
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import java.math.BigDecimal
+import java.time.LocalDate
 
 fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag =
     BeregnValgteInntekterGrunnlag(
@@ -51,19 +56,49 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
     let {
         val grunnlagsListe = grunnlagListe.toList()
         val periode = beregnetSærbidragPeriodeListe.first()
-        val delberegningVoksneIHustand = grunnlagsListe.finnDelberegningVoksneIHusstand(periode.grunnlagsreferanseListe)
         val bidragsevne = grunnlagsListe.finnDelberegningBidragsevne(periode.grunnlagsreferanseListe)
-        ResultatSærbidragsberegningDto(
-            periode = periode.periode,
-            resultat = periode.resultat.beløp,
-            resultatKode = periode.resultat.resultatkode,
-            bpsAndel = grunnlagsListe.finnDelberegningBidragspliktigesAndel(periode.grunnlagsreferanseListe),
-            beregning = behandling.utgift?.tilBeregningDto(),
-            voksenIHusstanden = delberegningVoksneIHustand?.borMedAndreVoksne,
-            antallBarnIHusstanden = grunnlagsListe.finnAntallBarnIHusstanden(periode.grunnlagsreferanseListe),
-            delberegningUtgift = grunnlagsListe.finnDelberegningUtgift(periode.grunnlagsreferanseListe),
+        grunnlagsListe.byggResultatSærbidragsberegning(
+            periode.periode.fom.atDay(1),
+            periode.resultat.beløp,
+            periode.resultat.resultatkode,
+            periode.grunnlagsreferanseListe,
         )
     }
+
+fun List<GrunnlagDto>.byggResultatSærbidragInntekter(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
+    ResultatSærbidragsberegningInntekterDto(
+        inntektBarn = finnTotalInntektForRolle(grunnlagsreferanseListe, Rolletype.BARN),
+        inntektBP =
+            finnTotalInntektForRolle(
+                grunnlagsreferanseListe,
+                Rolletype.BIDRAGSPLIKTIG,
+            ),
+        inntektBM =
+            finnTotalInntektForRolle(
+                grunnlagsreferanseListe,
+                Rolletype.BIDRAGSMOTTAKER,
+            ),
+    )
+
+fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
+    virkningstidspunkt: LocalDate,
+    resultat: BigDecimal?,
+    resultatkode: Resultatkode,
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+) = ResultatSærbidragsberegningDto(
+    periode =
+        ÅrMånedsperiode(
+            virkningstidspunkt,
+            finnBeregnTilDato(virkningstidspunkt),
+        ),
+    resultat = resultat ?: BigDecimal.ZERO,
+    resultatKode = resultatkode,
+    bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe),
+    antallBarnIHusstanden = finnAntallBarnIHusstanden(grunnlagsreferanseListe),
+    inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
+    delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
+    voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
+)
 
 fun List<ResultatForskuddsberegningBarn>.tilDto() =
     map { resultat ->
@@ -78,7 +113,11 @@ fun List<ResultatForskuddsberegningBarn>.tilDto() =
                         resultatKode = periode.resultat.kode,
                         regel = periode.resultat.regel,
                         sivilstand = grunnlagsListe.finnSivilstandForPeriode(periode.grunnlagsreferanseListe),
-                        inntekt = grunnlagsListe.finnTotalInntekt(periode.grunnlagsreferanseListe),
+                        inntekt =
+                            grunnlagsListe.finnTotalInntektForRolle(
+                                periode.grunnlagsreferanseListe,
+                                Rolletype.BIDRAGSMOTTAKER,
+                            ),
                         antallBarnIHusstanden =
                             grunnlagsListe
                                 .finnAntallBarnIHusstanden(periode.grunnlagsreferanseListe)
@@ -129,7 +168,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>()
 }
 
-fun List<GrunnlagDto>.finnDelberegningVoksneIHusstand(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningVoksneIHustand? {
+fun List<GrunnlagDto>.finnBorMedAndreVoksne(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Boolean? {
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
 
     val delberegningBidragspliktigesAndel =
@@ -139,7 +178,7 @@ fun List<GrunnlagDto>.finnDelberegningVoksneIHusstand(grunnlagsreferanseListe: L
                     it.referanse,
                 )
         } ?: return null
-    return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningVoksneIHustand>()
+    return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningVoksneIHustand>().borMedAndreVoksne
 }
 
 fun List<GrunnlagDto>.finnDelberegningUtgift(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUtgift? {
@@ -168,19 +207,40 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragsevne>()
 }
 
-fun List<GrunnlagDto>.finnTotalInntekt(grunnlagsreferanseListe: List<Grunnlagsreferanse>): BigDecimal {
+fun List<GrunnlagDto>.finnTotalInntektForRolle(
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+    rolletype: Rolletype = Rolletype.BIDRAGSMOTTAKER,
+): BigDecimal {
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
     val delberegningSumInntekt =
         find {
             it.type == Grunnlagstype.DELBEREGNING_SUM_INNTEKT &&
+                inntektTilhørerRolle(it.grunnlagsreferanseListe, rolletype) &&
                 sluttberegning.grunnlagsreferanseListe.contains(
                     it.referanse,
                 )
         }
     return delberegningSumInntekt?.innholdTilObjekt<DelberegningSumInntekt>()?.totalinntekt
         ?: BigDecimal.ZERO
+}
+
+fun List<GrunnlagDto>.inntektTilhørerRolle(
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+    rolletype: Rolletype,
+): Boolean {
+    val rolleReferanse =
+        this
+            .hentAllePersoner()
+            .find { it.type == rolletype.tilGrunnlagstype() }
+            ?.referanse
+    return this
+        .filter { grunnlagsreferanseListe.contains(it.referanse) }
+        .filter { it.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE }
+        .any {
+            it.gjelderReferanse == rolleReferanse
+        }
 }
 
 fun List<GrunnlagDto>.finnSluttberegningIReferanser(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =

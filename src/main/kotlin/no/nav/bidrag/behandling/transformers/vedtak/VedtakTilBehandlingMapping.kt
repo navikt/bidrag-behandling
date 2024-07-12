@@ -10,15 +10,17 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
-import no.nav.bidrag.behandling.transformers.finnTotalInntekt
+import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -42,6 +44,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -93,10 +96,28 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
                         regel = "",
                         beløp = it.beløp ?: BigDecimal.ZERO,
                         sivilstand = grunnlagListe.finnSivilstandForPeriode(it.grunnlagReferanseListe),
-                        inntekt = grunnlagListe.finnTotalInntekt(it.grunnlagReferanseListe),
+                        inntekt =
+                            grunnlagListe.finnTotalInntektForRolle(
+                                it.grunnlagReferanseListe,
+                                Rolletype.BIDRAGSMOTTAKER,
+                            ),
                         antallBarnIHusstanden = grunnlagListe.finnAntallBarnIHusstanden(it.grunnlagReferanseListe).toInt(),
                     )
                 },
+        )
+    }
+
+fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto? =
+    engangsbeløpListe.firstOrNull()?.let { engangsbeløp ->
+        val virkningstidspunkt =
+            grunnlagListe
+                .filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT)
+                .first()
+        grunnlagListe.byggResultatSærbidragsberegning(
+            virkningstidspunkt.innhold.virkningstidspunkt,
+            engangsbeløp.beløp,
+            Resultatkode.fraKode(engangsbeløp.resultatkode)!!,
+            engangsbeløp.grunnlagReferanseListe,
         )
     }
 

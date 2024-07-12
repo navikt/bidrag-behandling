@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename")
+
 package no.nav.bidrag.behandling.dto.v1.beregning
 
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -9,14 +11,18 @@ import java.math.BigDecimal
 
 data class ResultatSærbidragsberegningDto(
     val periode: ÅrMånedsperiode,
-    val inntektBM: BigDecimal? = null,
-    val inntektBP: BigDecimal? = null,
-    val inntektBarn: BigDecimal? = null,
     val bpsAndel: DelberegningBidragspliktigesAndelSærbidrag? = null,
     val beregning: UtgiftBeregningDto? = null,
+    val inntekter: ResultatSærbidragsberegningInntekterDto? = null,
     val delberegningUtgift: DelberegningUtgift? = null,
     val resultat: BigDecimal,
     val resultatKode: Resultatkode,
     val antallBarnIHusstanden: Double? = null,
     val voksenIHusstanden: Boolean? = null,
+)
+
+data class ResultatSærbidragsberegningInntekterDto(
+    val inntektBM: BigDecimal? = null,
+    val inntektBP: BigDecimal? = null,
+    val inntektBarn: BigDecimal? = null,
 )
