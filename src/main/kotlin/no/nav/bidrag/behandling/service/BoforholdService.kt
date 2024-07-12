@@ -29,12 +29,14 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
+import no.nav.bidrag.behandling.service.BoforholdService.Companion.lagreEksisterendePerioder
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaSivilstandshistorikk
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
+import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilPerioder
@@ -56,6 +58,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Familierelasjon
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -98,6 +101,30 @@ class BoforholdService(
                             .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
                             .filter { it.harFeil },
                 ),
+        )
+    }
+
+    @Transactional
+    fun lagreFørstegangsinnhentingAvAndreVoksneIBpsHusstand(
+        behandling: Behandling,
+        periodisertBoforholdVoksne: Set<Bostatus>,
+    ) {
+        behandling.husstandsmedlem.filter { (Kilde.OFFENTLIG == it.kilde) }
+            .filter { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }.forEach {
+                sletteHusstandsmedlem(behandling, it)
+            }
+
+        val husstandsmedlemBp =
+            Husstandsmedlem(
+                kilde = Kilde.OFFENTLIG,
+                behandling = behandling,
+                rolle = behandling.bidragspliktig,
+            )
+
+        husstandsmedlemBp.perioder = periodisertBoforholdVoksne.tilBostatusperiode(husstandsmedlemBp)
+
+        behandling.husstandsmedlem.add(
+            husstandsmedlemBp,
         )
     }
 
@@ -161,6 +188,19 @@ class BoforholdService(
         secureLogger.info {
             "Husstandsmedlem ${gjelderHusstandsmedlem.verdi} ble oppdatert for behandling ${behandling.id} " +
                 "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+        }
+    }
+
+    @Transactional
+    fun oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
+        behandling: Behandling,
+        ikkeaktivertPeriodisertGrunnlag: Set<Bostatus>,
+        overskriveManuelleOpplysninger: Boolean,
+    ) {
+        val husstandsmedlemBp = behandling.husstandsmedlem.find { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }
+
+        if (overskriveManuelleOpplysninger) {
+            husstandsmedlemBp?.lagreEksisterendePerioder()
         }
     }
 
@@ -351,7 +391,7 @@ class BoforholdService(
                             jsonListeTilObjekt<SivilstandGrunnlagDto>(g.data)
                                 .tilSivilstandRequest(
                                     behandling.sivilstand.filter { Kilde.MANUELL == it.kilde }.toSet(),
-                                    behandling.bidragsmottaker!!.foedselsdato,
+                                    behandling.bidragsmottaker!!.fødselsdato,
                                 )
                         SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, request).toSet()
                     }
@@ -540,7 +580,9 @@ class BoforholdService(
                 val request =
                     BoforholdBarnRequest(
                         relatertPersonPersonId = offisieltHusstandsmedlem.ident,
-                        fødselsdato = offisieltHusstandsmedlem.fødselsdato,
+                        fødselsdato =
+                            offisieltHusstandsmedlem.fødselsdato
+                                ?: offisieltHusstandsmedlem.rolle!!.fødselsdato,
                         erBarnAvBmBp = true,
                         innhentedeOffentligeOpplysninger =
                             offisieltHusstandsmedlem.perioder
@@ -605,7 +647,7 @@ class BoforholdService(
         private fun Husstandsmedlem.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
             Bostatusperiode(
                 husstandsmedlem = this,
-                datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato),
+                datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato ?: rolle!!.fødselsdato),
                 datoTom = null,
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
@@ -757,7 +799,7 @@ class BoforholdService(
             this.sivilstand.tilSvilstandRequest(
                 nyttEllerEndretInnslag,
                 sletteInnslag,
-                this.bidragsmottaker!!.foedselsdato,
+                this.bidragsmottaker!!.fødselsdato,
                 this,
             )
         val resultat = SivilstandApi.beregnV2(this.virkningstidspunktEllerSøktFomDato, request).toSet()

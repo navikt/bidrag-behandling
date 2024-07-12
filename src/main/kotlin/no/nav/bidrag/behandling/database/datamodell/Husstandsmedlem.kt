@@ -12,6 +12,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDate
@@ -28,7 +29,15 @@ open class Husstandsmedlem(
     open val id: Long? = null,
     open val ident: String? = null,
     open val navn: String? = null,
-    open val fødselsdato: LocalDate,
+    // kan bare være null dersom koblingen mot rolle er satt
+    open val fødselsdato: LocalDate? = null,
+    @OneToOne(
+        fetch = FetchType.LAZY,
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = true,
+    )
+    @JoinColumn(name = "rolle_id", nullable = true)
+    open val rolle: Rolle? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "husstandsmedlem",

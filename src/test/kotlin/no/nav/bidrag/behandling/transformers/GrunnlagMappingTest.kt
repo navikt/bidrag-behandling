@@ -109,7 +109,7 @@ class GrunnlagMappingTest {
             behandling = oppretteBehandling(),
             ident = testdataBM.ident,
             rolletype = Rolletype.BIDRAGSMOTTAKER,
-            foedselsdato = testdataBM.fødselsdato,
+            fødselsdato = testdataBM.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val grunnlagBp =
@@ -117,7 +117,7 @@ class GrunnlagMappingTest {
             behandling = oppretteBehandling(),
             ident = testdataBP.ident,
             rolletype = Rolletype.BIDRAGSPLIKTIG,
-            foedselsdato = testdataBP.fødselsdato,
+            fødselsdato = testdataBP.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag1 =
@@ -125,7 +125,7 @@ class GrunnlagMappingTest {
             behandling = oppretteBehandling(),
             ident = testdataBarn1.ident,
             rolletype = Rolletype.BARN,
-            foedselsdato = testdataBarn1.fødselsdato,
+            fødselsdato = testdataBarn1.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag2 =
@@ -133,7 +133,7 @@ class GrunnlagMappingTest {
             behandling = oppretteBehandling(),
             ident = testdataBarn2.ident,
             rolletype = Rolletype.BARN,
-            foedselsdato = testdataBarn2.fødselsdato,
+            fødselsdato = testdataBarn2.fødselsdato,
             id = 1L,
         ).tilGrunnlagPerson()
 
@@ -459,7 +459,7 @@ class GrunnlagMappingTest {
                     behandling = behandling,
                     ident = "12345678901",
                     rolletype = Rolletype.BIDRAGSMOTTAKER,
-                    foedselsdato = fødslesdato,
+                    fødselsdato = fødslesdato,
                     id = 1L,
                 ).tilGrunnlagPerson(),
             ) {
@@ -475,7 +475,7 @@ class GrunnlagMappingTest {
                     behandling = behandling,
                     ident = "12345678901",
                     rolletype = Rolletype.BARN,
-                    foedselsdato = fødslesdato,
+                    fødselsdato = fødslesdato,
                     id = 1L,
                 ).tilGrunnlagPerson(),
             ) {
@@ -491,7 +491,7 @@ class GrunnlagMappingTest {
                     behandling = behandling,
                     ident = "12345678901",
                     rolletype = Rolletype.BIDRAGSPLIKTIG,
-                    foedselsdato = fødslesdato,
+                    fødselsdato = fødslesdato,
                     id = 1L,
                 ).tilGrunnlagPerson(),
             ) {
@@ -625,7 +625,7 @@ class GrunnlagMappingTest {
                     behandling = behandling,
                     ident = "12345678901",
                     rolletype = Rolletype.BIDRAGSPLIKTIG,
-                    foedselsdato = fødslesdato,
+                    fødselsdato = fødslesdato,
                     id = 1L,
                 ).tilGrunnlagPerson(),
             ) {

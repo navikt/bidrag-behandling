@@ -1,7 +1,7 @@
 {
   "ainntektListe": [
     {
-      "personId": "213244124",
+      "personId": "99057812345",
       "periodeFra": "2021-01-01",
       "periodeTil": "2021-02-01",
       "aktiv": true,
@@ -28,7 +28,7 @@
   ],
   "arbeidsforholdListe": [
     {
-      "partPersonId": "213244124",
+      "partPersonId": "99057812345",
       "startdato": "2002-11-03",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -52,7 +52,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.087233848"
     },
     {
-      "partPersonId": "213244124",
+      "partPersonId": "99057812345",
       "startdato": "2022-12-07",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -76,7 +76,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.119823886"
     },
     {
-      "partPersonId": "213244124",
+      "partPersonId": "99057812345",
       "startdato": "2003-12-08",
       "sluttdato": null,
       "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
@@ -100,51 +100,15 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.151722999"
     }
   ],
-  "barnetilleggListe": [
-    {
-      "barnPersonId": "01057812300",
-      "partPersonId": "213244124",
-      "periodeFra": "2021-01-01",
-      "periodeTil": "2021-02-01",
-      "barnetilleggType": "PENSJON",
-      "beløpBrutto": 3450,
-      "barnType": "FELLES",
-      "hentetTidspunkt": "2023-12-20T15:03:29.888769"
-    }
-  ],
+  "barnetilleggListe": [],
   "barnetilsynListe": [],
   "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
-  "husstandsmedlemmerOgEgneBarnListe": [
-    {
-      "partPersonId": "213244124",
-      "relatertPersonPersonId": "1344124",
-      "navn": "Småstein Nilsen",
-      "fødselsdato": "2020-01-24",
-      "erBarnAvBmBp": true,
-      "borISammeHusstandDtoListe": [
-        {
-          "periodeFra": "2020-01-24"
-        }
-      ]
-    },
-    {
-      "partPersonId": "213244124",
-      "relatertPersonPersonId": "54545454545",
-      "navn": "Brostein Nilsen",
-      "fødselsdato": "2022-01-24",
-      "erBarnAvBmBp": true,
-      "borISammeHusstandDtoListe": [
-        {
-          "periodeFra": "2022-01-24"
-        }
-      ]
-    }
-  ],
+  "husstandsmedlemmerOgEgneBarnListe": [],
   "kontantstøtteListe": [],
   "sivilstandListe": [],
   "skattegrunnlagListe": [
     {
-      "personId": "213244124",
+      "personId": "99057812345",
       "periodeFra": "2024-01-01",
       "periodeTil": "2025-01-01",
       "skattegrunnlagspostListe": [
@@ -156,7 +120,24 @@
       ]
     }
   ],
-  "småbarnstilleggListe": [],
-  "utvidetBarnetrygdListe": [],
+  "småbarnstilleggListe": [
+    {
+      "personId": "99057812345",
+      "type": "UTVIDET_BARNETRYGD",
+      "periodeFra": "2020-06-01",
+      "periodeTil": "2023-07-01",
+      "beløp": 3000,
+      "manueltBeregnet": false
+    }
+  ],
+  "utvidetBarnetrygdListe": [
+    {
+      "personId": "99057812345",
+      "beløp": 2500,
+      "periodeFra": "2020-06-01",
+      "periodeTil": "2023-07-01",
+      "manueltBeregnet": false
+    }
+  ],
   "feilrapporteringListe": []
 }

@@ -324,7 +324,7 @@ private fun Rolle.tilNotatRolle() =
     PersonNotatDto(
         rolle = rolletype,
         navn = hentPersonVisningsnavn(ident),
-        fødselsdato = foedselsdato,
+        fødselsdato = fødselsdato,
         ident = ident?.let { Personident(it) },
     )
 
