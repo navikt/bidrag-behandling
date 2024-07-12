@@ -204,6 +204,10 @@ class BehandlingControllerV2(
             return boforholdService.oppdatereHusstandsmedlemManuelt(behandlingsid, it)
         }
 
+        request.oppdaterePeriodeMedAndreVoksneIHusstand?.let {
+            return boforholdService.oppdatereAndreVoksneIHusstandenManuelt(behandlingsid, it)
+        }
+
         request.oppdatereSivilstand?.let {
             return boforholdService.oppdatereSivilstandManuelt(behandlingsid, it)!!
         }

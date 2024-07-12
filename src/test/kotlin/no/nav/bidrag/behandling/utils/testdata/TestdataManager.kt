@@ -76,9 +76,8 @@ class TestdataManager(
         behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
         inkludereVoksneIBpsHusstand: Boolean = false,
     ): Behandling {
-        val behandling =
-            no.nav.bidrag.behandling.utils.testdata
-                .oppretteBehandling()
+        val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
+
         when (behandlingstype) {
             TypeBehandling.FORSKUDD -> {
                 behandling.stonadstype = Stønadstype.FORSKUDD
@@ -87,6 +86,7 @@ class TestdataManager(
             TypeBehandling.SÆRBIDRAG -> {
                 behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
                 behandling.stonadstype = null
+                behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
             }
 
             else -> throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
@@ -103,7 +103,8 @@ class TestdataManager(
             )
 
         if (inkludereBp) {
-            behandling.roller.add(opprettRolle(behandling, testdataBP))
+            val rolleBp = opprettRolle(behandling, testdataBP)
+            behandling.roller.add(rolleBp)
         }
 
         if (inkludereBoforhold) {
