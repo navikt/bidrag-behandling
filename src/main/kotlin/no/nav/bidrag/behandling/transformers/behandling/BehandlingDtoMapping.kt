@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
@@ -24,6 +25,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
@@ -227,21 +229,24 @@ fun Grunnlag.tilAndreVoksneIHusstanden() =
         innhentet = LocalDateTime.now(),
     )
 
-fun Grunnlag.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> {
-    return this.konvertereData<Set<Bostatus>>()?.map {
-        PeriodeAndreVoksneIHusstanden(
-            periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-            status = it.bostatus!!,
-        )
-    }?.toSet() ?: emptySet()
-}
+fun Grunnlag.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> =
+    this
+        .konvertereData<Set<Bostatus>>()
+        ?.map {
+            PeriodeAndreVoksneIHusstanden(
+                periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                status = it.bostatus!!,
+            )
+        }?.toSet() ?: emptySet()
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
         husstandsmedlem = husstandsmedlem.sortert().map { it.tilBostatusperiode() }.toSet(),
         andreVoksneIHusstanden =
-            grunnlag.hentSisteAktiv()
-                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }.konvertereData<Set<Bostatus>>()
+            grunnlag
+                .hentSisteAktiv()
+                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+                .konvertereData<Set<Bostatus>>()
                 ?.tilBostatusperiodeDto() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
@@ -307,6 +312,15 @@ fun Behandling.tilInntektDtoV2(
             .tilInntektDtoV2()
             .toSet(),
     beregnetInntekter = hentBeregnetInntekter(),
+    beregnetInntekterV2 =
+        listOfNotNull(bidragsmottaker, bidragspliktig)
+            .map {
+                BeregnetInntekterDto(
+                    it.tilPersonident()!!,
+                    it.rolletype,
+                    hentBeregnetInntekterForRolle(it.rolletype),
+                )
+            },
     notat =
         BehandlingNotatDto(
             medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
@@ -437,9 +451,31 @@ fun List<Inntekt>.inneholderFremtidigPeriode(virkningstidspunkt: LocalDate) =
         it.datoFom!!.isAfter(maxOf(virkningstidspunkt.withDayOfMonth(1), LocalDate.now().withDayOfMonth(1)))
     }
 
+fun Behandling.hentBeregnetInntekterForRolle(rolletype: Rolletype) =
+    BeregnApi()
+        .beregnInntekt(tilInntektberegningDto(rolletype))
+        .inntektPerBarnListe
+        .sortedBy {
+            it.inntektGjelderBarnIdent?.verdi
+        }.map {
+            it.copy(
+                summertInntektListe =
+                    it.summertInntektListe.map { delberegning ->
+                        delberegning.copy(
+                            barnetillegg = delberegning.barnetillegg?.nærmesteHeltall,
+                            småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
+                            kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
+                            utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
+                            skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
+                            totalinntekt = delberegning.totalinntekt.nærmesteHeltall,
+                        )
+                    },
+            )
+        }
+
 fun Behandling.hentBeregnetInntekter() =
     BeregnApi()
-        .beregnInntekt(tilInntektberegningDto())
+        .beregnInntekt(tilInntektberegningDto(Rolletype.BIDRAGSMOTTAKER))
         .inntektPerBarnListe
         .sortedBy {
             it.inntektGjelderBarnIdent?.verdi
