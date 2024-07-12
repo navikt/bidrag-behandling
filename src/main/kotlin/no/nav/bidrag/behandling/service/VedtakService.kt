@@ -13,9 +13,9 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
-import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
-import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønadAvslag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagGenerelt
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagGenereltAvslag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
@@ -79,10 +79,11 @@ class VedtakService(
         val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
         if (refererTilVedtakId.isNotEmpty()) {
-            return refererTilVedtakId.flatMap { vedtaksid ->
-                val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid.toLong())!!
-                hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
-            }.toSet() + setOf(vedtak.vedtakstidspunkt)
+            return refererTilVedtakId
+                .flatMap { vedtaksid ->
+                    val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid.toLong())!!
+                    hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
+                }.toSet() + setOf(vedtak.vedtakstidspunkt)
         }
         return setOf(vedtak.vedtakstidspunkt)
     }
@@ -195,7 +196,7 @@ class VedtakService(
 
     private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto {
         val sak = sakConsumer.hentSak(saksnummer)
-        val grunnlagListe = byggGrunnlagForStønadAvslag()
+        val grunnlagListe = byggGrunnlagGenereltAvslag()
 
         return OpprettVedtakRequestDto(
             enhetsnummer = Enhetsnummer(behandlerEnhet),
@@ -250,7 +251,7 @@ class VedtakService(
             beregning.map { it.byggStønadsendringerForVedtak(this) }
 
         val grunnlagListeVedtak = byggGrunnlagForVedtak()
-        val stønadsendringGrunnlagListe = byggGrunnlagForStønad()
+        val stønadsendringGrunnlagListe = byggGrunnlagGenerelt()
 
         val grunnlagListe =
             (
@@ -305,7 +306,8 @@ class VedtakService(
         }
 
         val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-            erKlageEllerOmgjøring && opprinneligVirkningstidspunkt != null &&
+            erKlageEllerOmgjøring &&
+                opprinneligVirkningstidspunkt != null &&
                 virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
         if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
             throw HttpClientErrorException(

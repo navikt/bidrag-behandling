@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
@@ -89,7 +90,7 @@ class BehandlingBeregnController(
     )
     fun beregnSærbidrag(
         @PathVariable behandlingsid: Long,
-    ): List<ResultatBeregningBarnDto> {
+    ): ResultatSærbidragsberegningDto {
         LOGGER.info { "Beregner særbidrag for behandling med id $behandlingsid" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
@@ -101,7 +102,7 @@ class BehandlingBeregnController(
             )
         }
 
-        return beregningService.beregneForskudd(behandling.id!!).tilDto()
+        return beregningService.beregneSærbidrag(behandling.id!!).tilDto(behandling)
     }
 
     @Suppress("unused")

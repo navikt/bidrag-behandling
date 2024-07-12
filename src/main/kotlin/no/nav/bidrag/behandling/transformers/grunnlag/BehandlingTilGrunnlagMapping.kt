@@ -130,11 +130,16 @@ fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<Grunnl
     val grunnlagBosstatus =
         husstandsmedlem
             .flatMap {
-                val barn = personobjekter.hentPersonNyesteIdent(it.ident) ?: it.opprettPersonGrunnlag()
+                val gjelder =
+                    if (it.rolle != null) {
+                        personobjekter.hentPersonNyesteIdent(it.rolle!!.ident)!!
+                    } else {
+                        personobjekter.hentPersonNyesteIdent(it.ident) ?: it.opprettPersonGrunnlag()
+                    }
                 val part =
                     (if (stonadstype == Stønadstype.FORSKUDD) personobjekter.bidragsmottaker else personobjekter.bidragspliktig)
                 opprettGrunnlagForBostatusperioder(
-                    barn.referanse,
+                    gjelder.referanse,
                     part!!.referanse,
                     it.perioder,
                 )
@@ -287,22 +292,22 @@ fun finnFødselsdato(
     }
 
 private fun opprettGrunnlagForBostatusperioder(
-    barnreferanse: String,
+    gjelderReferanse: String,
     relatertTilPartReferanse: String,
     bostatusperioder: Set<Bostatusperiode>,
 ): Set<GrunnlagDto> =
     bostatusperioder
         .map {
             GrunnlagDto(
-                referanse = "bostatus_${barnreferanse}_${it.datoFom?.toCompactString()}",
+                referanse = "bostatus_${gjelderReferanse}_${it.datoFom?.toCompactString()}",
                 type = Grunnlagstype.BOSTATUS_PERIODE,
-                gjelderReferanse = barnreferanse,
+                gjelderReferanse = gjelderReferanse,
                 grunnlagsreferanseListe =
                     if (it.kilde == Kilde.OFFENTLIG) {
                         listOf(
                             opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
                                 relatertTilPartReferanse,
-                                referanseRelatertTil = barnreferanse,
+                                referanseRelatertTil = gjelderReferanse,
                             ),
                         )
                     } else {

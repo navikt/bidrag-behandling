@@ -21,9 +21,9 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregningForskudd
-import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagGenerelt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagBostatus
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
@@ -157,7 +157,7 @@ class GrunnlagMappingTest {
             behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
             behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
-            val grunnlag = behandling.byggGrunnlagForStønad()
+            val grunnlag = behandling.byggGrunnlagGenerelt()
 
             assertSoftly(grunnlag.toList()) {
                 it shouldHaveSize 8
@@ -346,7 +346,7 @@ class GrunnlagMappingTest {
                 )
             val søknadsbarn1 = behandling.søknadsbarn.find { it.ident == testdataBarn1.ident }
             val grunnlagForBeregning =
-                behandling.byggGrunnlagForBeregningForskudd(søknadsbarn1!!)
+                behandling.byggGrunnlagForBeregning(søknadsbarn1!!)
 
             assertSoftly(grunnlagForBeregning) {
                 it.grunnlagListe shouldHaveSize 15
@@ -370,7 +370,7 @@ class GrunnlagMappingTest {
             }
             val søknadsbarn2 = behandling.søknadsbarn.find { it.ident == testdataBarn2.ident }
             val grunnlagForBeregning2 =
-                behandling.byggGrunnlagForBeregningForskudd(søknadsbarn2!!)
+                behandling.byggGrunnlagForBeregning(søknadsbarn2!!)
 
             assertSoftly(grunnlagForBeregning2) {
                 it.grunnlagListe shouldHaveSize 15

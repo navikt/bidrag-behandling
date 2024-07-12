@@ -48,6 +48,8 @@ fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
 
 fun Behandling.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG
 
+fun Behandling.erForskudd() = tilType() == TypeBehandling.FORSKUDD
+
 fun bestemTypeBehandling(
     stønadstype: Stønadstype?,
     engangsbeløptype: Engangsbeløptype?,
