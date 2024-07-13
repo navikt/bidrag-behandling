@@ -7,18 +7,17 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.tilInntektrapporteringYtelse
-import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.*
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
+import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
@@ -170,6 +169,14 @@ class InntektService(
         return OppdatereInntektResponse(
             inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
             beregnetInntekter = behandling.hentBeregnetInntekter(),
+            beregnetInntekterV2 =   behandling.roller
+                .map {
+                    BeregnetInntekterDto(
+                        it.tilPersonident()!!,
+                        it.rolletype,
+                        behandling.hentBeregnetInntekterForRolle(it),
+                    )
+                },
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
             notat =
                 BehandlingNotatDto(

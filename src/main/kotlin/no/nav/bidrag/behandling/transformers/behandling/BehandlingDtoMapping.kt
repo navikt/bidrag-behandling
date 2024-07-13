@@ -313,12 +313,12 @@ fun Behandling.tilInntektDtoV2(
             .toSet(),
     beregnetInntekter = hentBeregnetInntekter(),
     beregnetInntekterV2 =
-        listOfNotNull(bidragsmottaker, bidragspliktig)
+        roller
             .map {
                 BeregnetInntekterDto(
                     it.tilPersonident()!!,
                     it.rolletype,
-                    hentBeregnetInntekterForRolle(it.rolletype),
+                    hentBeregnetInntekterForRolle(it),
                 )
             },
     notat =
@@ -451,9 +451,9 @@ fun List<Inntekt>.inneholderFremtidigPeriode(virkningstidspunkt: LocalDate) =
         it.datoFom!!.isAfter(maxOf(virkningstidspunkt.withDayOfMonth(1), LocalDate.now().withDayOfMonth(1)))
     }
 
-fun Behandling.hentBeregnetInntekterForRolle(rolletype: Rolletype) =
+fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
     BeregnApi()
-        .beregnInntekt(tilInntektberegningDto(rolletype))
+        .beregnInntekt(tilInntektberegningDto(rolle))
         .inntektPerBarnListe
         .sortedBy {
             it.inntektGjelderBarnIdent?.verdi
@@ -475,7 +475,7 @@ fun Behandling.hentBeregnetInntekterForRolle(rolletype: Rolletype) =
 
 fun Behandling.hentBeregnetInntekter() =
     BeregnApi()
-        .beregnInntekt(tilInntektberegningDto(Rolletype.BIDRAGSMOTTAKER))
+        .beregnInntekt(tilInntektberegningDto(bidragsmottaker!!))
         .inntektPerBarnListe
         .sortedBy {
             it.inntektGjelderBarnIdent?.verdi

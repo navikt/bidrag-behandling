@@ -83,6 +83,7 @@ data class OppdatereInntektResponse(
     val inntekt: InntektDtoV2?,
     @Schema(description = "Periodiserte inntekter per barn")
     val beregnetInntekter: List<InntektPerBarn> = emptyList(),
+    val beregnetInntekterV2: List<BeregnetInntekterDto> = emptyList(),
     val notat: BehandlingNotatDto,
     val valideringsfeil: InntektValideringsfeilDto,
 )

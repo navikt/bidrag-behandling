@@ -1,13 +1,13 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
@@ -20,7 +20,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
 
-fun Behandling.tilInntektberegningDto(rolletype: Rolletype): BeregnValgteInntekterGrunnlag =
+fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnlag =
     BeregnValgteInntekterGrunnlag(
         periode =
             ÅrMånedsperiode(
@@ -28,9 +28,9 @@ fun Behandling.tilInntektberegningDto(rolletype: Rolletype): BeregnValgteInntekt
                 finnBeregnTilDato(virkningstidspunktEllerSøktFomDato),
             ),
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
-        bidragsmottakerIdent = roller.find { it.rolletype == rolletype }.let { Personident(it?.ident!!) },
+        bidragsmottakerIdent = Personident(rolle.ident!!),
         grunnlagListe =
-            inntekter.filter { it.taMed }.map {
+            inntekter.filter { it.ident == rolle.ident }.filter { it.taMed }.map {
                 InntektsgrunnlagPeriode(
                     periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
                     beløp = it.belop,
