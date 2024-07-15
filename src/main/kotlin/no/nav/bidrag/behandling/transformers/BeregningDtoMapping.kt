@@ -28,7 +28,7 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                 finnBeregnTilDato(virkningstidspunktEllerSøktFomDato),
             ),
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
-        bidragsmottakerIdent = Personident(rolle.ident!!),
+        gjelderIdent = Personident(rolle.ident!!),
         grunnlagListe =
             inntekter.filter { it.ident == rolle.ident }.filter { it.taMed }.map {
                 InntektsgrunnlagPeriode(
