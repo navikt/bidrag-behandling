@@ -8,12 +8,14 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
+import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
@@ -24,11 +26,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.begrensAntallPersoner
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiodeDto
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
@@ -39,6 +43,7 @@ import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
@@ -55,6 +60,7 @@ import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -65,6 +71,7 @@ import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
@@ -221,27 +228,52 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
             )
         }.toSet()
 
-fun Grunnlag.tilAndreVoksneIHusstanden() =
+fun List<Grunnlag>.tilAndreVoksneIHusstanden() =
     AndreVoksneIHusstandenGrunnlagDto(
-        perioder = this.tilPeriodeAndreVoksneIHusstanden(),
+        perioder = tilPeriodeAndreVoksneIHusstanden(),
         innhentet = LocalDateTime.now(),
     )
 
-fun Grunnlag.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> {
-    return this.konvertereData<Set<Bostatus>>()?.map {
-        PeriodeAndreVoksneIHusstanden(
-            periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-            status = it.bostatus!!,
-        )
-    }?.toSet() ?: emptySet()
-}
+fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> =
+    find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+        .konvertereData<Set<Bostatus>>()
+        ?.map {
+            val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
+            PeriodeAndreVoksneIHusstanden(
+                periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                status = it.bostatus!!,
+                husstandsmedlemmer = this.toSet().hentAndreVoksneHusstandForPeriode(periode),
+            )
+        }?.toSet() ?: emptySet()
+
+fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(periode: ÅrMånedsperiode): List<AndreVoksneIHusstandenDetaljerDto> =
+    hentSisteAktiv()
+        .find { it.type == Grunnlagsdatatype.BOFORHOLD && !it.erBearbeidet }
+        .konvertereData<List<RelatertPersonGrunnlagDto>>()
+        ?.filter { it.relasjon != Familierelasjon.BARN }
+        ?.filter {
+            it.borISammeHusstandDtoListe.any { p ->
+                val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!, p.periodeTil)
+                periodeBorHosBP.inneholder(periode)
+            }
+        }?.map {
+            AndreVoksneIHusstandenDetaljerDto(
+                it.navn!!,
+                it.fødselsdato,
+                it.relasjon != Familierelasjon.INGEN && it.relasjon != Familierelasjon.UKJENT,
+                relasjon = it.relasjon,
+            )
+        }?.sorter()
+        ?.begrensAntallPersoner() ?: emptyList()
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
         husstandsmedlem = husstandsmedlem.sortert().map { it.tilBostatusperiode() }.toSet(),
         andreVoksneIHusstanden =
-            grunnlag.hentSisteAktiv()
-                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }.konvertereData<Set<Bostatus>>()
+            grunnlag
+                .hentSisteAktiv()
+                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+                .konvertereData<Set<Bostatus>>()
                 ?.tilBostatusperiodeDto() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
@@ -307,6 +339,15 @@ fun Behandling.tilInntektDtoV2(
             .tilInntektDtoV2()
             .toSet(),
     beregnetInntekter = hentBeregnetInntekter(),
+    beregnetInntekterV2 =
+        roller
+            .map {
+                BeregnetInntekterDto(
+                    it.tilPersonident()!!,
+                    it.rolletype,
+                    hentBeregnetInntekterForRolle(it),
+                )
+            },
     notat =
         BehandlingNotatDto(
             medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
@@ -322,7 +363,7 @@ fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
                 ?: emptySet(),
         husstandsmedlem =
             filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
-        andreVoksneIHusstanden = find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }?.tilAndreVoksneIHusstanden(),
+        andreVoksneIHusstanden = tilAndreVoksneIHusstanden(),
         sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )
@@ -437,9 +478,9 @@ fun List<Inntekt>.inneholderFremtidigPeriode(virkningstidspunkt: LocalDate) =
         it.datoFom!!.isAfter(maxOf(virkningstidspunkt.withDayOfMonth(1), LocalDate.now().withDayOfMonth(1)))
     }
 
-fun Behandling.hentBeregnetInntekter() =
+fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
     BeregnApi()
-        .beregnInntekt(tilInntektberegningDto())
+        .beregnInntekt(tilInntektberegningDto(rolle))
         .inntektPerBarnListe
         .sortedBy {
             it.inntektGjelderBarnIdent?.verdi
@@ -458,6 +499,8 @@ fun Behandling.hentBeregnetInntekter() =
                     },
             )
         }
+
+fun Behandling.hentBeregnetInntekter() = hentBeregnetInntekterForRolle(bidragsmottaker!!)
 
 fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
 

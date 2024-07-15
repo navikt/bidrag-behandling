@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektPerBarn
@@ -56,8 +57,15 @@ data class InntekterDtoV2(
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekter: List<InntektPerBarn> = emptyList(),
+    val beregnetInntekterV2: List<BeregnetInntekterDto> = emptyList(),
     val notat: BehandlingNotatDto,
     val valideringsfeil: InntektValideringsfeilDto,
+)
+
+data class BeregnetInntekterDto(
+    val ident: Personident,
+    val rolle: Rolletype,
+    val inntekter: List<InntektPerBarn> = emptyList(),
 )
 
 data class OppdatereInntektRequest(
@@ -75,6 +83,7 @@ data class OppdatereInntektResponse(
     val inntekt: InntektDtoV2?,
     @Schema(description = "Periodiserte inntekter per barn")
     val beregnetInntekter: List<InntektPerBarn> = emptyList(),
+    val beregnetInntekterV2: List<BeregnetInntekterDto> = emptyList(),
     val notat: BehandlingNotatDto,
     val valideringsfeil: InntektValideringsfeilDto,
 )
