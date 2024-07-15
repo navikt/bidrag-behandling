@@ -226,7 +226,12 @@ class BehandlingService(
                 "Oppdatering av BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN etter endret virkningsdato " +
                     " (som følge av ny kalendermåned) er ikke implementert"
             }
-
+            /*
+                        grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
+                        grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
+                        boforholdService.rekalkulerOgLagreHusstandsmedlemPerioderForBp(behandling.id!!)
+                        grunnlagService.aktiverGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
+             */
             log.info { "Virkningstidspunkt er endret. Bygger sivilstandshistorikk på ny for behandling ${behandling.id}" }
             grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)

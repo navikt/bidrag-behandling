@@ -132,7 +132,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 boforholdService.oppdatereAndreVoksneIHusstandenManuelt(
                     behandling.id!!,
                     OppdatereAndreVoksneIHusstanden(
-                        oppdatereAndreVoksneIHusstandenperiode =
+                        oppdaterePeriode =
                             OppdatereAndreVoksneIHusstandenperiode(
                                 idPeriode = husstandsmedlem.perioder.first().id,
                                 borMedAndreVoksne = false,

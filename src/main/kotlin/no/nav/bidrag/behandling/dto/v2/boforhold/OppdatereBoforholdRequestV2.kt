@@ -8,7 +8,9 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.time.LocalDate
+import java.time.YearMonth
 
 @Schema(description = "Oppdaterer husstandsmedlem, sivilstand, eller notat")
 data class OppdatereBoforholdRequestV2(
@@ -33,7 +35,7 @@ data class OppdatereBoforholdResponse(
 
 data class OppdatereAndreVoksneIHusstanden(
     @Schema(description = "Oppdatere bor-med-andre-voksne-status på periode")
-    val oppdatereAndreVoksneIHusstandenperiode: OppdatereAndreVoksneIHusstandenperiode? = null,
+    val oppdaterePeriode: OppdatereAndreVoksneIHusstandenperiode? = null,
     @Schema(type = "Long", description = "Id til perioden som skal slettes")
     val slettePeriode: Long? = null,
     @Schema(type = "Long", description = "Angi om historikken skal tilbakestilles til siste aktiverte grunnlagsdata")
@@ -45,6 +47,14 @@ data class OppdatereAndreVoksneIHusstanden(
 data class OppdatereAndreVoksneIHusstandenperiode(
     @Schema(type = "Long", description = "Id til bostatusperioden som skal oppdateres, oppretter ny hvis null")
     val idPeriode: Long? = null,
+    @Schema(
+        description = "Periode, fra-og-med til-og-med måned. Ignoreres for særbidrag",
+        type = "string",
+        format = "date",
+        example = "2025-01",
+    )
+    @JsonFormat(pattern = "yyyy-MM")
+    val periode: ÅrMånedsperiode = ÅrMånedsperiode(YearMonth.now(), YearMonth.now()),
     @Schema(required = true)
     val borMedAndreVoksne: Boolean = true,
 )
@@ -81,6 +91,7 @@ data class OppdatereBostatusperiode(
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
+    val periode: ÅrMånedsperiode = ÅrMånedsperiode(YearMonth.now(), YearMonth.now()),
     @Schema(required = true)
     val bostatus: Bostatuskode,
 ) {

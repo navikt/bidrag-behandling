@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
+import no.nav.bidrag.behandling.database.datamodell.henteBpHusstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.henteLagretSivilstandshistorikk
 import no.nav.bidrag.behandling.database.datamodell.henteSisteSivilstand
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -116,11 +117,8 @@ class BoforholdService(
                 it.perioder.clear()
             }
 
-        val husstandsmedlemBp = behandling.husstandsmedlem.find { behandling.bidragspliktig == it.rolle }!!
+        val husstandsmedlemBp = behandling.henteBpHusstandsmedlem()
         husstandsmedlemBp.perioder = periodisertBoforholdVoksne.tilBostatusperiode(husstandsmedlemBp)
-        behandling.husstandsmedlem.add(
-            husstandsmedlemBp,
-        )
     }
 
     @Transactional
@@ -278,7 +276,6 @@ class BoforholdService(
                         ),
                 )
             }
-
             behandling.husstandsmedlem.add(husstandsmedlem)
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
             return husstandsmedlemRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
@@ -373,7 +370,7 @@ class BoforholdService(
                 .tilOppdatereBoforholdResponse(behandling)
         }
 
-        oppdatereAndreVoksneIHusstanden.oppdatereAndreVoksneIHusstandenperiode?.let { oppdatereStatus ->
+        oppdatereAndreVoksneIHusstanden.oppdaterePeriode?.let { oppdatereStatus ->
 
             val nyBostatus =
                 if (oppdatereStatus.borMedAndreVoksne) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
@@ -805,7 +802,7 @@ class BoforholdService(
                     "Gjeldende perioder etter endring: $detaljerPerioder"
             }
         }
-        oppdatereAndreVoksne.oppdatereAndreVoksneIHusstandenperiode?.let { statusPåPeriode ->
+        oppdatereAndreVoksne.oppdaterePeriode?.let { statusPåPeriode ->
             val nyStatus =
                 if (statusPåPeriode.borMedAndreVoksne) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
 
