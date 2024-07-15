@@ -1,7 +1,7 @@
 {
   "ainntektListe": [
     {
-      "personId": "99057812345",
+      "personId": "313213213",
       "periodeFra": "2021-01-01",
       "periodeTil": "2021-02-01",
       "aktiv": true,
@@ -28,7 +28,7 @@
   ],
   "arbeidsforholdListe": [
     {
-      "partPersonId": "99057812345",
+      "partPersonId": "313213213",
       "startdato": "2002-11-03",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -52,7 +52,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.087233848"
     },
     {
-      "partPersonId": "99057812345",
+      "partPersonId": "313213213",
       "startdato": "2022-12-07",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -76,7 +76,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.119823886"
     },
     {
-      "partPersonId": "99057812345",
+      "partPersonId": "313213213",
       "startdato": "2003-12-08",
       "sluttdato": null,
       "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
@@ -100,7 +100,18 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.151722999"
     }
   ],
-  "barnetilleggListe": [],
+  "barnetilleggListe": [
+    {
+      "barnPersonId": "1344124",
+      "partPersonId": "313213213",
+      "periodeFra": "2021-01-01",
+      "periodeTil": "2021-02-01",
+      "barnetilleggType": "PENSJON",
+      "beløpBrutto": 3450,
+      "barnType": "FELLES",
+      "hentetTidspunkt": "2023-12-20T15:03:29.888769"
+    }
+  ],
   "barnetilsynListe": [],
   "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
   "husstandsmedlemmerOgEgneBarnListe": [],
@@ -108,7 +119,7 @@
   "sivilstandListe": [],
   "skattegrunnlagListe": [
     {
-      "personId": "99057812345",
+      "personId": "313213213",
       "periodeFra": "2024-01-01",
       "periodeTil": "2025-01-01",
       "skattegrunnlagspostListe": [
@@ -122,7 +133,7 @@
   ],
   "småbarnstilleggListe": [
     {
-      "personId": "99057812345",
+      "personId": "313213213",
       "type": "UTVIDET_BARNETRYGD",
       "periodeFra": "2020-06-01",
       "periodeTil": "2023-07-01",
@@ -132,7 +143,7 @@
   ],
   "utvidetBarnetrygdListe": [
     {
-      "personId": "99057812345",
+      "personId": "313213213",
       "beløp": 2500,
       "periodeFra": "2020-06-01",
       "periodeTil": "2023-07-01",
