@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.behandling.transformers.inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -44,20 +45,28 @@ fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
             this.inntekter.filter { inntekt ->
                 if (!ligningsinntekter.contains(inntekt.inntektRapportering)) return@filter true
                 val sisteLigningsår =
-                    this.inntekter.sortedBy { it.periode.fom }
-                        .lastOrNull { it.inntektRapportering == inntekt.inntektRapportering }?.periode?.fom?.year
+                    this.inntekter
+                        .sortedBy { it.periode.fom }
+                        .lastOrNull { it.inntektRapportering == inntekt.inntektRapportering }
+                        ?.periode
+                        ?.fom
+                        ?.year
                         ?: return@filter true
                 ligningsinntekter.contains(
                     inntekt.inntektRapportering,
-                ) && inntekt.periode.fom.year == sisteLigningsår
+                ) &&
+                    inntekt.periode.fom.year == sisteLigningsår
             },
     )
 
 fun Inntekt.erHistorisk(inntekter: Collection<Inntekt>): Boolean {
     if (!ligningsinntekter.contains(type) || taMed || opprinneligFom == null) return false
     val sisteLigningsår =
-        inntekter.sortedBy { it.opprinneligFom }
-            .lastOrNull { it.type == type }?.opprinneligFom?.year
+        inntekter
+            .sortedBy { it.opprinneligFom }
+            .lastOrNull { it.type == type }
+            ?.opprinneligFom
+            ?.year
             ?: return false
     return ligningsinntekter.contains(type) && opprinneligFom?.year != sisteLigningsår
 }
@@ -69,7 +78,8 @@ fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
 
 fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirkningstidspunkt: Boolean = true) =
     filter {
-        if (eksluderYtelserFørVirkningstidspunkt && årsinntekterYtelser.contains(it.type) ||
+        if (eksluderYtelserFørVirkningstidspunkt &&
+            årsinntekterYtelser.contains(it.type) ||
             eksplisitteYtelser.contains(
                 it.type,
             )
@@ -84,44 +94,51 @@ fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirk
         }
     }
 
+fun List<AndreVoksneIHusstandenDetaljerDto>.sorter() =
+    sortedWith(
+        compareByDescending<AndreVoksneIHusstandenDetaljerDto> { it.harRelasjonTilBp }
+            .thenBy { it.navn.split(" ").last() },
+    )
+
 fun Set<Inntekt>.årsinntekterSortert(
     sorterTaMed: Boolean = true,
     inkluderHistoriskeInntekter: Boolean = false,
 ) = when (inkluderHistoriskeInntekter) {
     true -> this.filter { !eksplisitteYtelser.contains(it.type) }
     else -> this.filter { !eksplisitteYtelser.contains(it.type) }.filtrerUtHistoriskeInntekter()
-}
-    .sortedWith(
-        compareBy<Inntekt> {
-            it.taMed && sorterTaMed
-        }
-            .thenBy {
-                val index =
-                    årsinntekterPrioriteringsliste.indexOf(
-                        it.type,
-                    )
-                if (index == -1 || it.taMed && sorterTaMed) 1000 else index
-            }.thenBy {
-                val manuelleInntekterPrioritering = manuelleInntekter.map { it.name }.sorted()
-                val index =
-                    årsinntekterPrioriteringsliste.indexOf(
-                        it.type,
-                    )
-                        .let { prioritering ->
-                            if (prioritering == -1) 1000 + manuelleInntekterPrioritering.indexOf(it.type.name) else prioritering
-                        }
-                if (it.taMed && sorterTaMed) {
-                    (
-                        it.datoFom?.toEpochDay()
-                            ?: 1
-                    ) * 1000 + index
-                } else {
-                    it.opprinneligFom
+}.sortedWith(
+    compareBy<Inntekt> {
+        it.taMed && sorterTaMed
+    }.thenBy {
+        val index =
+            årsinntekterPrioriteringsliste.indexOf(
+                it.type,
+            )
+        if (index == -1 || it.taMed && sorterTaMed) 1000 else index
+    }.thenBy {
+        val manuelleInntekterPrioritering = manuelleInntekter.map { it.name }.sorted()
+        val index =
+            årsinntekterPrioriteringsliste
+                .indexOf(
+                    it.type,
+                ).let { prioritering ->
+                    if (prioritering == -1) 1000 + manuelleInntekterPrioritering.indexOf(it.type.name) else prioritering
                 }
-            },
-    )
+        if (it.taMed && sorterTaMed) {
+            (
+                it.datoFom?.toEpochDay()
+                    ?: 1
+            ) * 1000 + index
+        } else {
+            it.opprinneligFom
+        }
+    },
+)
 
-fun Husstandsmedlem.erSøknadsbarn() = this.behandling.søknadsbarn.map { it.ident }.contains(this.ident)
+fun Husstandsmedlem.erSøknadsbarn() =
+    this.behandling.søknadsbarn
+        .map { it.ident }
+        .contains(this.ident)
 
 fun Set<Husstandsmedlem>.sortert() =
     sortedWith(

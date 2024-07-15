@@ -25,13 +25,12 @@ private val log = KotlinLogging.logger {}
 
 fun Set<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandling) = this.toList().tilBoforholdBarnRequest(behandling)
 
-fun Set<RelatertPersonGrunnlagDto>.tilBoforholdVoksneRequest(): BoforholdVoksneRequest {
-    return BoforholdVoksneRequest(
+fun Set<RelatertPersonGrunnlagDto>.tilBoforholdVoksneRequest(): BoforholdVoksneRequest =
+    BoforholdVoksneRequest(
         behandledeBostatusopplysninger = emptyList(),
         endreBostatus = null,
-        innhentedeOffentligeOpplysninger = this.filter { it.relasjon != Familierelasjon.BARN }.tilHusstandsmedlemmer(),
+        innhentedeOffentligeOpplysninger = this.filter { !it.erBarn }.tilHusstandsmedlemmer(),
     )
-}
 
 fun List<RelatertPersonGrunnlagDto>.tilHusstandsmedlemmer() =
     this.map {
@@ -113,15 +112,16 @@ fun Husstandsmedlem.henteOffentligePerioder(): Set<Bostatusperiode> =
     }
 
 fun Set<Bostatus>.tilBostatusperiodeDto() =
-    this.map {
-        BostatusperiodeDto(
-            id = null,
-            datoFom = it.periodeFom,
-            datoTom = it.periodeTom,
-            bostatus = it.bostatus!!,
-            kilde = Kilde.OFFENTLIG,
-        )
-    }.toSet()
+    this
+        .map {
+            BostatusperiodeDto(
+                id = null,
+                datoFom = it.periodeFom,
+                datoTom = it.periodeTom,
+                bostatus = it.bostatus!!,
+                kilde = Kilde.OFFENTLIG,
+            )
+        }.toSet()
 
 fun Bostatusperiode.tilBostatus() =
     Bostatus(
@@ -132,15 +132,17 @@ fun Bostatusperiode.tilBostatus() =
     )
 
 fun Set<Bostatus>.tilBostatusperiode(husstandsmedlem: Husstandsmedlem) =
-    this.filter { it.bostatus != null }.map {
-        Bostatusperiode(
-            husstandsmedlem = husstandsmedlem,
-            bostatus = it.bostatus!!,
-            datoFom = it.periodeFom,
-            datoTom = it.periodeTom,
-            kilde = it.kilde,
-        )
-    }.toMutableSet()
+    this
+        .filter { it.bostatus != null }
+        .map {
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlem,
+                bostatus = it.bostatus!!,
+                datoFom = it.periodeFom,
+                datoTom = it.periodeTom,
+                kilde = it.kilde,
+            )
+        }.toMutableSet()
 
 fun List<BorISammeHusstandDto>.tilBostatus(
     bostatus: Bostatuskode,
@@ -158,7 +160,7 @@ fun List<BorISammeHusstandDto>.tilBostatus(
     relasjon: Familierelasjon,
     fødselsdato: LocalDate,
 ): List<Bostatus> {
-    val førsteDagIMånedenEtterFylteAttenÅr = fødselsdato.plusMonths(1).withDayOfMonth(1).minusYears(18)
+    val førsteDagIMånedenEtterFylteAttenÅr = fødselsdato.plusMonths(1).withDayOfMonth(1).plusYears(18)
 
     val bostatus =
         when (relasjon) {
@@ -170,13 +172,7 @@ fun List<BorISammeHusstandDto>.tilBostatus(
                 }
             }
 
-            else -> {
-                if (LocalDate.now().isBefore(førsteDagIMånedenEtterFylteAttenÅr)) {
-                    Bostatuskode.IKKE_MED_FORELDER
-                } else {
-                    Bostatuskode.REGNES_IKKE_SOM_BARN
-                }
-            }
+            else -> null
         }
 
     return this.map {
