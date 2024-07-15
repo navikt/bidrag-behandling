@@ -4,7 +4,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
+import no.nav.bidrag.behandling.database.datamodell.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
@@ -101,6 +103,15 @@ fun Husstandsmedlem.tilBoforholdBarnRequest(
         endreBostatus = endreBostatus,
     )
 
+fun Husstandsmedlem.tilBoforholdVoksneRequest(
+    gjelderRolle: Rolle,
+    endreBostatus: EndreBostatus? = null,
+) = BoforholdVoksneRequest(
+    innhentedeOffentligeOpplysninger = henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(gjelderRolle).tilHusstandsmedlemmer(),
+    behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
+    endreBostatus = endreBostatus,
+)
+
 fun Husstandsmedlem.henteOffentligePerioder(): Set<Bostatusperiode> =
     hentSisteBearbeidetBoforhold()?.tilPerioder(this) ?: if (kilde == Kilde.OFFENTLIG) {
         log.warn {
@@ -192,6 +203,17 @@ fun List<BoforholdResponse>.tilPerioder(husstandsmedlem: Husstandsmedlem) =
         }.toMutableSet()
     } ?: setOf()
 
+fun List<Bostatus>.tilPerioder(husstandsmedlem: Husstandsmedlem) =
+    this.map {
+        Bostatusperiode(
+            husstandsmedlem = husstandsmedlem,
+            bostatus = it.bostatus!!,
+            datoFom = it.periodeFom,
+            datoTom = it.periodeTom,
+            kilde = it.kilde,
+        )
+    }
+
 fun BoforholdResponse.tilPeriode(husstandsmedlem: Husstandsmedlem) =
     Bostatusperiode(
         bostatus = bostatus,
@@ -218,6 +240,14 @@ fun List<BoforholdResponse>.tilHusstandsmedlem(behandling: Behandling): Set<Huss
         }.toSet()
 
 fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResponse>) {
+    perioder.clear()
+    perioder.addAll(nyePerioder.tilPerioder(this))
+    if (perioder.isEmpty()) {
+        perioder.add(opprettDefaultPeriodeForOffentligHusstandsmedlem())
+    }
+}
+
+fun Husstandsmedlem.overskriveMedBearbeidaBostatusperioder(nyePerioder: List<Bostatus>) {
     perioder.clear()
     perioder.addAll(nyePerioder.tilPerioder(this))
     if (perioder.isEmpty()) {

@@ -221,6 +221,12 @@ class BehandlingService(
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
 
+            // TODO: Legge til oppdatering av BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN
+            log.warn {
+                "Oppdatering av BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN etter endret virkningsdato " +
+                    " (som følge av ny kalendermåned) er ikke implementert"
+            }
+
             log.info { "Virkningstidspunkt er endret. Bygger sivilstandshistorikk på ny for behandling ${behandling.id}" }
             grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)

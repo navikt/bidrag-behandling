@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.erSærbidrag
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -505,6 +506,61 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
             ressursIkkeTilknyttetBehandling(
                 "Husstandsmedlem $it hører ikke til behandling med id" +
                     "${behandling.id}.",
+            )
+        }
+    }
+}
+
+fun OppdatereAndreVoksneIHusstanden.validere(behandling: Behandling) {
+    if (TypeBehandling.SÆRBIDRAG != behandling.tilType()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Ugyldig behandlingstype for oppdatering av andre voksne i husstanden: ${behandling.tilType()} " +
+                "(behandlingsid: ${behandling.id}). Behandlingstype må være SÆRBIDRAG.",
+        )
+    }
+
+    val rolleMedAndreVoksneIHusstanden = behandling.bidragspliktig
+
+    var husstandsmedlem = behandling.husstandsmedlem.find { it.rolle != null && it.rolle == rolleMedAndreVoksneIHusstanden }
+    if (husstandsmedlem == null) {
+        husstandsmedlem =
+            Husstandsmedlem(
+                behandling = behandling,
+                kilde = Kilde.OFFENTLIG,
+                rolle = rolleMedAndreVoksneIHusstanden,
+            )
+        behandling.husstandsmedlem.add(husstandsmedlem)
+    }
+
+    this.oppdatereAndreVoksneIHusstandenperiode?.let { oppdatereAndreVoksne ->
+        oppdatereAndreVoksne.idPeriode.let { periodeid ->
+            val periodeSomSkalOppdateres = husstandsmedlem.perioder.find { periodeid == it.id }
+
+            if (husstandsmedlem.perioder.isEmpty() || periodeSomSkalOppdateres == null) {
+                throw HttpClientErrorException(
+                    HttpStatus.NOT_FOUND,
+                    "Fant ikke oppgitt bor-med-andre-voksne-periode (id $periodeid) i ${behandling.id}. Ingen endring" +
+                        " å utføre.",
+                )
+            }
+        }
+    }
+
+    if (husstandsmedlem.perioder.isEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.NOT_FOUND,
+            "Fant ingen bor-med-andre-voksne-perioder å endre i behandling ${behandling.id}.",
+        )
+    }
+
+    this.slettePeriode?.let { sletteId ->
+        val periodeSomSkalSlettes = husstandsmedlem.perioder.find { sletteId == it.id }
+        if (periodeSomSkalSlettes == null) {
+            throw HttpClientErrorException(
+                HttpStatus.NOT_FOUND,
+                "Fant ikke oppgitt bor-med-andre-voksne-periode (periodeid $sletteId). Sletter ingen perioder fra " +
+                    "behandling ${behandling.id}.",
             )
         }
     }
