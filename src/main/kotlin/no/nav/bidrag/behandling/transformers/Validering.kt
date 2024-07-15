@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.erSærbidrag
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksne
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -511,7 +511,7 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
     }
 }
 
-fun OppdatereAndreVoksne.validere(behandling: Behandling) {
+fun OppdatereAndreVoksneIHusstanden.validere(behandling: Behandling) {
     if (TypeBehandling.SÆRBIDRAG != behandling.tilType()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
@@ -533,7 +533,7 @@ fun OppdatereAndreVoksne.validere(behandling: Behandling) {
         behandling.husstandsmedlem.add(husstandsmedlem)
     }
 
-    this.oppdatere?.let { oppdatereAndreVoksne ->
+    this.oppdatereAndreVoksneIHusstandenperiode?.let { oppdatereAndreVoksne ->
         oppdatereAndreVoksne.idPeriode.let { periodeid ->
             val periodeSomSkalOppdateres = husstandsmedlem.perioder.find { periodeid == it.id }
 
@@ -554,7 +554,7 @@ fun OppdatereAndreVoksne.validere(behandling: Behandling) {
         )
     }
 
-    this.slette?.let { sletteId ->
+    this.slettePeriode?.let { sletteId ->
         val periodeSomSkalSlettes = husstandsmedlem.perioder.find { sletteId == it.id }
         if (periodeSomSkalSlettes == null) {
             throw HttpClientErrorException(

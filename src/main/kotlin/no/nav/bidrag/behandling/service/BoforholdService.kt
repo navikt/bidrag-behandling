@@ -23,7 +23,7 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksne
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
@@ -343,7 +343,7 @@ class BoforholdService(
     @Transactional
     fun oppdatereAndreVoksneIHusstandenManuelt(
         behandlingsid: Long,
-        oppdatereAndreVoksneIHusstanden: OppdatereAndreVoksne,
+        oppdatereAndreVoksneIHusstanden: OppdatereAndreVoksneIHusstanden,
     ): OppdatereBoforholdResponse {
         val behandling =
             behandlingRepository
@@ -357,7 +357,7 @@ class BoforholdService(
         val husstandsmedlemSomSkalOppdateres =
             behandling.husstandsmedlem.find { rolleMedAndreVoksneIHusstaden == it.rolle }!!
 
-        oppdatereAndreVoksneIHusstanden.slette?.let { idHusstansmedlemsperiode ->
+        oppdatereAndreVoksneIHusstanden.slettePeriode?.let { idHusstansmedlemsperiode ->
             husstandsmedlemSomSkalOppdateres.lagreEksisterendePerioder()
             husstandsmedlemSomSkalOppdateres.oppdaterePerioderVoksne(
                 gjelderRolle = rolleMedAndreVoksneIHusstaden,
@@ -373,7 +373,7 @@ class BoforholdService(
                 .tilOppdatereBoforholdResponse(behandling)
         }
 
-        oppdatereAndreVoksneIHusstanden.oppdatere?.let { oppdatereStatus ->
+        oppdatereAndreVoksneIHusstanden.oppdatereAndreVoksneIHusstandenperiode?.let { oppdatereStatus ->
 
             val nyBostatus =
                 if (oppdatereStatus.borMedAndreVoksne) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
@@ -415,7 +415,7 @@ class BoforholdService(
                 .tilOppdatereBoforholdResponse(behandling)
         }
 
-        if (oppdatereAndreVoksneIHusstanden.tilbakestille) {
+        if (oppdatereAndreVoksneIHusstanden.tilbakestilleHistorikk) {
             husstandsmedlemSomSkalOppdateres.lagreEksisterendePerioder()
             husstandsmedlemSomSkalOppdateres.resetTilOffentligePerioder()
             loggeEndringAndreVoksneIHusstanden(
@@ -774,7 +774,7 @@ class BoforholdService(
 
     private fun loggeEndringAndreVoksneIHusstanden(
         behandling: Behandling,
-        oppdatereAndreVoksne: OppdatereAndreVoksne,
+        oppdatereAndreVoksne: OppdatereAndreVoksneIHusstanden,
         husstandsmedlem: Husstandsmedlem,
     ) {
         val detaljerPerioder =
@@ -790,7 +790,7 @@ class BoforholdService(
                     "Gjeldende perioder etter endring: $detaljerPerioder"
             }
         }
-        if (oppdatereAndreVoksne.tilbakestille) {
+        if (oppdatereAndreVoksne.tilbakestilleHistorikk) {
             log.info { "Tilbakestilte perioder for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." }
             secureLogger.info {
                 "Tilbakestilte perioder for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." +
@@ -798,14 +798,14 @@ class BoforholdService(
             }
         }
 
-        oppdatereAndreVoksne.slette?.let { idBostatusperiode ->
+        oppdatereAndreVoksne.slettePeriode?.let { idBostatusperiode ->
             log.info { "Slettet bostatusperiode med id $idBostatusperiode fra behandling ${behandling.id}." }
             secureLogger.info {
                 "Slettet bostatusperiode med id $idBostatusperiode fra behandling ${behandling.id}." +
                     "Gjeldende perioder etter endring: $detaljerPerioder"
             }
         }
-        oppdatereAndreVoksne.oppdatere?.let { statusPåPeriode ->
+        oppdatereAndreVoksne.oppdatereAndreVoksneIHusstandenperiode?.let { statusPåPeriode ->
             val nyStatus =
                 if (statusPåPeriode.borMedAndreVoksne) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
 

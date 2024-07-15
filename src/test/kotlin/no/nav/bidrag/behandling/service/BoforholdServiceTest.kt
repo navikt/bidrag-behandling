@@ -22,11 +22,11 @@ import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksne
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstandenperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBostatusperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
-import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereStatusPåPeriode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.objectmapper
@@ -90,18 +90,18 @@ class BoforholdServiceTest : TestContainerRunner() {
     @Nested
     open inner class AndreVoksneIHusstandentester {
         @Nested
-        open inner class Førstegangsinnhenting{
-            //TODO: Legge til tester
+        open inner class Førstegangsinnhenting {
+            // TODO: Legge til tester
         }
 
         @Nested
-        open inner class OppdatereAutomatisk{
-            //TODO: Legge til tester
+        open inner class OppdatereAutomatisk {
+            // TODO: Legge til tester
         }
 
         @Nested
         open inner class OppdatereManuelt {
-            //TODO: Legge til tester
+            // TODO: Legge til tester
             @Test
             @Transactional
             open fun `skal angre forrige endring`() {
@@ -131,9 +131,9 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 boforholdService.oppdatereAndreVoksneIHusstandenManuelt(
                     behandling.id!!,
-                    OppdatereAndreVoksne(
-                        oppdatere =
-                            OppdatereStatusPåPeriode(
+                    OppdatereAndreVoksneIHusstanden(
+                        oppdatereAndreVoksneIHusstandenperiode =
+                            OppdatereAndreVoksneIHusstandenperiode(
                                 idPeriode = husstandsmedlem.perioder.first().id,
                                 borMedAndreVoksne = false,
                             ),
@@ -148,7 +148,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
                 boforholdService.oppdatereAndreVoksneIHusstandenManuelt(
                     behandling.id!!,
-                    OppdatereAndreVoksne(
+                    OppdatereAndreVoksneIHusstanden(
                         angreSisteEndring = true,
                     ),
                 )
@@ -162,7 +162,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // hvis
                 boforholdService.oppdatereAndreVoksneIHusstandenManuelt(
                     behandling.id!!,
-                    OppdatereAndreVoksne(
+                    OppdatereAndreVoksneIHusstanden(
                         angreSisteEndring = true,
                     ),
                 )
