@@ -29,7 +29,6 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
-import no.nav.bidrag.behandling.service.BoforholdService.Companion.lagreEksisterendePerioder
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
@@ -109,8 +108,10 @@ class BoforholdService(
         behandling: Behandling,
         periodisertBoforholdVoksne: Set<Bostatus>,
     ) {
-        behandling.husstandsmedlem.filter { (Kilde.OFFENTLIG == it.kilde) }
-            .filter { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }.forEach {
+        behandling.husstandsmedlem
+            .filter { (Kilde.OFFENTLIG == it.kilde) }
+            .filter { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }
+            .forEach {
                 sletteHusstandsmedlem(behandling, it)
             }
 

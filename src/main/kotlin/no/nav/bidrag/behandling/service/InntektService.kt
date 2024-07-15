@@ -7,11 +7,13 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.tilInntektrapporteringYtelse
+import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
@@ -19,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
+import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
@@ -54,7 +57,8 @@ class InntektService(
     @Transactional
     fun rekalkulerPerioderInntekter(behandlingsid: Long) {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid)
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
         rekalkulerPerioderInntekter(behandling)
     }
@@ -92,7 +96,8 @@ class InntektService(
         summerteÅrsinntekter: List<SummertÅrsinntekt>,
     ) {
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid)
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         val inntekterSomSkalSlettes: MutableSet<Inntekt> = mutableSetOf()
@@ -139,10 +144,13 @@ class InntektService(
         val ytelsetypeSomOppdateres = grunnlagstype?.tilInntektrapporteringYtelse()
         // Sletter tidligere innhentede inntekter knyttet til ainntekt og skattegrunnlag som ikke finnes i nyeste uttrekk
         val offentligeInntekterSomSkalSlettes =
-            behandling.inntekter.filter { Kilde.OFFENTLIG == it.kilde }
+            behandling.inntekter
+                .filter { Kilde.OFFENTLIG == it.kilde }
                 .filter {
-                    ytelsetypeSomOppdateres != null && it.type == ytelsetypeSomOppdateres ||
-                        ytelsetypeSomOppdateres == null && !inntektsrapporteringerForYtelser.contains(it.type)
+                    ytelsetypeSomOppdateres != null &&
+                        it.type == ytelsetypeSomOppdateres ||
+                        ytelsetypeSomOppdateres == null &&
+                        !inntektsrapporteringerForYtelser.contains(it.type)
                 }.filter { rolle.ident == it.ident }
                 .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
@@ -163,13 +171,23 @@ class InntektService(
         oppdatereInntektRequest.valider()
         secureLogger.info { "Oppdaterer inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid)
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         behandling.validerKanOppdatere()
         return OppdatereInntektResponse(
             inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
             beregnetInntekter = behandling.hentBeregnetInntekter(),
+            beregnetInntekterV2 =
+                behandling.roller
+                    .map {
+                        BeregnetInntekterDto(
+                            it.tilPersonident()!!,
+                            it.rolletype,
+                            behandling.hentBeregnetInntekterForRolle(it),
+                        )
+                    },
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
             notat =
                 BehandlingNotatDto(
@@ -241,7 +259,8 @@ class InntektService(
     ) {
         oppdatereInntekterRequest.valider()
         val behandling =
-            behandlingRepository.findBehandlingById(behandlingsid)
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         oppdatereInntekterRequest.oppdatereInntektsperioder.forEach {
@@ -254,7 +273,8 @@ class InntektService(
         oppdatereInntekterRequest.oppdatereManuelleInntekter.forEach {
             if (it.id != null) {
                 val inntekt =
-                    inntektRepository.findByIdAndKilde(it.id, Kilde.MANUELL)
+                    inntektRepository
+                        .findByIdAndKilde(it.id, Kilde.MANUELL)
                         .orElseThrow { inntektIkkeFunnetException(it.id) }
                 it.oppdatereEksisterendeInntekt(inntekt)
             } else {
@@ -264,8 +284,10 @@ class InntektService(
         }
 
         val manuelleInntekterSomSkalSlettes =
-            inntektRepository.findAllById(oppdatereInntekterRequest.sletteInntekter)
-                .filter { Kilde.MANUELL == it.kilde }.toSet()
+            inntektRepository
+                .findAllById(oppdatereInntekterRequest.sletteInntekter)
+                .filter { Kilde.MANUELL == it.kilde }
+                .toSet()
 
         log.info {
             "Fant ${manuelleInntekterSomSkalSlettes.size} av de oppgitte ${oppdatereInntekterRequest.sletteInntekter} " +
@@ -310,16 +332,17 @@ class InntektService(
             setOf(Inntektsrapportering.AINNTEKT_BEREGNET_3MND, Inntektsrapportering.AINNTEKT_BEREGNET_12MND)
 
         val inntekterSomSkalOppdateres =
-            behandling.inntekter.asSequence()
+            behandling.inntekter
+                .asSequence()
                 .filter { i -> Kilde.OFFENTLIG == i.kilde }
                 .filter { i -> type == i.type }
                 .filter { i -> i.opprinneligFom != null }
-                .filter { i -> rolle.ident == i.ident }.toList()
+                .filter { i -> rolle.ident == i.ident }
+                .toList()
                 .filter { i ->
                     inntekterSomKunIdentifiseresPåType.contains(i.type) ||
                         periode.fom == YearMonth.from(i.opprinneligFom)
-                }
-                .filter { i ->
+                }.filter { i ->
                     inntekterSomKunIdentifiseresPåType.contains(i.type) ||
                         periode.til ==
                         if (i.opprinneligTom != null) {
