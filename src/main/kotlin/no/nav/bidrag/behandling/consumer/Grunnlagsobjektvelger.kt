@@ -31,7 +31,7 @@ enum class Grunnlagsobjektvelger(
     ),
     BARNETILLEGG(
         mapOf(
-            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
