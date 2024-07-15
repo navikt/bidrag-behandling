@@ -17,6 +17,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -262,6 +263,15 @@ data class AndreVoksneIHusstandenGrunnlagDto(
 data class PeriodeAndreVoksneIHusstanden(
     val periode: ÅrMånedsperiode,
     val status: Bostatuskode,
+    val husstandsmedlemmer: List<AndreVoksneIHusstandenDetaljerDto> = emptyList(),
+)
+
+data class AndreVoksneIHusstandenDetaljerDto(
+    val navn: String,
+    val fødselsdato: LocalDate?,
+    val harRelasjonTilBp: Boolean,
+    @Schema(description = "Relasjon til BP. Brukes for debugging", deprecated = true)
+    val relasjon: Familierelasjon,
 )
 
 @Schema(enumAsRef = true, name = "OpplysningerType")

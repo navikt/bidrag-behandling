@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
@@ -19,7 +20,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
 
-fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag =
+fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnlag =
     BeregnValgteInntekterGrunnlag(
         periode =
             ÅrMånedsperiode(
@@ -27,9 +28,9 @@ fun Behandling.tilInntektberegningDto(): BeregnValgteInntekterGrunnlag =
                 finnBeregnTilDato(virkningstidspunktEllerSøktFomDato),
             ),
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
-        bidragsmottakerIdent = Personident(bidragsmottaker?.ident!!),
+        gjelderIdent = Personident(rolle.ident!!),
         grunnlagListe =
-            inntekter.filter { it.taMed }.map {
+            inntekter.filter { it.ident == rolle.ident }.filter { it.taMed }.map {
                 InntektsgrunnlagPeriode(
                     periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
                     beløp = it.belop,
