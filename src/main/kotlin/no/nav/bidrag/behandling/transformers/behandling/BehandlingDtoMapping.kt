@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.begrensAntallPersoner
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiodeDto
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
@@ -262,7 +263,8 @@ fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(periode: ÅrMånedsperiode):
                 it.relasjon != Familierelasjon.INGEN && it.relasjon != Familierelasjon.UKJENT,
                 relasjon = it.relasjon,
             )
-        }?.sorter() ?: emptyList()
+        }?.sorter()
+        ?.begrensAntallPersoner() ?: emptyList()
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(

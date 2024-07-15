@@ -94,6 +94,22 @@ fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirk
         }
     }
 
+fun List<AndreVoksneIHusstandenDetaljerDto>.begrensAntallPersoner(): List<AndreVoksneIHusstandenDetaljerDto> {
+    // Først filtrerer vi ut alle elementer hvor harRelasjonTilBp er true
+    val medRelasjon = this.filter { it.harRelasjonTilBp }
+
+    // Hvis antallet med relasjon er 10 eller mer, returnerer vi bare disse, begrenset til 10
+    if (medRelasjon.size >= 10) {
+        return medRelasjon.take(10)
+    }
+
+    // Hvis det er færre enn 10 med relasjon, tar vi resten fra listen uten relasjon, til vi når 10
+    val utenRelasjon = this.filterNot { it.harRelasjonTilBp }.take(10 - medRelasjon.size)
+
+    // Returnerer en kombinert liste av begge, med relasjon først
+    return medRelasjon + utenRelasjon
+}
+
 fun List<AndreVoksneIHusstandenDetaljerDto>.sorter() =
     sortedWith(
         compareByDescending<AndreVoksneIHusstandenDetaljerDto> { it.harRelasjonTilBp }
