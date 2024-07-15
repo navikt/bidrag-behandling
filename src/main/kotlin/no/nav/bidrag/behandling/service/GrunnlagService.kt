@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
@@ -267,6 +266,16 @@ class GrunnlagService(
                 return
             }
         sisteAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag()
+    }
+
+    @Transactional
+    fun oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        // TODO: Implementere
+    }
+
+    @Transactional
+    fun oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        // TODO: Implementere
     }
 
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
@@ -578,14 +587,6 @@ class GrunnlagService(
             )
 
             if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
-                behandling.husstandsmedlem.add(
-                    Husstandsmedlem(
-                        kilde = Kilde.OFFENTLIG,
-                        behandling = behandling,
-                        rolle = behandling.bidragspliktig,
-                    ),
-                )
-
                 periodisereOgLagreBpsBoforholdAndreVoksne(
                     behandling,
                     innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
@@ -747,6 +748,10 @@ class GrunnlagService(
                 it.aktiv = LocalDateTime.now()
             }
         }
+    }
+
+    fun aktiverGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+        // TODO: Implementere
     }
 
     fun aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {

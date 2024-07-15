@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -172,6 +173,17 @@ val Behandling.særbidragKategori
                 Særbidragskategori.ANNET
             }
         } ?: Særbidragskategori.ANNET
+
+fun Behandling.henteBpHusstandsmedlem(): Husstandsmedlem {
+    val eksisterendeHusstandsmedlem = husstandsmedlem.find { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }
+    return eksisterendeHusstandsmedlem ?: leggeTilBPSomHusstandsmedlem()
+}
+
+private fun Behandling.leggeTilBPSomHusstandsmedlem(): Husstandsmedlem {
+    val bpSomHusstandsmedlem = Husstandsmedlem(this, kilde = Kilde.OFFENTLIG, rolle = this.bidragspliktig!!)
+    this.husstandsmedlem.add(bpSomHusstandsmedlem)
+    return bpSomHusstandsmedlem
+}
 
 fun Behandling.henteAlleBostatusperioder() = husstandsmedlem.flatMap { it.perioder }
 
