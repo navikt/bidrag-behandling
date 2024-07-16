@@ -750,10 +750,6 @@ class GrunnlagService(
         }
     }
 
-    fun aktiverGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
-        // TODO: Implementere
-    }
-
     fun aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {
         val rolleInhentetFor = behandling.rolleGrunnlagSkalHentesFor
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
