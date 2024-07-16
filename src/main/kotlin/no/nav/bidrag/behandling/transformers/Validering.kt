@@ -534,7 +534,7 @@ fun OppdatereAndreVoksneIHusstanden.validere(behandling: Behandling) {
     }
 
     this.oppdaterePeriode?.let { oppdatereAndreVoksne ->
-        oppdatereAndreVoksne.idPeriode.let { periodeid ->
+        oppdatereAndreVoksne.idPeriode?.let { periodeid ->
             val periodeSomSkalOppdateres = husstandsmedlem.perioder.find { periodeid == it.id }
 
             if (husstandsmedlem.perioder.isEmpty() || periodeSomSkalOppdateres == null) {

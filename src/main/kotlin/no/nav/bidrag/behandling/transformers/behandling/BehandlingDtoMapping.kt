@@ -34,7 +34,6 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.begrensAntallPersoner
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
-import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiodeDto
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
@@ -268,13 +267,20 @@ fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(periode: ÅrMånedsperiode):
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
-        husstandsmedlem = husstandsmedlem.sortert().map { it.tilBostatusperiode() }.toSet(),
+        husstandsmedlem =
+            husstandsmedlem
+                .filter {
+                    it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG
+                }.toSet()
+                .sortert()
+                .map { it.tilBostatusperiode() }
+                .toSet(),
         andreVoksneIHusstanden =
-            grunnlag
-                .hentSisteAktiv()
-                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
-                .konvertereData<Set<Bostatus>>()
-                ?.tilBostatusperiodeDto() ?: emptySet(),
+            husstandsmedlem
+                .find {
+                    it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG
+                }?.perioder
+                ?.tilBostatusperiode() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
             BehandlingNotatDto(
