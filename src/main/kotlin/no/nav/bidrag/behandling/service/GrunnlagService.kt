@@ -416,9 +416,8 @@ class GrunnlagService(
         val nyesteIkkeaktiverteBoforhold =
             behandling.grunnlag.hentSisteIkkeAktiv()
                 .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
-                .firstOrNull { it.erBearbeidet }
 
-        if (nyesteIkkeaktiverteBoforhold == null) {
+        if (nyesteIkkeaktiverteBoforhold.firstOrNull { it.erBearbeidet } == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
@@ -428,11 +427,13 @@ class GrunnlagService(
 
         boforholdService.oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
             behandling,
-            commonObjectmapper.readValue<Set<Bostatus>>(nyesteIkkeaktiverteBoforhold.data),
+            commonObjectmapper.readValue<Set<Bostatus>>(nyesteIkkeaktiverteBoforhold.first { it.erBearbeidet }.data),
             overskriveManuelleOpplysninger,
         )
 
-        nyesteIkkeaktiverteBoforhold.aktiv = LocalDateTime.now()
+        nyesteIkkeaktiverteBoforhold.forEach {
+            it.aktiv = LocalDateTime.now()
+        }
     }
 
     private fun aktivereBoforhold(
@@ -678,7 +679,7 @@ class GrunnlagService(
             boforholdService.lagreFørstegangsinnhentingAvAndreVoksneIBpsHusstand(behandling, andreVoksneIHusstanden)
         }
 
-        aktiverGrunnlagForBpsBoforholdHvisIngenEndringerMåAksepteres(behandling)
+        aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
     }
 
     private fun periodisereOgLagreBoforhold(
@@ -725,7 +726,7 @@ class GrunnlagService(
         aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
     }
 
-    fun aktiverGrunnlagForBpsBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+    fun aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
@@ -748,10 +749,6 @@ class GrunnlagService(
                 it.aktiv = LocalDateTime.now()
             }
         }
-    }
-
-    fun aktiverGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
-        // TODO: Implementere
     }
 
     fun aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {
@@ -1484,6 +1481,15 @@ class GrunnlagService(
                 )
             }
 
+            Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
+                lagreGrunnlagHvisEndret(
+                    behandling,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                )
+            }
+
             Grunnlagsdatatype.SIVILSTAND -> {
                 lagreGrunnlagHvisEndret(
                     behandling,
@@ -1512,13 +1518,11 @@ class GrunnlagService(
             }
 
             else -> {
-                if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN != grunnlagsdatatype) {
-                    log.warn {
-                        "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
-                            "i behandling ${behandling.id}"
-                    }
-                    lagringAvGrunnlagFeiletException(behandling.id!!)
+                log.warn {
+                    "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
+                        "i behandling ${behandling.id}"
                 }
+                lagringAvGrunnlagFeiletException(behandling.id!!)
             }
         }
     }
