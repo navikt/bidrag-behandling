@@ -27,6 +27,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
@@ -69,8 +70,8 @@ val inntektsrapporteringSomKreverBarn =
         Inntektsrapportering.KONTANTSTØTTE,
     )
 
-fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> {
-    return stønadsendringListe.map { stønadsendring ->
+fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
+    stønadsendringListe.map { stønadsendring ->
         val barnIdent = stønadsendring.kravhaver
         val barn =
             grunnlagListe.hentPerson(barnIdent.verdi)?.innholdTilObjekt<Person>()
@@ -96,7 +97,6 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> {
                 },
         )
     }
-}
 
 fun VedtakDto.tilBehandling(
     vedtakId: Long,
@@ -121,7 +121,8 @@ fun VedtakDto.tilBehandling(
         if (lesemodus) {
             this.opprettetAvNavn
         } else {
-            TokenUtils.hentSaksbehandlerIdent()
+            TokenUtils
+                .hentSaksbehandlerIdent()
                 ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         }
     val behandling =
@@ -133,6 +134,10 @@ fun VedtakDto.tilBehandling(
                 hentVirkningstidspunkt()?.virkningstidspunkt
                     ?: hentSøknad().søktFraDato,
             opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
+            innkrevingstype =
+                this.stønadsendringListe.firstOrNull()?.innkreving
+                    ?: this.engangsbeløpListe.firstOrNull()?.innkreving
+                    ?: Innkrevingstype.MED_INNKREVING,
             årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
@@ -201,7 +206,8 @@ private fun List<GrunnlagDto>.mapRoller(
 
 private fun List<GrunnlagDto>.mapHusstandsmedlem(behandling: Behandling): MutableSet<Husstandsmedlem> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
-        .groupBy { it.gjelderReferanse }.map {
+        .groupBy { it.gjelderReferanse }
+        .map {
             it.value.tilHusstandsmedlem(it.key!!, behandling, this)
         }.toMutableSet()
 
@@ -231,29 +237,32 @@ private fun List<GrunnlagDto>.mapInntekter(
         behandling.soknadFra == SøktAvType.NAV_BIDRAG && behandling.vedtakstype == Vedtakstype.ENDRING
     if (!lesemodus && !erForskuddOmgjøring) {
         inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }?.let { originalInntekt ->
-            originalInntekt.copy(
-                type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
-            ).run {
-                inntekter.add(this)
-                originalInntekt.taMed = false
-                originalInntekt.datoFom = null
-                originalInntekt.datoTom = null
-            }
+            originalInntekt
+                .copy(
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                ).run {
+                    inntekter.add(this)
+                    originalInntekt.taMed = false
+                    originalInntekt.datoFom = null
+                    originalInntekt.datoTom = null
+                }
         }
 
         inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }?.let { originalInntekt ->
-            originalInntekt.copy(
-                type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
-            ).run {
-                inntekter.add(this)
-                originalInntekt.taMed = false
-                originalInntekt.datoFom = null
-                originalInntekt.datoTom = null
-            }
+            originalInntekt
+                .copy(
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                ).run {
+                    inntekter.add(this)
+                    originalInntekt.taMed = false
+                    originalInntekt.datoFom = null
+                    originalInntekt.datoTom = null
+                }
         }
     }
     val inntekterBeregnet =
-        inntekter.filter { ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
+        inntekter
+            .filter { ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
             .sortedByDescending { it.taMed }
             .distinctBy { listOfNotNull(it.opprinneligFom, it.opprinneligTom, it.type, it.gjelderBarn, it.ident) }
     val andreInntekter = inntekter.filter { !ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
@@ -262,7 +271,10 @@ private fun List<GrunnlagDto>.mapInntekter(
 
 fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
     filtrerBasertPåEgenReferanse(grunnlagstype)
-        .firstOrNull()?.innhold?.get("hentetTidspunkt")?.let {
+        .firstOrNull()
+        ?.innhold
+        ?.get("hentetTidspunkt")
+        ?.let {
             commonObjectmapper.treeToValue(it, LocalDateTime::class.java)
         } ?: LocalDateTime.now()
 
@@ -270,7 +282,8 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     behandling: Behandling,
     lesemodus: Boolean,
 ) = listOf(
-    hentGrunnlagArbeidsforhold().groupBy { it.partPersonId }
+    hentGrunnlagArbeidsforhold()
+        .groupBy { it.partPersonId }
         .map { (gjelderIdent, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.ARBEIDSFORHOLD,
@@ -280,7 +293,8 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus,
             )
         },
-    hentInnhentetSivilstand().groupBy { it.personId }
+    hentInnhentetSivilstand()
+        .groupBy { it.personId }
         .map { (gjelderIdent, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.SIVILSTAND,
@@ -291,7 +305,8 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             )
             // TODO: Legg til beregnet sivilstand
         },
-    hentInnhentetHusstandsmedlem().groupBy { it.partPersonId }
+    hentInnhentetHusstandsmedlem()
+        .groupBy { it.partPersonId }
         .flatMap { (innhentetForIdent, grunnlag) ->
 
             val boforholdPeriodisert =
@@ -308,7 +323,8 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                     lesemodus,
                 ),
             ) +
-                boforholdPeriodisert.filter { it.relatertPersonPersonId != null }
+                boforholdPeriodisert
+                    .filter { it.relatertPersonPersonId != null }
                     .groupBy { it.relatertPersonPersonId }
                     .map {
                         behandling.opprettGrunnlag(
@@ -327,8 +343,8 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
 private fun List<GrunnlagDto>.hentGrunnlagInntekt(
     behandling: Behandling,
     lesemodus: Boolean,
-): List<Grunnlag> {
-    return listOf(
+): List<Grunnlag> =
+    listOf(
         hentBeregnetInntekt().entries.map { (gjelderIdent, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
@@ -339,7 +355,8 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                 erBearbeidet = true,
             )
         },
-        hentBarnetillegListe().groupBy { it.partPersonId }
+        hentBarnetillegListe()
+            .groupBy { it.partPersonId }
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
                     Grunnlagsdatatype.BARNETILLEGG,
@@ -349,7 +366,8 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                     lesemodus,
                 )
             },
-        hentUtvidetbarnetrygdListe().groupBy { it.personId }
+        hentUtvidetbarnetrygdListe()
+            .groupBy { it.personId }
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
                     Grunnlagsdatatype.UTVIDET_BARNETRYGD,
@@ -359,7 +377,8 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                     lesemodus,
                 )
             },
-        hentSmåbarnstilleggListe().groupBy { it.personId }
+        hentSmåbarnstilleggListe()
+            .groupBy { it.personId }
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
@@ -369,7 +388,8 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                     lesemodus,
                 )
             },
-        hentBarnetilsynListe().groupBy { it.partPersonId }
+        hentBarnetilsynListe()
+            .groupBy { it.partPersonId }
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
                     Grunnlagsdatatype.BARNETILSYN,
@@ -379,7 +399,8 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                     lesemodus,
                 )
             },
-        hentKontantstøtteListe().groupBy { it.partPersonId }
+        hentKontantstøtteListe()
+            .groupBy { it.partPersonId }
             .map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
                     Grunnlagsdatatype.KONTANTSTØTTE,
@@ -400,7 +421,6 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                 )
             },
     ).flatten()
-}
 
 fun Behandling.opprettGrunnlag(
     type: Grunnlagsdatatype,
@@ -425,15 +445,23 @@ fun Behandling.opprettGrunnlag(
 private fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,
     medIVedtak: Boolean,
-) = grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
+) = grunnlagListe
+    .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
     .map { it.innholdTilObjekt<NotatGrunnlag>() }
-    .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }?.innhold
+    .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }
+    ?.innhold
 
-private fun VedtakDto.avslagskode(): Resultatkode? {
-    return if (stønadsendringListe.all { it.periodeListe.size == 1 }) {
+private fun VedtakDto.avslagskode(): Resultatkode? =
+    if (stønadsendringListe.all { it.periodeListe.size == 1 }) {
         val virkningstidspunkt = hentVirkningstidspunkt()
         if (virkningstidspunkt == null) {
-            Resultatkode.fraKode(stønadsendringListe.first().periodeListe.first().resultatkode)
+            Resultatkode.fraKode(
+                stønadsendringListe
+                    .first()
+                    .periodeListe
+                    .first()
+                    .resultatkode,
+            )
         } else if (virkningstidspunkt.avslag != null) {
             virkningstidspunkt.avslag
         } else {
@@ -442,17 +470,18 @@ private fun VedtakDto.avslagskode(): Resultatkode? {
     } else {
         null
     }
-}
 
-private fun VedtakDto.hentVirkningstidspunkt(): VirkningstidspunktGrunnlag? {
-    return grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
-        .firstOrNull()?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
-}
+private fun VedtakDto.hentVirkningstidspunkt(): VirkningstidspunktGrunnlag? =
+    grunnlagListe
+        .filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
+        .firstOrNull()
+        ?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
 
-private fun VedtakDto.hentSøknad(): SøknadGrunnlag {
-    return grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD).first()
+private fun VedtakDto.hentSøknad(): SøknadGrunnlag =
+    grunnlagListe
+        .filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)
+        .first()
         .innholdTilObjekt<SøknadGrunnlag>()
-}
 
 private fun List<BaseGrunnlag>.tilHusstandsmedlem(
     gjelderReferanse: Grunnlagsreferanse,
@@ -466,7 +495,8 @@ private fun List<BaseGrunnlag>.tilHusstandsmedlem(
     val gjelderBarn = gjelderBarnGrunnlag.innholdTilObjekt<Person>()
 
     val erOffentligKilde =
-        grunnlagsListe.hentInnhentetHusstandsmedlem()
+        grunnlagsListe
+            .hentInnhentetHusstandsmedlem()
             .any { it.relatertPersonPersonId == gjelderBarnGrunnlag.personIdent }
     val husstandsmedlemBO =
         Husstandsmedlem(
@@ -477,16 +507,20 @@ private fun List<BaseGrunnlag>.tilHusstandsmedlem(
             behandling = behandling,
         )
     husstandsmedlemBO.perioder =
-        this.map {
-            val bosstatusPeriode = it.innholdTilObjekt<BostatusPeriode>()
-            Bostatusperiode(
-                husstandsmedlem = husstandsmedlemBO,
-                datoFom = bosstatusPeriode.periode.fom.atDay(1),
-                datoTom = bosstatusPeriode.periode.til?.atDay(1)?.minusDays(1),
-                bostatus = bosstatusPeriode.bostatus,
-                kilde = if (bosstatusPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
-            )
-        }.toMutableSet()
+        this
+            .map {
+                val bosstatusPeriode = it.innholdTilObjekt<BostatusPeriode>()
+                Bostatusperiode(
+                    husstandsmedlem = husstandsmedlemBO,
+                    datoFom = bosstatusPeriode.periode.fom.atDay(1),
+                    datoTom =
+                        bosstatusPeriode.periode.til
+                            ?.atDay(1)
+                            ?.minusDays(1),
+                    bostatus = bosstatusPeriode.bostatus,
+                    kilde = if (bosstatusPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
+                )
+            }.toMutableSet()
     return husstandsmedlemBO
 }
 
@@ -500,7 +534,10 @@ private fun BaseGrunnlag.tilSivilstand(
         id = id,
         sivilstand = sivilstandPeriode.sivilstand,
         datoFom = sivilstandPeriode.periode.fom.atDay(1),
-        datoTom = sivilstandPeriode.periode.til?.atDay(1)?.minusDays(1),
+        datoTom =
+            sivilstandPeriode.periode.til
+                ?.atDay(1)
+                ?.minusDays(1),
         behandling = behandling,
         kilde = if (sivilstandPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
     )
@@ -523,9 +560,20 @@ private fun BaseGrunnlag.tilInntekt(
         )
     }
     val datoFom = if (inntektPeriode.valgt) inntektPeriode.periode.fom.atDay(1) else null
-    val datoTom = if (inntektPeriode.valgt) inntektPeriode.periode.til?.atDay(1)?.minusDays(1) else null
+    val datoTom =
+        if (inntektPeriode.valgt) {
+            inntektPeriode.periode.til
+                ?.atDay(1)
+                ?.minusDays(1)
+        } else {
+            null
+        }
     val opprinneligFom = inntektPeriode.opprinneligPeriode?.fom?.atDay(1)
-    val opprinneligTom = inntektPeriode.opprinneligPeriode?.til?.atDay(1)?.minusDays(1)
+    val opprinneligTom =
+        inntektPeriode.opprinneligPeriode
+            ?.til
+            ?.atDay(1)
+            ?.minusDays(1)
     val inntektBO =
         Inntekt(
             id = id,
@@ -555,15 +603,16 @@ private fun BaseGrunnlag.tilInntekt(
         )
 
     inntektBO.inntektsposter =
-        inntektPeriode.inntekstpostListe.mapIndexed { i, it ->
-            Inntektspost(
-                id = if (id != null) id + i else null,
-                kode = it.kode,
-                inntektstype = it.inntekstype,
-                beløp = it.beløp,
-                inntekt = inntektBO,
-            )
-        }.toMutableSet()
+        inntektPeriode.inntekstpostListe
+            .mapIndexed { i, it ->
+                Inntektspost(
+                    id = if (id != null) id + i else null,
+                    kode = it.kode,
+                    inntektstype = it.inntekstype,
+                    beløp = it.beløp,
+                    inntekt = inntektBO,
+                )
+            }.toMutableSet()
 
     return inntektBO
 }
@@ -608,13 +657,14 @@ private fun Inntekt.copy(
             opprinneligTom = opprinneligTom,
         )
     nyInntekt.inntektsposter =
-        inntektsposter.map {
-            Inntektspost(
-                beløp = it.beløp,
-                inntektstype = it.inntektstype,
-                kode = it.kode,
-                inntekt = nyInntekt,
-            )
-        }.toMutableSet()
+        inntektsposter
+            .map {
+                Inntektspost(
+                    beløp = it.beløp,
+                    inntektstype = it.inntektstype,
+                    kode = it.kode,
+                    inntekt = nyInntekt,
+                )
+            }.toMutableSet()
     return nyInntekt
 }

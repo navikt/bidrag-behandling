@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -135,6 +136,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                         engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
                         stønadstype = null,
                         vedtakstype = Vedtakstype.FASTSETTELSE,
+                        innkrevingstype = Innkrevingstype.UTEN_INNKREVING,
                         kategori =
                             OpprettKategoriRequestDto(
                                 kategori = Særbidragskategori.KONFIRMASJON.name,
@@ -157,6 +159,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             behandling.engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
             behandling.særbidragKategori shouldBe Særbidragskategori.KONFIRMASJON
             behandling.stonadstype shouldBe null
+            behandling.innkrevingstype shouldBe Innkrevingstype.UTEN_INNKREVING
             behandling.utgift shouldBe null
         }
 

@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -96,6 +97,11 @@ class BehandlingService(
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
+                innkrevingstype =
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD -> Innkrevingstype.MED_INNKREVING
+                        else -> opprettBehandling.innkrevingstype
+                    },
                 virkningstidspunkt =
                     when (opprettBehandling.tilType()) {
                         TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> opprettBehandling.søktFomDato
