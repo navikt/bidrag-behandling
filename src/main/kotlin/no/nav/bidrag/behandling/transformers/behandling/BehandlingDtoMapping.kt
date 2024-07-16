@@ -235,7 +235,7 @@ fun List<Grunnlag>.tilAndreVoksneIHusstanden() =
     )
 
 fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> =
-    find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+    find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
         .konvertereData<Set<Bostatus>>()
         ?.map {
             val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
@@ -248,7 +248,7 @@ fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHu
 
 fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(periode: ÅrMånedsperiode): List<AndreVoksneIHusstandenDetaljerDto> =
     hentSisteAktiv()
-        .find { it.type == Grunnlagsdatatype.BOFORHOLD && !it.erBearbeidet }
+        .find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && !it.erBearbeidet }
         .konvertereData<List<RelatertPersonGrunnlagDto>>()
         ?.filter { it.relasjon != Familierelasjon.BARN }
         ?.filter {
@@ -272,7 +272,7 @@ fun Behandling.tilBoforholdV2() =
         andreVoksneIHusstanden =
             grunnlag
                 .hentSisteAktiv()
-                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
                 .konvertereData<Set<Bostatus>>()
                 ?.tilBostatusperiodeDto() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),

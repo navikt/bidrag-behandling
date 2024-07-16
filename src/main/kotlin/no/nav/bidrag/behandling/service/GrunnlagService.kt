@@ -678,7 +678,7 @@ class GrunnlagService(
             boforholdService.lagreFørstegangsinnhentingAvAndreVoksneIBpsHusstand(behandling, andreVoksneIHusstanden)
         }
 
-        aktiverGrunnlagForBpsBoforholdHvisIngenEndringerMåAksepteres(behandling)
+        aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
     }
 
     private fun periodisereOgLagreBoforhold(
@@ -725,7 +725,7 @@ class GrunnlagService(
         aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
     }
 
-    fun aktiverGrunnlagForBpsBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+    fun aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
@@ -1484,6 +1484,15 @@ class GrunnlagService(
                 )
             }
 
+            Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
+                lagreGrunnlagHvisEndret(
+                    behandling,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                )
+            }
+
             Grunnlagsdatatype.SIVILSTAND -> {
                 lagreGrunnlagHvisEndret(
                     behandling,
@@ -1512,13 +1521,11 @@ class GrunnlagService(
             }
 
             else -> {
-                if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN != grunnlagsdatatype) {
-                    log.warn {
-                        "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
-                            "i behandling ${behandling.id}"
-                    }
-                    lagringAvGrunnlagFeiletException(behandling.id!!)
+                log.warn {
+                    "Forsøkte å lagre grunnlag av type $grunnlagsdatatype for rolle ${rolleInhentetFor.rolletype} " +
+                        "i behandling ${behandling.id}"
                 }
+                lagringAvGrunnlagFeiletException(behandling.id!!)
             }
         }
     }

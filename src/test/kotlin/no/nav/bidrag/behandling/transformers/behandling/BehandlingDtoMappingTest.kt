@@ -4,8 +4,11 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -186,6 +189,20 @@ class BehandlingDtoMappingTest {
             kategori.beskrivelse shouldBe "Høreapparat"
             notat.kunINotat shouldBe "Notat utgift"
             utgifter shouldHaveSize 0
+        }
+    }
+
+    @Test
+    fun `mappe behandlingDto for særbidrag  med andre voksne i husstanden`() {
+        // gitt
+        val behandling = oppretteBehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG, true, true)
+
+        // hvis
+        val behandlingDto = behandling.tilBehandlingDtoV2(behandling.grunnlagListe.toSet().hentSisteAktiv())
+
+        // så
+        assertSoftly(behandlingDto) { b ->
+            b.aktiveGrunnlagsdata.andreVoksneIHusstanden?.perioder?.shouldHaveSize(3)
         }
     }
 }

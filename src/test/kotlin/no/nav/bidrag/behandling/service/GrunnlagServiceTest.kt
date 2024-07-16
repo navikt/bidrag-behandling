@@ -1436,10 +1436,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBp = behandling.grunnlag.filter { it.rolle == behandling.bidragspliktig }
 
                 assertSoftly(grunnlagBp) { gbp ->
-                    gbp shouldHaveSize 8
+                    gbp shouldHaveSize 9
                     gbp.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 3
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
@@ -2014,7 +2015,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     }
                 }
 
-                val bfg = behandling.grunnlag.find { Grunnlagsdatatype.BOFORHOLD == it.type && !it.erBearbeidet }
+                val bfg = behandling.grunnlag.find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && !it.erBearbeidet }
 
                 val relatertPerson =
                     bfg.konvertereData<List<RelatertPersonGrunnlagDto>>()
@@ -2047,7 +2048,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag
                         .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type },
                 ) { voksne ->
-                    voksne shouldHaveSize 2
+                    voksne shouldHaveSize 3
                     voksne.filter { it.aktiv == null } shouldHaveSize 1
                 }
 
@@ -2066,7 +2067,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag
                         .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type },
                 ) { voksne ->
-                    voksne shouldHaveSize 2
+                    voksne shouldHaveSize 3
                     voksne.filter { it.aktiv == null } shouldHaveSize 0
                 }
             }
