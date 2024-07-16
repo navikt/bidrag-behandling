@@ -49,11 +49,9 @@ data class OppdatereAndreVoksneIHusstandenperiode(
     val idPeriode: Long? = null,
     @Schema(
         description = "Periode, fra-og-med til-og-med måned. Ignoreres for særbidrag",
-        type = "string",
         format = "date",
         example = "2025-01",
     )
-    @JsonFormat(pattern = "yyyy-MM")
     val periode: ÅrMånedsperiode = ÅrMånedsperiode(YearMonth.now(), YearMonth.now()),
     @Schema(required = true)
     val borMedAndreVoksne: Boolean = true,
