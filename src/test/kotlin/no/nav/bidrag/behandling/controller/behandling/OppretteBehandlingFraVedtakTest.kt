@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.junit.jupiter.api.Assertions
@@ -71,6 +72,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 15
             grunnlag shouldHaveSize 36
+            innkrevingstype shouldBe Innkrevingstype.MED_INNKREVING
             opprinneligVedtakstidspunkt shouldHaveSize 1
             opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
             refVedtaksid shouldBe 12333

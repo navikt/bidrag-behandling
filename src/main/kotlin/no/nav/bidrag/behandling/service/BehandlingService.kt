@@ -96,6 +96,7 @@ class BehandlingService(
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
+                innkrevingstype = opprettBehandling.innkrevingstype,
                 virkningstidspunkt =
                     when (opprettBehandling.tilType()) {
                         TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> opprettBehandling.søktFomDato

@@ -23,6 +23,7 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -38,6 +39,7 @@ import java.time.LocalDateTime
 data class BehandlingDetaljerDtoV2(
     val id: Long,
     val type: TypeBehandling,
+    val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
     val vedtakstype: Vedtakstype,
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
@@ -70,6 +72,7 @@ data class BehandlingDetaljerDtoV2(
 data class BehandlingDtoV2(
     val id: Long,
     val type: TypeBehandling,
+    val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
     val vedtakstype: Vedtakstype,
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
