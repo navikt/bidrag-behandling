@@ -101,6 +101,9 @@ fun List<Grunnlag>.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag: List<G
                     PeriodeAndreVoksneIHusstanden(
                         periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
                         status = it.bostatus!!,
+                        husstandsmedlemmer =
+                            this.toSet()
+                                .hentAndreVoksneHusstandForPeriode(ÅrMånedsperiode(it.periodeFom!!, it.periodeTom), false),
                     )
                 }.toSet(),
             innhentet = nyttGrunnlag?.innhentet ?: LocalDateTime.now(),

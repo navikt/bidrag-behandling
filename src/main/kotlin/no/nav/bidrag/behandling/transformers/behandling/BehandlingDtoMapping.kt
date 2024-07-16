@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -227,13 +228,13 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
             )
         }.toSet()
 
-fun List<Grunnlag>.tilAndreVoksneIHusstanden() =
+fun List<Grunnlag>.tilAndreVoksneIHusstanden(erAktivert: Boolean) =
     AndreVoksneIHusstandenGrunnlagDto(
-        perioder = tilPeriodeAndreVoksneIHusstanden(),
+        perioder = tilPeriodeAndreVoksneIHusstanden(erAktivert),
         innhentet = LocalDateTime.now(),
     )
 
-fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> =
+private fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(erAktivert: Boolean = true): Set<PeriodeAndreVoksneIHusstanden> =
     find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
         .konvertereData<Set<Bostatus>>()
         ?.map {
@@ -241,12 +242,17 @@ fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHu
             PeriodeAndreVoksneIHusstanden(
                 periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
                 status = it.bostatus!!,
-                husstandsmedlemmer = this.toSet().hentAndreVoksneHusstandForPeriode(periode),
+                husstandsmedlemmer = this.toSet().hentAndreVoksneHusstandForPeriode(periode, erAktivert),
             )
         }?.toSet() ?: emptySet()
 
-fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(periode: ÅrMånedsperiode): List<AndreVoksneIHusstandenDetaljerDto> =
-    hentSisteAktiv()
+fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(
+    periode: ÅrMånedsperiode,
+    erAktivert: Boolean = true,
+): List<AndreVoksneIHusstandenDetaljerDto> {
+    val grunnlag = if (erAktivert) hentSisteAktiv() else hentSisteIkkeAktiv()
+
+    return grunnlag
         .find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && !it.erBearbeidet }
         .konvertereData<List<RelatertPersonGrunnlagDto>>()
         ?.filter { it.relasjon != Familierelasjon.BARN }
@@ -264,6 +270,7 @@ fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(periode: ÅrMånedsperiode):
             )
         }?.sorter()
         ?.begrensAntallPersoner() ?: emptyList()
+}
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
@@ -369,7 +376,7 @@ fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
                 ?: emptySet(),
         husstandsmedlem =
             filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
-        andreVoksneIHusstanden = tilAndreVoksneIHusstanden(),
+        andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
         sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )
