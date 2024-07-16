@@ -12,24 +12,31 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 
 fun Set<Bostatusperiode>.tilBostatusperiode() =
-    this.map {
-        BostatusperiodeDto(
-            it.id,
-            it.datoFom,
-            it.datoTom,
-            it.bostatus,
-            it.kilde,
-        )
-    }.sortedBy { it.datoFom }.toSet()
+    this
+        .map {
+            BostatusperiodeDto(
+                it.id,
+                it.datoFom,
+                it.datoTom,
+                it.bostatus,
+                it.kilde,
+            )
+        }.sortedBy { it.datoFom }
+        .toSet()
 
 fun Husstandsmedlem.tilBostatusperiode() =
     HusstandsmedlemDtoV2(
         this.id,
         this.kilde,
         !this.ident.isNullOrBlank() && behandling.søknadsbarn.map { it.ident }.contains(this.ident),
-        this.perioder.sortedBy { it.datoFom }.toSet().tilBostatusperiode(),
+        this.perioder
+            .sortedBy { it.datoFom }
+            .toSet()
+            .tilBostatusperiode(),
         this.ident,
         this.navn ?: hentPersonVisningsnavn(this.ident),
         this.fødselsdato ?: this.rolle!!.fødselsdato,
@@ -37,11 +44,14 @@ fun Husstandsmedlem.tilBostatusperiode() =
 
 fun Husstandsmedlem.tilOppdatereBoforholdResponse(behandling: Behandling) =
     OppdatereBoforholdResponse(
-        oppdatertHusstandsmedlem = this.tilBostatusperiode(),
+        oppdatertePerioderMedAndreVoksne =
+            (rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG).ifTrue { perioder.tilBostatusperiode() } ?: emptySet(),
+        oppdatertHusstandsmedlem = (rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG).ifTrue { tilBostatusperiode() },
         valideringsfeil =
             BoforholdValideringsfeil(
                 husstandsmedlem =
-                    behandling.husstandsmedlem.validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                    behandling.husstandsmedlem
+                        .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
                         .filter { it.harFeil },
             ),
     )

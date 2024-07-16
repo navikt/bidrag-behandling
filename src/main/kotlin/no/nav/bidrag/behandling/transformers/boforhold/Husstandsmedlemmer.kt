@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.database.datamodell.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
+import no.nav.bidrag.behandling.service.BoforholdService.Companion.opprettDefaultPeriodeForAndreVoksneIHusstand
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
 import no.nav.bidrag.boforhold.dto.BoforholdResponse
@@ -244,6 +245,14 @@ fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdRe
     perioder.addAll(nyePerioder.tilPerioder(this))
     if (perioder.isEmpty()) {
         perioder.add(opprettDefaultPeriodeForOffentligHusstandsmedlem())
+    }
+}
+
+fun Husstandsmedlem.overskriveAndreVoksneIHusstandMedBearbeidaPerioder(nyePerioder: List<Bostatus>) {
+    perioder.clear()
+    perioder.addAll(nyePerioder.tilPerioder(this))
+    if (perioder.isEmpty()) {
+        perioder.add(opprettDefaultPeriodeForAndreVoksneIHusstand())
     }
 }
 
