@@ -416,9 +416,9 @@ class GrunnlagService(
         val nyesteIkkeaktiverteBoforhold =
             behandling.grunnlag.hentSisteIkkeAktiv()
                 .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
-                .firstOrNull { it.erBearbeidet }
 
-        if (nyesteIkkeaktiverteBoforhold == null) {
+
+        if (nyesteIkkeaktiverteBoforhold.firstOrNull { it.erBearbeidet } == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
@@ -428,11 +428,13 @@ class GrunnlagService(
 
         boforholdService.oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
             behandling,
-            commonObjectmapper.readValue<Set<Bostatus>>(nyesteIkkeaktiverteBoforhold.data),
+            commonObjectmapper.readValue<Set<Bostatus>>(nyesteIkkeaktiverteBoforhold.first { it.erBearbeidet }.data),
             overskriveManuelleOpplysninger,
         )
 
-        nyesteIkkeaktiverteBoforhold.aktiv = LocalDateTime.now()
+        nyesteIkkeaktiverteBoforhold.forEach {
+            it.aktiv =LocalDateTime.now()
+        }
     }
 
     private fun aktivereBoforhold(
