@@ -1001,7 +1001,9 @@ private fun oppretteBoforhold(
                         BorISammeHusstandDto(
                             periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(2).withDayOfMonth(1),
                             periodeTil =
-                                behandling.virkningstidspunktEllerSøktFomDato.plusMonths(6).withDayOfMonth(1)
+                                behandling.virkningstidspunktEllerSøktFomDato
+                                    .plusMonths(6)
+                                    .withDayOfMonth(1)
                                     .minusDays(1),
                         ),
                     ),
@@ -1053,14 +1055,14 @@ private fun oppretteBoforhold(
     )
 
     val boforholdPeriodisert =
-        BoforholdApi.beregnBoforholdBarnV2(
+        BoforholdApi.beregnBoforholdBarnV3(
             behandling.virkningstidspunktEllerSøktFomDato,
             grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
         )
 
     boforholdPeriodisert
-        .filter { it.relatertPersonPersonId != null }
-        .groupBy { it.relatertPersonPersonId }
+        .filter { it.gjelderPersonId != null }
+        .groupBy { it.gjelderPersonId }
         .forEach {
             behandling.grunnlag.add(
                 Grunnlag(
