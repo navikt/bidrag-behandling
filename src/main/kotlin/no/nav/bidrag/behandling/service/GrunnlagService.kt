@@ -417,7 +417,6 @@ class GrunnlagService(
             behandling.grunnlag.hentSisteIkkeAktiv()
                 .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
 
-
         if (nyesteIkkeaktiverteBoforhold.firstOrNull { it.erBearbeidet } == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
@@ -433,7 +432,7 @@ class GrunnlagService(
         )
 
         nyesteIkkeaktiverteBoforhold.forEach {
-            it.aktiv =LocalDateTime.now()
+            it.aktiv = LocalDateTime.now()
         }
     }
 
