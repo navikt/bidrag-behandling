@@ -337,8 +337,7 @@ class VedtakService(
                         resultatkode = Resultatkode.SÆRBIDRAG_INNVILGET.name, // TODO: RES
                         valutakode = "NOK",
                         betaltBeløp = utgift!!.totalBeløpBetaltAvBp,
-                        // TODO: Legg til støtte for å finne ut om det er med eller uten innkreving
-                        innkreving = Innkrevingstype.MED_INNKREVING,
+                        innkreving = innkrevingstype!!,
                         skyldner = tilSkyldner(),
                         omgjørVedtakId = refVedtaksid?.toInt(),
                         kravhaver =
