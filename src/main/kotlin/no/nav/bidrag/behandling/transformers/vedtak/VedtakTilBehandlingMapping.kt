@@ -27,6 +27,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
@@ -133,6 +134,10 @@ fun VedtakDto.tilBehandling(
                 hentVirkningstidspunkt()?.virkningstidspunkt
                     ?: hentSøknad().søktFraDato,
             opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
+            innkrevingstype =
+                this.stønadsendringListe.firstOrNull()?.innkreving
+                    ?: this.engangsbeløpListe.firstOrNull()?.innkreving
+                    ?: Innkrevingstype.MED_INNKREVING,
             årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,

@@ -88,8 +88,8 @@ fun InntektPost.erLik(inntektPost: Inntektspost): Boolean = kode == inntektPost.
 
 fun List<Grunnlag>.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag: List<Grunnlag>): AndreVoksneIHusstandenGrunnlagDto? {
     val aktivtGrunnlag =
-        aktiveGrunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet }
-    val nyttGrunnlag = find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+        aktiveGrunnlag.find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
+    val nyttGrunnlag = find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
     val aktiveData = aktivtGrunnlag.konvertereData<Set<Bostatus>>()?.toSet()
     val nyeData = nyttGrunnlag.konvertereData<Set<Bostatus>>()?.toSet()
     if (aktiveData != null && nyeData != null && !nyeData.erLik(aktiveData)) {
@@ -102,7 +102,9 @@ fun List<Grunnlag>.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag: List<G
                         PeriodeAndreVoksneIHusstanden(
                             periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
                             status = it.bostatus!!,
-                        )
+                        husstandsmedlemmer =
+                            this.toSet()
+                                .hentAndreVoksneHusstandForPeriode(ÅrMånedsperiode(it.periodeFom!!, it.periodeTom), false),)
                     }.toSet(),
             innhentet = nyttGrunnlag?.innhentet ?: LocalDateTime.now(),
         )

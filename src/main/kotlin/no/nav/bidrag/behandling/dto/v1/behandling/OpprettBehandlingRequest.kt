@@ -38,7 +38,7 @@ data class OpprettBehandlingRequest(
     val søknadsid: Long,
     val søknadsreferanseid: Long? = null,
     val kategori: OpprettKategoriRequestDto? = null,
-    val innkreving: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,
+    val innkrevingstype: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,
 )
 
 fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)
