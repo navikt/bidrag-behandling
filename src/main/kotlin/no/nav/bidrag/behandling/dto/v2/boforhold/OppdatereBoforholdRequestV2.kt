@@ -8,16 +8,21 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.time.LocalDate
+import java.time.YearMonth
 
 @Schema(description = "Oppdaterer husstandsmedlem, sivilstand, eller notat")
 data class OppdatereBoforholdRequestV2(
+    val oppdaterePeriodeMedAndreVoksneIHusstand: OppdatereAndreVoksneIHusstanden? = null,
     val oppdatereHusstandsmedlem: OppdatereHusstandsmedlem? = null,
     val oppdatereSivilstand: OppdatereSivilstand? = null,
     val oppdatereNotat: OppdaterNotat? = null,
 )
 
 data class OppdatereBoforholdResponse(
+    @Schema(description = "Oppdaterte perioder med andre voksne i Bps husstand")
+    val oppdatertePerioderMedAndreVoksne: Set<BostatusperiodeDto> = emptySet(),
     @Schema(description = "Husstandsmedlem som ble opprettet")
     val oppdatertHusstandsmedlem: HusstandsmedlemDtoV2? = null,
     val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
@@ -27,6 +32,30 @@ data class OppdatereBoforholdResponse(
     @Deprecated("Erstattes av oppdatertHusstandsmedlem")
     val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = oppdatertHusstandsmedlem
 }
+
+data class OppdatereAndreVoksneIHusstanden(
+    @Schema(description = "Oppdatere bor-med-andre-voksne-status på periode")
+    val oppdaterePeriode: OppdatereAndreVoksneIHusstandenperiode? = null,
+    @Schema(type = "Long", description = "Id til perioden som skal slettes")
+    val slettePeriode: Long? = null,
+    @Schema(type = "Long", description = "Angi om historikken skal tilbakestilles til siste aktiverte grunnlagsdata")
+    val tilbakestilleHistorikk: Boolean = false,
+    @Schema(type = "Long", description = "Angi om siste endring skal angres")
+    val angreSisteEndring: Boolean = false,
+)
+
+data class OppdatereAndreVoksneIHusstandenperiode(
+    @Schema(type = "Long", description = "Id til bostatusperioden som skal oppdateres, oppretter ny hvis null")
+    val idPeriode: Long? = null,
+    @Schema(
+        description = "Periode, fra-og-med til-og-med måned. Ignoreres for særbidrag",
+        format = "date",
+        example = "2025-01",
+    )
+    val periode: ÅrMånedsperiode = ÅrMånedsperiode(YearMonth.now(), YearMonth.now()),
+    @Schema(required = true)
+    val borMedAndreVoksne: Boolean = true,
+)
 
 data class OppdatereHusstandsmedlem(
     @Schema(description = "Informasjon om husstandsmedlem som skal opprettes")
@@ -60,6 +89,7 @@ data class OppdatereBostatusperiode(
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
+    val periode: ÅrMånedsperiode = ÅrMånedsperiode(YearMonth.now(), YearMonth.now()),
     @Schema(required = true)
     val bostatus: Bostatuskode,
 ) {

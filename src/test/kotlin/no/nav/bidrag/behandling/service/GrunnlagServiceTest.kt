@@ -1423,13 +1423,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
 
                 assertSoftly(grunnlagBm) { gbm ->
-                    gbm shouldHaveSize 6
+                    gbm shouldHaveSize 8
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
+                    gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
-                    gbm.filter { it.erBearbeidet } shouldHaveSize 4
+                    gbm.filter { it.erBearbeidet } shouldHaveSize 5
                 }
 
                 val grunnlagBp = behandling.grunnlag.filter { it.rolle == behandling.bidragspliktig }
@@ -1833,13 +1834,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandlingRepository.save(behandling)
 
                 assertSoftly(behandling.grunnlag) { g ->
-                    g shouldHaveSize 6
-                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 6
-                    g.filter { it.aktiv != null } shouldHaveSize 3
-                    g.filter { it.erBearbeidet } shouldHaveSize 4
+                    g shouldHaveSize 3
+                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 3
+                    g.filter { it.aktiv != null } shouldHaveSize 1
+                    g.filter { it.erBearbeidet } shouldHaveSize 1
                     g.filter { !it.erBearbeidet && it.gjelder == null } shouldHaveSize 2
-                    g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 2
-                    g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 2
+                    g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet } shouldHaveSize 1
                 }
 
                 // hvis
@@ -1851,11 +1851,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
                 assertSoftly(boforhold) { sb ->
-                    sb.size shouldBe 6
-                    sb.filter { it.aktiv != null } shouldHaveSize 4
-                    sb.filter { it.erBearbeidet } shouldHaveSize 4
+                    sb.size shouldBe 3
+                    sb.filter { it.aktiv != null } shouldHaveSize 2
+                    sb.filter { it.erBearbeidet } shouldHaveSize 1
                     sb.filter { !it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
-                    sb.filter { it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
+                    sb.filter { it.erBearbeidet && it.aktiv == null } shouldHaveSize 0
                 }
             }
 
@@ -1918,7 +1918,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val endretBoforhold =
                     listOf(
                         endretBoforholdTestbarn1!!,
-                        dataBoforhold.find { testdataBarn2.ident == it.gjelderPersonId }!!,
+                        dataBoforhold.find { testdataBarn1.ident == it.gjelderPersonId }!!,
                     )
 
                 behandling.grunnlag.add(
@@ -1940,7 +1940,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     )
 
                 bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
-                    val aktivert = if (it.key == testdataBarn2.ident) null else LocalDateTime.now().minusDays(1)
+                    val aktivert = if (it.key == testdataBarn1.ident) null else LocalDateTime.now().minusDays(1)
                     behandling.grunnlag.add(
                         Grunnlag(
                             behandling,
@@ -1959,33 +1959,27 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandlingRepository.save(behandling)
 
                 assertSoftly(behandling.grunnlag) { g ->
-                    g shouldHaveSize 6
-                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 6
-                    g.filter { it.aktiv != null } shouldHaveSize 4
-                    g.filter { it.erBearbeidet } shouldHaveSize 4
+                    g shouldHaveSize 3
+                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 3
+                    g.filter { it.aktiv != null } shouldHaveSize 1
+                    g.filter { it.erBearbeidet } shouldHaveSize 1
                     g.filter { !it.erBearbeidet && it.gjelder == null && it.aktiv === null } shouldHaveSize 1
-                    g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet && it.aktiv != null } shouldHaveSize 2
-                    g.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
-                }
-
-                assertSoftly(behandling.husstandsmedlem) { hb ->
-                    hb shouldHaveSize 2
-                    hb.filter { Kilde.OFFENTLIG == it.kilde } shouldHaveSize 2
+                    g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet && it.aktiv != null } shouldHaveSize 0
                 }
 
                 // hvis
                 grunnlagService.aktivereGrunnlag(
                     behandling,
-                    AktivereGrunnlagRequestV2(Personident(testdataBarn2.ident), Grunnlagsdatatype.BOFORHOLD, false),
+                    AktivereGrunnlagRequestV2(Personident(testdataBarn1.ident), Grunnlagsdatatype.BOFORHOLD, false),
                 )
 
                 // så
                 val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
                 assertSoftly(boforhold) { b ->
-                    b.size shouldBe 6
-                    b.filter { it.aktiv != null } shouldHaveSize 6
-                    b.filter { it.erBearbeidet } shouldHaveSize 4
-                    b.filter { testdataBarn2.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 0
+                    b.size shouldBe 3
+                    b.filter { it.aktiv != null } shouldHaveSize 3
+                    b.filter { it.erBearbeidet } shouldHaveSize 1
+                    b.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 0
                 }
             }
 
@@ -2349,10 +2343,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 Mockito
                     .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
                     .thenReturn(testdataBarn1.tilPersonDto())
-
-                assertSoftly(behandling.husstandsmedlem) {
-                    it.size shouldBe 2
-                }
 
                 testdataManager.oppretteOgLagreGrunnlag(
                     behandling = behandling,

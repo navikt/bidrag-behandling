@@ -13,7 +13,9 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
+import no.nav.bidrag.behandling.database.datamodell.henteBpHusstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.henteLagretSivilstandshistorikk
+import no.nav.bidrag.behandling.database.datamodell.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteSisteSivilstand
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.lagreSivilstandshistorikk
@@ -23,6 +25,8 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
@@ -31,9 +35,12 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.boforhold.overskriveAndreVoksneIHusstandMedBearbeidaPerioder
+import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaBostatusperioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaSivilstandshistorikk
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlem
@@ -112,21 +119,11 @@ class BoforholdService(
             .filter { (Kilde.OFFENTLIG == it.kilde) }
             .filter { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }
             .forEach {
-                sletteHusstandsmedlem(behandling, it)
+                it.perioder.clear()
             }
 
-        val husstandsmedlemBp =
-            Husstandsmedlem(
-                kilde = Kilde.OFFENTLIG,
-                behandling = behandling,
-                rolle = behandling.bidragspliktig,
-            )
-
+        val husstandsmedlemBp = behandling.henteBpHusstandsmedlem()
         husstandsmedlemBp.perioder = periodisertBoforholdVoksne.tilBostatusperiode(husstandsmedlemBp)
-
-        behandling.husstandsmedlem.add(
-            husstandsmedlemBp,
-        )
     }
 
     @Transactional
@@ -134,9 +131,13 @@ class BoforholdService(
         behandling: Behandling,
         periodisertBoforhold: List<BoforholdResponse>,
     ) {
-        behandling.husstandsmedlem.filter { (Kilde.OFFENTLIG == it.kilde) }.forEach {
-            sletteHusstandsmedlem(behandling, it)
-        }
+        behandling.husstandsmedlem
+            .filter {
+                Kilde.OFFENTLIG == it.kilde &&
+                    !(setOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER).contains(it.rolle?.rolletype))
+            }.forEach {
+                sletteHusstandsmedlem(behandling, it)
+            }
 
         behandling.husstandsmedlem.addAll(periodisertBoforhold.tilHusstandsmedlem(behandling))
     }
@@ -281,7 +282,6 @@ class BoforholdService(
                         ),
                 )
             }
-
             behandling.husstandsmedlem.add(husstandsmedlem)
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
             return husstandsmedlemRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
@@ -341,6 +341,101 @@ class BoforholdService(
             return husstandsmedlemRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
         }
         oppdateringAvBoforholdFeilet("Oppdatering av boforhold feilet. Forespørsel mangler informasjon om hva som skal oppdateres")
+    }
+
+    @Transactional
+    fun oppdatereAndreVoksneIHusstandenManuelt(
+        behandlingsid: Long,
+        oppdatereAndreVoksneIHusstanden: OppdatereAndreVoksneIHusstanden,
+    ): OppdatereBoforholdResponse {
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        oppdatereAndreVoksneIHusstanden.validere(behandling)
+
+        val rolleMedAndreVoksneIHusstaden = behandling.bidragspliktig!!
+
+        val husstandsmedlemSomSkalOppdateres =
+            behandling.husstandsmedlem.find { rolleMedAndreVoksneIHusstaden == it.rolle }!!
+
+        oppdatereAndreVoksneIHusstanden.slettePeriode?.let { idHusstansmedlemsperiode ->
+            husstandsmedlemSomSkalOppdateres.lagreEksisterendePerioder()
+            husstandsmedlemSomSkalOppdateres.oppdaterePerioderVoksne(
+                gjelderRolle = rolleMedAndreVoksneIHusstaden,
+                sletteHusstandsmedlemsperiode = idHusstansmedlemsperiode,
+            )
+
+            loggeEndringAndreVoksneIHusstanden(
+                behandling,
+                oppdatereAndreVoksneIHusstanden,
+                husstandsmedlemSomSkalOppdateres,
+            )
+            return husstandsmedlemRepository
+                .save(husstandsmedlemSomSkalOppdateres)
+                .tilOppdatereBoforholdResponse(behandling)
+        }
+
+        oppdatereAndreVoksneIHusstanden.oppdaterePeriode?.let { oppdatereStatus ->
+
+            val nyBostatus =
+                if (oppdatereStatus.borMedAndreVoksne) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
+
+            husstandsmedlemSomSkalOppdateres.lagreEksisterendePerioder()
+            val periodeSomSkalOppdateres =
+                husstandsmedlemSomSkalOppdateres.perioder.find { oppdatereStatus.idPeriode == it.id }
+
+            husstandsmedlemSomSkalOppdateres.oppdaterePerioderVoksne(
+                gjelderRolle = rolleMedAndreVoksneIHusstaden,
+                nyEllerOppdatertBostatusperiode =
+                    Bostatusperiode(
+                        id = oppdatereStatus.idPeriode,
+                        husstandsmedlem = husstandsmedlemSomSkalOppdateres,
+                        bostatus = nyBostatus,
+                        datoFom = periodeSomSkalOppdateres?.datoFom ?: behandling.virkningstidspunkt!!,
+                        datoTom = periodeSomSkalOppdateres?.datoTom,
+                        kilde = Kilde.MANUELL,
+                    ),
+            )
+
+            loggeEndringAndreVoksneIHusstanden(
+                behandling,
+                oppdatereAndreVoksneIHusstanden,
+                husstandsmedlemSomSkalOppdateres,
+            )
+            return husstandsmedlemRepository
+                .save(husstandsmedlemSomSkalOppdateres)
+                .tilOppdatereBoforholdResponse(behandling)
+        }
+
+        if (oppdatereAndreVoksneIHusstanden.angreSisteEndring) {
+            husstandsmedlemSomSkalOppdateres.oppdaterTilForrigeLagredePerioder()
+            loggeEndringAndreVoksneIHusstanden(
+                behandling,
+                oppdatereAndreVoksneIHusstanden,
+                husstandsmedlemSomSkalOppdateres,
+            )
+            return husstandsmedlemRepository
+                .save(husstandsmedlemSomSkalOppdateres)
+                .tilOppdatereBoforholdResponse(behandling)
+        }
+
+        if (oppdatereAndreVoksneIHusstanden.tilbakestilleHistorikk) {
+            husstandsmedlemSomSkalOppdateres.lagreEksisterendePerioder()
+            husstandsmedlemSomSkalOppdateres.resetTilOffentligePerioderAndreVoksneIHusstand()
+            loggeEndringAndreVoksneIHusstanden(
+                behandling,
+                oppdatereAndreVoksneIHusstanden,
+                husstandsmedlemSomSkalOppdateres,
+            )
+
+            return husstandsmedlemRepository
+                .save(husstandsmedlemSomSkalOppdateres)
+                .tilOppdatereBoforholdResponse(behandling)
+        }
+
+        oppdateringAvBoforholdFeilet("Oppdatering av boforhold andre-voksne-i-husstanden feilet.")
     }
 
     @Transactional
@@ -654,6 +749,15 @@ class BoforholdService(
                 kilde = Kilde.OFFENTLIG,
             )
 
+        fun Husstandsmedlem.opprettDefaultPeriodeForAndreVoksneIHusstand() =
+            Bostatusperiode(
+                husstandsmedlem = this,
+                datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato ?: rolle!!.fødselsdato),
+                datoTom = null,
+                bostatus = Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE,
+                kilde = Kilde.OFFENTLIG,
+            )
+
         private fun Husstandsmedlem.oppdaterTilForrigeLagredePerioder() {
             val lagredePerioder = commonObjectmapper.writeValueAsString(perioder)
             perioder.clear()
@@ -681,6 +785,52 @@ class BoforholdService(
 
         fun Husstandsmedlem.lagreEksisterendePerioder() {
             forrigePerioder = commonObjectmapper.writeValueAsString(perioder)
+        }
+    }
+
+    private fun loggeEndringAndreVoksneIHusstanden(
+        behandling: Behandling,
+        oppdatereAndreVoksne: OppdatereAndreVoksneIHusstanden,
+        husstandsmedlem: Husstandsmedlem,
+    ) {
+        val detaljerPerioder =
+            husstandsmedlem.perioder
+                .map {
+                    "{ datoFom: ${it.datoFom}, datoTom: ${it.datoTom}, " +
+                        "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
+                }.joinToString(", ", prefix = "[", postfix = "]")
+        if (oppdatereAndreVoksne.angreSisteEndring) {
+            log.info { "Angret siste endring for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." }
+            secureLogger.info {
+                "Angret siste steg for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}. " +
+                    "Gjeldende perioder etter endring: $detaljerPerioder"
+            }
+        }
+        if (oppdatereAndreVoksne.tilbakestilleHistorikk) {
+            log.info { "Tilbakestilte perioder for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." }
+            secureLogger.info {
+                "Tilbakestilte perioder for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." +
+                    "Gjeldende perioder etter endring: $detaljerPerioder"
+            }
+        }
+
+        oppdatereAndreVoksne.slettePeriode?.let { idBostatusperiode ->
+            log.info { "Slettet bostatusperiode med id $idBostatusperiode fra behandling ${behandling.id}." }
+            secureLogger.info {
+                "Slettet bostatusperiode med id $idBostatusperiode fra behandling ${behandling.id}." +
+                    "Gjeldende perioder etter endring: $detaljerPerioder"
+            }
+        }
+        oppdatereAndreVoksne.oppdaterePeriode?.let { statusPåPeriode ->
+            val nyStatus =
+                if (statusPåPeriode.borMedAndreVoksne) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
+
+            if (statusPåPeriode.idPeriode != null) {
+                log.info {
+                    "Oppdaterte bostatus for periode ${statusPåPeriode.idPeriode} for husstandsmedlem " +
+                        "${husstandsmedlem.id} til $nyStatus i behandling ${behandling.id}"
+                }
+            }
         }
     }
 
@@ -828,6 +978,27 @@ class BoforholdService(
         )
     }
 
+    private fun Husstandsmedlem.resetTilOffentligePerioderAndreVoksneIHusstand() {
+        behandling.grunnlag
+            .henteNyesteGrunnlag(
+                Grunnlagstype(
+                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    true,
+                ),
+                behandling.bidragspliktig!!,
+            ).konvertereData<List<Bostatus>>()
+            ?.let { overskriveAndreVoksneIHusstandMedBearbeidaPerioder(it) }
+            ?: run {
+                this.perioder.clear()
+                if (kilde == Kilde.OFFENTLIG) {
+                    this.perioder.add(opprettDefaultPeriodeForAndreVoksneIHusstand())
+                    log.warn {
+                        "Fant ikke originale bearbeidet perioder for offentlig husstandsmedlem $id i behandling ${behandling.id}. Lagt til initiell periode "
+                    }
+                }
+            }
+    }
+
     private fun Husstandsmedlem.resetTilOffentligePerioder() {
         hentSisteBearbeidetBoforhold()?.let { overskriveMedBearbeidaPerioder(it) }
             ?: run {
@@ -855,6 +1026,23 @@ class BoforholdService(
                 listOf(periodiseringsrequest),
             ),
         )
+    }
+
+    private fun Husstandsmedlem.oppdaterePerioderVoksne(
+        gjelderRolle: Rolle,
+        nyEllerOppdatertBostatusperiode: Bostatusperiode? = null,
+        sletteHusstandsmedlemsperiode: Long? = null,
+    ) {
+        val endreBostatus = tilEndreBostatus(nyEllerOppdatertBostatusperiode, sletteHusstandsmedlemsperiode)
+        val periodiseringsrequest = tilBoforholdVoksneRequest(gjelderRolle, endreBostatus)
+
+        val borMedAndreVoksneperioder =
+            BoforholdApi.beregnBoforholdAndreVoksne(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                periodiseringsrequest,
+            )
+
+        this.overskriveMedBearbeidaBostatusperioder(borMedAndreVoksneperioder)
     }
 
     private fun Husstandsmedlem.tilEndreBostatus(

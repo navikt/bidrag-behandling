@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -96,6 +97,11 @@ class BehandlingService(
             Behandling(
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
+                innkrevingstype =
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD -> Innkrevingstype.MED_INNKREVING
+                        else -> opprettBehandling.innkrevingstype
+                    },
                 virkningstidspunkt =
                     when (opprettBehandling.tilType()) {
                         TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> opprettBehandling.søktFomDato
@@ -221,6 +227,17 @@ class BehandlingService(
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
 
+            // TODO: Legge til oppdatering av BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN
+            log.warn {
+                "Oppdatering av BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN etter endret virkningsdato " +
+                    " (som følge av ny kalendermåned) er ikke implementert"
+            }
+            /*
+                        grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
+                        grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
+                        boforholdService.rekalkulerOgLagreHusstandsmedlemPerioderForBp(behandling.id!!)
+                        grunnlagService.aktiverGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
+             */
             log.info { "Virkningstidspunkt er endret. Bygger sivilstandshistorikk på ny for behandling ${behandling.id}" }
             grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)

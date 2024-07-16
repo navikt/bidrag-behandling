@@ -54,9 +54,10 @@ class GrunnlagsobjektvelgerTest {
         }
 
         assertSoftly(Grunnlagsobjektvelger.requestobjekter(behandlingstype, Rolletype.BIDRAGSMOTTAKER)) { objekterBm ->
-            objekterBm shouldHaveSize 5
+            objekterBm shouldHaveSize 6
             objekterBm.find { GrunnlagRequestType.AINNTEKT == it } != null
             objekterBm.find { GrunnlagRequestType.ARBEIDSFORHOLD == it } != null
+            objekterBm.find { GrunnlagRequestType.BARNETILLEGG == it } != null
             objekterBm.find { GrunnlagRequestType.KONTANTSTØTTE == it } != null
             objekterBm.find { GrunnlagRequestType.SKATTEGRUNNLAG == it } != null
             objekterBm.find { GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG == it } != null

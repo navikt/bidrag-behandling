@@ -22,6 +22,8 @@ import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
+import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstandenperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBostatusperiode
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
@@ -29,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandskodePDL
@@ -83,6 +86,96 @@ class BoforholdServiceTest : TestContainerRunner() {
 
     @Autowired
     lateinit var entityManager: EntityManager
+
+    @Nested
+    open inner class AndreVoksneIHusstandentester {
+        @Nested
+        open inner class Førstegangsinnhenting {
+            // TODO: Legge til tester
+        }
+
+        @Nested
+        open inner class OppdatereAutomatisk {
+            // TODO: Legge til tester
+        }
+
+        @Nested
+        open inner class OppdatereManuelt {
+            // TODO: Legge til tester
+            @Test
+            @Transactional
+            open fun `skal angre forrige endring`() {
+                // gitt
+                val behandling = testdataManager.oppretteBehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG)
+
+                val husstandsmedlem =
+                    Husstandsmedlem(
+                        behandling = behandling,
+                        rolle = behandling.bidragspliktig!!,
+                        kilde = Kilde.OFFENTLIG,
+                    )
+
+                husstandsmedlem.perioder =
+                    mutableSetOf(
+                        Bostatusperiode(
+                            husstandsmedlem = husstandsmedlem,
+                            datoFom = LocalDate.now().withDayOfMonth(1),
+                            datoTom = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1),
+                            bostatus = Bostatuskode.BOR_MED_ANDRE_VOKSNE,
+                            kilde = Kilde.OFFENTLIG,
+                        ),
+                    )
+
+                behandling.husstandsmedlem.add(husstandsmedlem)
+                entityManager.persist(husstandsmedlem)
+
+                boforholdService.oppdatereAndreVoksneIHusstandenManuelt(
+                    behandling.id!!,
+                    OppdatereAndreVoksneIHusstanden(
+                        oppdaterePeriode =
+                            OppdatereAndreVoksneIHusstandenperiode(
+                                idPeriode = husstandsmedlem.perioder.first().id,
+                                borMedAndreVoksne = false,
+                            ),
+                    ),
+                )
+
+                assertSoftly("Resultat etter første oppdatering") {
+                    husstandsmedlem.perioder.shouldHaveSize(1)
+                    husstandsmedlem.forrigePerioder.shouldNotBeEmpty()
+                    husstandsmedlem.perioder.find { husstandsmedlem.perioder.first().id == it.id }?.bostatus shouldBe Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
+                }
+
+                boforholdService.oppdatereAndreVoksneIHusstandenManuelt(
+                    behandling.id!!,
+                    OppdatereAndreVoksneIHusstanden(
+                        angreSisteEndring = true,
+                    ),
+                )
+
+                assertSoftly("Resultat etter angre forrige steg") {
+                    husstandsmedlem.perioder.shouldHaveSize(1)
+                    husstandsmedlem.forrigePerioder.shouldNotBeEmpty()
+                    husstandsmedlem.perioder.find { husstandsmedlem.perioder.first().id == it.id }?.bostatus shouldBe Bostatuskode.BOR_MED_ANDRE_VOKSNE
+                }
+
+                // hvis
+                boforholdService.oppdatereAndreVoksneIHusstandenManuelt(
+                    behandling.id!!,
+                    OppdatereAndreVoksneIHusstanden(
+                        angreSisteEndring = true,
+                    ),
+                )
+
+                // så
+                assertSoftly("Resultat etter angre forrige steg") {
+                    husstandsmedlem.perioder.shouldHaveSize(1)
+                    husstandsmedlem.forrigePerioder.shouldNotBeEmpty()
+                    husstandsmedlem.perioder.find { husstandsmedlem.perioder.first().id == it.id }?.bostatus shouldBe Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
+                }
+            }
+        }
+    }
 
     @Nested
     open inner class Husstandsmedlemstester {
