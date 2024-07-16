@@ -76,7 +76,9 @@ class TestdataManager(
         behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
         inkludereVoksneIBpsHusstand: Boolean = false,
     ): Behandling {
-        val behandling = no.nav.bidrag.behandling.utils.testdata.oppretteBehandling()
+        val behandling =
+            no.nav.bidrag.behandling.utils.testdata
+                .oppretteBehandling()
 
         when (behandlingstype) {
             TypeBehandling.FORSKUDD -> {
@@ -265,7 +267,9 @@ class TestdataManager(
                             BorISammeHusstandDto(
                                 periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(2).withDayOfMonth(1),
                                 periodeTil =
-                                    behandling.virkningstidspunktEllerSøktFomDato.plusMonths(6).withDayOfMonth(1)
+                                    behandling.virkningstidspunktEllerSøktFomDato
+                                        .plusMonths(6)
+                                        .withDayOfMonth(1)
                                         .minusDays(1),
                             ),
                         ),
@@ -305,14 +309,14 @@ class TestdataManager(
         )
 
         val boforholdPeriodisert =
-            BoforholdApi.beregnBoforholdBarnV2(
+            BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
             )
 
         boforholdPeriodisert
-            .filter { it.relatertPersonPersonId != null }
-            .groupBy { it.relatertPersonPersonId }
+            .filter { it.gjelderPersonId != null }
+            .groupBy { it.gjelderPersonId }
             .forEach {
                 behandling.grunnlag.add(
                     Grunnlag(

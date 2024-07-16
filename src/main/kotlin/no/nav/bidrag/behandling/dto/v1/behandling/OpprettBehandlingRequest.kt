@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.bestemTypeBehandling
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
@@ -37,6 +38,7 @@ data class OpprettBehandlingRequest(
     val søknadsid: Long,
     val søknadsreferanseid: Long? = null,
     val kategori: OpprettKategoriRequestDto? = null,
+    val innkreving: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,
 )
 
 fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)

@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -104,7 +104,7 @@ fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
     behandling.grunnlag
         .hentSisteAktiv()
         .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
-        .konvertereData<List<BoforholdResponse>>()
+        .konvertereData<List<BoforholdResponseV2>>()
 
 fun Husstandsmedlem.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(gjelderRolle: Rolle): List<RelatertPersonGrunnlagDto> {
     val nyesteInnhentaGrunnlagForAndreVoksneIHusstanden =
@@ -126,7 +126,8 @@ fun Husstandsmedlem.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(gj
         if (nyesteIkkebearbeidaBoforholdsgrunnlag?.aktiv != null) {
             nyesteIkkebearbeidaBoforholdsgrunnlag
         } else if (nyesteInnhentaGrunnlagForAndreVoksneIHusstanden?.aktiv != null) {
-            behandling.grunnlag.hentSisteAktiv()
+            behandling.grunnlag
+                .hentSisteAktiv()
                 .find { Grunnlagsdatatype.BOFORHOLD == it.type && !it.erBearbeidet && it.rolle.ident == gjelderRolle.ident }
         } else {
             nyesteIkkebearbeidaBoforholdsgrunnlag

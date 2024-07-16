@@ -10,8 +10,8 @@ import no.nav.bidrag.behandling.database.datamodell.henteGjeldendeBoforholdsgrun
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.opprettDefaultPeriodeForAndreVoksneIHusstand
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
-import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
@@ -45,7 +45,7 @@ fun List<RelatertPersonGrunnlagDto>.tilHusstandsmedlemmer() =
         )
     }
 
-fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandling): List<BoforholdBarnRequest> {
+fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandling): List<BoforholdBarnRequestV3> {
     val barnAvBmBpManglerFødselsdato = this.filter { it.erBarn }.filter { it.fødselsdato == null }
     if (barnAvBmBpManglerFødselsdato.isNotEmpty()) {
         secureLogger.warn {
@@ -54,7 +54,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandli
     }
 
     return this.filter { it.erBarn }.filter { it.fødselsdato != null }.map { g ->
-        BoforholdBarnRequest(
+        BoforholdBarnRequestV3(
             innhentedeOffentligeOpplysninger =
                 when (g.borISammeHusstandDtoListe.isNotEmpty()) {
                     true ->
@@ -73,31 +73,28 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandli
                             ),
                         )
                 },
-            erBarnAvBmBp =
+            relasjon =
                 if (behandling.husstandsmedlem.find {
                         it.ident != null && it.ident == g.gjelderPersonId
                     } != null
                 ) {
-                    true
+                    Familierelasjon.BARN
                 } else {
-                    g.erBarn
+                    g.relasjon
                 },
             fødselsdato = g.fødselsdato!!,
-            relatertPersonPersonId = g.gjelderPersonId,
+            gjelderPersonId = g.gjelderPersonId,
             behandledeBostatusopplysninger = emptyList(),
             endreBostatus = null,
         )
     }
 }
 
-fun Husstandsmedlem.tilBoforholdBarnRequest(
-    endreBostatus: EndreBostatus? = null,
-    erBarnAvBmBp: Boolean = true,
-): BoforholdBarnRequest =
-    BoforholdBarnRequest(
-        relatertPersonPersonId = ident,
+fun Husstandsmedlem.tilBoforholdBarnRequest(endreBostatus: EndreBostatus? = null): BoforholdBarnRequestV3 =
+    BoforholdBarnRequestV3(
+        gjelderPersonId = ident,
         fødselsdato = fødselsdato ?: rolle!!.fødselsdato,
-        erBarnAvBmBp = erBarnAvBmBp,
+        relasjon = Familierelasjon.BARN,
         innhentedeOffentligeOpplysninger =
             henteOffentligePerioder().map { it.tilBostatus() }.sortedBy { it.periodeFom },
         behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
@@ -197,8 +194,8 @@ fun List<BorISammeHusstandDto>.tilBostatus(
     }
 }
 
-fun List<BoforholdResponse>.tilPerioder(husstandsmedlem: Husstandsmedlem) =
-    this.find { it.relatertPersonPersonId == husstandsmedlem.ident }?.let {
+fun List<BoforholdResponseV2>.tilPerioder(husstandsmedlem: Husstandsmedlem) =
+    this.find { it.gjelderPersonId == husstandsmedlem.ident }?.let {
         map { boforhold ->
             boforhold.tilPeriode(husstandsmedlem)
         }.toMutableSet()
@@ -215,7 +212,7 @@ fun List<Bostatus>.tilPerioder(husstandsmedlem: Husstandsmedlem) =
         )
     }
 
-fun BoforholdResponse.tilPeriode(husstandsmedlem: Husstandsmedlem) =
+fun BoforholdResponseV2.tilPeriode(husstandsmedlem: Husstandsmedlem) =
     Bostatusperiode(
         bostatus = bostatus,
         datoFom = periodeFom,
@@ -224,9 +221,9 @@ fun BoforholdResponse.tilPeriode(husstandsmedlem: Husstandsmedlem) =
         husstandsmedlem = husstandsmedlem,
     )
 
-fun List<BoforholdResponse>.tilHusstandsmedlem(behandling: Behandling): Set<Husstandsmedlem> =
+fun List<BoforholdResponseV2>.tilHusstandsmedlem(behandling: Behandling): Set<Husstandsmedlem> =
     this
-        .groupBy { it.relatertPersonPersonId }
+        .groupBy { it.gjelderPersonId }
         .map {
             val fødselsdatoFraRespons = it.value.first().fødselsdato
             val husstandsmedlem =
@@ -240,7 +237,7 @@ fun List<BoforholdResponse>.tilHusstandsmedlem(behandling: Behandling): Set<Huss
             husstandsmedlem
         }.toSet()
 
-fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResponse>) {
+fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResponseV2>) {
     perioder.clear()
     perioder.addAll(nyePerioder.tilPerioder(this))
     if (perioder.isEmpty()) {

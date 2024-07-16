@@ -22,7 +22,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -731,8 +731,8 @@ fun oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(husstandsmedlemSet: Se
                 commonObjectmapper.writeValueAsString(
                     husstandsmedlem.flatMap { hb ->
                         hb.perioder.map {
-                            BoforholdResponse(
-                                relatertPersonPersonId = hb.ident,
+                            BoforholdResponseV2(
+                                gjelderPersonId = hb.ident,
                                 periodeFom = it.datoFom!!,
                                 periodeTom = it.datoTom,
                                 kilde = it.kilde,
