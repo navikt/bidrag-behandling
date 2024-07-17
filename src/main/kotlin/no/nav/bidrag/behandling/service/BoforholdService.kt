@@ -44,6 +44,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlem
+import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
@@ -197,12 +198,36 @@ class BoforholdService(
     fun oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
         behandling: Behandling,
         ikkeaktivertPeriodisertGrunnlag: Set<Bostatus>,
+        ikkeaktivertGrunnlag: List<RelatertPersonGrunnlagDto>,
         overskriveManuelleOpplysninger: Boolean,
     ) {
-        val husstandsmedlemBp = behandling.husstandsmedlem.find { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }
+        val husstandsmedlemBp =
+            behandling.husstandsmedlem.find { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype } ?: run {
+                log.error { "Fant ikke husstandsmedlem for BP. Kunne ikke oppdatere andre voksne i husstand." }
+                return
+            }
 
         if (overskriveManuelleOpplysninger) {
-            husstandsmedlemBp?.lagreEksisterendePerioder()
+            log.info {
+                "Overskriver andre voksne i husstand perioder med perioder fra nyeste innhentet grunnlag for behandling ${behandling.id}"
+            }
+            husstandsmedlemBp.overskriveMedBearbeidaBostatusperioder(ikkeaktivertPeriodisertGrunnlag.toList())
+        } else {
+            log.info {
+                "Beholder eksisterende perioder etter aktivering av grunnlag for andre voksne i husstanden. " +
+                    "Oppdaterer kilde på andre voksne i husstand perioder basert perioder fra nyeste innhentet grunnlag for behandling ${behandling.id}"
+            }
+            val periodiseringsrequest = husstandsmedlemBp.tilBoforholdVoksneRequest(behandling.bidragspliktig!!, null)
+
+            val borMedAndreVoksneperioder =
+                BoforholdApi.beregnBoforholdAndreVoksne(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    periodiseringsrequest.copy(
+                        innhentedeOffentligeOpplysninger = ikkeaktivertGrunnlag.tilHusstandsmedlemmer(),
+                    ),
+                )
+
+            husstandsmedlemBp.overskriveMedBearbeidaBostatusperioder(borMedAndreVoksneperioder)
         }
     }
 
@@ -800,24 +825,24 @@ class BoforholdService(
                         "bostatus: ${it.bostatus}, kilde: ${it.kilde} }"
                 }.joinToString(", ", prefix = "[", postfix = "]")
         if (oppdatereAndreVoksne.angreSisteEndring) {
-            log.info { "Angret siste endring for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." }
+            log.info { "Angret siste endring for andre voksne i husstanden ${husstandsmedlem.id} i behandling ${behandling.id}." }
             secureLogger.info {
-                "Angret siste steg for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}. " +
+                "Angret siste steg for andre voksne i husstanden ${husstandsmedlem.id} i behandling ${behandling.id}. " +
                     "Gjeldende perioder etter endring: $detaljerPerioder"
             }
         }
         if (oppdatereAndreVoksne.tilbakestilleHistorikk) {
-            log.info { "Tilbakestilte perioder for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." }
+            log.info { "Tilbakestilte perioder for andre voksne i husstanden ${husstandsmedlem.id} i behandling ${behandling.id}." }
             secureLogger.info {
-                "Tilbakestilte perioder for husstandsmedlem ${husstandsmedlem.id} i behandling ${behandling.id}." +
+                "Tilbakestilte perioder for andre voksne i husstanden ${husstandsmedlem.id} i behandling ${behandling.id}." +
                     "Gjeldende perioder etter endring: $detaljerPerioder"
             }
         }
 
         oppdatereAndreVoksne.slettePeriode?.let { idBostatusperiode ->
-            log.info { "Slettet bostatusperiode med id $idBostatusperiode fra behandling ${behandling.id}." }
+            log.info { "Slettet bostatusperiode med id $idBostatusperiode for andre voksne i husstanden fra behandling ${behandling.id}." }
             secureLogger.info {
-                "Slettet bostatusperiode med id $idBostatusperiode fra behandling ${behandling.id}." +
+                "Slettet bostatusperiode med id $idBostatusperiode for andre voksne i husstanden fra behandling ${behandling.id}." +
                     "Gjeldende perioder etter endring: $detaljerPerioder"
             }
         }
@@ -827,7 +852,7 @@ class BoforholdService(
 
             if (statusPåPeriode.idPeriode != null) {
                 log.info {
-                    "Oppdaterte bostatus for periode ${statusPåPeriode.idPeriode} for husstandsmedlem " +
+                    "Oppdaterte bostatus for periode ${statusPåPeriode.idPeriode} andre voksne i husstanden " +
                         "${husstandsmedlem.id} til $nyStatus i behandling ${behandling.id}"
                 }
             }

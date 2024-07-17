@@ -424,12 +424,18 @@ class GrunnlagService(
         behandling: Behandling,
         overskriveManuelleOpplysninger: Boolean = false,
     ) {
+        log.info {
+            "Aktiverer boforhold for andre voksne i husstanden for behandling ${behandling.id}. overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
+        }
         val nyesteIkkeaktiverteBoforhold =
             behandling.grunnlag
                 .hentSisteIkkeAktiv()
                 .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
 
-        if (nyesteIkkeaktiverteBoforhold.firstOrNull { it.erBearbeidet } == null) {
+        val nyesteIkkeAktivertBearbeidetBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { it.erBearbeidet }
+        val nyesteIkkeAktivertGrunnlagBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { !it.erBearbeidet }
+
+        if (nyesteIkkeAktivertBearbeidetBoforhold == null || nyesteIkkeAktivertGrunnlagBoforhold == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
@@ -439,7 +445,8 @@ class GrunnlagService(
 
         boforholdService.oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
             behandling,
-            commonObjectmapper.readValue<Set<Bostatus>>(nyesteIkkeaktiverteBoforhold.first { it.erBearbeidet }.data),
+            nyesteIkkeAktivertBearbeidetBoforhold.konvertereData<Set<Bostatus>>()!!,
+            nyesteIkkeAktivertGrunnlagBoforhold.konvertereData<List<RelatertPersonGrunnlagDto>>()!!,
             overskriveManuelleOpplysninger,
         )
 

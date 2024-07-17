@@ -107,33 +107,11 @@ fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
         .konvertereData<List<BoforholdResponseV2>>()
 
 fun Husstandsmedlem.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(gjelderRolle: Rolle): List<RelatertPersonGrunnlagDto> {
-    val nyesteInnhentaGrunnlagForAndreVoksneIHusstanden =
-        behandling.grunnlag.henteNyesteGrunnlag(
-            Grunnlagstype(
-                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
-                true,
-            ),
-            gjelderRolle,
-        )
+    val grunnlagAktiv = behandling.grunnlag.hentSisteAktiv().toSet()
     val nyesteIkkebearbeidaBoforholdsgrunnlag =
-        behandling.grunnlag.henteNyesteGrunnlag(Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false), gjelderRolle)
+        grunnlagAktiv.henteNyesteGrunnlag(Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, false), gjelderRolle)
 
-    /*
-    Henter boforholdsgrunnlag som ble innhentet for gjelder-rolle og brukt ved opprettelse av nyeste aktive grunnlag av
-    type BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN
-     */
-    val boforholdsgrunnlag =
-        if (nyesteIkkebearbeidaBoforholdsgrunnlag?.aktiv != null) {
-            nyesteIkkebearbeidaBoforholdsgrunnlag
-        } else if (nyesteInnhentaGrunnlagForAndreVoksneIHusstanden?.aktiv != null) {
-            behandling.grunnlag
-                .hentSisteAktiv()
-                .find { Grunnlagsdatatype.BOFORHOLD == it.type && !it.erBearbeidet && it.rolle.ident == gjelderRolle.ident }
-        } else {
-            nyesteIkkebearbeidaBoforholdsgrunnlag
-        }
-
-    return boforholdsgrunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
+    return nyesteIkkebearbeidaBoforholdsgrunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
 }
 
 fun List<Grunnlag>.hentGrunnlagForType(
