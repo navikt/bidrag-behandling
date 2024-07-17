@@ -2045,12 +2045,24 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     ),
                 )
 
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        aktiv = null,
+                        behandling = behandling,
+                        innhentet = LocalDateTime.now().minusDays(3),
+                        data = bfg!!.data,
+                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                        erBearbeidet = false,
+                    ),
+                )
+
                 assertSoftly(
                     behandling.grunnlag
                         .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type },
                 ) { voksne ->
-                    voksne shouldHaveSize 3
-                    voksne.filter { it.aktiv == null } shouldHaveSize 1
+                    voksne shouldHaveSize 4
+                    voksne.filter { it.aktiv == null } shouldHaveSize 2
                 }
 
                 // hvis
@@ -2068,7 +2080,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag
                         .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type },
                 ) { voksne ->
-                    voksne shouldHaveSize 3
+                    voksne shouldHaveSize 4
                     voksne.filter { it.aktiv == null } shouldHaveSize 0
                 }
             }
