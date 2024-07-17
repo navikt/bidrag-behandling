@@ -6,9 +6,12 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
+import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
@@ -56,7 +59,7 @@ import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Familierelasjon
@@ -216,7 +219,7 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
                 ident = it.gjelder,
                 perioder =
                     it
-                        .konvertereData<List<BoforholdResponse>>()
+                        .konvertereData<List<BoforholdResponseV2>>()
                         ?.map { boforholdrespons ->
                             HusstandsmedlemGrunnlagDto.BostatusperiodeGrunnlagDto(
                                 boforholdrespons.periodeFom,
@@ -227,27 +230,32 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
             )
         }.toSet()
 
-fun List<Grunnlag>.tilAndreVoksneIHusstanden() =
+fun List<Grunnlag>.tilAndreVoksneIHusstanden(erAktivert: Boolean) =
     AndreVoksneIHusstandenGrunnlagDto(
-        perioder = tilPeriodeAndreVoksneIHusstanden(),
+        perioder = tilPeriodeAndreVoksneIHusstanden(erAktivert),
         innhentet = LocalDateTime.now(),
     )
 
-fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> =
-    find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
+private fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(erAktivert: Boolean = true): Set<PeriodeAndreVoksneIHusstanden> =
+    find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
         .konvertereData<Set<Bostatus>>()
         ?.map {
             val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
             PeriodeAndreVoksneIHusstanden(
                 periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
                 status = it.bostatus!!,
-                husstandsmedlemmer = this.toSet().hentAndreVoksneHusstandForPeriode(periode),
+                husstandsmedlemmer = this.toSet().hentAndreVoksneHusstandForPeriode(periode, erAktivert),
             )
         }?.toSet() ?: emptySet()
 
-fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(periode: ÅrMånedsperiode): List<AndreVoksneIHusstandenDetaljerDto> =
-    hentSisteAktiv()
-        .find { it.type == Grunnlagsdatatype.BOFORHOLD && !it.erBearbeidet }
+fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(
+    periode: ÅrMånedsperiode,
+    erAktivert: Boolean = true,
+): List<AndreVoksneIHusstandenDetaljerDto> {
+    val grunnlag = if (erAktivert) hentSisteAktiv() else hentSisteIkkeAktiv()
+
+    return grunnlag
+        .find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && !it.erBearbeidet }
         .konvertereData<List<RelatertPersonGrunnlagDto>>()
         ?.filter { it.relasjon != Familierelasjon.BARN }
         ?.filter {
@@ -264,22 +272,21 @@ fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(periode: ÅrMånedsperiode):
             )
         }?.sorter()
         ?.begrensAntallPersoner() ?: emptyList()
+}
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
         husstandsmedlem =
             husstandsmedlem
-                .filter {
-                    it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG
-                }.toSet()
+                .barn
+                .toSet()
                 .sortert()
                 .map { it.tilBostatusperiode() }
                 .toSet(),
         andreVoksneIHusstanden =
             husstandsmedlem
-                .find {
-                    it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG
-                }?.perioder
+                .voksneIHusstanden
+                ?.perioder
                 ?.tilBostatusperiode() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
@@ -369,7 +376,7 @@ fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
                 ?: emptySet(),
         husstandsmedlem =
             filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
-        andreVoksneIHusstanden = tilAndreVoksneIHusstanden(),
+        andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
         sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
     )
@@ -532,11 +539,11 @@ fun Behandling.notatTittel(): String {
     return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
 }
 
-fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
+fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunkt(
     husstandsmedlemListe: Set<Husstandsmedlem>,
     virkningstidspunkt: LocalDate,
-): List<BoforholdResponse> {
-    return groupBy { it.relatertPersonPersonId }.flatMap { (barnId, perioder) ->
+): List<BoforholdResponseV2> {
+    return groupBy { it.gjelderPersonId }.flatMap { (barnId, perioder) ->
         val barn =
             husstandsmedlemListe.find { it.ident == barnId }
                 ?: return@flatMap perioder
@@ -608,7 +615,7 @@ fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     rolle: Rolle,
 ) = asSequence()
     .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    .mapNotNull { it.konvertereData<List<BoforholdResponse>>() }
+    .mapNotNull { it.konvertereData<List<BoforholdResponseV2>>() }
     .flatten()
     .distinct()
     .toList()

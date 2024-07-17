@@ -35,7 +35,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.testdata.tilTransformerInntekterRequest
 import no.nav.bidrag.behandling.utils.testdata.voksenPersonIBpsHusstand
 import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
@@ -1436,10 +1436,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBp = behandling.grunnlag.filter { it.rolle == behandling.bidragspliktig }
 
                 assertSoftly(grunnlagBp) { gbp ->
-                    gbp shouldHaveSize 8
+                    gbp shouldHaveSize 9
                     gbp.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 3
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
@@ -1705,9 +1706,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gjelderIdent = testdataHusstandsmedlem1.ident,
                     grunnlagsdata =
                         setOf(
-                            BoforholdResponse(
+                            BoforholdResponseV2(
                                 bostatus = Bostatuskode.MED_FORELDER,
-                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                gjelderPersonId = testdataHusstandsmedlem1.ident,
                                 fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                                 kilde = Kilde.OFFENTLIG,
                                 periodeFom = testdataHusstandsmedlem1.fødselsdato,
@@ -1810,12 +1811,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
                 val bearbeidaBoforhold =
-                    BoforholdApi.beregnBoforholdBarnV2(
+                    BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         endretBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
-                bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
+                bearbeidaBoforhold.groupBy { it.gjelderPersonId }.forEach {
                     behandling.grunnlag.add(
                         Grunnlag(
                             behandling,
@@ -1934,12 +1935,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
                 val bearbeidaBoforhold =
-                    BoforholdApi.beregnBoforholdBarnV2(
+                    BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         endretBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
-                bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
+                bearbeidaBoforhold.groupBy { it.gjelderPersonId }.forEach {
                     val aktivert = if (it.key == testdataBarn1.ident) null else LocalDateTime.now().minusDays(1)
                     behandling.grunnlag.add(
                         Grunnlag(
@@ -2014,10 +2015,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     }
                 }
 
-                val bfg = behandling.grunnlag.find { Grunnlagsdatatype.BOFORHOLD == it.type && !it.erBearbeidet }
+                val bfg = behandling.grunnlag.find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && !it.erBearbeidet }
 
                 val relatertPerson =
-                    bfg.konvertereData<List<RelatertPersonGrunnlagDto>>()
+                    bfg
+                        .konvertereData<List<RelatertPersonGrunnlagDto>>()
                         ?.find { voksenPersonIBpsHusstand.personident == it.gjelderPersonId }
 
                 val borHosperioder = relatertPerson?.borISammeHusstandDtoListe?.toMutableList()
@@ -2043,12 +2045,24 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     ),
                 )
 
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        aktiv = null,
+                        behandling = behandling,
+                        innhentet = LocalDateTime.now().minusDays(3),
+                        data = bfg!!.data,
+                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                        erBearbeidet = false,
+                    ),
+                )
+
                 assertSoftly(
                     behandling.grunnlag
                         .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type },
                 ) { voksne ->
-                    voksne shouldHaveSize 2
-                    voksne.filter { it.aktiv == null } shouldHaveSize 1
+                    voksne shouldHaveSize 4
+                    voksne.filter { it.aktiv == null } shouldHaveSize 2
                 }
 
                 // hvis
@@ -2066,7 +2080,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag
                         .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type },
                 ) { voksne ->
-                    voksne shouldHaveSize 2
+                    voksne shouldHaveSize 4
                     voksne.filter { it.aktiv == null } shouldHaveSize 0
                 }
             }
@@ -2352,9 +2366,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gjelderIdent = testdataHusstandsmedlem1.ident,
                     grunnlagsdata =
                         setOf(
-                            BoforholdResponse(
+                            BoforholdResponseV2(
                                 bostatus = Bostatuskode.MED_FORELDER,
-                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                gjelderPersonId = testdataHusstandsmedlem1.ident,
                                 fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                                 kilde = Kilde.OFFENTLIG,
                                 periodeFom = testdataHusstandsmedlem1.fødselsdato,
@@ -2836,9 +2850,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gjelderIdent = testdataHusstandsmedlem1.ident,
                     grunnlagsdata =
                         setOf(
-                            BoforholdResponse(
+                            BoforholdResponseV2(
                                 bostatus = Bostatuskode.MED_FORELDER,
-                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                gjelderPersonId = testdataHusstandsmedlem1.ident,
                                 fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                                 kilde = Kilde.OFFENTLIG,
                                 periodeFom = testdataHusstandsmedlem1.fødselsdato,
@@ -3004,12 +3018,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
                 val bearbeidaBoforhold =
-                    BoforholdApi.beregnBoforholdBarnV2(
+                    BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         endretBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
-                bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
+                bearbeidaBoforhold.groupBy { it.gjelderPersonId }.forEach {
                     behandling.grunnlag.add(
                         Grunnlag(
                             behandling,
@@ -3086,14 +3100,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
                 val bearbeidaBoforhold =
-                    BoforholdApi.beregnBoforholdBarnV2(
+                    BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                             rådataBoforhold.data,
                         ).tilBoforholdBarnRequest(behandling),
                     )
 
-                bearbeidaBoforhold.groupBy { it.relatertPersonPersonId }.forEach {
+                bearbeidaBoforhold.groupBy { it.gjelderPersonId }.forEach {
                     behandling.grunnlag.add(
                         Grunnlag(
                             behandling,
@@ -3168,9 +3182,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gjelderIdent = testdataHusstandsmedlem1.ident,
                     grunnlagsdata =
                         setOf(
-                            BoforholdResponse(
+                            BoforholdResponseV2(
                                 bostatus = Bostatuskode.MED_FORELDER,
-                                relatertPersonPersonId = testdataHusstandsmedlem1.ident,
+                                gjelderPersonId = testdataHusstandsmedlem1.ident,
                                 fødselsdato = testdataHusstandsmedlem1.fødselsdato,
                                 kilde = Kilde.OFFENTLIG,
                                 periodeFom = testdataHusstandsmedlem1.fødselsdato,
@@ -3325,13 +3339,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     data =
                         commonObjectmapper.writeValueAsString(
                             setOf(
-                                BoforholdResponse(
+                                BoforholdResponseV2(
                                     kilde = Kilde.OFFENTLIG,
                                     periodeFom = LocalDate.now().minusYears(13),
                                     periodeTom = null,
                                     bostatus = Bostatuskode.MED_FORELDER,
                                     fødselsdato = LocalDate.now().minusYears(13),
-                                    relatertPersonPersonId = testdataBarn1.ident,
+                                    gjelderPersonId = testdataBarn1.ident,
                                 ),
                             ),
                         ),
@@ -3351,13 +3365,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     data =
                         commonObjectmapper.writeValueAsString(
                             setOf(
-                                BoforholdResponse(
+                                BoforholdResponseV2(
                                     kilde = Kilde.OFFENTLIG,
                                     periodeFom = nyFomdato,
                                     periodeTom = null,
                                     bostatus = Bostatuskode.IKKE_MED_FORELDER,
                                     fødselsdato = LocalDate.now().minusYears(13),
-                                    relatertPersonPersonId = testdataBarn1.ident,
+                                    gjelderPersonId = testdataBarn1.ident,
                                 ),
                             ),
                         ),

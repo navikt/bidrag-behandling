@@ -352,7 +352,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
         .flatMap { (innhentetForIdent, grunnlag) ->
 
             val boforholdPeriodisert =
-                BoforholdApi.beregnBoforholdBarnV2(
+                BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     grunnlag.tilBoforholdBarnRequest(behandling),
                 )
@@ -366,8 +366,8 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 ),
             ) +
                 boforholdPeriodisert
-                    .filter { it.relatertPersonPersonId != null }
-                    .groupBy { it.relatertPersonPersonId }
+                    .filter { it.gjelderPersonId != null }
+                    .groupBy { it.gjelderPersonId }
                     .map {
                         behandling.opprettGrunnlag(
                             Grunnlagsdatatype.BOFORHOLD,
