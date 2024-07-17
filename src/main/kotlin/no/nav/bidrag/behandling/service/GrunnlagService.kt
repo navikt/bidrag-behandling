@@ -816,21 +816,19 @@ class GrunnlagService(
         val endringerSomMåBekreftes = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
 
         if (endringerSomMåBekreftes == null || endringerSomMåBekreftes.perioder.isEmpty()) {
-            val ikkeAktivtBoforholdBp =
-                ikkeAktiveGrunnlag
-                    .hentGrunnlagForType(
-                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
-                        behandling.bidragspliktig!!.ident!!,
-                    ).firstOrNull()
-            ikkeAktivtBoforholdBp?.let {
-                log.info {
-                    "Bps ikke aktive boforholdsgrunnlag ${ikkeAktivtBoforholdBp.id} med type " +
-                        "${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN} i behandling ${behandling.id} har " +
-                        "ingen endringer som må bekreftes av saksbehandler. Automatisk aktiverer ny innhentet " +
-                        "grunnlag."
-                }
-                it.aktiv = LocalDateTime.now()
+            log.info {
+                "Bps ikke aktive boforholdsgrunnlag med type " +
+                    "${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN} i behandling ${behandling.id} har " +
+                    "ingen endringer som må bekreftes av saksbehandler. Automatisk aktiverer ny innhentet " +
+                    "grunnlag."
             }
+            ikkeAktiveGrunnlag
+                .hentGrunnlagForType(
+                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    behandling.bidragspliktig!!.ident!!,
+                ).forEach { ikkeAktivtBoforholdBp ->
+                    ikkeAktivtBoforholdBp.aktiv = LocalDateTime.now()
+                }
         }
     }
 

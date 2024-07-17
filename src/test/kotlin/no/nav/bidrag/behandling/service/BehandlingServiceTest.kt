@@ -16,7 +16,10 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.barn
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
+import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
@@ -27,7 +30,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -38,10 +43,12 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -99,6 +106,8 @@ class BehandlingServiceTest : TestContainerRunner() {
     fun initMock() {
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPerson()
+        stubKodeverkProvider()
+        stubSjablonProvider()
     }
 
     @AfterEach
@@ -112,6 +121,58 @@ class BehandlingServiceTest : TestContainerRunner() {
         fun `skal kaste 404 exception hvis behandlingen ikke er der`() {
             Assertions.assertThrows(HttpClientErrorException::class.java) {
                 behandlingService.henteBehandling(1234)
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere virkningstidspunkt på særbidrag ved henting av behandling hvis vt ikke i inneværende måned`() {
+            // gitt
+            var behandling =
+                testdataManager.oppretteBehandling(
+                    false,
+                    false,
+                    false,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.SÆRBIDRAG,
+                )
+            behandling.virkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubPersonConsumer()
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            behandling.inntekter.forEach {
+                it.taMed = true
+                it.datoFom = behandling.virkningstidspunkt
+            }
+            behandling.husstandsmedlem.forEach {
+                it.perioder.first().let {
+                    it.datoFom = behandling.virkningstidspunkt
+                }
+            }
+
+            // hvis
+            val oppdatertBehandlingDto =
+                behandlingService.henteBehandling(
+                    behandling.id!!,
+                )
+
+            val nyVirkningsdato = LocalDate.now().withDayOfMonth(1)
+
+            entityManager.flush()
+            entityManager.refresh(behandling)
+            val oppdaterBehandling = testdataManager.hentBehandling(behandling.id!!)
+            assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
+                val andreVoksneIHusstanden = s.voksneIHusstanden
+                andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
+                barn.forEach {
+                    it.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
+                }
+            }
+            assertSoftly(oppdaterBehandling.inntekter.filter { it.taMed }) {
+                it.forEach {
+                    it.datoFom shouldBe nyVirkningsdato
+                }
             }
         }
 
@@ -1069,6 +1130,233 @@ class BehandlingServiceTest : TestContainerRunner() {
                 jsonListeTilObjekt<Sivilstand>(
                     s.first { it.erBearbeidet && it.aktiv == null }.data,
                 ).minByOrNull { it.periodeFom }!!.periodeFom shouldBeEqual nyVirkningsdato
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere perioder på andre voksne i husstand boforhold og inntekter når virkningstidspunkt på særbidrag endres`() {
+            // gitt
+            var behandling =
+                testdataManager.oppretteBehandling(
+                    false,
+                    false,
+                    false,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.SÆRBIDRAG,
+                )
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubPersonConsumer()
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            behandling.inntekter.forEach {
+                it.taMed = true
+                it.datoFom = behandling.virkningstidspunkt
+            }
+            behandling.husstandsmedlem.forEach {
+                it.perioder.first().let {
+                    it.datoFom = behandling.virkningstidspunkt
+                }
+            }
+
+            val nyVirkningsdato = behandling.virkningstidspunkt!!.plusMonths(1)
+
+            // hvis
+            behandlingService.oppdatereVirkningstidspunkt(
+                behandling.id!!,
+                OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
+            )
+
+            entityManager.flush()
+            entityManager.refresh(behandling)
+            val oppdaterBehandling = testdataManager.hentBehandling(behandling.id!!)
+            assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
+                val andreVoksneIHusstanden = s.voksneIHusstanden
+                andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
+                barn.forEach {
+                    it.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
+                }
+            }
+            assertSoftly(oppdaterBehandling.inntekter.filter { it.taMed }) {
+                it.forEach {
+                    it.datoFom shouldBe nyVirkningsdato
+                }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere aktivert og ikke aktivert andre voksne i husstand ved endring av virkningstidspunkt for særbidrag`() {
+            // gitt
+            var behandling =
+                testdataManager.oppretteBehandling(
+                    false,
+                    false,
+                    false,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.SÆRBIDRAG,
+                )
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubPersonConsumer()
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            val nyAndreVoksneIHusstandGrunnlag =
+                setOf(
+                    RelatertPersonGrunnlagDto(
+                        relasjon = Familierelasjon.FAR,
+                        gjelderPersonId = "12312",
+                        fødselsdato = LocalDate.now().minusYears(30),
+                        navn = "Test",
+                        partPersonId = behandling.bidragspliktig!!.ident,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.now().minusMonths(4).withDayOfMonth(1),
+                                    periodeTil = LocalDate.now().minusMonths(1).withDayOfMonth(1),
+                                ),
+                            ),
+                    ),
+                )
+
+            val beregnetGrunnlag =
+                BoforholdApi.beregnBoforholdAndreVoksne(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    nyAndreVoksneIHusstandGrunnlag.tilBoforholdVoksneRequest(),
+                )
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragspliktig!!,
+                    type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    erBearbeidet = false,
+                    aktiv = null,
+                    data =
+                        tilJson(nyAndreVoksneIHusstandGrunnlag),
+                ),
+            )
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragspliktig!!,
+                    type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    erBearbeidet = true,
+                    aktiv = null,
+                    data = tilJson(beregnetGrunnlag),
+                ),
+            )
+
+            val nyVirkningsdato = behandling.virkningstidspunkt!!.plusMonths(1)
+
+            // hvis
+            behandlingService.oppdatereVirkningstidspunkt(
+                behandling.id!!,
+                OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
+            )
+
+            entityManager.flush()
+            entityManager.refresh(behandling)
+            val oppdaterBehandling = testdataManager.hentBehandling(behandling.id!!)
+            assertSoftly(oppdaterBehandling!!.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }) { s ->
+                s shouldHaveSize 4
+                s.filter { it.aktiv == null } shouldHaveSize 2
+                val ikkeAktivBearbeidet = s.find { it.erBearbeidet && it.aktiv == null }
+                val aktivBearbeidet = s.find { it.erBearbeidet && it.aktiv != null }
+                aktivBearbeidet.konvertereData<List<Bostatus>>()!!.minByOrNull { it.periodeFom!! }!!.periodeFom!! shouldBeEqual
+                    nyVirkningsdato
+                ikkeAktivBearbeidet.konvertereData<List<Bostatus>>()!!.minByOrNull { it.periodeFom!! }!!.periodeFom!! shouldBeEqual
+                    nyVirkningsdato
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere aktivert og ikke aktivert andre voksne i husstand ved endring av virkningstidspunkt for særbidrag og automatisk aktivere`() {
+            // gitt
+            var behandling =
+                testdataManager.oppretteBehandling(
+                    false,
+                    false,
+                    false,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.SÆRBIDRAG,
+                )
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubPersonConsumer()
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            val nyAndreVoksneIHusstandGrunnlag =
+                setOf(
+                    RelatertPersonGrunnlagDto(
+                        relasjon = Familierelasjon.FAR,
+                        gjelderPersonId = "12312",
+                        fødselsdato = LocalDate.now().minusYears(30),
+                        navn = "Test",
+                        partPersonId = behandling.bidragspliktig!!.ident,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    periodeFra = LocalDate.now().minusMonths(4).withDayOfMonth(1),
+                                    periodeTil = null,
+                                ),
+                            ),
+                    ),
+                )
+
+            val beregnetGrunnlag =
+                BoforholdApi.beregnBoforholdAndreVoksne(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    nyAndreVoksneIHusstandGrunnlag.tilBoforholdVoksneRequest(),
+                )
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragspliktig!!,
+                    type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    erBearbeidet = false,
+                    aktiv = null,
+                    data =
+                        tilJson(nyAndreVoksneIHusstandGrunnlag),
+                ),
+            )
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                    rolle = behandling.bidragspliktig!!,
+                    type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    erBearbeidet = true,
+                    aktiv = null,
+                    data = tilJson(beregnetGrunnlag),
+                ),
+            )
+
+            val nyVirkningsdato = behandling.virkningstidspunkt!!.plusMonths(1)
+
+            // hvis
+            behandlingService.oppdatereVirkningstidspunkt(
+                behandling.id!!,
+                OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
+            )
+
+            entityManager.flush()
+            entityManager.refresh(behandling)
+            val oppdaterBehandling = testdataManager.hentBehandling(behandling.id!!)
+            assertSoftly(oppdaterBehandling!!.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }) { s ->
+                s shouldHaveSize 4
+                s.none { it.aktiv == null } shouldBe true
+                val bearbeidet = s.filter { it.erBearbeidet && it.aktiv != null }
+                bearbeidet shouldHaveSize 2
+                bearbeidet
+                    .forEach {
+                        it
+                            .konvertereData<List<Bostatus>>()!!
+                            .minByOrNull { it.periodeFom!! }!!
+                            .periodeFom!! shouldBeEqual
+                            nyVirkningsdato
+                    }
             }
         }
 

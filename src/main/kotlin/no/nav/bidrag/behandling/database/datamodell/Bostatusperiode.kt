@@ -20,7 +20,7 @@ open class Bostatusperiode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "husstandsmedlem_id", nullable = false)
     open var husstandsmedlem: Husstandsmedlem,
-    open val datoFom: LocalDate?,
+    open var datoFom: LocalDate?,
     open val datoTom: LocalDate?,
     @Enumerated(EnumType.STRING)
     open val bostatus: Bostatuskode,
@@ -30,7 +30,5 @@ open class Bostatusperiode(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
 ) {
-    override fun toString(): String {
-        return "Bostatusperiode(id=$id, datoFom=$datoFom, datoTom=$datoTom, bostatus=$bostatus, kilde=$kilde)"
-    }
+    override fun toString(): String = "Bostatusperiode(id=$id, datoFom=$datoFom, datoTom=$datoTom, bostatus=$bostatus, kilde=$kilde)"
 }
