@@ -110,11 +110,10 @@ fun stubHentPersonNyIdent(
 
 class StubUtils {
     companion object {
-        fun aClosedJsonResponse(): ResponseDefinitionBuilder {
-            return aResponse()
+        fun aClosedJsonResponse(): ResponseDefinitionBuilder =
+            aResponse()
                 .withHeader(HttpHeaders.CONNECTION, "close")
                 .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-        }
 
         private fun createGenericResponse() =
             aResponse()
@@ -124,9 +123,11 @@ class StubUtils {
 
     fun stubUnleash() {
         WireMock.stubFor(
-            WireMock.get(urlMatching("/unleash/api/client/features"))
+            WireMock
+                .get(urlMatching("/unleash/api/client/features"))
                 .willReturn(
-                    aClosedJsonResponse().withStatus(HttpStatus.OK.value())
+                    aClosedJsonResponse()
+                        .withStatus(HttpStatus.OK.value())
                         .withBodyFile("unleash-response.json"),
                 ),
         )
@@ -268,7 +269,8 @@ class StubUtils {
 
     fun stubSlettForsendelse(status: HttpStatus = HttpStatus.OK) {
         WireMock.stubFor(
-            WireMock.post(urlMatching("/forsendelse/api/forsendelse/journal/(.*)/avvik"))
+            WireMock
+                .post(urlMatching("/forsendelse/api/forsendelse/journal/(.*)/avvik"))
                 .willReturn(
                     aClosedJsonResponse()
                         .withStatus(status.value())
@@ -363,7 +365,8 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/YtelseFraOffentligeBeskrivelse.*"))
+            WireMock
+                .get(WireMock.urlPathMatching(".*/kodeverk/YtelseFraOffentligeBeskrivelse.*"))
                 .willReturn(
                     if (response != null) {
                         aClosedJsonResponse().withStatus(status.value()).withBody(
@@ -382,7 +385,8 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*"))
+            WireMock
+                .get(WireMock.urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*"))
                 .willReturn(
                     if (response != null) {
                         createGenericResponse().withStatus(status.value()).withBody(
@@ -401,7 +405,8 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Naeringsinntektsbeskrivelse.*"))
+            WireMock
+                .get(WireMock.urlPathMatching(".*/kodeverk/Naeringsinntektsbeskrivelse.*"))
                 .willReturn(
                     if (response != null) {
                         aClosedJsonResponse().withStatus(status.value()).withBody(
@@ -457,9 +462,10 @@ class StubUtils {
             if (rolle == null) {
                 WireMock.post(WireMock.urlEqualTo("/hentgrunnlag"))
             } else {
-                WireMock.post(
-                    WireMock.urlEqualTo("/hentgrunnlag"),
-                ).withRequestBody(WireMock.containing(rolle.ident))
+                WireMock
+                    .post(
+                        WireMock.urlEqualTo("/hentgrunnlag"),
+                    ).withRequestBody(WireMock.containing(rolle.ident))
             }
 
         val hentGrunnlagDto =
@@ -480,15 +486,18 @@ class StubUtils {
 
         val respons =
             if (tomRespons && responsobjekt == null) {
-                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse()
+                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBody(tilJson(hentGrunnlagDto))
             } else if (!tomRespons && responsobjekt != null) {
-                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse()
+                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBody(tilJson(responsobjekt))
             } else {
-                aClosedJsonResponse().withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                aClosedJsonResponse()
+                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
                     .withBodyFile(navnResponsfil)
             }
@@ -501,6 +510,11 @@ class StubUtils {
         behandling.roller.forEach {
             when (it.rolletype) {
                 Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlag(it)
+                Rolletype.BIDRAGSPLIKTIG ->
+                    stubHenteGrunnlag(
+                        rolle = it,
+                        navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
+                    )
                 Rolletype.BARN -> {
                     stubHenteGrunnlag(
                         rolle = it,
@@ -636,23 +650,21 @@ class StubUtils {
         }
     }
 
-    fun toJsonString(data: Any): String {
-        return try {
+    fun toJsonString(data: Any): String =
+        try {
             ObjectMapper().findAndRegisterModules().writeValueAsString(data)
         } catch (e: JsonProcessingException) {
             Assert.fail(e.message)
             ""
         }
-    }
 }
 
 fun nyOpprettJournalpostResponse(
     journalpostId: String = "123123123",
     dokumenter: List<OpprettDokumentDto> =
         listOf(OpprettDokumentDto(tittel = "Tittel på dokument", dokumentreferanse = "dokref1")),
-): OpprettJournalpostResponse {
-    return OpprettJournalpostResponse(
+): OpprettJournalpostResponse =
+    OpprettJournalpostResponse(
         dokumenter = dokumenter,
         journalpostId = journalpostId,
     )
-}

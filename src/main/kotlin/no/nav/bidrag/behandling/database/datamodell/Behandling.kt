@@ -262,6 +262,10 @@ fun Behandling.validerForBeregning() {
     }
 }
 
+val Set<Husstandsmedlem>.barn get() = filter { it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG }
+
+val Set<Husstandsmedlem>.voksneIHusstanden get() = find { it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
+
 @Converter
 open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {
     override fun convertToDatabaseColumn(attribute: VirkningstidspunktÅrsakstype?): String? = attribute?.name

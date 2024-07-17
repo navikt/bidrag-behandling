@@ -5,6 +5,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereSivilstand
@@ -565,23 +566,24 @@ class ValiderBoforholdSivilstandPerioderTest {
     }
 }
 
-fun opprettSivilstand(perioder: List<Pair<Datoperiode, Sivilstandskode>>): MutableSet<Sivilstand> {
-    return perioder.map {
-        Sivilstand(
-            behandling = oppretteBehandling(),
-            kilde = Kilde.MANUELL,
-            id = Random.nextLong(1000),
-            sivilstand = it.second,
-            datoTom = it.first.til,
-            datoFom = it.first.fom,
-        )
-    }.toMutableSet()
-}
+fun opprettSivilstand(perioder: List<Pair<Datoperiode, Sivilstandskode>>): MutableSet<Sivilstand> =
+    perioder
+        .map {
+            Sivilstand(
+                behandling = oppretteBehandling(),
+                kilde = Kilde.MANUELL,
+                id = Random.nextLong(1000),
+                sivilstand = it.second,
+                datoTom = it.first.til,
+                datoFom = it.first.fom,
+            )
+        }.toMutableSet()
 
 fun opprettHusstandsmedlem(
     perioder: List<Pair<Datoperiode, Bostatuskode?>>,
     ident: String,
     fødselsdato: LocalDate = LocalDate.parse("2022-01-01"),
+    rolle: Rolle? = null,
 ): Husstandsmedlem =
     Husstandsmedlem(
         behandling = oppretteBehandling(),
@@ -590,15 +592,17 @@ fun opprettHusstandsmedlem(
         ident = ident,
         navn = ident,
         fødselsdato = fødselsdato,
+        rolle = rolle,
         perioder =
-            perioder.map {
-                Bostatusperiode(
-                    husstandsmedlem = oppretteHusstandsmedlem(oppretteBehandling(), testdataBP),
-                    datoFom = it.first.fom,
-                    datoTom = it.first.til,
-                    bostatus = it.second ?: Bostatuskode.DELT_BOSTED,
-                    kilde = Kilde.MANUELL,
-                    id = Random.nextLong(1000),
-                )
-            }.toMutableSet(),
+            perioder
+                .map {
+                    Bostatusperiode(
+                        husstandsmedlem = oppretteHusstandsmedlem(oppretteBehandling(), testdataBP),
+                        datoFom = it.first.fom,
+                        datoTom = it.first.til,
+                        bostatus = it.second ?: Bostatuskode.DELT_BOSTED,
+                        kilde = Kilde.MANUELL,
+                        id = Random.nextLong(1000),
+                    )
+                }.toMutableSet(),
     )

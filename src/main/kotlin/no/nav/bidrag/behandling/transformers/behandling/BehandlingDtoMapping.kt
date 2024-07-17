@@ -6,10 +6,12 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
+import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
@@ -276,17 +278,15 @@ fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
         husstandsmedlem =
             husstandsmedlem
-                .filter {
-                    it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG
-                }.toSet()
+                .barn
+                .toSet()
                 .sortert()
                 .map { it.tilBostatusperiode() }
                 .toSet(),
         andreVoksneIHusstanden =
             husstandsmedlem
-                .find {
-                    it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG
-                }?.perioder
+                .voksneIHusstanden
+                ?.perioder
                 ?.tilBostatusperiode() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
