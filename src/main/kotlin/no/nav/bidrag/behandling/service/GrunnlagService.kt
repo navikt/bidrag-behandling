@@ -282,7 +282,9 @@ class GrunnlagService(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, false),
                 behandling.rolleGrunnlagSkalHentesFor!!,
             ) ?: run {
-                log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
+                log.warn {
+                    "Fant ingen aktive andre voksne i husstanden. Oppdaterer ikke andre voksne i husstanden beregnet etter virkningstidspunkt ble endret"
+                }
                 return
             }
         sisteAktiveGrunnlag.rekalkulerOgOppdaterAndreVoksneIHusstandenBearbeidetGrunnlag()

@@ -35,7 +35,6 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
-import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -333,8 +332,8 @@ class BehandlingService(
         val nyVirkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         if (virkningstidspunkt != nyVirkningstidspunkt) {
             log.info {
-                "Virkningstidspunkt ${virkningstidspunkt.toCompactString()} på særbidrag er ikke riktig som følge av ny kalendermåned." +
-                    " Endrer virkningstidspunkt til starten av nåværende kalendermåned ${nyVirkningstidspunkt.toCompactString()}"
+                "Virkningstidspunkt $virkningstidspunkt på særbidrag er ikke riktig som følge av ny kalendermåned." +
+                    " Endrer virkningstidspunkt til starten av nåværende kalendermåned $nyVirkningstidspunkt"
             }
             oppdaterVirkningstidspunkt(OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt), this)
         }
