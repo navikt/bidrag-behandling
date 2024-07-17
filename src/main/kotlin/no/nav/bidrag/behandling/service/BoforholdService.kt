@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
@@ -19,6 +20,7 @@ import no.nav.bidrag.behandling.database.datamodell.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteSisteSivilstand
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.lagreSivilstandshistorikk
+import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
@@ -133,9 +135,9 @@ class BoforholdService(
         periodisertBoforhold: List<BoforholdResponseV2>,
     ) {
         behandling.husstandsmedlem
+            .barn
             .filter {
-                Kilde.OFFENTLIG == it.kilde &&
-                    !(setOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER).contains(it.rolle?.rolletype))
+                Kilde.OFFENTLIG == it.kilde
             }.forEach {
                 sletteHusstandsmedlem(behandling, it)
             }
@@ -202,7 +204,7 @@ class BoforholdService(
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val husstandsmedlemBp =
-            behandling.husstandsmedlem.find { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype } ?: run {
+            behandling.husstandsmedlem.voksneIHusstanden ?: run {
                 log.error { "Fant ikke husstandsmedlem for BP. Kunne ikke oppdatere andre voksne i husstand." }
                 return
             }
@@ -232,18 +234,36 @@ class BoforholdService(
     }
 
     @Transactional
+    fun rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandlingsid: Long) {
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        behandling.husstandsmedlem
+            .voksneIHusstanden
+            ?.let { andreVoksneIHusstanden ->
+                andreVoksneIHusstanden.lagreEksisterendePerioder()
+                andreVoksneIHusstanden.oppdaterePerioderVoksne(behandling.bidragspliktig!!)
+
+                behandling.husstandsmedlem.remove(behandling.husstandsmedlem.voksneIHusstanden)
+                behandling.husstandsmedlem.add(husstandsmedlemRepository.save(andreVoksneIHusstanden))
+            }
+    }
+
+    @Transactional
     fun rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid: Long) {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
         val oppdaterHusstandsmedlemmer =
-            behandling.husstandsmedlem.map { husstandsmedlem ->
+            behandling.husstandsmedlem.barn.map { husstandsmedlem ->
                 husstandsmedlem.lagreEksisterendePerioder()
                 husstandsmedlem.oppdaterePerioder()
                 husstandsmedlemRepository.save(husstandsmedlem)
             }
-        behandling.husstandsmedlem.clear()
+        behandling.husstandsmedlem.removeAll(behandling.husstandsmedlem.barn.toSet())
         behandling.husstandsmedlem.addAll(oppdaterHusstandsmedlemmer)
     }
 

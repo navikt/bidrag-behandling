@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
@@ -14,6 +15,8 @@ import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusst
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
+import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -274,12 +277,39 @@ class GrunnlagService(
 
     @Transactional
     fun oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling: Behandling) {
-        // TODO: Implementere
+        val sisteAktiveGrunnlag =
+            behandling.henteNyesteAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, false),
+                behandling.rolleGrunnlagSkalHentesFor!!,
+            ) ?: run {
+                log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
+                return
+            }
+        sisteAktiveGrunnlag.rekalkulerOgOppdaterAndreVoksneIHusstandenBearbeidetGrunnlag()
     }
 
     @Transactional
     fun oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling: Behandling) {
-        // TODO: Implementere
+        val sisteIkkeAktiveGrunnlag =
+            behandling.henteNyesteIkkeAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, false),
+                behandling.rolleGrunnlagSkalHentesFor!!,
+            ) ?: run {
+                log.debug { "Fant ingen ikke-aktive andre voksne i husstanden grunnlag. Gjør ingen endringer" }
+                return
+            }
+        sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterAndreVoksneIHusstandenBearbeidetGrunnlag(false)
+    }
+
+    private fun Grunnlag.rekalkulerOgOppdaterAndreVoksneIHusstandenBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
+        val boforhold = konvertereData<Set<RelatertPersonGrunnlagDto>>()!!
+        val andreVoksneIHusstandenPeriodisert =
+            BoforholdApi.beregnBoforholdAndreVoksne(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                boforhold.tilBoforholdVoksneRequest(),
+            )
+
+        overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(behandling, andreVoksneIHusstandenPeriodisert, rekalkulerOgOverskriveAktiverte)
     }
 
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
@@ -295,6 +325,28 @@ class GrunnlagService(
             .forEach { (gjelder, perioder) ->
                 overskrivBearbeidetBoforholdGrunnlag(behandling, gjelder, perioder, rekalkulerOgOverskriveAktiverte)
             }
+    }
+
+    private fun overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
+        behandling: Behandling,
+        perioder: List<Bostatus>,
+        rekalkulerOgOverskriveAktiverte: Boolean = true,
+    ) {
+        val grunnlagSomSkalOverskrives =
+            if (rekalkulerOgOverskriveAktiverte) {
+                behandling.henteAktiverteGrunnlag(
+                    Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, true),
+                    behandling.rolleGrunnlagSkalHentesFor!!,
+                )
+            } else {
+                behandling.henteUaktiverteGrunnlag(
+                    Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, true),
+                    behandling.rolleGrunnlagSkalHentesFor!!,
+                )
+            }
+        grunnlagSomSkalOverskrives.forEach {
+            it.data = tilJson(perioder)
+        }
     }
 
     private fun overskrivBearbeidetBoforholdGrunnlag(
@@ -796,6 +848,7 @@ class GrunnlagService(
             )
 
         behandling.husstandsmedlem
+            .barn
             .filter { it.kilde == Kilde.OFFENTLIG }
             .filter { hb -> endringerSomMåBekreftes.none { it.ident == hb.ident } }
             .forEach { hb ->
@@ -1346,32 +1399,6 @@ class GrunnlagService(
                     it.rolle.id == rolle.id &&
                     grunnlagstype.erBearbeidet == it.erBearbeidet &&
                     it.gjelder == gjelder?.verdi
-            }.toSet()
-            .maxByOrNull { it.innhentet }
-
-    private fun Behandling.henteNyesteIkkeAktiveGrunnlag(
-        grunnlagstype: Grunnlagstype,
-        rolleInnhentetFor: Rolle,
-    ): Grunnlag? =
-        grunnlag
-            .filter {
-                it.type == grunnlagstype.type &&
-                    it.rolle.id == rolleInnhentetFor.id &&
-                    grunnlagstype.erBearbeidet == it.erBearbeidet &&
-                    it.aktiv == null
-            }.toSet()
-            .maxByOrNull { it.innhentet }
-
-    private fun Behandling.henteNyesteAktiveGrunnlag(
-        grunnlagstype: Grunnlagstype,
-        rolleInnhentetFor: Rolle,
-    ): Grunnlag? =
-        grunnlag
-            .filter {
-                it.type == grunnlagstype.type &&
-                    it.rolle.id == rolleInnhentetFor.id &&
-                    grunnlagstype.erBearbeidet == it.erBearbeidet &&
-                    it.aktiv != null
             }.toSet()
             .maxByOrNull { it.innhentet }
 

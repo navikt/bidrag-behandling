@@ -107,9 +107,8 @@ fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
         .konvertereData<List<BoforholdResponseV2>>()
 
 fun Husstandsmedlem.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(gjelderRolle: Rolle): List<RelatertPersonGrunnlagDto> {
-    val grunnlagAktiv = behandling.grunnlag.hentSisteAktiv().toSet()
     val nyesteIkkebearbeidaBoforholdsgrunnlag =
-        grunnlagAktiv.henteNyesteGrunnlag(Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, false), gjelderRolle)
+        behandling.henteNyesteAktiveGrunnlag(Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, false), gjelderRolle)
 
     return nyesteIkkebearbeidaBoforholdsgrunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
 }
@@ -127,5 +126,31 @@ fun List<Grunnlag>.henteBearbeidaInntekterForType(
 ) = find {
     it.type == type && it.erBearbeidet && it.rolle.ident == ident
 }.konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
+
+fun Behandling.henteNyesteIkkeAktiveGrunnlag(
+    grunnlagstype: Grunnlagstype,
+    rolleInnhentetFor: Rolle,
+): Grunnlag? =
+    grunnlag
+        .filter {
+            it.type == grunnlagstype.type &&
+                it.rolle.id == rolleInnhentetFor.id &&
+                grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                it.aktiv == null
+        }.toSet()
+        .maxByOrNull { it.innhentet }
+
+fun Behandling.henteNyesteAktiveGrunnlag(
+    grunnlagstype: Grunnlagstype,
+    rolleInnhentetFor: Rolle,
+): Grunnlag? =
+    grunnlag
+        .filter {
+            it.type == grunnlagstype.type &&
+                it.rolle.id == rolleInnhentetFor.id &&
+                grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                it.aktiv != null
+        }.toSet()
+        .maxByOrNull { it.innhentet }
 
 inline fun <reified T> Grunnlag?.konvertereData(): T? = this?.data?.let { objectmapper.readValue(it) }

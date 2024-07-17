@@ -35,6 +35,7 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -219,33 +220,55 @@ class BehandlingService(
         behandling: Behandling,
     ) {
         val erVirkningstidspunktEndret = request.virkningstidspunkt != behandling.virkningstidspunkt
-        if (erVirkningstidspunktEndret) {
-            behandling.virkningstidspunkt = request.virkningstidspunkt ?: behandling.virkningstidspunkt
+
+        fun oppdaterBoforhold() {
             log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlemsperioder på ny for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+        }
 
-            // TODO: Legge til oppdatering av BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN
-            log.warn {
-                "Oppdatering av BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN etter endret virkningsdato " +
-                    " (som følge av ny kalendermåned) er ikke implementert"
-            }
-            /*
-                        grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
-                        grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
-                        boforholdService.rekalkulerOgLagreHusstandsmedlemPerioderForBp(behandling.id!!)
-                        grunnlagService.aktiverGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
-             */
+        fun oppdaterSivilstand() {
             log.info { "Virkningstidspunkt er endret. Bygger sivilstandshistorikk på ny for behandling ${behandling.id}" }
             grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)
             boforholdService.oppdatereSivilstandshistorikk(behandling)
             grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+        }
 
+        fun oppdaterInntekter() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)
+        }
+
+        fun oppdaterAndreVoksneIHusstanden() {
+            log.info { "Virkningstidspunkt er endret. Beregner andre voksne i husstanden perioder på nytt for behandling ${behandling.id}" }
+            grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
+            boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
+            grunnlagService.aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
+        }
+
+        if (erVirkningstidspunktEndret) {
+            behandling.virkningstidspunkt = request.virkningstidspunkt ?: behandling.virkningstidspunkt
+
+            when (behandling.tilType()) {
+                TypeBehandling.FORSKUDD -> {
+                    oppdaterBoforhold()
+                    oppdaterSivilstand()
+                    oppdaterInntekter()
+                }
+                TypeBehandling.SÆRBIDRAG -> {
+                    oppdaterBoforhold()
+                    oppdaterAndreVoksneIHusstanden()
+                    oppdaterInntekter()
+                }
+                TypeBehandling.BIDRAG -> throw HttpClientErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    "Endring av virkningstidspunkt er ikke implementert for behandlingstype BIDRAG",
+                )
+            }
         }
     }
 
@@ -284,6 +307,7 @@ class BehandlingService(
         }
     }
 
+    @Transactional
     fun henteBehandling(
         behandlingsid: Long,
         inkluderHistoriskeInntekter: Boolean = false,
@@ -292,7 +316,7 @@ class BehandlingService(
         tilgangskontrollService.sjekkTilgangBehandling(behandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
-
+        behandling.oppdatereVirkningstidspunktSærbidrag()
         val grunnlagsdataEndretEtterAktivering =
             grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
 
@@ -301,6 +325,19 @@ class BehandlingService(
             grunnlagsdataEndretEtterAktivering,
             inkluderHistoriskeInntekter,
         )
+    }
+
+    @Transactional
+    fun Behandling.oppdatereVirkningstidspunktSærbidrag() {
+        if (tilType() != TypeBehandling.SÆRBIDRAG) return
+        val nyVirkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        if (virkningstidspunkt != nyVirkningstidspunkt) {
+            log.info {
+                "Virkningstidspunkt ${virkningstidspunkt.toCompactString()} på særbidrag er ikke riktig som følge av ny kalendermåned." +
+                    " Endrer virkningstidspunkt til starten av nåværende kalendermåned ${nyVirkningstidspunkt.toCompactString()}"
+            }
+            oppdaterVirkningstidspunkt(OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt), this)
+        }
     }
 
     fun hentBehandlingById(behandlingId: Long): Behandling {
