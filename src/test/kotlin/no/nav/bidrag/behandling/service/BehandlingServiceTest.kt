@@ -37,7 +37,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -780,14 +780,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                 )
 
                 val boforholdPeriodisert =
-                    BoforholdApi.beregnBoforholdBarnV2(
+                    BoforholdApi.beregnBoforholdBarnV3(
                         b.virkningstidspunktEllerSøktFomDato,
                         grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(b),
                     )
 
                 boforholdPeriodisert
-                    .filter { it.relatertPersonPersonId != null && it.relatertPersonPersonId == personidentBarnBoforholdSkalAktiveresFor.verdi }
-                    .groupBy { it.relatertPersonPersonId }
+                    .filter { it.gjelderPersonId != null && it.gjelderPersonId == personidentBarnBoforholdSkalAktiveresFor.verdi }
+                    .groupBy { it.gjelderPersonId }
                     .forEach {
                         b.grunnlag.add(
                             Grunnlag(
@@ -1161,7 +1161,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g shouldHaveSize 3
                 g.filter { it.aktiv != null } shouldHaveSize 3
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
-                jsonListeTilObjekt<BoforholdResponse>(g.first { it.erBearbeidet }.data)
+                jsonListeTilObjekt<BoforholdResponseV2>(g.first { it.erBearbeidet }.data)
                     .first()
                     .periodeFom shouldBeEqual behandling.virkningstidspunkt!!
             }
@@ -1177,7 +1177,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g shouldHaveSize 3
                 g.filter { !it.erBearbeidet } shouldHaveSize 1
                 g.filter { it.aktiv != null } shouldHaveSize 3
-                jsonListeTilObjekt<BoforholdResponse>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
+                jsonListeTilObjekt<BoforholdResponseV2>(g.filter { it.erBearbeidet }.maxBy { it.aktiv!! }.data)
                     .first()
                     .periodeFom shouldBeEqual nyVirkningsdato
             }

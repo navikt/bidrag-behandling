@@ -30,7 +30,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -747,8 +747,8 @@ fun oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(husstandsmedlemSet: Se
                 commonObjectmapper.writeValueAsString(
                     husstandsmedlem.flatMap { hb ->
                         hb.perioder.map {
-                            BoforholdResponse(
-                                relatertPersonPersonId = hb.ident,
+                            BoforholdResponseV2(
+                                gjelderPersonId = hb.ident,
                                 periodeFom = it.datoFom!!,
                                 periodeTom = it.datoTom,
                                 kilde = it.kilde,
@@ -1001,7 +1001,9 @@ private fun oppretteBoforhold(
                         BorISammeHusstandDto(
                             periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(2).withDayOfMonth(1),
                             periodeTil =
-                                behandling.virkningstidspunktEllerSøktFomDato.plusMonths(6).withDayOfMonth(1)
+                                behandling.virkningstidspunktEllerSøktFomDato
+                                    .plusMonths(6)
+                                    .withDayOfMonth(1)
                                     .minusDays(1),
                         ),
                     ),
@@ -1053,14 +1055,14 @@ private fun oppretteBoforhold(
     )
 
     val boforholdPeriodisert =
-        BoforholdApi.beregnBoforholdBarnV2(
+        BoforholdApi.beregnBoforholdBarnV3(
             behandling.virkningstidspunktEllerSøktFomDato,
             grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
         )
 
     boforholdPeriodisert
-        .filter { it.relatertPersonPersonId != null }
-        .groupBy { it.relatertPersonPersonId }
+        .filter { it.gjelderPersonId != null }
+        .groupBy { it.gjelderPersonId }
         .forEach {
             behandling.grunnlag.add(
                 Grunnlag(

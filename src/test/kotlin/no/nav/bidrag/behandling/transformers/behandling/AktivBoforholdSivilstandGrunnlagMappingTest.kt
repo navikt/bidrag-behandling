@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -31,29 +31,29 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
                 )
             val aktivBoforholdGrunnlagListe2 =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn2.ident,
+                        gjelderPersonId = testdataBarn2.ident,
                     ),
                 )
             val aktivGrunnlagBoforhold =
@@ -80,22 +80,22 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
 
             val boforholdGrunnlagListe =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
                 )
             val boforholdGrunnlagListe2 =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn2.ident,
+                        gjelderPersonId = testdataBarn2.ident,
                     ),
                 )
             val nyGrunnlagBoforhold =
@@ -147,19 +147,19 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
                 )
             val aktivGrunnlagBoforhold =
@@ -173,26 +173,26 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
             val boforholdGrunnlagListe =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = YearMonth.of(2023, 12).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
                 )
             val nyGrunnlagBoforhold =
@@ -228,19 +228,19 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2022, 11).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2022, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
                 )
             val aktivGrunnlagBoforhold =
@@ -254,33 +254,33 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
             val boforholdGrunnlagListe =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2021, 11).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2021, 12).atDay(1),
                         periodeTom = YearMonth.of(2022, 5).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2022, 6).atDay(1),
                         periodeTom = YearMonth.of(2022, 11).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2022, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
                 )
             val nyttGrunnlagBoforhold =
@@ -311,29 +311,29 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2005, 1).atDay(1),
                         periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn1.ident,
+                        gjelderPersonId = testdataBarn1.ident,
                     ),
                 )
             val aktivBoforholdGrunnlagListe2 =
                 listOf(
-                    BoforholdResponse(
+                    BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
                         fødselsdato = LocalDate.parse("2005-01-01"),
                         periodeFom = YearMonth.of(2023, 12).atDay(1),
                         periodeTom = null,
-                        relatertPersonPersonId = testdataBarn2.ident,
+                        gjelderPersonId = testdataBarn2.ident,
                     ),
                 )
             val aktivGrunnlagBoforhold =

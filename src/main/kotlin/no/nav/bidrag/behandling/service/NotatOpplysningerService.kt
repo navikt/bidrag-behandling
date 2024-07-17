@@ -41,7 +41,7 @@ import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilDto
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
@@ -128,7 +128,8 @@ class NotatOpplysningerService(
 
     fun hentNotatOpplysningerForBehandling(behandling: Behandling): NotatDto {
         val opplysningerBoforhold =
-            behandling.grunnlag.hentSisteAktiv()
+            behandling.grunnlag
+                .hentSisteAktiv()
                 .hentAlleBearbeidaBoforhold(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsmedlem,
@@ -136,22 +137,26 @@ class NotatOpplysningerService(
                 )
 
         val opplysningerSivilstand =
-            behandling.grunnlag.hentSisteAktiv()
+            behandling.grunnlag
+                .hentSisteAktiv()
                 .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
                 ?.konvertereData<List<SivilstandGrunnlagDto>>()
                 ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
                 ?: emptyList()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
-            behandling.grunnlag.hentSisteAktiv()
-                .filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.flatMap { r ->
+            behandling.grunnlag
+                .hentSisteAktiv()
+                .filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
+                .flatMap { r ->
                     r.konvertereData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
                 }
 
         return NotatDto(
             saksnummer = behandling.saksnummer,
             saksbehandlerNavn =
-                TokenUtils.hentSaksbehandlerIdent()
+                TokenUtils
+                    .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
             virkningstidspunkt = behandling.tilVirkningstidspunkt(),
             boforhold =
@@ -159,7 +164,8 @@ class NotatOpplysningerService(
                     notat = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
                     barn =
-                        behandling.husstandsmedlem.sortert()
+                        behandling.husstandsmedlem
+                            .sortert()
                             .map { it.tilBoforholdBarn(opplysningerBoforhold) },
                 ),
             roller = behandling.roller.map(Rolle::tilNotatRolle),
@@ -243,19 +249,21 @@ private fun Behandling.tilNotatInntekt() =
 private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandGrunnlagDto>) =
     SivilstandNotat(
         opplysningerBruktTilBeregning =
-            sivilstand.sortedBy { it.datoFom }
+            sivilstand
+                .sortedBy { it.datoFom }
                 .map(Sivilstand::tilSivilstandsperiode),
         opplysningerFraFolkeregisteret =
-            sivilstandOpplysninger.map { periode ->
-                OpplysningerFraFolkeregisteret(
-                    periode =
-                        ÅrMånedsperiode(
-                            periode.gyldigFom ?: LocalDate.MIN,
-                            null,
-                        ),
-                    status = periode.type,
-                )
-            }.sortedBy { it.periode.fom },
+            sivilstandOpplysninger
+                .map { periode ->
+                    OpplysningerFraFolkeregisteret(
+                        periode =
+                            ÅrMånedsperiode(
+                                periode.gyldigFom ?: LocalDate.MIN,
+                                null,
+                            ),
+                        status = periode.type,
+                    )
+                }.sortedBy { it.periode.fom },
     )
 
 private fun Sivilstand.tilSivilstandsperiode() =
@@ -282,7 +290,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         notat = tilNotatVirkningstidspunkt(),
     )
 
-private fun Husstandsmedlem.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdResponse>) =
+private fun Husstandsmedlem.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>) =
     BoforholdBarn(
         gjelder =
             PersonNotatDto(
@@ -294,18 +302,19 @@ private fun Husstandsmedlem.tilBoforholdBarn(opplysningerBoforhold: List<Boforho
         kilde = kilde,
         medIBehandling = behandling.roller.any { it.ident == this.ident },
         opplysningerFraFolkeregisteret =
-            opplysningerBoforhold.filter {
-                it.relatertPersonPersonId == this.ident
-            }.map {
-                OpplysningerFraFolkeregisteret(
-                    periode =
-                        ÅrMånedsperiode(
-                            it.periodeFom,
-                            it.periodeTom,
-                        ),
-                    status = it.bostatus,
-                )
-            },
+            opplysningerBoforhold
+                .filter {
+                    it.gjelderPersonId == this.ident
+                }.map {
+                    OpplysningerFraFolkeregisteret(
+                        periode =
+                            ÅrMånedsperiode(
+                                it.periodeFom,
+                                it.periodeTom,
+                            ),
+                        status = it.bostatus,
+                    )
+                },
         opplysningerBruktTilBeregning =
             perioder.sortedBy { it.datoFom }.map { periode ->
                 OpplysningerBruktTilBeregning(
@@ -348,9 +357,10 @@ private fun Inntekt.tilNotatInntektDto() =
         kilde = kilde,
         medIBeregning = taMed,
         gjelderBarn =
-            gjelderBarn?.let { gjelderBarn ->
-                behandling?.roller?.find { it.ident == gjelderBarn }
-            }?.tilNotatRolle(),
+            gjelderBarn
+                ?.let { gjelderBarn ->
+                    behandling?.roller?.find { it.ident == gjelderBarn }
+                }?.tilNotatRolle(),
         inntektsposter =
             inntektsposter.map {
                 NotatInntektspostDto(
@@ -376,7 +386,8 @@ private fun Behandling.hentInntekterForIdent(
             emptyList()
         } else {
             hentBeregnetInntekter()
-                .filter { it.inntektGjelderBarnIdent != null }.map { inntektPerBarn ->
+                .filter { it.inntektGjelderBarnIdent != null }
+                .map { inntektPerBarn ->
                     NotatBeregnetInntektDto(
                         roller.find { it.ident == inntektPerBarn.inntektGjelderBarnIdent!!.verdi }!!.tilNotatRolle(),
                         inntektPerBarn.summertInntektListe,
@@ -384,7 +395,8 @@ private fun Behandling.hentInntekterForIdent(
                 }
         },
     årsinntekter =
-        inntekter.årsinntekterSortert(!filtrerBareOffentlige)
+        inntekter
+            .årsinntekterSortert(!filtrerBareOffentlige)
             .filter { it.ident == ident }
             .ekskluderYtelserFørVirkningstidspunkt()
             .filtrerKilde(filtrerBareOffentlige)
@@ -445,12 +457,17 @@ private fun Behandling.hentInntekterForIdent(
             emptyList()
         },
     arbeidsforhold =
-        arbeidsforhold.filter { it.partPersonId == ident }
+        arbeidsforhold
+            .filter { it.partPersonId == ident }
             .map {
                 Arbeidsforhold(
                     periode = ÅrMånedsperiode(it.startdato!!, it.sluttdato),
                     arbeidsgiver = it.arbeidsgiverNavn ?: "-",
-                    stillingProsent = it.ansettelsesdetaljerListe?.firstOrNull()?.avtaltStillingsprosent?.toString(),
+                    stillingProsent =
+                        it.ansettelsesdetaljerListe
+                            ?.firstOrNull()
+                            ?.avtaltStillingsprosent
+                            ?.toString(),
                     lønnsendringDato = it.ansettelsesdetaljerListe?.firstOrNull()?.sisteLønnsendringDato,
                 )
             },

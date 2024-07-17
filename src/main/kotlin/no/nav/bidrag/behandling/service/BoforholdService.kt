@@ -55,8 +55,8 @@ import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.dto.BoforholdBarnRequest
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
 import no.nav.bidrag.commons.util.secureLogger
@@ -129,7 +129,7 @@ class BoforholdService(
     @Transactional
     fun lagreFørstegangsinnhentingAvPeriodisertBoforhold(
         behandling: Behandling,
-        periodisertBoforhold: List<BoforholdResponse>,
+        periodisertBoforhold: List<BoforholdResponseV2>,
     ) {
         behandling.husstandsmedlem
             .filter {
@@ -145,7 +145,7 @@ class BoforholdService(
     @Transactional
     fun oppdatereAutomatiskInnhentetBoforhold(
         behandling: Behandling,
-        periodisertBoforhold: List<BoforholdResponse>,
+        periodisertBoforhold: List<BoforholdResponseV2>,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
         overskriveManuelleOpplysninger: Boolean,
         gjelderHusstandsmedlem: Personident,
@@ -256,7 +256,7 @@ class BoforholdService(
             val offentligePerioder =
                 personalia.personident?.let {
                     val respons =
-                        BoforholdApi.beregnBoforholdBarnV2(
+                        BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             behandling
                                 .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
@@ -629,7 +629,7 @@ class BoforholdService(
                     nyttHusstandsmedlem.perioder
                 } // Kjør ny periodisering for å oppdatere kilde på periodene basert på nye opplysninger
                     ?: BoforholdApi
-                        .beregnBoforholdBarnV2(
+                        .beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             listOf(
                                 eksisterendeHusstandsmedlem
@@ -674,12 +674,12 @@ class BoforholdService(
                 }
                 offisieltHusstandsmedlem.resetTilOffentligePerioder()
                 val request =
-                    BoforholdBarnRequest(
-                        relatertPersonPersonId = offisieltHusstandsmedlem.ident,
+                    BoforholdBarnRequestV3(
+                        gjelderPersonId = offisieltHusstandsmedlem.ident,
                         fødselsdato =
                             offisieltHusstandsmedlem.fødselsdato
                                 ?: offisieltHusstandsmedlem.rolle!!.fødselsdato,
-                        erBarnAvBmBp = true,
+                        relasjon = Familierelasjon.BARN,
                         innhentedeOffentligeOpplysninger =
                             offisieltHusstandsmedlem.perioder
                                 .map { it.tilBostatus() }
@@ -689,12 +689,12 @@ class BoforholdService(
                     )
                 val periodisertBoforhold =
                     if (overskriveManuelleOpplysninger) {
-                        BoforholdApi.beregnBoforholdBarnV2(
+                        BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             listOf(request),
                         )
                     } else {
-                        BoforholdApi.beregnBoforholdBarnV2(
+                        BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             listOf(
                                 request.copy(
@@ -1021,7 +1021,7 @@ class BoforholdService(
         val periodiseringsrequest = tilBoforholdBarnRequest(endreBostatus)
 
         this.overskriveMedBearbeidaPerioder(
-            BoforholdApi.beregnBoforholdBarnV2(
+            BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 listOf(periodiseringsrequest),
             ),
@@ -1119,7 +1119,7 @@ class BoforholdService(
 
     private fun lagreBearbeidaBoforholdsgrunnlag(
         behandling: Behandling,
-        boforholdrespons: List<BoforholdResponse>,
+        boforholdrespons: List<BoforholdResponseV2>,
         personidentBarn: Personident,
     ) {
         behandling.grunnlag.add(

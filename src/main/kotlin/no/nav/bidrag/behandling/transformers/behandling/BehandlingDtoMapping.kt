@@ -57,7 +57,7 @@ import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
-import no.nav.bidrag.boforhold.dto.BoforholdResponse
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Familierelasjon
@@ -217,7 +217,7 @@ fun List<Grunnlag>.tilHusstandsmedlem() =
                 ident = it.gjelder,
                 perioder =
                     it
-                        .konvertereData<List<BoforholdResponse>>()
+                        .konvertereData<List<BoforholdResponseV2>>()
                         ?.map { boforholdrespons ->
                             HusstandsmedlemGrunnlagDto.BostatusperiodeGrunnlagDto(
                                 boforholdrespons.periodeFom,
@@ -539,11 +539,11 @@ fun Behandling.notatTittel(): String {
     return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
 }
 
-fun List<BoforholdResponse>.filtrerPerioderEtterVirkningstidspunkt(
+fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunkt(
     husstandsmedlemListe: Set<Husstandsmedlem>,
     virkningstidspunkt: LocalDate,
-): List<BoforholdResponse> {
-    return groupBy { it.relatertPersonPersonId }.flatMap { (barnId, perioder) ->
+): List<BoforholdResponseV2> {
+    return groupBy { it.gjelderPersonId }.flatMap { (barnId, perioder) ->
         val barn =
             husstandsmedlemListe.find { it.ident == barnId }
                 ?: return@flatMap perioder
@@ -615,7 +615,7 @@ fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     rolle: Rolle,
 ) = asSequence()
     .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    .mapNotNull { it.konvertereData<List<BoforholdResponse>>() }
+    .mapNotNull { it.konvertereData<List<BoforholdResponseV2>>() }
     .flatten()
     .distinct()
     .toList()

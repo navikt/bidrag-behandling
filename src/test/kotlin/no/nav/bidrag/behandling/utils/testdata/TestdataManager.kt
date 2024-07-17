@@ -58,14 +58,15 @@ class TestdataManager(
         inkludereVoksneIBpsHusstand: Boolean = false,
     ): Behandling {
         val behandling =
-            no.nav.bidrag.behandling.utils.testdata.oppretteBehandling(
-                inkludereInntekter,
-                inkludereSivilstand,
-                inkludereBoforhold,
-                inkludereBp,
-                behandlingstype,
-                inkludereVoksneIBpsHusstand,
-            )
+            no.nav.bidrag.behandling.utils.testdata
+                .oppretteBehandling(
+                    inkludereInntekter,
+                    inkludereSivilstand,
+                    inkludereBoforhold,
+                    inkludereBp,
+                    behandlingstype,
+                    inkludereVoksneIBpsHusstand,
+                )
 
         return behandlingRepository.save(behandling)
     }
