@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.begrensAntallPersoner
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
@@ -388,6 +389,8 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
     InntektValideringsfeilDto(
         årsinntekter =
             inntekter
+                .filter { if (tilType() == TypeBehandling.FORSKUDD) it.ident == bidragsmottaker?.ident else true }
+                .toSet()
                 .mapValideringsfeilForÅrsinntekter(
                     virkningstidspunktEllerSøktFomDato,
                     roller,

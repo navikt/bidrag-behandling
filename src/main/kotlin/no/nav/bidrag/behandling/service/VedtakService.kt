@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagGenerelt
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagGenereltAvslag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
@@ -31,7 +33,6 @@ import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.util.tilVedtakDto
-import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -51,7 +52,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 private val LOGGER = KotlinLogging.logger {}
@@ -161,6 +161,18 @@ class VedtakService(
     }
 
     fun fatteVedtak(behandlingId: Long): Int {
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        return when (behandling.tilType()) {
+            TypeBehandling.FORSKUDD -> fatteVedtakForskudd(behandling)
+            TypeBehandling.SÆRBIDRAG -> fatteVedtakSærbidrag(behandling)
+            else -> throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Fatte vedtak av behandlingstype ${behandling.tilType()} støttes ikke",
+            )
+        }
+    }
+
+    fun fatteVedtakSærbidrag(behandling: Behandling): Int {
         val isEnabled = unleashInstance.isEnabled(toggleFatteVedtakName, false)
         if (isEnabled.not()) {
             throw HttpClientErrorException(
@@ -168,8 +180,20 @@ class VedtakService(
                 "Fattevedtak er ikke aktivert",
             )
         }
+        behandling.validerForBeregning()
+        behandling.validerKanFatteVedtak()
 
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        val request =
+            if (behandling.avslag != null) {
+                behandling.byggOpprettVedtakRequestForAvslag()
+            } else {
+                behandling.byggOpprettVedtakRequestSærbidrag()
+            }
+        return 1
+    }
+
+    fun fatteVedtakForskudd(behandling: Behandling): Int {
+        val behandlingId = behandling.id!!
         behandling.validerForBeregning()
         behandling.validerKanFatteVedtak()
 
@@ -230,6 +254,7 @@ class VedtakService(
 
         return byggOpprettVedtakRequestObjekt()
             .copy(
+                grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
                 stønadsendringListe =
                     søknadsbarn.map {
                         OpprettStønadsendringRequestDto(
@@ -309,32 +334,59 @@ class VedtakService(
         )
     }
 
+    private fun Behandling.byggOpprettVedtakRequestForAvslagSærbidrag(): OpprettVedtakRequestDto {
+        val sak = sakConsumer.hentSak(saksnummer)
+        val grunnlagListe = byggGrunnlagGenereltAvslag()
+        val barn = søknadsbarn.first()
+
+        return byggOpprettVedtakRequestObjekt()
+            .copy(
+                engangsbeløpListe =
+                    listOf(
+                        OpprettEngangsbeløpRequestDto(
+                            type = engangsbeloptype!!,
+                            beløp = null,
+                            resultatkode = avslag!!.name,
+                            valutakode = "NOK",
+                            betaltBeløp = null,
+                            innkreving = innkrevingstype!!,
+                            skyldner = tilSkyldner(),
+                            omgjørVedtakId = refVedtaksid?.toInt(),
+                            kravhaver =
+                                barn.tilNyestePersonident()
+                                    ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                            mottaker =
+                                roller
+                                    .reelMottakerEllerBidragsmottaker(
+                                        sak.hentRolleMedFnr(barn.ident!!),
+                                    ),
+                            sak = Saksnummer(saksnummer),
+                            beslutning = Beslutningstype.ENDRING,
+                            grunnlagReferanseListe = grunnlagListe.map(GrunnlagDto::referanse),
+                        ),
+                    ),
+                grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
+            )
+    }
+
     private fun Behandling.byggOpprettVedtakRequestSærbidrag(): OpprettVedtakRequestDto {
         val sak = sakConsumer.hentSak(saksnummer)
-        val beregning = beregningService.beregneForskudd(id!!)
-
-        val stønadsendringPerioder =
-            beregning.map { it.byggStønadsendringerForVedtak(this) }
+        val beregning = beregningService.beregneSærbidrag(id!!)
 
         val grunnlagListeVedtak = byggGrunnlagForVedtak()
-        val stønadsendringGrunnlagListe = byggGrunnlagGenerelt()
+        val engangsbeløpGrunnlagliste = byggGrunnlagGenerelt()
 
-        val grunnlagListe =
-            (
-                grunnlagListeVedtak +
-                    stønadsendringPerioder.flatMap(
-                        StønadsendringPeriode::grunnlag,
-                    ) + stønadsendringGrunnlagListe
-            ).toSet()
+        val grunnlagliste = (grunnlagListeVedtak + engangsbeløpGrunnlagliste + beregning.grunnlagListe).toSet()
 
         val barn = søknadsbarn.first()
+        val resultat = beregning.beregnetSærbidragPeriodeListe.first().resultat
         return byggOpprettVedtakRequestObjekt().copy(
             engangsbeløpListe =
                 listOf(
                     OpprettEngangsbeløpRequestDto(
                         type = engangsbeloptype!!,
-                        beløp = BigDecimal.ZERO, // TODO: RES
-                        resultatkode = Resultatkode.SÆRBIDRAG_INNVILGET.name, // TODO: RES
+                        beløp = resultat.beløp,
+                        resultatkode = resultat.resultatkode.name,
                         valutakode = "NOK",
                         betaltBeløp = utgift!!.totalBeløpBetaltAvBp,
                         innkreving = innkrevingstype!!,
@@ -350,11 +402,10 @@ class VedtakService(
                                 ),
                         sak = Saksnummer(saksnummer),
                         beslutning = Beslutningstype.ENDRING,
-                        grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
-                        // Settes null for forskudd men skal settes til riktig verdi for bidrag
+                        grunnlagReferanseListe = grunnlagliste.map(GrunnlagDto::referanse),
                     ),
                 ),
-            grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
+            grunnlagListe = grunnlagliste.map(GrunnlagDto::tilOpprettRequestDto),
         )
     }
 
