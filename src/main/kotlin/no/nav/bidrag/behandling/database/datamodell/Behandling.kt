@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.UtgiftFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
+import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
@@ -240,12 +241,13 @@ fun Behandling.validerForBeregning() {
                     null,
                     inntekterFeil,
                     husstandsmedlemsfeil,
+                    null,
                     sivilstandFeil,
                     måBekrefteOpplysninger,
                 )
             }
         } else if (virkningstidspunktFeil != null) {
-            BeregningValideringsfeil(virkningstidspunktFeil, null, null, null, null)
+            BeregningValideringsfeil(virkningstidspunktFeil, null, null, null, null, null)
         } else {
             null
         }
@@ -272,8 +274,16 @@ fun Behandling.validerForBeregningSærbidrag() {
     val feil =
         if (avslag == null) {
             val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
+            val andreVoksneIHusstandenFeil =
+                husstandsmedlem.voksneIHusstanden
+                    ?.validereAndreVoksneIHusstanden(
+                        virkningstidspunktEllerSøktFomDato,
+                    )?.takeIf {
+                        it.harFeil
+                    }
             val husstandsmedlemsfeil =
-                husstandsmedlem
+                husstandsmedlem.barn
+                    .toSet()
                     .validerBoforhold(
                         virkningstidspunktEllerSøktFomDato,
                     ).filter { it.harFeil }
@@ -293,6 +303,7 @@ fun Behandling.validerForBeregningSærbidrag() {
             val harFeil =
                 inntekterFeil != null ||
                     husstandsmedlemsfeil != null ||
+                    andreVoksneIHusstandenFeil != null ||
                     utgiftFeil != null ||
                     måBekrefteOpplysninger.isNotEmpty()
             harFeil.ifTrue {
@@ -301,12 +312,11 @@ fun Behandling.validerForBeregningSærbidrag() {
                     utgiftFeil,
                     inntekterFeil,
                     husstandsmedlemsfeil,
+                    andreVoksneIHusstandenFeil,
                     null,
                     måBekrefteOpplysninger,
                 )
             }
-        } else if (utgiftFeil != null) {
-            BeregningValideringsfeil(null, utgiftFeil, null, null, null)
         } else {
             null
         }

@@ -55,6 +55,7 @@ import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
 import no.nav.bidrag.behandling.transformers.validerBoforhold
+import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
@@ -296,8 +297,10 @@ fun Behandling.tilBoforholdV2() =
             ),
         valideringsfeil =
             BoforholdValideringsfeil(
+                andreVoksneIHusstanden = husstandsmedlem.voksneIHusstanden?.validereAndreVoksneIHusstanden(virkningstidspunkt!!),
                 husstandsmedlem =
-                    husstandsmedlem
+                    husstandsmedlem.barn
+                        .toSet()
                         .validerBoforhold(virkningstidspunktEllerSøktFomDato)
                         .filter { it.harFeil },
                 sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },

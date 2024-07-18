@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
@@ -249,59 +248,6 @@ class InntektService(
         }
 
         return null
-    }
-
-    @Deprecated("Erstattes av oppdatereInntektManuelt")
-    @Transactional
-    fun oppdatereInntekterManuelt(
-        behandlingsid: Long,
-        oppdatereInntekterRequest: OppdatereInntekterRequestV2,
-    ) {
-        oppdatereInntekterRequest.valider()
-        val behandling =
-            behandlingRepository
-                .findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
-
-        oppdatereInntekterRequest.oppdatereInntektsperioder.forEach {
-            val inntekt = inntektRepository.findById(it.id).orElseThrow { inntektIkkeFunnetException(it.id) }
-            inntekt.datoFom = it.angittPeriode?.fom
-            inntekt.datoTom = it.angittPeriode?.til
-            inntekt.taMed = it.taMedIBeregning
-        }
-
-        oppdatereInntekterRequest.oppdatereManuelleInntekter.forEach {
-            if (it.id != null) {
-                val inntekt =
-                    inntektRepository
-                        .findByIdAndKilde(it.id, Kilde.MANUELL)
-                        .orElseThrow { inntektIkkeFunnetException(it.id) }
-                it.oppdatereEksisterendeInntekt(inntekt)
-            } else {
-                val nyInntekt = inntektRepository.save(it.lagreSomNyInntekt(behandling))
-                behandling.inntekter.add(nyInntekt)
-            }
-        }
-
-        val manuelleInntekterSomSkalSlettes =
-            inntektRepository
-                .findAllById(oppdatereInntekterRequest.sletteInntekter)
-                .filter { Kilde.MANUELL == it.kilde }
-                .toSet()
-
-        log.info {
-            "Fant ${manuelleInntekterSomSkalSlettes.size} av de oppgitte ${oppdatereInntekterRequest.sletteInntekter} " +
-                "inntektene som skal slettes"
-        }
-
-        behandling.inntekter.removeAll(manuelleInntekterSomSkalSlettes)
-
-        if (oppdatereInntekterRequest.sletteInntekter.isNotEmpty()) {
-            entityManager.flush()
-            log.info {
-                "Slettet ${oppdatereInntekterRequest.sletteInntekter} inntekter fra databasen."
-            }
-        }
     }
 
     private fun <T> behandleInntektsoppdatering(

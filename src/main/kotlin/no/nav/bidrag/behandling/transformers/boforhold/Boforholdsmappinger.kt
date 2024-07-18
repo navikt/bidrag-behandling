@@ -4,6 +4,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.barn
+import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
@@ -11,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.validerBoforhold
+import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -49,8 +52,12 @@ fun Husstandsmedlem.tilOppdatereBoforholdResponse(behandling: Behandling) =
         oppdatertHusstandsmedlem = (rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG).ifTrue { tilBostatusperiode() },
         valideringsfeil =
             BoforholdValideringsfeil(
+                andreVoksneIHusstanden =
+                    behandling.husstandsmedlem.voksneIHusstanden
+                        ?.validereAndreVoksneIHusstanden(behandling.virkningstidspunktEllerSøktFomDato),
                 husstandsmedlem =
-                    behandling.husstandsmedlem
+                    behandling.husstandsmedlem.barn
+                        .toSet()
                         .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
                         .filter { it.harFeil },
             ),

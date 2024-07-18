@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -23,6 +24,7 @@ data class VirkningstidspunktDto(
 )
 
 data class BoforholdValideringsfeil(
+    val andreVoksneIHusstanden: AndreVoksneIHusstandenPeriodeseringsfeil? = null,
     val husstandsmedlem: List<BoforholdPeriodeseringsfeil>? = emptyList(),
     val sivilstand: SivilstandPeriodeseringsfeil? = null,
 )

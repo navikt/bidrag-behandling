@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
+import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.erSærbidrag
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.utgift.tilUtgiftstype
+import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendeBostatusperiode
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendePeriode
@@ -197,6 +199,20 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
             "Ugyldig data ved oppdatering av virkningstidspunkt: ${feilliste.joinToString(", ")}",
         )
     }
+}
+
+fun Husstandsmedlem.validereAndreVoksneIHusstanden(virkniningstidspunkt: LocalDate): AndreVoksneIHusstandenPeriodeseringsfeil {
+    val hullIPerioder =
+        this.perioder
+            .map {
+                Datoperiode(it.datoFom!!, it.datoTom)
+            }.finnHullIPerioder(virkniningstidspunkt)
+    return AndreVoksneIHusstandenPeriodeseringsfeil(
+        hullIPerioder,
+        overlappendePerioder = this.perioder.finneOverlappendeBostatusperioder(),
+        manglerPerioder = this.perioder.isEmpty(),
+        fremtidigPeriode = this.inneholderFremtidigeBoforholdsperioder(),
+    )
 }
 
 fun Husstandsmedlem.validereBoforhold(
@@ -522,7 +538,7 @@ fun OppdatereAndreVoksneIHusstanden.validere(behandling: Behandling) {
 
     val rolleMedAndreVoksneIHusstanden = behandling.bidragspliktig
 
-    var husstandsmedlem = behandling.husstandsmedlem.find { it.rolle != null && it.rolle == rolleMedAndreVoksneIHusstanden }
+    var husstandsmedlem = behandling.husstandsmedlem.voksneIHusstanden
     if (husstandsmedlem == null) {
         husstandsmedlem =
             Husstandsmedlem(

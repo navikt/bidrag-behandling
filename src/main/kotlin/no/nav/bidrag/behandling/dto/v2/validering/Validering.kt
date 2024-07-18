@@ -142,6 +142,26 @@ data class OverlappendeBostatusperiode(
     val bosstatus: Set<Bostatuskode>,
 )
 
+data class AndreVoksneIHusstandenPeriodeseringsfeil(
+    val hullIPerioder: List<Datoperiode>,
+    val overlappendePerioder: List<OverlappendeBostatusperiode>,
+    @Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
+    val fremtidigPeriode: Boolean,
+    @Schema(description = """Er sann hvis det mangler sivilstand perioder."""")
+    val manglerPerioder: Boolean,
+) {
+    @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
+    val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
+
+    val harFeil
+        get() =
+            hullIPerioder.isNotEmpty() ||
+                overlappendePerioder.isNotEmpty() ||
+                fremtidigPeriode ||
+                manglerPerioder ||
+                ingenLøpendePeriode
+}
+
 data class SivilstandPeriodeseringsfeil(
     val hullIPerioder: List<Datoperiode>,
     val overlappendePerioder: List<SivilstandOverlappendePeriode>,
@@ -175,6 +195,7 @@ data class BeregningValideringsfeil(
     val utgift: UtgiftFeilDto?,
     val inntekter: InntektValideringsfeilDto? = null,
     val husstandsmedlem: List<BoforholdPeriodeseringsfeil>? = null,
+    val andreVoksneIHusstanden: AndreVoksneIHusstandenPeriodeseringsfeil? = null,
     val sivilstand: SivilstandPeriodeseringsfeil?,
     val måBekrefteNyeOpplysninger: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )
