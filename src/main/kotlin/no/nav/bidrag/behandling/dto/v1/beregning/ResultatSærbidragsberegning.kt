@@ -19,6 +19,7 @@ data class ResultatSærbidragsberegningDto(
     val resultatKode: Resultatkode,
     val antallBarnIHusstanden: Double? = null,
     val voksenIHusstanden: Boolean? = null,
+    val erDirekteAvslag: Boolean = false,
 ) {
     val beløpSomInnkreves: BigDecimal get() = maxOf(resultat - (beregning?.totalBeløpBetaltAvBp ?: BigDecimal.ZERO), BigDecimal.ZERO)
 }

@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -19,7 +20,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
-import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndelSærbidrag
@@ -29,7 +29,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningVoksneIHus
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
-import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
@@ -106,6 +106,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
     voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
+    erDirekteAvslag = isEmpty() && resultatkode.erDirekteAvslag(),
 )
 
 fun List<ResultatForskuddsberegningBarn>.tilDto() =
@@ -174,30 +175,6 @@ fun List<GrunnlagDto>.finnBorMedAndreVoksne(grunnlagsreferanseListe: List<Grunnl
         finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull() ?: return null
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningVoksneIHustand>().borMedAndreVoksne
 }
-
-fun List<BaseGrunnlag>.finnGrunnlagSomErReferertAv(
-    type: Grunnlagstype,
-    fraGrunnlag: BaseGrunnlag,
-): Set<BaseGrunnlag> {
-    val grunnlag = filtrerBasertPåEgenReferanser(type, fraGrunnlag.grunnlagsreferanseListe)
-    if (grunnlag.isEmpty()) {
-        return fraGrunnlag.grunnlagsreferanseListe
-            .flatMap { referanse ->
-                filtrerBasertPåEgenReferanse(null, referanse)
-                    .flatMap {
-                        finnGrunnlagSomErReferertAv(type, it)
-                    }
-            }.toSet()
-    }
-    return grunnlag.toSet()
-}
-
-fun List<BaseGrunnlag>.filtrerBasertPåEgenReferanser(
-    type: Grunnlagstype,
-    referanser: List<Grunnlagsreferanse>,
-): List<BaseGrunnlag> =
-    filtrerBasertPåEgenReferanse(type)
-        .filter { referanser.contains(it.referanse) }
 
 fun List<GrunnlagDto>.finnDelberegningUtgift(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUtgift? {
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
