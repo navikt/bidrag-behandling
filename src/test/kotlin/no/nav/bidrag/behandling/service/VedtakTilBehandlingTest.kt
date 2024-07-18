@@ -382,9 +382,9 @@ class VedtakTilBehandlingTest {
         }
 
         assertSoftly(behandling.grunnlag) {
-            this shouldHaveSize 23
+            this shouldHaveSize 24
             filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
-                12,
+                13,
             )
             filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BARN }.shouldHaveSize(1)
             filter { !it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(

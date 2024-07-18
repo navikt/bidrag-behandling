@@ -98,11 +98,7 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
                         regel = "",
                         beløp = it.beløp ?: BigDecimal.ZERO,
                         sivilstand = grunnlagListe.finnSivilstandForPeriode(it.grunnlagReferanseListe),
-                        inntekt =
-                            grunnlagListe.finnTotalInntektForRolle(
-                                it.grunnlagReferanseListe,
-                                Rolletype.BIDRAGSMOTTAKER,
-                            ),
+                        inntekt = grunnlagListe.finnTotalInntektForRolle(it.grunnlagReferanseListe),
                         antallBarnIHusstanden = grunnlagListe.finnAntallBarnIHusstanden(it.grunnlagReferanseListe).toInt(),
                     )
                 },
