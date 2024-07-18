@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdaterePeriodeInntekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner
@@ -31,6 +30,8 @@ import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvMa
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.tilAinntektspostDto
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -83,6 +84,8 @@ class InntektServiceTest : TestContainerRunner() {
     fun setup() {
         behandlingRepository.deleteAll()
         inntektRepository.deleteAll()
+        stubSjablonProvider()
+        stubKodeverkProvider()
     }
 
     @Nested
@@ -110,7 +113,11 @@ class InntektServiceTest : TestContainerRunner() {
                                     ),
                                 periode =
                                     ÅrMånedsperiode(
-                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                        YearMonth
+                                            .now()
+                                            .minusYears(1)
+                                            .withMonth(1)
+                                            .atDay(1),
                                         YearMonth.now().withMonth(1).atDay(1),
                                     ),
                                 sumInntekt = BigDecimal(500000),
@@ -131,17 +138,32 @@ class InntektServiceTest : TestContainerRunner() {
 
             assertSoftly {
                 oppdatertBehandling.get().inntekter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }
                     .belop shouldBe
                     summerteInntekter.inntekter
-                        .first { Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering }.sumInntekt
-                oppdatertBehandling.get().inntekter
-                    .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }.inntektsposter.size shouldBe 1
-                oppdatertBehandling.get().inntekter
-                    .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }.inntektsposter.first().kode shouldBe
-                    summerteInntekter.inntekter.first {
-                        Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering
-                    }.inntektPostListe.first().kode
+                        .first { Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering }
+                        .sumInntekt
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }
+                    .inntektsposter.size shouldBe 1
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first { Inntektsrapportering.LIGNINGSINNTEKT == it.type }
+                    .inntektsposter
+                    .first()
+                    .kode shouldBe
+                    summerteInntekter.inntekter
+                        .first {
+                            Inntektsrapportering.LIGNINGSINNTEKT == it.inntektRapportering
+                        }.inntektPostListe
+                        .first()
+                        .kode
             }
         }
 
@@ -276,7 +298,11 @@ class InntektServiceTest : TestContainerRunner() {
                                 inntektRapportering = Inntektsrapportering.BARNETILLEGG,
                                 periode =
                                     ÅrMånedsperiode(
-                                        YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                                        YearMonth
+                                            .now()
+                                            .minusYears(1)
+                                            .withMonth(1)
+                                            .atDay(1),
                                         YearMonth.now().withMonth(1).atDay(1),
                                     ),
                                 sumInntekt = BigDecimal(500),
@@ -403,7 +429,8 @@ class InntektServiceTest : TestContainerRunner() {
                 TransformerInntekterRequest(
                     ainntektHentetDato = LocalDate.now(),
                     ainntektsposter =
-                        skattepliktigeInntekter.ainntekter.flatMap { it.ainntektspostListe }
+                        skattepliktigeInntekter.ainntekter
+                            .flatMap { it.ainntektspostListe }
                             .tilAinntektsposter(testdataBM.tilRolle(behandling)),
                     kontantstøtteliste = emptyList(),
                     skattegrunnlagsliste = emptyList(),
@@ -471,7 +498,8 @@ class InntektServiceTest : TestContainerRunner() {
                 TransformerInntekterRequestBuilder(
                     ainntektHentetDato = grunnlagMedAinntekt.innhentet.toLocalDate(),
                     ainntektsposter =
-                        skattepliktigeInntekter.ainntekter.flatMap { it.ainntektspostListe }
+                        skattepliktigeInntekter.ainntekter
+                            .flatMap { it.ainntektspostListe }
                             .tilAinntektsposter(testdataBM.tilRolle(behandling)),
                 ).bygge()
 
@@ -488,11 +516,14 @@ class InntektServiceTest : TestContainerRunner() {
             entityManager.refresh(behandling)
 
             behandling.inntekter.size shouldBe 2
-            behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }
-                .filter { it.belop == BigDecimal(70000) }.size shouldBe 1
+            behandling.inntekter
+                .filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }
+                .filter { it.belop == BigDecimal(70000) }
+                .size shouldBe 1
 
             val oppdatertAinntekt =
-                skattepliktigeInntekter.ainntekter.flatMap { it.ainntektspostListe }
+                skattepliktigeInntekter.ainntekter
+                    .flatMap { it.ainntektspostListe }
                     .map { it.copy(beløp = it.beløp + BigDecimal(1000)) }
                     .tilAinntektsposter(testdataBM.tilRolle(behandling))
 
@@ -835,8 +866,18 @@ class InntektServiceTest : TestContainerRunner() {
                     behandling = behandling,
                     type = Inntektsrapportering.KONTANTSTØTTE,
                     belop = BigDecimal(14000),
-                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    datoFom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .atDay(1),
+                    datoTom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .atDay(31),
                     ident = testdataBM.ident,
                     gjelderBarn = testdataBarn1.ident,
                     kilde = Kilde.MANUELL,
@@ -851,13 +892,13 @@ class InntektServiceTest : TestContainerRunner() {
             behandlingEtterOppdatering.get().inntekter.size shouldBe 1
 
             val forespørselOmOppdateringAvInntekter =
-                OppdatereInntekterRequestV2(
-                    oppdatereManuelleInntekter =
-                        setOf(oppretteRequestForOppdateringAvManuellInntekt(idInntekt = lagretKontantstøtte.id!!)),
+                OppdatereInntektRequest(
+                    oppdatereManuellInntekt =
+                        oppretteRequestForOppdateringAvManuellInntekt(idInntekt = lagretKontantstøtte.id!!),
                 )
 
             // hvis
-            inntektService.oppdatereInntekterManuelt(
+            inntektService.oppdatereInntektManuelt(
                 behandling.id!!,
                 forespørselOmOppdateringAvInntekter,
             )
@@ -868,10 +909,18 @@ class InntektServiceTest : TestContainerRunner() {
             assertSoftly {
                 shouldBePresent(oppdatertBehandling)
                 oppdatertBehandling.get().inntekter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first().type shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereManuelleInntekter.first().type
-                oppdatertBehandling.get().inntekter.first().belop shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereManuelleInntekter.first().beløp
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .type shouldBe
+                    forespørselOmOppdateringAvInntekter.oppdatereManuellInntekt!!.type
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .belop shouldBe
+                    forespørselOmOppdateringAvInntekter.oppdatereManuellInntekt.beløp
             }
         }
 
@@ -885,8 +934,18 @@ class InntektServiceTest : TestContainerRunner() {
                     behandling = behandling,
                     type = Inntektsrapportering.KONTANTSTØTTE,
                     belop = BigDecimal(14000),
-                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    datoFom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .atDay(1),
+                    datoTom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .atDay(31),
                     ident = testdataBM.ident,
                     gjelderBarn = testdataBarn1.ident,
                     kilde = Kilde.MANUELL,
@@ -896,10 +955,10 @@ class InntektServiceTest : TestContainerRunner() {
             val lagretKontantstøtte = inntektRepository.save(kontantstøtte)
 
             val forespørselOmOppdateringAvInntekter =
-                OppdatereInntekterRequestV2(sletteInntekter = setOf(lagretKontantstøtte.id!!))
+                OppdatereInntektRequest(sletteInntekt = lagretKontantstøtte.id!!)
 
             // hvis
-            inntektService.oppdatereInntekterManuelt(
+            inntektService.oppdatereInntektManuelt(
                 behandling.id!!,
                 forespørselOmOppdateringAvInntekter,
             )
@@ -924,10 +983,30 @@ class InntektServiceTest : TestContainerRunner() {
                     behandling = behandling,
                     type = Inntektsrapportering.AINNTEKT,
                     belop = BigDecimal(50000),
-                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                    opprinneligFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                    opprinneligTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    datoFom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .atDay(1),
+                    datoTom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .atDay(31),
+                    opprinneligFom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .atDay(1),
+                    opprinneligTom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .atDay(31),
                     ident = testdataBM.ident,
                     kilde = Kilde.OFFENTLIG,
                     taMed = true,
@@ -945,23 +1024,22 @@ class InntektServiceTest : TestContainerRunner() {
             val lagretInntekt = inntektRepository.save(ainntekt)
 
             val forespørselOmOppdateringAvInntekter =
-                OppdatereInntekterRequestV2(
-                    oppdatereInntektsperioder =
-                        setOf(
-                            OppdaterePeriodeInntekt(
-                                id = lagretInntekt.id!!,
-                                taMedIBeregning = false,
-                                angittPeriode =
-                                    Datoperiode(
-                                        lagretInntekt.datoFom!!.minusYears(2),
-                                        lagretInntekt.datoTom?.plusMonths(1),
-                                    ),
-                            ),
+                OppdatereInntektRequest(
+                    oppdatereInntektsperiode =
+                        OppdaterePeriodeInntekt(
+                            id = lagretInntekt.id!!,
+                            taMedIBeregning = true,
+                            angittPeriode =
+                                Datoperiode(
+                                    lagretInntekt.datoFom!!.minusYears(2),
+                                    lagretInntekt.datoTom?.plusMonths(1),
+                                ),
                         ),
                 )
 
+            behandling.inntekter.add(lagretInntekt)
             // hvis
-            inntektService.oppdatereInntekterManuelt(
+            inntektService.oppdatereInntektManuelt(
                 behandling.id!!,
                 forespørselOmOppdateringAvInntekter,
             )
@@ -974,15 +1052,49 @@ class InntektServiceTest : TestContainerRunner() {
             assertSoftly {
                 shouldBePresent(oppdatertBehandling)
                 oppdatertBehandling.get().inntekter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first().belop shouldBe ainntekt.belop
-                oppdatertBehandling.get().inntekter.first().datoFom shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode!!.fom
-                oppdatertBehandling.get().inntekter.first().datoTom shouldBe
-                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperioder.first().angittPeriode!!.til
-                oppdatertBehandling.get().inntekter.first().opprinneligFom shouldBe ainntekt.opprinneligFom
-                oppdatertBehandling.get().inntekter.first().opprinneligTom shouldBe ainntekt.opprinneligTom
-                oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first().inntektsposter.first().inntektstype shouldBe postAinntekt.inntektstype
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .belop shouldBe ainntekt.belop
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .datoFom shouldBe
+                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperiode!!
+                        .angittPeriode!!
+                        .fom
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .datoTom shouldBe
+                    forespørselOmOppdateringAvInntekter.oppdatereInntektsperiode
+                        .angittPeriode!!
+                        .til
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .opprinneligFom shouldBe ainntekt.opprinneligFom
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .opprinneligTom shouldBe ainntekt.opprinneligTom
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .inntektsposter.size shouldBe 1
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .inntektsposter
+                    .first()
+                    .inntektstype shouldBe postAinntekt.inntektstype
             }
         }
     }
@@ -1000,8 +1112,18 @@ class InntektServiceTest : TestContainerRunner() {
                     behandling = behandling,
                     type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
                     belop = BigDecimal(563000),
-                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    datoFom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .atDay(1),
+                    datoTom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .atDay(31),
                     ident = testdataBM.ident,
                     kilde = Kilde.MANUELL,
                     taMed = true,
@@ -1012,7 +1134,11 @@ class InntektServiceTest : TestContainerRunner() {
 
             lagretBehandling.isPresent shouldBe true
             lagretBehandling.get().inntekter.size shouldBe 1
-            lagretBehandling.get().inntekter.first().belop shouldBe manuellInntekt.belop
+            lagretBehandling
+                .get()
+                .inntekter
+                .first()
+                .belop shouldBe manuellInntekt.belop
             lagretManuellInntekt.id shouldNotBe null
             lagretManuellInntekt.belop shouldBe manuellInntekt.belop
 
@@ -1024,8 +1150,18 @@ class InntektServiceTest : TestContainerRunner() {
                             taMed = true,
                             type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
                             beløp = BigDecimal(643000),
-                            datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                            datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                            datoFom =
+                                YearMonth
+                                    .now()
+                                    .minusYears(1)
+                                    .withMonth(1)
+                                    .atDay(1),
+                            datoTom =
+                                YearMonth
+                                    .now()
+                                    .minusYears(1)
+                                    .withMonth(12)
+                                    .atDay(31),
                             ident = Personident(testdataBM.ident),
                         ),
                 )
@@ -1042,7 +1178,11 @@ class InntektServiceTest : TestContainerRunner() {
             assertSoftly {
                 shouldBePresent(oppdatertBehandling)
                 oppdatertBehandling.get().inntekter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first().belop shouldBe
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .belop shouldBe
                     forespørselOmOppdateringAvInntekter.oppdatereManuellInntekt!!.beløp
             }
         }
@@ -1057,8 +1197,18 @@ class InntektServiceTest : TestContainerRunner() {
                     behandling = behandling,
                     type = Inntektsrapportering.KONTANTSTØTTE,
                     belop = BigDecimal(14000),
-                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    datoFom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .atDay(1),
+                    datoTom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .atDay(31),
                     ident = testdataBM.ident,
                     gjelderBarn = testdataBarn1.ident,
                     kilde = Kilde.MANUELL,
@@ -1070,7 +1220,11 @@ class InntektServiceTest : TestContainerRunner() {
 
             lagretBehandling.isPresent shouldBe true
             lagretBehandling.get().inntekter.size shouldBe 1
-            lagretBehandling.get().inntekter.first().belop shouldBe kontantstøtte.belop
+            lagretBehandling
+                .get()
+                .inntekter
+                .first()
+                .belop shouldBe kontantstøtte.belop
 
             val forespørselOmOppdateringAvInntekter = OppdatereInntektRequest(sletteInntekt = lagretKontantstøtte.id!!)
 
@@ -1146,8 +1300,18 @@ class InntektServiceTest : TestContainerRunner() {
                             taMed = true,
                             type = Inntektsrapportering.UTVIDET_BARNETRYGD,
                             beløp = BigDecimal(643000),
-                            datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                            datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                            datoFom =
+                                YearMonth
+                                    .now()
+                                    .minusYears(1)
+                                    .withMonth(1)
+                                    .atDay(1),
+                            datoTom =
+                                YearMonth
+                                    .now()
+                                    .minusYears(1)
+                                    .withMonth(12)
+                                    .atDay(31),
                             ident = Personident(testdataBM.ident),
                         ),
                 )
@@ -1182,10 +1346,30 @@ class InntektServiceTest : TestContainerRunner() {
                     behandling = behandling,
                     type = Inntektsrapportering.AINNTEKT,
                     belop = BigDecimal(50000),
-                    datoFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                    datoTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
-                    opprinneligFom = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
-                    opprinneligTom = YearMonth.now().minusYears(1).withMonth(12).atDay(31),
+                    datoFom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .atDay(1),
+                    datoTom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .atDay(31),
+                    opprinneligFom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .atDay(1),
+                    opprinneligTom =
+                        YearMonth
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .atDay(31),
                     ident = testdataBM.ident,
                     kilde = Kilde.OFFENTLIG,
                     taMed = true,
@@ -1225,13 +1409,43 @@ class InntektServiceTest : TestContainerRunner() {
             assertSoftly {
                 shouldBePresent(oppdatertBehandling)
                 oppdatertBehandling.get().inntekter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first().belop shouldBe ainntekt.belop
-                oppdatertBehandling.get().inntekter.first().datoFom shouldBe null
-                oppdatertBehandling.get().inntekter.first().datoTom shouldBe null
-                oppdatertBehandling.get().inntekter.first().opprinneligFom shouldBe ainntekt.opprinneligFom
-                oppdatertBehandling.get().inntekter.first().opprinneligTom shouldBe ainntekt.opprinneligTom
-                oppdatertBehandling.get().inntekter.first().inntektsposter.size shouldBe 1
-                oppdatertBehandling.get().inntekter.first().inntektsposter.first().inntektstype shouldBe postAinntekt.inntektstype
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .belop shouldBe ainntekt.belop
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .datoFom shouldBe null
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .datoTom shouldBe null
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .opprinneligFom shouldBe ainntekt.opprinneligFom
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .opprinneligTom shouldBe ainntekt.opprinneligTom
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .inntektsposter.size shouldBe 1
+                oppdatertBehandling
+                    .get()
+                    .inntekter
+                    .first()
+                    .inntektsposter
+                    .first()
+                    .inntektstype shouldBe postAinntekt.inntektstype
             }
         }
 

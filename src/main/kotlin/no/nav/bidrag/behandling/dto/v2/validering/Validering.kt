@@ -23,6 +23,14 @@ data class VirkningstidspunktFeilDto(
         get() = manglerVirkningstidspunkt || manglerÅrsakEllerAvslag || virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig
 }
 
+data class UtgiftFeilDto(
+    val manglerUtgifter: Boolean,
+) {
+    @get:JsonIgnore
+    val harFeil
+        get() = manglerUtgifter
+}
+
 data class InntektValideringsfeilDto(
     val barnetillegg: Set<InntektValideringsfeil>?,
     val utvidetBarnetrygd: InntektValideringsfeil?,
@@ -34,10 +42,13 @@ data class InntektValideringsfeilDto(
     @get:JsonIgnore
     val harFeil
         get() =
-            barnetillegg?.any { it.harFeil } == true || utvidetBarnetrygd?.harFeil == true ||
+            barnetillegg?.any { it.harFeil } == true ||
+                utvidetBarnetrygd?.harFeil == true ||
                 kontantstøtte?.any {
                     it.harFeil
-                } == true || småbarnstillegg?.harFeil == true || årsinntekter?.any { it.harFeil } == true
+                } == true ||
+                småbarnstillegg?.harFeil == true ||
+                årsinntekter?.any { it.harFeil } == true
 }
 
 data class InntektValideringsfeil(
@@ -65,8 +76,11 @@ data class InntektValideringsfeil(
     @get:JsonIgnore
     val harFeil
         get() =
-            overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty() ||
-                fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
+            overlappendePerioder.isNotEmpty() ||
+                hullIPerioder.isNotEmpty() ||
+                fremtidigPeriode ||
+                manglerPerioder ||
+                ingenLøpendePeriode
 }
 
 data class OverlappendePeriode(
@@ -98,8 +112,11 @@ data class BoforholdPeriodeseringsfeil(
     @get:JsonIgnore
     val harFeil
         get() =
-            hullIPerioder.isNotEmpty() || overlappendePerioder.isNotEmpty() ||
-                fremtidigPeriode || manglerPerioder || ingenLøpendePeriode
+            hullIPerioder.isNotEmpty() ||
+                overlappendePerioder.isNotEmpty() ||
+                fremtidigPeriode ||
+                manglerPerioder ||
+                ingenLøpendePeriode
     val barn
         get(): HusstandsmedlemPeriodiseringsfeilDto =
             husstandsmedlem?.let {
@@ -125,6 +142,26 @@ data class OverlappendeBostatusperiode(
     val bosstatus: Set<Bostatuskode>,
 )
 
+data class AndreVoksneIHusstandenPeriodeseringsfeil(
+    val hullIPerioder: List<Datoperiode>,
+    val overlappendePerioder: List<OverlappendeBostatusperiode>,
+    @Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
+    val fremtidigPeriode: Boolean,
+    @Schema(description = """Er sann hvis det mangler sivilstand perioder."""")
+    val manglerPerioder: Boolean,
+) {
+    @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
+    val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
+
+    val harFeil
+        get() =
+            hullIPerioder.isNotEmpty() ||
+                overlappendePerioder.isNotEmpty() ||
+                fremtidigPeriode ||
+                manglerPerioder ||
+                ingenLøpendePeriode
+}
+
 data class SivilstandPeriodeseringsfeil(
     val hullIPerioder: List<Datoperiode>,
     val overlappendePerioder: List<SivilstandOverlappendePeriode>,
@@ -140,8 +177,12 @@ data class SivilstandPeriodeseringsfeil(
 
     val harFeil
         get() =
-            hullIPerioder.isNotEmpty() || overlappendePerioder.isNotEmpty() ||
-                fremtidigPeriode || manglerPerioder || ingenLøpendePeriode || ugyldigStatus
+            hullIPerioder.isNotEmpty() ||
+                overlappendePerioder.isNotEmpty() ||
+                fremtidigPeriode ||
+                manglerPerioder ||
+                ingenLøpendePeriode ||
+                ugyldigStatus
 }
 
 data class SivilstandOverlappendePeriode(
@@ -151,8 +192,10 @@ data class SivilstandOverlappendePeriode(
 
 data class BeregningValideringsfeil(
     val virkningstidspunkt: VirkningstidspunktFeilDto?,
+    val utgift: UtgiftFeilDto?,
     val inntekter: InntektValideringsfeilDto? = null,
     val husstandsmedlem: List<BoforholdPeriodeseringsfeil>? = null,
+    val andreVoksneIHusstanden: AndreVoksneIHusstandenPeriodeseringsfeil? = null,
     val sivilstand: SivilstandPeriodeseringsfeil?,
     val måBekrefteNyeOpplysninger: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )

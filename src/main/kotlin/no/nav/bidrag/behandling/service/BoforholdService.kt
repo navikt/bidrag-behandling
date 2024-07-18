@@ -438,7 +438,9 @@ class BoforholdService(
                         id = oppdatereStatus.idPeriode,
                         husstandsmedlem = husstandsmedlemSomSkalOppdateres,
                         bostatus = nyBostatus,
-                        datoFom = periodeSomSkalOppdateres?.datoFom ?: behandling.virkningstidspunkt!!,
+                        datoFom =
+                            periodeSomSkalOppdateres?.datoFom
+                                ?: behandling.virkningstidspunkt!!,
                         datoTom = periodeSomSkalOppdateres?.datoTom,
                         kilde = Kilde.MANUELL,
                     ),

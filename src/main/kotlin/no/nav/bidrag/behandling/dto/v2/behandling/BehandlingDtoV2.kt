@@ -118,12 +118,12 @@ data class SærbidragKategoriDto(
 data class UtgiftBeregningDto(
     @Schema(description = "Beløp som er direkte betalt av BP")
     val beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
-    @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt og beløp som er direkte betalt av BP")
-    val totalBeløpBetaltAvBp: BigDecimal? = null,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val totalGodkjentBeløp: BigDecimal = BigDecimal.ZERO,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val totalGodkjentBeløpBp: BigDecimal? = null,
+    @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt plus beløp som er direkte betalt av BP")
+    val totalBeløpBetaltAvBp: BigDecimal = (totalGodkjentBeløpBp ?: BigDecimal.ZERO) + beløpDirekteBetaltAvBp,
 )
 
 data class UtgiftspostDto(

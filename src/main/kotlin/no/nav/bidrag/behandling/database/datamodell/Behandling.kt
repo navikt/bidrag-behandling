@@ -17,9 +17,11 @@ import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
+import no.nav.bidrag.behandling.dto.v2.validering.UtgiftFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
+import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
@@ -236,14 +238,16 @@ fun Behandling.validerForBeregning() {
             harFeil.ifTrue {
                 BeregningValideringsfeil(
                     virkningstidspunktFeil,
+                    null,
                     inntekterFeil,
                     husstandsmedlemsfeil,
+                    null,
                     sivilstandFeil,
                     måBekrefteOpplysninger,
                 )
             }
         } else if (virkningstidspunktFeil != null) {
-            BeregningValideringsfeil(virkningstidspunktFeil, null, null, null)
+            BeregningValideringsfeil(virkningstidspunktFeil, null, null, null, null, null)
         } else {
             null
         }
@@ -256,6 +260,75 @@ fun Behandling.validerForBeregning() {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
             "Feil ved validering av behandling for beregning",
+            commonObjectmapper.writeValueAsBytes(feil),
+            Charset.defaultCharset(),
+        )
+    }
+}
+
+fun Behandling.validerForBeregningSærbidrag() {
+    val utgiftFeil =
+        UtgiftFeilDto(
+            manglerUtgifter = utgift == null || utgift!!.utgiftsposter.isEmpty(),
+        ).takeIf { it.harFeil }
+    val feil =
+        if (avslag == null) {
+            val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
+            val andreVoksneIHusstandenFeil =
+                husstandsmedlem.voksneIHusstanden
+                    ?.validereAndreVoksneIHusstanden(
+                        virkningstidspunktEllerSøktFomDato,
+                    )?.takeIf {
+                        it.harFeil
+                    }
+            val husstandsmedlemsfeil =
+                husstandsmedlem.barn
+                    .toSet()
+                    .validerBoforhold(
+                        virkningstidspunktEllerSøktFomDato,
+                    ).filter { it.harFeil }
+                    .takeIf { it.isNotEmpty() }
+            val måBekrefteOpplysninger =
+                grunnlag
+                    .hentAlleSomMåBekreftes()
+                    .map { grunnlagSomMåBekreftes ->
+                        MåBekrefteNyeOpplysninger(
+                            grunnlagSomMåBekreftes.type,
+                            husstandsmedlem =
+                                (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
+                                    husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                                },
+                        )
+                    }.toSet()
+            val harFeil =
+                inntekterFeil != null ||
+                    husstandsmedlemsfeil != null ||
+                    andreVoksneIHusstandenFeil != null ||
+                    utgiftFeil != null ||
+                    måBekrefteOpplysninger.isNotEmpty()
+            harFeil.ifTrue {
+                BeregningValideringsfeil(
+                    null,
+                    utgiftFeil,
+                    inntekterFeil,
+                    husstandsmedlemsfeil,
+                    andreVoksneIHusstandenFeil,
+                    null,
+                    måBekrefteOpplysninger,
+                )
+            }
+        } else {
+            null
+        }
+
+    if (feil != null) {
+        secureLogger.warn {
+            "Feil ved validering av behandling for beregning av særbidrag" +
+                commonObjectmapper.writeValueAsString(feil)
+        }
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Feil ved validering av behandling for beregning av særbidrag",
             commonObjectmapper.writeValueAsBytes(feil),
             Charset.defaultCharset(),
         )

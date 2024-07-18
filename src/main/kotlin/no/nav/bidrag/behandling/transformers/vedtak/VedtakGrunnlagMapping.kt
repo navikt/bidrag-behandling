@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.vedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -10,7 +11,10 @@ import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SærbidragskategoriGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftDirekteBetaltGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftspostGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
@@ -57,6 +61,21 @@ fun Behandling.byggGrunnlagSøknad() =
         ),
     )
 
+fun Behandling.byggGrunnlagSærbidragKategori() =
+    setOf(
+        GrunnlagDto(
+            referanse = "særbidrag_kategori",
+            type = Grunnlagstype.SÆRBIDRAG_KATEGORI,
+            innhold =
+                POJONode(
+                    SærbidragskategoriGrunnlag(
+                        kategori = særbidragKategori,
+                        beskrivelse = kategoriBeskrivelse,
+                    ),
+                ),
+        ),
+    )
+
 fun Behandling.byggGrunnlagVirkningsttidspunkt() =
     setOf(
         GrunnlagDto(
@@ -68,6 +87,41 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt() =
                         virkningstidspunkt = virkningstidspunkt!!,
                         årsak = årsak,
                         avslag = (årsak == null).ifTrue { avslag },
+                    ),
+                ),
+        ),
+    )
+
+fun Behandling.byggGrunnlagUtgiftsposter() =
+    setOf(
+        GrunnlagDto(
+            referanse = "utgiftsposter",
+            type = Grunnlagstype.UTGIFTSPOST,
+            innhold =
+                POJONode(
+                    utgift!!.utgiftsposter.map {
+                        UtgiftspostGrunnlag(
+                            dato = it.dato,
+                            type = it.type,
+                            kravbeløp = it.kravbeløp,
+                            godkjentBeløp = it.godkjentBeløp,
+                            begrunnelse = it.begrunnelse,
+                            betaltAvBp = it.betaltAvBp,
+                        )
+                    },
+                ),
+        ),
+    )
+
+fun Behandling.byggGrunnlagUtgiftDirekteBetalt() =
+    setOf(
+        GrunnlagDto(
+            referanse = "utgift_direkte_betalt",
+            type = Grunnlagstype.UTGIFT_DIREKTE_BETALT,
+            innhold =
+                POJONode(
+                    UtgiftDirekteBetaltGrunnlag(
+                        beløpDirekteBetalt = utgift!!.beløpDirekteBetaltAvBp,
                     ),
                 ),
         ),

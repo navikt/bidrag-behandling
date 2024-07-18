@@ -22,8 +22,8 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
-import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForStønad
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
+import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagGenerelt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagBostatus
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
@@ -157,7 +157,7 @@ class GrunnlagMappingTest {
             behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
             behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
-            val grunnlag = behandling.byggGrunnlagForStønad()
+            val grunnlag = behandling.byggGrunnlagGenerelt()
 
             assertSoftly(grunnlag.toList()) {
                 it shouldHaveSize 8
@@ -358,11 +358,13 @@ class GrunnlagMappingTest {
                 it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE) shouldHaveSize 1
                 it.søknadsbarnReferanse shouldBe søknadsbarn1.tilGrunnlagPerson().referanse
 
-                it.grunnlagListe.filtrerBasertPåFremmedReferanse(
-                    Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
-                    referanse = søknadsbarnGrunnlag2.referanse,
-                ).shouldBeEmpty()
-                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+                it.grunnlagListe
+                    .filtrerBasertPåFremmedReferanse(
+                        Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                        referanse = søknadsbarnGrunnlag2.referanse,
+                    ).shouldBeEmpty()
+                it.grunnlagListe
+                    .filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
                     .filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn == søknadsbarnGrunnlag2.referanse }
                     .shouldBeEmpty()
             }
@@ -380,11 +382,13 @@ class GrunnlagMappingTest {
                 it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE) shouldHaveSize 1
                 it.søknadsbarnReferanse shouldBe søknadsbarn2.tilGrunnlagPerson().referanse
 
-                it.grunnlagListe.filtrerBasertPåFremmedReferanse(
-                    Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
-                    referanse = søknadsbarnGrunnlag1.referanse,
-                ).shouldBeEmpty()
-                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+                it.grunnlagListe
+                    .filtrerBasertPåFremmedReferanse(
+                        Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                        referanse = søknadsbarnGrunnlag1.referanse,
+                    ).shouldBeEmpty()
+                it.grunnlagListe
+                    .filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
                     .filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn == søknadsbarnGrunnlag1.referanse }
                     .shouldBeEmpty()
             }
@@ -405,16 +409,20 @@ class GrunnlagMappingTest {
             assertSoftly(behandling.tilPersonobjekter(testdataBarn1.tilRolle())) {
                 shouldHaveSize(2)
                 it.søknadsbarn shouldHaveSize 1
-                it.søknadsbarn.toList()
-                    .firstOrNull()?.referanse shouldBe søknadsbarnGrunnlag1.referanse
+                it.søknadsbarn
+                    .toList()
+                    .firstOrNull()
+                    ?.referanse shouldBe søknadsbarnGrunnlag1.referanse
                 it.bidragsmottaker shouldNotBe null
             }
 
             assertSoftly(behandling.tilPersonobjekter(testdataBarn2.tilRolle())) {
                 shouldHaveSize(2)
                 it.søknadsbarn shouldHaveSize 1
-                it.søknadsbarn.toList()
-                    .firstOrNull()?.referanse shouldBe søknadsbarnGrunnlag2.referanse
+                it.søknadsbarn
+                    .toList()
+                    .firstOrNull()
+                    ?.referanse shouldBe søknadsbarnGrunnlag2.referanse
                 it.bidragsmottaker shouldNotBe null
             }
         }
@@ -851,10 +859,16 @@ class GrunnlagMappingTest {
                 it.hentInntekt(Inntektsrapportering.KONTANTSTØTTE) shouldHaveSize 1
                 it.hentInntekt(Inntektsrapportering.BARNETILLEGG) shouldHaveSize 1
 
-                it.hentInntekt(Inntektsrapportering.KONTANTSTØTTE).first()
-                    .innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
-                it.hentInntekt(Inntektsrapportering.BARNETILLEGG).first()
-                    .innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn shouldBe søknadsbarnGrunnlag2.referanse
+                it
+                    .hentInntekt(Inntektsrapportering.KONTANTSTØTTE)
+                    .first()
+                    .innholdTilObjekt<InntektsrapporteringPeriode>()
+                    .gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
+                it
+                    .hentInntekt(Inntektsrapportering.BARNETILLEGG)
+                    .first()
+                    .innholdTilObjekt<InntektsrapporteringPeriode>()
+                    .gjelderBarn shouldBe søknadsbarnGrunnlag2.referanse
             }
         }
 
@@ -914,7 +928,8 @@ class GrunnlagMappingTest {
             )
             val personobjektersøknadsbarn = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1)
             assertSoftly(
-                behandling.tilGrunnlagInntekt(personobjektersøknadsbarn, søknadsbarnGrunnlag1)
+                behandling
+                    .tilGrunnlagInntekt(personobjektersøknadsbarn, søknadsbarnGrunnlag1)
                     .toList(),
             ) {
                 it shouldHaveSize 11
@@ -1297,7 +1312,8 @@ class GrunnlagMappingTest {
             behandling.husstandsmedlem = husstandsmedlem
 
             assertSoftly(
-                behandling.tilGrunnlagBostatus(personobjekter)
+                behandling
+                    .tilGrunnlagBostatus(personobjekter)
                     .toList(),
             ) {
                 it shouldHaveSize 18
@@ -1338,7 +1354,8 @@ class GrunnlagMappingTest {
             behandling.husstandsmedlem = husstandsmedlem
 
             val husstandsmedlemGrunnlag =
-                behandling.tilGrunnlagBostatus(personobjekter)
+                behandling
+                    .tilGrunnlagBostatus(personobjekter)
                     .toList()
             assertSoftly(husstandsmedlemGrunnlag) {
                 it shouldHaveSize 5
@@ -1454,8 +1471,8 @@ class GrunnlagMappingTest {
 
     @Nested
     inner class SivilstandGrunnlagTest {
-        fun opprettSivilstand(behandling: Behandling): MutableSet<Sivilstand> {
-            return mutableSetOf(
+        fun opprettSivilstand(behandling: Behandling): MutableSet<Sivilstand> =
+            mutableSetOf(
                 Sivilstand(
                     behandling = behandling,
                     datoFom = LocalDate.parse("2022-01-01"),
@@ -1485,7 +1502,6 @@ class GrunnlagMappingTest {
                     kilde = Kilde.MANUELL,
                 ),
             )
-        }
 
         @Test
         fun `skal opprette grunnlag for sivilstand`() {
@@ -1576,8 +1592,8 @@ class GrunnlagMappingTest {
         fun opprettBehandling(
             id: Long? = null,
             søknadRefId: Long? = null,
-        ): Behandling {
-            return Behandling(
+        ): Behandling =
+            Behandling(
                 Vedtakstype.FASTSETTELSE,
                 søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
                 datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
@@ -1596,7 +1612,6 @@ class GrunnlagMappingTest {
                 virkningstidspunkt = LocalDate.parse("2023-02-01"),
                 id = id,
             )
-        }
 
         @Test
         fun `skal opprette grunnlag for søknad`() {

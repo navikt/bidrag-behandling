@@ -5,19 +5,25 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
+import no.nav.bidrag.behandling.database.datamodell.validerForBeregningSærbidrag
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
+import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
+import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
+import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatBeregning as ResultatBeregningSærbidrag
+import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatPeriode as ResultatPeriodeSærbidrag
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -54,10 +60,50 @@ class BeregningService(
         }
     }
 
+    fun beregneSærbidrag(behandling: Behandling): BeregnetSærbidragResultat {
+        behandling.validerForBeregningSærbidrag()
+        val søknasdbarn = behandling.søknadsbarn.first()
+        return if (behandling.avslag != null) {
+            behandling.tilResultatAvslagSærbidrag()
+        } else {
+            val grunnlagBeregning = behandling.byggGrunnlagForBeregning(søknasdbarn)
+            secureLogger.info { "Grunnlag særbidrag $grunnlagBeregning" }
+            try {
+                // TODO: Legg til særbidrag beregning
+                BeregnSærbidragApi().beregn(grunnlagBeregning)
+            } catch (e: Exception) {
+                LOGGER.warn(e) { "Det skjedde en feil ved beregning av særbidrag: ${e.message}" }
+                throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
+            }
+        }
+    }
+
     fun beregneForskudd(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return beregneForskudd(behandling)
     }
+
+    fun beregneSærbidrag(behandlingsid: Long): BeregnetSærbidragResultat {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        return beregneSærbidrag(behandling)
+    }
+
+    private fun Behandling.tilResultatAvslagSærbidrag() =
+        BeregnetSærbidragResultat(
+            beregnetSærbidragPeriodeListe =
+                listOf(
+                    ResultatPeriodeSærbidrag(
+                        grunnlagsreferanseListe = emptyList(),
+                        periode = ÅrMånedsperiode(virkningstidspunkt!!, virkningstidspunkt!!.plusMonths(1)),
+                        resultat =
+                            ResultatBeregningSærbidrag(
+                                beløp = BigDecimal.ZERO,
+                                resultatkode = avslag!!,
+                            ),
+                    ),
+                ),
+            grunnlagListe = emptyList(),
+        )
 
     private fun Behandling.tilResultatAvslag(barn: Rolle) =
         ResultatForskuddsberegningBarn(

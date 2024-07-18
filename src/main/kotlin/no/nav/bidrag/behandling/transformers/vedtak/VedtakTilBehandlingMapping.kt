@@ -10,13 +10,18 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
+import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
-import no.nav.bidrag.behandling.transformers.finnTotalInntekt
+import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -29,6 +34,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -40,6 +46,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -91,10 +98,25 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
                         regel = "",
                         beløp = it.beløp ?: BigDecimal.ZERO,
                         sivilstand = grunnlagListe.finnSivilstandForPeriode(it.grunnlagReferanseListe),
-                        inntekt = grunnlagListe.finnTotalInntekt(it.grunnlagReferanseListe),
-                        antallBarnIHusstanden = grunnlagListe.finnAntallBarnIHusstanden(it.grunnlagReferanseListe),
+                        inntekt = grunnlagListe.finnTotalInntektForRolle(it.grunnlagReferanseListe),
+                        antallBarnIHusstanden = grunnlagListe.finnAntallBarnIHusstanden(it.grunnlagReferanseListe).toInt(),
                     )
                 },
+        )
+    }
+
+fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto? =
+    engangsbeløpListe.firstOrNull()?.let { engangsbeløp ->
+        val virkningstidspunkt =
+            grunnlagListe
+                .filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT)
+                .first()
+        grunnlagListe.byggResultatSærbidragsberegning(
+            virkningstidspunkt.innhold.virkningstidspunkt,
+            engangsbeløp.beløp,
+            Resultatkode.fraKode(engangsbeløp.resultatkode)!!,
+            engangsbeløp.grunnlagReferanseListe,
+            UtgiftBeregningDto(),
         )
     }
 
@@ -295,15 +317,33 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
         },
     hentInnhentetSivilstand()
         .groupBy { it.personId }
-        .map { (gjelderIdent, grunnlag) ->
-            behandling.opprettGrunnlag(
-                Grunnlagsdatatype.SIVILSTAND,
-                grunnlag,
-                gjelderIdent!!,
-                innhentetTidspunkt(Grunnlagstype.INNHENTET_SIVILSTAND),
-                lesemodus,
+        .flatMap { (gjelderIdent, grunnlag) ->
+            val sivilstandPeriodisert =
+                SivilstandApi.beregnV2(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    grunnlag.toSet().tilSivilstandRequest(
+                        emptySet(),
+                        behandling.bidragsmottaker!!.fødselsdato,
+                    ),
+                )
+
+            listOf(
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.SIVILSTAND,
+                    grunnlag,
+                    gjelderIdent!!,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_SIVILSTAND),
+                    lesemodus,
+                ),
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.SIVILSTAND,
+                    sivilstandPeriodisert,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_SIVILSTAND),
+                    lesemodus,
+                    true,
+                ),
             )
-            // TODO: Legg til beregnet sivilstand
         },
     hentInnhentetHusstandsmedlem()
         .groupBy { it.partPersonId }
@@ -337,6 +377,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                             gjelder = it.key!!,
                         )
                     }
+            // TODO: Boforhold andre voksne i husstand
         },
 ).flatten()
 
@@ -488,23 +529,31 @@ private fun List<BaseGrunnlag>.tilHusstandsmedlem(
     behandling: Behandling,
     grunnlagsListe: List<GrunnlagDto>,
 ): Husstandsmedlem {
-    val gjelderBarnGrunnlag =
+    val gjelderGrunnlag =
         grunnlagsListe.hentPersonMedReferanse(gjelderReferanse) ?: manglerPersonGrunnlag(
             gjelderReferanse,
         )
-    val gjelderBarn = gjelderBarnGrunnlag.innholdTilObjekt<Person>()
 
+    val gjelderPerson = gjelderGrunnlag.innholdTilObjekt<Person>()
+
+    val gjelderRolle =
+        behandling.roller
+            .find { hentNyesteIdent(it.ident) == hentNyesteIdent(gjelderPerson.ident?.verdi) }
+    val erBmBpBosstatus =
+        gjelderRolle?.let { listOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER).contains(it.rolletype) }
+            ?: false
     val erOffentligKilde =
         grunnlagsListe
             .hentInnhentetHusstandsmedlem()
-            .any { it.relatertPersonPersonId == gjelderBarnGrunnlag.personIdent }
+            .any { it.gjelderPersonId == gjelderGrunnlag.personIdent }
     val husstandsmedlemBO =
         Husstandsmedlem(
-            ident = gjelderBarnGrunnlag.personIdent,
-            navn = gjelderBarn.navn,
-            fødselsdato = gjelderBarn.fødselsdato,
-            kilde = if (erOffentligKilde) Kilde.OFFENTLIG else Kilde.MANUELL,
+            ident = gjelderGrunnlag.personIdent,
+            navn = gjelderPerson.navn,
+            fødselsdato = gjelderPerson.fødselsdato,
+            kilde = if (erOffentligKilde || erBmBpBosstatus) Kilde.OFFENTLIG else Kilde.MANUELL,
             behandling = behandling,
+            rolle = gjelderRolle,
         )
     husstandsmedlemBO.perioder =
         this

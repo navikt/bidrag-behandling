@@ -12,16 +12,19 @@ import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -38,31 +41,35 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
-fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> {
-    return sivilstand.map {
-        GrunnlagDto(
-            referanse = "sivilstand_${gjelder.referanse}_${it.datoFom?.toCompactString()}",
-            type = Grunnlagstype.SIVILSTAND_PERIODE,
-            gjelderReferanse = gjelder.referanse,
-            grunnlagsreferanseListe =
-                if (it.kilde == Kilde.OFFENTLIG) {
-                    listOf(
-                        opprettInnhentetSivilstandGrunnlagsreferanse(gjelder.referanse),
-                    )
-                } else {
-                    emptyList()
-                },
-            innhold =
-                POJONode(
-                    SivilstandPeriode(
-                        manueltRegistrert = it.kilde == Kilde.MANUELL,
-                        sivilstand = it.sivilstand,
-                        periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
-                    ),
-                ),
-        )
-    }.toSet()
-}
+fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> =
+    if (engangsbeloptype == Engangsbeløptype.SÆRBIDRAG) {
+        emptySet()
+    } else {
+        sivilstand
+            .map {
+                GrunnlagDto(
+                    referanse = "sivilstand_${gjelder.referanse}_${it.datoFom?.toCompactString()}",
+                    type = Grunnlagstype.SIVILSTAND_PERIODE,
+                    gjelderReferanse = gjelder.referanse,
+                    grunnlagsreferanseListe =
+                        if (it.kilde == Kilde.OFFENTLIG) {
+                            listOf(
+                                opprettInnhentetSivilstandGrunnlagsreferanse(gjelder.referanse),
+                            )
+                        } else {
+                            emptyList()
+                        },
+                    innhold =
+                        POJONode(
+                            SivilstandPeriode(
+                                manueltRegistrert = it.kilde == Kilde.MANUELL,
+                                sivilstand = it.sivilstand,
+                                periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
+                            ),
+                        ),
+                )
+            }.toSet()
+    }
 
 fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<GrunnlagDto> {
     val søknadsbarnListe =
@@ -121,18 +128,44 @@ fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<Grunnl
     }
 
     val grunnlagBosstatus =
-        husstandsmedlem.flatMap {
-            val barn = personobjekter.hentPersonNyesteIdent(it.ident) ?: it.opprettPersonGrunnlag()
-            val part =
-                (if (stonadstype == Stønadstype.FORSKUDD) personobjekter.bidragsmottaker else personobjekter.bidragspliktig)
-            opprettGrunnlagForBostatusperioder(
-                barn.referanse,
-                part!!.referanse,
-                it.perioder,
-            )
-        }.toSet()
+        husstandsmedlem
+            .flatMap {
+                val gjelder =
+                    if (it.rolle != null) {
+                        personobjekter.hentPersonNyesteIdent(it.rolle!!.ident)!!
+                    } else {
+                        personobjekter.hentPersonNyesteIdent(it.ident) ?: it.opprettPersonGrunnlag()
+                    }
+                val part =
+                    (if (stonadstype == Stønadstype.FORSKUDD) personobjekter.bidragsmottaker else personobjekter.bidragspliktig)
+                opprettGrunnlagForBostatusperioder(
+                    gjelder.referanse,
+                    part!!.referanse,
+                    it.perioder,
+                )
+            }.toSet()
 
     return grunnlagBosstatus + personobjekterHusstandsmedlem
+}
+
+fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
+    val beregningUtgifter = utgift!!.tilBeregningDto()
+    return GrunnlagDto(
+        referanse = "delberegning_utgift",
+        type = Grunnlagstype.DELBEREGNING_UTGIFT,
+        innhold =
+            POJONode(
+                DelberegningUtgift(
+                    periode =
+                        ÅrMånedsperiode(
+                            virkningstidspunkt!!,
+                            finnBeregnTilDato(virkningstidspunkt!!),
+                        ),
+                    sumBetaltAvBp = beregningUtgifter.totalBeløpBetaltAvBp,
+                    sumGodkjent = beregningUtgifter.totalGodkjentBeløp,
+                ),
+            ),
+    )
 }
 
 fun Behandling.tilGrunnlagInntekt(
@@ -141,20 +174,23 @@ fun Behandling.tilGrunnlagInntekt(
     inkluderAlle: Boolean = true,
 ): Set<GrunnlagDto> {
     val alleSøknadsbarnIdenter = this.søknadsbarn.mapNotNull { it.ident }
-    return inntekter.asSequence()
+    return inntekter
+        .asSequence()
         .filter { personobjekter.hentPersonNyesteIdent(it.ident) != null && (inkluderAlle || it.taMed) }
         .groupBy { it.ident }
         .flatMap { (ident, innhold) ->
             val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
-            innhold.filter {
-                søknadsbarn == null && (
-                    it.gjelderBarn.isNullOrEmpty() ||
-                        // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
-                        alleSøknadsbarnIdenter.contains(it.gjelderBarn)
-                ) || søknadsbarn != null &&
-                    (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
-            }
-                .groupBy { it.gjelderBarn }
+            innhold
+                .filter {
+                    søknadsbarn == null &&
+                        (
+                            it.gjelderBarn.isNullOrEmpty() ||
+                                // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
+                                alleSøknadsbarnIdenter.contains(it.gjelderBarn)
+                        ) ||
+                        søknadsbarn != null &&
+                        (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+                }.groupBy { it.gjelderBarn }
                 .map { (gjelderBarn, innhold) ->
                     val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)
                     innhold.map {
@@ -248,50 +284,50 @@ private fun Inntekt.tilInntektsrapporteringPeriode(
 fun finnFødselsdato(
     ident: String?,
     fødselsdato: LocalDate?,
-): LocalDate? {
-    return if (fødselsdato == null && ident != null) {
+): LocalDate? =
+    if (fødselsdato == null && ident != null) {
         hentPersonFødselsdato(ident)
     } else {
         fødselsdato
     }
-}
 
 private fun opprettGrunnlagForBostatusperioder(
-    barnreferanse: String,
+    gjelderReferanse: String,
     relatertTilPartReferanse: String,
     bostatusperioder: Set<Bostatusperiode>,
 ): Set<GrunnlagDto> =
-    bostatusperioder.map {
-        GrunnlagDto(
-            referanse = "bostatus_${barnreferanse}_${it.datoFom?.toCompactString()}",
-            type = Grunnlagstype.BOSTATUS_PERIODE,
-            gjelderReferanse = barnreferanse,
-            grunnlagsreferanseListe =
-                if (it.kilde == Kilde.OFFENTLIG) {
-                    listOf(
-                        opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
-                            relatertTilPartReferanse,
-                            referanseRelatertTil = barnreferanse,
-                        ),
-                    )
-                } else {
-                    emptyList()
-                },
-            innhold =
-                POJONode(
-                    BostatusPeriode(
-                        bostatus = it.bostatus,
-                        manueltRegistrert = it.kilde == Kilde.MANUELL,
-                        relatertTilPart = relatertTilPartReferanse,
-                        periode =
-                            ÅrMånedsperiode(
-                                it.datoFom!!,
-                                it.datoTom?.plusDays(1),
+    bostatusperioder
+        .map {
+            GrunnlagDto(
+                referanse = "bostatus_${gjelderReferanse}_${it.datoFom?.toCompactString()}",
+                type = Grunnlagstype.BOSTATUS_PERIODE,
+                gjelderReferanse = gjelderReferanse,
+                grunnlagsreferanseListe =
+                    if (it.kilde == Kilde.OFFENTLIG) {
+                        listOf(
+                            opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
+                                relatertTilPartReferanse,
+                                referanseRelatertTil = gjelderReferanse,
                             ),
+                        )
+                    } else {
+                        emptyList()
+                    },
+                innhold =
+                    POJONode(
+                        BostatusPeriode(
+                            bostatus = it.bostatus,
+                            manueltRegistrert = it.kilde == Kilde.MANUELL,
+                            relatertTilPart = relatertTilPartReferanse,
+                            periode =
+                                ÅrMånedsperiode(
+                                    it.datoFom!!,
+                                    it.datoTom?.plusDays(1),
+                                ),
+                        ),
                     ),
-                ),
-        )
-    }.toSet()
+            )
+        }.toSet()
 
 private fun Inntekt.tilGrunnlagreferanse(
     gjelder: GrunnlagDto,
