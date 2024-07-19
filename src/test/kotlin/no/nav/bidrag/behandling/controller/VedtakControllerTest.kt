@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -54,6 +55,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         every { unleashInstance.isEnabled(eq(toggleFatteVedtakName), any<Boolean>()) } returns false
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
+        behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
         save(behandling)
 
         stubUtils.stubHentSak(opprettSakForBehandling(behandling))

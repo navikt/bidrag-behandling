@@ -19,13 +19,21 @@ import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.AldersgruppeForskudd
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningForskudd
@@ -39,6 +47,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubPersonConsumer
+import java.math.BigDecimal
 import java.time.YearMonth
 
 @ExtendWith(SpringExtension::class)
@@ -116,6 +125,7 @@ class VedtakserviceSærbidragTest {
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
+        behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -146,10 +156,25 @@ class VedtakserviceSærbidragTest {
             withClue("Grunnlagliste skal inneholde 61 grunnlag") {
                 request.grunnlagListe shouldHaveSize 61
             }
+
+            assertSoftly(request.engangsbeløpListe[0]) {
+                it.type shouldBe Engangsbeløptype.SÆRBIDRAG
+                it.sak shouldBe Saksnummer(behandling.saksnummer)
+                it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
+                it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
+                it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
+                it.beløp shouldBe BigDecimal(417)
+                it.valutakode shouldBe "NOK"
+                it.resultatkode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET.name
+                it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+                it.beslutning shouldBe Beslutningstype.ENDRING
+                it.grunnlagReferanseListe shouldHaveSize 61
+                it.betaltBeløp shouldBe BigDecimal(500)
+            }
         }
 
 //        opprettVedtakRequest.validerVedtaksdetaljer(behandling)
-//        opprettVedtakRequest.validerPersongrunnlag()
+        opprettVedtakRequest.validerPersongrunnlag()
 //        opprettVedtakRequest.validerSluttberegning()
 //        opprettVedtakRequest.validerBosstatusPerioder()
 //        opprettVedtakRequest.validerInntektrapportering()
@@ -198,6 +223,25 @@ class VedtakserviceSærbidragTest {
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
         }
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerPersongrunnlag() {
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_SØKNADSBARN)) {
+        shouldHaveSize(1)
+        it.shouldContainPerson(testdataBarn1.ident)
+    }
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)) {
+        shouldHaveSize(4)
+        it.shouldContainPerson(testdataHusstandsmedlem1.ident)
+    }
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER)) {
+        shouldHaveSize(1)
+        it.shouldContainPerson(testdataBM.ident)
+    }
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSPLIKTIG)) {
+        shouldHaveSize(1)
+        it.shouldContainPerson(testdataBP.ident)
     }
 }
 

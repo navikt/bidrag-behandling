@@ -19,7 +19,6 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
-import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -177,7 +176,15 @@ class InntektService(
         behandling.validerKanOppdatere()
         return OppdatereInntektResponse(
             inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
-            beregnetInntekter = behandling.hentBeregnetInntekter(),
+            beregnetInntekter =
+                behandling.roller
+                    .map {
+                        BeregnetInntekterDto(
+                            it.tilPersonident()!!,
+                            it.rolletype,
+                            behandling.hentBeregnetInntekterForRolle(it),
+                        )
+                    },
             beregnetInntekterV2 =
                 behandling.roller
                     .map {
