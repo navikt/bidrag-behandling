@@ -3150,7 +3150,7 @@
   ],
   "husstandsmedlemmerOgEgneBarnListe": [
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "gjelderPersonId": "1344124",
       "navn": "GNIEN VAKLENDE PERLE",
       "fødselsdato": "2020-03-01",
@@ -3171,7 +3171,7 @@
       ]
     },
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "gjelderPersonId": "443322112233",
       "navn": "REALISTISK PUB",
       "fødselsdato": "1978-09-11",
@@ -3188,7 +3188,7 @@
       ]
     },
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "gjelderPersonId": "54545454545",
       "navn": "FLYKTIG BEFRIENDE ELV",
       "fødselsdato": "2018-05-09",
@@ -3205,7 +3205,7 @@
       ]
     },
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "gjelderPersonId": "98545454545",
       "navn": "SALIG TORN",
       "fødselsdato": "2005-06-23",
@@ -3222,7 +3222,7 @@
       ]
     },
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "gjelderPersonId": "31231231231",
       "navn": "FIKTIV PEDAGOG",
       "fødselsdato": "2001-05-09",
@@ -3235,35 +3235,7 @@
       ]
     }
   ],
-  "sivilstandListe": [
-    {
-      "personId": "313213213",
-      "type": "UGIFT",
-      "gyldigFom": "1978-08-25",
-      "bekreftelsesdato": null,
-      "master": "FREG",
-      "registrert": "2024-01-05T07:45:19",
-      "historisk": true
-    },
-    {
-      "personId": "313213213",
-      "type": "SKILT",
-      "gyldigFom": "2022-11-01",
-      "bekreftelsesdato": null,
-      "master": "FREG",
-      "registrert": "2024-01-05T07:45:19",
-      "historisk": false
-    },
-    {
-      "personId": "313213213",
-      "type": "SKILT",
-      "gyldigFom": "2022-12-01",
-      "bekreftelsesdato": null,
-      "master": "PDL",
-      "registrert": "2024-01-05T07:45:19",
-      "historisk": false
-    }
-  ],
+  "sivilstandListe": [],
   "barnetilsynListe": [],
   "arbeidsforholdListe": [
     {

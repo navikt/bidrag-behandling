@@ -37,6 +37,8 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.begrensAntallPersoner
+import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
+import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -80,6 +82,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 import java.time.ZoneOffset
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
@@ -389,11 +392,10 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
     InntektValideringsfeilDto(
         årsinntekter =
             inntekter
-                .filter { if (tilType() == TypeBehandling.FORSKUDD) it.ident == bidragsmottaker?.ident else true }
-                .toSet()
                 .mapValideringsfeilForÅrsinntekter(
                     virkningstidspunktEllerSøktFomDato,
                     roller,
+                    tilType(),
                 ).takeIf { it.isNotEmpty() },
         barnetillegg =
             inntekter
@@ -426,12 +428,16 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
 fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
+    behandlingType: TypeBehandling = TypeBehandling.FORSKUDD,
 ): Set<InntektValideringsfeil> {
     val inntekterSomSkalSjekkes = filter { !eksplisitteYtelser.contains(it.type) }.filter { it.taMed }
+    val rollerSomKreverMinstEnInntekt = bestemRollerSomMåHaMinstEnInntekt(behandlingType)
     return roller
+        .filter { bestemRollerSomKanHaInntekter(behandlingType).contains(it.rolletype) }
         .map { rolle ->
             val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
-            if (inntekterTaMed.isEmpty() && (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER || rolle.rolletype == Rolletype.BIDRAGSPLIKTIG)) {
+
+            if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
                 InntektValideringsfeil(
                     hullIPerioder = emptyList(),
                     overlappendePerioder = emptySet(),
@@ -445,6 +451,9 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt),
                     overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                     fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+                    perioderFørVirkningstidspunkt =
+                        inntekterTaMed
+                            .any { it.periode?.fom?.isBefore(YearMonth.from(virkningstidspunkt)) == true },
                     manglerPerioder =
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } ?: false,

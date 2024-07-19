@@ -43,7 +43,10 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.sak.Bidragssakstatus
 import no.nav.bidrag.domene.enums.sak.Sakskategori
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -182,6 +185,7 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
 fun oppretteBehandling(
     id: Long? = null,
     vedtakstype: Vedtakstype = Vedtakstype.FASTSETTELSE,
+    virkningstidspunkt: LocalDate = LocalDate.parse("2023-02-01"),
 ): Behandling =
     Behandling(
         vedtakstype,
@@ -199,7 +203,7 @@ fun oppretteBehandling(
         Stønadstype.FORSKUDD,
         null,
         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
-        virkningstidspunkt = LocalDate.parse("2023-02-01"),
+        virkningstidspunkt = virkningstidspunkt,
         id = id,
     )
 
@@ -337,6 +341,7 @@ fun oppretteBehandlingRoller(
     behandling: Behandling,
     generateId: Boolean = false,
     medBp: Boolean = false,
+    typeBehandling: TypeBehandling = TypeBehandling.FORSKUDD,
 ): MutableSet<Rolle> {
     val roller =
         mutableSetOf(
@@ -354,6 +359,10 @@ fun oppretteBehandlingRoller(
                 fødselsdato = testdataBarn1.fødselsdato,
                 id = if (generateId) (2).toLong() else null,
             ),
+        )
+
+    if (typeBehandling != TypeBehandling.SÆRBIDRAG) {
+        roller.add(
             Rolle(
                 ident = testdataBarn2.ident,
                 rolletype = Rolletype.BARN,
@@ -362,7 +371,7 @@ fun oppretteBehandlingRoller(
                 id = if (generateId) (3).toLong() else null,
             ),
         )
-
+    }
     if (medBp) {
         roller.add(
             Rolle(
@@ -417,10 +426,21 @@ fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDt
 fun opprettGyldigBehandlingForBeregningOgVedtak(
     generateId: Boolean = false,
     vedtakstype: Vedtakstype = Vedtakstype.FASTSETTELSE,
+    typeBehandling: TypeBehandling = TypeBehandling.FORSKUDD,
 ): Behandling {
     // given
-    val behandling = oppretteBehandling(if (generateId) 1 else null, vedtakstype = vedtakstype)
-    behandling.roller = oppretteBehandlingRoller(behandling, generateId)
+    val behandling =
+        oppretteBehandling(
+            if (generateId) 1 else null,
+            vedtakstype = vedtakstype,
+            virkningstidspunkt =
+                when (typeBehandling) {
+                    TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> LocalDate.parse("2023-02-01")
+                    TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
+                },
+        )
+    behandling.innkrevingstype = Innkrevingstype.MED_INNKREVING
+    behandling.roller = oppretteBehandlingRoller(behandling, generateId, typeBehandling != TypeBehandling.FORSKUDD, typeBehandling)
     val husstandsmedlem =
         mutableSetOf(
             behandling.oppretteHusstandsmedlem(
@@ -430,14 +450,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 testdataBarn1.fødselsdato,
                 behandling.virkningstidspunkt,
                 behandling.virkningstidspunkt!!.plusMonths(5),
-            ),
-            behandling.oppretteHusstandsmedlem(
-                if (generateId) 2 else null,
-                testdataBarn2.ident,
-                testdataBarn2.navn,
-                testdataBarn2.fødselsdato,
-                behandling.virkningstidspunkt,
-                behandling.virkningstidspunkt!!.plusMonths(8),
+                typeBehandling = typeBehandling,
             ),
             behandling.oppretteHusstandsmedlem(
                 if (generateId) 3 else null,
@@ -446,93 +459,162 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 null,
                 behandling.virkningstidspunkt,
                 behandling.virkningstidspunkt!!.plusMonths(10),
-            ),
-        )
-    val sivilstand =
-        Sivilstand(
-            sivilstand = Sivilstandskode.BOR_ALENE_MED_BARN,
-            behandling = behandling,
-            datoFom = behandling.søktFomDato,
-            datoTom = null,
-            kilde = Kilde.OFFENTLIG,
-            id = if (generateId) (1).toLong() else null,
-        )
-    val inntekter =
-        mutableSetOf(
-            Inntekt(
-                belop = BigDecimal(50000),
-                datoFom = LocalDate.parse("2022-01-01"),
-                datoTom = LocalDate.parse("2022-06-30"),
-                ident = behandling.bidragsmottaker!!.ident!!,
-                taMed = true,
-                kilde = Kilde.MANUELL,
-                behandling = behandling,
-                type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
-                id = if (generateId) (1).toLong() else null,
-            ),
-            Inntekt(
-                belop = BigDecimal(60000),
-                datoFom = LocalDate.parse("2022-07-01"),
-                datoTom = LocalDate.parse("2022-09-30"),
-                ident = behandling.bidragsmottaker!!.ident!!,
-                taMed = true,
-                kilde = Kilde.MANUELL,
-                behandling = behandling,
-                type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
-                id = if (generateId) (2).toLong() else null,
+                typeBehandling = typeBehandling,
             ),
         )
 
-    val aInntekt =
-        Inntekt(
-            belop = BigDecimal(60000),
-            datoFom = LocalDate.parse("2022-10-01"),
-            datoTom = null,
-            opprinneligFom = LocalDate.parse("2023-02-01"),
-            opprinneligTom = LocalDate.parse("2024-01-01"),
-            ident = behandling.bidragsmottaker!!.ident!!,
-            taMed = true,
-            kilde = Kilde.OFFENTLIG,
-            behandling = behandling,
-            type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-            id = if (generateId) (3).toLong() else null,
-        )
-    aInntekt.inntektsposter.addAll(opprettInntektsposter(aInntekt))
-    val barnetillegg =
-        Inntekt(
-            belop = BigDecimal(60000),
-            datoFom = LocalDate.parse("2022-01-01"),
-            datoTom = null,
-            opprinneligFom = LocalDate.parse("2023-01-01"),
-            opprinneligTom = LocalDate.parse("2023-12-31"),
-            ident = behandling.bidragsmottaker!!.ident!!,
-            taMed = true,
-            gjelderBarn = testdataBarn1.ident,
-            kilde = Kilde.OFFENTLIG,
-            behandling = behandling,
-            type = Inntektsrapportering.BARNETILLEGG,
-            id = if (generateId) (4).toLong() else null,
-        )
-    val barnInntekt =
-        Inntekt(
-            belop = BigDecimal(60000),
-            datoFom = LocalDate.parse("2022-01-01"),
-            datoTom = null,
-            opprinneligFom = LocalDate.parse("2023-02-01"),
-            opprinneligTom = LocalDate.parse("2024-01-01"),
-            ident = testdataBarn1.ident,
-            taMed = true,
-            kilde = Kilde.OFFENTLIG,
-            behandling = behandling,
-            type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-            id = if (generateId) (5).toLong() else null,
-        )
-    inntekter.add(aInntekt)
-    inntekter.add(barnetillegg)
-    inntekter.add(barnInntekt)
+    when (typeBehandling) {
+        TypeBehandling.FORSKUDD -> {
+            husstandsmedlem.add(
+                behandling.oppretteHusstandsmedlem(
+                    if (generateId) 2 else null,
+                    testdataBarn2.ident,
+                    testdataBarn2.navn,
+                    testdataBarn2.fødselsdato,
+                    behandling.virkningstidspunkt,
+                    behandling.virkningstidspunkt!!.plusMonths(8),
+                ),
+            )
+            val sivilstand =
+                Sivilstand(
+                    sivilstand = Sivilstandskode.BOR_ALENE_MED_BARN,
+                    behandling = behandling,
+                    datoFom = behandling.søktFomDato,
+                    datoTom = null,
+                    kilde = Kilde.OFFENTLIG,
+                    id = if (generateId) (1).toLong() else null,
+                )
+            behandling.sivilstand = mutableSetOf(sivilstand)
+            val inntekterBm =
+                mutableSetOf(
+                    Inntekt(
+                        belop = BigDecimal(50000),
+                        datoFom = LocalDate.parse("2022-01-01"),
+                        datoTom = LocalDate.parse("2022-06-30"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        id = if (generateId) (1).toLong() else null,
+                    ),
+                    Inntekt(
+                        belop = BigDecimal(60000),
+                        datoFom = LocalDate.parse("2022-07-01"),
+                        datoTom = LocalDate.parse("2022-09-30"),
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        id = if (generateId) (2).toLong() else null,
+                    ),
+                )
+
+            val aInntekt =
+                Inntekt(
+                    belop = BigDecimal(60000),
+                    datoFom = LocalDate.parse("2022-10-01"),
+                    datoTom = null,
+                    opprinneligFom = LocalDate.parse("2023-02-01"),
+                    opprinneligTom = LocalDate.parse("2024-01-01"),
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    taMed = true,
+                    kilde = Kilde.OFFENTLIG,
+                    behandling = behandling,
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    id = if (generateId) (3).toLong() else null,
+                )
+            aInntekt.inntektsposter.addAll(opprettInntektsposter(aInntekt))
+            val barnetillegg =
+                Inntekt(
+                    belop = BigDecimal(60000),
+                    datoFom = LocalDate.parse("2022-01-01"),
+                    datoTom = null,
+                    opprinneligFom = LocalDate.parse("2023-01-01"),
+                    opprinneligTom = LocalDate.parse("2023-12-31"),
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    taMed = true,
+                    gjelderBarn = testdataBarn1.ident,
+                    kilde = Kilde.OFFENTLIG,
+                    behandling = behandling,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    id = if (generateId) (4).toLong() else null,
+                )
+            val barnInntekt =
+                Inntekt(
+                    belop = BigDecimal(60000),
+                    datoFom = LocalDate.parse("2022-01-01"),
+                    datoTom = null,
+                    opprinneligFom = LocalDate.parse("2023-02-01"),
+                    opprinneligTom = LocalDate.parse("2024-01-01"),
+                    ident = testdataBarn1.ident,
+                    taMed = true,
+                    kilde = Kilde.OFFENTLIG,
+                    behandling = behandling,
+                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+                    id = if (generateId) (5).toLong() else null,
+                )
+            inntekterBm.add(aInntekt)
+            inntekterBm.add(barnetillegg)
+            inntekterBm.add(barnInntekt)
+            behandling.inntekter.addAll(inntekterBm)
+        }
+        TypeBehandling.SÆRBIDRAG -> {
+            behandling.stonadstype = null
+            behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+            behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+            behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+            husstandsmedlem.add(
+                behandling.oppretteHusstandsmedlem(
+                    if (generateId) 2 else null,
+                    testdataBarn2.ident,
+                    testdataBarn2.navn,
+                    testdataBarn2.fødselsdato,
+                    behandling.virkningstidspunkt,
+                    behandling.virkningstidspunkt!!.plusMonths(8),
+                    behandling.bidragspliktig,
+                    true,
+                    typeBehandling = typeBehandling,
+                ),
+            )
+            val inntekterBp =
+                mutableSetOf(
+                    Inntekt(
+                        belop = BigDecimal(500000),
+                        datoFom = behandling.virkningstidspunkt,
+                        datoTom = null,
+                        ident = behandling.bidragspliktig!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        id = if (generateId) (1).toLong() else null,
+                    ),
+                )
+            val inntekterBm =
+                mutableSetOf(
+                    Inntekt(
+                        belop = BigDecimal(50000),
+                        datoFom = behandling.virkningstidspunkt,
+                        datoTom = null,
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        id = if (generateId) (1).toLong() else null,
+                    ),
+                )
+
+            behandling.inntekter.addAll(inntekterBp)
+            behandling.inntekter.addAll(inntekterBm)
+        }
+        else -> {}
+    }
+
     behandling.husstandsmedlem = husstandsmedlem
-    behandling.inntekter = inntekter
-    behandling.sivilstand = mutableSetOf(sivilstand)
+
     return behandling
 }
 
@@ -543,6 +625,9 @@ fun Behandling.oppretteHusstandsmedlem(
     fødselsdato: LocalDate?,
     førstePeriodeFra: LocalDate? = null,
     førstePeridoeTil: LocalDate? = null,
+    rolle: Rolle? = null,
+    andreVoksneIHusstanden: Boolean = false,
+    typeBehandling: TypeBehandling = TypeBehandling.FORSKUDD,
 ): Husstandsmedlem {
     val husstandsmedlem =
         Husstandsmedlem(
@@ -552,6 +637,7 @@ fun Behandling.oppretteHusstandsmedlem(
             navn = navn,
             fødselsdato = fødselsdato ?: LocalDate.parse("2020-01-01"),
             id = if (index != null) (index + 1).toLong() else null,
+            rolle = rolle,
         )
     val førsteDatoTom =
         if (førstePeridoeTil != null) {
@@ -562,46 +648,85 @@ fun Behandling.oppretteHusstandsmedlem(
         } else {
             YearMonth.from(søktFomDato.plusMonths(3)).atEndOfMonth()
         }
-    husstandsmedlem.perioder =
-        mutableSetOf(
-            Bostatusperiode(
-                husstandsmedlem = husstandsmedlem,
-                datoFom = førstePeriodeFra ?: søktFomDato,
-                datoTom = førsteDatoTom,
-                bostatus = Bostatuskode.MED_FORELDER,
-                kilde = Kilde.OFFENTLIG,
-                id = if (index != null) (index + 1).toLong() else null,
-            ),
-            Bostatusperiode(
-                husstandsmedlem = husstandsmedlem,
-                datoFom = YearMonth.from(førsteDatoTom).plusMonths(1).atDay(1),
-                datoTom = null,
-                bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                kilde = Kilde.OFFENTLIG,
-                id = if (index != null) (index + 1).toLong() else null,
-            ),
-        )
+
+    when (typeBehandling) {
+        TypeBehandling.SÆRBIDRAG -> {
+            husstandsmedlem.perioder =
+                mutableSetOf(
+                    Bostatusperiode(
+                        husstandsmedlem = husstandsmedlem,
+                        datoFom = førstePeriodeFra ?: søktFomDato,
+                        datoTom = null,
+                        bostatus = if (andreVoksneIHusstanden) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        id = if (index != null) (index + 1).toLong() else null,
+                    ),
+                )
+        }
+        else -> {
+            husstandsmedlem.perioder =
+                mutableSetOf(
+                    Bostatusperiode(
+                        husstandsmedlem = husstandsmedlem,
+                        datoFom = førstePeriodeFra ?: søktFomDato,
+                        datoTom = førsteDatoTom,
+                        bostatus = if (andreVoksneIHusstanden) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        id = if (index != null) (index + 1).toLong() else null,
+                    ),
+                    Bostatusperiode(
+                        husstandsmedlem = husstandsmedlem,
+                        datoFom = YearMonth.from(førsteDatoTom).plusMonths(1).atDay(1),
+                        datoTom = null,
+                        bostatus = if (andreVoksneIHusstanden) Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE else Bostatuskode.IKKE_MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        id = if (index != null) (index + 1).toLong() else null,
+                    ),
+                )
+        }
+    }
+
     return husstandsmedlem
 }
 
 fun opprettAlleAktiveGrunnlagFraFil(
     behandling: Behandling,
     filnavn: String,
-): MutableSet<Grunnlag> =
-    listOf(
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.ARBEIDSFORHOLD),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILSYN),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILLEGG),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.KONTANTSTØTTE),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SMÅBARNSTILLEGG),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
-        opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
-        opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBM),
-        opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn1),
-        opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn2),
-    ).flatten().toMutableSet()
+): MutableSet<Grunnlag> {
+    val grunnlagListe =
+        listOf(
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD),
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.ARBEIDSFORHOLD),
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILSYN),
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILLEGG),
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.KONTANTSTØTTE),
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SMÅBARNSTILLEGG),
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN),
+            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
+            opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBM),
+            opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn1),
+        ).flatten().toMutableSet()
+    when (behandling.tilType()) {
+        TypeBehandling.FORSKUDD -> {
+            grunnlagListe.addAll(
+                listOf(
+                    opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
+                    opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn2),
+                ).flatten(),
+            )
+        }
+        else -> {
+            grunnlagListe.addAll(
+                listOf(
+                    opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
+                    opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBP),
+                ).flatten(),
+            )
+        }
+    }
+    return grunnlagListe
+}
 
 fun opprettBeregnetInntektFraGrunnlag(
     behandling: Behandling,

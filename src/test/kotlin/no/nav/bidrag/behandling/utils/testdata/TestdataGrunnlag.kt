@@ -51,6 +51,9 @@ fun opprettGrunnlagFraFil(
         Grunnlagsdatatype.BOFORHOLD -> {
             grunnlag.husstandsmedlemmerOgEgneBarnListe.tilGrunnlagEntity(behandling)
         }
+        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
+            grunnlag.husstandsmedlemmerOgEgneBarnListe.tilGrunnlagEntity(behandling)
+        }
 
         Grunnlagsdatatype.SIVILSTAND ->
             grunnlag.sivilstandListe.tilGrunnlagEntity(behandling)
@@ -200,8 +203,8 @@ fun Behandling.opprettGrunnlag(
     type: Grunnlagsdatatype,
     grunnlag: Any,
     personId: String,
-): Grunnlag {
-    return Grunnlag(
+): Grunnlag =
+    Grunnlag(
         behandling = this,
         type = type,
         erBearbeidet = false,
@@ -216,7 +219,6 @@ fun Behandling.opprettGrunnlag(
                 fødselsdato = LocalDate.parse("2020-01-01"),
             ),
     )
-}
 
 fun HentGrunnlagDto.tilTransformerInntekterRequest(
     rolle: Rolle,

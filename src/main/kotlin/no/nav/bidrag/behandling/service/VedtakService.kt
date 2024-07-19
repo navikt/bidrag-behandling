@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
-import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
@@ -14,6 +13,9 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.TypeBehandling
+import no.nav.bidrag.behandling.transformers.beregning.validerForBeregning
+import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbidrag
+import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagGenerelt
@@ -173,6 +175,7 @@ class VedtakService(
     }
 
     fun fatteVedtakSærbidrag(behandling: Behandling): Int {
+        val behandlingId = behandling.id!!
         val isEnabled = unleashInstance.isEnabled(toggleFatteVedtakName, false)
         if (isEnabled.not()) {
             throw HttpClientErrorException(
@@ -180,16 +183,28 @@ class VedtakService(
                 "Fattevedtak er ikke aktivert",
             )
         }
-        behandling.validerForBeregning()
+        behandling.validerTekniskForBeregningAvSærbidrag()
+        behandling.validerForBeregningSærbidrag()
         behandling.validerKanFatteVedtak()
 
         val request =
             if (behandling.avslag != null) {
-                behandling.byggOpprettVedtakRequestForAvslag()
+                behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
             } else {
                 behandling.byggOpprettVedtakRequestSærbidrag()
             }
-        return 1
+        request.validerGrunnlagsreferanser()
+        secureLogger.info { "Fatter vedtak for særbidrag behandling $behandlingId med forespørsel $request" }
+        val response = vedtakConsumer.fatteVedtak(request)
+        behandlingService.oppdaterVedtakFattetStatus(
+            behandlingId,
+            vedtaksid = response.vedtaksid.toLong(),
+        )
+//        opprettNotat(behandling)
+        LOGGER.info {
+            "Fattet vedtak for særbidrag behandling $behandlingId med vedtaksid ${response.vedtaksid}"
+        }
+        return response.vedtaksid
     }
 
     fun fatteVedtakForskudd(behandling: Behandling): Int {
@@ -224,7 +239,28 @@ class VedtakService(
     fun behandlingTilVedtakDto(behandlingId: Long): VedtakDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val request =
-            if (behandling.avslag != null) behandling.byggOpprettVedtakRequestForAvslag() else behandling.byggOpprettVedtakRequestForskudd()
+            when (behandling.tilType()) {
+                TypeBehandling.SÆRBIDRAG ->
+                    if (behandling.avslag !=
+                        null
+                    ) {
+                        behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
+                    } else {
+                        behandling.byggOpprettVedtakRequestSærbidrag()
+                    }
+                TypeBehandling.FORSKUDD ->
+                    if (behandling.avslag !=
+                        null
+                    ) {
+                        behandling.byggOpprettVedtakRequestForAvslag()
+                    } else {
+                        behandling.byggOpprettVedtakRequestForskudd()
+                    }
+                else -> throw HttpClientErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    "Behandlingstype ${behandling.tilType()} støttes ikke",
+                )
+            }
 
         return request.tilVedtakDto()
     }
@@ -254,7 +290,6 @@ class VedtakService(
 
         return byggOpprettVedtakRequestObjekt()
             .copy(
-                grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
                 stønadsendringListe =
                     søknadsbarn.map {
                         OpprettStønadsendringRequestDto(
@@ -366,7 +401,7 @@ class VedtakService(
                             grunnlagReferanseListe = grunnlagListe.map(GrunnlagDto::referanse),
                         ),
                     ),
-                grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
+                grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
             )
     }
 
