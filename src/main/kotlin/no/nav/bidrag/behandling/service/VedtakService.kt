@@ -260,6 +260,7 @@ class VedtakService(
                                 ),
                         )
                     },
+                grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
             )
     }
 
