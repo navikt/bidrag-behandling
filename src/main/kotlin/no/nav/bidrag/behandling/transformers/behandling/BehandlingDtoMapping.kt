@@ -82,7 +82,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.YearMonth
 import java.time.ZoneOffset
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
@@ -459,9 +458,9 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt),
                     overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                     fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
-                    perioderFørVirkningstidspunkt =
-                        inntekterTaMed
-                            .any { it.periode?.fom?.isBefore(YearMonth.from(virkningstidspunkt)) == true },
+//                    perioderFørVirkningstidspunkt =
+//                        inntekterTaMed
+//                            .any { it.periode?.fom?.isBefore(YearMonth.from(virkningstidspunkt)) == true },
                     manglerPerioder =
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } ?: false,
