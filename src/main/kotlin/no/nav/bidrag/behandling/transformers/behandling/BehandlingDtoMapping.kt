@@ -358,7 +358,15 @@ fun Behandling.tilInntektDtoV2(
             .årsinntekterSortert(inkluderHistoriskeInntekter = inkluderHistoriskeInntekter)
             .tilInntektDtoV2()
             .toSet(),
-    beregnetInntekter = hentBeregnetInntekter(),
+    beregnetInntekter =
+        roller
+            .map {
+                BeregnetInntekterDto(
+                    it.tilPersonident()!!,
+                    it.rolletype,
+                    hentBeregnetInntekterForRolle(it),
+                )
+            },
     beregnetInntekterV2 =
         roller
             .map {
