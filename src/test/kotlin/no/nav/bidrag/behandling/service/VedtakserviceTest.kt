@@ -167,7 +167,7 @@ class VedtakserviceTest {
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
             withClue("Grunnlagliste skal inneholde 78 grunnlag") {
-                request.grunnlagListe shouldHaveSize 78
+                request.grunnlagListe shouldHaveSize 86
             }
         }
 
@@ -343,8 +343,12 @@ class VedtakserviceTest {
         opprettVedtakRequest.grunnlagListe.shouldHaveSize(76)
 
         opprettVedtakRequest.grunnlagListe.hentAllePersoner() shouldHaveSize 7
-        opprettVedtakRequest.grunnlagListe.søknadsbarn.toList()[0].personIdent shouldBe nyIdentBarn1
-        opprettVedtakRequest.grunnlagListe.søknadsbarn.toList()[1].personIdent shouldBe nyIdentBarn2
+        opprettVedtakRequest.grunnlagListe.søknadsbarn
+            .toList()[0]
+            .personIdent shouldBe nyIdentBarn1
+        opprettVedtakRequest.grunnlagListe.søknadsbarn
+            .toList()[1]
+            .personIdent shouldBe nyIdentBarn2
         opprettVedtakRequest.grunnlagListe.bidragsmottaker!!.personIdent shouldBe nyIdentBm
 
         val husstandsmedlemmer =
@@ -581,7 +585,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
             assertSoftly(it[0].periodeListe) {
-                shouldHaveSize(5)
+                shouldHaveSize(6)
                 assertSoftly(it[0]) {
                     periode shouldBe
                         ÅrMånedsperiode(
@@ -609,7 +613,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
             assertSoftly(it[1].periodeListe) {
-                shouldHaveSize(5)
+                shouldHaveSize(6)
                 assertSoftly(it[0]) {
                     periode shouldBe
                         ÅrMånedsperiode(
@@ -659,9 +663,11 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
             relatertTilPart shouldBe bmGrunnlag.referanse
         }
 
-        it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag.referanse)
+        it
+            .filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag.referanse)
             .shouldHaveSize(2)
-        it.filtrerBasertPåFremmedReferanse(referanse = husstandsmedlemGrunnlag.referanse)
+        it
+            .filtrerBasertPåFremmedReferanse(referanse = husstandsmedlemGrunnlag.referanse)
             .shouldHaveSize(2)
     }
 }
@@ -774,7 +780,8 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     }
 
     val delberegningInntektFiltrertPåEgenReferanse =
-        grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegningInntekt[0].grunnlagsreferanseListe[0])
+        grunnlagListe
+            .filtrerBasertPåEgenReferanse(referanse = delberegningInntekt[0].grunnlagsreferanseListe[0])
             .first()
 
     assertSoftly(delberegningInntektFiltrertPåEgenReferanse) {
@@ -783,7 +790,8 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     }
 
     val innhentetAinntekt =
-        grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegningInntektFiltrertPåEgenReferanse.grunnlagsreferanseListe[0])
+        grunnlagListe
+            .filtrerBasertPåEgenReferanse(referanse = delberegningInntektFiltrertPåEgenReferanse.grunnlagsreferanseListe[0])
             .first()
     assertSoftly(innhentetAinntekt) {
         it.type shouldBe Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT
@@ -809,13 +817,15 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
             delberegning.grunnlagsreferanseListe shouldHaveSize 3
 
             val bosstatusHusstandsmedlem =
-                grunnlagListe.filtrerBasertPåEgenReferanse(referanse = delberegning.grunnlagsreferanseListe[0])
+                grunnlagListe
+                    .filtrerBasertPåEgenReferanse(referanse = delberegning.grunnlagsreferanseListe[0])
                     .first()
             bosstatusHusstandsmedlem.type shouldBe Grunnlagstype.BOSTATUS_PERIODE
             bosstatusHusstandsmedlem.grunnlagsreferanseListe shouldHaveSize 1
 
             val innhentetHusstandsmedlem =
-                grunnlagListe.filtrerBasertPåEgenReferanse(referanse = bosstatusHusstandsmedlem.grunnlagsreferanseListe[0])
+                grunnlagListe
+                    .filtrerBasertPåEgenReferanse(referanse = bosstatusHusstandsmedlem.grunnlagsreferanseListe[0])
                     .first()
             innhentetHusstandsmedlem.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
             innhentetHusstandsmedlem.grunnlagsreferanseListe shouldHaveSize 0
