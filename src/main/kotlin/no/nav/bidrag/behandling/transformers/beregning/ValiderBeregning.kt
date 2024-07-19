@@ -5,7 +5,6 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
@@ -121,7 +120,8 @@ fun Behandling.validerTekniskForBeregningAvSærbidrag() {
     }
     if (virkningstidspunkt != LocalDate.now().withDayOfMonth(1)) {
         feilListe.add(
-            "Virkningstidspunkt $virkningstidspunkt er ikke første dag i inneværende måned. Dette er ikke gyldig for beregning av særbidrag.",
+            "Virkningstidspunkt $virkningstidspunkt er ikke første dag i inneværende måned. " +
+                "Dette er ikke gyldig for beregning av særbidrag.",
         )
     }
     if (søknadsbarn.size > 1) {

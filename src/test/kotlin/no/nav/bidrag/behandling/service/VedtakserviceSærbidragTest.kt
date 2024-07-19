@@ -143,8 +143,8 @@ class VedtakserviceSærbidragTest {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 78 grunnlag") {
-                request.grunnlagListe shouldHaveSize 78
+            withClue("Grunnlagliste skal inneholde 61 grunnlag") {
+                request.grunnlagListe shouldHaveSize 61
             }
         }
 

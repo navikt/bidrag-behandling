@@ -702,7 +702,6 @@ fun opprettAlleAktiveGrunnlagFraFil(
             opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.KONTANTSTØTTE),
             opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SMÅBARNSTILLEGG),
             opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN),
             opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
             opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBM),
             opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn1),
@@ -719,8 +718,8 @@ fun opprettAlleAktiveGrunnlagFraFil(
         else -> {
             grunnlagListe.addAll(
                 listOf(
-                    opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
                     opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBP),
+                    opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN),
                 ).flatten(),
             )
         }

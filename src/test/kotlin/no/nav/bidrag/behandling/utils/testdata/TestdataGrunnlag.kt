@@ -52,7 +52,7 @@ fun opprettGrunnlagFraFil(
             grunnlag.husstandsmedlemmerOgEgneBarnListe.tilGrunnlagEntity(behandling)
         }
         Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
-            grunnlag.husstandsmedlemmerOgEgneBarnListe.tilGrunnlagEntity(behandling)
+            grunnlag.husstandsmedlemmerOgEgneBarnListe.tilGrunnlagEntity(behandling, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN)
         }
 
         Grunnlagsdatatype.SIVILSTAND ->
@@ -98,15 +98,17 @@ fun opprettGrunnlagFraFil(
 }
 
 @JvmName("relatertPersonGrunnlagDtoTilGrunnlagEntity")
-fun List<RelatertPersonGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
-    groupBy { it.partPersonId }
-        .map { (partPersonId, grunnlag) ->
-            behandling.opprettGrunnlag(
-                Grunnlagsdatatype.BOFORHOLD,
-                grunnlag,
-                partPersonId!!,
-            )
-        }
+fun List<RelatertPersonGrunnlagDto>.tilGrunnlagEntity(
+    behandling: Behandling,
+    type: Grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD,
+) = groupBy { it.partPersonId }
+    .map { (partPersonId, grunnlag) ->
+        behandling.opprettGrunnlag(
+            type,
+            grunnlag,
+            partPersonId!!,
+        )
+    }
 
 @JvmName("sivilstandGrunnlagDtoTilGrunnlagEntity")
 fun List<SivilstandGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =

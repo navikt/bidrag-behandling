@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.trimToNull
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
@@ -21,6 +22,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
@@ -95,8 +97,33 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDt
                         )
                     }
             }.toSet()
-
-    return innhentetHusstandsmedlemGrunnlagListe + personobjekterInnhentetHusstandsmedlem
+    val innhentetAndreVoksneIHusstandenGrunnlagListe =
+        find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN }
+            ?.let { grunnlag ->
+                val andreVoksneIHusstandenListe =
+                    grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>()?.filter { it.relasjon != Familierelasjon.BARN }
+                        ?: emptyList()
+                val gjelder = personobjekter.hentPersonNyesteIdent(grunnlag.rolle.ident)!!
+                GrunnlagDto(
+                    referanse =
+                        opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
+                            gjelder.referanse,
+                            referanseRelatertTil = gjelder.referanse,
+                        ),
+                    type = Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    gjelderReferanse = gjelder.referanse,
+                    innhold =
+                        POJONode(
+                            andreVoksneIHusstandenListe.map {
+                                it.tilGrunnlagsobjektInnhold(
+                                    grunnlag.innhentet,
+                                    gjelder.referanse,
+                                )
+                            },
+                        ),
+                )
+            }?.let { setOf(it) } ?: emptySet()
+    return innhentetHusstandsmedlemGrunnlagListe + personobjekterInnhentetHusstandsmedlem + innhentetAndreVoksneIHusstandenGrunnlagListe
 }
 
 fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
