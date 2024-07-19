@@ -167,7 +167,7 @@ class VedtakserviceTest {
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
             withClue("Grunnlagliste skal inneholde 78 grunnlag") {
-                request.grunnlagListe shouldHaveSize 86
+                request.grunnlagListe shouldHaveSize 78
             }
         }
 
@@ -585,7 +585,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
             assertSoftly(it[0].periodeListe) {
-                shouldHaveSize(6)
+                shouldHaveSize(5)
                 assertSoftly(it[0]) {
                     periode shouldBe
                         ÅrMånedsperiode(
@@ -613,7 +613,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
             assertSoftly(it[1].periodeListe) {
-                shouldHaveSize(6)
+                shouldHaveSize(5)
                 assertSoftly(it[0]) {
                     periode shouldBe
                         ÅrMånedsperiode(
@@ -646,10 +646,10 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
         bostatusSøknadsbarn1.shouldHaveSize(2)
         it[0].gjelderReferanse shouldBe søknadsbarn1Grunnlag.referanse
         it[1].gjelderReferanse shouldBe søknadsbarn1Grunnlag.referanse
-        it[2].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
-        it[3].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
-        it[4].gjelderReferanse shouldBe husstandsmedlemGrunnlag.referanse
-        it[5].gjelderReferanse shouldBe husstandsmedlemGrunnlag.referanse
+        it[4].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
+        it[5].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
+        it[2].gjelderReferanse shouldBe husstandsmedlemGrunnlag.referanse
+        it[3].gjelderReferanse shouldBe husstandsmedlemGrunnlag.referanse
         assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
             bostatus shouldBe Bostatuskode.MED_FORELDER
             periode.fom shouldBe YearMonth.parse("2023-02")
