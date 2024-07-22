@@ -109,7 +109,7 @@ fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater() + byggGrunnlagSøknad()).toMutableSet()
     when (tilType()) {
         TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
-        TypeBehandling.SÆRBIDRAG -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
+        TypeBehandling.SÆRBIDRAG -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
 
         else -> {}
     }

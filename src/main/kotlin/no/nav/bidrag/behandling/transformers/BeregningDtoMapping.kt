@@ -61,7 +61,6 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
     let {
         val grunnlagsListe = grunnlagListe.toList()
         val periode = beregnetSærbidragPeriodeListe.first()
-        val bidragsevne = grunnlagsListe.finnDelberegningBidragsevne(periode.grunnlagsreferanseListe)
         grunnlagsListe.byggResultatSærbidragsberegning(
             periode.periode.fom.atDay(1),
             periode.resultat.beløp,
@@ -106,7 +105,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
     voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
-    erDirekteAvslag = isEmpty() && resultatkode.erDirekteAvslag(),
+    erDirekteAvslag = resultatkode.erDirekteAvslag(),
 )
 
 fun List<ResultatForskuddsberegningBarn>.tilDto() =

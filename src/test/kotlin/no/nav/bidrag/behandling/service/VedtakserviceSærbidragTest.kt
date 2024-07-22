@@ -233,6 +233,111 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
     @Test
     @Transactional
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling avslag`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
+        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
+        behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
+        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
+        behandling.refVedtaksid = 553
+        behandling.inntekter = mutableSetOf()
+        behandling.grunnlag = mutableSetOf()
+        behandling.avslag = Resultatkode.ALLE_UTGIFTER_ER_FORELDET
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
+        behandling.kategori = Særbidragskategori.ANNET.name
+        behandling.kategoriBeskrivelse = "Batterier til høreapparat"
+        behandling.utgift = null
+        testdataManager.lagreBehandling(behandling)
+        stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+        behandling.initGrunnlagRespons(stubUtils)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+
+            request.stønadsendringListe.shouldBeEmpty()
+            request.engangsbeløpListe shouldHaveSize 1
+            withClue("Grunnlagliste skal inneholde 11 grunnlag") {
+                request.grunnlagListe shouldHaveSize 11
+            }
+        }
+
+        assertSoftly(opprettVedtakRequest.engangsbeløpListe[0]) {
+            it.type shouldBe Engangsbeløptype.SÆRBIDRAG
+            it.sak shouldBe Saksnummer(behandling.saksnummer)
+            it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
+            it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
+            it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
+            it.beløp shouldBe null
+            it.valutakode shouldBe "NOK"
+            it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.ALLE_UTGIFTER_ER_FORELDET.name
+            it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+            it.beslutning shouldBe Beslutningstype.ENDRING
+            it.grunnlagReferanseListe shouldHaveSize 8
+            it.betaltBeløp shouldBe null
+        }
+        assertSoftly(opprettVedtakRequest) {
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.SÆRBIDRAG_KATEGORI)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<SærbidragskategoriGrunnlag>().first()
+                innhold.kategori shouldBe Særbidragskategori.ANNET
+                innhold.beskrivelse shouldBe "Batterier til høreapparat"
+            }
+
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
+                shouldHaveSize(5)
+                val innholdListe = innholdTilObjekt<NotatGrunnlag>()
+                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe behandling.utgiftsbegrunnelseKunINotat
+            }
+
+            hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSPLIKTIG) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.UTGIFT_DIREKTE_BETALT) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.UTGIFTSPOSTER) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 0
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+    }
+
+    @Test
+    @Transactional
     fun `Skal bruke nyeste identer for særbidrag`() {
         val nyIdentBm = "ny_ident_bm"
         val nyIdentBp = "ny_ident_bp"
