@@ -8,13 +8,15 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.Utgift
+import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -22,6 +24,8 @@ import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -46,12 +50,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.særbidragskategori
+import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftDirekteBetalt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
@@ -107,16 +113,13 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
 
 fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto? =
     engangsbeløpListe.firstOrNull()?.let { engangsbeløp ->
-        val virkningstidspunkt =
-            grunnlagListe
-                .filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT)
-                .first()
+        val behandling = tilBehandling(1)
         grunnlagListe.byggResultatSærbidragsberegning(
-            virkningstidspunkt.innhold.virkningstidspunkt,
+            behandling.virkningstidspunkt!!,
             engangsbeløp.beløp,
             Resultatkode.fraKode(engangsbeløp.resultatkode)!!,
             engangsbeløp.grunnlagReferanseListe,
-            UtgiftBeregningDto(),
+            behandling.utgift!!.tilBeregningDto(),
         )
     }
 
@@ -152,6 +155,8 @@ fun VedtakDto.tilBehandling(
             id = if (lesemodus) 1 else null,
             vedtakstype = vedtakType ?: type,
             virkningstidspunkt = hentVirkningstidspunkt()?.virkningstidspunkt ?: hentSøknad().søktFraDato,
+            kategori = grunnlagListe.særbidragskategori?.kategori?.name,
+            kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
             opprinneligVirkningstidspunkt =
                 hentVirkningstidspunkt()?.virkningstidspunkt
                     ?: hentSøknad().søktFraDato,
@@ -179,6 +184,7 @@ fun VedtakDto.tilBehandling(
             saksnummer = saksnummer!!,
             soknadsid = søknadId ?: this.søknadId!!,
             boforholdsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false),
+            utgiftsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.UTGIFTER, false),
             boforholdsbegrunnelseIVedtakOgNotat =
                 notatMedType(
                     NotatGrunnlag.NotatType.BOFORHOLD,
@@ -201,6 +207,7 @@ fun VedtakDto.tilBehandling(
     behandling.inntekter = grunnlagListe.mapInntekter(behandling, lesemodus)
     behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling)
     behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
+    behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
     behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
     return behandling
@@ -241,6 +248,30 @@ private fun List<GrunnlagDto>.mapSivilstand(
         .mapIndexed { i, it ->
             it.tilSivilstand(behandling, if (lesemodus) i.toLong() else null)
         }.toMutableSet()
+
+private fun List<GrunnlagDto>.mapUtgifter(
+    behandling: Behandling,
+    lesemodus: Boolean,
+): Utgift? {
+    if (behandling.tilType() !== TypeBehandling.SÆRBIDRAG) return null
+    val utgift = Utgift(behandling, beløpDirekteBetaltAvBp = utgiftDirekteBetalt!!.beløpDirekteBetalt)
+    utgift.utgiftsposter =
+        utgiftsposter
+            .mapIndexed { index, it ->
+                Utgiftspost(
+                    id = if (lesemodus) index.toLong() else null,
+                    utgift = utgift,
+                    dato = it.dato,
+                    type = it.type,
+                    godkjentBeløp = it.godkjentBeløp,
+                    kravbeløp = it.kravbeløp,
+                    begrunnelse = it.begrunnelse,
+                    betaltAvBp = it.betaltAvBp,
+                )
+            }.toMutableSet()
+
+    return utgift
+}
 
 private fun List<GrunnlagDto>.mapInntekter(
     behandling: Behandling,

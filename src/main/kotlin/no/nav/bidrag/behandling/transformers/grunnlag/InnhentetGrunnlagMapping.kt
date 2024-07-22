@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.trimToNull
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
@@ -21,6 +22,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
@@ -36,8 +38,9 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 
-fun List<Grunnlag>.tilInnhentetArbeidsforhold(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
-    return filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.groupBy { it.rolle.ident }
+fun List<Grunnlag>.tilInnhentetArbeidsforhold(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
+    filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD }
+        .groupBy { it.rolle.ident }
         .map { (personId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val arbeidsforholdListe =
@@ -45,10 +48,10 @@ fun List<Grunnlag>.tilInnhentetArbeidsforhold(personobjekter: Set<GrunnlagDto>):
             val gjelder = personobjekter.hentPersonNyesteIdent(personId)!!
             arbeidsforholdListe.tilGrunnlagsobjekt(grunnlag.innhentet, gjelder.referanse)
         }.toSet()
-}
 
-fun List<Grunnlag>.tilInnhentetSivilstand(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
-    return filter { it.type == Grunnlagsdatatype.SIVILSTAND }.groupBy { it.rolle.ident }
+fun List<Grunnlag>.tilInnhentetSivilstand(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
+    filter { it.type == Grunnlagsdatatype.SIVILSTAND }
+        .groupBy { it.rolle.ident }
         .map { (personId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val sivilstandListe =
@@ -59,7 +62,6 @@ fun List<Grunnlag>.tilInnhentetSivilstand(personobjekter: Set<GrunnlagDto>): Set
                 gjelder.referanse,
             )
         }.toSet()
-}
 
 fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
     val personobjekterInnhentetHusstandsmedlem = mutableSetOf<GrunnlagDto>()
@@ -71,13 +73,15 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDt
     }
 
     val innhentetHusstandsmedlemGrunnlagListe =
-        filter { it.type == Grunnlagsdatatype.BOFORHOLD }.groupBy { it.rolle.ident }
+        filter { it.type == Grunnlagsdatatype.BOFORHOLD }
+            .groupBy { it.rolle.ident }
             .flatMap { (partPersonId, grunnlagListe) ->
                 val grunnlag = grunnlagListe.first()
                 val husstandsmedlemList =
                     grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
                 val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
-                husstandsmedlemList.groupBy { it.relatertPersonPersonId }
+                husstandsmedlemList
+                    .groupBy { it.gjelderPersonId }
                     .map { (relatertPersonPersonId, relatertPersonListe) ->
                         val relatertPersonObjekt =
                             (personobjekter + personobjekterInnhentetHusstandsmedlem).hentPersonNyesteIdent(
@@ -93,12 +97,38 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDt
                         )
                     }
             }.toSet()
-
-    return innhentetHusstandsmedlemGrunnlagListe + personobjekterInnhentetHusstandsmedlem
+    val innhentetAndreVoksneIHusstandenGrunnlagListe =
+        find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN }
+            ?.let { grunnlag ->
+                val andreVoksneIHusstandenListe =
+                    grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>()?.filter { it.relasjon != Familierelasjon.BARN }
+                        ?: emptyList()
+                val gjelder = personobjekter.hentPersonNyesteIdent(grunnlag.rolle.ident)!!
+                GrunnlagDto(
+                    referanse =
+                        opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
+                            gjelder.referanse,
+                            referanseRelatertTil = gjelder.referanse,
+                        ),
+                    type = Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    gjelderReferanse = gjelder.referanse,
+                    innhold =
+                        POJONode(
+                            andreVoksneIHusstandenListe.map {
+                                it.tilGrunnlagsobjektInnhold(
+                                    grunnlag.innhentet,
+                                    gjelder.referanse,
+                                )
+                            },
+                        ),
+                )
+            }?.let { setOf(it) } ?: emptySet()
+    return innhentetHusstandsmedlemGrunnlagListe + personobjekterInnhentetHusstandsmedlem + innhentetAndreVoksneIHusstandenGrunnlagListe
 }
 
-fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
-    return filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER }.groupBy { it.rolle.ident }
+fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
+    filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER }
+        .groupBy { it.rolle.ident }
         .map { (ident, grunnlag) ->
             val inntekter =
                 grunnlag.first().konvertereData<SummerteInntekter<SummertMånedsinntekt>>()!!
@@ -133,15 +163,13 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
                     ),
             )
         }.toSet()
-}
 
-fun List<Grunnlag>.tilInnhentetGrunnlagInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
-    return mapSkattegrunnlag(personobjekter) + mapAinntekt(personobjekter) +
+fun List<Grunnlag>.tilInnhentetGrunnlagInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
+    mapSkattegrunnlag(personobjekter) + mapAinntekt(personobjekter) +
         mapKontantstøtte(personobjekter) +
         mapBarnetilsyn(personobjekter) +
         mapBarnetillegg(personobjekter) +
         mapUtvidetbarnetrygd(personobjekter) + mapSmåbarnstillegg(personobjekter)
-}
 
 fun List<Grunnlag>.hentVersjonForInntekt(inntekt: Inntekt): String {
     val inntekterGrunnlag =
@@ -158,13 +186,16 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
     val periode = ÅrMånedsperiode(inntekt.opprinneligFom!!, inntekt.opprinneligTom)
     val inntekterGjelderGrunnlag =
         hentAlleAktiv().find {
-            it.type == inntekt.type.tilGrunnlagsdataType() && it.erBearbeidet && hentNyesteIdent(
-                it.rolle.ident,
-            )?.verdi == gjelderIdent
+            it.type == inntekt.type.tilGrunnlagsdataType() &&
+                it.erBearbeidet &&
+                hentNyesteIdent(
+                    it.rolle.ident,
+                )?.verdi == gjelderIdent
         }
 
     val inntekter =
-        inntekterGjelderGrunnlag.konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
+        inntekterGjelderGrunnlag
+            .konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
             ?.inntekter
     val beregnetInntekt =
         inntekter?.find {
@@ -214,7 +245,8 @@ private fun opprettGrunnlagsreferanserForInntekt2(
 }
 
 private fun List<Grunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =
-    filter { it.type == Grunnlagsdatatype.BARNETILLEGG && !it.erBearbeidet }.groupBy { it.rolle.ident }
+    filter { it.type == Grunnlagsdatatype.BARNETILLEGG && !it.erBearbeidet }
+        .groupBy { it.rolle.ident }
         .map { (partPersonId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val barnetillegListe =
@@ -228,7 +260,8 @@ private fun List<Grunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =
         }.toSet()
 
 private fun List<Grunnlag>.mapBarnetilsyn(personobjekter: Set<GrunnlagDto>) =
-    filter { it.type == Grunnlagsdatatype.BARNETILSYN && !it.erBearbeidet }.groupBy { it.rolle.ident }
+    filter { it.type == Grunnlagsdatatype.BARNETILSYN && !it.erBearbeidet }
+        .groupBy { it.rolle.ident }
         .map { (partPersonId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val barnetilsynListe =
@@ -242,7 +275,8 @@ private fun List<Grunnlag>.mapBarnetilsyn(personobjekter: Set<GrunnlagDto>) =
         }.toSet()
 
 private fun List<Grunnlag>.mapAinntekt(personobjekter: Set<GrunnlagDto>) =
-    filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }.groupBy { it.rolle.ident }
+    filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
+        .groupBy { it.rolle.ident }
         .map { (ident, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val ainntektListe =
@@ -256,7 +290,8 @@ private fun List<Grunnlag>.mapAinntekt(personobjekter: Set<GrunnlagDto>) =
         }.toSet()
 
 private fun List<Grunnlag>.mapKontantstøtte(personobjekter: Set<GrunnlagDto>) =
-    filter { it.type == Grunnlagsdatatype.KONTANTSTØTTE && !it.erBearbeidet }.groupBy { it.rolle.ident }
+    filter { it.type == Grunnlagsdatatype.KONTANTSTØTTE && !it.erBearbeidet }
+        .groupBy { it.rolle.ident }
         .map { (partPersonId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val kontantstøtteListe =
@@ -270,7 +305,8 @@ private fun List<Grunnlag>.mapKontantstøtte(personobjekter: Set<GrunnlagDto>) =
         }.toSet()
 
 private fun List<Grunnlag>.mapSmåbarnstillegg(personobjekter: Set<GrunnlagDto>) =
-    filter { it.type == Grunnlagsdatatype.SMÅBARNSTILLEGG && !it.erBearbeidet }.groupBy { it.rolle.ident }
+    filter { it.type == Grunnlagsdatatype.SMÅBARNSTILLEGG && !it.erBearbeidet }
+        .groupBy { it.rolle.ident }
         .map { (partPersonId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val småbarnstilleggListe =
@@ -283,7 +319,8 @@ private fun List<Grunnlag>.mapSmåbarnstillegg(personobjekter: Set<GrunnlagDto>)
         }.toSet()
 
 private fun List<Grunnlag>.mapUtvidetbarnetrygd(personobjekter: Set<GrunnlagDto>) =
-    filter { it.type == Grunnlagsdatatype.UTVIDET_BARNETRYGD && !it.erBearbeidet }.groupBy { it.rolle.ident }
+    filter { it.type == Grunnlagsdatatype.UTVIDET_BARNETRYGD && !it.erBearbeidet }
+        .groupBy { it.rolle.ident }
         .map { (partPersonId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val utvidetBarnetrygdListe =
@@ -296,7 +333,8 @@ private fun List<Grunnlag>.mapUtvidetbarnetrygd(personobjekter: Set<GrunnlagDto>
         }.toSet()
 
 private fun List<Grunnlag>.mapSkattegrunnlag(personobjekter: Set<GrunnlagDto>) =
-    filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }.groupBy { it.rolle.ident }
+    filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
+        .groupBy { it.rolle.ident }
         .flatMap { (ident, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val skattegrunnlag =

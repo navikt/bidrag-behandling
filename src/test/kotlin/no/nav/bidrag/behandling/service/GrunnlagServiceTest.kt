@@ -1423,7 +1423,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
 
                 assertSoftly(grunnlagBm) { gbm ->
-                    gbm shouldHaveSize 8
+                    gbm shouldHaveSize 10
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0

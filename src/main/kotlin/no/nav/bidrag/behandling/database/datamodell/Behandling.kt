@@ -14,19 +14,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
-import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
-import no.nav.bidrag.behandling.dto.v2.validering.UtgiftFeilDto
-import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
-import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
-import no.nav.bidrag.behandling.transformers.validerBoforhold
-import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
-import no.nav.bidrag.behandling.transformers.validereSivilstand
-import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
-import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
-import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -37,13 +25,9 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
-import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import org.springframework.http.HttpStatus
-import org.springframework.web.client.HttpClientErrorException
-import java.nio.charset.Charset
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -195,145 +179,6 @@ fun Behandling.henteAlleBostatusperioder() = husstandsmedlem.flatMap { it.period
 fun Behandling.finnBostatusperiode(id: Long?) = henteAlleBostatusperioder().find { it.id == id }
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
-
-fun Behandling.validerForBeregning() {
-    val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-        erKlageEllerOmgjøring &&
-            opprinneligVirkningstidspunkt != null &&
-            virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
-    val virkningstidspunktFeil =
-        VirkningstidspunktFeilDto(
-            manglerÅrsakEllerAvslag = avslag == null && årsak == null,
-            manglerVirkningstidspunkt = virkningstidspunkt == null,
-            virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
-        ).takeIf { it.harFeil }
-    val feil =
-        if (avslag == null) {
-            val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
-            val sivilstandFeil = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil }
-            val husstandsmedlemsfeil =
-                husstandsmedlem
-                    .validerBoforhold(
-                        virkningstidspunktEllerSøktFomDato,
-                    ).filter { it.harFeil }
-                    .takeIf { it.isNotEmpty() }
-            val måBekrefteOpplysninger =
-                grunnlag
-                    .hentAlleSomMåBekreftes()
-                    .map { grunnlagSomMåBekreftes ->
-                        MåBekrefteNyeOpplysninger(
-                            grunnlagSomMåBekreftes.type,
-                            husstandsmedlem =
-                                (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                    husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
-                                },
-                        )
-                    }.toSet()
-            val harFeil =
-                inntekterFeil != null ||
-                    sivilstandFeil != null ||
-                    husstandsmedlemsfeil != null ||
-                    virkningstidspunktFeil != null ||
-                    måBekrefteOpplysninger.isNotEmpty()
-            harFeil.ifTrue {
-                BeregningValideringsfeil(
-                    virkningstidspunktFeil,
-                    null,
-                    inntekterFeil,
-                    husstandsmedlemsfeil,
-                    null,
-                    sivilstandFeil,
-                    måBekrefteOpplysninger,
-                )
-            }
-        } else if (virkningstidspunktFeil != null) {
-            BeregningValideringsfeil(virkningstidspunktFeil, null, null, null, null, null)
-        } else {
-            null
-        }
-
-    if (feil != null) {
-        secureLogger.warn {
-            "Feil ved validering av behandling for beregning " +
-                commonObjectmapper.writeValueAsString(feil)
-        }
-        throw HttpClientErrorException(
-            HttpStatus.BAD_REQUEST,
-            "Feil ved validering av behandling for beregning",
-            commonObjectmapper.writeValueAsBytes(feil),
-            Charset.defaultCharset(),
-        )
-    }
-}
-
-fun Behandling.validerForBeregningSærbidrag() {
-    val utgiftFeil =
-        UtgiftFeilDto(
-            manglerUtgifter = utgift == null || utgift!!.utgiftsposter.isEmpty(),
-        ).takeIf { it.harFeil }
-    val feil =
-        if (avslag == null) {
-            val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
-            val andreVoksneIHusstandenFeil =
-                husstandsmedlem.voksneIHusstanden
-                    ?.validereAndreVoksneIHusstanden(
-                        virkningstidspunktEllerSøktFomDato,
-                    )?.takeIf {
-                        it.harFeil
-                    }
-            val husstandsmedlemsfeil =
-                husstandsmedlem.barn
-                    .toSet()
-                    .validerBoforhold(
-                        virkningstidspunktEllerSøktFomDato,
-                    ).filter { it.harFeil }
-                    .takeIf { it.isNotEmpty() }
-            val måBekrefteOpplysninger =
-                grunnlag
-                    .hentAlleSomMåBekreftes()
-                    .map { grunnlagSomMåBekreftes ->
-                        MåBekrefteNyeOpplysninger(
-                            grunnlagSomMåBekreftes.type,
-                            husstandsmedlem =
-                                (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                    husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
-                                },
-                        )
-                    }.toSet()
-            val harFeil =
-                inntekterFeil != null ||
-                    husstandsmedlemsfeil != null ||
-                    andreVoksneIHusstandenFeil != null ||
-                    utgiftFeil != null ||
-                    måBekrefteOpplysninger.isNotEmpty()
-            harFeil.ifTrue {
-                BeregningValideringsfeil(
-                    null,
-                    utgiftFeil,
-                    inntekterFeil,
-                    husstandsmedlemsfeil,
-                    andreVoksneIHusstandenFeil,
-                    null,
-                    måBekrefteOpplysninger,
-                )
-            }
-        } else {
-            null
-        }
-
-    if (feil != null) {
-        secureLogger.warn {
-            "Feil ved validering av behandling for beregning av særbidrag" +
-                commonObjectmapper.writeValueAsString(feil)
-        }
-        throw HttpClientErrorException(
-            HttpStatus.BAD_REQUEST,
-            "Feil ved validering av behandling for beregning av særbidrag",
-            commonObjectmapper.writeValueAsBytes(feil),
-            Charset.defaultCharset(),
-        )
-    }
-}
 
 val Set<Husstandsmedlem>.barn get() = filter { it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG }
 

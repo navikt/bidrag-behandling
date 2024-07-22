@@ -301,10 +301,25 @@ enum class Grunnlagsdatatype(
         ),
     ),
     BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN(mapOf(TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG))),
-    KONTANTSTØTTE(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    KONTANTSTØTTE(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
+        ),
+    ),
     SIVILSTAND(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
-    UTVIDET_BARNETRYGD(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
-    SMÅBARNSTILLEGG(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    UTVIDET_BARNETRYGD(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
+        ),
+    ),
+    SMÅBARNSTILLEGG(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
+        ),
+    ),
     SKATTEPLIKTIGE_INNTEKTER(
         mapOf(
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),

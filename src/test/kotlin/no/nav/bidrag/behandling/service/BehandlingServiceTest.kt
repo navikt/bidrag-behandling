@@ -243,12 +243,15 @@ class BehandlingServiceTest : TestContainerRunner() {
 
             assertSoftly(behandlingDto) {
                 it.inntekter.beregnetInntekter shouldHaveSize 3
+                val beregnetInntekterBM =
+                    it.inntekter.beregnetInntekter.find { it.rolle == Rolletype.BIDRAGSMOTTAKER }!!
+                beregnetInntekterBM.inntekter shouldHaveSize 3
                 val inntekterAlle =
-                    it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
+                    beregnetInntekterBM.inntekter.find { it.inntektGjelderBarnIdent == null }
                 val inntekterBarn1 =
-                    it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn1.ident)
+                    beregnetInntekterBM.inntekter.hentInntektForBarn(testdataBarn1.ident)
                 val inntekterBarn2 =
-                    it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn2.ident)
+                    beregnetInntekterBM.inntekter.hentInntektForBarn(testdataBarn2.ident)
                 inntekterAlle.shouldNotBeNull()
                 inntekterBarn1.shouldNotBeNull()
                 inntekterBarn2.shouldNotBeNull()

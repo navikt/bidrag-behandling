@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForYtelseSomGjelderBarn
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForÅrsinntekter
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
@@ -121,7 +122,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe true
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolle shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
@@ -157,7 +158,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe true
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolle shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
@@ -238,12 +239,127 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolle shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
         @Test
-        fun `Skal validere inntekter hvis barn har inntekter med hull i periode`() {
+        fun `Skal validere inntekter hvis ingen periode for BP i Særbidrag`() {
+            val bmIdent = "31233123"
+            val bpIdent = "31233333123"
+            val barnIdent = "21333123"
+            val virkningstidspunkt = YearMonth.now()
+            val roller =
+                setOf(
+                    opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER),
+                    opprettRolle(bpIdent, Rolletype.BIDRAGSPLIKTIG),
+                    opprettRolle(barnIdent, Rolletype.BARN),
+                )
+            val inntekter =
+                setOf(
+                    opprettInntekt(
+                        virkningstidspunkt,
+                        null,
+                        Inntektsrapportering.INNTEKTSOPPLYSNINGER_FRA_ARBEIDSGIVER,
+                        ident = bmIdent,
+                        taMed = true,
+                    ),
+                    opprettInntekt(
+                        virkningstidspunkt,
+                        null,
+                        Inntektsrapportering.AINNTEKT,
+                        ident = bmIdent,
+                        taMed = false,
+                    ),
+                    opprettInntekt(
+                        virkningstidspunkt,
+                        null,
+                        Inntektsrapportering.AINNTEKT,
+                        ident = bpIdent,
+                        taMed = false,
+                    ),
+                )
+
+            val resultat =
+                inntekter
+                    .mapValideringsfeilForÅrsinntekter(
+                        virkningstidspunkt.atDay(1),
+                        roller,
+                        TypeBehandling.SÆRBIDRAG,
+                    ).toList()
+            resultat shouldHaveSize 1
+
+            assertSoftly(resultat[0]) {
+                hullIPerioder shouldHaveSize 0
+                overlappendePerioder shouldHaveSize 0
+                manglerPerioder shouldBe true
+                ingenLøpendePeriode shouldBe false
+                fremtidigPeriode shouldBe false
+                harFeil shouldBe true
+                ident shouldBe bpIdent
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
+            }
+        }
+
+        @Test
+        fun `Skal validere inntekter hvis barn har inntekter med hull i periode og behandling er av type SÆRBIDRAG`() {
+            val bmIdent = "31233123"
+            val bpIdent = "3333"
+            val barnIdent = "21333123"
+            val virkningstidspunkt = YearMonth.now()
+            val roller =
+                setOf(
+                    opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER),
+                    opprettRolle(bpIdent, Rolletype.BIDRAGSPLIKTIG),
+                    opprettRolle(barnIdent, Rolletype.BARN),
+                )
+            val inntekter =
+                setOf(
+                    opprettInntekt(virkningstidspunkt, null, ident = bmIdent, taMed = true),
+                    opprettInntekt(virkningstidspunkt, null, ident = bpIdent, taMed = true),
+                    opprettInntekt(
+                        virkningstidspunkt,
+                        null,
+                        Inntektsrapportering.AINNTEKT,
+                        ident = barnIdent,
+                        taMed = true,
+                    ),
+                    opprettInntekt(
+                        virkningstidspunkt,
+                        null,
+                        Inntektsrapportering.AINNTEKT,
+                        ident = barnIdent,
+                        taMed = true,
+                    ),
+                )
+
+            val resultat =
+                inntekter
+                    .mapValideringsfeilForÅrsinntekter(
+                        virkningstidspunkt.atDay(1),
+                        roller,
+                        TypeBehandling.SÆRBIDRAG,
+                    ).toList()
+            resultat shouldHaveSize 1
+
+            assertSoftly(resultat[0]) {
+                hullIPerioder shouldHaveSize 0
+                overlappendePerioder shouldHaveSize 1
+                assertSoftly(overlappendePerioder.first().periode) {
+                    fom shouldBe virkningstidspunkt.atDay(1)
+                    til shouldBe null
+                }
+                manglerPerioder shouldBe false
+                ingenLøpendePeriode shouldBe false
+                fremtidigPeriode shouldBe false
+                harFeil shouldBe true
+                ident shouldBe barnIdent
+                rolle!!.rolletype shouldBe Rolletype.BARN
+            }
+        }
+
+        @Test
+        fun `Skal ikke validere inntekter hvis barn har inntekter med hull i periode og behandling er av type FORSKUDD`() {
             val bmIdent = "31233123"
             val barnIdent = "21333123"
             val barn2Ident = "44444"
@@ -270,23 +386,14 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), roller).toList()
-            resultat shouldHaveSize 1
-
-            assertSoftly(resultat[0]) {
-                hullIPerioder shouldHaveSize 1
-                assertSoftly(hullIPerioder[0]) {
-                    fom shouldBe LocalDate.parse("2022-06-30")
-                    til shouldBe null
-                }
-                overlappendePerioder shouldHaveSize 0
-                manglerPerioder shouldBe false
-                ingenLøpendePeriode shouldBe true
-                fremtidigPeriode shouldBe false
-                harFeil shouldBe true
-                ident shouldBe barnIdent
-                rolle shouldBe Rolletype.BARN
-            }
+            val resultat =
+                inntekter
+                    .mapValideringsfeilForÅrsinntekter(
+                        LocalDate.parse("2022-01-01"),
+                        roller,
+                        TypeBehandling.FORSKUDD,
+                    ).toList()
+            resultat shouldHaveSize 0
         }
 
         @Test
@@ -332,11 +439,12 @@ class ValiderInntektPerioderTest {
                 )
 
             val resultat =
-                inntekter.mapValideringsfeilForYtelseSomGjelderBarn(
-                    Inntektsrapportering.BARNETILLEGG,
-                    LocalDate.parse("2022-01-01"),
-                    roller,
-                ).toList()
+                inntekter
+                    .mapValideringsfeilForYtelseSomGjelderBarn(
+                        Inntektsrapportering.BARNETILLEGG,
+                        LocalDate.parse("2022-01-01"),
+                        roller,
+                    ).toList()
             resultat shouldHaveSize 1
 
             assertSoftly(resultat[0]) {
@@ -349,7 +457,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 ident shouldBe bmIdent
                 gjelderBarn shouldBe barn2Ident
-                rolle shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
     }
@@ -922,11 +1030,12 @@ fun opprettInntekt(
     taMed = taMed,
     type = type,
     inntektsposter =
-        inntektstyper.map {
-            Inntektspost(
-                beløp = BigDecimal.ONE,
-                inntektstype = it,
-                kode = "",
-            )
-        }.toMutableSet(),
+        inntektstyper
+            .map {
+                Inntektspost(
+                    beløp = BigDecimal.ONE,
+                    inntektstype = it,
+                    kode = "",
+                )
+            }.toMutableSet(),
 )

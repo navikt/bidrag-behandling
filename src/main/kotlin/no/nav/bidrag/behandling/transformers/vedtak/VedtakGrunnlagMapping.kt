@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.transformers.vedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
-import no.nav.bidrag.behandling.database.datamodell.tilPersonident
+import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -96,7 +96,7 @@ fun Behandling.byggGrunnlagUtgiftsposter() =
     setOf(
         GrunnlagDto(
             referanse = "utgiftsposter",
-            type = Grunnlagstype.UTGIFTSPOST,
+            type = Grunnlagstype.UTGIFTSPOSTER,
             innhold =
                 POJONode(
                     utgift!!.utgiftsposter.map {
@@ -147,13 +147,16 @@ fun Behandling.byggGrunnlagNotater() =
         inntektsbegrunnelseIVedtakOgNotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.INNTEKT, true, it)
         },
+        utgiftsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
+            opprettGrunnlagNotat(NotatGrunnlag.NotatType.UTGIFTER, false, it)
+        },
     ).filterNotNull()
 
 fun Behandling.tilSkyldner() =
     when (stonadstype) {
         Stønadstype.FORSKUDD -> skyldnerNav
         else ->
-            bidragspliktig?.tilPersonident()
+            bidragspliktig?.tilNyestePersonident()
                 ?: rolleManglerIdent(Rolletype.BIDRAGSPLIKTIG, id!!)
     }
 

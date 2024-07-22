@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.utgift.tilUtgiftstype
 import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodeseringsfeil
@@ -46,6 +47,18 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
+
+fun bestemRollerSomMåHaMinstEnInntekt(typeBehandling: TypeBehandling) =
+    when (typeBehandling) {
+        TypeBehandling.FORSKUDD -> listOf(Rolletype.BIDRAGSMOTTAKER)
+        TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG -> listOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER)
+    }
+
+fun bestemRollerSomKanHaInntekter(typeBehandling: TypeBehandling) =
+    when (typeBehandling) {
+        TypeBehandling.FORSKUDD -> listOf(Rolletype.BIDRAGSMOTTAKER)
+        TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG -> listOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN)
+    }
 
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
 val Behandling.utgiftCuttofDato get() = mottattdato.minusYears(1)
@@ -113,64 +126,13 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
     if (erAvslag && (nyEllerEndretUtgift != null || sletteUtgift != null || angreSisteEndring == true)) {
         feilliste.add("Kan ikke oppdatere eller opprette utgift hvis avslag er satt")
     }
+    val utgift = behandling.utgift
+    if (sletteUtgift != null && (utgift == null || utgift.utgiftsposter.none { it.id == sletteUtgift })) {
+        feilliste.add("Utgiftspost med id $sletteUtgift finnes ikke i behandling ${behandling.id}")
+    }
 
     if (nyEllerEndretUtgift != null) {
-        if (nyEllerEndretUtgift.dato >= LocalDate.now()) {
-            feilliste.add("Dato for utgift kan ikke være senere enn eller lik dagens dato")
-        }
-        if (nyEllerEndretUtgift.godkjentBeløp != nyEllerEndretUtgift.kravbeløp &&
-            nyEllerEndretUtgift.begrunnelse.isNullOrEmpty() &&
-            !behandling.erDatoForUtgiftForeldet(
-                nyEllerEndretUtgift.dato,
-            )
-        ) {
-            feilliste.add("Begrunnelse må settes hvis kravbeløp er ulik godkjent beløp")
-        }
-        if (nyEllerEndretUtgift.godkjentBeløp > nyEllerEndretUtgift.kravbeløp) {
-            feilliste.add("Godkjent beløp kan ikke være høyere enn kravbeløp")
-        }
-        if (behandling.erDatoForUtgiftForeldet(nyEllerEndretUtgift.dato) && nyEllerEndretUtgift.godkjentBeløp > BigDecimal.ZERO) {
-            feilliste.add("Godkjent beløp må være 0 når dato på utgiften er 1 år etter mottatt dato (utgiften er foreldet)")
-        }
-        val utgift = behandling.utgift
-        if (nyEllerEndretUtgift.id != null && (utgift == null || utgift.utgiftsposter.none { it.id == nyEllerEndretUtgift.id })) {
-            feilliste.add("Utgiftspost med id ${nyEllerEndretUtgift.id} finnes ikke i behandling ${behandling.id}")
-        }
-        if (sletteUtgift != null && (utgift == null || utgift.utgiftsposter.none { it.id == sletteUtgift })) {
-            feilliste.add("Utgiftspost med id $sletteUtgift finnes ikke i behandling ${behandling.id}")
-        }
-
-        when (behandling.særbidragKategori) {
-            Særbidragskategori.KONFIRMASJON -> {
-                if (nyEllerEndretUtgift.type.isNullOrEmpty()) {
-                    feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.KONFIRMASJON}")
-                }
-                if (nyEllerEndretUtgift.type?.tilUtgiftstype()?.kategori != Særbidragskategori.KONFIRMASJON) {
-                    feilliste.add(
-                        "Type ${nyEllerEndretUtgift.type} er ikke gyldig for" +
-                            " behandling med kategori ${Særbidragskategori.KONFIRMASJON}",
-                    )
-                }
-            }
-
-            Særbidragskategori.ANNET -> {
-                if (nyEllerEndretUtgift.type.isNullOrEmpty()) {
-                    feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.ANNET}")
-                }
-            }
-
-            else -> {
-                if (nyEllerEndretUtgift.betaltAvBp) {
-                    feilliste.add(
-                        "Kan ikke legge til utgift betalt av BP for " +
-                            "særbidrag behandling som ikke har kategori ${Særbidragskategori.KONFIRMASJON}",
-                    )
-                }
-                if (nyEllerEndretUtgift.type != null) {
-                    feilliste.add("Type kan ikke settes hvis behandling har kategori ${behandling.særbidragKategori}")
-                }
-            }
-        }
+        feilliste.addAll(nyEllerEndretUtgift.validerUtgiftspost(behandling))
     }
 
     if (feilliste.isNotEmpty()) {
@@ -179,6 +141,65 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
             "Ugyldig data ved oppdatering av utgift: ${feilliste.joinToString(", ")}",
         )
     }
+}
+
+fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
+    val feilliste = mutableListOf<String>()
+
+    if (dato >= LocalDate.now()) {
+        feilliste.add("Dato for utgift kan ikke være senere enn eller lik dagens dato")
+    }
+    if (godkjentBeløp != kravbeløp &&
+        begrunnelse.isNullOrEmpty() &&
+        !behandling.erDatoForUtgiftForeldet(
+            dato,
+        )
+    ) {
+        feilliste.add("Begrunnelse må settes hvis kravbeløp er ulik godkjent beløp")
+    }
+    if (godkjentBeløp > kravbeløp) {
+        feilliste.add("Godkjent beløp kan ikke være høyere enn kravbeløp")
+    }
+    if (behandling.erDatoForUtgiftForeldet(dato) && godkjentBeløp > BigDecimal.ZERO) {
+        feilliste.add("Godkjent beløp må være 0 når dato på utgiften er 1 år etter mottatt dato (utgiften er foreldet)")
+    }
+    val utgift = behandling.utgift
+    if (id != null && (utgift == null || utgift.utgiftsposter.none { it.id == id })) {
+        feilliste.add("Utgiftspost med id $id finnes ikke i behandling ${behandling.id}")
+    }
+
+    when (behandling.særbidragKategori) {
+        Særbidragskategori.KONFIRMASJON -> {
+            if (type.isNullOrEmpty()) {
+                feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.KONFIRMASJON}")
+            }
+            if (type?.tilUtgiftstype()?.kategori != Særbidragskategori.KONFIRMASJON) {
+                feilliste.add(
+                    "Type $type er ikke gyldig for" +
+                        " behandling med kategori ${Særbidragskategori.KONFIRMASJON}",
+                )
+            }
+        }
+
+        Særbidragskategori.ANNET -> {
+            if (type.isNullOrEmpty()) {
+                feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.ANNET}")
+            }
+        }
+
+        else -> {
+            if (betaltAvBp) {
+                feilliste.add(
+                    "Kan ikke legge til utgift betalt av BP for " +
+                        "særbidrag behandling som ikke har kategori ${Særbidragskategori.KONFIRMASJON}",
+                )
+            }
+            if (type != null) {
+                feilliste.add("Type kan ikke settes hvis behandling har kategori ${behandling.særbidragKategori}")
+            }
+        }
+    }
+    return feilliste
 }
 
 fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {

@@ -6,7 +6,7 @@ import java.time.LocalDate
 data class RolleDto(
     val id: Long,
     val rolletype: Rolletype,
-    val ident: String?,
-    val navn: String?,
-    val fødselsdato: LocalDate?,
+    val ident: String? = null,
+    val navn: String? = null,
+    val fødselsdato: LocalDate? = null,
 )

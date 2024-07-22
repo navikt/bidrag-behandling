@@ -35,7 +35,10 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.begrensAntallPersoner
+import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
+import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -142,16 +145,7 @@ fun Behandling.tilBehandlingDtoV2(
     søknadsid = soknadsid,
     behandlerenhet = behandlerEnhet,
     roller =
-        roller
-            .map {
-                RolleDto(
-                    it.id!!,
-                    it.rolletype,
-                    it.ident,
-                    it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.fødselsdato,
-                )
-            }.toSet(),
+        roller.map { it.tilDto() }.toSet(),
     søknadRefId = soknadRefId,
     vedtakRefId = refVedtaksid,
     virkningstidspunkt =
@@ -185,6 +179,15 @@ fun Behandling.tilBehandlingDtoV2(
             objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
         },
 )
+
+fun Rolle.tilDto() =
+    RolleDto(
+        id!!,
+        rolletype,
+        ident,
+        navn ?: hentPersonVisningsnavn(ident),
+        fødselsdato,
+    )
 
 private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this
@@ -354,7 +357,15 @@ fun Behandling.tilInntektDtoV2(
             .årsinntekterSortert(inkluderHistoriskeInntekter = inkluderHistoriskeInntekter)
             .tilInntektDtoV2()
             .toSet(),
-    beregnetInntekter = hentBeregnetInntekter(),
+    beregnetInntekter =
+        roller
+            .map {
+                BeregnetInntekterDto(
+                    it.tilPersonident()!!,
+                    it.rolletype,
+                    hentBeregnetInntekterForRolle(it),
+                )
+            },
     beregnetInntekterV2 =
         roller
             .map {
@@ -391,6 +402,7 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
                 .mapValideringsfeilForÅrsinntekter(
                     virkningstidspunktEllerSøktFomDato,
                     roller,
+                    tilType(),
                 ).takeIf { it.isNotEmpty() },
         barnetillegg =
             inntekter
@@ -400,17 +412,20 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
                     roller,
                 ).takeIf { it.isNotEmpty() },
         småbarnstillegg =
-            inntekter.mapValideringsfeilForYtelse(
-                Inntektsrapportering.SMÅBARNSTILLEGG,
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ),
+            inntekter
+                .mapValideringsfeilForYtelse(
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    virkningstidspunktEllerSøktFomDato,
+                    roller,
+                ).firstOrNull(),
+        // Det er bare bidragsmottaker småbarnstillegg og utvidetbarnetrygd er relevant for. Antar derfor det alltid gjelder BM og velger derfor den første i listen
         utvidetBarnetrygd =
-            inntekter.mapValideringsfeilForYtelse(
-                Inntektsrapportering.UTVIDET_BARNETRYGD,
-                virkningstidspunktEllerSøktFomDato,
-                roller,
-            ),
+            inntekter
+                .mapValideringsfeilForYtelse(
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    virkningstidspunktEllerSøktFomDato,
+                    roller,
+                ).firstOrNull(),
         kontantstøtte =
             inntekter
                 .mapValideringsfeilForYtelseSomGjelderBarn(
@@ -423,30 +438,35 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
 fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
+    behandlingType: TypeBehandling = TypeBehandling.FORSKUDD,
 ): Set<InntektValideringsfeil> {
     val inntekterSomSkalSjekkes = filter { !eksplisitteYtelser.contains(it.type) }.filter { it.taMed }
+    val rollerSomKreverMinstEnInntekt = bestemRollerSomMåHaMinstEnInntekt(behandlingType)
     return roller
+        .filter { bestemRollerSomKanHaInntekter(behandlingType).contains(it.rolletype) }
         .map { rolle ->
             val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
-            if (inntekterTaMed.isEmpty() && (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER || rolle.rolletype == Rolletype.BIDRAGSPLIKTIG)) {
+
+            if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
                 InntektValideringsfeil(
                     hullIPerioder = emptyList(),
                     overlappendePerioder = emptySet(),
                     fremtidigPeriode = false,
                     manglerPerioder = true,
-                    ident = rolle.ident!!,
-                    rolle = rolle.rolletype,
+                    rolle = rolle.tilDto(),
                 )
             } else {
                 InntektValideringsfeil(
                     hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt),
                     overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                     fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+//                    perioderFørVirkningstidspunkt =
+//                        inntekterTaMed
+//                            .any { it.periode?.fom?.isBefore(YearMonth.from(virkningstidspunkt)) == true },
                     manglerPerioder =
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } ?: false,
-                    ident = rolle.ident!!,
-                    rolle = rolle.rolletype,
+                    rolle = rolle.tilDto(),
                 )
             }
         }.filter { it.harFeil }
@@ -458,20 +478,22 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
     gjelderBarn: String? = null,
-) = filter { it.taMed }.filter { it.type == type }.let { inntekterTaMed ->
-    val inntektGjelderIdent = inntekterTaMed.firstOrNull()?.ident
-    val gjelderRolle = roller.find { it.ident == inntektGjelderIdent }
-    val gjelderIdent = gjelderRolle?.ident ?: inntektGjelderIdent ?: ""
-    InntektValideringsfeil(
-        overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
-        fremtidigPeriode =
-            inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
-        ident = gjelderIdent,
-        rolle = gjelderRolle?.rolletype,
-        gjelderBarn = gjelderBarn,
-        erYtelse = true,
-    ).takeIf { it.harFeil }
-}
+) = filter { it.taMed }
+    .filter { it.type == type }
+    .groupBy { it.ident }
+    .map { (inntektGjelderIdent, inntekterTaMed) ->
+        val gjelderRolle = roller.find { it.ident == inntektGjelderIdent }
+        val gjelderIdent = gjelderRolle?.ident ?: inntektGjelderIdent
+        InntektValideringsfeil(
+            overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
+            fremtidigPeriode =
+                inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+            ident = gjelderIdent,
+            rolle = gjelderRolle?.tilDto(),
+            gjelderBarn = gjelderBarn,
+            erYtelse = true,
+        ).takeIf { it.harFeil }
+    }
 
 fun Set<Inntekt>.mapValideringsfeilForYtelseSomGjelderBarn(
     type: Inntektsrapportering,
@@ -479,7 +501,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelseSomGjelderBarn(
     roller: Set<Rolle>,
 ) = filter { inntekstrapporteringerSomKreverGjelderBarn.contains(type) }
     .groupBy { it.gjelderBarn }
-    .map { (gjelderBarn, inntekter) ->
+    .flatMap { (gjelderBarn, inntekter) ->
         inntekter.toSet().mapValideringsfeilForYtelse(
             type,
             virkningstidspunkt,

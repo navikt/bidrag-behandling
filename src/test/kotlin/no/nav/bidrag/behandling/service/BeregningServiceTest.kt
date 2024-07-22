@@ -2,30 +2,45 @@ package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
+import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
+import java.time.LocalDate
 import java.time.YearMonth
 
 @ExtendWith(SpringExtension::class)
@@ -41,7 +56,7 @@ class BeregningServiceTest {
     }
 
     @Test
-    fun `skal bygge grunnlag for beregning`() {
+    fun `skal bygge grunnlag for forskudd beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -106,5 +121,91 @@ class BeregningServiceTest {
                 it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
             inntekter shouldHaveSize 3
         }
+    }
+
+    @Test
+    fun `skal bygge grunnlag for særbidrag beregning`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        mockkConstructor(BeregnSærbidragApi::class)
+        every { BeregnSærbidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
+        val resultat = BeregningService(behandlingService).beregneSærbidrag(1)
+        val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
+
+        verify(exactly = 1) {
+            BeregnSærbidragApi().beregn(any())
+        }
+        resultat shouldNotBe null
+        resultat.grunnlagListe shouldHaveSize 27
+        beregnGrunnlagList shouldHaveSize 1
+        assertSoftly(beregnGrunnlagList[0]) {
+            it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
+            it.periode.til shouldBe YearMonth.now().plusMonths(1)
+            it.grunnlagListe shouldHaveSize 10
+
+            val personer =
+                it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
+            personer shouldHaveSize 4
+            personer.hentPerson(testdataBarn1.ident) shouldNotBe null
+            personer.map { it.type } shouldContainAll
+                listOf(
+                    Grunnlagstype.PERSON_SØKNADSBARN,
+                    Grunnlagstype.PERSON_BIDRAGSPLIKTIG,
+                    Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
+                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM,
+                )
+
+            val bostatuser =
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
+            bostatuser shouldHaveSize 3
+            val barnStatus = bostatuser.find { it.gjelderReferanse == grunnlagListe.søknadsbarn.first().referanse }
+            barnStatus!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.MED_FORELDER
+
+            val andreVoksneIHusstanden = bostatuser.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse }
+            andreVoksneIHusstanden!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.BOR_MED_ANDRE_VOKSNE
+
+            val sivilstand =
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE)
+            sivilstand shouldHaveSize 0
+
+            val inntekter =
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+            inntekter shouldHaveSize 2
+            inntekter.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse } shouldNotBe null
+            inntekter.find { it.gjelderReferanse == grunnlagListe.bidragsmottaker!!.referanse } shouldNotBe null
+        }
+    }
+
+    @Test
+    fun `skal feile hvis ugyldig behandling for særbidrag`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.virkningstidspunkt = LocalDate.now().minusMonths(2).withDayOfMonth(1)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        mockkConstructor(BeregnSærbidragApi::class)
+        every { BeregnSærbidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
+
+        val exception = assertThrows<HttpClientErrorException> { BeregningService(behandlingService).beregneSærbidrag(1) }
+        verify(exactly = 0) {
+            BeregnSærbidragApi().beregn(any())
+        }
+        exception.message shouldContain "Feil ved validering av behandling for beregning av særbidrag"
     }
 }

@@ -106,7 +106,7 @@ class VedtakTilBehandlingTest {
     }
 
     @Test
-    fun `Skal konvertere vedtak til behandling for lesemodus`() {
+    fun `Skal konvertere vedtak til behandling for lesemodus for FORSKUDD`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 

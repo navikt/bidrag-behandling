@@ -23,6 +23,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -64,12 +65,15 @@ class HentBehandlingTest : BehandlingControllerTest() {
 
         assertSoftly(behandlingRes.body!!) {
             it.inntekter.beregnetInntekter shouldHaveSize 3
+            val beregnetInntekterBM =
+                it.inntekter.beregnetInntekter.find { it.rolle == Rolletype.BIDRAGSMOTTAKER }!!
+            beregnetInntekterBM.inntekter shouldHaveSize 3
             val inntekterAlle =
-                it.inntekter.beregnetInntekter.find { it.inntektGjelderBarnIdent == null }
+                beregnetInntekterBM.inntekter.find { it.inntektGjelderBarnIdent == null }
             val inntekterBarn1 =
-                it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn1.ident)
+                beregnetInntekterBM.inntekter.hentInntektForBarn(testdataBarn1.ident)
             val inntekterBarn2 =
-                it.inntekter.beregnetInntekter.hentInntektForBarn(testdataBarn2.ident)
+                beregnetInntekterBM.inntekter.hentInntektForBarn(testdataBarn2.ident)
             inntekterAlle.shouldNotBeNull()
             inntekterBarn1.shouldNotBeNull()
             inntekterBarn2.shouldNotBeNull()

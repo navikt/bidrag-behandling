@@ -78,6 +78,29 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
     )
 }
 
+fun RelatertPersonGrunnlagDto.tilGrunnlagsobjektInnhold(
+    hentetTidspunkt: LocalDateTime,
+    gjelderPersonReferanse: String,
+) = InnhentetHusstandsmedlem(
+    hentetTidspunkt = hentetTidspunkt,
+    grunnlag =
+        InnhentetHusstandsmedlem.HusstandsmedlemPDL(
+            relatertPerson = gjelderPersonReferanse,
+            gjelderPerson = gjelderPersonReferanse,
+            erBarnAvBmBp = erBarn,
+            relasjon = relasjon,
+            navn = navn,
+            fødselsdato = fødselsdato,
+            perioder =
+                borISammeHusstandDtoListe.map {
+                    Datoperiode(
+                        it.periodeFra ?: LocalDate.MIN,
+                        it.periodeTil,
+                    )
+                },
+        ),
+)
+
 fun RelatertPersonGrunnlagDto.tilGrunnlagsobjekt(
     hentetTidspunkt: LocalDateTime,
     gjelderReferanse: String,
@@ -92,24 +115,9 @@ fun RelatertPersonGrunnlagDto.tilGrunnlagsobjekt(
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
-            InnhentetHusstandsmedlem(
-                hentetTidspunkt = hentetTidspunkt,
-                grunnlag =
-                    InnhentetHusstandsmedlem.HusstandsmedlemPDL(
-                        relatertPerson = gjelderPersonReferanse,
-                        gjelderPerson = gjelderPersonReferanse,
-                        erBarnAvBmBp = erBarn,
-                        relasjon = relasjon,
-                        navn = navn,
-                        fødselsdato = fødselsdato,
-                        perioder =
-                            borISammeHusstandDtoListe.map {
-                                Datoperiode(
-                                    it.periodeFra ?: LocalDate.MIN,
-                                    it.periodeTil,
-                                )
-                            },
-                    ),
+            tilGrunnlagsobjektInnhold(
+                hentetTidspunkt,
+                gjelderPersonReferanse,
             ),
         ),
 )

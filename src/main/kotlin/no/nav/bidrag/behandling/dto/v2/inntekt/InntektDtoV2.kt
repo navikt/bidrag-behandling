@@ -56,7 +56,7 @@ data class InntekterDtoV2(
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
-    val beregnetInntekter: List<InntektPerBarn> = emptyList(),
+    val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
     val beregnetInntekterV2: List<BeregnetInntekterDto> = emptyList(),
     val notat: BehandlingNotatDto,
     val valideringsfeil: InntektValideringsfeilDto,
@@ -82,7 +82,7 @@ data class OppdatereInntektResponse(
     @Schema(description = "Inntekt som ble oppdatert")
     val inntekt: InntektDtoV2?,
     @Schema(description = "Periodiserte inntekter per barn")
-    val beregnetInntekter: List<InntektPerBarn> = emptyList(),
+    val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
     val beregnetInntekterV2: List<BeregnetInntekterDto> = emptyList(),
     val notat: BehandlingNotatDto,
     val valideringsfeil: InntektValideringsfeilDto,

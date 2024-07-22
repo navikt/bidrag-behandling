@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
@@ -31,7 +32,10 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
+import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSærbidragKategori
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
+import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBetalt
+import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
@@ -55,7 +59,10 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -67,13 +74,17 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SærbidragskategoriGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftDirekteBetaltGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftspostGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
@@ -149,7 +160,7 @@ class GrunnlagMappingTest {
     @Nested
     inner class GrunnlagByggerTest {
         @Test
-        fun `skal bygge grunnlag for stønad`() {
+        fun `skal bygge grunnlag for stønad for forskudd`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
             behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
@@ -157,6 +168,8 @@ class GrunnlagMappingTest {
             behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
             behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
+            behandling.stonadstype = Stønadstype.FORSKUDD
+            behandling.engangsbeloptype = null
             val grunnlag = behandling.byggGrunnlagGenerelt()
 
             assertSoftly(grunnlag.toList()) {
@@ -164,6 +177,30 @@ class GrunnlagMappingTest {
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 6
+            }
+        }
+
+        @Test
+        fun `skal bygge grunnlag for engangsbeløp for særbidrag`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+            behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
+            behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
+            behandling.utgiftsbegrunnelseKunINotat = "Utgift notat"
+            behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+            behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
+            behandling.stonadstype = null
+            behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+
+            val grunnlag = behandling.byggGrunnlagGenerelt()
+
+            assertSoftly(grunnlag.toList()) {
+                it shouldHaveSize 10
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 5
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.UTGIFTSPOSTER) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.UTGIFT_DIREKTE_BETALT) shouldHaveSize 1
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.SÆRBIDRAG_KATEGORI) shouldHaveSize 1
             }
         }
 
@@ -391,6 +428,92 @@ class GrunnlagMappingTest {
                     .filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
                     .filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn == søknadsbarnGrunnlag1.referanse }
                     .shouldBeEmpty()
+            }
+        }
+    }
+
+    @Nested
+    inner class SærbidragGrunnlagByggerTest {
+        @Test
+        fun `skal bygge særbidragskategori grunnlag`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+            behandling.stonadstype = null
+            behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+            behandling.kategori = Særbidragskategori.ANNET.name
+            behandling.kategoriBeskrivelse = "Kategori beskrivelse test"
+
+            val grunnlag = behandling.byggGrunnlagSærbidragKategori()
+
+            assertSoftly(grunnlag.toList()) {
+                it shouldHaveSize 1
+                val utgift = it.innholdTilObjekt<SærbidragskategoriGrunnlag>().first()
+                utgift.kategori shouldBe Særbidragskategori.ANNET
+                utgift.beskrivelse shouldBe "Kategori beskrivelse test"
+            }
+        }
+
+        @Test
+        fun `skal bygge utgift direkte betalt`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+            behandling.stonadstype = null
+            behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+            behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(1234)
+
+            val grunnlag = behandling.byggGrunnlagUtgiftDirekteBetalt()
+
+            assertSoftly(grunnlag.toList()) {
+                it shouldHaveSize 1
+                val utgift = it.innholdTilObjekt<UtgiftDirekteBetaltGrunnlag>().first()
+                utgift.beløpDirekteBetalt shouldBe BigDecimal(1234)
+            }
+        }
+
+        @Test
+        fun `skal bygge utgiftsposter grunnlag`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+            behandling.stonadstype = null
+            behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+            behandling.utgift!!.utgiftsposter =
+                mutableSetOf(
+                    Utgiftspost(
+                        dato = LocalDate.now().minusMonths(3),
+                        type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
+                        utgift = behandling.utgift!!,
+                        godkjentBeløp = BigDecimal(15000),
+                        kravbeløp = BigDecimal(5000),
+                        begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                        betaltAvBp = true,
+                    ),
+                    Utgiftspost(
+                        dato = LocalDate.now().minusMonths(8),
+                        type = Utgiftstype.KLÆR.name,
+                        utgift = behandling.utgift!!,
+                        kravbeløp = BigDecimal(10000),
+                        godkjentBeløp = BigDecimal(10000),
+                    ),
+                    Utgiftspost(
+                        dato = LocalDate.now().minusMonths(5),
+                        type = Utgiftstype.SELSKAP.name,
+                        utgift = behandling.utgift!!,
+                        kravbeløp = BigDecimal(10000),
+                        godkjentBeløp = BigDecimal(5000),
+                        begrunnelse = "Inneholder utgifter til mat og drikke",
+                    ),
+                )
+
+            val grunnlag = behandling.byggGrunnlagUtgiftsposter()
+
+            assertSoftly(grunnlag.toList()) {
+                it shouldHaveSize 1
+                val utgiftsposter = it.first().innholdTilObjektListe<List<UtgiftspostGrunnlag>>()
+                utgiftsposter shouldHaveSize 3
+                val utgiftspostKonfirmasjon = utgiftsposter.find { it.type == Utgiftstype.KONFIRMASJONSAVGIFT.name }!!
+                utgiftspostKonfirmasjon.dato shouldBe LocalDate.now().minusMonths(3)
+                utgiftspostKonfirmasjon.type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
+                utgiftspostKonfirmasjon.betaltAvBp shouldBe true
+                utgiftspostKonfirmasjon.godkjentBeløp shouldBe BigDecimal(15000)
+                utgiftspostKonfirmasjon.kravbeløp shouldBe BigDecimal(5000)
+                utgiftspostKonfirmasjon.begrunnelse shouldBe "Inneholder avgifter for alkohol og pynt"
             }
         }
     }

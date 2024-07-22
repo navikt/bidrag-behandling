@@ -4,14 +4,15 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
-import no.nav.bidrag.behandling.database.datamodell.validerForBeregning
-import no.nav.bidrag.behandling.database.datamodell.validerForBeregningSærbidrag
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.transformers.beregning.validerForBeregning
+import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbidrag
+import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
+import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
-import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
@@ -36,6 +37,7 @@ class BeregningService(
     private val behandlingService: BehandlingService,
 ) {
     private val beregnApi = BeregnForskuddApi()
+    private val beregnSærbidragApi = BeregnSærbidragApi()
 
     fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
         behandling.validerForBeregning()
@@ -61,16 +63,18 @@ class BeregningService(
     }
 
     fun beregneSærbidrag(behandling: Behandling): BeregnetSærbidragResultat {
+        behandling.validerTekniskForBeregningAvSærbidrag()
         behandling.validerForBeregningSærbidrag()
         val søknasdbarn = behandling.søknadsbarn.first()
         return if (behandling.avslag != null) {
             behandling.tilResultatAvslagSærbidrag()
         } else {
-            val grunnlagBeregning = behandling.byggGrunnlagForBeregning(søknasdbarn)
-            secureLogger.info { "Grunnlag særbidrag $grunnlagBeregning" }
             try {
-                // TODO: Legg til særbidrag beregning
-                BeregnSærbidragApi().beregn(grunnlagBeregning)
+                val grunnlagBeregning = behandling.byggGrunnlagForBeregning(søknasdbarn)
+                beregnSærbidragApi.beregn(grunnlagBeregning).let {
+                    it.validerForSærbidrag()
+                    it
+                }
             } catch (e: Exception) {
                 LOGGER.warn(e) { "Det skjedde en feil ved beregning av særbidrag: ${e.message}" }
                 throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
