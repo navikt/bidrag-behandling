@@ -142,7 +142,7 @@ class GrunnlagService(
                 Grunnlagsdatatype.BOFORHOLD -> behandling.rolleGrunnlagSkalHentesFor
                 Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> behandling.rolleGrunnlagSkalHentesFor
                 else ->
-                    behandling.roller.find { request.personident.verdi == it.ident }
+                    behandling.roller.find { request.personident?.verdi == it.ident }
                         ?: behandling.rolleGrunnlagSkalHentesFor
             }
 

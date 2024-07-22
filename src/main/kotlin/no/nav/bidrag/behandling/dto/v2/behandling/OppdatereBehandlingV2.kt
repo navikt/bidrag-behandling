@@ -14,7 +14,7 @@ data class AktivereGrunnlagResponseV2(
 
 data class AktivereGrunnlagRequestV2(
     @Schema(description = "Personident tilhørende rolle i behandling grunnlag skal aktiveres for")
-    val personident: Personident,
+    val personident: Personident? = null,
     @Schema(description = "Grunnlagstype som skal aktiveres")
     val grunnlagstype: Grunnlagsdatatype,
     @Schema(description = "Angi om manuelle opplysninger skal overskrives")

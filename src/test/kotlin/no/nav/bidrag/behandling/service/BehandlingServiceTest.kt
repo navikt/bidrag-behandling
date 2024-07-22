@@ -877,7 +877,11 @@ class BehandlingServiceTest : TestContainerRunner() {
                 val svar =
                     behandlingService.aktivereGrunnlag(
                         b.id!!,
-                        AktivereGrunnlagRequestV2(personidentBarnBoforholdSkalAktiveresFor, Grunnlagsdatatype.BOFORHOLD),
+                        AktivereGrunnlagRequestV2(
+                            personident = Personident(testdataBM.ident),
+                            gjelderIdent = personidentBarnBoforholdSkalAktiveresFor,
+                            grunnlagstype = Grunnlagsdatatype.BOFORHOLD,
+                        ),
                     )
 
                 // så
