@@ -139,12 +139,10 @@ class GrunnlagService(
     ) {
         val rolleGrunnlagErInnhentetFor =
             when (request.grunnlagstype) {
-                Grunnlagsdatatype.BARNETILLEGG -> behandling.rolleGrunnlagSkalHentesFor
                 Grunnlagsdatatype.BOFORHOLD -> behandling.rolleGrunnlagSkalHentesFor
                 Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> behandling.rolleGrunnlagSkalHentesFor
-                Grunnlagsdatatype.KONTANTSTØTTE -> behandling.rolleGrunnlagSkalHentesFor
                 else ->
-                    behandling.roller.find { request.personident.verdi == it.ident }
+                    behandling.roller.find { request.personident?.verdi == it.ident }
                         ?: behandling.rolleGrunnlagSkalHentesFor
             }
 
@@ -178,7 +176,7 @@ class GrunnlagService(
             aktivereBoforhold(
                 behandling,
                 request.grunnlagstype,
-                request.personident,
+                request.gjelderIdent!!,
                 request.overskriveManuelleOpplysninger,
             )
         } else if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == request.grunnlagstype) {

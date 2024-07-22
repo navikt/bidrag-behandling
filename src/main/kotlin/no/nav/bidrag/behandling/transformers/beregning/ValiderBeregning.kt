@@ -178,7 +178,10 @@ fun Behandling.validerForBeregningSærbidrag() {
                         utgift?.utgiftsposter?.any {
                             OppdatereUtgift(
                                 it.dato,
-                                it.type,
+                                when (kategori) {
+                                    Særbidragskategori.KONFIRMASJON.name, Særbidragskategori.ANNET.name -> it.type
+                                    else -> null
+                                },
                                 it.kravbeløp,
                                 it.godkjentBeløp,
                                 it.begrunnelse,

@@ -1719,8 +1719,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val aktivereGrunnlagRequest =
                     AktivereGrunnlagRequestV2(
-                        Personident(testdataHusstandsmedlem1.ident),
-                        Grunnlagsdatatype.BOFORHOLD,
+                        personident = Personident(testdataBM.ident),
+                        gjelderIdent = Personident(testdataHusstandsmedlem1.ident),
+                        grunnlagstype = Grunnlagsdatatype.BOFORHOLD,
                     )
 
                 // hvis
@@ -1846,7 +1847,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // hvis
                 grunnlagService.aktivereGrunnlag(
                     behandling,
-                    AktivereGrunnlagRequestV2(Personident(testdataBarn1.ident), Grunnlagsdatatype.BOFORHOLD),
+                    AktivereGrunnlagRequestV2(
+                        personident = Personident(testdataBM.ident),
+                        gjelderIdent = Personident(testdataBarn1.ident),
+                        grunnlagstype = Grunnlagsdatatype.BOFORHOLD,
+                    ),
                 )
 
                 // så
@@ -1971,7 +1976,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // hvis
                 grunnlagService.aktivereGrunnlag(
                     behandling,
-                    AktivereGrunnlagRequestV2(Personident(testdataBarn1.ident), Grunnlagsdatatype.BOFORHOLD, false),
+                    AktivereGrunnlagRequestV2(
+                        personident = Personident(testdataBM.ident),
+                        gjelderIdent = Personident(testdataBarn1.ident),
+                        grunnlagstype = Grunnlagsdatatype.BOFORHOLD,
+                        overskriveManuelleOpplysninger = false,
+                    ),
                 )
 
                 // så
@@ -2863,8 +2873,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val aktivereGrunnlagRequest =
                     AktivereGrunnlagRequestV2(
-                        Personident(testdataHusstandsmedlem1.ident),
-                        Grunnlagsdatatype.BOFORHOLD,
+                        personident = Personident(testdataBM.ident),
+                        gjelderIdent = Personident(testdataHusstandsmedlem1.ident),
+                        grunnlagstype = Grunnlagsdatatype.BOFORHOLD,
                     )
 
                 // hvis
@@ -3143,7 +3154,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // hvis
                 grunnlagService.aktivereGrunnlag(
                     behandling,
-                    AktivereGrunnlagRequestV2(Personident(testdataBarn1.ident), Grunnlagsdatatype.BOFORHOLD, false),
+                    AktivereGrunnlagRequestV2(
+                        personident = Personident(testdataBM.ident),
+                        gjelderIdent = Personident(testdataBarn1.ident),
+                        grunnlagstype = Grunnlagsdatatype.BOFORHOLD,
+                        overskriveManuelleOpplysninger = false,
+                    ),
                 )
 
                 // så
