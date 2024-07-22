@@ -6,14 +6,18 @@ import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
+import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
+import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.toggleFatteVedtakName
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
+import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
@@ -39,6 +43,12 @@ class VedtakControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var grunnlagRepository: GrunnlagRepository
 
+    @Autowired
+    lateinit var grunnlagService: GrunnlagService
+
+    @Autowired
+    lateinit var entityManager: EntityManager
+
     @BeforeEach
     fun oppsett() {
         behandlingRepository.deleteAll()
@@ -51,7 +61,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     }
 
     @Test
-    fun `Skal ikke fatte vedtak hvis feature toggle er av`() {
+    fun `Skal ikke fatte vedtak særbidrag hvis feature toggle er av`() {
         every { unleashInstance.isEnabled(eq(toggleFatteVedtakName), any<Boolean>()) } returns false
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
@@ -77,7 +87,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     }
 
     @Test
-    fun `Skal fatte vedtak`() {
+    fun `Skal fatte vedtak for forskudd`() {
         stubUtils.stubOpprettJournalpost("12333")
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
@@ -111,6 +121,86 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.Verify().hentSakKalt(behandling.saksnummer)
         stubUtils.Verify().opprettNotatKalt()
         stubUtils.Verify().opprettJournalpostKaltMed()
+    }
+
+    @Test
+    fun `Skal fatte vedtak for særbidrag`() {
+        stubUtils.stubOpprettJournalpost("12333")
+
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
+        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
+        behandling.utgiftsbegrunnelseKunINotat = "Utgifter kun i notat"
+        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
+        behandling.husstandsmedlem = mutableSetOf()
+        testdataManager.lagreBehandling(behandling)
+
+        stubUtils.stubHentSak(opprettSakForBehandling(behandling))
+        stubUtils.stubFatteVedtak()
+        behandling.initGrunnlagRespons(stubUtils)
+        // Trigge hente grunnlag
+        val henteBehandlingResponse =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}",
+                HttpMethod.GET,
+                null,
+                Void::class.java,
+            )
+        henteBehandlingResponse.statusCode shouldBe HttpStatus.OK
+        val response =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
+                HttpMethod.POST,
+                HttpEntity(""),
+                Int::class.java,
+            )
+
+        response.statusCode shouldBe HttpStatus.OK
+        response.body shouldBe 1
+
+        val behandlingEtter = behandlingRepository.findBehandlingById(behandling.id!!).get()
+        behandlingEtter.vedtaksid shouldBe 1
+        behandlingEtter.vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
+        behandlingEtter.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
+        // TODO endre dette når notat er klart
+        behandlingEtter.notatJournalpostId shouldBe null
+        stubUtils.Verify().fatteVedtakKalt()
+        stubUtils.Verify().hentSakKalt(behandling.saksnummer)
+//        stubUtils.Verify().opprettNotatKalt()
+//        stubUtils.Verify().opprettJournalpostKaltMed()
+    }
+
+    @Test
+    fun `Skal ikke fatte vedtak hvis behandling har vedtakId for særbidrag`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.vedtaksid = 1L
+        behandling.husstandsmedlem = mutableSetOf()
+        testdataManager.lagreBehandling(behandling)
+
+        stubUtils.stubHentSak(opprettSakForBehandling(behandling))
+        stubUtils.stubFatteVedtak()
+        behandling.initGrunnlagRespons(stubUtils)
+        // Trigge hente grunnlag
+        val henteBehandlingResponse =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}",
+                HttpMethod.GET,
+                null,
+                Void::class.java,
+            )
+        henteBehandlingResponse.statusCode shouldBe HttpStatus.OK
+        stubUtils.stubHentSak(opprettSakForBehandling(behandling))
+        stubUtils.stubFatteVedtak()
+        val response =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
+                HttpMethod.POST,
+                HttpEntity(""),
+                Int::class.java,
+            )
+
+        response.statusCode shouldBe HttpStatus.BAD_REQUEST
     }
 
     @Test

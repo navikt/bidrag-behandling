@@ -562,9 +562,10 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
         }
         TypeBehandling.SÆRBIDRAG -> {
             behandling.stonadstype = null
+            behandling.årsak = null
             behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
             behandling.kategori = Særbidragskategori.KONFIRMASJON.name
-            behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+            behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name, generateId)
             husstandsmedlem.add(
                 behandling.oppretteHusstandsmedlem(
                     if (generateId) 2 else null,
@@ -985,17 +986,18 @@ fun opprettInntekt(
 fun oppretteUtgift(
     behandling: Behandling,
     utgiftstype: String,
+    medId: Boolean = false,
 ): Utgift {
     val utgift =
         Utgift(
-            id = 1,
+            id = if (medId) 1 else null,
             behandling = behandling,
             beløpDirekteBetaltAvBp = BigDecimal(0),
         )
     utgift.utgiftsposter =
         mutableSetOf(
             Utgiftspost(
-                id = 1,
+                id = if (medId) 1 else null,
                 dato = LocalDate.now().minusDays(3),
                 type = utgiftstype,
                 kravbeløp = BigDecimal(1000),
@@ -1294,4 +1296,60 @@ private fun oppretteSivilstand(behandling: Behandling) {
     )
 
     behandling.sivilstand.addAll(periodisertHistorikk.toSet().tilSivilstand(behandling))
+}
+
+fun lagGrunnlagsdata(
+    filnavn: String,
+    virkningstidspunkt: YearMonth,
+    gjelderIdent: String,
+    barnIdent: String = testdataBarn1.ident,
+    barnIdent2: String = testdataBarn2.ident,
+    hustandsmedlem1: String = testdataHusstandsmedlem1.ident,
+): HentGrunnlagDto {
+    val fil = hentFil("/__files/$filnavn")
+    var stringValue = fil.readText().replace("{personId}", gjelderIdent)
+    stringValue = stringValue.replace("{barnId}", barnIdent)
+    stringValue = stringValue.replace("{barnId2}", barnIdent2)
+    stringValue = stringValue.replace("{barnId2}", barnIdent2)
+    stringValue = stringValue.replace("{hustandsmedlem1}", hustandsmedlem1)
+    stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
+    (0..24).forEach {
+        stringValue =
+            stringValue.replace(
+                "{virkningstidspunkt-minus-${it}m}",
+                virkningstidspunkt.atDay(1).minusMonths(it.toLong()).toString(),
+            )
+        stringValue =
+            stringValue.replace(
+                "{virkningstidspunkt-minus-${it}m-ym}",
+                virkningstidspunkt.minusMonths(it.toLong()).toString(),
+            )
+        stringValue =
+            stringValue.replace(
+                "{virkningstidspunkt-minus-${it}y-januar}",
+                virkningstidspunkt
+                    .atDay(1)
+                    .minusYears(it.toLong())
+                    .withMonth(1)
+                    .toString(),
+            )
+        stringValue =
+            stringValue.replace(
+                "{virkningstidspunkt-minus-${it}y-januar-ym}",
+                virkningstidspunkt.minusYears(it.toLong()).withMonth(1).toString(),
+            )
+
+        stringValue =
+            stringValue.replace(
+                "{virkningstidspunkt-plus-${it}m-ym}",
+                virkningstidspunkt.plusMonths(it.toLong()).toString(),
+            )
+        stringValue =
+            stringValue.replace(
+                "{virkningstidspunkt-plus-${it}m}",
+                virkningstidspunkt.atDay(1).plusMonths(it.toLong()).toString(),
+            )
+    }
+    val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(stringValue)
+    return grunnlag
 }

@@ -1,0 +1,118 @@
+{
+  "ainntektListe": [
+    {
+      "personId": "{personId}",
+      "periodeFra": "{virkningstidspunkt-minus-3m}",
+      "periodeTil": "{virkningstidspunkt-minus-2m}",
+      "ainntektspostListe": [
+        {
+          "utbetalingsperiode": "{virkningstidspunkt-minus-3m-ym}",
+          "opptjeningsperiodeFra": null,
+          "opptjeningsperiodeTil": null,
+          "opplysningspliktigId": "963743254",
+          "virksomhetId": "947064649",
+          "inntektType": "LOENNSINNTEKT",
+          "fordelType": "kontantytelse",
+          "beskrivelse": "fastloenn",
+          "belop": 3000,
+          "etterbetalingsperiodeFra": null,
+          "etterbetalingsperiodeTil": null
+        }
+      ]
+    },
+    {
+      "personId": "{personId}",
+      "periodeFra": "{virkningstidspunkt-minus-2m}",
+      "periodeTil": "{virkningstidspunkt-minus-1m}",
+      "ainntektspostListe": [
+        {
+          "utbetalingsperiode": "{virkningstidspunkt-minus-2m-ym}",
+          "opptjeningsperiodeFra": null,
+          "opptjeningsperiodeTil": null,
+          "opplysningspliktigId": "963743254",
+          "virksomhetId": "947064649",
+          "inntektType": "LOENNSINNTEKT",
+          "fordelType": "kontantytelse",
+          "beskrivelse": "fastloenn",
+          "belop": 2000,
+          "etterbetalingsperiodeFra": null,
+          "etterbetalingsperiodeTil": null
+        }
+      ]
+    },
+    {
+      "personId": "{personId}",
+      "periodeFra": "{virkningstidspunkt-minus-1m}",
+      "periodeTil": "{virkningstidspunkt-minus-0m}",
+      "ainntektspostListe": [
+        {
+          "utbetalingsperiode": "{virkningstidspunkt-minus-1m-ym}",
+          "opptjeningsperiodeFra": null,
+          "opptjeningsperiodeTil": null,
+          "opplysningspliktigId": "963743254",
+          "virksomhetId": "947064649",
+          "inntektType": "LOENNSINNTEKT",
+          "fordelType": "kontantytelse",
+          "beskrivelse": "fastloenn",
+          "belop": 6000,
+          "etterbetalingsperiodeFra": null,
+          "etterbetalingsperiodeTil": null
+        }
+      ]
+    }
+  ],
+  "skattegrunnlagListe": [
+    {
+      "personId": "{personId}",
+      "periodeFra": "{virkningstidspunkt-minus-2y-januar}",
+      "periodeTil": "{virkningstidspunkt-minus-1y-januar}",
+      "skattegrunnlagspostListe": []
+    },
+    {
+      "personId": "{personId}",
+      "periodeFra": "{virkningstidspunkt-minus-1y-januar}",
+      "periodeTil": "{virkningstidspunkt-minus-0y-januar}",
+      "skattegrunnlagspostListe": [
+        {
+          "skattegrunnlagType": "ORDINÆR",
+          "inntektType": "annenArbeidsinntekt",
+          "belop": 5000.0
+        }
+      ]
+    }
+  ],
+  "utvidetBarnetrygdListe": [],
+  "småbarnstilleggListe": [],
+  "barnetilleggListe": [],
+  "kontantstøtteListe": [],
+  "husstandsmedlemmerOgEgneBarnListe": [],
+  "sivilstandListe": [],
+  "barnetilsynListe": [],
+  "arbeidsforholdListe": [
+    {
+      "partPersonId": "{personId}",
+      "startdato": "{virkningstidspunkt-minus-1y-januar}",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "{virkningstidspunkt-minus-1y-januar-ym}",
+          "periodeTil": null,
+          "arbeidsforholdType": "Forenklet",
+          "arbeidstidsordningBeskrivelse": null,
+          "ansettelsesformBeskrivelse": null,
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": null,
+          "avtaltStillingsprosent": null,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjonListe": [],
+      "permitteringListe": []
+    }
+  ],
+  "feilrapporteringListe": [],
+  "hentetTidspunkt": "{dagens_dato}"
+}

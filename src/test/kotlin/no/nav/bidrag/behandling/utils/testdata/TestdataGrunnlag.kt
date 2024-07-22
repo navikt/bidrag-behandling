@@ -1,12 +1,15 @@
 package no.nav.bidrag.behandling.utils.testdata
 
+import StubUtils
 import com.fasterxml.jackson.module.kotlin.readValue
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
@@ -36,6 +39,7 @@ import no.nav.bidrag.transport.behandling.inntekt.request.UtvidetBarnetrygd
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 val testdataGrunnlagInnhentetTidspunkt = LocalDateTime.parse("2024-01-01T00:00:00")
 
@@ -306,3 +310,53 @@ fun List<Grunnlag>.filtrerEtterTypeOgIdent(
     ident: String,
     erBearbeidet: Boolean = false,
 ) = filter { it.type == type && it.rolle.ident == ident && it.erBearbeidet == erBearbeidet }
+
+fun Behandling.initGrunnlagRespons(stubUtils: StubUtils) {
+    roller.forEach {
+        when (it.rolletype) {
+            Rolletype.BIDRAGSMOTTAKER ->
+
+                stubUtils.stubHenteGrunnlag(
+                    rolle = it,
+                    responsobjekt =
+                        lagGrunnlagsdata(
+                            if (tilType() ==
+                                TypeBehandling.FORSKUDD
+                            ) {
+                                "vedtak/vedtak-grunnlagrespons-sb-bm-forskudd.json"
+                            } else {
+                                "vedtak/vedtak-grunnlagrespons-sb-bm.json"
+                            },
+                            YearMonth.from(virkningstidspunkt),
+                            bidragsmottaker!!.ident!!,
+                            søknadsbarn.first().ident!!,
+                        ),
+                )
+
+            Rolletype.BIDRAGSPLIKTIG ->
+                stubUtils.stubHenteGrunnlag(
+                    rolle = it,
+                    responsobjekt =
+                        lagGrunnlagsdata(
+                            "vedtak/vedtak-grunnlagrespons-sb-bp.json",
+                            YearMonth.from(virkningstidspunkt),
+                            bidragspliktig!!.ident!!,
+                            søknadsbarn.first().ident!!,
+                        ),
+                )
+
+            Rolletype.BARN ->
+                stubUtils.stubHenteGrunnlag(
+                    rolle = it,
+                    responsobjekt =
+                        lagGrunnlagsdata(
+                            "vedtak/vedtak-grunnlagrespons-barn1.json",
+                            YearMonth.from(virkningstidspunkt),
+                            søknadsbarn.first().ident!!,
+                        ),
+                )
+
+            else -> throw Exception()
+        }
+    }
+}

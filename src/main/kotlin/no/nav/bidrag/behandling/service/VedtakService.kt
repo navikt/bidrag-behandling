@@ -164,6 +164,7 @@ class VedtakService(
 
     fun fatteVedtak(behandlingId: Long): Int {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
+        behandling.validerKanFatteVedtak()
         return when (behandling.tilType()) {
             TypeBehandling.FORSKUDD -> fatteVedtakForskudd(behandling)
             TypeBehandling.SÆRBIDRAG -> fatteVedtakSærbidrag(behandling)
@@ -185,7 +186,6 @@ class VedtakService(
         }
         behandling.validerTekniskForBeregningAvSærbidrag()
         behandling.validerForBeregningSærbidrag()
-        behandling.validerKanFatteVedtak()
 
         val request =
             if (behandling.avslag != null) {
@@ -210,7 +210,6 @@ class VedtakService(
     fun fatteVedtakForskudd(behandling: Behandling): Int {
         val behandlingId = behandling.id!!
         behandling.validerForBeregning()
-        behandling.validerKanFatteVedtak()
 
         val request =
             if (behandling.avslag != null) {
@@ -265,24 +264,21 @@ class VedtakService(
         return request.tilVedtakDto()
     }
 
-    private fun Behandling.byggOpprettVedtakRequestObjekt(): OpprettVedtakRequestDto {
-        val grunnlagListe = byggGrunnlagGenerelt()
-
-        return OpprettVedtakRequestDto(
+    private fun Behandling.byggOpprettVedtakRequestObjekt(): OpprettVedtakRequestDto =
+        OpprettVedtakRequestDto(
             enhetsnummer = Enhetsnummer(behandlerEnhet),
             vedtakstidspunkt = LocalDateTime.now(),
             type = vedtakstype,
             stønadsendringListe = emptyList(),
             engangsbeløpListe = emptyList(),
             behandlingsreferanseListe = tilBehandlingreferanseListe(),
-            grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
+            grunnlagListe = emptyList(),
             kilde = Vedtakskilde.MANUELT,
             fastsattILand = null,
             innkrevingUtsattTilDato = null,
             // Settes automatisk av bidrag-vedtak basert på token
             opprettetAv = null,
         )
-    }
 
     private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto {
         val sak = sakConsumer.hentSak(saksnummer)

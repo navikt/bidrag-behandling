@@ -168,25 +168,24 @@ fun BeregnetSærbidragResultat.validerForSærbidrag() {
 }
 
 fun Behandling.validerForBeregningSærbidrag() {
-    val utgiftFeil =
-        UtgiftFeilDto(
-            ugyldigUtgiftspost =
-                utgift!!.utgiftsposter.any {
-                    OppdatereUtgift(
-                        it.dato,
-                        it.type,
-                        it.kravbeløp,
-                        it.godkjentBeløp,
-                        it.begrunnelse,
-                        it.betaltAvBp,
-                        it.id,
-                    ).validerUtgiftspost(this).isNotEmpty()
-                },
-            manglerUtgifter = utgift == null || utgift!!.utgiftsposter.isEmpty(),
-        ).takeIf { it.harFeil }
-
     val feil =
         if (avslag == null) {
+            val utgiftFeil =
+                UtgiftFeilDto(
+                    ugyldigUtgiftspost =
+                        utgift?.utgiftsposter?.any {
+                            OppdatereUtgift(
+                                it.dato,
+                                it.type,
+                                it.kravbeløp,
+                                it.godkjentBeløp,
+                                it.begrunnelse,
+                                it.betaltAvBp,
+                                it.id,
+                            ).validerUtgiftspost(this).isNotEmpty()
+                        } ?: false,
+                    manglerUtgifter = utgift == null || utgift!!.utgiftsposter.isEmpty(),
+                ).takeIf { it.harFeil }
             val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
             val andreVoksneIHusstandenFeil =
                 (husstandsmedlem.voksneIHusstanden ?: Husstandsmedlem(this, kilde = Kilde.OFFENTLIG, rolle = bidragspliktig))
