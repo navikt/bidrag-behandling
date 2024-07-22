@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.aktiveringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -36,6 +37,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -367,9 +369,19 @@ class InntektService(
             eksisterendeInntekt.opprinneligTom = nyInntekt.periode.til?.atEndOfMonth()
             eksisterendeInntekt.inntektsposter.clear()
             eksisterendeInntekt.inntektsposter.addAll(
-                nyInntekt.inntektPostListe.tilInntektspost(
-                    eksisterendeInntekt,
-                ),
+                if (nyInntekt.inntektRapportering == Inntektsrapportering.BARNETILLEGG) {
+                    mutableSetOf(
+                        Inntektspost(
+                            kode = nyInntekt.inntektRapportering.name,
+                            beløp = nyInntekt.sumInntekt,
+                            // TODO: Hentes bare fra pensjon i dag. Dette bør endres når vi henter barnetillegg fra andre kilder
+                            inntektstype = Inntektstype.BARNETILLEGG_PENSJON,
+                            inntekt = eksisterendeInntekt,
+                        ),
+                    )
+                } else {
+                    nyInntekt.inntektPostListe.tilInntektspost(eksisterendeInntekt)
+                },
             )
         }
     }
