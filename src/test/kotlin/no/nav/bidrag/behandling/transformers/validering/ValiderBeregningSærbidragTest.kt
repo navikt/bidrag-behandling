@@ -270,7 +270,7 @@ class ValiderBeregningSærbidragTest {
                     ingenLøpendePeriode shouldBe false
                     ident shouldBe bpIdent
                     gjelderBarn shouldBe null
-                    rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
+                    rolle!!.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
                 }
             }
         }
@@ -321,7 +321,7 @@ class ValiderBeregningSærbidragTest {
                     ingenLøpendePeriode shouldBe false
                     ident shouldBe bmIdent
                     gjelderBarn shouldBe null
-                    rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
+                    rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
                 }
             }
         }

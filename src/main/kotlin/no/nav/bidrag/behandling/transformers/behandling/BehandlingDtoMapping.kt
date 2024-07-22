@@ -145,16 +145,7 @@ fun Behandling.tilBehandlingDtoV2(
     søknadsid = soknadsid,
     behandlerenhet = behandlerEnhet,
     roller =
-        roller
-            .map {
-                RolleDto(
-                    it.id!!,
-                    it.rolletype,
-                    it.ident,
-                    it.navn ?: hentPersonVisningsnavn(it.ident),
-                    it.fødselsdato,
-                )
-            }.toSet(),
+        roller.map { it.tilDto() }.toSet(),
     søknadRefId = soknadRefId,
     vedtakRefId = refVedtaksid,
     virkningstidspunkt =
@@ -188,6 +179,15 @@ fun Behandling.tilBehandlingDtoV2(
             objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
         },
 )
+
+fun Rolle.tilDto() =
+    RolleDto(
+        id!!,
+        rolletype,
+        ident,
+        navn ?: hentPersonVisningsnavn(ident),
+        fødselsdato,
+    )
 
 private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this
@@ -453,7 +453,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     overlappendePerioder = emptySet(),
                     fremtidigPeriode = false,
                     manglerPerioder = true,
-                    rolle = rolle,
+                    rolle = rolle.tilDto(),
                 )
             } else {
                 InntektValideringsfeil(
@@ -466,7 +466,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     manglerPerioder =
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } ?: false,
-                    rolle = rolle,
+                    rolle = rolle.tilDto(),
                 )
             }
         }.filter { it.harFeil }
@@ -489,7 +489,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
             fremtidigPeriode =
                 inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
             ident = gjelderIdent,
-            rolle = gjelderRolle,
+            rolle = gjelderRolle?.tilDto(),
             gjelderBarn = gjelderBarn,
             erYtelse = true,
         ).takeIf { it.harFeil }

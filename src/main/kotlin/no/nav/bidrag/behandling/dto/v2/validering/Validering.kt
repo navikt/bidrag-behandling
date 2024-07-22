@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.validering
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
-import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.erSøknadsbarn
@@ -11,7 +11,6 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.time.LocalDate
 
@@ -69,12 +68,9 @@ data class InntektValideringsfeil(
     @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
     val gjelderBarn: String? = null,
     @JsonIgnore
-    val rolle: Rolle?,
-    val ident: String? = rolle?.ident,
-    val rolletype: Rolletype? = rolle?.rolletype,
-    val rolleId: Long? = rolle?.id,
-    @JsonIgnore
     val erYtelse: Boolean = false,
+    val rolle: RolleDto? = null,
+    val ident: String? = rolle?.ident,
 ) {
     @Schema(
         description =

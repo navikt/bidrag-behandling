@@ -122,7 +122,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe true
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
@@ -158,7 +158,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe true
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
@@ -239,7 +239,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
@@ -297,7 +297,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 harFeil shouldBe true
                 ident shouldBe bpIdent
-                rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
             }
         }
 
@@ -354,7 +354,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 harFeil shouldBe true
                 ident shouldBe barnIdent
-                rolletype shouldBe Rolletype.BARN
+                rolle!!.rolletype shouldBe Rolletype.BARN
             }
         }
 
@@ -457,7 +457,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 ident shouldBe bmIdent
                 gjelderBarn shouldBe barn2Ident
-                rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
     }
