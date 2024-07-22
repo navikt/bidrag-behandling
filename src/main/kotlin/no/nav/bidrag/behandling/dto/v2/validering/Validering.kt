@@ -11,6 +11,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.time.LocalDate
 
@@ -70,6 +71,8 @@ data class InntektValideringsfeil(
     @JsonIgnore
     val rolle: Rolle?,
     val ident: String? = rolle?.ident,
+    val rolletype: Rolletype? = rolle?.rolletype,
+    val rolleId: Long? = rolle?.id,
     @JsonIgnore
     val erYtelse: Boolean = false,
 ) {
@@ -79,9 +82,6 @@ data class InntektValideringsfeil(
                 "Det vil si en periode hvor datoTom er null. Er bare relevant for årsinntekter",
     )
     val ingenLøpendePeriode: Boolean = if (erYtelse) false else hullIPerioder.any { it.til == null }
-
-    val rolletype get() = rolle?.rolletype
-    val rolleId get() = rolle?.id
 
     @get:JsonIgnore
     val harFeil
