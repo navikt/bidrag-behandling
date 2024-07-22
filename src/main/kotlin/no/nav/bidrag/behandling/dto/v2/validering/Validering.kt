@@ -211,6 +211,7 @@ data class BeregningValideringsfeil(
 
 data class MåBekrefteNyeOpplysninger(
     val type: Grunnlagsdatatype,
+    val rolle: RolleDto,
     @JsonIgnore
     val husstandsmedlem: Husstandsmedlem? = null,
 ) {

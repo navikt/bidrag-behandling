@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validerUtgiftspost
 import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
@@ -57,6 +58,7 @@ fun Behandling.validerForBeregning() {
                     .map { grunnlagSomMåBekreftes ->
                         MåBekrefteNyeOpplysninger(
                             grunnlagSomMåBekreftes.type,
+                            rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
                             husstandsmedlem =
                                 (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
                                     husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
@@ -223,6 +225,7 @@ fun Behandling.validerForBeregningSærbidrag() {
                     .map { grunnlagSomMåBekreftes ->
                         MåBekrefteNyeOpplysninger(
                             grunnlagSomMåBekreftes.type,
+                            rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
                             husstandsmedlem =
                                 (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
                                     husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
