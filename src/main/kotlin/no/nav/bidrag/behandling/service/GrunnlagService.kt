@@ -605,7 +605,12 @@ class GrunnlagService(
         }
     }
 
-    private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean = false
+    private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean =
+        behandling.grunnlagSistInnhentet == null ||
+            behandling.grunnlagsinnhentingFeilet != null ||
+            LocalDateTime
+                .now()
+                .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
 
     private fun henteOglagreGrunnlag(
         behandling: Behandling,
