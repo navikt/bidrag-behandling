@@ -19,4 +19,10 @@ data class AktivereGrunnlagRequestV2(
     val grunnlagstype: Grunnlagsdatatype,
     @Schema(description = "Angi om manuelle opplysninger skal overskrives")
     val overskriveManuelleOpplysninger: Boolean = true,
+    @Schema(
+        description =
+            "Ident på person grunnlag gjelder." +
+                " Er relevant for blant annet Barnetillegg, Kontantstøtte og Boforhold",
+    )
+    val gjelderIdent: Personident? = null,
 )
