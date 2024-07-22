@@ -132,7 +132,7 @@ fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<Grunnl
             .flatMap {
                 val gjelder =
                     if (it.rolle != null) {
-                        personobjekter.hentPersonNyesteIdent(it.rolle!!.ident)!!
+                        personobjekter.hentPersonNyesteIdent(it.rolle!!.ident) ?: it.opprettPersonGrunnlag()
                     } else {
                         personobjekter.hentPersonNyesteIdent(it.ident) ?: it.opprettPersonGrunnlag()
                     }
