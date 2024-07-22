@@ -122,7 +122,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe true
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolle shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
@@ -158,7 +158,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe true
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolle shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
@@ -239,7 +239,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 harFeil shouldBe true
                 ident shouldBe bmIdent
-                rolle shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
 
@@ -297,7 +297,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 harFeil shouldBe true
                 ident shouldBe bpIdent
-                rolle shouldBe Rolletype.BIDRAGSPLIKTIG
+                rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
             }
         }
 
@@ -354,7 +354,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 harFeil shouldBe true
                 ident shouldBe barnIdent
-                rolle shouldBe Rolletype.BARN
+                rolletype shouldBe Rolletype.BARN
             }
         }
 
@@ -457,7 +457,7 @@ class ValiderInntektPerioderTest {
                 fremtidigPeriode shouldBe false
                 ident shouldBe bmIdent
                 gjelderBarn shouldBe barn2Ident
-                rolle shouldBe Rolletype.BIDRAGSMOTTAKER
+                rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
             }
         }
     }
