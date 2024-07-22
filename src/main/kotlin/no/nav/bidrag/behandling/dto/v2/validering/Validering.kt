@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.validering
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.erSøknadsbarn
@@ -10,7 +11,6 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
-import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.time.LocalDate
 
@@ -65,10 +65,11 @@ data class InntektValideringsfeil(
     val manglerPerioder: Boolean = false,
     @Schema(description = "Hvis det er inntekter som har periode som starter før virkningstidspunkt")
     val perioderFørVirkningstidspunkt: Boolean = false,
-    val ident: String,
     @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
     val gjelderBarn: String? = null,
-    val rolle: Rolletype?,
+    @JsonIgnore
+    val rolle: Rolle?,
+    val ident: String? = rolle?.ident,
     @JsonIgnore
     val erYtelse: Boolean = false,
 ) {
@@ -78,6 +79,9 @@ data class InntektValideringsfeil(
                 "Det vil si en periode hvor datoTom er null. Er bare relevant for årsinntekter",
     )
     val ingenLøpendePeriode: Boolean = if (erYtelse) false else hullIPerioder.any { it.til == null }
+
+    val rolletype get() = rolle?.rolletype
+    val rolleId get() = rolle?.id
 
     @get:JsonIgnore
     val harFeil

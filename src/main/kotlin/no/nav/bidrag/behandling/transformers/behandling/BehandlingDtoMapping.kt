@@ -453,8 +453,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     overlappendePerioder = emptySet(),
                     fremtidigPeriode = false,
                     manglerPerioder = true,
-                    ident = rolle.ident!!,
-                    rolle = rolle.rolletype,
+                    rolle = rolle,
                 )
             } else {
                 InntektValideringsfeil(
@@ -467,8 +466,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     manglerPerioder =
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } ?: false,
-                    ident = rolle.ident!!,
-                    rolle = rolle.rolletype,
+                    rolle = rolle,
                 )
             }
         }.filter { it.harFeil }
@@ -491,7 +489,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
             fremtidigPeriode =
                 inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
             ident = gjelderIdent,
-            rolle = gjelderRolle?.rolletype,
+            rolle = gjelderRolle,
             gjelderBarn = gjelderBarn,
             erYtelse = true,
         ).takeIf { it.harFeil }
