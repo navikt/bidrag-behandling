@@ -5,16 +5,14 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
-import no.nav.bidrag.behandling.dto.v2.validering.UtgiftFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
-import no.nav.bidrag.behandling.transformers.validerUtgiftspost
 import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
@@ -172,25 +170,7 @@ fun BeregnetSærbidragResultat.validerForSærbidrag() {
 fun Behandling.validerForBeregningSærbidrag() {
     val feil =
         if (avslag == null) {
-            val utgiftFeil =
-                UtgiftFeilDto(
-                    ugyldigUtgiftspost =
-                        utgift?.utgiftsposter?.any {
-                            OppdatereUtgift(
-                                it.dato,
-                                when (kategori) {
-                                    Særbidragskategori.KONFIRMASJON.name, Særbidragskategori.ANNET.name -> it.type
-                                    else -> null
-                                },
-                                it.kravbeløp,
-                                it.godkjentBeløp,
-                                it.begrunnelse,
-                                it.betaltAvBp,
-                                it.id,
-                            ).validerUtgiftspost(this).isNotEmpty()
-                        } ?: false,
-                    manglerUtgifter = utgift == null || utgift!!.utgiftsposter.isEmpty(),
-                ).takeIf { it.harFeil }
+            val utgiftFeil = utgift?.hentValideringsfeil()
             val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
             val andreVoksneIHusstandenFeil =
                 (husstandsmedlem.voksneIHusstanden ?: Husstandsmedlem(this, kilde = Kilde.OFFENTLIG, rolle = bidragspliktig))

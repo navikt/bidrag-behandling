@@ -27,7 +27,7 @@ data class VirkningstidspunktFeilDto(
                 virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig
 }
 
-data class UtgiftFeilDto(
+data class UtgiftValideringsfeilDto(
     val manglerUtgifter: Boolean,
     val ugyldigUtgiftspost: Boolean,
 ) {
@@ -201,7 +201,7 @@ data class SivilstandOverlappendePeriode(
 
 data class BeregningValideringsfeil(
     val virkningstidspunkt: VirkningstidspunktFeilDto?,
-    val utgift: UtgiftFeilDto?,
+    val utgift: UtgiftValideringsfeilDto?,
     val inntekter: InntektValideringsfeilDto? = null,
     val husstandsmedlem: List<BoforholdPeriodeseringsfeil>? = null,
     val andreVoksneIHusstanden: AndreVoksneIHusstandenPeriodeseringsfeil? = null,
