@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 
+val kategorierSomKreverType = listOf(Særbidragskategori.ANNET, Særbidragskategori.KONFIRMASJON)
 val Behandling.kanInneholdeUtgiftBetaltAvBp get() = særbidragKategori == Særbidragskategori.KONFIRMASJON
 val Utgift.totalGodkjentBeløpBp
     get() =
@@ -45,8 +46,8 @@ fun Utgift?.hentValideringsfeil() =
             this?.utgiftsposter?.any {
                 OppdatereUtgift(
                     it.dato,
-                    when (behandling.kategori) {
-                        Særbidragskategori.KONFIRMASJON.name, Særbidragskategori.ANNET.name -> it.type
+                    when {
+                        kategorierSomKreverType.contains(behandling.særbidragKategori) -> it.type
                         else -> null
                     },
                     it.kravbeløp,
@@ -142,10 +143,10 @@ fun OppdatereUtgift.tilUtgiftspost(utgift: Utgift) =
                 begrunnelse
             },
         type =
-            when (utgift.behandling.særbidragKategori) {
-                Særbidragskategori.ANNET, Særbidragskategori.KONFIRMASJON -> type!!
-                Særbidragskategori.OPTIKK -> Utgiftstype.OPTIKK.name
-                Særbidragskategori.TANNREGULERING -> Utgiftstype.TANNREGULERING.name
+            when {
+                kategorierSomKreverType.contains(utgift.behandling.særbidragKategori) -> type!!
+                utgift.behandling.særbidragKategori == Særbidragskategori.OPTIKK -> Utgiftstype.OPTIKK.name
+                utgift.behandling.særbidragKategori == Særbidragskategori.TANNREGULERING -> Utgiftstype.TANNREGULERING.name
                 else -> throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Kunne ikke bestemme type for utgiftspost")
             },
         godkjentBeløp =
