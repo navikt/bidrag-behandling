@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
@@ -20,6 +21,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndelSærbidrag
@@ -29,6 +31,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningVoksneIHus
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -105,6 +108,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
     voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
+    enesteVoksenIHusstandenErEgetBarn = finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe),
     erDirekteAvslag = resultatkode.erDirekteAvslag(),
 )
 
@@ -165,6 +169,24 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
                 )
         } ?: return null
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>()
+}
+
+fun List<GrunnlagDto>.finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Boolean? {
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
+
+    val delberegningBidragspliktigesAndel =
+        finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull() ?: return null
+    val bosstatuser = finnGrunnlagSomErReferertAv(Grunnlagstype.BOSTATUS_PERIODE, delberegningBidragspliktigesAndel)
+    val borMedVoksenBarn =
+        bosstatuser
+            .find { it.gjelderReferanse != bidragspliktig?.referanse }
+            ?.innholdTilObjekt<BostatusPeriode>() != null
+    val borIkkeMedAndreVoksne =
+        bosstatuser
+            .find { it.gjelderReferanse == bidragspliktig?.referanse }
+            ?.innholdTilObjekt<BostatusPeriode>()
+            ?.bostatus == Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
+    return borMedVoksenBarn && borIkkeMedAndreVoksne
 }
 
 fun List<GrunnlagDto>.finnBorMedAndreVoksne(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Boolean? {
