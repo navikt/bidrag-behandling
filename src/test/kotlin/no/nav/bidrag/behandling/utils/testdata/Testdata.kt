@@ -944,6 +944,7 @@ fun opprettInntekt(
     kilde: Kilde = Kilde.OFFENTLIG,
     beløp: BigDecimal = BigDecimal.ONE,
     behandling: Behandling = oppretteBehandling(),
+    medId: Boolean = true,
 ): Inntekt {
     val inntekt =
         Inntekt(
@@ -955,7 +956,7 @@ fun opprettInntekt(
             belop = beløp,
             ident = ident,
             gjelderBarn = gjelderBarn,
-            id = Random.nextLong(1000),
+            id = if (medId) Random.nextLong(1000) else null,
             kilde = kilde,
             taMed = taMed,
             type = type,
