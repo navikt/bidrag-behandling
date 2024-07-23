@@ -53,7 +53,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @ExtendWith(SpringExtension::class)
-class VedtakTilBehandlingTest {
+class VedtakTilBehandlingForskuddTest {
     @MockkBean
     lateinit var behandlingService: BehandlingService
 

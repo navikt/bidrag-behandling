@@ -467,7 +467,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.resultatkode shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
-            it.grunnlagReferanseListe shouldHaveSize 3
+            it.grunnlagReferanseListe shouldHaveSize 4
             it.betaltBeløp shouldBe null
         }
 
@@ -542,8 +542,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 6 grunnlag") {
-                request.grunnlagListe shouldHaveSize 6
+            withClue("Grunnlagliste skal inneholde 7 grunnlag") {
+                request.grunnlagListe shouldHaveSize 7
             }
         }
 
@@ -559,7 +559,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.resultatkode shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
-            it.grunnlagReferanseListe shouldHaveSize 3
+            it.grunnlagReferanseListe shouldHaveSize 4
             it.betaltBeløp shouldBe null
         }
         assertSoftly(opprettVedtakRequest) {
@@ -567,6 +567,12 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 shouldHaveSize(1)
                 val innholdListe = innholdTilObjekt<NotatGrunnlag>()
                 innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe behandling.utgiftsbegrunnelseKunINotat
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.SÆRBIDRAG_KATEGORI)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<SærbidragskategoriGrunnlag>().first()
+                innhold.kategori shouldBe Særbidragskategori.KONFIRMASJON
+                innhold.beskrivelse shouldBe null
             }
 
             hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSPLIKTIG) shouldHaveSize 1
