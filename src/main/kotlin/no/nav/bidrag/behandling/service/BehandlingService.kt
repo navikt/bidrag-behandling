@@ -330,7 +330,9 @@ class BehandlingService(
     fun Behandling.oppdatereVirkningstidspunktSærbidrag() {
         if (tilType() != TypeBehandling.SÆRBIDRAG) return
         val nyVirkningstidspunkt = LocalDate.now().withDayOfMonth(1)
-        if (virkningstidspunkt != nyVirkningstidspunkt) {
+        // Virkningstidspunkt skal alltid være lik det som var i opprinnelig vedtaket.
+        // Oppdaterer derfor ikke virkningstidspunkt hvis behandlingen er klage eller omgjøring
+        if (virkningstidspunkt != nyVirkningstidspunkt && !erKlageEllerOmgjøring) {
             log.info {
                 "Virkningstidspunkt $virkningstidspunkt på særbidrag er ikke riktig som følge av ny kalendermåned." +
                     " Endrer virkningstidspunkt til starten av nåværende kalendermåned $nyVirkningstidspunkt"

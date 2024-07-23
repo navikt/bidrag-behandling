@@ -302,4 +302,24 @@ class OppdaterUtgiftRequestValideringTest {
 
         exception.message shouldContain "Type må settes hvis behandling har kategori ANNET"
     }
+
+    @Test
+    fun `skal validere at utgiftstype er satt for kategori KONFIRMASJON`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        val request =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusDays(2),
+                        type = "",
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "asdsad",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Type må settes hvis behandling har kategori KONFIRMASJON"
+    }
 }

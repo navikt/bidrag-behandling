@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.ressursHarFeilKildeException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
+import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -168,22 +169,19 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
         feilliste.add("Utgiftspost med id $id finnes ikke i behandling ${behandling.id}")
     }
 
+    if (kategorierSomKreverType.contains(behandling.særbidragKategori) && type.isNullOrEmpty()) {
+        feilliste.add("Type må settes hvis behandling har kategori ${behandling.særbidragKategori}")
+    } else if (!kategorierSomKreverType.contains(behandling.særbidragKategori) && type != null) {
+        feilliste.add("Type kan ikke settes hvis behandling har kategori ${behandling.særbidragKategori}")
+    }
+
     when (behandling.særbidragKategori) {
         Særbidragskategori.KONFIRMASJON -> {
-            if (type.isNullOrEmpty()) {
-                feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.KONFIRMASJON}")
-            }
             if (type?.tilUtgiftstype()?.kategori != Særbidragskategori.KONFIRMASJON) {
                 feilliste.add(
                     "Type $type er ikke gyldig for" +
                         " behandling med kategori ${Særbidragskategori.KONFIRMASJON}",
                 )
-            }
-        }
-
-        Særbidragskategori.ANNET -> {
-            if (type.isNullOrEmpty()) {
-                feilliste.add("Type må settes hvis behandling har kategori ${Særbidragskategori.ANNET}")
             }
         }
 
@@ -193,9 +191,6 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
                     "Kan ikke legge til utgift betalt av BP for " +
                         "særbidrag behandling som ikke har kategori ${Særbidragskategori.KONFIRMASJON}",
                 )
-            }
-            if (type != null) {
-                feilliste.add("Type kan ikke settes hvis behandling har kategori ${behandling.særbidragKategori}")
             }
         }
     }

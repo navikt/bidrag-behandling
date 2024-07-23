@@ -126,7 +126,61 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal oppdatere virkningstidspunkt på særbidrag ved henting av behandling hvis vt ikke i inneværende måned`() {
+        open fun `skal ikke oppdatere virkningstidspunkt på særbidrag hvis klage`() {
+            // gitt
+            var behandling =
+                testdataManager.oppretteBehandling(
+                    false,
+                    false,
+                    false,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.SÆRBIDRAG,
+                )
+            behandling.virkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
+            behandling.opprinneligVirkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
+            behandling.refVedtaksid = 2
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+            stubPersonConsumer()
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+            behandling.inntekter.forEach {
+                it.taMed = true
+                it.datoFom = behandling.virkningstidspunkt
+            }
+            behandling.husstandsmedlem.forEach {
+                it.perioder.first().let {
+                    it.datoFom = behandling.virkningstidspunkt
+                }
+            }
+
+            // hvis
+            val oppdatertBehandlingDto =
+                behandlingService.henteBehandling(
+                    behandling.id!!,
+                )
+
+            val opprinneligVirkningstidspunkt = behandling.virkningstidspunkt!!
+
+            entityManager.flush()
+            entityManager.refresh(behandling)
+            val oppdaterBehandling = testdataManager.hentBehandling(behandling.id!!)
+            assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
+                val andreVoksneIHusstanden = s.voksneIHusstanden
+                andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual opprinneligVirkningstidspunkt
+                barn.forEach {
+                    it.perioder.first().datoFom!! shouldBeEqual opprinneligVirkningstidspunkt
+                }
+            }
+            assertSoftly(oppdaterBehandling.inntekter.filter { it.taMed }) {
+                it.forEach {
+                    it.datoFom shouldBe opprinneligVirkningstidspunkt
+                }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere virkningstidspunkt på særbidrag ved henting av behandling hvis VT ikke i inneværende måned`() {
             // gitt
             var behandling =
                 testdataManager.oppretteBehandling(

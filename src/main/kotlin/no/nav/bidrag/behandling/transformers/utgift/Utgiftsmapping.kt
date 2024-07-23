@@ -11,9 +11,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
+import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.sorter
+import no.nav.bidrag.behandling.transformers.validerUtgiftspost
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
@@ -21,6 +23,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 
+val kategorierSomKreverType = listOf(Særbidragskategori.ANNET, Særbidragskategori.KONFIRMASJON)
 val Behandling.kanInneholdeUtgiftBetaltAvBp get() = særbidragKategori == Særbidragskategori.KONFIRMASJON
 val Utgift.totalGodkjentBeløpBp
     get() =
@@ -37,13 +40,35 @@ fun Behandling.tilSærbidragKategoriDto() =
         beskrivelse = kategoriBeskrivelse,
     )
 
+fun Utgift?.hentValideringsfeil() =
+    UtgiftValideringsfeilDto(
+        ugyldigUtgiftspost =
+            this?.utgiftsposter?.any {
+                OppdatereUtgift(
+                    it.dato,
+                    when {
+                        kategorierSomKreverType.contains(behandling.særbidragKategori) -> it.type
+                        else -> null
+                    },
+                    it.kravbeløp,
+                    it.godkjentBeløp,
+                    it.begrunnelse,
+                    it.betaltAvBp,
+                    it.id,
+                ).validerUtgiftspost(behandling).isNotEmpty()
+            } ?: false,
+        manglerUtgifter = this == null || utgiftsposter.isEmpty(),
+    ).takeIf { it.harFeil }
+
 fun Behandling.tilUtgiftDto() =
     utgift?.let { utgift ->
+        val valideringsfeil = utgift.hentValideringsfeil()
         if (avslag != null) {
             SærbidragUtgifterDto(
                 avslag = avslag,
                 kategori = tilSærbidragKategoriDto(),
                 notat = BehandlingNotatDto(utgiftsbegrunnelseKunINotat ?: ""),
+                valideringsfeil = valideringsfeil,
             )
         } else {
             SærbidragUtgifterDto(
@@ -55,6 +80,7 @@ fun Behandling.tilUtgiftDto() =
                         kunINotat = utgiftsbegrunnelseKunINotat,
                     ),
                 utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
+                valideringsfeil = valideringsfeil,
             )
         }
     } ?: if (erSærbidrag()) {
@@ -65,6 +91,7 @@ fun Behandling.tilUtgiftDto() =
                 BehandlingNotatDto(
                     kunINotat = utgiftsbegrunnelseKunINotat,
                 ),
+            valideringsfeil = utgift.hentValideringsfeil(),
         )
     } else {
         null
@@ -75,6 +102,7 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
         OppdatereUtgiftResponse(
             avslag = behandling.avslag,
             notat = BehandlingNotatDto(behandling.utgiftsbegrunnelseKunINotat ?: ""),
+            valideringsfeil = behandling.utgift.hentValideringsfeil(),
         )
     } else {
         OppdatereUtgiftResponse(
@@ -82,6 +110,7 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
             utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
             notat = BehandlingNotatDto(behandling.utgiftsbegrunnelseKunINotat ?: ""),
             beregning = tilBeregningDto(),
+            valideringsfeil = behandling.utgift.hentValideringsfeil(),
         )
     }
 
@@ -114,10 +143,10 @@ fun OppdatereUtgift.tilUtgiftspost(utgift: Utgift) =
                 begrunnelse
             },
         type =
-            when (utgift.behandling.særbidragKategori) {
-                Særbidragskategori.ANNET, Særbidragskategori.KONFIRMASJON -> type!!
-                Særbidragskategori.OPTIKK -> Utgiftstype.OPTIKK.name
-                Særbidragskategori.TANNREGULERING -> Utgiftstype.TANNREGULERING.name
+            when {
+                kategorierSomKreverType.contains(utgift.behandling.særbidragKategori) -> type!!
+                utgift.behandling.særbidragKategori == Særbidragskategori.OPTIKK -> Utgiftstype.OPTIKK.name
+                utgift.behandling.særbidragKategori == Særbidragskategori.TANNREGULERING -> Utgiftstype.TANNREGULERING.name
                 else -> throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Kunne ikke bestemme type for utgiftspost")
             },
         godkjentBeløp =

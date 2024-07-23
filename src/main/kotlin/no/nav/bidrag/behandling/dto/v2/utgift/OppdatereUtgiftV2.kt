@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
+import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import java.math.BigDecimal
@@ -45,6 +46,7 @@ data class OppdatereUtgiftResponse(
     val notat: BehandlingNotatDto,
     val beregning: UtgiftBeregningDto? = null,
     val avslag: Resultatkode? = null,
+    val valideringsfeil: UtgiftValideringsfeilDto?,
 )
 
 data class OppdatereUtgift(
