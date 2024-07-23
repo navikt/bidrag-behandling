@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.TypeBehandling
@@ -119,7 +120,7 @@ fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto?
             engangsbeløp.beløp,
             Resultatkode.fraKode(engangsbeløp.resultatkode)!!,
             engangsbeløp.grunnlagReferanseListe,
-            behandling.utgift!!.tilBeregningDto(),
+            behandling.utgift?.tilBeregningDto() ?: UtgiftBeregningDto(),
         )
     }
 
@@ -253,7 +254,7 @@ private fun List<GrunnlagDto>.mapUtgifter(
     behandling: Behandling,
     lesemodus: Boolean,
 ): Utgift? {
-    if (behandling.tilType() !== TypeBehandling.SÆRBIDRAG) return null
+    if (behandling.tilType() !== TypeBehandling.SÆRBIDRAG || behandling.avslag != null) return null
     val utgift = Utgift(behandling, beløpDirekteBetaltAvBp = utgiftDirekteBetalt!!.beløpDirekteBetalt)
     utgift.utgiftsposter =
         utgiftsposter

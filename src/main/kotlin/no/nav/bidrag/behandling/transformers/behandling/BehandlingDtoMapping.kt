@@ -300,7 +300,11 @@ fun Behandling.tilBoforholdV2() =
             ),
         valideringsfeil =
             BoforholdValideringsfeil(
-                andreVoksneIHusstanden = husstandsmedlem.voksneIHusstanden?.validereAndreVoksneIHusstanden(virkningstidspunkt!!),
+                andreVoksneIHusstanden =
+                    husstandsmedlem.voksneIHusstanden
+                        ?.validereAndreVoksneIHusstanden(
+                            virkningstidspunkt!!,
+                        )?.takeIf { it.harFeil },
                 husstandsmedlem =
                     husstandsmedlem.barn
                         .toSet()
@@ -358,15 +362,6 @@ fun Behandling.tilInntektDtoV2(
             .tilInntektDtoV2()
             .toSet(),
     beregnetInntekter =
-        roller
-            .map {
-                BeregnetInntekterDto(
-                    it.tilPersonident()!!,
-                    it.rolletype,
-                    hentBeregnetInntekterForRolle(it),
-                )
-            },
-    beregnetInntekterV2 =
         roller
             .map {
                 BeregnetInntekterDto(

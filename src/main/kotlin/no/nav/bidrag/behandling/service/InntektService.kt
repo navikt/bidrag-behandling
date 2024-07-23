@@ -187,15 +187,6 @@ class InntektService(
                             behandling.hentBeregnetInntekterForRolle(it),
                         )
                     },
-            beregnetInntekterV2 =
-                behandling.roller
-                    .map {
-                        BeregnetInntekterDto(
-                            it.tilPersonident()!!,
-                            it.rolletype,
-                            behandling.hentBeregnetInntekterForRolle(it),
-                        )
-                    },
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
             notat =
                 BehandlingNotatDto(
