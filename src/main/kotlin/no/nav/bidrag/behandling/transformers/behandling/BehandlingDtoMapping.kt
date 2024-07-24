@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
@@ -298,6 +299,7 @@ fun Behandling.tilBoforholdV2() =
                 medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
                 kunINotat = boforholdsbegrunnelseKunINotat,
             ),
+        egetBarnErEnesteVoksenIHusstanden = egetBarnErEnesteVoksenIHusstanden,
         valideringsfeil =
             BoforholdValideringsfeil(
                 andreVoksneIHusstanden =

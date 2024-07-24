@@ -25,6 +25,7 @@ data class OppdatereBoforholdResponse(
     val oppdatertePerioderMedAndreVoksne: Set<BostatusperiodeDto> = emptySet(),
     @Schema(description = "Husstandsmedlem som ble opprettet")
     val oppdatertHusstandsmedlem: HusstandsmedlemDtoV2? = null,
+    val egetBarnErEnesteVoksenIHusstanden: Boolean? = null,
     val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
     val oppdatertNotat: OppdaterNotat? = null,
     val valideringsfeil: BoforholdValideringsfeil,
