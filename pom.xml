@@ -371,7 +371,7 @@
         </dependency>
         <dependency>
             <groupId>no.nav.bidrag</groupId>
-            <artifactId>bidrag-beregn-saertilskudd</artifactId>
+            <artifactId>bidrag-beregn-saerbidrag</artifactId>
             <version>${bidrag-beregn-felles.version}</version>
             <exclusions>
                 <exclusion>
