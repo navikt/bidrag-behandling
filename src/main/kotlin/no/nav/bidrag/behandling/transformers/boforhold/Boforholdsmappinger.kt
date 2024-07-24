@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
+import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
@@ -50,6 +51,7 @@ fun Husstandsmedlem.tilOppdatereBoforholdResponse(behandling: Behandling) =
         oppdatertePerioderMedAndreVoksne =
             (rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG).ifTrue { perioder.tilBostatusperiode() } ?: emptySet(),
         oppdatertHusstandsmedlem = (rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG).ifTrue { tilBostatusperiode() },
+        egetBarnErEnesteVoksenIHusstanden = behandling.egetBarnErEnesteVoksenIHusstanden,
         valideringsfeil =
             BoforholdValideringsfeil(
                 andreVoksneIHusstanden =
