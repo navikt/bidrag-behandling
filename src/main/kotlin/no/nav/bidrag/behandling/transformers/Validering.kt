@@ -171,7 +171,7 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
 
     if (kategorierSomKreverType.contains(behandling.særbidragKategori) && type.isNullOrEmpty()) {
         feilliste.add("Type må settes hvis behandling har kategori ${behandling.særbidragKategori}")
-    } else if (!kategorierSomKreverType.contains(behandling.særbidragKategori) && type != null) {
+    } else if (!kategorierSomKreverType.contains(behandling.særbidragKategori) && !type.isNullOrEmpty()) {
         feilliste.add("Type kan ikke settes hvis behandling har kategori ${behandling.særbidragKategori}")
     }
 

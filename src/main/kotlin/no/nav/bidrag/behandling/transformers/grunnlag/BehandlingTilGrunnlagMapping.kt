@@ -13,6 +13,9 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
+import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_delberegning_utgift
+import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_direkte_betalt
+import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
@@ -151,7 +154,7 @@ fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<Grunnl
 fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
     val beregningUtgifter = utgift!!.tilBeregningDto()
     return GrunnlagDto(
-        referanse = "delberegning_utgift",
+        referanse = grunnlagsreferanse_delberegning_utgift,
         type = Grunnlagstype.DELBEREGNING_UTGIFT,
         innhold =
             POJONode(
@@ -165,6 +168,7 @@ fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
                     sumGodkjent = beregningUtgifter.totalGodkjentBeløp,
                 ),
             ),
+        grunnlagsreferanseListe = listOf(grunnlagsreferanse_utgiftsposter, grunnlagsreferanse_utgift_direkte_betalt),
     )
 }
 

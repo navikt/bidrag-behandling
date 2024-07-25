@@ -56,6 +56,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftspostGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
@@ -156,6 +157,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         opprettVedtakRequest.validerInntekter()
 //
 
+        val grunnlagsliste = opprettVedtakRequest.grunnlagListe
         assertSoftly(opprettVedtakRequest.engangsbeløpListe[0]) {
             it.type shouldBe Engangsbeløptype.SÆRBIDRAG
             it.sak shouldBe Saksnummer(behandling.saksnummer)
@@ -167,7 +169,32 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_INNVILGET.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
-            it.grunnlagReferanseListe shouldHaveSize 89
+            it.grunnlagReferanseListe shouldHaveSize 9
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SÆRBIDRAG_KATEGORI,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.NOTAT,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                5
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SØKNAD,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
             it.betaltBeløp shouldBe BigDecimal(500)
         }
         assertSoftly(opprettVedtakRequest) {
@@ -335,7 +362,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_IKKE_FULL_BIDRAGSEVNE.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
-            it.grunnlagReferanseListe shouldHaveSize 90
+            it.grunnlagReferanseListe shouldHaveSize 9
             it.betaltBeløp shouldBe BigDecimal(500)
         }
         assertSoftly(opprettVedtakRequest) {
@@ -463,6 +490,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             }
         }
 
+        val grunnlagsliste = opprettVedtakRequest.grunnlagListe
+
         assertSoftly(opprettVedtakRequest.engangsbeløpListe[0]) {
             it.type shouldBe Engangsbeløptype.SÆRBIDRAG
             it.sak shouldBe Saksnummer(behandling.saksnummer)
@@ -475,6 +504,31 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
             it.grunnlagReferanseListe shouldHaveSize 8
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                0
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SÆRBIDRAG_KATEGORI,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.NOTAT,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                5
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SØKNAD,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
             it.betaltBeløp shouldBe null
         }
         assertSoftly(opprettVedtakRequest) {
@@ -580,6 +634,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
+        val grunnlagsliste = opprettVedtakRequest.grunnlagListe
         assertSoftly(opprettVedtakRequest.engangsbeløpListe[0]) {
             it.type shouldBe Engangsbeløptype.SÆRBIDRAG
             it.sak shouldBe Saksnummer(behandling.saksnummer)
@@ -591,7 +646,32 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_INNVILGET.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
-            it.grunnlagReferanseListe shouldHaveSize 85
+            it.grunnlagReferanseListe shouldHaveSize 5
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SÆRBIDRAG_KATEGORI,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.NOTAT,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.SØKNAD,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
+            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                it.grunnlagReferanseListe,
+            ) shouldHaveSize
+                1
             it.betaltBeløp shouldBe BigDecimal(500)
         }
 

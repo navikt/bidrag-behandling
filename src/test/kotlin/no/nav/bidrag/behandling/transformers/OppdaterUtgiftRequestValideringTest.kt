@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
+import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.string.shouldContain
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -58,6 +59,42 @@ class OppdaterUtgiftRequestValideringTest {
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
         exception.message shouldContain "Type OPTIKK er ikke gyldig for behandling med kategori KONFIRMASJON"
+    }
+
+    @Test
+    fun `skal kunne sette utgiftstype for kategori KONFIRMASJON`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        val request =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusDays(2),
+                        type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Test",
+                    ),
+            )
+        shouldNotThrow<HttpClientErrorException> { request.valider(behandling) }
+    }
+
+    @Test
+    fun `skal kunne sette utgiftstype for kategori ANNET`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.ANNET.name
+        val request =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusDays(2),
+                        type = "Utgift batteri",
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(500),
+                        begrunnelse = "Test",
+                    ),
+            )
+        shouldNotThrow<HttpClientErrorException> { request.valider(behandling) }
     }
 
     @Test
