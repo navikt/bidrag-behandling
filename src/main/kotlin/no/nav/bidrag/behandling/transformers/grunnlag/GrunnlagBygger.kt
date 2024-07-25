@@ -82,7 +82,8 @@ fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
                 ),
             )
 
-        else -> grunnlagListe.addAll(byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt())
+        TypeBehandling.SÆRBIDRAG -> grunnlagListe.addAll(byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt())
+        else -> {}
     }
     return grunnlagListe.toSet()
 }
