@@ -218,6 +218,7 @@ class NotatOpplysningerService(
                                 rolle.ident!!,
                                 rolle,
                                 alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
+                                bareMedIBeregning = true,
                             )
                         },
                     offentligeInntekterPerRolle =
@@ -540,6 +541,7 @@ private fun Behandling.hentInntekterForIdent(
     rolle: Rolle,
     arbeidsforhold: List<ArbeidsforholdGrunnlagDto>,
     filtrerBareOffentlige: Boolean = false,
+    bareMedIBeregning: Boolean = false,
 ) = InntekterPerRolle(
     gjelder = rolle.tilNotatRolle(),
     beregnetInntekter =
@@ -561,28 +563,27 @@ private fun Behandling.hentInntekterForIdent(
             .filter { it.ident == ident }
             .ekskluderYtelserFørVirkningstidspunkt()
             .filtrerKilde(filtrerBareOffentlige)
+            .filter { !bareMedIBeregning || it.taMed }
             .map {
                 it.tilNotatInntektDto()
             },
     barnetillegg =
-        if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter
-                .filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                .filtrerKilde(filtrerBareOffentlige)
-                .ekskluderYtelserFørVirkningstidspunkt()
-                .sorterEtterDatoOgBarn()
-                .map {
-                    it.tilNotatInntektDto()
-                }
-        } else {
-            emptyList()
-        },
+        inntekter
+            .filter { it.type == Inntektsrapportering.BARNETILLEGG }
+            .filtrerKilde(filtrerBareOffentlige)
+            .ekskluderYtelserFørVirkningstidspunkt()
+            .sorterEtterDatoOgBarn()
+            .filter { !bareMedIBeregning || it.taMed }
+            .map {
+                it.tilNotatInntektDto()
+            },
     småbarnstillegg =
         if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
             inntekter
                 .sortedBy { it.datoFom }
                 .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
                 .filtrerKilde(filtrerBareOffentlige)
+                .filter { !bareMedIBeregning || it.taMed }
                 .ekskluderYtelserFørVirkningstidspunkt()
                 .sorterEtterDato()
                 .map {
@@ -596,6 +597,7 @@ private fun Behandling.hentInntekterForIdent(
             inntekter
                 .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
                 .filtrerKilde(filtrerBareOffentlige)
+                .filter { !bareMedIBeregning || it.taMed }
                 .ekskluderYtelserFørVirkningstidspunkt()
                 .sorterEtterDatoOgBarn()
                 .map {
@@ -609,6 +611,7 @@ private fun Behandling.hentInntekterForIdent(
             inntekter
                 .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
                 .filtrerKilde(filtrerBareOffentlige)
+                .filter { !bareMedIBeregning || it.taMed }
                 .ekskluderYtelserFørVirkningstidspunkt()
                 .sorterEtterDato()
                 .map {
