@@ -19,6 +19,10 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrun
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 
+val grunnlagsreferanse_delberegning_utgift = "delberegning_utgift"
+val grunnlagsreferanse_utgiftsposter = "utgiftsposter"
+val grunnlagsreferanse_utgift_direkte_betalt = "utgift_direkte_betalt"
+
 fun GrunnlagDto.tilOpprettRequestDto() =
     OpprettGrunnlagRequestDto(
         referanse = referanse,
@@ -95,7 +99,7 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt() =
 fun Behandling.byggGrunnlagUtgiftsposter() =
     setOf(
         GrunnlagDto(
-            referanse = "utgiftsposter",
+            referanse = grunnlagsreferanse_utgiftsposter,
             type = Grunnlagstype.UTGIFTSPOSTER,
             innhold =
                 POJONode(
@@ -116,7 +120,7 @@ fun Behandling.byggGrunnlagUtgiftsposter() =
 fun Behandling.byggGrunnlagUtgiftDirekteBetalt() =
     setOf(
         GrunnlagDto(
-            referanse = "utgift_direkte_betalt",
+            referanse = grunnlagsreferanse_utgift_direkte_betalt,
             type = Grunnlagstype.UTGIFT_DIREKTE_BETALT,
             innhold =
                 POJONode(

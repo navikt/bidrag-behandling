@@ -82,6 +82,7 @@ fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
                 ),
             )
 
+        TypeBehandling.SÆRBIDRAG -> grunnlagListe.addAll(byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt())
         else -> {}
     }
     return grunnlagListe.toSet()
@@ -92,13 +93,7 @@ fun Behandling.byggGrunnlagGenerelt(): Set<GrunnlagDto> {
     when (tilType()) {
         TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
         TypeBehandling.SÆRBIDRAG ->
-            grunnlagListe.addAll(
-                // TODO: Trenger vi byggGrunnlagVirkningsttidspunkt?
-                byggGrunnlagVirkningsttidspunkt() +
-                    byggGrunnlagUtgiftDirekteBetalt() +
-                    byggGrunnlagUtgiftsposter() +
-                    byggGrunnlagSærbidragKategori(),
-            )
+            grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
 
         else -> {}
     }

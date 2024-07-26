@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.util.tilVedtakDto
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -406,9 +407,13 @@ class VedtakService(
         val beregning = beregningService.beregneSærbidrag(id!!)
 
         val grunnlagListeVedtak = byggGrunnlagForVedtak()
-        val engangsbeløpGrunnlagliste = byggGrunnlagGenerelt()
+        val grunnlaglisteGenerelt = byggGrunnlagGenerelt()
 
-        val grunnlagliste = (grunnlagListeVedtak + engangsbeløpGrunnlagliste + beregning.grunnlagListe).toSet()
+        val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet()
+
+        val grunnlagslisteEngangsbeløp =
+            grunnlaglisteGenerelt +
+                beregning.grunnlagListe.filter { it.type == Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG }
 
         val barn = søknadsbarn.first()
         val resultat = beregning.beregnetSærbidragPeriodeListe.first().resultat
@@ -434,7 +439,7 @@ class VedtakService(
                                 ),
                         sak = Saksnummer(saksnummer),
                         beslutning = Beslutningstype.ENDRING,
-                        grunnlagReferanseListe = grunnlagliste.map(GrunnlagDto::referanse),
+                        grunnlagReferanseListe = grunnlagslisteEngangsbeløp.map(GrunnlagDto::referanse),
                     ),
                 ),
             grunnlagListe = grunnlagliste.map(GrunnlagDto::tilOpprettRequestDto),

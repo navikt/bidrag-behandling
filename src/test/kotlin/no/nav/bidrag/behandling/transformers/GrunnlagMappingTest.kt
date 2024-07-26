@@ -194,12 +194,10 @@ class GrunnlagMappingTest {
             val grunnlag = behandling.byggGrunnlagGenerelt()
 
             assertSoftly(grunnlag.toList()) {
-                it shouldHaveSize 10
+                it shouldHaveSize 8
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 5
-                it.filtrerBasertPåEgenReferanse(Grunnlagstype.UTGIFTSPOSTER) shouldHaveSize 1
-                it.filtrerBasertPåEgenReferanse(Grunnlagstype.UTGIFT_DIREKTE_BETALT) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SÆRBIDRAG_KATEGORI) shouldHaveSize 1
             }
         }
