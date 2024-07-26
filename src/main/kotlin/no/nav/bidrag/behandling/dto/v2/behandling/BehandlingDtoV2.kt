@@ -268,6 +268,13 @@ data class AndreVoksneIHusstandenGrunnlagDto(
 data class PeriodeAndreVoksneIHusstanden(
     val periode: ÅrMånedsperiode,
     val status: Bostatuskode,
+    @Schema(description = "Total antall husstandsmedlemmer som bor hos BP for gjeldende periode")
+    val totalAntallHusstandsmedlemmer: Int,
+    @Schema(
+        description =
+            "Detaljer om husstandsmedlemmer som bor hos BP for gjeldende periode. " +
+                "Antall hustandsmedlemmer er begrenset til maks 10 personer",
+    )
     val husstandsmedlemmer: List<AndreVoksneIHusstandenDetaljerDto> = emptyList(),
 )
 
@@ -330,8 +337,8 @@ enum class Grunnlagsdatatype(
     ),
     SUMMERTE_MÅNEDSINNTEKTER(
         mapOf(
-            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
         ),
     ),
 

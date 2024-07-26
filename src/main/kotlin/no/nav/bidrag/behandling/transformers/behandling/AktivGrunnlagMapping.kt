@@ -102,9 +102,13 @@ fun List<Grunnlag>.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag: List<G
                         PeriodeAndreVoksneIHusstanden(
                             periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
                             status = it.bostatus!!,
+                            totalAntallHusstandsmedlemmer =
+                                toSet()
+                                    .hentAlleAndreVoksneHusstandForPeriode(ÅrMånedsperiode(it.periodeFom!!, it.periodeTom), false)
+                                    .size,
                             husstandsmedlemmer =
-                                this.toSet()
-                                    .hentAndreVoksneHusstandForPeriode(ÅrMånedsperiode(it.periodeFom!!, it.periodeTom), false),
+                                toSet()
+                                    .hentBegrensetAndreVoksneHusstandForPeriode(ÅrMånedsperiode(it.periodeFom!!, it.periodeTom), false),
                         )
                     }.toSet(),
             innhentet = nyttGrunnlag?.innhentet ?: LocalDateTime.now(),

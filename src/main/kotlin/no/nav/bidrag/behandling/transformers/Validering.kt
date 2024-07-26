@@ -158,9 +158,14 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
     ) {
         feilliste.add("Begrunnelse må settes hvis kravbeløp er ulik godkjent beløp")
     }
+    if (kravbeløp <= BigDecimal.ZERO) {
+        feilliste.add("Kravbeløp kan ikke være 0 eller negativt")
+    }
+
     if (godkjentBeløp > kravbeløp) {
         feilliste.add("Godkjent beløp kan ikke være høyere enn kravbeløp")
     }
+
     if (behandling.erDatoForUtgiftForeldet(dato) && godkjentBeløp > BigDecimal.ZERO) {
         feilliste.add("Godkjent beløp må være 0 når dato på utgiften er 1 år etter mottatt dato (utgiften er foreldet)")
     }

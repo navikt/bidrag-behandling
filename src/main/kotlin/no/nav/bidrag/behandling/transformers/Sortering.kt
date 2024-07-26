@@ -95,10 +95,8 @@ fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirk
     }
 
 fun List<AndreVoksneIHusstandenDetaljerDto>.begrensAntallPersoner(): List<AndreVoksneIHusstandenDetaljerDto> {
-    // Først filtrerer vi ut alle elementer hvor harRelasjonTilBp er true
     val medRelasjon = this.filter { it.harRelasjonTilBp }
 
-    // Hvis antallet med relasjon er 10 eller mer, returnerer vi bare disse, begrenset til 10
     if (medRelasjon.size >= 10) {
         return medRelasjon.take(10)
     }

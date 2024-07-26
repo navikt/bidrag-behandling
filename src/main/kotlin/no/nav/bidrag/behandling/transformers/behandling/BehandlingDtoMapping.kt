@@ -249,11 +249,12 @@ private fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(erAktivert: Boolean 
             PeriodeAndreVoksneIHusstanden(
                 periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
                 status = it.bostatus!!,
-                husstandsmedlemmer = this.toSet().hentAndreVoksneHusstandForPeriode(periode, erAktivert),
+                totalAntallHusstandsmedlemmer = toSet().hentAlleAndreVoksneHusstandForPeriode(periode, erAktivert).size,
+                husstandsmedlemmer = toSet().hentBegrensetAndreVoksneHusstandForPeriode(periode, erAktivert),
             )
         }?.toSet() ?: emptySet()
 
-fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(
+fun Set<Grunnlag>.hentAlleAndreVoksneHusstandForPeriode(
     periode: ÅrMånedsperiode,
     erAktivert: Boolean = true,
 ): List<AndreVoksneIHusstandenDetaljerDto> {
@@ -265,8 +266,8 @@ fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(
         ?.filter { it.relasjon != Familierelasjon.BARN }
         ?.filter {
             it.borISammeHusstandDtoListe.any { p ->
-                val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!, p.periodeTil)
-                periodeBorHosBP.inneholder(periode)
+                val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!, p.periodeTil?.plusMonths(1))
+                periodeBorHosBP.fom <= periode.fom && periodeBorHosBP.tilEllerMax() <= periode.tilEllerMax()
             }
         }?.map {
             AndreVoksneIHusstandenDetaljerDto(
@@ -275,9 +276,13 @@ fun Set<Grunnlag>.hentAndreVoksneHusstandForPeriode(
                 it.relasjon != Familierelasjon.INGEN && it.relasjon != Familierelasjon.UKJENT,
                 relasjon = it.relasjon,
             )
-        }?.sorter()
-        ?.begrensAntallPersoner() ?: emptyList()
+        }?.sorter() ?: emptyList()
 }
+
+fun Set<Grunnlag>.hentBegrensetAndreVoksneHusstandForPeriode(
+    periode: ÅrMånedsperiode,
+    erAktivert: Boolean = true,
+): List<AndreVoksneIHusstandenDetaljerDto> = hentAlleAndreVoksneHusstandForPeriode(periode, erAktivert).begrensAntallPersoner()
 
 fun Behandling.tilBoforholdV2() =
     BoforholdDtoV2(
@@ -383,8 +388,10 @@ fun Behandling.tilInntektDtoV2(
 fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
     AktiveGrunnlagsdata(
         arbeidsforhold =
-            find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }.konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
-                ?: emptySet(),
+            filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
+                .mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }
+                .flatten()
+                .toSet(),
         husstandsmedlem =
             filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
         andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
