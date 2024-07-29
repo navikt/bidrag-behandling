@@ -532,6 +532,8 @@ private fun Inntekt.tilNotatInntektDto() =
             },
     )
 
+private fun List<Inntekt>.inntekterForIdent(ident: String) = filter { it.ident == ident }
+
 private fun List<Inntekt>.filtrerKilde(filtrerBareOffentlige: Boolean = false) =
     filter { !filtrerBareOffentlige || it.kilde == Kilde.OFFENTLIG }
 
@@ -559,7 +561,7 @@ private fun Behandling.hentInntekterForIdent(
     årsinntekter =
         inntekter
             .årsinntekterSortert(!filtrerBareOffentlige)
-            .filter { it.ident == ident }
+            .inntekterForIdent(ident)
             .ekskluderYtelserFørVirkningstidspunkt()
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
@@ -569,7 +571,7 @@ private fun Behandling.hentInntekterForIdent(
     barnetillegg =
         inntekter
             .filter { it.type == Inntektsrapportering.BARNETILLEGG }
-            .filter { it.ident == ident }
+            .inntekterForIdent(ident)
             .filtrerKilde(filtrerBareOffentlige)
             .ekskluderYtelserFørVirkningstidspunkt()
             .sorterEtterDatoOgBarn()
@@ -581,7 +583,7 @@ private fun Behandling.hentInntekterForIdent(
         inntekter
             .sortedBy { it.datoFom }
             .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
-            .filter { it.ident == ident }
+            .inntekterForIdent(ident)
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
             .ekskluderYtelserFørVirkningstidspunkt()
@@ -592,7 +594,7 @@ private fun Behandling.hentInntekterForIdent(
     kontantstøtte =
         inntekter
             .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-            .filter { it.ident == ident }
+            .inntekterForIdent(ident)
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
             .ekskluderYtelserFørVirkningstidspunkt()
@@ -603,7 +605,7 @@ private fun Behandling.hentInntekterForIdent(
     utvidetBarnetrygd =
         inntekter
             .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
-            .filter { it.ident == ident }
+            .inntekterForIdent(ident)
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
             .ekskluderYtelserFørVirkningstidspunkt()
