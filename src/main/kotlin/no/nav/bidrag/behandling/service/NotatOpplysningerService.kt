@@ -48,7 +48,6 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
@@ -533,6 +532,8 @@ private fun Inntekt.tilNotatInntektDto() =
             },
     )
 
+private fun List<Inntekt>.inntekterForIdent(ident: String) = filter { it.ident == ident }
+
 private fun List<Inntekt>.filtrerKilde(filtrerBareOffentlige: Boolean = false) =
     filter { !filtrerBareOffentlige || it.kilde == Kilde.OFFENTLIG }
 
@@ -560,7 +561,7 @@ private fun Behandling.hentInntekterForIdent(
     årsinntekter =
         inntekter
             .årsinntekterSortert(!filtrerBareOffentlige)
-            .filter { it.ident == ident }
+            .inntekterForIdent(ident)
             .ekskluderYtelserFørVirkningstidspunkt()
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
@@ -570,6 +571,7 @@ private fun Behandling.hentInntekterForIdent(
     barnetillegg =
         inntekter
             .filter { it.type == Inntektsrapportering.BARNETILLEGG }
+            .inntekterForIdent(ident)
             .filtrerKilde(filtrerBareOffentlige)
             .ekskluderYtelserFørVirkningstidspunkt()
             .sorterEtterDatoOgBarn()
@@ -578,48 +580,39 @@ private fun Behandling.hentInntekterForIdent(
                 it.tilNotatInntektDto()
             },
     småbarnstillegg =
-        if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter
-                .sortedBy { it.datoFom }
-                .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
-                .filtrerKilde(filtrerBareOffentlige)
-                .filter { !bareMedIBeregning || it.taMed }
-                .ekskluderYtelserFørVirkningstidspunkt()
-                .sorterEtterDato()
-                .map {
-                    it.tilNotatInntektDto()
-                }
-        } else {
-            emptyList()
-        },
+        inntekter
+            .sortedBy { it.datoFom }
+            .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+            .inntekterForIdent(ident)
+            .filtrerKilde(filtrerBareOffentlige)
+            .filter { !bareMedIBeregning || it.taMed }
+            .ekskluderYtelserFørVirkningstidspunkt()
+            .sorterEtterDato()
+            .map {
+                it.tilNotatInntektDto()
+            },
     kontantstøtte =
-        if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter
-                .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                .filtrerKilde(filtrerBareOffentlige)
-                .filter { !bareMedIBeregning || it.taMed }
-                .ekskluderYtelserFørVirkningstidspunkt()
-                .sorterEtterDatoOgBarn()
-                .map {
-                    it.tilNotatInntektDto()
-                }
-        } else {
-            emptyList()
-        },
+        inntekter
+            .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+            .inntekterForIdent(ident)
+            .filtrerKilde(filtrerBareOffentlige)
+            .filter { !bareMedIBeregning || it.taMed }
+            .ekskluderYtelserFørVirkningstidspunkt()
+            .sorterEtterDatoOgBarn()
+            .map {
+                it.tilNotatInntektDto()
+            },
     utvidetBarnetrygd =
-        if (rolle.rolletype == Rolletype.BIDRAGSMOTTAKER) {
-            inntekter
-                .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
-                .filtrerKilde(filtrerBareOffentlige)
-                .filter { !bareMedIBeregning || it.taMed }
-                .ekskluderYtelserFørVirkningstidspunkt()
-                .sorterEtterDato()
-                .map {
-                    it.tilNotatInntektDto()
-                }
-        } else {
-            emptyList()
-        },
+        inntekter
+            .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+            .inntekterForIdent(ident)
+            .filtrerKilde(filtrerBareOffentlige)
+            .filter { !bareMedIBeregning || it.taMed }
+            .ekskluderYtelserFørVirkningstidspunkt()
+            .sorterEtterDato()
+            .map {
+                it.tilNotatInntektDto()
+            },
     arbeidsforhold =
         arbeidsforhold
             .filter { it.partPersonId == ident }
