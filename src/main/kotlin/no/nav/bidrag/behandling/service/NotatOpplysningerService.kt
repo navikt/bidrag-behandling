@@ -303,6 +303,7 @@ class NotatOpplysningerService(
                                     periode = it.periode,
                                     resultat = it.resultat,
                                     resultatKode = it.resultatKode,
+                                    bpsAndel = it.bpsAndel,
                                     beregning =
                                         it.beregning?.let {
                                             NotatResultatSærbidragsberegningDto.UtgiftBeregningDto(
