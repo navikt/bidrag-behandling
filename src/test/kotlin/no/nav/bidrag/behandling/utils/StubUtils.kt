@@ -244,7 +244,7 @@ class StubUtils {
 
     fun stubOpprettNotat(status: HttpStatus = HttpStatus.OK) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/dokumentproduksjon/api/notat/pdf/forskudd")).willReturn(
+            WireMock.post(WireMock.urlMatching("/dokumentproduksjon/api/v2/notat/pdf")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
