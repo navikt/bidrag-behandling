@@ -105,7 +105,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 sakConsumer,
                 unleash,
             )
-        every { notatOpplysningerService.opprettNotat(any()) } returns Unit
+        every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
