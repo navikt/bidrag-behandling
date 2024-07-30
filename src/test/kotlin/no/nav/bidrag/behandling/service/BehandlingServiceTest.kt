@@ -46,6 +46,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Familierelasjon
@@ -504,6 +505,60 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     @Nested
     open inner class OppretteBehandling {
+        @Test
+        @Transactional
+        open fun `skal opprette en forskuddsbehandling med vedtakstype opphør`() {
+            val søknadsid = 123213L
+            val actualBehandling = behandlingRepository.save(prepareBehandling(søknadsid))
+            behandlingRepository.delete(actualBehandling)
+            stubUtils.stubHenteGrunnlag()
+            stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
+            stubKodeverkProvider()
+            kjøreStubber(actualBehandling)
+
+            val opprettetBehandling =
+                behandlingService.opprettBehandling(
+                    OpprettBehandlingRequest(
+                        vedtakstype = Vedtakstype.OPPHØR,
+                        søktFomDato = LocalDate.parse("2023-01-01"),
+                        mottattdato = LocalDate.parse("2023-01-01"),
+                        søknadFra = SøktAvType.BIDRAGSMOTTAKER,
+                        saksnummer = "12312",
+                        søknadsid = søknadsid,
+                        behandlerenhet = "1233",
+                        stønadstype = Stønadstype.FORSKUDD,
+                        engangsbeløpstype = null,
+                        roller =
+                            setOf(
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BARN,
+                                    ident = Personident(testdataBarn1.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                                OpprettRolleDto(
+                                    rolletype = Rolletype.BIDRAGSMOTTAKER,
+                                    ident = Personident(testdataBM.ident),
+                                    fødselsdato = LocalDate.parse("2005-01-01"),
+                                ),
+                            ),
+                    ),
+                )
+
+            opprettetBehandling.id shouldNotBe actualBehandling.id
+
+            val opprettetBehandlingAfter =
+                behandlingService.hentBehandlingById(opprettetBehandling.id)
+
+            opprettetBehandlingAfter.stonadstype shouldBe Stønadstype.FORSKUDD
+            opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
+            opprettetBehandlingAfter.årsak shouldBe null
+            opprettetBehandlingAfter.avslag shouldBe Resultatkode.PÅ_GRUNN_AV_BARNEPENSJON
+            opprettetBehandlingAfter.roller shouldHaveSize 2
+            opprettetBehandlingAfter.soknadsid shouldBe søknadsid
+            opprettetBehandlingAfter.saksnummer shouldBe "12312"
+            opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
+        }
+
         @Test
         @Transactional
         open fun `skal opprette en forskuddsbehandling hvis det finnes behandling med samme søknadsid men som er slettet`() {
