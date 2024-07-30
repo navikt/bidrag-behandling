@@ -33,7 +33,9 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -109,7 +111,26 @@ class BehandlingService(
                     },
                 årsak =
                     when (opprettBehandling.tilType()) {
-                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
+                            if (opprettBehandling.vedtakstype !=
+                                Vedtakstype.OPPHØR
+                            ) {
+                                VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+                            } else {
+                                null
+                            }
+                        TypeBehandling.SÆRBIDRAG -> null
+                    },
+                avslag =
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
+                            if (opprettBehandling.vedtakstype ==
+                                Vedtakstype.OPPHØR
+                            ) {
+                                Resultatkode.PÅ_GRUNN_AV_BARNEPENSJON
+                            } else {
+                                null
+                            }
                         TypeBehandling.SÆRBIDRAG -> null
                     },
                 mottattdato = opprettBehandling.mottattdato,
