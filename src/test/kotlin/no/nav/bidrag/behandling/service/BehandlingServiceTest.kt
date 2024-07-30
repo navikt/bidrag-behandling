@@ -552,7 +552,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandlingAfter.stonadstype shouldBe Stønadstype.FORSKUDD
             opprettetBehandlingAfter.virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
             opprettetBehandlingAfter.årsak shouldBe null
-            opprettetBehandlingAfter.avslag shouldBe Resultatkode.PÅ_GRUNN_AV_BARNEPENSJON
+            opprettetBehandlingAfter.avslag shouldBe Resultatkode.IKKE_OMSORG
             opprettetBehandlingAfter.roller shouldHaveSize 2
             opprettetBehandlingAfter.soknadsid shouldBe søknadsid
             opprettetBehandlingAfter.saksnummer shouldBe "12312"

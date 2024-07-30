@@ -127,7 +127,7 @@ class BehandlingService(
                             if (opprettBehandling.vedtakstype ==
                                 Vedtakstype.OPPHØR
                             ) {
-                                Resultatkode.PÅ_GRUNN_AV_BARNEPENSJON
+                                Resultatkode.IKKE_OMSORG
                             } else {
                                 null
                             }
