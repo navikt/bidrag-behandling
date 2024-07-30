@@ -626,7 +626,7 @@ class StubUtils {
         }
 
         fun opprettNotatKalt() {
-            WireMock.verify(postRequestedFor(WireMock.urlMatching("/dokumentproduksjon/api/notat/pdf/forskudd")))
+            WireMock.verify(postRequestedFor(WireMock.urlMatching("/dokumentproduksjon/api/v2/notat/pdf")))
         }
 
         fun opprettJournalpostKaltMed(vararg contains: String) {
