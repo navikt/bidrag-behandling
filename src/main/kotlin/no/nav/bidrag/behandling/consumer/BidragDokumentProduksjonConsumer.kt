@@ -16,7 +16,7 @@ class BidragDokumentProduksjonConsumer(
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-dokument-produksjon") {
     private val bidragDokumentProduksjonUri
-        get() = UriComponentsBuilder.fromUri(bidragDokumentProduksjonUrl).pathSegment("api", "notat", "pdf", "forskudd")
+        get() = UriComponentsBuilder.fromUri(bidragDokumentProduksjonUrl).pathSegment("api", "v2", "notat", "pdf")
 
     fun opprettNotat(request: NotatDto): ByteArray {
         val headers = HttpHeaders()
