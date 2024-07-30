@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -62,7 +63,7 @@ fun stubTokenUtils() {
     mockkStatic(TokenUtils::hentApplikasjonsnavn)
     mockkStatic(TokenUtils::hentSaksbehandlerIdent)
     every { TokenUtils.hentApplikasjonsnavn() } returns "bidrag-behandling"
-    every { TokenUtils.hentSaksbehandlerIdent() } returns "Z99999"
+    every { TokenUtils.hentSaksbehandlerIdent() } returns SAKSBEHANDLER_IDENT
 }
 
 fun stubPersonConsumer(): BidragPersonConsumer {

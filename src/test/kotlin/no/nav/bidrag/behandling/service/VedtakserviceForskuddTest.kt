@@ -226,6 +226,7 @@ class VedtakserviceForskuddTest {
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
         }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
     }
 
     @Test
@@ -447,6 +448,7 @@ class VedtakserviceForskuddTest {
         vedtakService.fatteVedtak(behandling.id!!)
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
 
         assertSoftly(opprettVedtakRequest) { request ->
             request.type shouldBe Vedtakstype.FASTSETTELSE
