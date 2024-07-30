@@ -33,12 +33,9 @@ import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilDto
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
-import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
-import no.nav.bidrag.behandling.transformers.utgift.totalGodkjentBeløp
-import no.nav.bidrag.behandling.transformers.utgift.totalGodkjentBeløpBp
+import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -107,7 +104,10 @@ class NotatOpplysningerService(
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
     @Transactional
-    fun opprettNotat(behandlingId: Long) {
+    fun opprettNotat(
+        behandlingId: Long,
+        oppdaterDatoDokument: Boolean = false,
+    ): String {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val notatDto = hentNotatOpplysninger(behandlingId)
         val notatPdf = bidragDokumentProduksjonConsumer.opprettNotat(notatDto)
@@ -115,6 +115,7 @@ class NotatOpplysningerService(
         val forespørsel =
             OpprettJournalpostRequest(
                 skalFerdigstilles = true,
+                datoDokument = oppdaterDatoDokument.ifTrue { behandling.vedtakstidspunkt },
                 journalposttype = JournalpostType.NOTAT,
                 journalførendeEnhet = behandling.behandlerEnhet,
                 tilknyttSaker = listOf(behandling.saksnummer),
@@ -140,6 +141,7 @@ class NotatOpplysningerService(
             "Opprettet notat for behandling $behandlingId i sak ${behandling.saksnummer} " +
                 "med journalpostId ${response.journalpostId}"
         }
+        return response.journalpostId ?: ""
     }
 
     private fun lagreJournalpostId(
