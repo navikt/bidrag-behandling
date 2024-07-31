@@ -1587,11 +1587,7 @@ class GrunnlagService(
                     behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
-                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe
-                        .filter {
-                            // TODO: Er det riktig å filtrere ut husstandsmedlemmer som ikke er barn av BM i forskudd?
-                            behandling.tilType() == TypeBehandling.FORSKUDD || it.erBarn
-                        }.toSet(),
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.filter { it.erBarn }.toSet(),
                 )
             }
 
