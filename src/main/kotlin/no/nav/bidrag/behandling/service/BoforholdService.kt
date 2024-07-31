@@ -304,8 +304,10 @@ class BoforholdService(
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            typeBehandling = behandling.tilTypeFelles(),
-                            emptyList(),
+                            behandling.tilTypeFelles(),
+                            behandling
+                                .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
+                                .tilBoforholdBarnRequest(behandling),
                         )
 
                     if (respons.isNotEmpty()) {
@@ -1181,7 +1183,7 @@ class BoforholdService(
                 data = tilJson(boforholdrespons),
                 innhentet = LocalDateTime.now(),
                 aktiv = LocalDateTime.now(),
-                rolle = behandling.bidragsmottaker!!,
+                rolle = behandling.bidragsmottaker!!, // TODO: Dette er BP for særbidrag
                 gjelder = personidentBarn.verdi,
             ),
         )
