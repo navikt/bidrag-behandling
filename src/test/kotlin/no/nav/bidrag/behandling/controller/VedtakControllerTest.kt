@@ -164,11 +164,11 @@ class VedtakControllerTest : KontrollerTestRunner() {
         behandlingEtter.vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
         behandlingEtter.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
         // TODO endre dette når notat er klart
-        behandlingEtter.notatJournalpostId shouldBe null
+        behandlingEtter.notatJournalpostId shouldBe "12333"
         stubUtils.Verify().fatteVedtakKalt()
         stubUtils.Verify().hentSakKalt(behandling.saksnummer)
-//        stubUtils.Verify().opprettNotatKalt()
-//        stubUtils.Verify().opprettJournalpostKaltMed()
+        stubUtils.Verify().opprettNotatKalt()
+        stubUtils.Verify().opprettJournalpostKaltMed()
     }
 
     @Test

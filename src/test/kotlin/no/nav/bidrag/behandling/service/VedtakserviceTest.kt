@@ -41,10 +41,14 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.transaction.annotation.Transactional
 import stubPersonConsumer
+import stubTokenUtils
 import java.time.LocalDate
 
 @ExtendWith(SpringExtension::class)
 class VedtakserviceTest : TestContainerRunner() {
+    protected val testNotatJournalpostId = "123123123"
+    protected val testVedtakResponsId = 1
+
     @Autowired
     lateinit var behandlingService: BehandlingService
 
@@ -89,6 +93,7 @@ class VedtakserviceTest : TestContainerRunner() {
     @BeforeEach
     fun initMocks() {
         clearAllMocks()
+        stubTokenUtils()
         unleash.enableAll()
         beregningService =
             BeregningService(
@@ -105,10 +110,10 @@ class VedtakserviceTest : TestContainerRunner() {
                 sakConsumer,
                 unleash,
             )
-        every { notatOpplysningerService.opprettNotat(any()) } returns "213"
+        every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
-        every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
+        every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(testVedtakResponsId, emptyList())
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()

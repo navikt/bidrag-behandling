@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
@@ -243,6 +244,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         testdataBarn2.fødselsdato,
+                        behandling.tilTypeFelles(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -290,6 +292,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         LocalDate.now(),
+                        behandling.tilTypeFelles(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -383,6 +386,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
+                        behandling.tilTypeFelles(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -479,6 +483,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
+                        behandling.tilTypeFelles(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -576,6 +581,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
+                        behandling.tilTypeFelles(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -667,6 +673,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
+                        behandling.tilTypeFelles(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -1284,7 +1291,11 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             // hvis
             val periodisertBoforhold =
-                BoforholdApi.beregnBoforholdBarnV3(testdataBarn2.fødselsdato, listOf(periodiseringsrequest))
+                BoforholdApi.beregnBoforholdBarnV3(
+                    testdataBarn2.fødselsdato,
+                    behandling.tilTypeFelles(),
+                    listOf(periodiseringsrequest),
+                )
 
             // så
             assertSoftly(periodisertBoforhold) { p ->

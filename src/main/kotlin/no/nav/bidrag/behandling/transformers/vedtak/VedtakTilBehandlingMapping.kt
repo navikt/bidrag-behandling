@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -62,6 +63,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
+import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -155,11 +157,11 @@ fun VedtakDto.tilBehandling(
         Behandling(
             id = if (lesemodus) 1 else null,
             vedtakstype = vedtakType ?: type,
-            virkningstidspunkt = hentVirkningstidspunkt()?.virkningstidspunkt ?: hentSøknad().søktFraDato,
+            virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato,
             kategori = grunnlagListe.særbidragskategori?.kategori?.name,
             kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
             opprinneligVirkningstidspunkt =
-                hentVirkningstidspunkt()?.virkningstidspunkt
+                virkningstidspunkt
                     ?: hentSøknad().søktFraDato,
             opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
             innkrevingstype =
@@ -384,6 +386,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             val boforholdPeriodisert =
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.tilTypeFelles(),
                     grunnlag.tilBoforholdBarnRequest(behandling),
                 )
             listOf(

@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
 import no.nav.bidrag.behandling.utils.søknad
+import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
@@ -70,6 +71,7 @@ import stubHentPersonNyIdent
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 
 @ExtendWith(SpringExtension::class)
@@ -136,8 +138,15 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             )
 
         vedtakService.fatteVedtak(behandling.id!!)
-
+        entityManager.flush()
+        entityManager.refresh(behandling)
         val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(behandling) {
+            vedtaksid shouldBe testVedtakResponsId
+            vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
+            vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
+        }
 
         assertSoftly(opprettVedtakRequest) {
             val request = opprettVedtakRequest
@@ -259,6 +268,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
         }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
     }
 
     @Test
@@ -336,7 +346,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         vedtakService.fatteVedtak(behandling.id!!)
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
-
+        assertSoftly(behandling) {
+            vedtaksid shouldBe testVedtakResponsId
+            vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
+            vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
+        }
         assertSoftly(opprettVedtakRequest) {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
@@ -437,6 +451,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
         }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
     }
 
     @Test
@@ -478,7 +493,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         vedtakService.fatteVedtak(behandling.id!!)
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
-
+        assertSoftly(behandling) {
+            vedtaksid shouldBe testVedtakResponsId
+            vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
+            vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
+        }
         assertSoftly(opprettVedtakRequest) {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
@@ -569,6 +588,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
         }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
     }
 
     @Test

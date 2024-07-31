@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequ
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
+import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.hentFil
@@ -306,7 +307,7 @@ class VedtakTilBehandlingForskuddTest {
             vedtaksid shouldBe null
             soknadRefId shouldBe 222
             soknadsid shouldBe 100
-            opprettetAv shouldBe "Z99999"
+            opprettetAv shouldBe SAKSBEHANDLER_IDENT
             opprettetAvNavn shouldBe "Fornavn Etternavn"
             refVedtaksid shouldBe 12333
 

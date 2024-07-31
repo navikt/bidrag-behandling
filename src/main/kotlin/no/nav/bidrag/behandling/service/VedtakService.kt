@@ -201,7 +201,7 @@ class VedtakService(
             behandlingId,
             vedtaksid = response.vedtaksid.toLong(),
         )
-//        opprettNotat(behandling)
+        opprettNotat(behandling)
         LOGGER.info {
             "Fattet vedtak for særbidrag behandling $behandlingId med vedtaksid ${response.vedtaksid}"
         }

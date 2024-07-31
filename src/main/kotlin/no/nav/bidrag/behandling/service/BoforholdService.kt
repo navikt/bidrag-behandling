@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.database.datamodell.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteSisteSivilstand
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.lagreSivilstandshistorikk
+import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
@@ -303,6 +304,7 @@ class BoforholdService(
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.tilTypeFelles(),
                             behandling
                                 .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
                                 .tilBoforholdBarnRequest(behandling),
@@ -678,6 +680,7 @@ class BoforholdService(
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.tilTypeFelles(),
                             listOf(
                                 eksisterendeHusstandsmedlem
                                     .tilBoforholdBarnRequest()
@@ -738,11 +741,13 @@ class BoforholdService(
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.tilTypeFelles(),
                             listOf(request),
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.tilTypeFelles(),
                             listOf(
                                 request.copy(
                                     behandledeBostatusopplysninger = manueltMedlem.perioder.map { it.tilBostatus() },
@@ -1070,6 +1075,7 @@ class BoforholdService(
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.tilTypeFelles(),
                 listOf(periodiseringsrequest),
             ),
         )
@@ -1177,7 +1183,7 @@ class BoforholdService(
                 data = tilJson(boforholdrespons),
                 innhentet = LocalDateTime.now(),
                 aktiv = LocalDateTime.now(),
-                rolle = behandling.bidragsmottaker!!,
+                rolle = behandling.bidragsmottaker!!, // TODO: Dette er BP for særbidrag
                 gjelder = personidentBarn.verdi,
             ),
         )

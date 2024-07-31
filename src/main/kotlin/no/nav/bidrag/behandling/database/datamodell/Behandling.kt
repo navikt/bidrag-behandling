@@ -14,6 +14,8 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.transformers.TypeBehandling
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -190,3 +192,10 @@ open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, 
 
     override fun convertToEntityAttribute(dbData: String?): VirkningstidspunktÅrsakstype? = dbData?.tilÅrsakstype()
 }
+
+fun Behandling.tilTypeFelles() =
+    when (tilType()) {
+        TypeBehandling.FORSKUDD -> no.nav.bidrag.domene.enums.behandling.TypeBehandling.FORSKUDD
+        TypeBehandling.SÆRBIDRAG -> no.nav.bidrag.domene.enums.behandling.TypeBehandling.SÆRBIDRAG
+        else -> no.nav.bidrag.domene.enums.behandling.TypeBehandling.BIDRAG
+    }
