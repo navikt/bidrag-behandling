@@ -557,6 +557,8 @@ fun Behandling.notatTittel(): String {
             Stønadstype.MOTREGNING -> "Motregning"
             else ->
                 when (engangsbeloptype) {
+                    Engangsbeløptype.SAERTILSKUDD, Engangsbeløptype.SÆRTILSKUDD, Engangsbeløptype.SÆRBIDRAG -> "Særbidrag"
+                    Engangsbeløptype.DIREKTE_OPPGJOR, Engangsbeløptype.DIREKTE_OPPGJØR -> "Direkte oppgjør"
                     Engangsbeløptype.ETTERGIVELSE -> "Ettergivelse"
                     Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> "Ettergivelse tilbakekreving"
                     Engangsbeløptype.GEBYR_MOTTAKER -> "Gebyr"
