@@ -9,9 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.database.datamodell.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.opprettDefaultPeriodeForAndreVoksneIHusstand
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
-import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
@@ -88,12 +86,6 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandli
             gjelderPersonId = g.gjelderPersonId,
             behandledeBostatusopplysninger = emptyList(),
             endreBostatus = null,
-            typeBehandling =
-                when (behandling.tilType()) {
-                    TypeBehandling.FORSKUDD -> no.nav.bidrag.domene.enums.behandling.TypeBehandling.FORSKUDD
-                    TypeBehandling.SÆRBIDRAG -> no.nav.bidrag.domene.enums.behandling.TypeBehandling.SÆRBIDRAG
-                    else -> no.nav.bidrag.domene.enums.behandling.TypeBehandling.BIDRAG
-                },
         )
     }
 }

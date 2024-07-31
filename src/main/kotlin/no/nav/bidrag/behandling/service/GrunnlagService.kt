@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForTy
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
@@ -317,6 +318,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.tilTypeFelles(),
                 boforhold.tilBoforholdBarnRequest(behandling),
             )
         boforholdPeriodisert
@@ -769,6 +771,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.tilTypeFelles(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling),
             )
 
