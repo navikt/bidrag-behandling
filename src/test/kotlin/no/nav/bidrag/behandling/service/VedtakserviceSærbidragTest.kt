@@ -283,6 +283,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
+        behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -769,6 +770,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+        behandling.klageMottattdato = LocalDate.now()
         testdataManager.lagreBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
