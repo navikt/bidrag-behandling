@@ -540,10 +540,10 @@ class BoforholdService(
             behandling.sivilstand.addAll(
                 it.tilSivilstand(behandling),
             )
-
-            nyesteIkkeaktiverteSivilstand?.aktiv = LocalDateTime.now()
-            nyesteIkkeaktivertePeriodiserteSivilstand?.aktiv = LocalDateTime.now()
         }
+
+        nyesteIkkeaktiverteSivilstand?.aktiv = LocalDateTime.now()
+        nyesteIkkeaktivertePeriodiserteSivilstand?.aktiv = LocalDateTime.now()
     }
 
     @Transactional
