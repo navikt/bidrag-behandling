@@ -243,7 +243,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
-            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 9
+            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 7
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 8
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT)
@@ -427,7 +429,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
-            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 9
+            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 7
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 8
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT)
