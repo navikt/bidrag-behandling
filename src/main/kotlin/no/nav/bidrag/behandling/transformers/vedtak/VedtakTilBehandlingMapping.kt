@@ -170,6 +170,7 @@ fun VedtakDto.tilBehandling(
                     ?: Innkrevingstype.MED_INNKREVING,
             årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
+            opprinneligMottattdato = if (!lesemodus) hentSøknad().opprinneligMottattDato ?: hentSøknad().mottattDato else null,
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
             soknadFra = soknadFra ?: hentSøknad().søktAv,
             mottattdato = mottattdato ?: hentSøknad().mottattDato,

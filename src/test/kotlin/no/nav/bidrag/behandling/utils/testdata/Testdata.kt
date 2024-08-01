@@ -193,6 +193,7 @@ fun oppretteBehandling(
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
+        opprinneligMottattdato = null,
         SAKSNUMMER,
         SOKNAD_ID,
         null,

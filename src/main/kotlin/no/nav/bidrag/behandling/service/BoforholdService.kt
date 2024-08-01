@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
-import no.nav.bidrag.behandling.database.datamodell.henteBpHusstandsmedlem
+import no.nav.bidrag.behandling.database.datamodell.henteEllerOpprettBpHusstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.henteLagretSivilstandshistorikk
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteSisteSivilstand
@@ -68,7 +68,6 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Familierelasjon
-import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -119,15 +118,9 @@ class BoforholdService(
         behandling: Behandling,
         periodisertBoforholdVoksne: Set<Bostatus>,
     ) {
-        behandling.husstandsmedlem
-            .filter { (Kilde.OFFENTLIG == it.kilde) }
-            .filter { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }
-            .forEach {
-                it.perioder.clear()
-            }
-
-        val husstandsmedlemBp = behandling.henteBpHusstandsmedlem()
-        husstandsmedlemBp.perioder = periodisertBoforholdVoksne.tilBostatusperiode(husstandsmedlemBp)
+        val husstandsmedlemBp = behandling.henteEllerOpprettBpHusstandsmedlem()
+        husstandsmedlemBp.perioder.clear()
+        husstandsmedlemBp.perioder.addAll(periodisertBoforholdVoksne.tilBostatusperiode(husstandsmedlemBp))
     }
 
     @Transactional
