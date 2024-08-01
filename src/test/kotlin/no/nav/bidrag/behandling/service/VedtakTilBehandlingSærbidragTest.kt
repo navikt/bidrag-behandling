@@ -141,6 +141,60 @@ class VedtakTilBehandlingSærbidragTest {
     }
 
     @Test
+    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med klage mottatt dato`() {
+        val originalVedtak = filTilVedtakDto("vedtak_response-særbidrag")
+        val vedtak1 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
+                grunnlagListe =
+                    originalVedtak.grunnlagListe.map {
+                        if (it.type == Grunnlagstype.SØKNAD) {
+                            it.copy(
+                                innhold =
+                                    POJONode(
+                                        it.innholdTilObjekt<SøknadGrunnlag>().copy(
+                                            mottattDato = LocalDate.parse("2024-05-01"),
+                                            klageMottattDato = LocalDate.parse("2024-03-01"),
+                                        ),
+                                    ),
+                            )
+                        } else {
+                            it
+                        }
+                    },
+            )
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
+        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
+
+        assertSoftly(behandling) {
+            behandling.saksnummer shouldBe SAKSNUMMER
+            årsak shouldBe null
+            avslag shouldBe null
+            virkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
+            soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
+            stonadstype shouldBe null
+            engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            behandlerEnhet shouldBe "4806"
+            mottattdato shouldBe LocalDate.parse("2024-05-01")
+            klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            vedtakstype shouldBe Vedtakstype.ENDRING
+            vedtaksid shouldBe null
+            refVedtaksid shouldBe 1
+            kategori shouldBe "ANNET"
+            kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
+            soknadsid shouldBe 101
+            opprettetAv shouldBe "Z994977"
+            opprettetAvNavn shouldBe null
+            utgiftsbegrunnelseKunINotat shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
+            validerUtgifter()
+            validerRoller()
+            validerHusstandsmedlem()
+            validerInntekter()
+            validerGrunnlag()
+        }
+    }
+
+    @Test
     fun `Skal opprette behandling og lagre vedtakstidspunkt for forrige vedtak`() {
         val originalVedtak = filTilVedtakDto("vedtak_response-særbidrag")
         val vedtak1 =
