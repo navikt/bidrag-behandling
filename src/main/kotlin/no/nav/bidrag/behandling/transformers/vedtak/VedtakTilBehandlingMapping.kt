@@ -154,7 +154,6 @@ fun VedtakDto.tilBehandling(
                 .hentSaksbehandlerIdent()
                 ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         }
-    val erKlage = søknadRefId != null
     val behandling =
         Behandling(
             id = if (lesemodus) 1 else null,
