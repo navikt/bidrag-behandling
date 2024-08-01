@@ -57,7 +57,7 @@ fun Behandling.byggGrunnlagSøknad() =
             innhold =
                 POJONode(
                     SøknadGrunnlag(
-                        opprinneligMottattDato = opprinneligMottattdato,
+                        klageMottattDato = klageMottattdato,
                         mottattDato = mottattdato,
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,

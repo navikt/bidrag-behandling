@@ -63,6 +63,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
+import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
@@ -153,6 +154,7 @@ fun VedtakDto.tilBehandling(
                 .hentSaksbehandlerIdent()
                 ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         }
+    val erKlage = søknadRefId != null
     val behandling =
         Behandling(
             id = if (lesemodus) 1 else null,
@@ -170,10 +172,14 @@ fun VedtakDto.tilBehandling(
                     ?: Innkrevingstype.MED_INNKREVING,
             årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
-            opprinneligMottattdato = if (!lesemodus) hentSøknad().opprinneligMottattDato ?: hentSøknad().mottattDato else null,
+            klageMottattdato = if (!lesemodus) mottattdato else null,
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
             soknadFra = soknadFra ?: hentSøknad().søktAv,
-            mottattdato = mottattdato ?: hentSøknad().mottattDato,
+            mottattdato =
+                when (typeBehandling) {
+                    no.nav.bidrag.domene.enums.behandling.TypeBehandling.SÆRBIDRAG -> hentSøknad().mottattDato
+                    else -> mottattdato ?: hentSøknad().mottattDato
+                },
             // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
             stonadstype = stønadsendringListe.firstOrNull()?.type,
             engangsbeloptype = engangsbeløpListe.firstOrNull()?.type,

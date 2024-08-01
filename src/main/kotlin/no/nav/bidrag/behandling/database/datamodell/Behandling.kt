@@ -44,7 +44,7 @@ open class Behandling(
     open val søktFomDato: LocalDate,
     open val datoTom: LocalDate? = null,
     open var mottattdato: LocalDate,
-    open var opprinneligMottattdato: LocalDate? = null,
+    open var klageMottattdato: LocalDate? = null,
     open val saksnummer: String,
     open var soknadsid: Long,
     open val soknadRefId: Long? = null,

@@ -141,7 +141,7 @@ fun Behandling.tilBehandlingDtoV2(
     erVedtakFattet = vedtaksid != null,
     søktFomDato = søktFomDato,
     mottattdato = mottattdato,
-    opprinneligMottattdato = opprinneligMottattdato,
+    klageMottattdato = klageMottattdato,
     søktAv = soknadFra,
     saksnummer = saksnummer,
     søknadsid = soknadsid,

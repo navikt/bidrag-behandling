@@ -87,6 +87,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
+        behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -991,6 +992,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             val søknad = grunnlagListe.søknad?.innholdTilObjekt<SøknadGrunnlag>()
             søknad!!.mottattDato shouldHaveSameDayAs behandling.mottattdato
             søknad.søktAv shouldBe behandling.soknadFra
+            søknad.klageMottattDato shouldBe LocalDate.now()
             søknad.søktFraDato shouldBe behandling.søktFomDato
         }
 

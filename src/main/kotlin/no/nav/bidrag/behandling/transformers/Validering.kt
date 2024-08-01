@@ -62,7 +62,7 @@ fun bestemRollerSomKanHaInntekter(typeBehandling: TypeBehandling) =
     }
 
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
-val Behandling.utgiftCuttofDato get() = (opprinneligMottattdato ?: mottattdato).minusYears(1)
+val Behandling.utgiftCuttofDato get() = mottattdato.minusYears(1)
 
 fun Behandling.erDatoForUtgiftForeldet(utgiftDato: LocalDate) = utgiftDato < utgiftCuttofDato
 
