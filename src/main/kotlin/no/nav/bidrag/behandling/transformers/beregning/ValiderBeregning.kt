@@ -170,7 +170,7 @@ fun BeregnetSærbidragResultat.validerForSærbidrag() {
 fun Behandling.validerForBeregningSærbidrag() {
     val feil =
         if (avslag == null) {
-            val utgiftFeil = utgift?.hentValideringsfeil()
+            val utgiftFeil = utgift.hentValideringsfeil()
             val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
             val andreVoksneIHusstandenFeil =
                 (husstandsmedlem.voksneIHusstanden ?: Husstandsmedlem(this, kilde = Kilde.OFFENTLIG, rolle = bidragspliktig))
