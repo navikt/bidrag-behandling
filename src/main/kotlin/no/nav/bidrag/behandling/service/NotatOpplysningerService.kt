@@ -434,6 +434,7 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
         vedtakstype = vedtakstype,
         søktAv = soknadFra,
         mottattDato = mottattdato,
+        klageMottattDato = klageMottattdato,
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         avslag = avslag,
