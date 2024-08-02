@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
@@ -30,6 +31,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
+import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -385,6 +387,35 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 ),
             )
         },
+    hentInnhentetAndreVoksneIHusstanden().groupBy { it.partPersonId }.flatMap { (gjelderRolle, grunnlag) ->
+
+        val andreVoksneIHusstandPeriodisert =
+            BoforholdApi.beregnBoforholdAndreVoksne(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                BoforholdVoksneRequest(
+                    innhentedeOffentligeOpplysninger = grunnlag.tilHusstandsmedlemmer(),
+                    behandledeBostatusopplysninger = emptyList(),
+                    endreBostatus = null,
+                ),
+            )
+        listOf(
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                grunnlag,
+                gjelderRolle!!,
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN),
+                lesemodus,
+            ),
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                andreVoksneIHusstandPeriodisert,
+                gjelderRolle,
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                lesemodus,
+                true,
+            ),
+        )
+    },
     hentInnhentetHusstandsmedlem()
         .groupBy { it.partPersonId }
         .flatMap { (innhentetForIdent, grunnlag) ->

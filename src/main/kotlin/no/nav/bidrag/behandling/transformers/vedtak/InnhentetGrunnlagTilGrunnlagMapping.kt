@@ -28,6 +28,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
@@ -83,6 +84,27 @@ fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<Summe
                             },
                 )
         }.associate { it.first!! to it.second }
+
+fun List<GrunnlagDto>.hentInnhentetAndreVoksneIHusstanden(): List<RelatertPersonGrunnlagDto> =
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN)
+        .flatMap {
+            val part = hentPersonMedReferanse(it.gjelderReferanse)!!
+            val andreVoksneIHusstandeListe = it.innholdTilObjektListe<List<InnhentetHusstandsmedlem>>()
+            andreVoksneIHusstandeListe.map { andreVoksneIHusstand ->
+                val gjelderPerson = hentPersonMedReferanse(andreVoksneIHusstand.grunnlag.gjelderPerson)!!
+                RelatertPersonGrunnlagDto(
+                    partPersonId = part.personIdent!!,
+                    relatertPersonPersonId = gjelderPerson.personIdent,
+                    navn = andreVoksneIHusstand.grunnlag.navn,
+                    fødselsdato = andreVoksneIHusstand.grunnlag.fødselsdato,
+                    relasjon = andreVoksneIHusstand.grunnlag.relasjon,
+                    borISammeHusstandDtoListe =
+                        andreVoksneIHusstand.grunnlag.perioder.map {
+                            BorISammeHusstandDto(it.fom, it.til)
+                        },
+                )
+            }
+        }
 
 fun List<GrunnlagDto>.hentInnhentetHusstandsmedlem(): List<RelatertPersonGrunnlagDto> =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM)
