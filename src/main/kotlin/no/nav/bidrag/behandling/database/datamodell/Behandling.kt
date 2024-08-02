@@ -44,6 +44,7 @@ open class Behandling(
     open val søktFomDato: LocalDate,
     open val datoTom: LocalDate? = null,
     open var mottattdato: LocalDate,
+    open var klageMottattdato: LocalDate? = null,
     open val saksnummer: String,
     open var soknadsid: Long,
     open val soknadRefId: Long? = null,
@@ -165,7 +166,7 @@ val Behandling.særbidragKategori
             }
         } ?: Særbidragskategori.ANNET
 
-fun Behandling.henteBpHusstandsmedlem(): Husstandsmedlem {
+fun Behandling.henteEllerOpprettBpHusstandsmedlem(): Husstandsmedlem {
     val eksisterendeHusstandsmedlem = husstandsmedlem.find { Rolletype.BIDRAGSPLIKTIG == it.rolle?.rolletype }
     return eksisterendeHusstandsmedlem ?: leggeTilBPSomHusstandsmedlem()
 }

@@ -87,6 +87,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
+        behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -242,7 +243,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
-            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 9
+            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 7
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 8
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT)
@@ -282,6 +285,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
+        behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -425,7 +429,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
-            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 9
+            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 7
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 8
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT)
@@ -768,6 +774,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+        behandling.klageMottattdato = LocalDate.now()
         testdataManager.lagreBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
@@ -991,6 +998,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             val søknad = grunnlagListe.søknad?.innholdTilObjekt<SøknadGrunnlag>()
             søknad!!.mottattDato shouldHaveSameDayAs behandling.mottattdato
             søknad.søktAv shouldBe behandling.soknadFra
+            søknad.klageMottattDato shouldBe LocalDate.now()
             søknad.søktFraDato shouldBe behandling.søktFomDato
         }
 

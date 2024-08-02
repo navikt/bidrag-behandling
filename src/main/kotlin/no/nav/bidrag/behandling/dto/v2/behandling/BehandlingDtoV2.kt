@@ -86,6 +86,9 @@ data class BehandlingDtoV2(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val mottattdato: LocalDate,
+    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    val klageMottattdato: LocalDate? = null,
     val søktAv: SøktAvType,
     val saksnummer: String,
     val søknadsid: Long,

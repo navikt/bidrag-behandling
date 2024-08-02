@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
+import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
@@ -30,6 +31,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
+import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -63,6 +65,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
+import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
@@ -170,9 +173,14 @@ fun VedtakDto.tilBehandling(
                     ?: Innkrevingstype.MED_INNKREVING,
             årsak = hentVirkningstidspunkt()?.årsak,
             avslag = avslagskode(),
+            klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
             søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
             soknadFra = soknadFra ?: hentSøknad().søktAv,
-            mottattdato = mottattdato ?: hentSøknad().mottattDato,
+            mottattdato =
+                when (typeBehandling) {
+                    no.nav.bidrag.domene.enums.behandling.TypeBehandling.SÆRBIDRAG -> hentSøknad().mottattDato
+                    else -> mottattdato ?: hentSøknad().mottattDato
+                },
             // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
             stonadstype = stønadsendringListe.firstOrNull()?.type,
             engangsbeloptype = engangsbeløpListe.firstOrNull()?.type,
@@ -379,6 +387,35 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 ),
             )
         },
+    hentInnhentetAndreVoksneIHusstanden().groupBy { it.partPersonId }.flatMap { (gjelderRolle, grunnlag) ->
+
+        val andreVoksneIHusstandPeriodisert =
+            BoforholdApi.beregnBoforholdAndreVoksne(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                BoforholdVoksneRequest(
+                    innhentedeOffentligeOpplysninger = grunnlag.tilHusstandsmedlemmer(),
+                    behandledeBostatusopplysninger = emptyList(),
+                    endreBostatus = null,
+                ),
+            )
+        listOf(
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                grunnlag,
+                gjelderRolle!!,
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN),
+                lesemodus,
+            ),
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                andreVoksneIHusstandPeriodisert,
+                gjelderRolle,
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                lesemodus,
+                true,
+            ),
+        )
+    },
     hentInnhentetHusstandsmedlem()
         .groupBy { it.partPersonId }
         .flatMap { (innhentetForIdent, grunnlag) ->

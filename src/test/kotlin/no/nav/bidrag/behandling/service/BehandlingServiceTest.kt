@@ -1633,6 +1633,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Vedtakstype.FASTSETTELSE,
                     YearMonth.now().atDay(1),
                     YearMonth.now().atEndOfMonth(),
+                    YearMonth.now().atEndOfMonth(),
                     LocalDate.now(),
                     "1900000",
                     søknadsid,
