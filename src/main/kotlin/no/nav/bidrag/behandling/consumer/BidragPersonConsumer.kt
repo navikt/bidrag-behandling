@@ -18,10 +18,12 @@ class BidragPersonConsumer(
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-person") {
     private val hentPersonUri =
-        UriComponentsBuilder.fromUri(bidragPersonUrl).pathSegment("informasjon").build().toUri()
+        UriComponentsBuilder
+            .fromUri(bidragPersonUrl)
+            .pathSegment("informasjon")
+            .build()
+            .toUri()
 
     @BrukerCacheable(PERSON_CACHE)
-    fun hentPerson(ident: String): PersonDto {
-        return postForNonNullEntity(hentPersonUri, PersonDto(Personident(ident)))
-    }
+    fun hentPerson(ident: String): PersonDto = postForNonNullEntity(hentPersonUri, PersonDto(Personident(ident)))
 }

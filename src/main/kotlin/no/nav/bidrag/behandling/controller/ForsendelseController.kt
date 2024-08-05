@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestControllerV1
-class ForsendelseController(private val forsendelseService: ForsendelseService) {
+class ForsendelseController(
+    private val forsendelseService: ForsendelseService,
+) {
     @Suppress("unused")
     @PostMapping("/forsendelse/init")
     @Operation(
@@ -22,7 +24,5 @@ class ForsendelseController(private val forsendelseService: ForsendelseService) 
         @Valid
         @RequestBody(required = true)
         request: InitalizeForsendelseRequest,
-    ): List<String> {
-        return forsendelseService.slettEllerOpprettForsendelse(request)
-    }
+    ): List<String> = forsendelseService.slettEllerOpprettForsendelse(request)
 }

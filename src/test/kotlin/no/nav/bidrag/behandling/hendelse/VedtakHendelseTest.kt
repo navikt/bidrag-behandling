@@ -70,11 +70,14 @@ class VedtakHendelseTest : TestContainerRunner() {
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
         oppdatertBehandling.vedtaksid shouldBe vedtakId
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(3)
-        stubUtils.Verify()
+        stubUtils
+            .Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBM.ident}\"")
-        stubUtils.Verify()
+        stubUtils
+            .Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBarn1.ident}\"")
-        stubUtils.Verify()
+        stubUtils
+            .Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBarn2.ident}\"")
         stubUtils.Verify().forsendelseHentetForSak(SAKSNUMMER)
         stubUtils.Verify().forsendelseSlettet("1")
@@ -96,7 +99,8 @@ class VedtakHendelseTest : TestContainerRunner() {
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
         oppdatertBehandling.vedtaksid shouldBe vedtakId
         stubUtils.Verify().opprettForsendelseKaltAntallGanger(1)
-        stubUtils.Verify()
+        stubUtils
+            .Verify()
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBM.ident}\"")
     }
 
@@ -130,8 +134,8 @@ class VedtakHendelseTest : TestContainerRunner() {
         vedtakId: Int,
         behandlingId: Long,
         stonadType: Stønadstype = Stønadstype.BIDRAG18AAR,
-    ): VedtakHendelse {
-        return VedtakHendelse(
+    ): VedtakHendelse =
+        VedtakHendelse(
             type = Vedtakstype.FASTSETTELSE,
             stønadsendringListe =
                 listOf(
@@ -173,5 +177,4 @@ class VedtakHendelseTest : TestContainerRunner() {
                     ),
                 ),
         )
-    }
 }

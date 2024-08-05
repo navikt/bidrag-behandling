@@ -174,7 +174,8 @@ class VerdikjedeTest : KontrollerTestRunner() {
                 ),
             )
         val behandlingReq =
-            BehandlingControllerTest.oppretteBehandlingRequestTest("1900000", "4806", roller)
+            BehandlingControllerTest
+                .oppretteBehandlingRequestTest("1900000", "4806", roller)
                 .copy(
                     søktFomDato = LocalDate.parse("2023-01-01"),
                     mottattdato = LocalDate.parse("2023-01-01"),

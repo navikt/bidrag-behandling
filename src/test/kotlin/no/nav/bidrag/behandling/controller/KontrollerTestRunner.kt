@@ -65,13 +65,9 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
 
     val stubUtils: StubUtils = StubUtils()
 
-    protected fun rootUriV1(): String {
-        return "http://localhost:$port/api/v1"
-    }
+    protected fun rootUriV1(): String = "http://localhost:$port/api/v1"
 
-    protected fun rootUriV2(): String {
-        return "http://localhost:$port/api/v2"
-    }
+    protected fun rootUriV2(): String = "http://localhost:$port/api/v2"
 
     @BeforeEach
     fun initMocks() {

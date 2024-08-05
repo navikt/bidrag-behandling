@@ -102,8 +102,8 @@ data class TransformerInntekterRequestBuilder(
     val småbarnstillegg: List<Småbarnstillegg>? = emptyList(),
     val utvidetBarnetrygd: List<UtvidetBarnetrygd>? = emptyList(),
 ) {
-    fun bygge(): TransformerInntekterRequest {
-        return TransformerInntekterRequest(
+    fun bygge(): TransformerInntekterRequest =
+        TransformerInntekterRequest(
             ainntektHentetDato = ainntektHentetDato!!,
             ainntektsposter = ainntektsposter!!,
             skattegrunnlagsliste = skattegrunnlag!!,
@@ -112,5 +112,4 @@ data class TransformerInntekterRequestBuilder(
             småbarnstilleggliste = småbarnstillegg!!,
             barnetilleggsliste = barnetillegg!!,
         )
-    }
 }

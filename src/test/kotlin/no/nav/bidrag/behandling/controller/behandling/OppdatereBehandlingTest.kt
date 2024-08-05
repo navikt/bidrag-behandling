@@ -308,10 +308,14 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val inntekter = oppdatertBehandling.get().inntekter.toList()
         inntekter shouldHaveSize 7
         inntekter.filter { it.datoFom == nyttVirkningstidspunkt } shouldHaveSize 4
-        inntekter.find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }!!
+        inntekter
+            .find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }!!
             .datoFom shouldBe LocalDate.parse("2024-01-01")
         inntekter.filter { it.type == Inntektsrapportering.AINNTEKT } shouldHaveSize 2
-        inntekter.filter { it.type == Inntektsrapportering.AINNTEKT && !it.taMed && it.datoFom == null && it.datoTom == null } shouldHaveSize 1
+        inntekter.filter {
+            it.type == Inntektsrapportering.AINNTEKT && !it.taMed && it.datoFom == null && it.datoTom == null
+        } shouldHaveSize
+            1
         assertSoftly(inntekter.find { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }!!) {
             taMed shouldBe false
             datoFom shouldBe null
@@ -396,15 +400,20 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         oppdatertBehandling.get().virkningstidspunkt shouldBe nyttVirkningstidspunkt
         val inntekter = oppdatertBehandling.get().inntekter.toList()
         inntekter shouldHaveSize 6
-        inntekter.find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }!!
+        inntekter
+            .find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }!!
             .datoFom shouldBe LocalDate.parse("2024-01-01")
-        inntekter.find { it.type == Inntektsrapportering.KAPITALINNTEKT }!!
+        inntekter
+            .find { it.type == Inntektsrapportering.KAPITALINNTEKT }!!
             .datoFom shouldBe LocalDate.parse("2023-06-01")
-        inntekter.find { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }!!
+        inntekter
+            .find { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }!!
             .datoFom shouldBe LocalDate.parse("2023-02-01")
-        inntekter.find { it.type == Inntektsrapportering.AINNTEKT }!!
+        inntekter
+            .find { it.type == Inntektsrapportering.AINNTEKT }!!
             .datoFom shouldBe LocalDate.parse("2023-01-01")
-        inntekter.find { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }!!
+        inntekter
+            .find { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }!!
             .datoFom shouldBe LocalDate.parse("2023-02-01")
     }
 
@@ -511,7 +520,12 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
         val innhentingstidspunkt: LocalDateTime = LocalDate.of(2024, 1, 1).atStartOfDay()
         val grunnlagLagret =
             SkattegrunnlagGrunnlagDto(
-                periodeFra = YearMonth.now().minusYears(1).withMonth(1).atDay(1),
+                periodeFra =
+                    YearMonth
+                        .now()
+                        .minusYears(1)
+                        .withMonth(1)
+                        .atDay(1),
                 periodeTil = YearMonth.now().withMonth(1).atDay(1),
                 personId = behandling.bidragsmottaker!!.ident!!,
                 skattegrunnlagspostListe =
@@ -543,9 +557,10 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, true),
                 innhentingstidspunkt,
                 grunnlagsdata =
-                    opprettHentGrunnlagDto().copy(
-                        skattegrunnlagListe = listOf(grunnlagLagret),
-                    ).tilSummerteInntekter(behandling.bidragsmottaker!!),
+                    opprettHentGrunnlagDto()
+                        .copy(
+                            skattegrunnlagListe = listOf(grunnlagLagret),
+                        ).tilSummerteInntekter(behandling.bidragsmottaker!!),
             )
 
         val aktivereGrunnlagRequest =
@@ -651,7 +666,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, behandlingRes.statusCode)
 
-        behandlingRes.headers.get("Warning")
+        behandlingRes.headers
+            .get("Warning")
             ?.first() shouldBe "Validering feilet - Kan ikke slette behandling hvor vedtak er fattet"
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()

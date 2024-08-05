@@ -26,8 +26,8 @@ class BehandlingControllerTest : KontrollerTestRunner() {
             enhet: String,
             roller: Set<OpprettRolleDto>,
             søknadsid: Long = 100,
-        ): OpprettBehandlingRequest {
-            return OpprettBehandlingRequest(
+        ): OpprettBehandlingRequest =
+            OpprettBehandlingRequest(
                 Vedtakstype.FASTSETTELSE,
                 stønadstype = Stønadstype.FORSKUDD,
                 søktFomDato = LocalDate.now().minusMonths(4),
@@ -39,6 +39,5 @@ class BehandlingControllerTest : KontrollerTestRunner() {
                 engangsbeløpstype = null,
                 søknadsid = søknadsid,
             )
-        }
     }
 }

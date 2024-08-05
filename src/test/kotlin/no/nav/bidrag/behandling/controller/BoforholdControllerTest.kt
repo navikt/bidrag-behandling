@@ -198,7 +198,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsmedlem.shouldBeEmpty()
+                it.body
+                    ?.valideringsfeil
+                    ?.husstandsmedlem
+                    .shouldBeEmpty()
                 it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
@@ -295,26 +298,38 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsmedlem.shouldBeEmpty()
+                it.body
+                    ?.valideringsfeil
+                    ?.husstandsmedlem
+                    .shouldBeEmpty()
                 it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
             assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
                 oppdatertHusstandsmedlem!!.kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.ident shouldBe
-                    request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.personident!!.verdi
+                    request.oppdatereHusstandsmedlem!!
+                        .opprettHusstandsmedlem!!
+                        .personident!!
+                        .verdi
                 oppdatertHusstandsmedlem.navn shouldBe request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.navn
                 oppdatertHusstandsmedlem.perioder.shouldHaveSize(1)
                 oppdatertHusstandsmedlem.perioder.first().kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
-                oppdatertHusstandsmedlem.perioder.first().datoTom.shouldBeNull()
+                oppdatertHusstandsmedlem.perioder
+                    .first()
+                    .datoTom
+                    .shouldBeNull()
             }
 
             assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsmedlem) {
                 it.size shouldBe 3
                 it.find { nyttBarn ->
                     nyttBarn.ident ==
-                        request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.personident!!.verdi
+                        request.oppdatereHusstandsmedlem!!
+                            .opprettHusstandsmedlem!!
+                            .personident!!
+                            .verdi
                 } shouldNotBe null
             }
         }

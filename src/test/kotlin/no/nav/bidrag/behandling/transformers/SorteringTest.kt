@@ -480,7 +480,8 @@ class SorteringTest {
         val filtrertInntekter = inntekter.toList().ekskluderYtelserFørVirkningstidspunkt()
 
         filtrertInntekter shouldHaveSize 5
-        filtrertInntekter.map { it.type }
+        filtrertInntekter
+            .map { it.type }
             .shouldContainAll(
                 listOf(
                     Inntektsrapportering.SMÅBARNSTILLEGG,
@@ -559,7 +560,8 @@ class SorteringTest {
         val filtrertInntekter = inntekter.toList().ekskluderYtelserFørVirkningstidspunkt()
 
         filtrertInntekter shouldHaveSize 5
-        filtrertInntekter.map { it.type }
+        filtrertInntekter
+            .map { it.type }
             .shouldContainAll(
                 listOf(
                     Inntektsrapportering.SMÅBARNSTILLEGG,

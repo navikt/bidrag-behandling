@@ -14,34 +14,37 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 
 @Deprecated("Utgår når manuell oppdatering av sivilstand kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
 fun Set<SivilstandDto>.toSivilstandDomain(behandling: Behandling) =
-    this.map {
-        Sivilstand(behandling, it.datoFom, it.datoTom, it.sivilstand, it.kilde, it.id)
-    }.toMutableSet()
+    this
+        .map {
+            Sivilstand(behandling, it.datoFom, it.datoTom, it.sivilstand, it.kilde, it.id)
+        }.toMutableSet()
 
 @Deprecated("Utgår når manuell oppdatering av husstandsmedlem kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
 fun Set<HusstandsmedlemDtoV2>.toDomain(behandling: Behandling) =
-    this.map {
-        val barn =
-            Husstandsmedlem(
-                behandling,
-                it.kilde,
-                it.id,
-                it.ident,
-                it.navn,
-                it.fødselsdato,
-            )
-        barn.perioder = it.perioder.toDomain(barn).toMutableSet()
-        barn
-    }.toMutableSet()
+    this
+        .map {
+            val barn =
+                Husstandsmedlem(
+                    behandling,
+                    it.kilde,
+                    it.id,
+                    it.ident,
+                    it.navn,
+                    it.fødselsdato,
+                )
+            barn.perioder = it.perioder.toDomain(barn).toMutableSet()
+            barn
+        }.toMutableSet()
 
 @Deprecated("Utgår når manuell oppdatering av husstandsmedlem kun gjøres via endepunktet for oppdatering av boforhold (boforhold v2) ")
 fun Set<BostatusperiodeDto>.toDomain(husstandsmedlem: Husstandsmedlem) =
-    this.map {
-        Bostatusperiode(
-            husstandsmedlem,
-            it.datoFom,
-            it.datoTom,
-            it.bostatus,
-            it.kilde,
-        )
-    }.toSet()
+    this
+        .map {
+            Bostatusperiode(
+                husstandsmedlem,
+                it.datoFom,
+                it.datoTom,
+                it.bostatus,
+                it.kilde,
+            )
+        }.toSet()

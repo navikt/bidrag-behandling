@@ -30,7 +30,8 @@ abstract class CommonTestRunner {
     }
 
     private fun resetWiremockServers() {
-        applicationContext.getBeansOfType(WireMockServer::class.java)
+        applicationContext
+            .getBeansOfType(WireMockServer::class.java)
             .values
             .forEach(WireMockServer::resetAll)
     }

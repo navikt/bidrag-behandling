@@ -233,9 +233,7 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingDetaljerForSøknadsid(
         @PathVariable søknadsid: Long,
-    ): BehandlingDetaljerDtoV2 {
-        return behandlingService.henteBehandlingDetaljerForSøknadsid(søknadsid)
-    }
+    ): BehandlingDetaljerDtoV2 = behandlingService.henteBehandlingDetaljerForSøknadsid(søknadsid)
 
     @Suppress("unused")
     @GetMapping("/behandling/detaljer/{behandlingsid}")
@@ -251,9 +249,7 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingDetaljer(
         @PathVariable behandlingsid: Long,
-    ): BehandlingDetaljerDtoV2 {
-        return behandlingService.henteBehandlingDetaljer(behandlingsid)
-    }
+    ): BehandlingDetaljerDtoV2 = behandlingService.henteBehandlingDetaljer(behandlingsid)
 
     @Suppress("unused")
     @GetMapping("/behandling/{behandlingsid}")
@@ -270,9 +266,7 @@ class BehandlingControllerV2(
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
         @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
-    ): BehandlingDtoV2 {
-        return behandlingService.henteBehandling(behandlingsid, inkluderHistoriskeInntekter)
-    }
+    ): BehandlingDtoV2 = behandlingService.henteBehandling(behandlingsid, inkluderHistoriskeInntekter)
 
     @Suppress("unused")
     @DeleteMapping("/behandling/{behandlingsid}")
@@ -377,7 +371,5 @@ class BehandlingControllerV2(
     fun aktivereGrunnlag(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
-    ): AktivereGrunnlagResponseV2 {
-        return behandlingService.aktivereGrunnlag(behandlingsid, request)
-    }
+    ): AktivereGrunnlagResponseV2 = behandlingService.aktivereGrunnlag(behandlingsid, request)
 }

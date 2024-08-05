@@ -52,7 +52,8 @@ class DefaultConfiguration {
         @Value("\${UNLEASH_SERVER_API_TOKEN}") apiToken: String,
         @Value("\${UNLEASH_SERVER_API_ENV}") environment: String,
         @Value("\${UNLEASH_FETCH_SYNC:true}") fetchInSync: Boolean,
-    ) = UnleashConfig.builder()
+    ) = UnleashConfig
+        .builder()
         .appName(appName)
         .unleashAPI("$apiUrl/api/")
         .instanceId(appName)
@@ -70,7 +71,8 @@ class DefaultConfiguration {
 class DefaultUnleashContextProvider : UnleashContextProvider {
     override fun getContext(): UnleashContext {
         val userId = MDC.get("user")
-        return UnleashContext.builder()
+        return UnleashContext
+            .builder()
             .userId(userId)
             .appName(MDC.get("applicationKey"))
             .build()

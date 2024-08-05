@@ -40,12 +40,11 @@ class SpringTestRunner {
     }
 
     private fun resetWiremockServers() {
-        applicationContext.getBeansOfType(WireMockServer::class.java)
+        applicationContext
+            .getBeansOfType(WireMockServer::class.java)
             .values
             .forEach(WireMockServer::resetAll)
     }
 
-    protected fun getPort(): String {
-        return port.toString()
-    }
+    protected fun getPort(): String = port.toString()
 }

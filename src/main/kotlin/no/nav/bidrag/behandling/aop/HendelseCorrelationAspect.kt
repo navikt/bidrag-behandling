@@ -18,7 +18,9 @@ private val log = KotlinLogging.logger {}
 
 @Component
 @Aspect
-class HendelseCorrelationAspect(private val objectMapper: ObjectMapper) {
+class HendelseCorrelationAspect(
+    private val objectMapper: ObjectMapper,
+) {
     @Before(value = "execution(* no.nav.bidrag.behandling.kafka.VedtakHendelseListener.prossesserVedtakHendelse(..)) && args(hendelse)")
     fun leggSporingFraVedtakHendelseTilMDC(
         joinPoint: JoinPoint,
@@ -34,15 +36,14 @@ class HendelseCorrelationAspect(private val objectMapper: ObjectMapper) {
         }
     }
 
-    private fun hentSporingFraHendelse(hendelse: ConsumerRecord<String, String>): String? {
-        return try {
+    private fun hentSporingFraHendelse(hendelse: ConsumerRecord<String, String>): String? =
+        try {
             val vedtakHendelse = objectMapper.readValue(hendelse.value(), VedtakHendelse::class.java)
             vedtakHendelse.sporingsdata.correlationId
         } catch (e: Exception) {
             log.error(e) { "Det skjedde en feil ved konverting av melding fra hendelse" }
             null
         }
-    }
 
     @After(value = "execution(* no.nav.bidrag.behandling.kafka.VedtakHendelseListener.*(..))")
     fun clearCorrelationIdFromKafkaListener(joinPoint: JoinPoint) {

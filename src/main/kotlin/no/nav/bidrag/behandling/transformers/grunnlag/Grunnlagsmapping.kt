@@ -56,14 +56,15 @@ val List<SummertÅrsinntekt>.skattegrunnlagListe
 val List<SummertÅrsinntekt>.ainntektListe get() = filter { summertAinntektstyper.contains(it.inntektRapportering) }
 
 fun List<InntektPost>.tilInntektspost(inntekt: Inntekt) =
-    this.map {
-        Inntektspost(
-            beløp = it.beløp,
-            kode = it.kode,
-            inntektstype = it.inntekstype,
-            inntekt = inntekt,
-        )
-    }.toMutableSet()
+    this
+        .map {
+            Inntektspost(
+                beløp = it.beløp,
+                kode = it.kode,
+                inntektstype = it.inntekstype,
+                inntekt = inntekt,
+            )
+        }.toMutableSet()
 
 fun SummertÅrsinntekt.tilInntekt(
     behandling: Behandling,
@@ -104,9 +105,10 @@ fun SummertÅrsinntekt.tilInntekt(
 fun List<SummertÅrsinntekt>.tilInntekt(
     behandling: Behandling,
     person: Personident,
-) = this.map {
-    it.tilInntekt(behandling, person)
-}.toMutableSet()
+) = this
+    .map {
+        it.tilInntekt(behandling, person)
+    }.toMutableSet()
 
 fun Inntektsrapportering.tilGrunnlagsdataType() =
     when (this) {
