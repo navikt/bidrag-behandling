@@ -137,7 +137,8 @@ class ValiderGrunnlagTest {
             )
 
         val value = shouldThrow<RuntimeException> { request.validerGrunnlagsreferanser() }
-        value.message shouldContain "Feil i grunnlagsreferanser: Grunnlagslisten har duplikat grunnlagsreferanser for følgende referanse: ref_1"
+        value.message shouldContain
+            "Feil i grunnlagsreferanser: Grunnlagslisten har duplikat grunnlagsreferanser for følgende referanse: ref_1"
     }
 
     @Test
@@ -284,7 +285,8 @@ class ValiderGrunnlagTest {
             )
 
         val value = shouldThrow<RuntimeException> { request.validerGrunnlagsreferanser() }
-        value.message shouldContain "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" finnes ikke i grunnlagslisten\n" +
+        value.message shouldContain
+            "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" finnes ikke i grunnlagslisten\n" +
             "Grunnlaget med referanse \"ref_4\" referert av \"ref_1\" finnes ikke i grunnlagslisten\n" +
             "Grunnlaget med referanse \"ref_2\" referert av \"Stønadsendring(FORSKUDD, *1*2*3*1*)\" finnes ikke i grunnlagslisten\n" +
             "Grunnlaget med referanse \"ref_3\" referert av \"Stønadsendring(FORSKUDD, *1*2*3*1*)\" finnes ikke i grunnlagslisten"
@@ -359,7 +361,8 @@ class ValiderGrunnlagTest {
             )
 
         val value = shouldThrow<RuntimeException> { request.validerGrunnlagsreferanser() }
-        value.message shouldContain "Feil i grunnlagsreferanser: Grunnlaget INNTEKT_RAPPORTERING_PERIODE med inntektsrapportering KONTANTSTØTTE og referanse ref_1 mangler referanse til søknadsbarn\n" +
+        value.message shouldContain
+            "Feil i grunnlagsreferanser: Grunnlaget INNTEKT_RAPPORTERING_PERIODE med inntektsrapportering KONTANTSTØTTE og referanse ref_1 mangler referanse til søknadsbarn\n" +
             "Grunnlaget INNTEKT_RAPPORTERING_PERIODE med inntektsrapportering BARNETILLEGG og referanse ref_2 mangler referanse til søknadsbarn"
     }
 
@@ -420,7 +423,8 @@ class ValiderGrunnlagTest {
             )
 
         val value = shouldThrow<RuntimeException> { request.validerGrunnlagsreferanser() }
-        value.message shouldContain "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" inneholder sirkulær avhengighet. Referanseliste [ref_1, person_PERSON_BIDRAGSMOTTAKER_19780825_1]\n" +
+        value.message shouldContain
+            "Feil i grunnlagsreferanser: Grunnlaget med referanse \"ref_2\" referert av \"ref_1\" inneholder sirkulær avhengighet. Referanseliste [ref_1, person_PERSON_BIDRAGSMOTTAKER_19780825_1]\n" +
             "Grunnlaget med referanse \"ref_1\" referert av \"ref_2\" inneholder sirkulær avhengighet. Referanseliste [ref_2, person_PERSON_BIDRAGSMOTTAKER_19780825_1]"
     }
 

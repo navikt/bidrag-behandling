@@ -23,11 +23,23 @@ class BidragForsendelseConsumer(
         postForNonNullEntity(bidragForsendelsedUri.build().toUri(), payload)
 
     fun hentForsendelserISak(saksnummer: String): List<ForsendelseResponsTo> =
-        getForNonNullEntity(bidragForsendelsedUri.pathSegment("sak").pathSegment(saksnummer).pathSegment("forsendelser").build().toUri())
+        getForNonNullEntity(
+            bidragForsendelsedUri
+                .pathSegment("sak")
+                .pathSegment(saksnummer)
+                .pathSegment("forsendelser")
+                .build()
+                .toUri(),
+        )
 
     fun slettForsendelse(forsendelseId: Long) {
         postForEntity<Void>(
-            bidragForsendelsedUri.pathSegment("journal").pathSegment(forsendelseId.toString()).pathSegment("avvik").build().toUri(),
+            bidragForsendelsedUri
+                .pathSegment("journal")
+                .pathSegment(forsendelseId.toString())
+                .pathSegment("avvik")
+                .build()
+                .toUri(),
             Avvikshendelse(AvvikType.SLETT_JOURNALPOST),
         )
     }

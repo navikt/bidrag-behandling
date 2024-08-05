@@ -64,13 +64,14 @@ abstract class AktivGrunnlagTestFelles {
         behandling: Behandling,
         inntekter: Set<Inntekt>,
     ): Set<IkkeAktivInntektDto> =
-        grunnlagsdataTyperYtelser.flatMap {
-            behandling.grunnlag.toList().hentEndringerInntekter(
-                behandling.bidragsmottaker!!,
-                inntekter,
-                it,
-            )
-        }.toSet()
+        grunnlagsdataTyperYtelser
+            .flatMap {
+                behandling.grunnlag.toList().hentEndringerInntekter(
+                    behandling.bidragsmottaker!!,
+                    inntekter,
+                    it,
+                )
+            }.toSet()
 
     fun opprettInntekt(
         datoFom: YearMonth,

@@ -7,7 +7,9 @@ import no.nav.bidrag.commons.security.SikkerhetsKontekst
 import org.springframework.stereotype.Service
 
 @Service
-class TilgangskontrollService(private val tIlgangskontrollConsumer: BidragTilgangskontrollConsumer) {
+class TilgangskontrollService(
+    private val tIlgangskontrollConsumer: BidragTilgangskontrollConsumer,
+) {
     fun sjekkTilgangSak(saksnummer: String) {
         if (SikkerhetsKontekst.erIApplikasjonKontekst()) return
         if (!tIlgangskontrollConsumer.sjekkTilgangSak(saksnummer)) ingenTilgang("Ingen tilgang til saksnummer $saksnummer")

@@ -49,12 +49,12 @@ class DefaultExceptionHandler {
 
         LOGGER.error(feilmelding, exception)
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
             .header(
                 HttpHeaders.WARNING,
                 feilmelding,
-            )
-            .build<Any>()
+            ).build<Any>()
     }
 
     @ResponseBody
@@ -66,7 +66,8 @@ class DefaultExceptionHandler {
                 ?: exception.responseBodyAsString
         LOGGER.warn(feilmelding, exception)
         secureLogger.warn(exception) { "Feilmelding: $feilmelding. Innhold: $payloadFeilmelding" }
-        return ResponseEntity.status(exception.statusCode)
+        return ResponseEntity
+            .status(exception.statusCode)
             .header(HttpHeaders.WARNING, feilmelding)
             .body(payloadFeilmelding)
     }
@@ -84,7 +85,8 @@ class DefaultExceptionHandler {
     @ExceptionHandler(Exception::class)
     fun handleOtherExceptions(exception: Exception): ResponseEntity<*> {
         LOGGER.error("Det skjedde en ukjent feil: ${exception.message}", exception)
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .header(HttpHeaders.WARNING, exception.message)
             .body(exception.message ?: "Ukjent feil")
     }
@@ -92,7 +94,9 @@ class DefaultExceptionHandler {
     private fun getErrorMessage(exception: HttpStatusCodeException): String {
         val errorMessage = StringBuilder()
 
-        exception.responseHeaders?.get(HttpHeaders.WARNING)?.firstOrNull()
+        exception.responseHeaders
+            ?.get(HttpHeaders.WARNING)
+            ?.firstOrNull()
             ?.let { errorMessage.append(it) }
         if (exception.statusText.isNotEmpty()) {
             if (exception.statusCode == HttpStatus.BAD_REQUEST) {
@@ -136,5 +140,9 @@ class DefaultExceptionHandler {
         }
     }
 
-    data class CustomFieldError(val objectName: String, val field: String, val message: String)
+    data class CustomFieldError(
+        val objectName: String,
+        val field: String,
+        val message: String,
+    )
 }

@@ -211,7 +211,8 @@ class BehandlingDtoMappingTest {
         val behandling = oppretteBehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG, true, true)
 
         val andreVoksneUbehandla =
-            behandling.grunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && !it.erBearbeidet }
+            behandling.grunnlag
+                .find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && !it.erBearbeidet }
                 .konvertereData<Set<RelatertPersonGrunnlagDto>>()
 
         val andreVoksneUbehandlaOppdatert =
@@ -271,11 +272,18 @@ class BehandlingDtoMappingTest {
 
         // så
         assertSoftly(behandlingDto) { b ->
-            b.aktiveGrunnlagsdata.andreVoksneIHusstanden?.perioder?.shouldHaveSize(3)
-            b.ikkeAktiverteEndringerIGrunnlagsdata.andreVoksneIHusstanden?.perioder?.shouldHaveSize(2)
-            b.ikkeAktiverteEndringerIGrunnlagsdata.andreVoksneIHusstanden?.perioder!!.find {
-                it.status == Bostatuskode.BOR_MED_ANDRE_VOKSNE
-            }!!.husstandsmedlemmer shouldHaveSize 1
+            b.aktiveGrunnlagsdata.andreVoksneIHusstanden
+                ?.perioder
+                ?.shouldHaveSize(3)
+            b.ikkeAktiverteEndringerIGrunnlagsdata.andreVoksneIHusstanden
+                ?.perioder
+                ?.shouldHaveSize(2)
+            b.ikkeAktiverteEndringerIGrunnlagsdata.andreVoksneIHusstanden
+                ?.perioder!!
+                .find {
+                    it.status == Bostatuskode.BOR_MED_ANDRE_VOKSNE
+                }!!
+                .husstandsmedlemmer shouldHaveSize 1
         }
     }
 }

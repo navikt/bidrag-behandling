@@ -31,8 +31,8 @@ class RestConfig {
     fun clientRequestObservationConvention() = DefaultClientRequestObservationConvention()
 
     @Bean
-    fun jackson2ObjectMapperBuilder(): Jackson2ObjectMapperBuilder {
-        return Jackson2ObjectMapperBuilder()
+    fun jackson2ObjectMapperBuilder(): Jackson2ObjectMapperBuilder =
+        Jackson2ObjectMapperBuilder()
             .modules(
                 KotlinModule.Builder().build(),
                 JavaTimeModule()
@@ -45,9 +45,7 @@ class RestConfig {
                         // Denne trengs for å skrive ut år over 9999 riktig.
                         LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                     ),
-            )
-            .dateFormat(StdDateFormat())
+            ).dateFormat(StdDateFormat())
             .failOnUnknownProperties(false)
             .serializationInclusion(JsonInclude.Include.NON_NULL)
-    }
 }

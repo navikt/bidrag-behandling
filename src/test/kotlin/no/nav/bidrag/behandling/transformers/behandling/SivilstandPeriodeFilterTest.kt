@@ -50,7 +50,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
                 ),
             )
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2023-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2023-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 1
@@ -58,7 +59,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         }
 
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2022-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2022-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 2
@@ -67,7 +69,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         }
 
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2017-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2017-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 3
@@ -76,7 +79,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
             this[2].gyldigFom!! shouldBe YearMonth.of(2023, 1).atDay(1)
         }
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.now().plusMonths(3))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.now().plusMonths(3))
                 .toList(),
         ) {
             this shouldHaveSize 1
@@ -117,7 +121,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
                 ),
             )
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2023-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2023-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 2
@@ -126,7 +131,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         }
 
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2022-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2022-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 3
@@ -136,7 +142,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         }
 
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2017-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.parse("2017-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 3
@@ -146,7 +153,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         }
 
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.now().plusMonths(5))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandGrunnlagEtterVirkningstidspunkt(LocalDate.now().plusMonths(5))
                 .toList(),
         ) {
             this shouldHaveSize 2
@@ -179,7 +187,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
                 ),
             )
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(LocalDate.parse("2023-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(LocalDate.parse("2023-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 1
@@ -187,7 +196,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         }
 
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(LocalDate.parse("2022-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(LocalDate.parse("2022-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 2
@@ -196,7 +206,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         }
 
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(LocalDate.parse("2020-05-01"))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(LocalDate.parse("2020-05-01"))
                 .toList(),
         ) {
             this shouldHaveSize 3
@@ -206,7 +217,8 @@ class SivilstandPeriodeFilterTest : AktivGrunnlagTestFelles() {
         }
 
         assertSoftly(
-            sivilstandGrunnlagDtoList.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(LocalDate.now().plusMonths(56))
+            sivilstandGrunnlagDtoList
+                .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(LocalDate.now().plusMonths(56))
                 .toList(),
         ) {
             this shouldHaveSize 1

@@ -30,11 +30,11 @@ fun Set<SivilstandGrunnlagDto>.tilSivilstandRequest(
     endreSivilstand = null,
 )
 
-fun Behandling.henteNyesteSivilstandGrunnlagsdata(): List<SivilstandGrunnlagDto> {
-    return grunnlag.hentSisteAktiv()
+fun Behandling.henteNyesteSivilstandGrunnlagsdata(): List<SivilstandGrunnlagDto> =
+    grunnlag
+        .hentSisteAktiv()
         .find { !it.erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
         .konvertereData<List<SivilstandGrunnlagDto>>() ?: emptyList()
-}
 
 fun Set<Sivilstand>.tilSvilstandRequest(
     nyttEllerEndretInnslag: Sivilstandsperiode? = null,
@@ -141,8 +141,8 @@ fun Set<Sivilstand>.bestemmmeOriginalSivilstand(
     sletteInnslag?.let { id -> return this.find { it.id == id }?.tilSivilstandBeregnV2Dto() } ?: return null
 }
 
-fun bestemmeNySivilstand(nyttEllerEndretInnslag: Sivilstandsperiode?): SivilstandBeregnV2Dto? {
-    return nyttEllerEndretInnslag?.let {
+fun bestemmeNySivilstand(nyttEllerEndretInnslag: Sivilstandsperiode?): SivilstandBeregnV2Dto? =
+    nyttEllerEndretInnslag?.let {
         SivilstandBeregnV2Dto(
             periodeFom = it.fraOgMed,
             periodeTom = it.tilOgMed,
@@ -150,7 +150,6 @@ fun bestemmeNySivilstand(nyttEllerEndretInnslag: Sivilstandsperiode?): Sivilstan
             sivilstandskode = it.sivilstand,
         )
     }
-}
 
 private fun bestemmeEndringstype(
     nyttEllerEndretInnslag: Sivilstandsperiode? = null,

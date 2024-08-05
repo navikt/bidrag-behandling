@@ -340,7 +340,8 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                 }!!,
             ) {
                 inntektsposterSomErEndret shouldHaveSize 1
-                inntektsposterSomErEndret.find { it.kode == "arbeidsavklaringspenger" }!!.endringstype shouldBe GrunnlagInntektEndringstype.ENDRING
+                inntektsposterSomErEndret.find { it.kode == "arbeidsavklaringspenger" }!!.endringstype shouldBe
+                    GrunnlagInntektEndringstype.ENDRING
             }
             resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 0
 

@@ -41,8 +41,7 @@ class ArbeidOgInntektController(
                 .defaultHeader(
                     "Nav-A-inntekt-Filter",
                     if (behandling.stonadstype == Stønadstype.FORSKUDD) "BidragsforskuddA-Inntekt" else "BidragA-Inntekt",
-                )
-                .defaultHeader("Nav-Enhet", behandling.behandlerEnhet)
+                ).defaultHeader("Nav-Enhet", behandling.behandlerEnhet)
                 .defaultHeader("Nav-FagsakId", behandling.saksnummer)
                 .defaultHeader("Nav-Personident", request.ident)
                 .build()

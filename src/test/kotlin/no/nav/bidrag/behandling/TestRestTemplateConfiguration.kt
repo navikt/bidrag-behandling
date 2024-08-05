@@ -31,8 +31,8 @@ class TestRestTemplateConfiguration {
     fun unleash(): Unleash = FakeUnleash()
 
     @Bean
-    fun httpHeaderTestRestTemplate(): TestRestTemplate {
-        return TestRestTemplate(
+    fun httpHeaderTestRestTemplate(): TestRestTemplate =
+        TestRestTemplate(
             RestTemplateBuilder()
                 .additionalMessageConverters(MappingJackson2HttpMessageConverter())
                 .additionalInterceptors({ request, body, execution ->
@@ -40,18 +40,16 @@ class TestRestTemplateConfiguration {
                     execution.execute(request, body)
                 }),
         )
-    }
 
     @Bean
-    fun httpHeaderTestRestTemplateNoJackson(): TestRestTemplate {
-        return TestRestTemplate(
+    fun httpHeaderTestRestTemplateNoJackson(): TestRestTemplate =
+        TestRestTemplate(
             RestTemplateBuilder()
                 .additionalInterceptors({ request, body, execution ->
                     request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
                     execution.execute(request, body)
                 }),
         )
-    }
 
     protected fun generateBearerToken(): String {
         val iss = mockOAuth2Server.issuerUrl("aad")

@@ -19,7 +19,5 @@ class VedtakSimuleringController(
     )
     fun behandlingTilVedtak(
         @PathVariable behandlingId: Long,
-    ): VedtakDto {
-        return vedtakService.behandlingTilVedtakDto(behandlingId)
-    }
+    ): VedtakDto = vedtakService.behandlingTilVedtakDto(behandlingId)
 }

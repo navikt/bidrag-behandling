@@ -37,12 +37,11 @@ class ForsendelseService(
         return opprettForsendelse(request)
     }
 
-    private fun slettForsendelse(request: InitalizeForsendelseRequest): List<String> {
-        return slettVarselbrevUnderOpprettelse(
+    private fun slettForsendelse(request: InitalizeForsendelseRequest): List<String> =
+        slettVarselbrevUnderOpprettelse(
             request.saksnummer,
             request.behandlingInfo.soknadId,
         ).map { it.toString() }
-    }
 
     private fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         val opprettRequestTemplate =
@@ -149,8 +148,7 @@ class ForsendelseService(
     }
 }
 
-class OpprettForsendelseForRollerListe :
-    MutableList<ForsendelseRolleDto> by mutableListOf() {
+class OpprettForsendelseForRollerListe : MutableList<ForsendelseRolleDto> by mutableListOf() {
     fun leggTil(rolle: ForsendelseRolleDto?) {
         if (rolle?.fødselsnummer == null) return
         val fødselsnummer = rolle.fødselsnummer

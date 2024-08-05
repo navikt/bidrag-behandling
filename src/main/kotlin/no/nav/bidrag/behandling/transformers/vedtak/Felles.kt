@@ -35,18 +35,12 @@ fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto) =
     rolle.reellMottager?.verdi?.let { Personident(it) }
         ?: find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }!!.let { hentNyesteIdent(it.ident)!! }
 
-fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? {
-    return if (this == null || this is String && this.trim().isEmpty()) null else block(this)
-}
+fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? = if (this == null || this is String && this.trim().isEmpty()) null else block(this)
 
 fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
     if (this?.taMed == true) block(this)
 }
 
-fun <T> Boolean?.ifTrue(block: (Boolean) -> T?): T? {
-    return if (this == true) block(this) else null
-}
+fun <T> Boolean?.ifTrue(block: (Boolean) -> T?): T? = if (this == true) block(this) else null
 
-fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? {
-    return if (this == false) block(this) else null
-}
+fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? = if (this == false) block(this) else null

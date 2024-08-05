@@ -53,8 +53,8 @@ open class Inntekt(
     val opprinneligPeriode get() = opprinneligFom?.let { ÅrMånedsperiode(it, opprinneligTom) }
     val periode get() = datoFom?.let { ÅrMånedsperiode(it, datoTom) }
 
-    override fun toString(): String {
-        return try {
+    override fun toString(): String =
+        try {
             "Inntekt($type, beløp=$belop, datoFom=$datoFom, " +
                 "datoTom=$datoTom, ident='$ident', gjelderBarn='$gjelderBarn'," +
                 "opprinneligFom=$opprinneligFom, opprinneligTom=$opprinneligTom, " +
@@ -62,5 +62,4 @@ open class Inntekt(
         } catch (e: Exception) {
             "Inntekt${this.hashCode()}"
         }
-    }
 }

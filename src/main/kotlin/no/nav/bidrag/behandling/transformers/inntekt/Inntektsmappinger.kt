@@ -56,9 +56,8 @@ fun Inntekt.bestemDatoTomForOffentligInntekt() =
         }
     }
 
-fun Inntekt.skalAutomatiskSettePeriode(): Boolean {
-    return kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type) && erOpprinneligPeriodeInnenforVirkningstidspunkt()
-}
+fun Inntekt.skalAutomatiskSettePeriode(): Boolean =
+    kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type) && erOpprinneligPeriodeInnenforVirkningstidspunkt()
 
 fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
     opprinneligFom?.let { fom ->
@@ -72,7 +71,8 @@ fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
                     false
                 } else {
                     virkningstidspunkt in fom..tom ||
-                        virkningstidspunktEllerStartenAvNesteMåned >= fom && tom.isAfter(virkningstidspunkt)
+                        virkningstidspunktEllerStartenAvNesteMåned >= fom &&
+                        tom.isAfter(virkningstidspunkt)
                 }
             }
         }
@@ -149,14 +149,15 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         ident = Personident(gjelder),
         kilde = Kilde.OFFENTLIG,
         inntektsposter =
-            inntektPostListe.map {
-                InntektspostDtoV2(
-                    kode = it.kode,
-                    visningsnavn = finnVisningsnavn(it.kode),
-                    inntektstype = it.inntekstype,
-                    beløp = it.beløp,
-                )
-            }.toSet(),
+            inntektPostListe
+                .map {
+                    InntektspostDtoV2(
+                        kode = it.kode,
+                        visningsnavn = finnVisningsnavn(it.kode),
+                        inntektstype = it.inntekstype,
+                        beløp = it.beløp,
+                    )
+                }.toSet(),
         inntektstyper = emptySet(),
         datoFom = gjelderÅrMåned.atDay(1),
         datoTom = gjelderÅrMåned.atEndOfMonth(),
@@ -230,14 +231,15 @@ fun Inntekt.tilIkkeAktivInntektDto(
     innhentetTidspunkt = innhentetTidspunkt,
     originalId = id,
     inntektsposter =
-        inntektsposter.map {
-            InntektspostDtoV2(
-                it.kode,
-                finnVisningsnavn(it.kode),
-                it.inntektstype,
-                it.beløp.nærmesteHeltall,
-            )
-        }.toSet(),
+        inntektsposter
+            .map {
+                InntektspostDtoV2(
+                    it.kode,
+                    finnVisningsnavn(it.kode),
+                    it.inntektstype,
+                    it.beløp.nærmesteHeltall,
+                )
+            }.toSet(),
 )
 
 fun SummertÅrsinntekt.tilIkkeAktivInntektDto(
@@ -337,23 +339,25 @@ fun opprettTransformerInntekterRequest(
             )
         },
     barnetilleggsliste =
-        innhentetGrunnlag.barnetilleggListe.filter {
-            harBarnRolleIBehandling(
-                it.barnPersonId,
-                behandling,
-            )
-        }.tilBarnetillegg(
-            rolleInhentetFor,
-        ),
+        innhentetGrunnlag.barnetilleggListe
+            .filter {
+                harBarnRolleIBehandling(
+                    it.barnPersonId,
+                    behandling,
+                )
+            }.tilBarnetillegg(
+                rolleInhentetFor,
+            ),
     kontantstøtteliste =
-        innhentetGrunnlag.kontantstøtteListe.filter {
-            harBarnRolleIBehandling(
-                it.barnPersonId,
-                behandling,
-            )
-        }.tilKontantstøtte(
-            rolleInhentetFor,
-        ),
+        innhentetGrunnlag.kontantstøtteListe
+            .filter {
+                harBarnRolleIBehandling(
+                    it.barnPersonId,
+                    behandling,
+                )
+            }.tilKontantstøtte(
+                rolleInhentetFor,
+            ),
     skattegrunnlagsliste =
         innhentetGrunnlag.skattegrunnlagListe.tilSkattegrunnlagForLigningsår(
             rolleInhentetFor,

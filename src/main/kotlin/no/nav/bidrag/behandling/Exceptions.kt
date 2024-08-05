@@ -88,11 +88,14 @@ fun finnesFraFørException(behandlingsid: Long): Nothing =
         "Forsøk på å oppdatere behandling $behandlingsid feilet pga duplikate data.",
     )
 
-class KunneIkkeLeseMeldingFraHendelse(melding: String?, throwable: Throwable) :
-    RuntimeException(melding, throwable)
+class KunneIkkeLeseMeldingFraHendelse(
+    melding: String?,
+    throwable: Throwable,
+) : RuntimeException(melding, throwable)
 
-class BeregningAvResultatForBehandlingFeilet(val feilmeldinger: List<String>) :
-    HttpClientErrorException(
+class BeregningAvResultatForBehandlingFeilet(
+    val feilmeldinger: List<String>,
+) : HttpClientErrorException(
         HttpStatus.BAD_REQUEST,
         "Beregning av resultat feilet med: ${feilmeldinger.joinToString(", ")}",
     )

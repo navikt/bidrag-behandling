@@ -387,9 +387,11 @@ class VedtakInnhentetGrunnlagTest {
                 val personGrunnlagHusstandsmedlemListe = it.hentGrunnlagPersonHusstandsmedlem()
                 val husstandGrunnlag = it.hentGrunnlagHusstand()
                 husstandGrunnlag shouldHaveSize 4
-                husstandGrunnlag.hentHusstandsmedlemMedReferanse(søknadsbarnGrunnlag2.referanse)
+                husstandGrunnlag
+                    .hentHusstandsmedlemMedReferanse(søknadsbarnGrunnlag2.referanse)
                     .shouldHaveSize(1)
-                husstandGrunnlag.hentHusstandsmedlemMedReferanse(personGrunnlagHusstandsmedlemListe[0].referanse)
+                husstandGrunnlag
+                    .hentHusstandsmedlemMedReferanse(personGrunnlagHusstandsmedlemListe[0].referanse)
                     .shouldHaveSize(1)
 
                 assertSoftly(husstandGrunnlag[0]) {
@@ -479,7 +481,9 @@ class VedtakInnhentetGrunnlagTest {
                     "grunnlagresponse.json",
                 )
             assertSoftly(
-                grunnlagListe.toList().tilInnhentetGrunnlagInntekt(personobjekter)
+                grunnlagListe
+                    .toList()
+                    .tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
                 this shouldHaveSize 10
@@ -503,7 +507,8 @@ class VedtakInnhentetGrunnlagTest {
                     opprettSkattegrunnlagGrunnlagListe(),
                 )
             assertSoftly(
-                grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
+                grunnlagListe
+                    .tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
                 it shouldHaveSize 5
@@ -548,7 +553,8 @@ class VedtakInnhentetGrunnlagTest {
                     opprettSkattegrunnlagGrunnlagListe(),
                 )
             assertSoftly(
-                grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
+                grunnlagListe
+                    .tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
                 this shouldHaveSize 5
@@ -607,7 +613,8 @@ class VedtakInnhentetGrunnlagTest {
                     ),
                 ).flatten()
             assertSoftly(
-                grunnlagListe.tilInnhentetGrunnlagInntekt(personobjekter)
+                grunnlagListe
+                    .tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
                 this shouldHaveSize 13
@@ -738,7 +745,8 @@ class VedtakInnhentetGrunnlagTest {
                 )
             val grunnlagListe = opprettArbeidsforholdGrunnlagListe().tilGrunnlagEntity(behandling)
             assertSoftly(
-                grunnlagListe.tilInnhentetArbeidsforhold(personobjekter)
+                grunnlagListe
+                    .tilInnhentetArbeidsforhold(personobjekter)
                     .toList(),
             ) {
                 it shouldHaveSize 2
