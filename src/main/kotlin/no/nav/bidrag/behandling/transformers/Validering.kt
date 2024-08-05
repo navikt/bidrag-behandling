@@ -158,7 +158,7 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
     ) {
         feilliste.add("Begrunnelse må settes hvis kravbeløp er ulik godkjent beløp")
     }
-    if (kravbeløp <= BigDecimal.ZERO) {
+    if (!behandling.erDatoForUtgiftForeldet(dato) && kravbeløp <= BigDecimal.ZERO) {
         feilliste.add("Kravbeløp kan ikke være 0 eller negativt")
     }
 

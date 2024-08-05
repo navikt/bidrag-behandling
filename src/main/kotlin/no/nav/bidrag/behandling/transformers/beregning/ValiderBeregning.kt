@@ -118,7 +118,7 @@ fun Behandling.validerTekniskForBeregningAvSærbidrag() {
     if (stonadstype != null) {
         feilListe.add("Stønadstype $stonadstype er ikke null.")
     }
-    if (virkningstidspunkt != LocalDate.now().withDayOfMonth(1)) {
+    if (!erKlageEllerOmgjøring && virkningstidspunkt != LocalDate.now().withDayOfMonth(1)) {
         feilListe.add(
             "Virkningstidspunkt $virkningstidspunkt er ikke første dag i inneværende måned. " +
                 "Dette er ikke gyldig for beregning av særbidrag.",
