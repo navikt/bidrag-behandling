@@ -1038,7 +1038,6 @@ fun oppretteBehandling(
         else -> throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
     }
 
-    behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "notat virkning med i vedtak"
     behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
 
     val parterIBehandlingen = hashMapOf(1 to testdataBM, 2 to testdataBarn1, 3 to testdataBarn2)

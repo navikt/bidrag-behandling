@@ -81,11 +81,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
         behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
@@ -279,11 +277,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling avslag`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
         behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
@@ -465,11 +461,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling direkte avslag`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()

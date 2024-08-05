@@ -126,11 +126,8 @@ class VedtakTilBehandlingForskuddTest {
             soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
-            virkningstidspunktsbegrunnelseIVedtakOgNotat shouldBe "Notat virkningstidspunkt med i vedtak"
             virkningstidspunktbegrunnelseKunINotat shouldBe "Notat virkningstidspunkt"
-            boforholdsbegrunnelseIVedtakOgNotat shouldBe "Notat boforhold med i vedtak"
             boforholdsbegrunnelseKunINotat shouldBe "Notat boforhold"
-            inntektsbegrunnelseIVedtakOgNotat shouldBe "Notat inntekt med i vedtak"
             inntektsbegrunnelseKunINotat shouldBe "Notat inntekt"
             validerRoller()
             validerHusstandsmedlem()

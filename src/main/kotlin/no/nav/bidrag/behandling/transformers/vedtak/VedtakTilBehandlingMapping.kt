@@ -196,22 +196,11 @@ fun VedtakDto.tilBehandling(
             soknadsid = søknadId ?: this.søknadId!!,
             boforholdsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false),
             utgiftsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.UTGIFTER, false),
-            boforholdsbegrunnelseIVedtakOgNotat =
-                notatMedType(
-                    NotatGrunnlag.NotatType.BOFORHOLD,
-                    true,
-                ),
             virkningstidspunktbegrunnelseKunINotat =
                 notatMedType(
                     NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
                     false,
                 ),
-            virkningstidspunktsbegrunnelseIVedtakOgNotat =
-                notatMedType(
-                    NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                    true,
-                ),
-            inntektsbegrunnelseIVedtakOgNotat = notatMedType(NotatGrunnlag.NotatType.INNTEKT, true),
             inntektsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.INNTEKT, false),
         )
     behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)

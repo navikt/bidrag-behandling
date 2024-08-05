@@ -158,7 +158,7 @@ fun Behandling.tilBehandlingDtoV2(
             avslag = avslag,
             notat =
                 BehandlingNotatDto(
-                    medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+                    medIVedtaket = null,
                     kunINotat = virkningstidspunktbegrunnelseKunINotat,
                 ),
         ),
@@ -302,7 +302,7 @@ fun Behandling.tilBoforholdV2() =
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
             BehandlingNotatDto(
-                medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+                medIVedtaket = null,
                 kunINotat = boforholdsbegrunnelseKunINotat,
             ),
         egetBarnErEnesteVoksenIHusstanden = egetBarnErEnesteVoksenIHusstanden,
@@ -380,7 +380,7 @@ fun Behandling.tilInntektDtoV2(
             },
     notat =
         BehandlingNotatDto(
-            medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+            medIVedtaket = null,
             kunINotat = inntektsbegrunnelseKunINotat,
         ),
     valideringsfeil = hentInntekterValideringsfeil(),

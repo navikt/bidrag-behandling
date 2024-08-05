@@ -137,12 +137,9 @@ class VedtakserviceForskuddTest {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en forskudd behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -432,9 +429,7 @@ class VedtakserviceForskuddTest {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.avslag = Resultatkode.AVSLAG
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         every { behandlingService.hentBehandlingById(any()) } returns behandling
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
