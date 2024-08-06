@@ -310,7 +310,11 @@ class GrunnlagService(
                 boforhold.tilBoforholdVoksneRequest(),
             )
 
-        overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(behandling, andreVoksneIHusstandenPeriodisert, rekalkulerOgOverskriveAktiverte)
+        overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
+            behandling,
+            andreVoksneIHusstandenPeriodisert,
+            rekalkulerOgOverskriveAktiverte,
+        )
     }
 
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
@@ -1128,12 +1132,14 @@ class GrunnlagService(
                 aktivtGrunnlag = sistInnhentedeGrunnlagAvTypeForRolle,
                 behandling = behandling,
             )
-
-        if (erFørstegangsinnhenting &&
+        val skalLagres =
             innhentetGrunnlag.isNotEmpty() ||
-            erGrunnlagEndret &&
-            nyesteGrunnlag?.aktiv != null
-        ) {
+                Grunnlagstype(
+                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    false,
+                ) == grunnlagstype
+
+        if (erFørstegangsinnhenting && skalLagres || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
             val aktivert =
                 if (nyesteGrunnlag?.aktiv != null) {
                     aktiveringstidspunkt
