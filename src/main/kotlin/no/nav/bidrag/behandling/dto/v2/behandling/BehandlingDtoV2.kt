@@ -189,7 +189,7 @@ data class IkkeAktiveInntekter(
 }
 
 data class Grunnlagsinnhentingsfeil(
-    val rolleid: Long,
+    val rolle: RolleDto,
     val grunnlagsdatatype: Grunnlagsdatatype,
     val feilmelding: String,
     @JsonDeserialize(using = PeriodeDeserialiserer::class)
