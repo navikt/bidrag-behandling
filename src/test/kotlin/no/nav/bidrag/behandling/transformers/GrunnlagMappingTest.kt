@@ -170,10 +170,10 @@ class GrunnlagMappingTest {
             val grunnlag = behandling.byggGrunnlagGenerelt()
 
             assertSoftly(grunnlag.toList()) {
-                it shouldHaveSize 8
+                it shouldHaveSize 5
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
-                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 6
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 3
             }
         }
 
@@ -189,10 +189,10 @@ class GrunnlagMappingTest {
             val grunnlag = behandling.byggGrunnlagGenerelt()
 
             assertSoftly(grunnlag.toList()) {
-                it shouldHaveSize 8
+                it shouldHaveSize 6
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
-                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 5
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 3
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SÆRBIDRAG_KATEGORI) shouldHaveSize 1
             }
         }
@@ -1797,7 +1797,7 @@ class GrunnlagMappingTest {
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
 
             assertSoftly(behandling.byggGrunnlagNotater().toList()) {
-                shouldHaveSize(4)
+                shouldHaveSize(3)
                 assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
                     innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
@@ -1809,11 +1809,6 @@ class GrunnlagMappingTest {
                     type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
                 }
                 assertSoftly(it[2].innholdTilObjekt<NotatGrunnlag>()) {
-                    erMedIVedtaksdokumentet shouldBe true
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
-                }
-                assertSoftly(it[3].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.inntektsbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
                     type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.INNTEKT
                 }
@@ -1828,32 +1823,18 @@ class GrunnlagMappingTest {
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
 
             assertSoftly(behandling.byggGrunnlagNotater().toList()) {
-                shouldHaveSize(6)
+                shouldHaveSize(3)
                 assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
                     innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
                     type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
                 }
                 assertSoftly(it[1].innholdTilObjekt<NotatGrunnlag>()) {
-                    erMedIVedtaksdokumentet shouldBe true
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
+                    erMedIVedtaksdokumentet shouldBe false
+                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
                 }
                 assertSoftly(it[2].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.boforholdsbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
-                }
-                assertSoftly(it[3].innholdTilObjekt<NotatGrunnlag>()) {
-                    erMedIVedtaksdokumentet shouldBe true
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
-                }
-                assertSoftly(it[4].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.inntektsbegrunnelseKunINotat
-                    erMedIVedtaksdokumentet shouldBe false
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.INNTEKT
-                }
-                assertSoftly(it[5].innholdTilObjekt<NotatGrunnlag>()) {
-                    erMedIVedtaksdokumentet shouldBe true
                     type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.INNTEKT
                 }
             }

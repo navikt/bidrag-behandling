@@ -54,7 +54,6 @@ class LesBehandlingTest : BehandlingControllerTest() {
             virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             notat.kunINotat shouldBe "Notat virkningstidspunkt"
-            notat.medIVedtaket shouldBe "Notat virkningstidspunkt med i vedtak"
         }
 
         assertSoftly(behandling.inntekter) {
@@ -67,14 +66,12 @@ class LesBehandlingTest : BehandlingControllerTest() {
                 .shouldBeEmpty()
             månedsinntekter shouldHaveSize 25
             notat.kunINotat shouldBe "Notat inntekt"
-            notat.medIVedtaket shouldBe "Notat inntekt med i vedtak"
         }
 
         assertSoftly(behandling.boforhold) {
             husstandsmedlem shouldHaveSize 6
             sivilstand shouldHaveSize 2
             notat.kunINotat shouldBe "Notat boforhold"
-            notat.medIVedtaket shouldBe "Notat boforhold med i vedtak"
         }
 
         val aktiveGrunnlagsdata = behandling.aktiveGrunnlagsdata
