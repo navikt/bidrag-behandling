@@ -80,16 +80,10 @@ open class Behandling(
     @Column(name = "avslag")
     @Enumerated(EnumType.STRING)
     open var avslag: Resultatkode? = null,
-    @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_VEDTAK_OG_NOTAT")
-    open var virkningstidspunktsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_KUN_NOTAT")
     open var virkningstidspunktbegrunnelseKunINotat: String? = null,
-    @Column(name = "BOFORHOLDSBEGRUNNELSE_VEDTAK_OG_NOTAT")
-    open var boforholdsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "BOFORHOLDSBEGRUNNELSE_KUN_NOTAT")
     open var boforholdsbegrunnelseKunINotat: String? = null,
-    @Column(name = "INNTEKTSBEGRUNNELSE_VEDTAK_OG_NOTAT")
-    open var inntektsbegrunnelseIVedtakOgNotat: String? = null,
     @Column(name = "INNTEKTSBEGRUNNELSE_KUN_NOTAT")
     open var inntektsbegrunnelseKunINotat: String? = null,
     @Column(name = "UTGIFTSBEGRUNNELSE_KUN_NOTAT")

@@ -137,12 +137,9 @@ class VedtakserviceForskuddTest {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en forskudd behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.refVedtaksid = 553
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -171,8 +168,8 @@ class VedtakserviceForskuddTest {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            withClue("Grunnlagliste skal inneholde 78 grunnlag") {
-                request.grunnlagListe shouldHaveSize 78
+            withClue("Grunnlagliste skal inneholde 75 grunnlag") {
+                request.grunnlagListe shouldHaveSize 75
             }
         }
 
@@ -200,7 +197,7 @@ class VedtakserviceForskuddTest {
                 innhold.summertMånedsinntektListe.shouldHaveSize(13)
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
-                shouldHaveSize(6)
+                shouldHaveSize(3)
                 assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
                     innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
@@ -432,9 +429,7 @@ class VedtakserviceForskuddTest {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.avslag = Resultatkode.AVSLAG
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         every { behandlingService.hentBehandlingById(any()) } returns behandling
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
@@ -454,7 +449,7 @@ class VedtakserviceForskuddTest {
             request.type shouldBe Vedtakstype.FASTSETTELSE
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe shouldHaveSize 9
+            request.grunnlagListe shouldHaveSize 7
             assertSoftly(behandlingsreferanseListe) { behandlingRef ->
                 behandlingRef shouldHaveSize 2
                 with(behandlingRef[0]) {
@@ -472,7 +467,7 @@ class VedtakserviceForskuddTest {
                     it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
                     it[0].skyldner.verdi shouldBe "NAV"
-                    it[0].grunnlagReferanseListe.shouldHaveSize(6)
+                    it[0].grunnlagReferanseListe.shouldHaveSize(4)
                     it[0].grunnlagReferanseListe.forEach {
                         grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
                     }
@@ -495,7 +490,7 @@ class VedtakserviceForskuddTest {
                     it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
                     it[1].skyldner.verdi shouldBe "NAV"
-                    it[1].grunnlagReferanseListe.shouldHaveSize(6)
+                    it[1].grunnlagReferanseListe.shouldHaveSize(4)
                     it[1].grunnlagReferanseListe.forEach {
                         grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
                     }
@@ -570,7 +565,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
             it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
             it[0].skyldner.verdi shouldBe "NAV"
             it[0].omgjørVedtakId shouldBe 553
-            it[0].grunnlagReferanseListe.shouldHaveSize(8)
+            it[0].grunnlagReferanseListe.shouldHaveSize(5)
             it[0].grunnlagReferanseListe.forEach {
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
@@ -598,7 +593,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
             it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
             it[1].skyldner.verdi shouldBe "NAV"
             it[1].omgjørVedtakId shouldBe 553
-            it[1].grunnlagReferanseListe.shouldHaveSize(8)
+            it[1].grunnlagReferanseListe.shouldHaveSize(5)
             it[1].grunnlagReferanseListe.forEach {
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }

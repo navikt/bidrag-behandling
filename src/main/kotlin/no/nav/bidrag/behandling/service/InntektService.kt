@@ -190,7 +190,7 @@ class InntektService(
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
             notat =
                 BehandlingNotatDto(
-                    medIVedtaket = behandling.inntektsbegrunnelseIVedtakOgNotat,
+                    medIVedtaket = null,
                     kunINotat = behandling.inntektsbegrunnelseKunINotat,
                 ),
         )

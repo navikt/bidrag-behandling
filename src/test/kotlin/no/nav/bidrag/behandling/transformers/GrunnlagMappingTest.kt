@@ -162,42 +162,37 @@ class GrunnlagMappingTest {
         @Test
         fun `skal bygge grunnlag for stønad for forskudd`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-            behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-            behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
             behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-            behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
             behandling.stonadstype = Stønadstype.FORSKUDD
             behandling.engangsbeloptype = null
             val grunnlag = behandling.byggGrunnlagGenerelt()
 
             assertSoftly(grunnlag.toList()) {
-                it shouldHaveSize 8
+                it shouldHaveSize 5
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
-                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 6
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 3
             }
         }
 
         @Test
         fun `skal bygge grunnlag for engangsbeløp for særbidrag`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
-            behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
             behandling.utgiftsbegrunnelseKunINotat = "Utgift notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-            behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
             behandling.stonadstype = null
             behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
 
             val grunnlag = behandling.byggGrunnlagGenerelt()
 
             assertSoftly(grunnlag.toList()) {
-                it shouldHaveSize 8
+                it shouldHaveSize 6
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
-                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 5
+                it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 3
                 it.filtrerBasertPåEgenReferanse(Grunnlagstype.SÆRBIDRAG_KATEGORI) shouldHaveSize 1
             }
         }
@@ -1797,15 +1792,12 @@ class GrunnlagMappingTest {
         @Test
         fun `skal opprette grunnlag for notat og ikke ta med notat hvis tom eller null`() {
             val behandling = opprettBehandling()
-            behandling.inntektsbegrunnelseIVedtakOgNotat = null
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-            behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "   "
             behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-            behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
 
             assertSoftly(behandling.byggGrunnlagNotater().toList()) {
-                shouldHaveSize(4)
+                shouldHaveSize(3)
                 assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
                     innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
@@ -1817,12 +1809,6 @@ class GrunnlagMappingTest {
                     type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
                 }
                 assertSoftly(it[2].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.boforholdsbegrunnelseIVedtakOgNotat
-                    erMedIVedtaksdokumentet shouldBe true
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
-                }
-                assertSoftly(it[3].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.inntektsbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
                     type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.INNTEKT
                 }
@@ -1832,43 +1818,23 @@ class GrunnlagMappingTest {
         @Test
         fun `skal opprette grunnlag for notat`() {
             val behandling = opprettBehandling()
-            behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-            behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
             behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-            behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
 
             assertSoftly(behandling.byggGrunnlagNotater().toList()) {
-                shouldHaveSize(6)
+                shouldHaveSize(3)
                 assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
                     innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
                     type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
                 }
                 assertSoftly(it[1].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat
-                    erMedIVedtaksdokumentet shouldBe true
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
+                    erMedIVedtaksdokumentet shouldBe false
+                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
                 }
                 assertSoftly(it[2].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.boforholdsbegrunnelseKunINotat
                     erMedIVedtaksdokumentet shouldBe false
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
-                }
-                assertSoftly(it[3].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.boforholdsbegrunnelseIVedtakOgNotat
-                    erMedIVedtaksdokumentet shouldBe true
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
-                }
-                assertSoftly(it[4].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.inntektsbegrunnelseKunINotat
-                    erMedIVedtaksdokumentet shouldBe false
-                    type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.INNTEKT
-                }
-                assertSoftly(it[5].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.inntektsbegrunnelseIVedtakOgNotat
-                    erMedIVedtaksdokumentet shouldBe true
                     type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.INNTEKT
                 }
             }

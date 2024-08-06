@@ -137,20 +137,11 @@ fun Behandling.byggGrunnlagNotater() =
         virkningstidspunktbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, false, it)
         },
-        virkningstidspunktsbegrunnelseIVedtakOgNotat?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, true, it)
-        },
         boforholdsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.BOFORHOLD, false, it)
         },
-        boforholdsbegrunnelseIVedtakOgNotat?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(NotatGrunnlag.NotatType.BOFORHOLD, true, it)
-        },
         inntektsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.INNTEKT, false, it)
-        },
-        inntektsbegrunnelseIVedtakOgNotat?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(NotatGrunnlag.NotatType.INNTEKT, true, it)
         },
         utgiftsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
             opprettGrunnlagNotat(NotatGrunnlag.NotatType.UTGIFTER, false, it)

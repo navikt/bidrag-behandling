@@ -91,12 +91,9 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettJournalpost("12333")
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktsbegrunnelseIVedtakOgNotat = "Virkningstidspunkt"
         behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         save(behandling)
 
         stubUtils.stubHentSak(opprettSakForBehandling(behandling))
@@ -128,11 +125,9 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettJournalpost("12333")
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseIVedtakOgNotat = "Inntektsbegrunnelse"
         behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
         behandling.utgiftsbegrunnelseKunINotat = "Utgifter kun i notat"
         behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-        behandling.boforholdsbegrunnelseIVedtakOgNotat = "Boforhold kun i notat"
         behandling.husstandsmedlem = mutableSetOf()
         testdataManager.lagreBehandling(behandling)
 

@@ -249,7 +249,12 @@ class NotatOpplysningerService(
                             status = it.bostatus!!,
                             detaljer =
                                 AndreVoksneIHusstandenDetaljerDto(
-                                    totalAntallHusstandsmedlemmer = grunnlag.hentAlleAndreVoksneHusstandForPeriode(periode, true).size,
+                                    totalAntallHusstandsmedlemmer =
+                                        grunnlag
+                                            .hentAlleAndreVoksneHusstandForPeriode(
+                                                periode,
+                                                true,
+                                            ).size,
                                     husstandsmedlemmer =
                                         grunnlag.hentBegrensetAndreVoksneHusstandForPeriode(periode, true).map { hm ->
                                             VoksenIHusstandenDetaljerDto(
@@ -298,6 +303,7 @@ class NotatOpplysningerService(
                                     },
                             )
                         }
+
                     TypeBehandling.SÆRBIDRAG ->
                         beregningService.beregneSærbidrag(this).tilDto(this).let {
                             listOf(
@@ -331,6 +337,7 @@ class NotatOpplysningerService(
                                 ),
                             )
                         }
+
                     else -> emptyList()
                 }
             } catch (e: Exception) {
@@ -345,21 +352,21 @@ class NotatOpplysningerService(
     }
 }
 
-private fun Behandling.tilNotatBoforhold() =
+private fun Behandling.tilNotatBoforhold(): SaksbehandlerNotat =
     SaksbehandlerNotat(
-        medIVedtaket = boforholdsbegrunnelseIVedtakOgNotat,
+        medIVedtaket = null,
         intern = boforholdsbegrunnelseKunINotat,
     )
 
 private fun Behandling.tilNotatVirkningstidspunkt() =
     SaksbehandlerNotat(
-        medIVedtaket = virkningstidspunktsbegrunnelseIVedtakOgNotat,
+        medIVedtaket = null,
         intern = virkningstidspunktbegrunnelseKunINotat,
     )
 
 private fun Behandling.tilNotatInntekt() =
     SaksbehandlerNotat(
-        medIVedtaket = inntektsbegrunnelseIVedtakOgNotat,
+        medIVedtaket = null,
         intern = inntektsbegrunnelseKunINotat,
     )
 
