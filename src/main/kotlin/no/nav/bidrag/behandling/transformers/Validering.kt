@@ -584,13 +584,6 @@ fun OppdatereAndreVoksneIHusstanden.validere(behandling: Behandling) {
         }
     }
 
-//    if (husstandsmedlem.perioder.isEmpty()) {
-//        throw HttpClientErrorException(
-//            HttpStatus.NOT_FOUND,
-//            "Fant ingen bor-med-andre-voksne-perioder å endre i behandling ${behandling.id}.",
-//        )
-//    }
-
     this.slettePeriode?.let { sletteId ->
         val periodeSomSkalSlettes = husstandsmedlem.perioder.find { sletteId == it.id }
         if (periodeSomSkalSlettes == null) {
