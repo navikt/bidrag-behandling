@@ -195,7 +195,7 @@ private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsf
     this
         .map { feil ->
             Grunnlagsinnhentingsfeil(
-                rolleid = behandling.roller.find { feil.value.personId == it.ident }!!.id!!,
+                rolle = behandling.roller.find { feil.value.personId == it.ident }?.tilDto()!!,
                 feilmelding = feil.value.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
                 grunnlagsdatatype = feil.key,
                 periode = feil.value.periodeFra?.let { Datoperiode(feil.value.periodeFra!!, feil.value.periodeTil) },
