@@ -28,6 +28,5 @@ open class Notat(
     open val notattype: Notattype,
     open val innhold: String,
 ) {
-    override fun toString(): String =
-        "Notat(id=$id, behandlingsid=${behandling.id}, rolleid=${rolle.id}, notatttype=$notattype, innhold=$innhold"
+    override fun toString(): String = "Notat(id=$id, behandlingsid=${behandling.id}, rolleid=${rolle.id}, notatttype=$notattype"
 }

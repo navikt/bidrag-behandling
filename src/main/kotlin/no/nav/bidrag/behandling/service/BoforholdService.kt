@@ -953,7 +953,7 @@ class BoforholdService(
                     "Gjeldende historikk etter endring: $historikkstreng"
             }
         }
-        oppdatereSivilstand.tilbakestilleHistorikk?.let {
+        if (oppdatereSivilstand.tilbakestilleHistorikk) {
             log.info { "Tilbakestilte sivilstandshistorikk for behandling ${behandling.id}." }
             secureLogger.info {
                 "Tilbakestilte sivilstandshistorikk til offentlige kilder for behandling  ${behandling.id}." +
@@ -1176,7 +1176,7 @@ class BoforholdService(
                 data = tilJson(boforholdrespons),
                 innhentet = LocalDateTime.now(),
                 aktiv = LocalDateTime.now(),
-                rolle = behandling.bidragsmottaker!!, // TODO: Dette er BP for særbidrag
+                rolle = behandling.rolleGrunnlagSkalHentesFor!!,
                 gjelder = personidentBarn.verdi,
             ),
         )
