@@ -1449,6 +1449,86 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbp.filter { it.erBearbeidet } shouldHaveSize 5
                 }
             }
+
+            @Test
+            @Transactional
+            open fun `skal hente boforhold andre voksne i husstanden for BP som ikke har andre voksne i husstanden`() {
+                // gitt
+                val behandling = testdataManager.oppretteBehandling(false, false, false, true, TypeBehandling.SÆRBIDRAG)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
+                            )
+
+                        Rolletype.BIDRAGSPLIKTIG ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bp-uten-andre-voksne.json",
+                            )
+
+                        Rolletype.BARN ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                            )
+
+                        else -> throw Exception()
+                    }
+                }
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+
+                val grunnlagBarn = behandling.grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
+
+                grunnlagBarn.groupBy { it.rolle }.forEach {
+                    assertSoftly(it.value) { gbarn ->
+                        gbarn shouldHaveSize 4
+                        gbarn.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
+                        gbarn.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
+                        gbarn.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
+                    }
+                }
+
+                grunnlagBarn shouldHaveSize 8
+
+                val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
+
+                assertSoftly(grunnlagBm) { gbm ->
+                    gbm shouldHaveSize 10
+                    gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
+                    gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
+                    gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
+                    gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
+                    gbm.filter { it.erBearbeidet } shouldHaveSize 5
+                }
+
+                val grunnlagBp = behandling.grunnlag.filter { it.rolle == behandling.bidragspliktig }
+
+                assertSoftly(grunnlagBp) { gbp ->
+                    gbp shouldHaveSize 9
+                    gbp.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 3
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet } shouldHaveSize 1
+                    gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
+                    gbp.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
+                    gbp.filter { it.erBearbeidet } shouldHaveSize 5
+                }
+            }
         }
     }
 
