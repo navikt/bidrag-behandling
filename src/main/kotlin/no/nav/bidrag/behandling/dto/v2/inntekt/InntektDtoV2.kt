@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.dto.v2.inntekt
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -103,7 +102,7 @@ data class OppdatereInntekterRequestV2(
     val oppdatereManuelleInntekter: Set<OppdatereManuellInntekt> = emptySet(),
     @Schema(description = "Angi id til inntekter som skal slettes")
     val sletteInntekter: Set<Long> = emptySet(),
-    val notat: OppdaterNotat? = null,
+    val notat: OppdatereNotat? = null,
 )
 
 data class OppdaterePeriodeInntekt(

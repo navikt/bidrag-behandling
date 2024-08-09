@@ -28,6 +28,11 @@ data class AktivereGrunnlagRequestV2(
 )
 
 data class OppdatereNotat(
-    val nyttNotat: String = "",
+    var nyttNotat: String = "",
     val rolleid: Long? = null,
-)
+) {
+    @Deprecated("Erstattes av nyttNotat")
+    val kunINotat: String = nyttNotat
+
+    fun henteNyttNotat() = if (nyttNotat.isNotEmpty()) nyttNotat else kunINotat
+}

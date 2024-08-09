@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
@@ -48,6 +49,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
+
+private val log = KotlinLogging.logger {}
 
 fun bestemRollerSomMåHaMinstEnInntekt(typeBehandling: TypeBehandling) =
     when (typeBehandling) {
@@ -438,7 +441,9 @@ fun OppdatereInntektRequest.valider() {
 
     this.oppdatereNotat?.let {
         if (it.rolleid == null) {
-            feilliste.add("Rolleid må være satt ved oppdatering av inntektsnotat.")
+            log.warn { "Rolleid skal være satt ved oppdatering av inntektsnotat. Setter rolle til bidragsmottaker" }
+            // TODO: Fjerne utkommentering når front-end angir rolle ved oppdatering av inntektsnotat
+            // feilliste.add("Rolleid må være satt ved oppdatering av inntektsnotat.")
         }
     }
 

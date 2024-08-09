@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.dto.v2.boforhold
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -35,7 +34,7 @@ data class OppdatereBoforholdResponse(
     val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = oppdatertHusstandsmedlem
 
     @Deprecated("Erstattes av opppdatertNotattekst")
-    val oppdaterNotat: OppdaterNotat? = oppdatertNotattekst?.let { OppdaterNotat(it) }
+    val oppdaterNotat: OppdatereNotat? = oppdatertNotattekst?.let { OppdatereNotat(it) }
 }
 
 data class OppdatereAndreVoksneIHusstanden(

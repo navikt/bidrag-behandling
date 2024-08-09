@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.Nulls
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
-import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
@@ -40,39 +39,7 @@ data class OppdatereVirkningstidspunkt(
     var oppdatereNotat: OppdatereNotat? = null,
 ) {
     @Deprecated("Bruk oppdatereNotat i stedet")
-    val notat: OppdaterNotat? = null
+    val notat: OppdatereNotat? = oppdatereNotat
 
-    init {
-        if (oppdatereNotat == null) {
-            oppdatereNotat = notat?.tilOppdatereNotat()
-        }
-    }
+    fun henteOppdatereNotat() = oppdatereNotat ?: notat
 }
-
-@Deprecated(
-    "Erstattes av OppdatereBoforholdRequestV2 - Oppdatering av boforhold gjøres via eget " +
-        "endepunkt (/behandling/{behandlingsid}/boforhold)",
-)
-@Schema(
-    description = """
-For `husstandsmedlem` og `sivilstand`
-* Hvis feltet er null eller ikke satt vil det ikke bli gjort noe endringer. 
-* Hvis feltet er tom liste vil alt bli slettet
-* Innholdet i listen vil erstatte alt som er lagret. Det er derfor ikke mulig å endre på deler av informasjon i listene.
-""",
-)
-data class OppdaterBoforholdRequest(
-    val husstandsmedlem: Set<HusstandsmedlemDtoV2>? = null,
-    val sivilstand: Set<SivilstandDto>? = null,
-    val notat: OppdaterNotat? = null,
-)
-
-// TODO: Fjerne når migrering til OppdatereNotat er fullført
-@Deprecated("Erstsattes av OppdatereNotat")
-data class OppdaterNotat(
-    val kunINotat: String? = null,
-    val rolleid: Long? = null,
-)
-
-@Deprecated("Fjernes når OppdaterNotat er fjernet")
-fun OppdaterNotat.tilOppdatereNotat() = OppdatereNotat(this.kunINotat ?: "", this.rolleid)

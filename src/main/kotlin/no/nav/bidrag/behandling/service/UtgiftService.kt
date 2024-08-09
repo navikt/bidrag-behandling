@@ -43,11 +43,11 @@ class UtgiftService(
         request.valider(behandling)
         val utgift = behandling.utgift ?: Utgift(behandling = behandling)
         utgift.beløpDirekteBetaltAvBp = request.beløpDirekteBetaltAvBp ?: utgift.beløpDirekteBetaltAvBp
-        request.oppdatereNotat?.let {
+        request.henteOppdatereNotat()?.let {
             notatService.oppdatereNotat(
                 behandling,
                 NotatGrunnlag.NotatType.UTGIFTER,
-                it.nyttNotat,
+                it.henteNyttNotat(),
                 behandling.bidragsmottaker!!.id!!,
             )
         }

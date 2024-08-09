@@ -232,11 +232,11 @@ class BehandlingService(
                 request.valider(it)
                 it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
                 it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
-                request.oppdatereNotat?.let { n ->
+                request.henteOppdatereNotat()?.let { n ->
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        n.nyttNotat,
+                        n.henteNyttNotat(),
                         it.bidragsmottaker!!.id!!,
                     )
                 }

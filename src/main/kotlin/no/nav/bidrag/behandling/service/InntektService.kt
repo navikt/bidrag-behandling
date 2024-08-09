@@ -190,8 +190,9 @@ class InntektService(
             notat =
                 oppdatereInntektRequest.oppdatereNotat?.let {
                     NotatService.henteInntektsnotat(
+                        // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
                         behandling,
-                        it.rolleid!!,
+                        it.rolleid ?: behandling.bidragsmottaker!!.id!!,
                     )
                 },
         )
@@ -248,8 +249,9 @@ class InntektService(
             notatService.oppdatereNotat(
                 behandling = behandling,
                 notattype = Notattype.INNTEKT,
-                notattekst = it.nyttNotat,
-                rolleid = it.rolleid!!,
+                notattekst = it.henteNyttNotat(),
+                // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
+                rolleid = it.rolleid ?: behandling.bidragsmottaker!!.id!!,
             )
         }
 

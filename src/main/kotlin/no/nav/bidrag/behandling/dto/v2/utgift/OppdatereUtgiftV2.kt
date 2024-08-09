@@ -36,7 +36,12 @@ data class OppdatereUtgiftRequest(
     )
     val angreSisteEndring: Boolean? = false,
     val oppdatereNotat: OppdatereNotat? = null,
-)
+) {
+    @Deprecated("Bruk oppdatereNotat i stedet")
+    val notat: OppdatereNotat? = oppdatereNotat
+
+    fun henteOppdatereNotat(): OppdatereNotat? = oppdatereNotat ?: notat
+}
 
 data class OppdatereUtgiftResponse(
     @Schema(description = "Utgiftspost som ble oppdatert")
