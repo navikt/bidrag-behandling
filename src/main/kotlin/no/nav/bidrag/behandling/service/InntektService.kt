@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -11,7 +10,6 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.tilInntektrapporteringYtelse
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
@@ -45,6 +43,7 @@ import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.YearMonth
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
 
@@ -52,7 +51,7 @@ private val log = KotlinLogging.logger {}
 class InntektService(
     private val behandlingRepository: BehandlingRepository,
     private val inntektRepository: InntektRepository,
-    private val entityManager: EntityManager,
+    private val notatService: NotatService,
 ) {
     @Transactional
     fun rekalkulerPerioderInntekter(behandlingsid: Long) {
@@ -189,10 +188,12 @@ class InntektService(
                     },
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
             notat =
-                BehandlingNotatDto(
-                    medIVedtaket = null,
-                    kunINotat = behandling.inntektsbegrunnelseKunINotat,
-                ),
+                oppdatereInntektRequest.oppdatereNotat?.let {
+                    NotatService.henteInntektsnotat(
+                        behandling,
+                        it.rolleid!!,
+                    )
+                },
         )
     }
 
@@ -244,7 +245,12 @@ class InntektService(
         }
 
         oppdatereInntektRequest.oppdatereNotat?.let {
-            behandling.inntektsbegrunnelseKunINotat = it.kunINotat ?: behandling.inntektsbegrunnelseKunINotat
+            notatService.oppdatereNotat(
+                behandling = behandling,
+                notattype = Notattype.INNTEKT,
+                notattekst = it.nyttNotat,
+                rolleid = it.rolleid!!,
+            )
         }
 
         return null

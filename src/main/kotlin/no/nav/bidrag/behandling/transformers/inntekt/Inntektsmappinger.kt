@@ -78,58 +78,6 @@ fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
         }
     } ?: false
 
-fun OppdatereManuellInntekt.tilInntekt(inntekt: Inntekt): Inntekt {
-    inntekt.type = this.type
-    inntekt.belop = this.beløp
-    inntekt.datoFom = this.datoFom
-    inntekt.datoTom = this.datoTom
-    inntekt.gjelderBarn = this.gjelderBarn?.verdi
-    inntekt.kilde = Kilde.MANUELL
-    inntekt.taMed = this.taMed
-    if (this.inntektstype != null) {
-        inntekt.inntektsposter =
-            mutableSetOf(
-                Inntektspost(
-                    inntekt = inntekt,
-                    beløp = this.beløp,
-                    inntektstype = this.inntektstype,
-                    kode = this.type.toString(),
-                ),
-            )
-    }
-    return inntekt
-}
-
-fun OppdatereManuellInntekt.tilInntekt(behandling: Behandling): Inntekt {
-    val inntekt =
-        Inntekt(
-            type = this.type,
-            belop = this.beløp,
-            datoFom = this.datoFom,
-            datoTom = this.datoTom,
-            ident = this.ident.verdi,
-            gjelderBarn = this.gjelderBarn?.verdi,
-            kilde = Kilde.MANUELL,
-            taMed = this.taMed,
-            id = this.id,
-            behandling = behandling,
-        )
-
-    if (this.inntektstype != null) {
-        inntekt.inntektsposter =
-            mutableSetOf(
-                Inntektspost(
-                    inntekt = inntekt,
-                    beløp = this.beløp,
-                    inntektstype = this.inntektstype,
-                    kode = this.type.toString(),
-                ),
-            )
-    }
-
-    return inntekt
-}
-
 fun Set<Inntektspost>.tilInntektspostDtoV2() =
     this.map {
         InntektspostDtoV2(

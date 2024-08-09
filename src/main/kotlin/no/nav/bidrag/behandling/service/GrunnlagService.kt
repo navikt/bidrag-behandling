@@ -310,7 +310,11 @@ class GrunnlagService(
                 boforhold.tilBoforholdVoksneRequest(),
             )
 
-        overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(behandling, andreVoksneIHusstandenPeriodisert, rekalkulerOgOverskriveAktiverte)
+        overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
+            behandling,
+            andreVoksneIHusstandenPeriodisert,
+            rekalkulerOgOverskriveAktiverte,
+        )
     }
 
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
@@ -1129,11 +1133,7 @@ class GrunnlagService(
                 behandling = behandling,
             )
 
-        if (erFørstegangsinnhenting &&
-            innhentetGrunnlag.isNotEmpty() ||
-            erGrunnlagEndret &&
-            nyesteGrunnlag?.aktiv != null
-        ) {
+        if (erFørstegangsinnhenting && innhentetGrunnlag.isNotEmpty() || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
             val aktivert =
                 if (nyesteGrunnlag?.aktiv != null) {
                     aktiveringstidspunkt

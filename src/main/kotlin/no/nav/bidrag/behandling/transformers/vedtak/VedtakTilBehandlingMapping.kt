@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -71,6 +72,7 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 fun manglerPersonGrunnlag(referanse: Grunnlagsreferanse?): Nothing =
     vedtakmappingFeilet(
@@ -194,21 +196,29 @@ fun VedtakDto.tilBehandling(
             datoTom = null,
             saksnummer = saksnummer!!,
             soknadsid = søknadId ?: this.søknadId!!,
-            boforholdsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false),
-            utgiftsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.UTGIFTER, false),
-            virkningstidspunktbegrunnelseKunINotat =
-                notatMedType(
-                    NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                    false,
-                ),
-            inntektsbegrunnelseKunINotat = notatMedType(NotatGrunnlag.NotatType.INNTEKT, false),
         )
+
     behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
     behandling.inntekter = grunnlagListe.mapInntekter(behandling, lesemodus)
     behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling)
     behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
     behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
     behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
+
+    notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false)?.let {
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.BOFORHOLD, it, null))
+    }
+    notatMedType(Notattype.UTGIFTER, false)?.let {
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UTGIFTER, it, null))
+    }
+    notatMedType(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, false)?.let {
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, it, null))
+    }
+    notatMedType(NotatGrunnlag.NotatType.INNTEKT, false)?.let {
+        behandling.roller.forEach { r ->
+            behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.INNTEKT, it, r))
+        }
+    }
 
     return behandling
 }

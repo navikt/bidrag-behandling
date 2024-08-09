@@ -17,6 +17,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleAndreVoksneHusstandForPeriode
@@ -48,6 +50,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.dokument.JournalpostType
@@ -197,7 +200,7 @@ class NotatOpplysningerService(
                     .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
             virkningstidspunkt = behandling.tilVirkningstidspunkt(),
-            utgift = behandling.tilUtgiftDto()?.tilNotatUtgiftDto(),
+            utgift = behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling),
             boforhold =
                 Boforhold(
                     notat = behandling.tilNotatBoforhold(),
@@ -212,7 +215,8 @@ class NotatOpplysningerService(
             roller = behandling.roller.map(Rolle::tilNotatRolle),
             inntekter =
                 Inntekter(
-                    notat = behandling.tilNotatInntekt(),
+                    notat = behandling.tilNotatInntekt(behandling.bidragsmottaker!!),
+                    notatPerRolle = behandling.roller.map { r -> behandling.tilNotatInntekt(r) }.toSet(),
                     inntekterPerRolle =
                         behandling.roller.map { rolle ->
                             behandling.hentInntekterForIdent(
@@ -356,18 +360,21 @@ private fun Behandling.tilNotatBoforhold(): SaksbehandlerNotat =
     SaksbehandlerNotat(
         medIVedtaket = null,
         intern = boforholdsbegrunnelseKunINotat,
+        gjelder = this.rolleGrunnlagSkalHentesFor!!.tilNotatRolle(),
     )
 
 private fun Behandling.tilNotatVirkningstidspunkt() =
     SaksbehandlerNotat(
         medIVedtaket = null,
-        intern = virkningstidspunktbegrunnelseKunINotat,
+        intern = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
+        gjelder = this.bidragsmottaker!!.tilNotatRolle(),
     )
 
-private fun Behandling.tilNotatInntekt() =
+private fun Behandling.tilNotatInntekt(rolle: Rolle): SaksbehandlerNotat =
     SaksbehandlerNotat(
         medIVedtaket = null,
-        intern = inntektsbegrunnelseKunINotat,
+        intern = henteInntektsnotat(this, rolle.id!!),
+        gjelder = rolle.tilNotatRolle(),
     )
 
 private fun Behandling.tilSivilstand(sivilstandOpplysninger: List<SivilstandGrunnlagDto>) =
@@ -401,12 +408,13 @@ private fun Sivilstand.tilSivilstandsperiode() =
         kilde = kilde,
     )
 
-private fun SærbidragUtgifterDto.tilNotatUtgiftDto() =
+private fun SærbidragUtgifterDto.tilNotatUtgiftDto(behandling: Behandling) =
     NotatSærbidragUtgifterDto(
         beregning = beregning?.tilNotatBeregningDto(),
         notat =
             SaksbehandlerNotat(
                 intern = notat.kunINotat,
+                gjelder = behandling.bidragsmottaker!!.tilNotatRolle(),
             ),
         utgifter = utgifter.map { it.tilNotatDto() },
     )

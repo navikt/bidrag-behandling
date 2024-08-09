@@ -5,6 +5,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
@@ -18,6 +20,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftspostGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 val grunnlagsreferanse_delberegning_utgift = "delberegning_utgift"
 val grunnlagsreferanse_utgiftsposter = "utgiftsposter"
@@ -33,7 +36,7 @@ fun GrunnlagDto.tilOpprettRequestDto() =
     )
 
 private fun opprettGrunnlagNotat(
-    notatType: NotatGrunnlag.NotatType,
+    notatType: Notattype,
     medIVedtak: Boolean,
     innhold: String,
 ) = GrunnlagDto(
@@ -132,21 +135,21 @@ fun Behandling.byggGrunnlagUtgiftDirekteBetalt() =
         ),
     )
 
-fun Behandling.byggGrunnlagNotater() =
+fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> =
     setOf(
-        virkningstidspunktbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, false, it)
+        henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT)?.takeIfNotNullOrEmpty {
+            opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT, false, it)
         },
-        boforholdsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(NotatGrunnlag.NotatType.BOFORHOLD, false, it)
+        henteNotatinnhold(this, Notattype.BOFORHOLD)?.takeIfNotNullOrEmpty {
+            opprettGrunnlagNotat(Notattype.BOFORHOLD, false, it)
         },
-        inntektsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(NotatGrunnlag.NotatType.INNTEKT, false, it)
+        henteInntektsnotat(this, this.rolleGrunnlagSkalHentesFor!!.id!!)?.takeIfNotNullOrEmpty {
+            opprettGrunnlagNotat(Notattype.INNTEKT, false, it)
         },
-        utgiftsbegrunnelseKunINotat?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(NotatGrunnlag.NotatType.UTGIFTER, false, it)
+        henteNotatinnhold(this, Notattype.UTGIFTER)?.takeIfNotNullOrEmpty {
+            opprettGrunnlagNotat(Notattype.UTGIFTER, false, it)
         },
-    ).filterNotNull()
+    ).filterNotNull().toSet()
 
 fun Behandling.tilSkyldner() =
     when (stonadstype) {

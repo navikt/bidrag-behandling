@@ -436,6 +436,12 @@ fun OppdatereInntektRequest.valider() {
         this.oppdatereManuellInntekt?.validerHarInnteksttype(feilliste)
     }
 
+    this.oppdatereNotat?.let {
+        if (it.rolleid == null) {
+            feilliste.add("Rolleid må være satt ved oppdatering av inntektsnotat.")
+        }
+    }
+
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,

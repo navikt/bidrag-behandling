@@ -4,7 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -12,6 +12,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
+import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
+import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.sorter
@@ -22,6 +25,7 @@ import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 val kategorierSomKreverType = listOf(Særbidragskategori.ANNET, Særbidragskategori.KONFIRMASJON)
 val Behandling.kanInneholdeUtgiftBetaltAvBp get() = særbidragKategori == Særbidragskategori.KONFIRMASJON
@@ -67,7 +71,7 @@ fun Behandling.tilUtgiftDto() =
             SærbidragUtgifterDto(
                 avslag = avslag,
                 kategori = tilSærbidragKategoriDto(),
-                notat = BehandlingNotatDto(utgiftsbegrunnelseKunINotat ?: ""),
+                notat = NotatDto(henteNotatinnhold(this, Notattype.UTGIFTER) ?: ""),
                 valideringsfeil = valideringsfeil,
             )
         } else {
@@ -76,8 +80,9 @@ fun Behandling.tilUtgiftDto() =
                 beregning = utgift.tilBeregningDto(),
                 kategori = tilSærbidragKategoriDto(),
                 notat =
-                    BehandlingNotatDto(
-                        kunINotat = utgiftsbegrunnelseKunINotat,
+                    NotatDto(
+                        innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
+                        gjelder = this.henteRolleForNotat(Notattype.UTGIFTER, null).tilDto(),
                     ),
                 utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
                 valideringsfeil = valideringsfeil,
@@ -88,8 +93,9 @@ fun Behandling.tilUtgiftDto() =
             avslag = avslag,
             kategori = tilSærbidragKategoriDto(),
             notat =
-                BehandlingNotatDto(
-                    kunINotat = utgiftsbegrunnelseKunINotat,
+                NotatDto(
+                    innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
+                    gjelder = this.henteRolleForNotat(Notattype.UTGIFTER, null).tilDto(),
                 ),
             valideringsfeil = utgift.hentValideringsfeil(),
         )
@@ -101,14 +107,14 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
     if (behandling.avslag != null) {
         OppdatereUtgiftResponse(
             avslag = behandling.avslag,
-            notat = BehandlingNotatDto(behandling.utgiftsbegrunnelseKunINotat ?: ""),
+            oppdatertNotat = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
         )
     } else {
         OppdatereUtgiftResponse(
             oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
             utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
-            notat = BehandlingNotatDto(behandling.utgiftsbegrunnelseKunINotat ?: ""),
+            oppdatertNotat = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             beregning = tilBeregningDto(),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
         )

@@ -1790,8 +1790,8 @@ class GrunnlagMappingTest {
         }
 
         @Test
-        fun `skal opprette grunnlag for notat og ikke ta med notat hvis tom eller null`() {
-            val behandling = opprettBehandling()
+        fun `skal opprette grunnlag for notat og ikke ta med notat hvis tomt eller null`() {
+            val behandling = oppretteBehandling(true, setteDatabaseider = true)
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
             behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
@@ -1817,7 +1817,7 @@ class GrunnlagMappingTest {
 
         @Test
         fun `skal opprette grunnlag for notat`() {
-            val behandling = opprettBehandling()
+            val behandling = oppretteBehandling(true, setteDatabaseider = true)
             behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
             behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
             behandling.boforholdsbegrunnelseKunINotat = "Boforhold"

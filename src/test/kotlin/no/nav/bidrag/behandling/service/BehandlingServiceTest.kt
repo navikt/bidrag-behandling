@@ -156,10 +156,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
 
             // hvis
-            val oppdatertBehandlingDto =
-                behandlingService.henteBehandling(
-                    behandling.id!!,
-                )
+            behandlingService.henteBehandling(
+                behandling.id!!,
+            )
 
             val opprinneligVirkningstidspunkt = behandling.virkningstidspunkt!!
 
@@ -888,7 +887,10 @@ class BehandlingServiceTest : TestContainerRunner() {
                 val svar =
                     behandlingService.aktivereGrunnlag(
                         b.id!!,
-                        AktivereGrunnlagRequestV2(Personident(b.bidragsmottaker!!.ident!!), Grunnlagsdatatype.SIVILSTAND),
+                        AktivereGrunnlagRequestV2(
+                            Personident(b.bidragsmottaker!!.ident!!),
+                            Grunnlagsdatatype.SIVILSTAND,
+                        ),
                     )
 
                 // så
@@ -1381,9 +1383,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                 s.filter { it.aktiv == null } shouldHaveSize 2
                 val ikkeAktivBearbeidet = s.find { it.erBearbeidet && it.aktiv == null }
                 val aktivBearbeidet = s.find { it.erBearbeidet && it.aktiv != null }
-                aktivBearbeidet.konvertereData<List<Bostatus>>()!!.minByOrNull { it.periodeFom!! }!!.periodeFom!! shouldBeEqual
+                aktivBearbeidet
+                    .konvertereData<List<Bostatus>>()!!
+                    .minByOrNull { it.periodeFom!! }!!
+                    .periodeFom!! shouldBeEqual
                     nyVirkningsdato
-                ikkeAktivBearbeidet.konvertereData<List<Bostatus>>()!!.minByOrNull { it.periodeFom!! }!!.periodeFom!! shouldBeEqual
+                ikkeAktivBearbeidet
+                    .konvertereData<List<Bostatus>>()!!
+                    .minByOrNull { it.periodeFom!! }!!
+                    .periodeFom!! shouldBeEqual
                     nyVirkningsdato
             }
         }

@@ -16,6 +16,8 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
@@ -52,6 +54,7 @@ import stubSaksbehandlernavnProvider
 import stubTokenUtils
 import java.math.BigDecimal
 import java.time.LocalDate
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 @ExtendWith(SpringExtension::class)
 class VedtakTilBehandlingForskuddTest {
@@ -126,9 +129,9 @@ class VedtakTilBehandlingForskuddTest {
             soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
-            virkningstidspunktbegrunnelseKunINotat shouldBe "Notat virkningstidspunkt"
-            boforholdsbegrunnelseKunINotat shouldBe "Notat boforhold"
-            inntektsbegrunnelseKunINotat shouldBe "Notat inntekt"
+            henteNotatinnhold(behandling, Notattype.VIRKNINGSTIDSPUNKT) shouldBe "Notat virkningstidspunkt"
+            henteNotatinnhold(behandling, Notattype.BOFORHOLD) shouldBe "Notat boforhold"
+            henteInntektsnotat(behandling, behandling.bidragsmottaker!!.id!!) shouldBe "Notat inntekt"
             validerRoller()
             validerHusstandsmedlem()
             validerSivilstand()

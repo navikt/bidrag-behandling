@@ -108,6 +108,13 @@ open class Behandling(
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
     )
+    open var notater: MutableSet<Notat> = mutableSetOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+    )
     open var roller: MutableSet<Rolle> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,

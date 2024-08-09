@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.Nulls
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -36,8 +37,17 @@ data class OppdatereVirkningstidspunkt(
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonSetter(nulls = Nulls.SKIP)
     val virkningstidspunkt: LocalDate? = null,
-    val notat: OppdaterNotat? = null,
-)
+    var oppdatereNotat: OppdatereNotat? = null,
+) {
+    @Deprecated("Bruk oppdatereNotat i stedet")
+    val notat: OppdaterNotat? = null
+
+    init {
+        if (oppdatereNotat == null) {
+            oppdatereNotat = notat?.tilOppdatereNotat()
+        }
+    }
+}
 
 @Deprecated(
     "Erstattes av OppdatereBoforholdRequestV2 - Oppdatering av boforhold gjøres via eget " +
@@ -57,6 +67,12 @@ data class OppdaterBoforholdRequest(
     val notat: OppdaterNotat? = null,
 )
 
+// TODO: Fjerne når migrering til OppdatereNotat er fullført
+@Deprecated("Erstsattes av OppdatereNotat")
 data class OppdaterNotat(
     val kunINotat: String? = null,
+    val rolleid: Long? = null,
 )
+
+@Deprecated("Fjernes når OppdaterNotat er fjernet")
+fun OppdaterNotat.tilOppdatereNotat() = OppdatereNotat(this.kunINotat ?: "", this.rolleid)

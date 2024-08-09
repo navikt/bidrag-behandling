@@ -1031,6 +1031,7 @@ fun oppretteBehandling(
 
         TypeBehandling.SÆRBIDRAG -> {
             behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+            behandling.kategori = Særbidragskategori.KONFIRMASJON.name
             behandling.stonadstype = null
             behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         }

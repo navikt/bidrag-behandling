@@ -26,3 +26,8 @@ data class AktivereGrunnlagRequestV2(
     )
     val gjelderIdent: Personident? = null,
 )
+
+data class OppdatereNotat(
+    val nyttNotat: String = "",
+    val rolleid: Long? = null,
+)
