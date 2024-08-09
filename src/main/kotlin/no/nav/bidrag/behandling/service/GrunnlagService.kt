@@ -1133,7 +1133,14 @@ class GrunnlagService(
                 behandling = behandling,
             )
 
-        if (erFørstegangsinnhenting && innhentetGrunnlag.isNotEmpty() || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
+        val skalLagres =
+            innhentetGrunnlag.isNotEmpty() ||
+                Grunnlagstype(
+                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    false,
+                ) == grunnlagstype
+
+        if (erFørstegangsinnhenting && skalLagres || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
             val aktivert =
                 if (nyesteGrunnlag?.aktiv != null) {
                     aktiveringstidspunkt
