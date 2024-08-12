@@ -69,7 +69,7 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
             periode.resultat.beløp,
             periode.resultat.resultatkode,
             periode.grunnlagsreferanseListe,
-            behandling.utgift!!.tilBeregningDto(),
+            behandling.utgift?.tilBeregningDto() ?: UtgiftBeregningDto(),
         )
     }
 
