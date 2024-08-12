@@ -34,7 +34,7 @@ data class OppdatereBoforholdResponse(
     val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = oppdatertHusstandsmedlem
 
     @Deprecated("Erstattes av opppdatertNotattekst")
-    val oppdaterNotat: OppdatereNotat? = oppdatertNotattekst?.let { OppdatereNotat(it) }
+    val oppdatertNotat: OppdatereNotat? = oppdatertNotattekst?.let { OppdatereNotat(it) }
 }
 
 data class OppdatereAndreVoksneIHusstanden(

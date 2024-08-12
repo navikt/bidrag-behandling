@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragDokumentConsumer
 import no.nav.bidrag.behandling.consumer.BidragDokumentProduksjonConsumer
@@ -359,7 +360,7 @@ class NotatOpplysningerService(
 private fun Behandling.tilNotatBoforhold(): SaksbehandlerNotat =
     SaksbehandlerNotat(
         medIVedtaket = null,
-        intern = boforholdsbegrunnelseKunINotat,
+        intern = henteNotatinnhold(this, NotatType.BOFORHOLD),
         gjelder = this.rolleGrunnlagSkalHentesFor!!.tilNotatRolle(),
     )
 
