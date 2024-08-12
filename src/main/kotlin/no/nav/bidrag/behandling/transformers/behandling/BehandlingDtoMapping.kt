@@ -74,6 +74,7 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -117,6 +118,11 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         virkningstidspunkt = virkningstidspunkt,
         årsak = årsak,
         avslag = avslag,
+        opprettetAv =
+            SaksbehandlerDto(
+                opprettetAv,
+                opprettetAvNavn,
+            ),
         kategori =
             when (engangsbeloptype) {
                 Engangsbeløptype.SÆRBIDRAG -> tilSærbidragKategoriDto()
@@ -179,7 +185,7 @@ fun Behandling.tilBehandlingDtoV2(
                 object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
 
             objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
-        },
+        } ?: emptySet(),
 )
 
 fun Rolle.tilDto() =

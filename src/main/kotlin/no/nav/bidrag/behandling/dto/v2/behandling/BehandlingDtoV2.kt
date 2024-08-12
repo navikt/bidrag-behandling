@@ -31,6 +31,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Periode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import java.math.BigDecimal
@@ -68,6 +69,7 @@ data class BehandlingDetaljerDtoV2(
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
     val kategori: SærbidragKategoriDto? = null,
+    val opprettetAv: SaksbehandlerDto,
 )
 
 data class BehandlingDtoV2(
