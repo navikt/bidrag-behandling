@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftResponse
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftspost
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,6 +27,7 @@ private val log = KotlinLogging.logger {}
 @Service
 class UtgiftService(
     private val behandlingRepository: BehandlingRepository,
+    private val notatService: NotatService,
     private val utgiftRepository: UtgiftRepository,
 ) {
     @Transactional
@@ -41,7 +43,14 @@ class UtgiftService(
         request.valider(behandling)
         val utgift = behandling.utgift ?: Utgift(behandling = behandling)
         utgift.beløpDirekteBetaltAvBp = request.beløpDirekteBetaltAvBp ?: utgift.beløpDirekteBetaltAvBp
-        behandling.utgiftsbegrunnelseKunINotat = request.notat?.kunINotat ?: behandling.utgiftsbegrunnelseKunINotat
+        request.henteOppdatereNotat()?.let {
+            notatService.oppdatereNotat(
+                behandling,
+                NotatGrunnlag.NotatType.UTGIFTER,
+                it.henteNyttNotat(),
+                behandling.bidragsmottaker!!.id!!,
+            )
+        }
         behandling.avslag = request.avslag
         if (request.nyEllerEndretUtgift != null) {
             utgift.lagreHistorikk()

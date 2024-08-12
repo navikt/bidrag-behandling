@@ -53,6 +53,7 @@ import stubSaksbehandlernavnProvider
 import stubTokenUtils
 import java.math.BigDecimal
 import java.time.LocalDate
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 @ExtendWith(SpringExtension::class)
 class VedtakTilBehandlingSærbidragTest {
@@ -131,7 +132,7 @@ class VedtakTilBehandlingSærbidragTest {
             soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
-            utgiftsbegrunnelseKunINotat shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
+            notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
             validerUtgifter()
             validerRoller()
             validerHusstandsmedlem()
@@ -185,7 +186,8 @@ class VedtakTilBehandlingSærbidragTest {
             soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
-            utgiftsbegrunnelseKunINotat shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
+            notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe
+                "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
             validerUtgifter()
             validerRoller()
             validerHusstandsmedlem()
@@ -309,7 +311,8 @@ class VedtakTilBehandlingSærbidragTest {
             avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
             kategori shouldBe Særbidragskategori.ANNET.name
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
-            utgiftsbegrunnelseKunINotat shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
+            notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe
+                "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
             virkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
             opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
         }

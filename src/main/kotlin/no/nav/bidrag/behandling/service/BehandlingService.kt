@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.behandling.tilAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
@@ -33,10 +32,12 @@ import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -51,6 +52,7 @@ class BehandlingService(
     private val behandlingRepository: BehandlingRepository,
     private val forsendelseService: ForsendelseService,
     private val boforholdService: BoforholdService,
+    private val notatService: NotatService,
     private val tilgangskontrollService: TilgangskontrollService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
@@ -119,6 +121,7 @@ class BehandlingService(
                             } else {
                                 null
                             }
+
                         TypeBehandling.SÆRBIDRAG -> null
                     },
                 avslag =
@@ -131,6 +134,7 @@ class BehandlingService(
                             } else {
                                 null
                             }
+
                         TypeBehandling.SÆRBIDRAG -> null
                     },
                 mottattdato = opprettBehandling.mottattdato,
@@ -228,8 +232,14 @@ class BehandlingService(
                 request.valider(it)
                 it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
                 it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
-                it.virkningstidspunktbegrunnelseKunINotat =
-                    request.notat?.kunINotat ?: it.virkningstidspunktbegrunnelseKunINotat
+                request.henteOppdatereNotat()?.let { n ->
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                        n.henteNyttNotat(),
+                        it.bidragsmottaker!!.id!!,
+                    )
+                }
                 oppdaterVirkningstidspunkt(request, it)
                 it
             }
@@ -279,11 +289,13 @@ class BehandlingService(
                     oppdaterSivilstand()
                     oppdaterInntekter()
                 }
+
                 TypeBehandling.SÆRBIDRAG -> {
                     oppdaterBoforhold()
                     oppdaterAndreVoksneIHusstanden()
                     oppdaterInntekter()
                 }
+
                 TypeBehandling.BIDRAG -> throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
                     "Endring av virkningstidspunkt er ikke implementert for behandlingstype BIDRAG",

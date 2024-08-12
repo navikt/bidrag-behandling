@@ -3,8 +3,8 @@ package no.nav.bidrag.behandling.dto.v2.boforhold
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.ident.Personident
@@ -17,7 +17,7 @@ data class OppdatereBoforholdRequestV2(
     val oppdaterePeriodeMedAndreVoksneIHusstand: OppdatereAndreVoksneIHusstanden? = null,
     val oppdatereHusstandsmedlem: OppdatereHusstandsmedlem? = null,
     val oppdatereSivilstand: OppdatereSivilstand? = null,
-    val oppdatereNotat: OppdaterNotat? = null,
+    val oppdatereNotat: OppdatereNotat? = null,
 )
 
 data class OppdatereBoforholdResponse(
@@ -27,11 +27,14 @@ data class OppdatereBoforholdResponse(
     val oppdatertHusstandsmedlem: HusstandsmedlemDtoV2? = null,
     val egetBarnErEnesteVoksenIHusstanden: Boolean? = null,
     val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
-    val oppdatertNotat: OppdaterNotat? = null,
+    val oppdatertNotattekst: String? = null,
     val valideringsfeil: BoforholdValideringsfeil,
 ) {
     @Deprecated("Erstattes av oppdatertHusstandsmedlem")
     val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = oppdatertHusstandsmedlem
+
+    @Deprecated("Erstattes av opppdatertNotattekst")
+    val oppdatertNotat: OppdatereNotat? = oppdatertNotattekst?.let { OppdatereNotat(it) }
 }
 
 data class OppdatereAndreVoksneIHusstanden(

@@ -20,7 +20,7 @@ data class VirkningstidspunktDto(
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
-    val notat: BehandlingNotatDto,
+    val notat: NotatDto,
 )
 
 data class BoforholdValideringsfeil(
@@ -29,7 +29,10 @@ data class BoforholdValideringsfeil(
     val sivilstand: SivilstandPeriodeseringsfeil? = null,
 )
 
-data class BehandlingNotatDto(
-    val kunINotat: String? = null,
-    val medIVedtaket: String? = null,
-)
+data class NotatDto(
+    val innhold: String,
+    val gjelder: RolleDto? = null,
+) {
+    @Deprecated("Bruk innhold")
+    val kunINotat: String = innhold
+}

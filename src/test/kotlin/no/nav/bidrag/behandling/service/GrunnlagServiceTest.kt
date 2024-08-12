@@ -11,7 +11,6 @@ import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
-import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -23,9 +22,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -37,6 +36,7 @@ import no.nav.bidrag.behandling.utils.testdata.tilTransformerInntekterRequest
 import no.nav.bidrag.behandling.utils.testdata.voksenPersonIBpsHusstand
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
@@ -1895,7 +1895,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         endretBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -2024,7 +2024,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         endretBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -2108,7 +2108,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     }
                 }
 
-                val bfg = behandling.grunnlag.find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && !it.erBearbeidet }
+                val bfg =
+                    behandling.grunnlag.find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && !it.erBearbeidet }
 
                 val relatertPerson =
                     bfg
@@ -3114,7 +3115,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         endretBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -3197,7 +3198,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                             rådataBoforhold.data,
                         ).tilBoforholdBarnRequest(behandling),

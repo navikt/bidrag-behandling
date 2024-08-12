@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
@@ -13,7 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
-import no.nav.bidrag.behandling.transformers.TypeBehandling
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -112,7 +112,7 @@ data class SærbidragUtgifterDto(
     val avslag: Resultatkode? = null,
     val kategori: SærbidragKategoriDto,
     val beregning: UtgiftBeregningDto? = null,
-    val notat: BehandlingNotatDto,
+    val notat: NotatDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
     val valideringsfeil: UtgiftValideringsfeilDto?,
 )

@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.transformers.grunnlag
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSærbidragKategori
@@ -11,6 +10,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBet
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
 import no.nav.bidrag.behandling.vedtakmappingFeilet
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode

@@ -19,7 +19,6 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
-import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
@@ -31,10 +30,10 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
@@ -47,6 +46,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -156,10 +156,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
 
             // hvis
-            val oppdatertBehandlingDto =
-                behandlingService.henteBehandling(
-                    behandling.id!!,
-                )
+            behandlingService.henteBehandling(
+                behandling.id!!,
+            )
 
             val opprinneligVirkningstidspunkt = behandling.virkningstidspunkt!!
 
@@ -888,7 +887,10 @@ class BehandlingServiceTest : TestContainerRunner() {
                 val svar =
                     behandlingService.aktivereGrunnlag(
                         b.id!!,
-                        AktivereGrunnlagRequestV2(Personident(b.bidragsmottaker!!.ident!!), Grunnlagsdatatype.SIVILSTAND),
+                        AktivereGrunnlagRequestV2(
+                            Personident(b.bidragsmottaker!!.ident!!),
+                            Grunnlagsdatatype.SIVILSTAND,
+                        ),
                     )
 
                 // så
@@ -956,7 +958,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 val boforholdPeriodisert =
                     BoforholdApi.beregnBoforholdBarnV3(
                         b.virkningstidspunktEllerSøktFomDato,
-                        b.tilTypeFelles(),
+                        b.tilType(),
                         grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(b),
                     )
 
@@ -1381,9 +1383,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                 s.filter { it.aktiv == null } shouldHaveSize 2
                 val ikkeAktivBearbeidet = s.find { it.erBearbeidet && it.aktiv == null }
                 val aktivBearbeidet = s.find { it.erBearbeidet && it.aktiv != null }
-                aktivBearbeidet.konvertereData<List<Bostatus>>()!!.minByOrNull { it.periodeFom!! }!!.periodeFom!! shouldBeEqual
+                aktivBearbeidet
+                    .konvertereData<List<Bostatus>>()!!
+                    .minByOrNull { it.periodeFom!! }!!
+                    .periodeFom!! shouldBeEqual
                     nyVirkningsdato
-                ikkeAktivBearbeidet.konvertereData<List<Bostatus>>()!!.minByOrNull { it.periodeFom!! }!!.periodeFom!! shouldBeEqual
+                ikkeAktivBearbeidet
+                    .konvertereData<List<Bostatus>>()!!
+                    .minByOrNull { it.periodeFom!! }!!
+                    .periodeFom!! shouldBeEqual
                     nyVirkningsdato
             }
         }

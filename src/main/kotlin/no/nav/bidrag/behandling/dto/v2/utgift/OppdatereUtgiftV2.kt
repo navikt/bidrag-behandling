@@ -3,8 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.utgift
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.PositiveOrZero
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
@@ -36,14 +35,19 @@ data class OppdatereUtgiftRequest(
         description = "Angre siste endring som ble gjort. Siste endring kan ikke angres hvis avslag er satt",
     )
     val angreSisteEndring: Boolean? = false,
-    val notat: OppdaterNotat? = null,
-)
+    val oppdatereNotat: OppdatereNotat? = null,
+) {
+    @Deprecated("Bruk oppdatereNotat i stedet")
+    val notat: OppdatereNotat? = oppdatereNotat
+
+    fun henteOppdatereNotat(): OppdatereNotat? = oppdatereNotat ?: notat
+}
 
 data class OppdatereUtgiftResponse(
     @Schema(description = "Utgiftspost som ble oppdatert")
     val oppdatertUtgiftspost: UtgiftspostDto? = null,
     val utgiftposter: List<UtgiftspostDto> = emptyList(),
-    val notat: BehandlingNotatDto,
+    val oppdatertNotat: String? = null,
     val beregning: UtgiftBeregningDto? = null,
     val avslag: Resultatkode? = null,
     val valideringsfeil: UtgiftValideringsfeilDto?,

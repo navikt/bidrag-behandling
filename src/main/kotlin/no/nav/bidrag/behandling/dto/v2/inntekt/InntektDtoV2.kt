@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.dto.v2.inntekt
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
+import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -57,9 +57,17 @@ data class InntekterDtoV2(
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
-    val notat: BehandlingNotatDto,
+    val notater: Set<NotatDto> = emptySet(),
     val valideringsfeil: InntektValideringsfeilDto,
-)
+) {
+    @Deprecated("Bruk notater for notat per rolle")
+    val notat: NotatDto =
+        if (notater.isNotEmpty()) {
+            notater.find { Rolletype.BIDRAGSMOTTAKER == it.gjelder?.rolletype } ?: notater.first()
+        } else {
+            NotatDto("")
+        }
+}
 
 data class BeregnetInntekterDto(
     val ident: Personident,
@@ -72,7 +80,7 @@ data class OppdatereInntektRequest(
     val oppdatereInntektsperiode: OppdaterePeriodeInntekt? = null,
     @Schema(description = "Opprette eller oppdatere manuelt oppgitt inntekt")
     val oppdatereManuellInntekt: OppdatereManuellInntekt? = null,
-    val oppdatereNotat: OppdaterNotat? = null,
+    val oppdatereNotat: OppdatereNotat? = null,
     @Schema(description = "Angi id til inntekt som skal slettes")
     val sletteInntekt: Long? = null,
 )
@@ -82,7 +90,7 @@ data class OppdatereInntektResponse(
     val inntekt: InntektDtoV2?,
     @Schema(description = "Periodiserte inntekter per barn")
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
-    val notat: BehandlingNotatDto,
+    val notat: String? = null,
     val valideringsfeil: InntektValideringsfeilDto,
 )
 
@@ -94,7 +102,7 @@ data class OppdatereInntekterRequestV2(
     val oppdatereManuelleInntekter: Set<OppdatereManuellInntekt> = emptySet(),
     @Schema(description = "Angi id til inntekter som skal slettes")
     val sletteInntekter: Set<Long> = emptySet(),
-    val notat: OppdaterNotat? = null,
+    val notat: OppdatereNotat? = null,
 )
 
 data class OppdaterePeriodeInntekt(
