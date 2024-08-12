@@ -21,7 +21,7 @@ class NotatService {
     ) {
         val rolle = behandling.roller.find { rolleid == it.id }
 
-        if (Notattype.INNTEKT == notattype && rolle == null) {
+        if (rolle == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ikke rolle med id $rolleid i behandling ${behandling.id}",
