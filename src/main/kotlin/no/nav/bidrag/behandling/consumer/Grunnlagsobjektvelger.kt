@@ -1,6 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
-import no.nav.bidrag.behandling.transformers.TypeBehandling
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 

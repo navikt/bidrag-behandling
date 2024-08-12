@@ -16,12 +16,10 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
@@ -33,6 +31,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.sjablon.Sjablontall
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -442,7 +441,8 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                 },
         )
     behandling.innkrevingstype = Innkrevingstype.MED_INNKREVING
-    behandling.roller = oppretteBehandlingRoller(behandling, generateId, typeBehandling != TypeBehandling.FORSKUDD, typeBehandling)
+    behandling.roller =
+        oppretteBehandlingRoller(behandling, generateId, typeBehandling != TypeBehandling.FORSKUDD, typeBehandling)
     val husstandsmedlem =
         mutableSetOf(
             behandling.oppretteHusstandsmedlem(
@@ -562,6 +562,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             inntekterBm.add(barnInntekt)
             behandling.inntekter.addAll(inntekterBm)
         }
+
         TypeBehandling.SÆRBIDRAG -> {
             behandling.stonadstype = null
             behandling.årsak = null
@@ -613,6 +614,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             behandling.inntekter.addAll(inntekterBp)
             behandling.inntekter.addAll(inntekterBm)
         }
+
         else -> {}
     }
 
@@ -666,6 +668,7 @@ fun Behandling.oppretteHusstandsmedlem(
                     ),
                 )
         }
+
         else -> {
             husstandsmedlem.perioder =
                 mutableSetOf(
@@ -718,6 +721,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
                 ).flatten(),
             )
         }
+
         else -> {
             grunnlagListe.addAll(
                 listOf(
@@ -1031,6 +1035,7 @@ fun oppretteBehandling(
 
         TypeBehandling.SÆRBIDRAG -> {
             behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+            behandling.kategori = Særbidragskategori.KONFIRMASJON.name
             behandling.stonadstype = null
             behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         }
@@ -1185,7 +1190,7 @@ private fun oppretteBoforhold(
     val boforholdPeriodisert =
         BoforholdApi.beregnBoforholdBarnV3(
             behandling.virkningstidspunktEllerSøktFomDato,
-            behandling.tilTypeFelles(),
+            behandling.tilType(),
             grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
         )
 

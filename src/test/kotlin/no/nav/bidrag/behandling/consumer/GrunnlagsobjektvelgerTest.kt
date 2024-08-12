@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.consumer
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
-import no.nav.bidrag.behandling.transformers.TypeBehandling
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.junit.jupiter.api.Test

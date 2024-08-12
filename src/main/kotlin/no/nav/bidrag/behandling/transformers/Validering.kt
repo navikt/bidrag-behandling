@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
@@ -37,6 +38,7 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -48,6 +50,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
+
+private val log = KotlinLogging.logger {}
 
 fun bestemRollerSomMåHaMinstEnInntekt(typeBehandling: TypeBehandling) =
     when (typeBehandling) {
@@ -434,6 +438,14 @@ fun OppdatereInntektRequest.valider() {
     }
     if (inntekstrapporteringerSomKreverInnteksttype.contains(this.oppdatereManuellInntekt?.type)) {
         this.oppdatereManuellInntekt?.validerHarInnteksttype(feilliste)
+    }
+
+    this.oppdatereNotat?.let {
+        if (it.rolleid == null) {
+            log.warn { "Rolleid skal være satt ved oppdatering av inntektsnotat. Setter rolle til bidragsmottaker" }
+            // TODO: Fjerne utkommentering når front-end angir rolle ved oppdatering av inntektsnotat
+            // feilliste.add("Rolleid må være satt ved oppdatering av inntektsnotat.")
+        }
     }
 
     if (feilliste.isNotEmpty()) {

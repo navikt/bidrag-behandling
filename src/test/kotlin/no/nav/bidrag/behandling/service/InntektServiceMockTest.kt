@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import io.kotest.assertions.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainAnyOf
 import io.kotest.matchers.collections.shouldHaveSize
@@ -8,7 +7,6 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -35,16 +33,16 @@ class InntektServiceMockTest {
     lateinit var behandlingRepository: BehandlingRepository
 
     @MockK
-    lateinit var inntektRepository: InntektRepository
+    lateinit var notatService: NotatService
 
-    @MockK(relaxed = true)
-    lateinit var entityManager: EntityManager
+    @MockK
+    lateinit var inntektRepository: InntektRepository
 
     lateinit var inntektService: InntektService
 
     @BeforeEach
     fun initMock() {
-        inntektService = InntektService(behandlingRepository, inntektRepository, entityManager)
+        inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }
     }
 

@@ -20,15 +20,14 @@ import no.nav.bidrag.behandling.database.datamodell.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteSisteSivilstand
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.lagreSivilstandshistorikk
-import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterNotat
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
@@ -54,6 +53,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSvilstandRequest
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.behandling.transformers.validereSivilstand
@@ -80,6 +80,7 @@ import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
 
@@ -87,22 +88,28 @@ private val log = KotlinLogging.logger {}
 class BoforholdService(
     private val behandlingRepository: BehandlingRepository,
     private val husstandsmedlemRepository: HusstandsmedlemRepository,
+    private val notatService: NotatService,
     private val sivilstandRepository: SivilstandRepository,
 ) {
     @Transactional
     fun oppdatereNotat(
         behandlingsid: Long,
-        request: OppdaterNotat,
+        request: OppdatereNotat,
     ): OppdatereBoforholdResponse {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        behandling.boforholdsbegrunnelseKunINotat = request.kunINotat ?: behandling.boforholdsbegrunnelseKunINotat
+        notatService.oppdatereNotat(
+            behandling = behandling,
+            notattype = Notattype.BOFORHOLD,
+            notattekst = request.henteNyttNotat(),
+            rolleid = behandling.rolleGrunnlagSkalHentesFor!!.id!!,
+        )
 
         return OppdatereBoforholdResponse(
-            oppdatertNotat = request,
+            oppdatertNotattekst = NotatService.henteNotatinnhold(behandling, Notattype.BOFORHOLD),
             valideringsfeil =
                 BoforholdValideringsfeil(
                     husstandsmedlem =
@@ -297,7 +304,7 @@ class BoforholdService(
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.tilTypeFelles(),
+                            behandling.tilType(),
                             behandling
                                 .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
                                 .tilBoforholdBarnRequest(behandling),
@@ -673,7 +680,7 @@ class BoforholdService(
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.tilTypeFelles(),
+                            behandling.tilType(),
                             listOf(
                                 eksisterendeHusstandsmedlem
                                     .tilBoforholdBarnRequest()
@@ -734,13 +741,13 @@ class BoforholdService(
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.tilTypeFelles(),
+                            behandling.tilType(),
                             listOf(request),
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.tilTypeFelles(),
+                            behandling.tilType(),
                             listOf(
                                 request.copy(
                                     behandledeBostatusopplysninger = manueltMedlem.perioder.map { it.tilBostatus() },
@@ -1068,7 +1075,7 @@ class BoforholdService(
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.tilTypeFelles(),
+                behandling.tilType(),
                 listOf(periodiseringsrequest),
             ),
         )

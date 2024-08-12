@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
-import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
@@ -31,11 +30,10 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.objectmapper
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandskodePDL
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
@@ -47,6 +45,7 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.diverse.TypeEndring
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -54,7 +53,6 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
-import no.nav.bidrag.sivilstand.dto.SivilstandRequest
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -73,6 +71,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import kotlin.test.assertFailsWith
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 @RunWith(Enclosed::class)
 class BoforholdServiceTest : TestContainerRunner() {
@@ -244,7 +243,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         testdataBarn2.fødselsdato,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -292,7 +291,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         LocalDate.now(),
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -386,7 +385,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -483,7 +482,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -581,7 +580,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -673,7 +672,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 val periodisertBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
-                        behandling.tilTypeFelles(),
+                        behandling.tilType(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -1293,7 +1292,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             val periodisertBoforhold =
                 BoforholdApi.beregnBoforholdBarnV3(
                     testdataBarn2.fødselsdato,
-                    behandling.tilTypeFelles(),
+                    behandling.tilType(),
                     listOf(periodiseringsrequest),
                 )
 
@@ -1301,6 +1300,34 @@ class BoforholdServiceTest : TestContainerRunner() {
             assertSoftly(periodisertBoforhold) { p ->
                 p shouldNotBe emptyList<BoforholdResponseV2>()
                 p.filter { Kilde.MANUELL == it.kilde } shouldHaveSize 1
+            }
+        }
+    }
+
+    @Nested
+    open inner class OppdatereNotat {
+        @Test
+        @Transactional
+        open fun `skal oppdatere notat`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false, false, false, true)
+            val nyNotattekst = "BP bor alene"
+            val request =
+                no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat(
+                    nyNotattekst,
+                    behandling.bidragspliktig!!.id!!,
+                )
+
+            // hvis
+            val respons = boforholdService.oppdatereNotat(behandling.id!!, request)
+
+            // så
+            respons.oppdatertNotattekst shouldBe nyNotattekst
+
+            assertSoftly(behandling.notater) {
+                it shouldHaveSize 1
+                it.first().type shouldBe Notattype.BOFORHOLD
+                it.first().sistOppdatert.toLocalDate() shouldBe LocalDate.now()
             }
         }
     }
@@ -1769,44 +1796,4 @@ fun Set<Sivilstand>.tilSivilstandGrunnlagDto(): List<SivilstandGrunnlagDto> {
             registrert = it.datoFom.atStartOfDay(),
         )
     }
-}
-
-fun leggeTilGrunnlagForSivilstand(behandling: Behandling) {
-    behandling.grunnlag.add(
-        Grunnlag(
-            aktiv = LocalDateTime.now(),
-            type = Grunnlagsdatatype.SIVILSTAND,
-            erBearbeidet = false,
-            behandling = behandling,
-            innhentet = LocalDateTime.now(),
-            rolle = behandling.bidragsmottaker!!,
-            data = tilJson(behandling.sivilstand.tilSivilstandGrunnlagDto()),
-        ),
-    )
-
-    val førstegangsrequest =
-        SivilstandRequest(
-            behandledeSivilstandsopplysninger = emptyList(),
-            innhentedeOffentligeOpplysninger = behandling.sivilstand.tilSivilstandGrunnlagDto(),
-            endreSivilstand = null,
-            fødselsdatoBM = behandling.bidragsmottaker!!.fødselsdato,
-        )
-
-    val førstegangsperiodisering =
-        SivilstandApi.beregnV2(
-            virkningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato,
-            førstegangsrequest,
-        )
-
-    behandling.grunnlag.add(
-        Grunnlag(
-            aktiv = LocalDateTime.now(),
-            type = Grunnlagsdatatype.SIVILSTAND,
-            erBearbeidet = true,
-            behandling = behandling,
-            innhentet = LocalDateTime.now(),
-            rolle = behandling.bidragsmottaker!!,
-            data = tilJson(førstegangsperiodisering),
-        ),
-    )
 }

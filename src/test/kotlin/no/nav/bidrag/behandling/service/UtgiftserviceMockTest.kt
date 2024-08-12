@@ -31,13 +31,16 @@ class UtgiftserviceMockTest {
     lateinit var behandlingRepository: BehandlingRepository
 
     @MockK
+    lateinit var notatService: NotatService
+
+    @MockK
     lateinit var utgiftRepository: UtgiftRepository
 
     lateinit var utgiftService: UtgiftService
 
     @BeforeEach
     fun initMock() {
-        utgiftService = UtgiftService(behandlingRepository, utgiftRepository)
+        utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository)
         every { utgiftRepository.save<Utgift>(any()) } answers {
             val utgift = firstArg<Utgift>()
             utgift.id = 1

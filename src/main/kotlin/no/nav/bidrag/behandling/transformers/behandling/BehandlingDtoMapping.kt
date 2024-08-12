@@ -1,10 +1,12 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
 import com.fasterxml.jackson.core.type.TypeReference
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
@@ -13,8 +15,8 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
-import no.nav.bidrag.behandling.dto.v1.behandling.BehandlingNotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
@@ -35,8 +37,8 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.begrensAntallPersoner
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
@@ -66,6 +68,7 @@ import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -84,6 +87,9 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
+
+private val log = KotlinLogging.logger {}
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
     BehandlingDetaljerDtoV2(
@@ -156,11 +162,7 @@ fun Behandling.tilBehandlingDtoV2(
             opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
             årsak = årsak,
             avslag = avslag,
-            notat =
-                BehandlingNotatDto(
-                    medIVedtaket = null,
-                    kunINotat = virkningstidspunktbegrunnelseKunINotat,
-                ),
+            notat = NotatDto(NotatService.henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT) ?: ""),
         ),
     boforhold = tilBoforholdV2(),
     inntekter =
@@ -301,9 +303,9 @@ fun Behandling.tilBoforholdV2() =
                 ?.tilBostatusperiode() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
         notat =
-            BehandlingNotatDto(
-                medIVedtaket = null,
-                kunINotat = boforholdsbegrunnelseKunINotat,
+            NotatDto(
+                innhold = NotatService.henteNotatinnhold(this, Notattype.BOFORHOLD),
+                gjelder = this.henteRolleForNotat(Notattype.BOFORHOLD, null).tilDto(),
             ),
         egetBarnErEnesteVoksenIHusstanden = egetBarnErEnesteVoksenIHusstanden,
         valideringsfeil =
@@ -378,11 +380,17 @@ fun Behandling.tilInntektDtoV2(
                     hentBeregnetInntekterForRolle(it),
                 )
             },
-    notat =
-        BehandlingNotatDto(
-            medIVedtaket = null,
-            kunINotat = inntektsbegrunnelseKunINotat,
-        ),
+    notater =
+        this.roller
+            .mapNotNull { r ->
+                val inntektsnotat = NotatService.henteInntektsnotat(this, r.id!!)
+                inntektsnotat?.let {
+                    NotatDto(
+                        innhold = it,
+                        gjelder = r.tilDto(),
+                    )
+                }
+            }.toSet(),
     valideringsfeil = hentInntekterValideringsfeil(),
 )
 
@@ -543,9 +551,33 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
             )
         }
 
-fun Behandling.hentBeregnetInntekter() = hentBeregnetInntekterForRolle(bidragsmottaker!!)
-
 fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
+
+fun Behandling.tilNotat(
+    notattype: Notattype,
+    tekst: String,
+    rolleVedInntekt: Rolle?,
+): Notat {
+    val gjelder = this.henteRolleForNotat(notattype, rolleVedInntekt)
+    return Notat(behandling = this, rolle = gjelder, type = notattype, innhold = tekst)
+}
+
+fun Behandling.henteRolleForNotat(
+    notattype: Notattype,
+    rolleVedInntekt: Rolle?,
+) = when (notattype) {
+    Notattype.BOFORHOLD -> this.rolleGrunnlagSkalHentesFor!!
+    Notattype.UTGIFTER -> this.bidragsmottaker!!
+    Notattype.VIRKNINGSTIDSPUNKT -> this.bidragsmottaker!!
+    Notattype.INNTEKT -> {
+        if (rolleVedInntekt == null) {
+            log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
+            this.bidragsmottaker!!
+        } else {
+            rolleVedInntekt
+        }
+    }
+}
 
 fun Behandling.notatTittel(): String {
     val prefiks =
@@ -558,8 +590,8 @@ fun Behandling.notatTittel(): String {
             Stønadstype.MOTREGNING -> "Motregning"
             else ->
                 when (engangsbeloptype) {
-                    Engangsbeløptype.SAERTILSKUDD, Engangsbeløptype.SÆRTILSKUDD, Engangsbeløptype.SÆRBIDRAG -> "Særbidrag"
-                    Engangsbeløptype.DIREKTE_OPPGJOR, Engangsbeløptype.DIREKTE_OPPGJØR -> "Direkte oppgjør"
+                    Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRBIDRAG -> "Særbidrag"
+                    Engangsbeløptype.DIREKTE_OPPGJØR, Engangsbeløptype.DIREKTE_OPPGJØR -> "Direkte oppgjør"
                     Engangsbeløptype.ETTERGIVELSE -> "Ettergivelse"
                     Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> "Ettergivelse tilbakekreving"
                     Engangsbeløptype.GEBYR_MOTTAKER -> "Gebyr"
