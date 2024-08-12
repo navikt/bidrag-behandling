@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.database.datamodell.tilTypeFelles
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -18,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.transformers.TypeBehandling
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
@@ -35,6 +33,7 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -422,7 +421,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             val boforholdPeriodisert =
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.tilTypeFelles(),
+                    behandling.tilType(),
                     grunnlag.tilBoforholdBarnRequest(behandling),
                 )
             listOf(

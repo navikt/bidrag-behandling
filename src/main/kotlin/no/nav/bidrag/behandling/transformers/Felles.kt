@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
-import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -59,13 +59,6 @@ fun bestemTypeBehandling(
     TypeBehandling.FORSKUDD
 } else {
     TypeBehandling.BIDRAG
-}
-
-@Schema(enumAsRef = true)
-enum class TypeBehandling {
-    FORSKUDD,
-    SÆRBIDRAG,
-    BIDRAG,
 }
 
 fun <T : Comparable<T>> minOfNullable(
