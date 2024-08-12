@@ -14,12 +14,10 @@ import java.time.LocalDate
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 class NotatServiceTest {
-
     private val notatService = NotatService()
 
     @Nested
     open inner class OppdatereNotat {
-
         @Test
         fun `skal opprette nytt notat`() {
             // gitt
@@ -53,8 +51,8 @@ class NotatServiceTest {
                     behandling = behandling,
                     innhold = eksisterendeInnhold,
                     rolle = rolle,
-                    type = notattype
-                )
+                    type = notattype,
+                ),
             )
 
             behandling.notater shouldHaveSize 1
@@ -85,7 +83,7 @@ class NotatServiceTest {
                     behandling,
                     Notattype.BOFORHOLD,
                     innhold,
-                    idTilRolleidSomIkkeFinnesIBehandling
+                    idTilRolleidSomIkkeFinnesIBehandling,
                 )
             }
         }
