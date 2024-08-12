@@ -187,7 +187,7 @@ fun Behandling.tilBehandlingDtoV2(
                 object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
 
             objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
-        } ?: emptySet(),
+        },
 )
 
 fun Rolle.tilDto() =
