@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragDokumentConsumer
 import no.nav.bidrag.behandling.consumer.BidragDokumentProduksjonConsumer
