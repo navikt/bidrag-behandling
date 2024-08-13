@@ -38,7 +38,7 @@ data class OppdatereUtgiftRequest(
     val oppdatereNotat: OppdatereNotat? = null,
 ) {
     @Deprecated("Bruk oppdatereNotat i stedet")
-    @Schema(deprecated = true)
+    @Schema(description = "Bruk oppdatereNotat i stedet", deprecated = true)
     val notat: OppdatereNotat? = oppdatereNotat
 
     fun henteOppdatereNotat(): OppdatereNotat? = oppdatereNotat ?: notat

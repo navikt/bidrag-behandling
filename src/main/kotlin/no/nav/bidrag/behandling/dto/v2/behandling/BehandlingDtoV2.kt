@@ -159,6 +159,7 @@ data class AktiveGrunnlagsdata(
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
+    @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
 }
 
@@ -169,6 +170,7 @@ data class IkkeAktiveGrunnlagsdata(
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
+    @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
 }
 
@@ -348,24 +350,31 @@ enum class Grunnlagsdatatype(
     ),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
+    @Schema(deprecated = true)
     AINNTEKT,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
+    @Schema(deprecated = true)
     SKATTEGRUNNLAG,
 
     @Deprecated("Erstattes av BOFORHOLD i kombiansjon med erBearbeidet = true")
+    @Schema(deprecated = true)
     BOFORHOLD_BEARBEIDET,
 
     @Deprecated("Erstattes av BOFORHOLD i kombinasjon med erBearbeidet = false")
+    @Schema(description = "Erstattes av BOFORHOLD i kombinasjon med erBearbeidet = false", deprecated = true)
     HUSSTANDSMEDLEMMER,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
+    @Schema(deprecated = true)
     INNTEKT_BEARBEIDET,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = false")
+    @Schema(deprecated = true)
     INNTEKTSOPPLYSNINGER,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
+    @Schema(deprecated = true)
     SUMMERTE_ÅRSINNTEKTER,
 
     ;

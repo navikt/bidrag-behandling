@@ -32,6 +32,7 @@ data class OppdatereNotat(
     val rolleid: Long? = null,
 ) {
     @Deprecated("Erstattes av nyttNotat")
+    @Schema(description = "Erstattes av nyttNotat", deprecated = true)
     val kunINotat: String = nyttNotat
 
     fun henteNyttNotat() = if (nyttNotat.isNotEmpty()) nyttNotat else kunINotat
