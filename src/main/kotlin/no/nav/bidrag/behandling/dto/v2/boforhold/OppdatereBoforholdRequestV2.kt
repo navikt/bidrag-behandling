@@ -31,9 +31,11 @@ data class OppdatereBoforholdResponse(
     val valideringsfeil: BoforholdValideringsfeil,
 ) {
     @Deprecated("Erstattes av oppdatertHusstandsmedlem")
+    @Schema(description = "Erstattes av oppdatertHusstandsmedlem", deprecated = true)
     val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = oppdatertHusstandsmedlem
 
     @Deprecated("Erstattes av opppdatertNotattekst")
+    @Schema(description = "Erstattes av opppdatertNotattekst", deprecated = true)
     val oppdatertNotat: OppdatereNotat? = oppdatertNotattekst?.let { OppdatereNotat(it) }
 }
 
@@ -81,7 +83,7 @@ data class OppdatereHusstandsmedlem(
 
 data class OppdatereBostatusperiode(
     @Deprecated("Erstattes av idHusstandsmedlem")
-    @Schema(type = "Long", description = "Id til husstandsbarnet perioden skal gjelde for")
+    @Schema(type = "Long", description = "Id til husstandsbarnet perioden skal gjelde for", deprecated = true)
     var idHusstandsbarn: Long = 0L,
     @Schema(type = "Long", description = "Id til husstandsmedlemmet perioden skal gjelde for")
     var idHusstandsmedlem: Long = 0L,

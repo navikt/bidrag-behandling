@@ -61,6 +61,7 @@ data class InntekterDtoV2(
     val valideringsfeil: InntektValideringsfeilDto,
 ) {
     @Deprecated("Bruk notater for notat per rolle")
+    @Schema(description = "Bruk notater for notat per rolle", deprecated = true)
     val notat: NotatDto =
         if (notater.isNotEmpty()) {
             notater.find { Rolletype.BIDRAGSMOTTAKER == it.gjelder?.rolletype } ?: notater.first()
@@ -95,6 +96,7 @@ data class OppdatereInntektResponse(
 )
 
 @Deprecated("Erstattes av OppdatereInntektRequest")
+@Schema(description = "Erstattes av OppdatereInntektRequest", deprecated = true)
 data class OppdatereInntekterRequestV2(
     @Schema(description = "Angi periodeinformasjon for inntekter")
     val oppdatereInntektsperioder: Set<OppdaterePeriodeInntekt> = emptySet(),

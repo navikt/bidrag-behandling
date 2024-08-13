@@ -34,5 +34,6 @@ data class NotatDto(
     val gjelder: RolleDto? = null,
 ) {
     @Deprecated("Bruk innhold")
+    @Schema(description = "Bruk innhold", deprecated = true)
     val kunINotat: String = innhold
 }

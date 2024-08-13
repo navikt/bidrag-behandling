@@ -35,6 +35,7 @@ data class BoforholdDtoV2(
     val egetBarnErEnesteVoksenIHusstanden: Boolean? = false,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
+    @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
 }
 
