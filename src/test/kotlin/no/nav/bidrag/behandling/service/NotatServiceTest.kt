@@ -17,7 +17,7 @@ class NotatServiceTest {
     private val notatService = NotatService()
 
     @Nested
-    open inner class OppdatereNotat {
+    open inner class OppdatereBegrunnelse {
         @Test
         fun `skal opprette nytt notat`() {
             // gitt

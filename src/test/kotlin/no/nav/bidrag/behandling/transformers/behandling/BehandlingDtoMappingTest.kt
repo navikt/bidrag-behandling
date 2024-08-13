@@ -90,7 +90,7 @@ class BehandlingDtoMappingTest {
             avslag shouldBe null
             kategori.kategori shouldBe Særbidragskategori.ANNET
             kategori.beskrivelse shouldBe "Høreapparat"
-            notat.kunINotat shouldBe "Notat utgift"
+            begrunnelse.kunINotat shouldBe "Notat utgift"
             utgifter shouldHaveSize 2
             utgifter[0].type shouldBe "Ny mikrofon for skolelærer"
             utgifter[1].type shouldBe "Batteri"
@@ -151,7 +151,7 @@ class BehandlingDtoMappingTest {
         assertSoftly(utgiftDto) {
             avslag shouldBe null
             kategori.kategori shouldBe Særbidragskategori.KONFIRMASJON
-            notat.kunINotat shouldBe "Notat utgift"
+            begrunnelse.kunINotat shouldBe "Notat utgift"
             utgifter shouldHaveSize 3
             utgifter[0].type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
             utgifter[1].type shouldBe Utgiftstype.REISEUTGIFT.name
@@ -200,7 +200,7 @@ class BehandlingDtoMappingTest {
             avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
             kategori.kategori shouldBe Særbidragskategori.ANNET
             kategori.beskrivelse shouldBe "Høreapparat"
-            notat.kunINotat shouldBe "Notat utgift"
+            begrunnelse.kunINotat shouldBe "Notat utgift"
             utgifter shouldHaveSize 0
         }
     }
