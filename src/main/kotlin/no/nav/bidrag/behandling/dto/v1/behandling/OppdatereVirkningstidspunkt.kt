@@ -39,6 +39,7 @@ data class OppdatereVirkningstidspunkt(
     var oppdatereNotat: OppdatereNotat? = null,
 ) {
     @Deprecated("Bruk oppdatereNotat i stedet")
+    @Schema(deprecated = true)
     val notat: OppdatereNotat? = oppdatereNotat
 
     fun henteOppdatereNotat() = oppdatereNotat ?: notat
