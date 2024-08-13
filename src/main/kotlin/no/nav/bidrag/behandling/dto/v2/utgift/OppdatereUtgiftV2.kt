@@ -48,14 +48,14 @@ data class OppdatereUtgiftResponse(
     @Schema(description = "Utgiftspost som ble oppdatert")
     val oppdatertUtgiftspost: UtgiftspostDto? = null,
     val utgiftposter: List<UtgiftspostDto> = emptyList(),
-    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true )
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
     val begrunnelse: String? = null,
     val beregning: UtgiftBeregningDto? = null,
     val avslag: Resultatkode? = null,
     val valideringsfeil: UtgiftValideringsfeilDto?,
 ) {
     @Deprecated("Erstattes av begrunnelse")
-    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true )
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
     val oppdatertNotat: String? = begrunnelse
 }
 

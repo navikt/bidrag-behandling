@@ -21,10 +21,10 @@ data class OppdatereBoforholdRequestV2(
 ) {
     @Deprecated("Erstattes av oppdatereBegrunnelse")
     @Schema(description = "Bruk oppdatereBegrunnelse i stedet", deprecated = true)
-     val oppdatereNotat: OppdatereBegrunnelse? = null
+    val oppdatereNotat: OppdatereBegrunnelse? = null
 
-    //TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført
-    val henteOppdatereBegrunnelse = oppdatereBegrunnelse?: oppdatereNotat
+    // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført
+    val henteOppdatereBegrunnelse = oppdatereBegrunnelse ?: oppdatereNotat
 }
 
 data class OppdatereBoforholdResponse(
