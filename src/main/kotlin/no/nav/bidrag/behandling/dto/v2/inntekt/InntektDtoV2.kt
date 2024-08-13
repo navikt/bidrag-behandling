@@ -84,9 +84,15 @@ data class OppdatereInntektRequest(
     val oppdatereManuellInntekt: OppdatereManuellInntekt? = null,
     @Schema(description = "Oppdatere begrunnelse for inntekt")
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
+    @Deprecated("Erstattes av oppdatereBegrunnelse")
+    @Schema(description = "Oppdatere begrunnelse for inntekt", deprecated = true)
+    val oppdatereNotat: OppdatereBegrunnelse? = null,
     @Schema(description = "Angi id til inntekt som skal slettes")
     val sletteInntekt: Long? = null,
-)
+) {
+    // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført
+    val henteOppdatereBegrunnelse = oppdatereBegrunnelse ?: oppdatereNotat
+}
 
 data class OppdatereInntektResponse(
     @Schema(description = "Inntekt som ble oppdatert")

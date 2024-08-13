@@ -35,12 +35,13 @@ data class OppdatereUtgiftRequest(
         description = "Angre siste endring som ble gjort. Siste endring kan ikke angres hvis avslag er satt",
     )
     val angreSisteEndring: Boolean? = false,
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = false)
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-) {
     @Deprecated("Bruk oppdatereBegrunnelse i stedet")
-    @Schema(description = "Bruk oppdatereBegrunnelse i stedet", deprecated = true)
-    val notat: OppdatereBegrunnelse? = null
-
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = true)
+    val notat: OppdatereBegrunnelse? = null,
+) {
+    // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført
     fun henteOppdatereNotat(): OppdatereBegrunnelse? = oppdatereBegrunnelse ?: notat
 }
 

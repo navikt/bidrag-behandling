@@ -191,7 +191,7 @@ class InntektService(
                     },
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
             begrunnelse =
-                oppdatereInntektRequest.oppdatereBegrunnelse?.let {
+                oppdatereInntektRequest.henteOppdatereBegrunnelse?.let {
                     NotatService.henteInntektsnotat(
                         // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
                         behandling,
@@ -248,7 +248,7 @@ class InntektService(
             return inntektSomSkalSlettes.tilInntektDtoV2()
         }
 
-        oppdatereInntektRequest.oppdatereBegrunnelse?.let {
+        oppdatereInntektRequest.henteOppdatereBegrunnelse?.let {
             notatService.oppdatereNotat(
                 behandling = behandling,
                 notattype = Notattype.INNTEKT,
