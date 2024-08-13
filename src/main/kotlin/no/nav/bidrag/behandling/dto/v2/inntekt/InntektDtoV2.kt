@@ -96,7 +96,11 @@ data class OppdatereInntektResponse(
     @Schema(description = "Oppdatert begrunnelse")
     val begrunnelse: String? = null,
     val valideringsfeil: InntektValideringsfeilDto,
-)
+) {
+    @Deprecated("Erstattes av begrunnelse")
+    @Schema(description = "Oppdatert begrunnelse", deprecated = true)
+    val notat: String? = begrunnelse
+}
 
 @Deprecated("Erstattes av OppdatereInntektRequest")
 @Schema(description = "Erstattes av OppdatereInntektRequest", deprecated = true)
