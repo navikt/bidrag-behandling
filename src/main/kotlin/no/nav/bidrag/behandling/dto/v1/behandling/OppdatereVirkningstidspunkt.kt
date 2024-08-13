@@ -36,11 +36,11 @@ data class OppdatereVirkningstidspunkt(
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonSetter(nulls = Nulls.SKIP)
     val virkningstidspunkt: LocalDate? = null,
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = false)
     var oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-) {
     @Deprecated("Bruk oppdatereNotat i stedet")
     @Schema(deprecated = true)
-    val notat: OppdatereBegrunnelse? = oppdatereBegrunnelse
-
+    val notat: OppdatereBegrunnelse? = oppdatereBegrunnelse,
+) {
     fun henteOppdatereNotat() = oppdatereBegrunnelse ?: notat
 }
