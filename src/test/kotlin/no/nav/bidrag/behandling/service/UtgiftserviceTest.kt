@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -677,11 +677,11 @@ class UtgiftserviceTest : TestContainerRunner() {
         val behandling = oppretteBehandlingForSærbidrag()
         val forespørsel =
             OppdatereUtgiftRequest(
-                oppdatereNotat = OppdatereNotat("Nytt notat"),
+                oppdatereBegrunnelse = OppdatereBegrunnelse("Nytt notat"),
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
-        response.oppdatertNotat shouldBe "Nytt notat"
+        response.begrunnelse shouldBe "Nytt notat"
 
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)!!
         behandlingEtter.notater.first { Notattype.UTGIFTER == it.type }.innhold shouldBe "Nytt notat"

@@ -21,19 +21,21 @@ data class AktivereGrunnlagRequestV2(
     val overskriveManuelleOpplysninger: Boolean = true,
     @Schema(
         description =
-            "Ident på person grunnlag gjelder." +
+        "Ident på person grunnlag gjelder." +
                 " Er relevant for blant annet Barnetillegg, Kontantstøtte og Boforhold",
     )
     val gjelderIdent: Personident? = null,
 )
 
-data class OppdatereNotat(
-    var nyttNotat: String = "",
+data class OppdatereBegrunnelse(
+    @Schema(description = "Saksbehandlers begrunnelse", defaultValue = "", type = "String")
+    var nyBegrunnelse: String = "",
+    @Schema(description = "Id til rollen begrunnelsen gjelder for")
     val rolleid: Long? = null,
 ) {
-    @Deprecated("Erstattes av nyttNotat")
+    @Deprecated("Erstattes av nyBegrunnelse")
     @Schema(description = "Erstattes av nyttNotat", deprecated = true)
-    val kunINotat: String = nyttNotat
+    val kunINotat: String = nyBegrunnelse
 
-    fun henteNyttNotat() = if (nyttNotat.isNotEmpty()) nyttNotat else kunINotat
+    fun henteNyttNotat() = if (nyBegrunnelse.isNotEmpty()) nyBegrunnelse else kunINotat
 }

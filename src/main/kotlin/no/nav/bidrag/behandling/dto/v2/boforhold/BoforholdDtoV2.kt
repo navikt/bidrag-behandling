@@ -6,7 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
-import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -25,7 +25,8 @@ data class BoforholdDtoV2(
     val husstandsmedlem: Set<HusstandsmedlemDtoV2>,
     val andreVoksneIHusstanden: Set<BostatusperiodeDto> = emptySet(),
     val sivilstand: Set<SivilstandDto>,
-    val notat: NotatDto,
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
+    val begrunnelse: BegrunnelseDto,
     val valideringsfeil: BoforholdValideringsfeil,
     @Schema(
         description =
@@ -37,6 +38,10 @@ data class BoforholdDtoV2(
     @Deprecated("Erstattes av husstandsmedlem")
     @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
+
+    @Deprecated("Erstattes av begrunnelse")
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    val notat: BegrunnelseDto = begrunnelse
 }
 
 data class HusstandsmedlemDtoV2(

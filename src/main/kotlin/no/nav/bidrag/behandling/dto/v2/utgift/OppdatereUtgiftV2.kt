@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.utgift
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.PositiveOrZero
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
@@ -35,24 +35,29 @@ data class OppdatereUtgiftRequest(
         description = "Angre siste endring som ble gjort. Siste endring kan ikke angres hvis avslag er satt",
     )
     val angreSisteEndring: Boolean? = false,
-    val oppdatereNotat: OppdatereNotat? = null,
+    val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
 ) {
-    @Deprecated("Bruk oppdatereNotat i stedet")
-    @Schema(description = "Bruk oppdatereNotat i stedet", deprecated = true)
-    val notat: OppdatereNotat? = oppdatereNotat
+    @Deprecated("Bruk oppdatereBegrunnelse i stedet")
+    @Schema(description = "Bruk oppdatereBegrunnelse i stedet", deprecated = true)
+    val notat: OppdatereBegrunnelse? = null
 
-    fun henteOppdatereNotat(): OppdatereNotat? = oppdatereNotat ?: notat
+    fun henteOppdatereNotat(): OppdatereBegrunnelse? = oppdatereBegrunnelse ?: notat
 }
 
 data class OppdatereUtgiftResponse(
     @Schema(description = "Utgiftspost som ble oppdatert")
     val oppdatertUtgiftspost: UtgiftspostDto? = null,
     val utgiftposter: List<UtgiftspostDto> = emptyList(),
-    val oppdatertNotat: String? = null,
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true )
+    val begrunnelse: String? = null,
     val beregning: UtgiftBeregningDto? = null,
     val avslag: Resultatkode? = null,
     val valideringsfeil: UtgiftValideringsfeilDto?,
-)
+) {
+    @Deprecated("Erstattes av begrunnelse")
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true )
+    val oppdatertNotat: String? = begrunnelse
+}
 
 data class OppdatereUtgift(
     @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
