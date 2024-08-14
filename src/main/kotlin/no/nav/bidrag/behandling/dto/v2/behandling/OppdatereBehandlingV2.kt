@@ -28,9 +28,9 @@ data class AktivereGrunnlagRequestV2(
 )
 
 data class OppdatereBegrunnelse(
-    @Schema(description = "Saksbehandlers begrunnelse", defaultValue = "", type = "String")
+    @Schema(description = "Saksbehandlers begrunnelse", defaultValue = "", type = "String", deprecated = false)
     var nyBegrunnelse: String = "",
-    @Schema(description = "Id til rollen begrunnelsen gjelder for")
+    @Schema(description = "Id til rollen begrunnelsen gjelder for", deprecated = false)
     val rolleid: Long? = null,
 ) {
     @Deprecated("Erstattes av nyBegrunnelse")
