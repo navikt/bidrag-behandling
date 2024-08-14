@@ -38,7 +38,7 @@ data class OppdatereVirkningstidspunkt(
     val virkningstidspunkt: LocalDate? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
     var oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-    @Schema(description = "Deprekert - Bruk oppdatereNotat i stedet")
+    @Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
     val notat: OppdatereBegrunnelse? = oppdatereBegrunnelse,
 ) {
     fun henteOppdatereNotat() = oppdatereBegrunnelse ?: notat
