@@ -98,6 +98,11 @@
                 <artifactId>swagger-annotations</artifactId>
                 <version>${swagger.version}</version>
             </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logback-encoder.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -420,7 +425,6 @@
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
-            <version>${logback-encoder.version}</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
