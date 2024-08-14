@@ -4,7 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
 import no.nav.bidrag.behandling.service.VedtakService
-import no.nav.bidrag.transport.notat.NotatDto
+import no.nav.bidrag.transport.notat.VedtakNotatDto
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -23,12 +23,12 @@ class NotatOpplysningerController(
     @GetMapping("/notat/{behandlingId}")
     fun hentNotatOpplysninger(
         @PathVariable behandlingId: Long,
-    ): NotatDto = notatOpplysningerService.hentNotatOpplysninger(behandlingId)
+    ): VedtakNotatDto = notatOpplysningerService.hentNotatOpplysninger(behandlingId)
 
     @GetMapping("/notat/vedtak/{vedtaksid}")
     fun hentNotatOpplysningerForVedtak(
         @PathVariable vedtaksid: Long,
-    ): NotatDto {
+    ): VedtakNotatDto {
         val behandling =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtaksid)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtaksid")
