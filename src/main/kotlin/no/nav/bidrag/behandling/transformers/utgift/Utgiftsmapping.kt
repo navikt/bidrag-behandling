@@ -35,6 +35,7 @@ val Utgift.totalGodkjentBeløpBp
             utgiftsposter.filter { it.betaltAvBp }.sumOf { it.godkjentBeløp }
         }
 val Utgift.totalGodkjentBeløp get() = utgiftsposter.sumOf { it.godkjentBeløp }
+val Utgift.totalKravbeløp get() = utgiftsposter.sumOf { it.kravbeløp }
 val Utgift.totalBeløpBetaltAvBp
     get() = utgiftsposter.filter { it.betaltAvBp }.sumOf { it.godkjentBeløp } + beløpDirekteBetaltAvBp
 
@@ -125,6 +126,7 @@ fun Utgift.tilBeregningDto() =
         beløpDirekteBetaltAvBp = beløpDirekteBetaltAvBp,
         totalBeløpBetaltAvBp = totalBeløpBetaltAvBp,
         totalGodkjentBeløp = totalGodkjentBeløp,
+        totalKravbeløp = totalKravbeløp,
         totalGodkjentBeløpBp = totalGodkjentBeløpBp,
     )
 
