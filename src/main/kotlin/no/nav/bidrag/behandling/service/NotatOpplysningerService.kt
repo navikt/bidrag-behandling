@@ -431,6 +431,7 @@ private fun UtgiftBeregningDto.tilNotatBeregningDto() =
         beløpDirekteBetaltAvBp = beløpDirekteBetaltAvBp,
         totalBeløpBetaltAvBp = totalBeløpBetaltAvBp,
         totalGodkjentBeløp = totalGodkjentBeløp,
+        totalKravbeløp = totalKravbeløp,
         totalGodkjentBeløpBp = totalGodkjentBeløpBp,
     )
 
