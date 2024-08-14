@@ -1596,7 +1596,7 @@ class GrunnlagService(
                     behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
-                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.filter { it.erBarn }.toSet(),
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
             }
 
