@@ -35,10 +35,9 @@ data class OppdatereUtgiftRequest(
         description = "Angre siste endring som ble gjort. Siste endring kan ikke angres hvis avslag er satt",
     )
     val angreSisteEndring: Boolean? = false,
-    @Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = false)
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-    @Deprecated("Bruk oppdatereBegrunnelse i stedet")
-    @Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = true)
+    @Schema(description = "Deprekert - bruk oppdatereBegrunnelse i stedet")
     val notat: OppdatereBegrunnelse? = null,
 ) {
     // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført

@@ -17,10 +17,9 @@ data class OppdatereBoforholdRequestV2(
     val oppdaterePeriodeMedAndreVoksneIHusstand: OppdatereAndreVoksneIHusstanden? = null,
     val oppdatereHusstandsmedlem: OppdatereHusstandsmedlem? = null,
     val oppdatereSivilstand: OppdatereSivilstand? = null,
-    @Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = false)
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-    @Deprecated("Erstattes av oppdatereBegrunnelse")
-    @Schema(description = "Bruk oppdatereBegrunnelse i stedet", deprecated = true)
+    @Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
     val oppdatereNotat: OppdatereBegrunnelse? = null,
 ) {
     // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført

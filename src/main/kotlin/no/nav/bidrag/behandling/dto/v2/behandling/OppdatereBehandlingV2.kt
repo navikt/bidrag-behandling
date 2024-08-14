@@ -28,13 +28,12 @@ data class AktivereGrunnlagRequestV2(
 )
 
 data class OppdatereBegrunnelse(
-    @Schema(description = "Saksbehandlers begrunnelse", defaultValue = "", type = "String", deprecated = false)
+    @Schema(description = "Saksbehandlers begrunnelse", defaultValue = "", type = "String")
     var nyBegrunnelse: String = "",
-    @Schema(description = "Id til rollen begrunnelsen gjelder for", deprecated = false)
+    @Schema(description = "Id til rollen begrunnelsen gjelder for")
     val rolleid: Long? = null,
 ) {
-    @Deprecated("Erstattes av nyBegrunnelse")
-    @Schema(description = "Erstattes av nyttNotat", deprecated = true)
+    @Schema(description = "Deprekert - Erstattes av nyttNotat")
     val kunINotat: String = nyBegrunnelse
 
     fun henteNyttNotat() = if (nyBegrunnelse.isNotEmpty()) nyBegrunnelse else kunINotat

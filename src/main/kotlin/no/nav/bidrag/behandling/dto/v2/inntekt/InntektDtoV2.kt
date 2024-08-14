@@ -84,8 +84,7 @@ data class OppdatereInntektRequest(
     val oppdatereManuellInntekt: OppdatereManuellInntekt? = null,
     @Schema(description = "Oppdatere begrunnelse for inntekt")
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-    @Deprecated("Erstattes av oppdatereBegrunnelse")
-    @Schema(description = "Oppdatere begrunnelse for inntekt", deprecated = true)
+    @Schema(description = "Deprekert, bruk oppdatereBegrunnelse i stedet")
     val oppdatereNotat: OppdatereBegrunnelse? = null,
     @Schema(description = "Angi id til inntekt som skal slettes")
     val sletteInntekt: Long? = null,
