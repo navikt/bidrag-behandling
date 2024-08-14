@@ -1596,10 +1596,7 @@ class GrunnlagService(
                     behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
-                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe
-                        .filter {
-                            behandling.tilType() == TypeBehandling.FORSKUDD || it.erBarn
-                        }.toSet(),
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
             }
 
