@@ -207,16 +207,16 @@ fun VedtakDto.tilBehandling(
     behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
     notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.BOFORHOLD, it, null))
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.BOFORHOLD, it))
     }
     notatMedType(Notattype.UTGIFTER, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UTGIFTER, it, null))
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UTGIFTER, it))
     }
     notatMedType(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, it, null))
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, it))
     }
-    notatMedType(NotatGrunnlag.NotatType.INNTEKT, false)?.let {
-        behandling.roller.forEach { r ->
+    behandling.roller.forEach { r ->
+        notatMedType(NotatGrunnlag.NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
             behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.INNTEKT, it, r))
         }
     }
@@ -558,8 +558,10 @@ fun Behandling.opprettGrunnlag(
 private fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,
     medIVedtak: Boolean,
+    gjelderReferanse: Grunnlagsreferanse? = null,
 ) = grunnlagListe
     .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
+    .filter { gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse == gjelderReferanse }
     .map { it.innholdTilObjekt<NotatGrunnlag>() }
     .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }
     ?.innhold

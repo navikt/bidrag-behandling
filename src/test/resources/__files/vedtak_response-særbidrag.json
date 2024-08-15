@@ -1033,6 +1033,39 @@
       "gjelderReferanse": null
     },
     {
+      "referanse": "notat_INNTEKTER_kun_i_notat_person_PERSON_SØKNADSBARN_20220726_40",
+      "type": "NOTAT",
+      "innhold": {
+        "type": "INNTEKT",
+        "innhold": "Notat inntekter BA",
+        "erMedIVedtaksdokumentet": false
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_SØKNADSBARN_20220726_40"
+    },
+    {
+      "referanse": "notat_INNTEKTER_kun_i_notat_person_PERSON_BIDRAGSPLIKTIG_19720829_39",
+      "type": "NOTAT",
+      "innhold": {
+        "type": "INNTEKT",
+        "innhold": "Notat inntekter BP",
+        "erMedIVedtaksdokumentet": false
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19720829_39"
+    },
+    {
+      "referanse": "notat_INNTEKTER_kun_i_notat_person_PERSON_BIDRAGSMOTTAKER_19781115_41",
+      "type": "NOTAT",
+      "innhold": {
+        "type": "INNTEKT",
+        "innhold": "Notat inntekter BM",
+        "erMedIVedtaksdokumentet": false
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19781115_41"
+    },
+    {
       "referanse": "søknad",
       "type": "SØKNAD",
       "innhold": {
@@ -1490,6 +1523,9 @@
         "person_PERSON_HUSSTANDSMEDLEM_19780331_innhentet_1825089093",
         "innhentet_husstandsmedlem_person_PERSON_BIDRAGSPLIKTIG_19720829_39_person_PERSON_BIDRAGSPLIKTIG_19720829_39",
         "notat_UTGIFTER_kun_i_notat",
+        "notat_INNTEKTER_kun_i_notat_person_PERSON_SØKNADSBARN_20220726_40",
+        "notat_INNTEKTER_kun_i_notat_person_PERSON_BIDRAGSMOTTAKER_19781115_41",
+        "notat_INNTEKTER_kun_i_notat_person_PERSON_BIDRAGSPLIKTIG_19720829_39",
         "søknad",
         "virkningstidspunkt",
         "utgift_direkte_betalt",
