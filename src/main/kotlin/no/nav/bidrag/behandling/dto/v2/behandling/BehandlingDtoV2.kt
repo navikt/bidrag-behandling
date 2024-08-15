@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
@@ -112,10 +112,15 @@ data class SærbidragUtgifterDto(
     val avslag: Resultatkode? = null,
     val kategori: SærbidragKategoriDto,
     val beregning: UtgiftBeregningDto? = null,
-    val notat: NotatDto,
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
+    val begrunnelse: BegrunnelseDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
     val valideringsfeil: UtgiftValideringsfeilDto?,
-)
+) {
+    @Deprecated("Erstattes av begrunnelse")
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    val notat: BegrunnelseDto = begrunnelse
+}
 
 data class SærbidragKategoriDto(
     val kategori: Særbidragskategori,

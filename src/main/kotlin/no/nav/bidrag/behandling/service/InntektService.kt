@@ -175,10 +175,13 @@ class InntektService(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         behandling.validerKanOppdatere()
+
+        val oppdatertInntekt = oppdatereInntekt(oppdatereInntektRequest, behandling)
         return OppdatereInntektResponse(
-            inntekt = oppdatereInntekt(oppdatereInntektRequest, behandling),
+            inntekt = oppdatertInntekt,
             beregnetInntekter =
                 behandling.roller
+                    .filter { it.ident == oppdatertInntekt?.ident?.verdi }
                     .map {
                         BeregnetInntekterDto(
                             it.tilPersonident()!!,
@@ -187,8 +190,8 @@ class InntektService(
                         )
                     },
             valideringsfeil = behandling.hentInntekterValideringsfeil(),
-            notat =
-                oppdatereInntektRequest.oppdatereNotat?.let {
+            begrunnelse =
+                oppdatereInntektRequest.henteOppdatereBegrunnelse?.let {
                     NotatService.henteInntektsnotat(
                         // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
                         behandling,
@@ -245,11 +248,11 @@ class InntektService(
             return inntektSomSkalSlettes.tilInntektDtoV2()
         }
 
-        oppdatereInntektRequest.oppdatereNotat?.let {
+        oppdatereInntektRequest.henteOppdatereBegrunnelse?.let {
             notatService.oppdatereNotat(
                 behandling = behandling,
                 notattype = Notattype.INNTEKT,
-                notattekst = it.henteNyttNotat(),
+                notattekst = it.henteNyttNotat() ?: "",
                 // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
                 rolleid = it.rolleid ?: behandling.bidragsmottaker!!.id!!,
             )

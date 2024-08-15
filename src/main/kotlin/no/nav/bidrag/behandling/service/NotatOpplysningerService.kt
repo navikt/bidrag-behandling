@@ -410,7 +410,7 @@ private fun SærbidragUtgifterDto.tilNotatUtgiftDto(behandling: Behandling) =
         beregning = beregning?.tilNotatBeregningDto(),
         begrunnelse =
             NotatBegrunnelseDto(
-                innhold = notat.innhold,
+                innhold = begrunnelse.innhold,
                 gjelder = behandling.bidragsmottaker!!.tilNotatRolle(),
             ),
         utgifter = utgifter.map { it.tilNotatDto() },

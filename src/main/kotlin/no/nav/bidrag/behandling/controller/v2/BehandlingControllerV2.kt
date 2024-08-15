@@ -212,7 +212,7 @@ class BehandlingControllerV2(
             return boforholdService.oppdatereSivilstandManuelt(behandlingsid, it)!!
         }
 
-        request.oppdatereNotat?.let {
+        request.henteOppdatereBegrunnelse?.let {
             return boforholdService.oppdatereNotat(behandlingsid, it)
         }
 
