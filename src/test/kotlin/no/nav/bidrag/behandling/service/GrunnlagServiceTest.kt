@@ -54,7 +54,6 @@ import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
@@ -1677,7 +1676,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
                 stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
 
-                val arbeidsforhold = oppretteArbeidsforhold( behandling.bidragspliktig!!.ident!!)
+                val arbeidsforhold = oppretteArbeidsforhold(behandling.bidragspliktig!!.ident!!)
 
                 testdataManager.oppretteOgLagreGrunnlag(
                     behandling = behandling,
