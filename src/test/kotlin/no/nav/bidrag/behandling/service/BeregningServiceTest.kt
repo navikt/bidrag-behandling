@@ -129,6 +129,7 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.vedtakstype = Vedtakstype.FASTSETTELSE
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -187,6 +188,33 @@ class BeregningServiceTest {
             inntekter.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse } shouldNotBe null
             inntekter.find { it.gjelderReferanse == grunnlagListe.bidragsmottaker!!.referanse } shouldNotBe null
         }
+    }
+
+    @Test
+    fun `skal bygge grunnlag for særbidrag beregning med opprinnelig vedtakstype`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.opprinneligVedtakstype = Vedtakstype.ENDRING
+        behandling.vedtakstype = Vedtakstype.KLAGE
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
+        mockkConstructor(BeregnSærbidragApi::class)
+        every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
+        val resultat = BeregningService(behandlingService).beregneSærbidrag(1)
+
+        verify(exactly = 1) {
+            BeregnSærbidragApi().beregn(any(), any())
+        }
+        resultat shouldNotBe null
+        vedtaksTypeCapture.captured shouldBe Vedtakstype.ENDRING
     }
 
     @Test
