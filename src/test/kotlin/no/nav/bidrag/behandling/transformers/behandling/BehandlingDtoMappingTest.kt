@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
@@ -25,6 +26,7 @@ import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -47,12 +49,19 @@ class BehandlingDtoMappingTest {
 
     @Test
     fun `skal mappe BehandlingDto for SÆRBIDRAG behandling med utgifter`() {
-        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
         behandling.stonadstype = null
         behandling.kategori = Særbidragskategori.ANNET.name
         behandling.kategoriBeskrivelse = "Høreapparat"
-        behandling.utgiftsbegrunnelseKunINotat = "Notat utgift"
+        behandling.notater.add(
+            Notat(
+                behandling = behandling,
+                innhold = "Notat utgift",
+                rolle = behandling.bidragsmottaker!!,
+                type = NotatGrunnlag.NotatType.UTGIFTER,
+            ),
+        )
 
         behandling.utgift = oppretteUtgift(behandling, "")
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal.valueOf(1000)
@@ -90,7 +99,7 @@ class BehandlingDtoMappingTest {
             avslag shouldBe null
             kategori.kategori shouldBe Særbidragskategori.ANNET
             kategori.beskrivelse shouldBe "Høreapparat"
-            begrunnelse.kunINotat shouldBe "Notat utgift"
+            begrunnelse.innhold shouldBe "Notat utgift"
             utgifter shouldHaveSize 2
             utgifter[0].type shouldBe "Ny mikrofon for skolelærer"
             utgifter[1].type shouldBe "Batteri"
@@ -99,11 +108,18 @@ class BehandlingDtoMappingTest {
 
     @Test
     fun `skal mappe BehandlingDto for SÆRBIDRAG behandling med utgifter og kategori KONFIRMASJON`() {
-        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
         behandling.stonadstype = null
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
-        behandling.utgiftsbegrunnelseKunINotat = "Notat utgift"
+        behandling.notater.add(
+            Notat(
+                behandling = behandling,
+                innhold = "Notat utgift",
+                rolle = behandling.bidragsmottaker!!,
+                type = NotatGrunnlag.NotatType.UTGIFTER,
+            ),
+        )
 
         behandling.utgift = oppretteUtgift(behandling, "")
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal.valueOf(1000)
@@ -151,7 +167,7 @@ class BehandlingDtoMappingTest {
         assertSoftly(utgiftDto) {
             avslag shouldBe null
             kategori.kategori shouldBe Særbidragskategori.KONFIRMASJON
-            begrunnelse.kunINotat shouldBe "Notat utgift"
+            begrunnelse.innhold shouldBe "Notat utgift"
             utgifter shouldHaveSize 3
             utgifter[0].type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
             utgifter[1].type shouldBe Utgiftstype.REISEUTGIFT.name
@@ -161,13 +177,20 @@ class BehandlingDtoMappingTest {
 
     @Test
     fun `skal mappe BehandlingDto for SÆRBIDRAG med avslag`() {
-        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
         behandling.stonadstype = null
         behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
         behandling.kategori = Særbidragskategori.ANNET.name
         behandling.kategoriBeskrivelse = "Høreapparat"
-        behandling.utgiftsbegrunnelseKunINotat = "Notat utgift"
+        behandling.notater.add(
+            Notat(
+                behandling = behandling,
+                innhold = "Notat utgift",
+                rolle = behandling.bidragsmottaker!!,
+                type = NotatGrunnlag.NotatType.UTGIFTER,
+            ),
+        )
 
         behandling.utgift = oppretteUtgift(behandling, "")
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal.valueOf(1000)
@@ -200,7 +223,7 @@ class BehandlingDtoMappingTest {
             avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
             kategori.kategori shouldBe Særbidragskategori.ANNET
             kategori.beskrivelse shouldBe "Høreapparat"
-            begrunnelse.kunINotat shouldBe "Notat utgift"
+            begrunnelse.innhold shouldBe "Notat utgift"
             utgifter shouldHaveSize 0
         }
     }
@@ -238,7 +261,7 @@ class BehandlingDtoMappingTest {
             Grunnlag(
                 type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
                 erBearbeidet = false,
-                rolle = behandling.bidragspliktig!!,
+                rolle = behandling.bidragsmottaker!!,
                 behandling = behandling,
                 data = commonObjectmapper.writeValueAsString(andreVoksneUbehandlaOppdatert),
                 innhentet = LocalDateTime.now(),

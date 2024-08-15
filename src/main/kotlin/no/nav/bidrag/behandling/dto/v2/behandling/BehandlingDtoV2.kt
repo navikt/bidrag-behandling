@@ -132,6 +132,8 @@ data class UtgiftBeregningDto(
     val beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val totalGodkjentBeløp: BigDecimal = BigDecimal.ZERO,
+    @Schema(description = "Summen av kravbeløp")
+    val totalKravbeløp: BigDecimal = BigDecimal.ZERO,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val totalGodkjentBeløpBp: BigDecimal? = null,
     @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt plus beløp som er direkte betalt av BP")

@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.commons.web.client.AbstractRestClient
-import no.nav.bidrag.transport.notat.NotatDto
+import no.nav.bidrag.transport.notat.VedtakNotatDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
@@ -18,7 +18,7 @@ class BidragDokumentProduksjonConsumer(
     private val bidragDokumentProduksjonUri
         get() = UriComponentsBuilder.fromUri(bidragDokumentProduksjonUrl).pathSegment("api", "v2", "notat", "pdf")
 
-    fun opprettNotat(request: NotatDto): ByteArray {
+    fun opprettNotat(request: VedtakNotatDto): ByteArray {
         val headers = HttpHeaders()
         return postForEntity(
             bidragDokumentProduksjonUri.build().toUri(),
