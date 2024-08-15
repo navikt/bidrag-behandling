@@ -186,6 +186,12 @@ class GrunnlagService(
                 behandling,
                 request.overskriveManuelleOpplysninger,
             )
+        } else if (Grunnlagsdatatype.ARBEIDSFORHOLD == request.grunnlagstype) {
+            log.info { "Aktiverer arbeidsforhold for rolleid ${rolleGrunnlagErInnhentetFor?.id} i behandling med id ${behandling.id}." }
+            behandling.grunnlag
+                .hentAlleIkkeAktiv()
+                .hentGrunnlagForType(Grunnlagsdatatype.ARBEIDSFORHOLD, request.personident!!.verdi)
+                .oppdaterStatusTilAktiv(LocalDateTime.now())
         } else {
             log.error {
                 "Grunnlagstype ${request.grunnlagstype} ikke støttet ved aktivering av grunnlag. Aktivering feilet " +

@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -53,6 +54,7 @@ import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
@@ -1662,6 +1664,45 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter
                         .first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }
                         .belop shouldBe BigDecimal(368000)
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal aktivere grunnlag av type arbeidsforhold for bp i behandling av særbidrag`() {
+                // gitt
+                val behandling = testdataManager.oppretteBehandling(false, inkludereBp = true)
+                behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
+                stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
+
+                val arbeidsforhold = oppretteArbeidsforhold( behandling.bidragspliktig!!.ident!!)
+
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    rolle = behandling.bidragspliktig!!,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.ARBEIDSFORHOLD, false),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata = arbeidsforhold,
+                )
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        Personident(behandling.bidragspliktig?.ident!!),
+                        Grunnlagsdatatype.ARBEIDSFORHOLD,
+                    )
+
+                // hvis
+                grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
+
+                // så
+                assertSoftly(behandling.grunnlag) { g ->
+                    g.isNotEmpty()
+                    g.filter { LocalDate.now() == it.aktiv?.toLocalDate() }.size shouldBe 4
+                    g.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
+                    g.find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD }?.aktiv?.toLocalDate() shouldBe LocalDate.now()
                 }
             }
 

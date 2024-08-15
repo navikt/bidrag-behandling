@@ -57,10 +57,9 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
-import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
-import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -150,20 +149,6 @@ data class TestDataPerson(
             ident = Personident(ident),
             navn = navn,
             fødselsdato = fødselsdato,
-        )
-
-    fun tilGrunnlagDto() =
-        GrunnlagDto(
-            referanse = "${ident}_${rolletype.name}_$navn",
-            type = rolletype.tilGrunnlagstype(),
-            innhold =
-                POJONode(
-                    Person(
-                        ident = Personident(ident),
-                        navn = navn,
-                        fødselsdato = fødselsdato,
-                    ),
-                ),
         )
 
     fun tilForsendelseRolleDto() = ForsendelseRolleDto(Personident(ident), type = rolletype)
@@ -1024,6 +1009,7 @@ fun oppretteBehandling(
     behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
     inkludereVoksneIBpsHusstand: Boolean = false,
     setteDatabaseider: Boolean = false,
+    inkludereArbeidsforhold: Boolean = false,
 ): Behandling {
     val behandlingsid = if (setteDatabaseider) 1L else null
     val behandling = oppretteBehandling(behandlingsid)
@@ -1073,7 +1059,56 @@ fun oppretteBehandling(
         }
     }
 
+    if (inkludereArbeidsforhold) {
+        oppretteArbeidsforhold(behandling, behandling.rolleGrunnlagSkalHentesFor!!.ident!!)
+    }
+
     return behandling
+}
+
+fun oppretteArbeidsforhold(personident: String): ArbeidsforholdGrunnlagDto =
+    ArbeidsforholdGrunnlagDto(
+        arbeidsgiverNavn = "Liv og røre",
+        arbeidsgiverOrgnummer = "001122445577",
+        startdato = LocalDate.now().minusMonths(144),
+        sluttdato = null,
+        partPersonId = personident,
+        permitteringListe = emptyList(),
+        permisjonListe = emptyList(),
+        ansettelsesdetaljerListe =
+            listOf(
+                Ansettelsesdetaljer(
+                    periodeFra = YearMonth.now().minusMonths(144),
+                    periodeTil = null,
+                    ansettelsesformBeskrivelse = "Fast ansatt",
+                    antallTimerPrUke = 40.0,
+                    arbeidsforholdType = "Ordinaer",
+                    avtaltStillingsprosent = 100.0,
+                    arbeidstidsordningBeskrivelse = "Ikke skift",
+                    sisteLønnsendringDato = LocalDate.now().minusMonths(10).withMonth(1),
+                    sisteStillingsprosentendringDato = LocalDate.now().minusMonths(144),
+                    yrkeBeskrivelse = "Snekker",
+                ),
+            ),
+    )
+
+fun oppretteArbeidsforhold(
+    behandling: Behandling,
+    personident: String,
+) {
+    val arbeidsforhold = oppretteArbeidsforhold(personident)
+
+    behandling.grunnlag.add(
+        Grunnlag(
+            aktiv = LocalDateTime.now(),
+            behandling = behandling,
+            innhentet = LocalDateTime.now().minusDays(3),
+            data = commonObjectmapper.writeValueAsString(setOf(arbeidsforhold)),
+            rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+            type = Grunnlagsdatatype.ARBEIDSFORHOLD,
+            erBearbeidet = false,
+        ),
+    )
 }
 
 private fun oppretteBoforhold(

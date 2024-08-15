@@ -36,6 +36,8 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -1007,6 +1009,57 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Nested
         open inner class Særbidrag {
+            @Test
+            @Transactional
+            open fun `skal aktivere arbeidsforhold`() {
+                // gitt
+                val b = oppretteBehandling(inkludereBp = true, inkludereArbeidsforhold = true)
+                kjøreStubber(b)
+                val nyttArbeidsforhold =
+                    oppretteArbeidsforhold(b.bidragspliktig!!.ident!!).copy(
+                        startdato = LocalDate.now(),
+                        arbeidsgiverNavn = "Skruer og mutrer AS",
+                    )
+                b.grunnlag.add(
+                    Grunnlag(
+                        b,
+                        Grunnlagsdatatype.ARBEIDSFORHOLD,
+                        false,
+                        commonObjectmapper.writeValueAsString(setOf(nyttArbeidsforhold)),
+                        LocalDateTime.now(),
+                        null,
+                        b.bidragspliktig!!,
+                    ),
+                )
+
+                testdataManager.lagreBehandlingNewTransaction(b)
+
+                assertSoftly(b.grunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }) { g ->
+                    g shouldHaveSize 2
+                    g.filter { it.aktiv == null } shouldHaveSize 1
+                }
+
+                // hvis
+                val svar =
+                    behandlingService.aktivereGrunnlag(
+                        b.id!!,
+                        AktivereGrunnlagRequestV2(Personident(b.bidragspliktig!!.ident!!), Grunnlagsdatatype.ARBEIDSFORHOLD),
+                    )
+
+                // så
+                assertSoftly(svar.aktiveGrunnlagsdata.arbeidsforhold) { a ->
+                    a shouldHaveSize 2
+                    a.filter { b.bidragsmottaker!!.ident == it.partPersonId } shouldHaveSize 1
+                    a.filter { b.bidragspliktig!!.ident == it.partPersonId } shouldHaveSize 1
+                }
+
+                val oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!).get()
+                assertSoftly(oppdatertBehandling.grunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }) { a ->
+                    a shouldHaveSize 2
+                    a.filter { it.aktiv != null } shouldHaveSize 2
+                }
+            }
+
             @Test
             open fun `skal aktivere andre voksne i husstan`() {
             }

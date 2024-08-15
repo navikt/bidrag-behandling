@@ -61,6 +61,8 @@ class TestdataManager(
         inkludereBp: Boolean = false,
         behandlingstype: TypeBehandling = TypeBehandling.FORSKUDD,
         inkludereVoksneIBpsHusstand: Boolean = false,
+        setteDatabaseider: Boolean = false,
+        inkludereArbeidsforhold: Boolean = false,
     ): Behandling {
         val behandling =
             no.nav.bidrag.behandling.utils.testdata
@@ -71,6 +73,8 @@ class TestdataManager(
                     inkludereBp,
                     behandlingstype,
                     inkludereVoksneIBpsHusstand,
+                    setteDatabaseider,
+                    inkludereArbeidsforhold,
                 )
 
         return behandlingRepository.save(behandling)
