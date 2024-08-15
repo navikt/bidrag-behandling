@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
+import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotaterDirekteAvslag
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSærbidragKategori
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBetalt
@@ -101,7 +102,7 @@ fun Behandling.byggGrunnlagGenerelt(): Set<GrunnlagDto> {
 }
 
 fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
-    val grunnlagListe = (byggGrunnlagNotater() + byggGrunnlagSøknad()).toMutableSet()
+    val grunnlagListe = (byggGrunnlagNotaterDirekteAvslag() + byggGrunnlagSøknad()).toMutableSet()
     when (tilType()) {
         TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
         TypeBehandling.SÆRBIDRAG -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
