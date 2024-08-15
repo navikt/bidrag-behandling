@@ -41,6 +41,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
+import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
@@ -181,9 +182,19 @@ class GrunnlagMappingTest {
         @Test
         fun `skal bygge grunnlag for engangsbeløp for særbidrag`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
-            behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-            behandling.utgiftsbegrunnelseKunINotat = "Utgift notat"
-            behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+            behandling.leggTilNotat(
+                "Notat inntekt BM",
+                NotatGrunnlag.NotatType.INNTEKT,
+                behandling.bidragsmottaker!!,
+            )
+            behandling.leggTilNotat(
+                "Utgift notat",
+                NotatGrunnlag.NotatType.UTGIFTER,
+            )
+            behandling.leggTilNotat(
+                "Boforhold",
+                NotatGrunnlag.NotatType.BOFORHOLD,
+            )
             behandling.stonadstype = null
             behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
 
