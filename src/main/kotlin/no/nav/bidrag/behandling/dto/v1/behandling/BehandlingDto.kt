@@ -20,8 +20,13 @@ data class VirkningstidspunktDto(
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
-    val notat: NotatDto,
-)
+    @Schema(description = "Saksbehandlers begrunnelse")
+    val begrunnelse: BegrunnelseDto,
+) {
+    @Deprecated("Bruk begrunnelse")
+    @Schema(description = "Bruk begrunnelse", deprecated = true)
+    val notat: BegrunnelseDto = begrunnelse
+}
 
 data class BoforholdValideringsfeil(
     val andreVoksneIHusstanden: AndreVoksneIHusstandenPeriodeseringsfeil? = null,
@@ -29,7 +34,7 @@ data class BoforholdValideringsfeil(
     val sivilstand: SivilstandPeriodeseringsfeil? = null,
 )
 
-data class NotatDto(
+data class BegrunnelseDto(
     val innhold: String,
     val gjelder: RolleDto? = null,
 ) {

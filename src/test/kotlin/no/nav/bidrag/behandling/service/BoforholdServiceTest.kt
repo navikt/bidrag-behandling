@@ -1305,7 +1305,7 @@ class BoforholdServiceTest : TestContainerRunner() {
     }
 
     @Nested
-    open inner class OppdatereNotat {
+    open inner class OppdatereBegrunnelse {
         @Test
         @Transactional
         open fun `skal oppdatere notat`() {
@@ -1313,7 +1313,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             val behandling = testdataManager.oppretteBehandling(false, false, false, true)
             val nyNotattekst = "BP bor alene"
             val request =
-                no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat(
+                no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse(
                     nyNotattekst,
                     behandling.bidragspliktig!!.id!!,
                 )
@@ -1322,7 +1322,7 @@ class BoforholdServiceTest : TestContainerRunner() {
             val respons = boforholdService.oppdatereNotat(behandling.id!!, request)
 
             // så
-            respons.oppdatertNotattekst shouldBe nyNotattekst
+            respons.begrunnelse shouldBe nyNotattekst
 
             assertSoftly(behandling.notater) {
                 it shouldHaveSize 1

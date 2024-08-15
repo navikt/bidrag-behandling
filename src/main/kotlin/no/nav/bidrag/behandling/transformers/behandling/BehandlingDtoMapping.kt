@@ -15,8 +15,8 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
-import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
@@ -168,7 +168,7 @@ fun Behandling.tilBehandlingDtoV2(
             opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
             årsak = årsak,
             avslag = avslag,
-            notat = NotatDto(NotatService.henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT) ?: ""),
+            begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT) ?: ""),
         ),
     boforhold = tilBoforholdV2(),
     inntekter =
@@ -308,8 +308,8 @@ fun Behandling.tilBoforholdV2() =
                 ?.perioder
                 ?.tilBostatusperiode() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
-        notat =
-            NotatDto(
+        begrunnelse =
+            BegrunnelseDto(
                 innhold = NotatService.henteNotatinnhold(this, Notattype.BOFORHOLD),
                 gjelder = this.henteRolleForNotat(Notattype.BOFORHOLD, null).tilDto(),
             ),
@@ -386,12 +386,12 @@ fun Behandling.tilInntektDtoV2(
                     hentBeregnetInntekterForRolle(it),
                 )
             },
-    notater =
+    begrunnelser =
         this.roller
             .mapNotNull { r ->
                 val inntektsnotat = NotatService.henteInntektsnotat(this, r.id!!)
                 inntektsnotat?.let {
-                    NotatDto(
+                    BegrunnelseDto(
                         innhold = it,
                         gjelder = r.tilDto(),
                     )
