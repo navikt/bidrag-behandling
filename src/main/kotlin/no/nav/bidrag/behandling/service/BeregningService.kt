@@ -71,7 +71,7 @@ class BeregningService(
         } else {
             try {
                 val grunnlagBeregning = behandling.byggGrunnlagForBeregning(søknasdbarn)
-                beregnSærbidragApi.beregn(grunnlagBeregning).let {
+                beregnSærbidragApi.beregn(grunnlagBeregning, behandling.vedtakstype).let {
                     it.validerForSærbidrag()
                     it
                 }

@@ -99,7 +99,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
                 ),
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(8),
@@ -114,7 +114,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder utgifter til mat og drikke",
+                    kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
         testdataManager.lagreBehandling(behandling)
@@ -229,7 +229,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 utgiftspost.type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
                 utgiftspost.kravbeløp shouldBe BigDecimal(15000)
                 utgiftspost.godkjentBeløp shouldBe BigDecimal(5000)
-                utgiftspost.begrunnelse shouldBe "Inneholder avgifter for alkohol og pynt"
+                utgiftspost.kommentar shouldBe "Inneholder avgifter for alkohol og pynt"
             }
 
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
@@ -295,7 +295,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
                 ),
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(8),
@@ -310,7 +310,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder utgifter til mat og drikke",
+                    kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
 
@@ -413,7 +413,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 utgiftspost.type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
                 utgiftspost.kravbeløp shouldBe BigDecimal(15000)
                 utgiftspost.godkjentBeløp shouldBe BigDecimal(5000)
-                utgiftspost.begrunnelse shouldBe "Inneholder avgifter for alkohol og pynt"
+                utgiftspost.kommentar shouldBe "Inneholder avgifter for alkohol og pynt"
             }
 
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
@@ -616,7 +616,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
                 ),
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(8),
@@ -631,7 +631,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder utgifter til mat og drikke",
+                    kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
         behandling.initGrunnlagRespons(stubUtils)
@@ -781,7 +781,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
                 ),
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(8),
@@ -796,7 +796,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder utgifter til mat og drikke",
+                    kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
         behandling.initGrunnlagRespons(stubUtils)

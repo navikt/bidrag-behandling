@@ -7,6 +7,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
@@ -23,6 +24,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -136,15 +138,17 @@ class BeregningServiceTest {
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
-        every { BeregnSærbidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
+        every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
         val resultat = BeregningService(behandlingService).beregneSærbidrag(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 1) {
-            BeregnSærbidragApi().beregn(any())
+            BeregnSærbidragApi().beregn(any(), any())
         }
         resultat shouldNotBe null
+        vedtaksTypeCapture.captured shouldBe Vedtakstype.FASTSETTELSE
         resultat.grunnlagListe shouldHaveSize 27
         beregnGrunnlagList shouldHaveSize 1
         assertSoftly(beregnGrunnlagList[0]) {
@@ -200,11 +204,13 @@ class BeregningServiceTest {
 
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnSærbidragApi::class)
-        every { BeregnSærbidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
+        val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
+
+        every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
 
         val exception = assertThrows<HttpClientErrorException> { BeregningService(behandlingService).beregneSærbidrag(1) }
         verify(exactly = 0) {
-            BeregnSærbidragApi().beregn(any())
+            BeregnSærbidragApi().beregn(any(), any())
         }
         exception.message shouldContain "Feil ved validering av behandling for beregning av særbidrag"
     }

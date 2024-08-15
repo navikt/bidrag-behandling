@@ -113,7 +113,7 @@ fun Behandling.byggGrunnlagUtgiftsposter() =
                             type = it.type,
                             kravbeløp = it.kravbeløp,
                             godkjentBeløp = it.godkjentBeløp,
-                            begrunnelse = it.begrunnelse,
+                            kommentar = it.kommentar,
                             betaltAvBp = it.betaltAvBp,
                         )
                     },

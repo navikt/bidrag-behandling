@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -20,12 +21,12 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
@@ -34,6 +35,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import stubPersonConsumer
 import java.math.BigDecimal
+import java.math.MathContext
 
 class BehandlingBeregnControllerTest : KontrollerTestRunner() {
     @Autowired
@@ -64,7 +66,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
         // when
         val returnert =
             httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/${behandling.id}/beregn",
+                "${rootUriV1()}/behandling/${behandling.id}/beregn/forskudd",
                 HttpMethod.POST,
                 HttpEntity.EMPTY,
                 responseType,
@@ -109,6 +111,38 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
     }
 
     @Test
+    fun `skal beregne særbidrag for validert behandling`() {
+        // given
+        val behandling = lagreBehandling(opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.SÆRBIDRAG))
+
+        // when
+        val returnert =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV1()}/behandling/${behandling.id}/beregn/sarbidrag",
+                HttpMethod.POST,
+                HttpEntity.EMPTY,
+                ResultatSærbidragsberegningDto::class.java,
+            )
+
+        // then
+        assertSoftly(returnert) {
+            this shouldNotBe null
+            statusCode shouldBe HttpStatus.OK
+        }
+
+        assertSoftly(returnert.body!!) {
+            it.resultat shouldBe BigDecimal(2083)
+            it.resultatKode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET
+            it.voksenIHusstanden shouldBe true
+            it.bpHarEvne shouldBe true
+            it.delberegningUtgift!!.sumGodkjent shouldBe BigDecimal(2500)
+            it.beregning!!.totalKravbeløp shouldBe BigDecimal(3000)
+            it.bpsAndel!!.andelBeløp shouldBe BigDecimal(2083)
+            it.bpsAndel.andelProsent.round(MathContext(3)) shouldBe BigDecimal(83.33).round(MathContext(3))
+        }
+    }
+
+    @Test
     fun `skal returnere httpkode 400 dersom behandling mangler informasjon om husstandsmedlem`() {
         // given
         val behandling = lagreBehandlingMedRoller()
@@ -145,37 +179,6 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 årsinntekter shouldNotBe null
                 årsinntekter!! shouldHaveSize 1
             }
-        }
-    }
-
-    @Test
-    @Disabled("")
-    fun `skal videreføre feil fra bidrag-beregn-forskudd-rest`() {
-        // given
-        val errorMessage = "Feil input"
-        every { forskuddBeregning.beregn(any()) } throws IllegalArgumentException(errorMessage)
-        val behandling = lagreBehandling(opprettGyldigBehandlingForBeregningOgVedtak())
-
-        // when
-        val returnert =
-            httpHeaderTestRestTemplate.exchange(
-                "${rootUriV1()}/behandling/${behandling.id}/beregn",
-                HttpMethod.POST,
-                HttpEntity.EMPTY,
-                responseType,
-            )
-
-        // then
-        assertSoftly {
-            returnert shouldNotBe null
-            returnert.statusCode shouldBe HttpStatus.BAD_REQUEST
-            returnert.body shouldBe null
-            returnert.headers["Warning"]?.shouldBe(
-                listOf(
-                    errorMessage,
-                    errorMessage,
-                ),
-            )
         }
     }
 

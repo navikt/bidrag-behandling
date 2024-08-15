@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -28,7 +29,8 @@ open class Utgiftspost(
     open var type: String,
     open var kravbeløp: BigDecimal,
     open var godkjentBeløp: BigDecimal,
-    open var begrunnelse: String? = null,
+    @Column(name = "begrunnelse")
+    open var kommentar: String? = null,
     open var betaltAvBp: Boolean = false,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utgift_id", nullable = false)
@@ -36,5 +38,5 @@ open class Utgiftspost(
 ) {
     override fun toString(): String =
         "Utgiftspost(id=$id, dato=$dato, type=$type, kravbeløp=$kravbeløp, betaltAvBp=$betaltAvBp" +
-            "godkjentBeløp=$godkjentBeløp, begrunnelse=$begrunnelse)"
+            "godkjentBeløp=$godkjentBeløp, kommentar=$kommentar)"
 }

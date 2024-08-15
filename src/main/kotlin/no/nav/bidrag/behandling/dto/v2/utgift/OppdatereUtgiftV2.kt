@@ -71,8 +71,17 @@ data class OppdatereUtgift(
     @Schema(description = "Beløp som er godkjent for beregningen")
     @field:PositiveOrZero(message = "Godkjent beløp kan ikke være negativ")
     val godkjentBeløp: BigDecimal = kravbeløp,
-    @Schema(description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp")
-    val begrunnelse: String? = null,
+    @Schema(
+        description =
+            "Kommentar kan brukes til å legge inn nærmere informasjon om utgiften f.eks. fakturanr., butikk det er handlet i," +
+                " informasjon om hvorfor man ikke har godkjent hele kravbeløpet",
+    )
+    val kommentar: String? = null,
+    @Schema(
+        description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp",
+        deprecated = true,
+    )
+    val begrunnelse: String? = kommentar,
     @Schema(description = "Om utgiften er betalt av BP")
     val betaltAvBp: Boolean = false,
     val id: Long? = null,

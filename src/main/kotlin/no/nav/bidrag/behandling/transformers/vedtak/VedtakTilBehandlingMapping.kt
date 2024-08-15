@@ -141,6 +141,7 @@ fun VedtakDto.tilBehandling(
     søknadId: Long? = null,
     enhet: String? = null,
     opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
+    opprinneligVedtakstype: Vedtakstype? = null,
 ): Behandling {
     val opprettetAv =
         if (lesemodus) {
@@ -161,6 +162,7 @@ fun VedtakDto.tilBehandling(
         Behandling(
             id = if (lesemodus) 1 else null,
             vedtakstype = vedtakType ?: type,
+            opprinneligVedtakstype = opprinneligVedtakstype,
             virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato,
             kategori = grunnlagListe.særbidragskategori?.kategori?.name,
             kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
@@ -179,7 +181,7 @@ fun VedtakDto.tilBehandling(
             soknadFra = soknadFra ?: hentSøknad().søktAv,
             mottattdato =
                 when (typeBehandling) {
-                    no.nav.bidrag.domene.enums.behandling.TypeBehandling.SÆRBIDRAG -> hentSøknad().mottattDato
+                    TypeBehandling.SÆRBIDRAG -> hentSøknad().mottattDato
                     else -> mottattdato ?: hentSøknad().mottattDato
                 },
             // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
@@ -274,7 +276,7 @@ private fun List<GrunnlagDto>.mapUtgifter(
                     type = it.type,
                     godkjentBeløp = it.godkjentBeløp,
                     kravbeløp = it.kravbeløp,
-                    begrunnelse = it.begrunnelse,
+                    kommentar = it.kommentar,
                     betaltAvBp = it.betaltAvBp,
                 )
             }.toMutableSet()

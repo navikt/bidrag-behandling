@@ -411,7 +411,7 @@ class VedtakTilBehandlingSærbidragTest {
                 godkjentBeløp shouldBe BigDecimal(6000)
                 type shouldBe "Ny høreapparat"
                 betaltAvBp shouldBe false
-                begrunnelse shouldBe "Inkluderer ikke frakt og andre kostnader"
+                kommentar shouldBe "Inkluderer ikke frakt og andre kostnader"
                 dato shouldBe LocalDate.parse("2024-05-06")
             }
         }

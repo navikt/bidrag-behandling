@@ -83,7 +83,7 @@ class ValiderBeregningSærbidragTest {
                 utgiftsposter =
                     mutableSetOf(
                         Utgiftspost(
-                            begrunnelse = null,
+                            kommentar = null,
                             dato = LocalDate.now().minusDays(2),
                             godkjentBeløp = BigDecimal.valueOf(1000),
                             kravbeløp = BigDecimal.valueOf(500),

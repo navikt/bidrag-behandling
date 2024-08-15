@@ -74,7 +74,7 @@ class UtgiftserviceMockTest {
                     type = Utgiftstype.OPTIKK.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -87,7 +87,7 @@ class UtgiftserviceMockTest {
                         dato = LocalDate.now().minusDays(1),
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                         betaltAvBp = true,
                     ),
             )
@@ -115,7 +115,7 @@ class UtgiftserviceMockTest {
                     type = Utgiftstype.OPTIKK.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -129,7 +129,7 @@ class UtgiftserviceMockTest {
                         type = Utgiftstype.OPTIKK.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val exception =

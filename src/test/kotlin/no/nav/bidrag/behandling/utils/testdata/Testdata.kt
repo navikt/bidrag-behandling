@@ -189,6 +189,7 @@ fun oppretteBehandling(
 ): Behandling =
     Behandling(
         vedtakstype,
+        null,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
@@ -1009,7 +1010,7 @@ fun oppretteUtgift(
                 type = utgiftstype,
                 kravbeløp = BigDecimal(3000),
                 godkjentBeløp = BigDecimal(2500),
-                begrunnelse = "Trekker fra alkohol",
+                kommentar = "Trekker fra alkohol",
                 utgift = utgift,
             ),
         )

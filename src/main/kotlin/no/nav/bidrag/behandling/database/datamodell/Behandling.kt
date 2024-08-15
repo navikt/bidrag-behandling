@@ -38,6 +38,8 @@ import java.time.LocalDateTime
 open class Behandling(
     @Enumerated(EnumType.STRING)
     open val vedtakstype: Vedtakstype,
+    @Enumerated(EnumType.STRING)
+    open val opprinneligVedtakstype: Vedtakstype? = null,
     @Column(name = "dato_fom")
     open val søktFomDato: LocalDate,
     open val datoTom: LocalDate? = null,

@@ -50,16 +50,17 @@ fun Utgift?.hentValideringsfeil() =
         ugyldigUtgiftspost =
             this?.utgiftsposter?.any {
                 OppdatereUtgift(
-                    it.dato,
-                    when {
-                        kategorierSomKreverType.contains(behandling.særbidragKategori) -> it.type
-                        else -> null
-                    },
-                    it.kravbeløp,
-                    it.godkjentBeløp,
-                    it.begrunnelse,
-                    it.betaltAvBp,
-                    it.id,
+                    dato = it.dato,
+                    type =
+                        when {
+                            kategorierSomKreverType.contains(behandling.særbidragKategori) -> it.type
+                            else -> null
+                        },
+                    kravbeløp = it.kravbeløp,
+                    godkjentBeløp = it.godkjentBeløp,
+                    kommentar = it.kommentar,
+                    betaltAvBp = it.betaltAvBp,
+                    id = it.id,
                 ).validerUtgiftspost(behandling).isNotEmpty()
             } ?: false,
         manglerUtgifter = this == null || utgiftsposter.isEmpty(),
@@ -133,7 +134,7 @@ fun Utgift.tilBeregningDto() =
 fun Utgiftspost.tilDto() =
     UtgiftspostDto(
         id = id!!,
-        begrunnelse = begrunnelse ?: "",
+        kommentar = kommentar ?: "",
         type = type,
         godkjentBeløp = godkjentBeløp,
         kravbeløp = kravbeløp,
@@ -144,7 +145,7 @@ fun Utgiftspost.tilDto() =
 fun OppdatereUtgift.tilUtgiftspost(utgift: Utgift) =
     Utgiftspost(
         utgift = utgift,
-        begrunnelse =
+        kommentar =
             if (utgift.behandling.erDatoForUtgiftForeldet(dato)) {
                 "Utgiften er foreldet"
             } else {

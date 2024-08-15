@@ -276,7 +276,7 @@ class OppdaterUtgiftRequestValideringTest {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )

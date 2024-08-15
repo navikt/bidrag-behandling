@@ -148,7 +148,12 @@ data class UtgiftspostDto(
     @Schema(description = "Beløp som er godkjent for beregningen")
     val godkjentBeløp: BigDecimal = kravbeløp,
     @Schema(description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp")
-    val begrunnelse: String,
+    val kommentar: String,
+    @Schema(
+        description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp",
+        deprecated = true,
+    )
+    val begrunnelse: String = kommentar,
     @Schema(description = "Om utgiften er betalt av BP")
     val betaltAvBp: Boolean = false,
     val id: Long,
