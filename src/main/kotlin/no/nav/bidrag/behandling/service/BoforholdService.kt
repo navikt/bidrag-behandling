@@ -27,7 +27,7 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
@@ -94,7 +94,7 @@ class BoforholdService(
     @Transactional
     fun oppdatereNotat(
         behandlingsid: Long,
-        request: OppdatereNotat,
+        request: OppdatereBegrunnelse,
     ): OppdatereBoforholdResponse {
         val behandling =
             behandlingRepository
@@ -104,12 +104,12 @@ class BoforholdService(
         notatService.oppdatereNotat(
             behandling = behandling,
             notattype = Notattype.BOFORHOLD,
-            notattekst = request.henteNyttNotat(),
+            notattekst = request.henteNyttNotat() ?: "",
             rolleid = behandling.rolleGrunnlagSkalHentesFor!!.id!!,
         )
 
         return OppdatereBoforholdResponse(
-            oppdatertNotattekst = NotatService.henteNotatinnhold(behandling, Notattype.BOFORHOLD),
+            begrunnelse = NotatService.henteNotatinnhold(behandling, Notattype.BOFORHOLD),
             valideringsfeil =
                 BoforholdValideringsfeil(
                     husstandsmedlem =

@@ -47,7 +47,7 @@ class UtgiftService(
             notatService.oppdatereNotat(
                 behandling,
                 NotatGrunnlag.NotatType.UTGIFTER,
-                it.henteNyttNotat(),
+                it.henteNyttNotat() ?: "",
                 behandling.bidragsmottaker!!.id!!,
             )
         }

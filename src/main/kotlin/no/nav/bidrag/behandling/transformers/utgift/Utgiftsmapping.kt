@@ -4,7 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
-import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -73,7 +73,7 @@ fun Behandling.tilUtgiftDto() =
             SærbidragUtgifterDto(
                 avslag = avslag,
                 kategori = tilSærbidragKategoriDto(),
-                notat = NotatDto(henteNotatinnhold(this, Notattype.UTGIFTER) ?: ""),
+                begrunnelse = BegrunnelseDto(henteNotatinnhold(this, Notattype.UTGIFTER) ?: ""),
                 valideringsfeil = valideringsfeil,
             )
         } else {
@@ -81,8 +81,8 @@ fun Behandling.tilUtgiftDto() =
                 avslag = avslag,
                 beregning = utgift.tilBeregningDto(),
                 kategori = tilSærbidragKategoriDto(),
-                notat =
-                    NotatDto(
+                begrunnelse =
+                    BegrunnelseDto(
                         innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
                         gjelder = this.henteRolleForNotat(Notattype.UTGIFTER, null).tilDto(),
                     ),
@@ -94,8 +94,8 @@ fun Behandling.tilUtgiftDto() =
         SærbidragUtgifterDto(
             avslag = avslag,
             kategori = tilSærbidragKategoriDto(),
-            notat =
-                NotatDto(
+            begrunnelse =
+                BegrunnelseDto(
                     innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
                     gjelder = this.henteRolleForNotat(Notattype.UTGIFTER, null).tilDto(),
                 ),
@@ -109,14 +109,14 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
     if (behandling.avslag != null) {
         OppdatereUtgiftResponse(
             avslag = behandling.avslag,
-            oppdatertNotat = henteNotatinnhold(behandling, Notattype.UTGIFTER),
+            begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
         )
     } else {
         OppdatereUtgiftResponse(
             oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
             utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
-            oppdatertNotat = henteNotatinnhold(behandling, Notattype.UTGIFTER),
+            begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             beregning = tilBeregningDto(),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
         )

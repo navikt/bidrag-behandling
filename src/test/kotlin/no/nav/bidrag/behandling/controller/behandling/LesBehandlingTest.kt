@@ -71,7 +71,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
         assertSoftly(behandling.boforhold) {
             husstandsmedlem shouldHaveSize 6
             sivilstand shouldHaveSize 2
-            notat.kunINotat shouldBe "Notat boforhold"
+            begrunnelse.kunINotat shouldBe "Notat boforhold"
         }
 
         val aktiveGrunnlagsdata = behandling.aktiveGrunnlagsdata
