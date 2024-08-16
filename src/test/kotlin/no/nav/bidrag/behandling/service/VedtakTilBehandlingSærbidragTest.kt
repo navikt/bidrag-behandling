@@ -133,6 +133,11 @@ class VedtakTilBehandlingSærbidragTest {
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
+            notater shouldHaveSize 4
+            val notatInntekter = notater.filter { it.type == Notattype.INNTEKT }
+            notatInntekter.find { it.rolle == it.behandling.bidragsmottaker }?.innhold shouldBe "Notat inntekter BM"
+            notatInntekter.find { it.rolle == it.behandling.bidragspliktig }?.innhold shouldBe "Notat inntekter BP"
+            notatInntekter.find { it.rolle == it.behandling.søknadsbarn.first() }?.innhold shouldBe "Notat inntekter BA"
             validerUtgifter()
             validerRoller()
             validerHusstandsmedlem()
@@ -188,6 +193,12 @@ class VedtakTilBehandlingSærbidragTest {
             opprettetAvNavn shouldBe null
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe
                 "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
+            notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
+            notater shouldHaveSize 4
+            val notatInntekter = notater.filter { it.type == Notattype.INNTEKT }
+            notatInntekter.find { it.rolle == it.behandling.bidragsmottaker }?.innhold shouldBe "Notat inntekter BM"
+            notatInntekter.find { it.rolle == it.behandling.bidragspliktig }?.innhold shouldBe "Notat inntekter BP"
+            notatInntekter.find { it.rolle == it.behandling.søknadsbarn.first() }?.innhold shouldBe "Notat inntekter BA"
             validerUtgifter()
             validerRoller()
             validerHusstandsmedlem()
@@ -411,7 +422,7 @@ class VedtakTilBehandlingSærbidragTest {
                 godkjentBeløp shouldBe BigDecimal(6000)
                 type shouldBe "Ny høreapparat"
                 betaltAvBp shouldBe false
-                begrunnelse shouldBe "Inkluderer ikke frakt og andre kostnader"
+                kommentar shouldBe "Inkluderer ikke frakt og andre kostnader"
                 dato shouldBe LocalDate.parse("2024-05-06")
             }
         }

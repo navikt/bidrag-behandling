@@ -40,6 +40,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -81,6 +82,17 @@ class VedtakService(
             LOGGER.error(e) { "Det skjedde en feil ved konvertering av vedtak $vedtakId for lesemodus" }
             throw e
         }
+    }
+
+    private fun hentOpprinneligVedtakstype(vedtak: VedtakDto): Vedtakstype {
+        val vedtaksiderStønadsendring = vedtak.stønadsendringListe.mapNotNull { it.omgjørVedtakId }
+        val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
+        val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
+        if (refererTilVedtakId.isNotEmpty()) {
+            val opprinneligVedtak = vedtakConsumer.hentVedtak(refererTilVedtakId.first().toLong())!!
+            return hentOpprinneligVedtakstype(opprinneligVedtak)
+        }
+        return vedtak.type
     }
 
     private fun hentOpprinneligVedtakstidspunkt(vedtak: VedtakDto): Set<LocalDateTime> {
@@ -150,6 +162,7 @@ class VedtakService(
             søknadId = request.søknadsid,
             lesemodus = false,
             opprinneligVedtakstidspunkt = hentOpprinneligVedtakstidspunkt(vedtak).toSet(),
+            opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
         )
     }
 

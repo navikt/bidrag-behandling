@@ -1,0 +1,1 @@
+alter table utgiftspost rename column begrunnelse to kommentar;

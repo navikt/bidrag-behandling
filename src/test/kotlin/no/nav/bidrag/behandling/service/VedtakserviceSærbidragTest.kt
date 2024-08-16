@@ -12,6 +12,7 @@ import io.mockk.slot
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.validering.virkningstidspunkt
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.utils.shouldContainPerson
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
+import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
@@ -81,9 +83,29 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
-        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+        behandling.leggTilNotat(
+            "Notat inntekt BM",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragsmottaker!!,
+        )
+        behandling.leggTilNotat(
+            "Notat inntekt BP",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragspliktig!!,
+        )
+        behandling.leggTilNotat(
+            "Notat inntekt BA",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.søknadsbarn.first()!!,
+        )
+        behandling.leggTilNotat(
+            "Utgiftsbegrunnelse",
+            NotatGrunnlag.NotatType.UTGIFTER,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatGrunnlag.NotatType.BOFORHOLD,
+        )
         behandling.refVedtaksid = 553
         behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
@@ -99,7 +121,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
                 ),
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(8),
@@ -114,7 +136,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder utgifter til mat og drikke",
+                    kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
         testdataManager.lagreBehandling(behandling)
@@ -153,8 +175,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 101 grunnlag") {
-                request.grunnlagListe shouldHaveSize 101
+            withClue("Grunnlagliste skal inneholde 103 grunnlag") {
+                request.grunnlagListe shouldHaveSize 103
             }
         }
 
@@ -177,7 +199,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_INNVILGET.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
-            it.grunnlagReferanseListe shouldHaveSize 7
+            it.grunnlagReferanseListe shouldHaveSize 9
             grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                 Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG,
                 it.grunnlagReferanseListe,
@@ -192,7 +214,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 Grunnlagstype.NOTAT,
                 it.grunnlagReferanseListe,
             ) shouldHaveSize
-                3
+                5
             grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                 Grunnlagstype.SØKNAD,
                 it.grunnlagReferanseListe,
@@ -229,13 +251,21 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 utgiftspost.type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
                 utgiftspost.kravbeløp shouldBe BigDecimal(15000)
                 utgiftspost.godkjentBeløp shouldBe BigDecimal(5000)
-                utgiftspost.begrunnelse shouldBe "Inneholder avgifter for alkohol og pynt"
+                utgiftspost.kommentar shouldBe "Inneholder avgifter for alkohol og pynt"
             }
 
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
-                shouldHaveSize(3)
+                shouldHaveSize(5)
                 val innholdListe = innholdTilObjekt<NotatGrunnlag>()
-                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe behandling.utgiftsbegrunnelseKunINotat
+                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe
+                    henteNotatinnhold(behandling, NotatGrunnlag.NotatType.UTGIFTER)
+                val notatInntekter = this.filter { it.innholdTilObjekt<NotatGrunnlag>().type == NotatGrunnlag.NotatType.INNTEKT }
+                notatInntekter.find { it.gjelderReferanse == bmGrunnlag.referanse }!!.innholdTilObjekt<NotatGrunnlag>().innhold shouldBe
+                    "Notat inntekt BM"
+                notatInntekter.find { it.gjelderReferanse == bpGrunnlag.referanse }!!.innholdTilObjekt<NotatGrunnlag>().innhold shouldBe
+                    "Notat inntekt BP"
+                notatInntekter.find { it.gjelderReferanse == barn1Grunnlag.referanse }!!.innholdTilObjekt<NotatGrunnlag>().innhold shouldBe
+                    "Notat inntekt BA"
             }
 
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
@@ -277,9 +307,29 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling avslag`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
-        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+        behandling.leggTilNotat(
+            "Notat inntekt BM",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragsmottaker!!,
+        )
+        behandling.leggTilNotat(
+            "Notat inntekt BP",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragspliktig!!,
+        )
+        behandling.leggTilNotat(
+            "Notat inntekt BA",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Utgiftsbegrunnelse",
+            NotatGrunnlag.NotatType.UTGIFTER,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatGrunnlag.NotatType.BOFORHOLD,
+        )
         behandling.refVedtaksid = 553
         behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
@@ -295,7 +345,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
                 ),
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(8),
@@ -310,7 +360,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder utgifter til mat og drikke",
+                    kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
 
@@ -357,8 +407,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 102 grunnlag") {
-                request.grunnlagListe shouldHaveSize 102
+            withClue("Grunnlagliste skal inneholde 104 grunnlag") {
+                request.grunnlagListe shouldHaveSize 104
             }
         }
 
@@ -376,7 +426,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_IKKE_FULL_BIDRAGSEVNE.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
-            it.grunnlagReferanseListe shouldHaveSize 7
+            it.grunnlagReferanseListe shouldHaveSize 9
             it.betaltBeløp shouldBe BigDecimal(500)
         }
         assertSoftly(opprettVedtakRequest) {
@@ -413,13 +463,21 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 utgiftspost.type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
                 utgiftspost.kravbeløp shouldBe BigDecimal(15000)
                 utgiftspost.godkjentBeløp shouldBe BigDecimal(5000)
-                utgiftspost.begrunnelse shouldBe "Inneholder avgifter for alkohol og pynt"
+                utgiftspost.kommentar shouldBe "Inneholder avgifter for alkohol og pynt"
             }
 
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
-                shouldHaveSize(3)
+                shouldHaveSize(5)
                 val innholdListe = innholdTilObjekt<NotatGrunnlag>()
-                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe behandling.utgiftsbegrunnelseKunINotat
+                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe
+                    henteNotatinnhold(behandling, NotatGrunnlag.NotatType.UTGIFTER)
+                val notatInntekter = this.filter { it.innholdTilObjekt<NotatGrunnlag>().type == NotatGrunnlag.NotatType.INNTEKT }
+                notatInntekter.find { it.gjelderReferanse == bmGrunnlag.referanse }!!.innholdTilObjekt<NotatGrunnlag>().innhold shouldBe
+                    "Notat inntekt BM"
+                notatInntekter.find { it.gjelderReferanse == bpGrunnlag.referanse }!!.innholdTilObjekt<NotatGrunnlag>().innhold shouldBe
+                    "Notat inntekt BP"
+                notatInntekter.find { it.gjelderReferanse == barn1Grunnlag.referanse }!!.innholdTilObjekt<NotatGrunnlag>().innhold shouldBe
+                    "Notat inntekt BA"
             }
 
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
@@ -461,9 +519,29 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling direkte avslag`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
-        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+        behandling.leggTilNotat(
+            "Notat inntekt BM",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragsmottaker!!,
+        )
+        behandling.leggTilNotat(
+            "Notat inntekt BP",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragspliktig!!,
+        )
+        behandling.leggTilNotat(
+            "Notat inntekt BA",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragspliktig!!,
+        )
+        behandling.leggTilNotat(
+            "Utgiftsbegrunnelse",
+            NotatGrunnlag.NotatType.UTGIFTER,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatGrunnlag.NotatType.BOFORHOLD,
+        )
         behandling.refVedtaksid = 553
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
@@ -504,8 +582,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 9 grunnlag") {
-                request.grunnlagListe shouldHaveSize 9
+            withClue("Grunnlagliste skal inneholde 7 grunnlag") {
+                request.grunnlagListe shouldHaveSize 7
             }
         }
 
@@ -522,7 +600,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.ALLE_UTGIFTER_ER_FORELDET.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
-            it.grunnlagReferanseListe shouldHaveSize 6
+            it.grunnlagReferanseListe shouldHaveSize 4
             grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                 Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG,
                 it.grunnlagReferanseListe,
@@ -537,7 +615,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 Grunnlagstype.NOTAT,
                 it.grunnlagReferanseListe,
             ) shouldHaveSize
-                3
+                1
             grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                 Grunnlagstype.SØKNAD,
                 it.grunnlagReferanseListe,
@@ -559,9 +637,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             }
 
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
-                shouldHaveSize(3)
+                shouldHaveSize(1)
                 val innholdListe = innholdTilObjekt<NotatGrunnlag>()
-                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe behandling.utgiftsbegrunnelseKunINotat
+                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe
+                    henteNotatinnhold(behandling, NotatGrunnlag.NotatType.UTGIFTER)
             }
 
             hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
@@ -601,7 +680,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, mock)
         stubHentPersonNyIdent(testdataBP.ident, nyIdentBp, mock)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
+        behandling.leggTilNotat(
+            "Utgiftsbegrunnelse",
+            NotatGrunnlag.NotatType.UTGIFTER,
+        )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -616,7 +698,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
                 ),
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(8),
@@ -631,7 +713,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder utgifter til mat og drikke",
+                    kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
         behandling.initGrunnlagRespons(stubUtils)
@@ -710,7 +792,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, mock)
         stubHentPersonNyIdent(testdataBP.ident, nyIdentBp, mock)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
+        behandling.leggTilNotat(
+            "Utgiftsbegrunnelse",
+            NotatGrunnlag.NotatType.UTGIFTER,
+        )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -762,7 +847,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal fatte vedtak med avslag for særbidrag behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.utgiftsbegrunnelseKunINotat = "Utgiftsbegrunnelse"
+        behandling.leggTilNotat(
+            "Utgiftsbegrunnelse",
+            NotatGrunnlag.NotatType.UTGIFTER,
+        )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -781,7 +869,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
                 ),
                 Utgiftspost(
                     dato = LocalDate.now().minusMonths(8),
@@ -796,7 +884,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(5000),
-                    begrunnelse = "Inneholder utgifter til mat og drikke",
+                    kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
         behandling.initGrunnlagRespons(stubUtils)
@@ -848,7 +936,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
                 shouldHaveSize(1)
                 val innholdListe = innholdTilObjekt<NotatGrunnlag>()
-                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe behandling.utgiftsbegrunnelseKunINotat
+                innholdListe.find { it.type == NotatGrunnlag.NotatType.UTGIFTER }!!.innhold shouldBe
+                    henteNotatinnhold(behandling, NotatGrunnlag.NotatType.UTGIFTER)
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.SÆRBIDRAG_KATEGORI)) {
                 shouldHaveSize(1)

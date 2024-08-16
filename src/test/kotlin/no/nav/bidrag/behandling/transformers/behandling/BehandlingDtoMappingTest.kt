@@ -73,7 +73,7 @@ class BehandlingDtoMappingTest {
                     type = "Batteri",
                     kravbeløp = BigDecimal(100),
                     godkjentBeløp = BigDecimal(100),
-                    begrunnelse = null,
+                    kommentar = null,
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
@@ -82,7 +82,7 @@ class BehandlingDtoMappingTest {
                     type = "Ny mikrofon for skolelærer",
                     kravbeløp = BigDecimal(3000),
                     godkjentBeløp = BigDecimal(2000),
-                    begrunnelse = "Tar ikke med fraktkostnader",
+                    kommentar = "Tar ikke med fraktkostnader",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -99,7 +99,7 @@ class BehandlingDtoMappingTest {
             avslag shouldBe null
             kategori.kategori shouldBe Særbidragskategori.ANNET
             kategori.beskrivelse shouldBe "Høreapparat"
-            begrunnelse.innhold shouldBe "Notat utgift"
+            notat.innhold shouldBe "Notat utgift"
             utgifter shouldHaveSize 2
             utgifter[0].type shouldBe "Ny mikrofon for skolelærer"
             utgifter[1].type shouldBe "Batteri"
@@ -131,7 +131,7 @@ class BehandlingDtoMappingTest {
                     type = Utgiftstype.KLÆR.name,
                     kravbeløp = BigDecimal(100),
                     godkjentBeløp = BigDecimal(100),
-                    begrunnelse = null,
+                    kommentar = null,
                     betaltAvBp = true,
                     utgift = behandling.utgift!!,
                 ),
@@ -142,7 +142,7 @@ class BehandlingDtoMappingTest {
                     kravbeløp = BigDecimal(3000),
                     godkjentBeløp = BigDecimal(2000),
                     betaltAvBp = true,
-                    begrunnelse = "Inkluderer ikke alkohol",
+                    kommentar = "Inkluderer ikke alkohol",
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
@@ -151,7 +151,7 @@ class BehandlingDtoMappingTest {
                     type = Utgiftstype.REISEUTGIFT.name,
                     kravbeløp = BigDecimal(3000),
                     godkjentBeløp = BigDecimal(2000),
-                    begrunnelse = "Tar ikke med bompenger",
+                    kommentar = "Tar ikke med bompenger",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -167,7 +167,7 @@ class BehandlingDtoMappingTest {
         assertSoftly(utgiftDto) {
             avslag shouldBe null
             kategori.kategori shouldBe Særbidragskategori.KONFIRMASJON
-            begrunnelse.innhold shouldBe "Notat utgift"
+            notat.innhold shouldBe "Notat utgift"
             utgifter shouldHaveSize 3
             utgifter[0].type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
             utgifter[1].type shouldBe Utgiftstype.REISEUTGIFT.name
@@ -202,7 +202,7 @@ class BehandlingDtoMappingTest {
                     type = "Batteri",
                     kravbeløp = BigDecimal(100),
                     godkjentBeløp = BigDecimal(100),
-                    begrunnelse = null,
+                    kommentar = null,
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
@@ -211,7 +211,7 @@ class BehandlingDtoMappingTest {
                     type = "Ny mikrofon for skolelærer",
                     kravbeløp = BigDecimal(3000),
                     godkjentBeløp = BigDecimal(2000),
-                    begrunnelse = "Tar ikke med fraktkostnader",
+                    kommentar = "Tar ikke med fraktkostnader",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -223,7 +223,7 @@ class BehandlingDtoMappingTest {
             avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
             kategori.kategori shouldBe Særbidragskategori.ANNET
             kategori.beskrivelse shouldBe "Høreapparat"
-            begrunnelse.innhold shouldBe "Notat utgift"
+            notat.innhold shouldBe "Notat utgift"
             utgifter shouldHaveSize 0
         }
     }

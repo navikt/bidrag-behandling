@@ -31,6 +31,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Periode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -43,6 +44,7 @@ data class BehandlingDetaljerDtoV2(
     val type: TypeBehandling,
     val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
     val vedtakstype: Vedtakstype,
+    val opprinneligVedtakstype: Vedtakstype? = null,
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
@@ -77,6 +79,7 @@ data class BehandlingDtoV2(
     val type: TypeBehandling,
     val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
     val vedtakstype: Vedtakstype,
+    val opprinneligVedtakstype: Vedtakstype? = null,
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
@@ -106,7 +109,9 @@ data class BehandlingDtoV2(
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
     @Schema(description = "Utgiftsgrunnlag for særbidrag. Vil alltid være null for forskudd og bidrag")
     val utgift: SærbidragUtgifterDto? = null,
-)
+) {
+    val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
+}
 
 data class SærbidragUtgifterDto(
     val avslag: Resultatkode? = null,
@@ -153,7 +158,12 @@ data class UtgiftspostDto(
     @Schema(description = "Beløp som er godkjent for beregningen")
     val godkjentBeløp: BigDecimal = kravbeløp,
     @Schema(description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp")
-    val begrunnelse: String,
+    val kommentar: String,
+    @Schema(
+        description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp",
+        deprecated = true,
+    )
+    val begrunnelse: String = kommentar,
     @Schema(description = "Om utgiften er betalt av BP")
     val betaltAvBp: Boolean = false,
     val id: Long,

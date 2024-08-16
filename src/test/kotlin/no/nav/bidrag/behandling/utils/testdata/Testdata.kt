@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
+import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgift
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
@@ -58,6 +60,7 @@ import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
@@ -189,6 +192,7 @@ fun oppretteBehandling(
 ): Behandling =
     Behandling(
         vedtakstype,
+        null,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
@@ -1009,7 +1013,7 @@ fun oppretteUtgift(
                 type = utgiftstype,
                 kravbeløp = BigDecimal(3000),
                 godkjentBeløp = BigDecimal(2500),
-                begrunnelse = "Trekker fra alkohol",
+                kommentar = "Trekker fra alkohol",
                 utgift = utgift,
             ),
         )
@@ -1360,4 +1364,19 @@ fun lagGrunnlagsdata(
     }
     val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(stringValue)
     return grunnlag
+}
+
+fun Behandling.leggTilNotat(
+    innhold: String,
+    type: NotatGrunnlag.NotatType,
+    rolleForInntekt: Rolle? = null,
+) {
+    notater.add(
+        Notat(
+            behandling = this,
+            rolle = henteRolleForNotat(type, rolleForInntekt),
+            innhold = innhold,
+            type = type,
+        ),
+    )
 }

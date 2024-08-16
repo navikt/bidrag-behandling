@@ -97,6 +97,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         id = id!!,
         type = tilType(),
         vedtakstype = vedtakstype,
+        opprinneligVedtakstype = opprinneligVedtakstype,
         stønadstype = stonadstype,
         engangsbeløptype = engangsbeloptype,
         erKlageEllerOmgjøring = erKlageEllerOmgjøring,
@@ -146,6 +147,7 @@ fun Behandling.tilBehandlingDtoV2(
     id = id!!,
     type = tilType(),
     vedtakstype = vedtakstype,
+    opprinneligVedtakstype = opprinneligVedtakstype,
     stønadstype = stonadstype,
     engangsbeløptype = engangsbeloptype,
     erKlageEllerOmgjøring = erKlageEllerOmgjøring,
@@ -562,7 +564,7 @@ fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.
 fun Behandling.tilNotat(
     notattype: Notattype,
     tekst: String,
-    rolleVedInntekt: Rolle?,
+    rolleVedInntekt: Rolle? = null,
 ): Notat {
     val gjelder = this.henteRolleForNotat(notattype, rolleVedInntekt)
     return Notat(behandling = this, rolle = gjelder, type = notattype, innhold = tekst)

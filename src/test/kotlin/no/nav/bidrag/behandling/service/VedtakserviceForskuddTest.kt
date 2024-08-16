@@ -18,12 +18,14 @@ import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyperForReferanser
 import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
 import no.nav.bidrag.behandling.utils.søknad
+import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
@@ -137,9 +139,18 @@ class VedtakserviceForskuddTest {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en forskudd behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatGrunnlag.NotatType.INNTEKT,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatGrunnlag.NotatType.BOFORHOLD,
+        )
         behandling.refVedtaksid = 553
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -199,10 +210,13 @@ class VedtakserviceForskuddTest {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
                 shouldHaveSize(3)
                 assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
+                    innhold shouldBe henteNotatinnhold(behandling, NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT)
                     erMedIVedtaksdokumentet shouldBe false
                     type shouldBe NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
                 }
+
+                val notatInntekter = this.find { it.innholdTilObjekt<NotatGrunnlag>().type == NotatGrunnlag.NotatType.INNTEKT }
+                notatInntekter!!.innholdTilObjekt<NotatGrunnlag>().innhold shouldBe "Inntektsbegrunnelse kun i notat"
             }
 
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
@@ -429,8 +443,16 @@ class VedtakserviceForskuddTest {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.avslag = Resultatkode.AVSLAG
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragsmottaker!!,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+        )
+
         every { behandlingService.hentBehandlingById(any()) } returns behandling
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
@@ -449,7 +471,7 @@ class VedtakserviceForskuddTest {
             request.type shouldBe Vedtakstype.FASTSETTELSE
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe shouldHaveSize 7
+            request.grunnlagListe shouldHaveSize 6
             assertSoftly(behandlingsreferanseListe) { behandlingRef ->
                 behandlingRef shouldHaveSize 2
                 with(behandlingRef[0]) {
@@ -467,7 +489,7 @@ class VedtakserviceForskuddTest {
                     it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
                     it[0].skyldner.verdi shouldBe "NAV"
-                    it[0].grunnlagReferanseListe.shouldHaveSize(4)
+                    it[0].grunnlagReferanseListe.shouldHaveSize(3)
                     it[0].grunnlagReferanseListe.forEach {
                         grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
                     }
@@ -490,7 +512,7 @@ class VedtakserviceForskuddTest {
                     it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
                     it[1].skyldner.verdi shouldBe "NAV"
-                    it[1].grunnlagReferanseListe.shouldHaveSize(4)
+                    it[1].grunnlagReferanseListe.shouldHaveSize(3)
                     it[1].grunnlagReferanseListe.forEach {
                         grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
                     }
