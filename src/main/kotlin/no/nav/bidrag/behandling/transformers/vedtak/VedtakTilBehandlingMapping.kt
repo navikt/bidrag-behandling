@@ -449,7 +449,6 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                             gjelder = it.key!!,
                         )
                     }
-            // TODO: Boforhold andre voksne i husstand
         },
 ).flatten()
 

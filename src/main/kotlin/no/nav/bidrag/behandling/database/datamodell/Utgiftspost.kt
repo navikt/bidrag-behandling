@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -29,7 +28,6 @@ open class Utgiftspost(
     open var type: String,
     open var kravbeløp: BigDecimal,
     open var godkjentBeløp: BigDecimal,
-    @Column(name = "begrunnelse")
     open var kommentar: String? = null,
     open var betaltAvBp: Boolean = false,
     @ManyToOne(fetch = FetchType.LAZY)
