@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -128,7 +129,10 @@ fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto?
             Resultatkode.fraKode(engangsbeløp.resultatkode)!!,
             engangsbeløp.grunnlagReferanseListe,
             behandling.utgift?.tilBeregningDto() ?: UtgiftBeregningDto(),
-            behandling.utgift?.utgiftsposter?.map { it.tilDto() } ?: emptyList(),
+            behandling.utgift
+                ?.utgiftsposter
+                ?.sorter()
+                ?.map { it.tilDto() } ?: emptyList(),
         )
     }
 

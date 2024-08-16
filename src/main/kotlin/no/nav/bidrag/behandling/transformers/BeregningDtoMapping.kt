@@ -72,7 +72,10 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
             periode.resultat.resultatkode,
             periode.grunnlagsreferanseListe,
             behandling.utgift?.tilBeregningDto() ?: UtgiftBeregningDto(),
-            behandling.utgift?.utgiftsposter?.map { it.tilDto() } ?: emptyList(),
+            behandling.utgift
+                ?.utgiftsposter
+                ?.sorter()
+                ?.map { it.tilDto() } ?: emptyList(),
         )
     }
 
