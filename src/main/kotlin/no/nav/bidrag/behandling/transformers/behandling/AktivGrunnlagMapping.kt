@@ -30,6 +30,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.dto.Sivilstand
+import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -64,7 +65,7 @@ fun mapTilInntektspostEndringer(
 ): Set<InntektspostEndringDto> {
     val endringer =
         nyeInntektsposter.map {
-            if (eksisterendePoster.none { eksisterende -> it.erLik(eksisterende) }) {
+            if (eksisterendePoster.none { eksisterende -> it.erDetSammeSom(eksisterende) }) {
                 it.tilInntektspostEndring(GrunnlagInntektEndringstype.NY)
             } else if (erInntektspostEndret(it, eksisterendePoster)) {
                 it.tilInntektspostEndring(GrunnlagInntektEndringstype.ENDRING)
@@ -74,7 +75,7 @@ fun mapTilInntektspostEndringer(
         }
     val slettetPoster =
         eksisterendePoster.map {
-            if (nyeInntektsposter.none { ny -> ny.erLik(it) }) {
+            if (nyeInntektsposter.none { ny -> ny.erDetSammeSom(it) }) {
                 it.tilInntektspostEndring(GrunnlagInntektEndringstype.SLETTET)
             } else {
                 null
@@ -84,7 +85,7 @@ fun mapTilInntektspostEndringer(
     return (endringer + slettetPoster).filterNotNull().toSet()
 }
 
-fun InntektPost.erLik(inntektPost: Inntektspost): Boolean = kode == inntektPost.kode && inntekstype == inntektPost.inntektstype
+fun InntektPost.erDetSammeSom(inntektPost: Inntektspost): Boolean = kode == inntektPost.kode && inntekstype == inntektPost.inntektstype
 
 fun List<Grunnlag>.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag: List<Grunnlag>): AndreVoksneIHusstandenGrunnlagDto? {
     val aktivtGrunnlag =
@@ -104,11 +105,16 @@ fun List<Grunnlag>.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag: List<G
                             status = it.bostatus!!,
                             totalAntallHusstandsmedlemmer =
                                 toSet()
-                                    .hentAlleAndreVoksneHusstandForPeriode(ÅrMånedsperiode(it.periodeFom!!, it.periodeTom), false)
-                                    .size,
+                                    .hentAlleAndreVoksneHusstandForPeriode(
+                                        ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                                        false,
+                                    ).size,
                             husstandsmedlemmer =
                                 toSet()
-                                    .hentBegrensetAndreVoksneHusstandForPeriode(ÅrMånedsperiode(it.periodeFom!!, it.periodeTom), false),
+                                    .hentBegrensetAndreVoksneHusstandForPeriode(
+                                        ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                                        false,
+                                    ),
                         )
                     }.toSet(),
             innhentet = nyttGrunnlag?.innhentet ?: LocalDateTime.now(),
@@ -128,7 +134,30 @@ fun Set<Bostatus>.erLik(detAndreSettet: Set<Bostatus>): Boolean {
     }
 }
 
-fun List<Grunnlag>.hentEndringerBoforhold(
+fun List<Grunnlag>.henteEndringerIArbeidsforhold(alleAktiveGrunnlag: List<Grunnlag>): Set<ArbeidsforholdGrunnlagDto> {
+    val aktiveArbeidsforholdsgrunnlag =
+        alleAktiveGrunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }
+    val aktiveData =
+        aktiveArbeidsforholdsgrunnlag
+            .asSequence()
+            .mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }
+            .flatten()
+            .toSet()
+    val nyeData =
+        this
+            .asSequence()
+            .filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }
+            .mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }
+            .flatten()
+            .toSet()
+
+    if (aktiveData.isNotEmpty() && nyeData.isNotEmpty() && !nyeData.erDetSammeSom(aktiveData)) {
+        return nyeData
+    }
+    return emptySet()
+}
+
+fun List<Grunnlag>.henteEndringerIBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     virkniningstidspunkt: LocalDate,
     husstandsmedlem: Set<Husstandsmedlem>,
@@ -152,10 +181,10 @@ fun Set<BoforholdResponseV2>.finnEndringerBoforhold(
     aktivBoforholdData: Set<BoforholdResponseV2>,
     innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 ) = groupBy { it.gjelderPersonId }
-    .map { (barnId, oppdaterGrunnlag) ->
-        val aktivGrunnlag = aktivBoforholdData.filter { it.gjelderPersonId == barnId }
-        if (aktivGrunnlag.erLik(oppdaterGrunnlag, virkniningstidspunkt)) return@map null
-        oppdaterGrunnlag.tilHusstandsmedlemGrunnlagDto(barnId, innhentetTidspunkt)
+    .map { (barnId, nyttGrunnlag) ->
+        val aktivtGrunnlag = aktivBoforholdData.filter { it.gjelderPersonId == barnId }
+        if (aktivtGrunnlag.erDetSammeSom(nyttGrunnlag, virkniningstidspunkt)) return@map null
+        nyttGrunnlag.tilHusstandsmedlemGrunnlagDto(barnId, innhentetTidspunkt)
     }.filterNotNull()
     .toSet()
 
@@ -193,7 +222,7 @@ fun List<Grunnlag>.hentEndringerSivilstand(
                 ?.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkniningstidspunkt)
         if (aktiveSivilstandsdata != null &&
             nyeSivilstandsdata != null &&
-            !nyeSivilstandsdata.erLik(
+            !nyeSivilstandsdata.erDetSammeSom(
                 aktiveSivilstandsdata,
             )
         ) {
@@ -224,7 +253,7 @@ fun List<Grunnlag>.hentEndringerSivilstand(
     }
 }
 
-fun List<Sivilstand>.erLik(other: List<Sivilstand>): Boolean {
+fun List<Sivilstand>.erDetSammeSom(other: List<Sivilstand>): Boolean {
     if (size != other.size) return false
     return sortedBy { it.periodeFom }.all { sivilstand ->
         other.sortedBy { it.periodeFom }.any {
@@ -235,7 +264,26 @@ fun List<Sivilstand>.erLik(other: List<Sivilstand>): Boolean {
     }
 }
 
-fun List<BoforholdResponseV2>.erLik(
+fun Set<ArbeidsforholdGrunnlagDto>.erDetSammeSom(settB: Set<ArbeidsforholdGrunnlagDto>): Boolean {
+    if (this.size != settB.size) return false
+
+    return this.all { settA ->
+        settB.any { settB ->
+            val detaljerA = settA.ansettelsesdetaljerListe?.get(0)
+            val detaljerB = settB.ansettelsesdetaljerListe?.get(0)
+
+            settB.partPersonId == settA.partPersonId &&
+                settB.startdato == settA.startdato &&
+                settB.arbeidsgiverNavn == settA.arbeidsgiverNavn &&
+                detaljerB?.periodeFra == detaljerA?.periodeFra &&
+                detaljerB?.periodeTil == detaljerA?.periodeTil &&
+                detaljerB?.avtaltStillingsprosent == detaljerA?.avtaltStillingsprosent &&
+                detaljerB?.sisteLønnsendringDato == detaljerA?.sisteLønnsendringDato
+        }
+    }
+}
+
+fun List<BoforholdResponseV2>.erDetSammeSom(
     other: List<BoforholdResponseV2>,
     virkniningstidspunkt: LocalDate,
 ): Boolean {
@@ -265,14 +313,14 @@ fun List<Grunnlag>.hentEndringerInntekter(
 
     val oppdatertGrunnlag = henteBearbeidaInntekterForType(type, rolle.ident!!)?.filtrerUtHistoriskeInntekter()
     val innhentetTidspunkt = find { it.type == type && it.erBearbeidet }?.innhentet ?: LocalDateTime.now()
-    val oppdaterteEllerNyInntekter =
+    val oppdaterteEllerNyeInntekter =
         oppdatertGrunnlag
             ?.inntekter
             ?.map { grunnlag ->
                 val eksisterendeInntekt =
                     inntekterRolle.find {
                         it.kilde == Kilde.OFFENTLIG &&
-                            it.erLik(grunnlag)
+                            it.erDetSammeSom(grunnlag)
                     }
                         ?: return@map grunnlag.tilIkkeAktivInntektDto(
                             rolle.ident!!,
@@ -308,18 +356,18 @@ fun List<Grunnlag>.hentEndringerInntekter(
                 }
             }?.toSet() ?: emptySet()
 
-    val slettetInntekter =
+    val slettedeInntekter =
         inntekterRolle
             .filter { it.kilde == Kilde.OFFENTLIG && type.inneholder(it.type) }
             .filter { inntekt ->
                 oppdatertGrunnlag
                     ?.inntekter
-                    ?.none { inntekt.erLik(it) } == true
+                    ?.none { inntekt.erDetSammeSom(it) } == true
             }.map { it.tilIkkeAktivInntektDto(GrunnlagInntektEndringstype.SLETTET, LocalDateTime.now()) }
 
-    return oppdaterteEllerNyInntekter
+    return oppdaterteEllerNyeInntekter
         .filter { it.endringstype != GrunnlagInntektEndringstype.INGEN_ENDRING }
-        .toSet() + slettetInntekter
+        .toSet() + slettedeInntekter
 }
 
 fun Grunnlagsdatatype.inneholder(type: Inntektsrapportering) =
@@ -331,7 +379,7 @@ fun Grunnlagsdatatype.inneholder(type: Inntektsrapportering) =
         else -> !eksplisitteYtelser.contains(type)
     }
 
-fun Inntekt.erLik(grunnlag: SummertÅrsinntekt): Boolean {
+fun Inntekt.erDetSammeSom(grunnlag: SummertÅrsinntekt): Boolean {
     if (opprinneligPeriode == null || type != grunnlag.inntektRapportering) return false
     return if (eksplisitteYtelser.contains(type)) {
         opprinneligPeriode!! == grunnlag.periode

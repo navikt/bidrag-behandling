@@ -27,6 +27,8 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -1662,6 +1664,45 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter
                         .first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }
                         .belop shouldBe BigDecimal(368000)
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal aktivere grunnlag av type arbeidsforhold for bp i behandling av særbidrag`() {
+                // gitt
+                val behandling = testdataManager.oppretteBehandling(false, inkludereBp = true)
+                behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
+                stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
+
+                val arbeidsforhold = oppretteArbeidsforhold(behandling.bidragspliktig!!.ident!!)
+
+                testdataManager.oppretteOgLagreGrunnlag(
+                    behandling = behandling,
+                    rolle = behandling.bidragspliktig!!,
+                    grunnlagstype = Grunnlagstype(Grunnlagsdatatype.ARBEIDSFORHOLD, false),
+                    innhentet = LocalDate.of(2024, 1, 1).atStartOfDay(),
+                    aktiv = null,
+                    grunnlagsdata = arbeidsforhold,
+                )
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        Personident(behandling.bidragspliktig?.ident!!),
+                        Grunnlagsdatatype.ARBEIDSFORHOLD,
+                    )
+
+                // hvis
+                grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
+
+                // så
+                assertSoftly(behandling.grunnlag) { g ->
+                    g.isNotEmpty()
+                    g.filter { LocalDate.now() == it.aktiv?.toLocalDate() }.size shouldBe 4
+                    g.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
+                    g.find { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD }?.aktiv?.toLocalDate() shouldBe LocalDate.now()
                 }
             }
 
@@ -3360,6 +3401,39 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste differensiering av nytt mot gammelt grunnlag")
     open inner class Diffing {
+        @Test
+        open fun `skal returnere diff for arbeidsforhold`() {
+            // gitt
+            val b = oppretteBehandling(inkludereBp = true, inkludereArbeidsforhold = true)
+            val nyttArbeidsforhold =
+                oppretteArbeidsforhold(b.bidragspliktig!!.ident!!).copy(
+                    startdato = LocalDate.now(),
+                    arbeidsgiverNavn = "Skruer og mutrer AS",
+                )
+            b.grunnlag.add(
+                Grunnlag(
+                    b,
+                    Grunnlagsdatatype.ARBEIDSFORHOLD,
+                    false,
+                    commonObjectmapper.writeValueAsString(setOf(nyttArbeidsforhold)),
+                    LocalDateTime.now(),
+                    null,
+                    b.bidragspliktig!!,
+                ),
+            )
+
+            testdataManager.lagreBehandlingNewTransaction(b)
+
+            // hvis
+            val ikkeAktivereGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
+
+            // så
+            assertSoftly(ikkeAktivereGrunnlagsdata) { resultat ->
+                resultat.arbeidsforhold shouldNotBe null
+                resultat.arbeidsforhold shouldHaveSize 1
+            }
+        }
+
         @Test
         open fun `skal returnere diff for sivilstand`() {
             // gitt

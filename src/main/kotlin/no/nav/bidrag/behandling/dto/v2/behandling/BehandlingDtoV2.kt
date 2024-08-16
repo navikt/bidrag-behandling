@@ -193,6 +193,7 @@ data class AktiveGrunnlagsdata(
 data class IkkeAktiveGrunnlagsdata(
     val inntekter: IkkeAktiveInntekter = IkkeAktiveInntekter(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
+    val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
 ) {

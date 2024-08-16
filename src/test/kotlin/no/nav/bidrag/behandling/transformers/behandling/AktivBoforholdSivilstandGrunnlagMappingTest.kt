@@ -121,7 +121,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
 
             val resultat =
-                nyGrunnlagBoforhold.hentEndringerBoforhold(
+                nyGrunnlagBoforhold.henteEndringerIBoforhold(
                     aktivGrunnlagBoforhold,
                     LocalDate.parse("2020-01-01"),
                     opprettHusstandsmedlemmer(behandling),
@@ -208,7 +208,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val resultat =
                 listOf(
                     nyGrunnlagBoforhold,
-                ).hentEndringerBoforhold(
+                ).henteEndringerIBoforhold(
                     listOf(aktivGrunnlagBoforhold),
                     LocalDate.parse("2020-01-01"),
                     opprettHusstandsmedlemmer(behandling),
@@ -296,7 +296,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val resultat =
                 listOf(
                     nyttGrunnlagBoforhold,
-                ).hentEndringerBoforhold(
+                ).henteEndringerIBoforhold(
                     listOf(aktivGrunnlagBoforhold),
                     LocalDate.parse("2022-12-01"),
                     opprettHusstandsmedlemmer(behandling),
@@ -381,7 +381,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
 
             val resultat =
-                nyGrunnlagBoforhold.hentEndringerBoforhold(
+                nyGrunnlagBoforhold.henteEndringerIBoforhold(
                     aktivGrunnlagBoforhold,
                     LocalDate.parse("2020-01-01"),
                     opprettHusstandsmedlemmer(behandling),
