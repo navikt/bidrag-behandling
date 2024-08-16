@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.dto.v2.inntekt
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -57,15 +57,17 @@ data class InntekterDtoV2(
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
-    val notater: Set<NotatDto> = emptySet(),
+    @Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
+    val begrunnelser: Set<BegrunnelseDto> = emptySet(),
     val valideringsfeil: InntektValideringsfeilDto,
 ) {
-    @Deprecated("Bruk notater for notat per rolle")
-    val notat: NotatDto =
-        if (notater.isNotEmpty()) {
-            notater.find { Rolletype.BIDRAGSMOTTAKER == it.gjelder?.rolletype } ?: notater.first()
+    @Deprecated("Bruk begrunnelser for begrunnelse per rolle")
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    val notat: BegrunnelseDto =
+        if (begrunnelser.isNotEmpty()) {
+            begrunnelser.find { Rolletype.BIDRAGSMOTTAKER == it.gjelder?.rolletype } ?: begrunnelser.first()
         } else {
-            NotatDto("")
+            BegrunnelseDto("")
         }
 }
 
@@ -80,21 +82,33 @@ data class OppdatereInntektRequest(
     val oppdatereInntektsperiode: OppdaterePeriodeInntekt? = null,
     @Schema(description = "Opprette eller oppdatere manuelt oppgitt inntekt")
     val oppdatereManuellInntekt: OppdatereManuellInntekt? = null,
-    val oppdatereNotat: OppdatereNotat? = null,
+    @Schema(description = "Oppdatere begrunnelse for inntekt")
+    val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
+    @Schema(description = "Deprekert, bruk oppdatereBegrunnelse i stedet")
+    val oppdatereNotat: OppdatereBegrunnelse? = null,
     @Schema(description = "Angi id til inntekt som skal slettes")
     val sletteInntekt: Long? = null,
-)
+) {
+    // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført
+    val henteOppdatereBegrunnelse = oppdatereBegrunnelse ?: oppdatereNotat
+}
 
 data class OppdatereInntektResponse(
     @Schema(description = "Inntekt som ble oppdatert")
     val inntekt: InntektDtoV2?,
-    @Schema(description = "Periodiserte inntekter per barn")
+    @Schema(description = "Periodiserte inntekter")
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
-    val notat: String? = null,
+    @Schema(description = "Oppdatert begrunnelse")
+    val begrunnelse: String? = null,
     val valideringsfeil: InntektValideringsfeilDto,
-)
+) {
+    @Deprecated("Erstattes av begrunnelse")
+    @Schema(description = "Oppdatert begrunnelse", deprecated = true)
+    val notat: String? = begrunnelse
+}
 
 @Deprecated("Erstattes av OppdatereInntektRequest")
+@Schema(description = "Erstattes av OppdatereInntektRequest", deprecated = true)
 data class OppdatereInntekterRequestV2(
     @Schema(description = "Angi periodeinformasjon for inntekter")
     val oppdatereInntektsperioder: Set<OppdaterePeriodeInntekt> = emptySet(),
@@ -102,7 +116,7 @@ data class OppdatereInntekterRequestV2(
     val oppdatereManuelleInntekter: Set<OppdatereManuellInntekt> = emptySet(),
     @Schema(description = "Angi id til inntekter som skal slettes")
     val sletteInntekter: Set<Long> = emptySet(),
-    val notat: OppdatereNotat? = null,
+    val notat: OppdatereBegrunnelse? = null,
 )
 
 data class OppdaterePeriodeInntekt(

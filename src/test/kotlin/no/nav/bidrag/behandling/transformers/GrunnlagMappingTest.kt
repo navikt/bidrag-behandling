@@ -41,6 +41,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
+import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
@@ -163,9 +164,19 @@ class GrunnlagMappingTest {
         @Test
         fun `skal bygge grunnlag for stønad for forskudd`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-            behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-            behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-            behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+            behandling.leggTilNotat(
+                "Notat inntekt BM",
+                NotatGrunnlag.NotatType.INNTEKT,
+                behandling.bidragsmottaker!!,
+            )
+            behandling.leggTilNotat(
+                "Utgift notat",
+                NotatGrunnlag.NotatType.UTGIFTER,
+            )
+            behandling.leggTilNotat(
+                "Boforhold",
+                NotatGrunnlag.NotatType.BOFORHOLD,
+            )
             behandling.stonadstype = Stønadstype.FORSKUDD
             behandling.engangsbeloptype = null
             val grunnlag = behandling.byggGrunnlagGenerelt()
@@ -181,9 +192,19 @@ class GrunnlagMappingTest {
         @Test
         fun `skal bygge grunnlag for engangsbeløp for særbidrag`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
-            behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-            behandling.utgiftsbegrunnelseKunINotat = "Utgift notat"
-            behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+            behandling.leggTilNotat(
+                "Notat inntekt BM",
+                NotatGrunnlag.NotatType.INNTEKT,
+                behandling.bidragsmottaker!!,
+            )
+            behandling.leggTilNotat(
+                "Utgift notat",
+                NotatGrunnlag.NotatType.UTGIFTER,
+            )
+            behandling.leggTilNotat(
+                "Boforhold",
+                NotatGrunnlag.NotatType.BOFORHOLD,
+            )
             behandling.stonadstype = null
             behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
 
@@ -475,7 +496,7 @@ class GrunnlagMappingTest {
                         utgift = behandling.utgift!!,
                         godkjentBeløp = BigDecimal(15000),
                         kravbeløp = BigDecimal(5000),
-                        begrunnelse = "Inneholder avgifter for alkohol og pynt",
+                        kommentar = "Inneholder avgifter for alkohol og pynt",
                         betaltAvBp = true,
                     ),
                     Utgiftspost(
@@ -491,7 +512,7 @@ class GrunnlagMappingTest {
                         utgift = behandling.utgift!!,
                         kravbeløp = BigDecimal(10000),
                         godkjentBeløp = BigDecimal(5000),
-                        begrunnelse = "Inneholder utgifter til mat og drikke",
+                        kommentar = "Inneholder utgifter til mat og drikke",
                     ),
                 )
 
@@ -507,7 +528,7 @@ class GrunnlagMappingTest {
                 utgiftspostKonfirmasjon.betaltAvBp shouldBe true
                 utgiftspostKonfirmasjon.godkjentBeløp shouldBe BigDecimal(15000)
                 utgiftspostKonfirmasjon.kravbeløp shouldBe BigDecimal(5000)
-                utgiftspostKonfirmasjon.begrunnelse shouldBe "Inneholder avgifter for alkohol og pynt"
+                utgiftspostKonfirmasjon.kommentar shouldBe "Inneholder avgifter for alkohol og pynt"
             }
         }
     }
@@ -1712,6 +1733,7 @@ class GrunnlagMappingTest {
         ): Behandling =
             Behandling(
                 Vedtakstype.FASTSETTELSE,
+                null,
                 søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
                 datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
                 mottattdato = LocalDate.parse("2023-03-15"),

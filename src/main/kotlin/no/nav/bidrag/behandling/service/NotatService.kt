@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Notat
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -50,8 +51,9 @@ class NotatService {
         fun henteNotatinnhold(
             behandling: Behandling,
             notattype: Notattype,
+            rolle: Rolle? = null,
         ): String {
-            val rolleid: Long? = behandling.henteRolleForNotat(notattype, null).id
+            val rolleid: Long? = behandling.henteRolleForNotat(notattype, rolle).id
             return behandling.notater.find { it.rolle.id == rolleid && it.type == notattype }?.innhold
                 ?: henteNotatFraGammelStruktur(behandling, notattype) ?: ""
         }

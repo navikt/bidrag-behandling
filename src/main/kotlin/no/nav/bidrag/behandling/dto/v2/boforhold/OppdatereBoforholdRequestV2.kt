@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.ident.Personident
@@ -17,8 +17,14 @@ data class OppdatereBoforholdRequestV2(
     val oppdaterePeriodeMedAndreVoksneIHusstand: OppdatereAndreVoksneIHusstanden? = null,
     val oppdatereHusstandsmedlem: OppdatereHusstandsmedlem? = null,
     val oppdatereSivilstand: OppdatereSivilstand? = null,
-    val oppdatereNotat: OppdatereNotat? = null,
-)
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
+    @Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
+    val oppdatereNotat: OppdatereBegrunnelse? = null,
+) {
+    // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført
+    val henteOppdatereBegrunnelse = oppdatereBegrunnelse ?: oppdatereNotat
+}
 
 data class OppdatereBoforholdResponse(
     @Schema(description = "Oppdaterte perioder med andre voksne i Bps husstand")
@@ -27,14 +33,15 @@ data class OppdatereBoforholdResponse(
     val oppdatertHusstandsmedlem: HusstandsmedlemDtoV2? = null,
     val egetBarnErEnesteVoksenIHusstanden: Boolean? = null,
     val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
-    val oppdatertNotattekst: String? = null,
+    val begrunnelse: String? = null,
     val valideringsfeil: BoforholdValideringsfeil,
 ) {
     @Deprecated("Erstattes av oppdatertHusstandsmedlem")
+    @Schema(description = "Erstattes av oppdatertHusstandsmedlem", deprecated = true)
     val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = oppdatertHusstandsmedlem
-
-    @Deprecated("Erstattes av opppdatertNotattekst")
-    val oppdatertNotat: OppdatereNotat? = oppdatertNotattekst?.let { OppdatereNotat(it) }
+    @Deprecated("Erstattes av begrunnelse")
+    @Schema(description = "Saksbehandlers notat", deprecated = true)
+    val oppdatertNotat: OppdatereBegrunnelse? = begrunnelse?.let { OppdatereBegrunnelse(it) }
 }
 
 data class OppdatereAndreVoksneIHusstanden(
@@ -81,7 +88,7 @@ data class OppdatereHusstandsmedlem(
 
 data class OppdatereBostatusperiode(
     @Deprecated("Erstattes av idHusstandsmedlem")
-    @Schema(type = "Long", description = "Id til husstandsbarnet perioden skal gjelde for")
+    @Schema(type = "Long", description = "Id til husstandsbarnet perioden skal gjelde for", deprecated = true)
     var idHusstandsbarn: Long = 0L,
     @Schema(type = "Long", description = "Id til husstandsmedlemmet perioden skal gjelde for")
     var idHusstandsmedlem: Long = 0L,

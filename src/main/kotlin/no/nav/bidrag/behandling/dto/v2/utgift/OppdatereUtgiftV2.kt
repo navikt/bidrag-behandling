@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.utgift
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.PositiveOrZero
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
@@ -35,23 +35,29 @@ data class OppdatereUtgiftRequest(
         description = "Angre siste endring som ble gjort. Siste endring kan ikke angres hvis avslag er satt",
     )
     val angreSisteEndring: Boolean? = false,
-    val oppdatereNotat: OppdatereNotat? = null,
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
+    @Schema(description = "Deprekert - bruk oppdatereBegrunnelse i stedet")
+    val notat: OppdatereBegrunnelse? = null,
 ) {
-    @Deprecated("Bruk oppdatereNotat i stedet")
-    val notat: OppdatereNotat? = oppdatereNotat
-
-    fun henteOppdatereNotat(): OppdatereNotat? = oppdatereNotat ?: notat
+    // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført
+    fun henteOppdatereNotat(): OppdatereBegrunnelse? = oppdatereBegrunnelse ?: notat
 }
 
 data class OppdatereUtgiftResponse(
     @Schema(description = "Utgiftspost som ble oppdatert")
     val oppdatertUtgiftspost: UtgiftspostDto? = null,
     val utgiftposter: List<UtgiftspostDto> = emptyList(),
-    val oppdatertNotat: String? = null,
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    val begrunnelse: String? = null,
     val beregning: UtgiftBeregningDto? = null,
     val avslag: Resultatkode? = null,
     val valideringsfeil: UtgiftValideringsfeilDto?,
-)
+) {
+    @Deprecated("Erstattes av begrunnelse")
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    val oppdatertNotat: String? = begrunnelse
+}
 
 data class OppdatereUtgift(
     @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
@@ -70,8 +76,17 @@ data class OppdatereUtgift(
     @Schema(description = "Beløp som er godkjent for beregningen")
     @field:PositiveOrZero(message = "Godkjent beløp kan ikke være negativ")
     val godkjentBeløp: BigDecimal = kravbeløp,
-    @Schema(description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp")
-    val begrunnelse: String? = null,
+    @Schema(
+        description =
+            "Kommentar kan brukes til å legge inn nærmere informasjon om utgiften f.eks. fakturanr., butikk det er handlet i," +
+                " informasjon om hvorfor man ikke har godkjent hele kravbeløpet",
+    )
+    val kommentar: String? = null,
+    @Schema(
+        description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp",
+        deprecated = true,
+    )
+    val begrunnelse: String? = kommentar,
     @Schema(description = "Om utgiften er betalt av BP")
     val betaltAvBp: Boolean = false,
     val id: Long? = null,

@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
@@ -77,6 +78,7 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -96,6 +98,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         id = id!!,
         type = tilType(),
         vedtakstype = vedtakstype,
+        opprinneligVedtakstype = opprinneligVedtakstype,
         stønadstype = stonadstype,
         engangsbeløptype = engangsbeloptype,
         erKlageEllerOmgjøring = erKlageEllerOmgjøring,
@@ -123,6 +126,11 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         virkningstidspunkt = virkningstidspunkt,
         årsak = årsak,
         avslag = avslag,
+        opprettetAv =
+            SaksbehandlerDto(
+                opprettetAv,
+                opprettetAvNavn,
+            ),
         kategori =
             when (engangsbeloptype) {
                 Engangsbeløptype.SÆRBIDRAG -> tilSærbidragKategoriDto()
@@ -140,6 +148,7 @@ fun Behandling.tilBehandlingDtoV2(
     id = id!!,
     type = tilType(),
     vedtakstype = vedtakstype,
+    opprinneligVedtakstype = opprinneligVedtakstype,
     stønadstype = stonadstype,
     engangsbeløptype = engangsbeloptype,
     erKlageEllerOmgjøring = erKlageEllerOmgjøring,
@@ -162,7 +171,7 @@ fun Behandling.tilBehandlingDtoV2(
             opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
             årsak = årsak,
             avslag = avslag,
-            notat = NotatDto(NotatService.henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT) ?: ""),
+            begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT) ?: ""),
         ),
     boforhold = tilBoforholdV2(),
     inntekter =
@@ -302,8 +311,8 @@ fun Behandling.tilBoforholdV2() =
                 ?.perioder
                 ?.tilBostatusperiode() ?: emptySet(),
         sivilstand = sivilstand.toSivilstandDto(),
-        notat =
-            NotatDto(
+        begrunnelse =
+            BegrunnelseDto(
                 innhold = NotatService.henteNotatinnhold(this, Notattype.BOFORHOLD),
                 gjelder = this.henteRolleForNotat(Notattype.BOFORHOLD, null).tilDto(),
             ),
@@ -380,12 +389,12 @@ fun Behandling.tilInntektDtoV2(
                     hentBeregnetInntekterForRolle(it),
                 )
             },
-    notater =
+    begrunnelser =
         this.roller
             .mapNotNull { r ->
                 val inntektsnotat = NotatService.henteInntektsnotat(this, r.id!!)
                 inntektsnotat?.let {
-                    NotatDto(
+                    BegrunnelseDto(
                         innhold = it,
                         gjelder = r.tilDto(),
                     )
@@ -556,7 +565,7 @@ fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.
 fun Behandling.tilNotat(
     notattype: Notattype,
     tekst: String,
-    rolleVedInntekt: Rolle?,
+    rolleVedInntekt: Rolle? = null,
 ): Notat {
     val gjelder = this.henteRolleForNotat(notattype, rolleVedInntekt)
     return Notat(behandling = this, rolle = gjelder, type = notattype, innhold = tekst)

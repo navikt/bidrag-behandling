@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.Nulls
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
@@ -36,10 +36,10 @@ data class OppdatereVirkningstidspunkt(
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonSetter(nulls = Nulls.SKIP)
     val virkningstidspunkt: LocalDate? = null,
-    var oppdatereNotat: OppdatereNotat? = null,
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    var oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
+    @Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
+    val notat: OppdatereBegrunnelse? = oppdatereBegrunnelse,
 ) {
-    @Deprecated("Bruk oppdatereNotat i stedet")
-    val notat: OppdatereNotat? = oppdatereNotat
-
-    fun henteOppdatereNotat() = oppdatereNotat ?: notat
+    fun henteOppdatereNotat() = oppdatereBegrunnelse ?: notat
 }

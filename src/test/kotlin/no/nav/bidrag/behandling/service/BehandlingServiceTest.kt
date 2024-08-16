@@ -1692,6 +1692,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling =
                 Behandling(
                     Vedtakstype.FASTSETTELSE,
+                    null,
                     YearMonth.now().atDay(1),
                     YearMonth.now().atEndOfMonth(),
                     YearMonth.now().atEndOfMonth(),

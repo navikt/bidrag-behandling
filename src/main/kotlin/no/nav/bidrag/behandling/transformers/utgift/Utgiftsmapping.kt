@@ -4,7 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
-import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -35,6 +35,7 @@ val Utgift.totalGodkjentBeløpBp
             utgiftsposter.filter { it.betaltAvBp }.sumOf { it.godkjentBeløp }
         }
 val Utgift.totalGodkjentBeløp get() = utgiftsposter.sumOf { it.godkjentBeløp }
+val Utgift.totalKravbeløp get() = utgiftsposter.sumOf { it.kravbeløp }
 val Utgift.totalBeløpBetaltAvBp
     get() = utgiftsposter.filter { it.betaltAvBp }.sumOf { it.godkjentBeløp } + beløpDirekteBetaltAvBp
 
@@ -49,16 +50,17 @@ fun Utgift?.hentValideringsfeil() =
         ugyldigUtgiftspost =
             this?.utgiftsposter?.any {
                 OppdatereUtgift(
-                    it.dato,
-                    when {
-                        kategorierSomKreverType.contains(behandling.særbidragKategori) -> it.type
-                        else -> null
-                    },
-                    it.kravbeløp,
-                    it.godkjentBeløp,
-                    it.begrunnelse,
-                    it.betaltAvBp,
-                    it.id,
+                    dato = it.dato,
+                    type =
+                        when {
+                            kategorierSomKreverType.contains(behandling.særbidragKategori) -> it.type
+                            else -> null
+                        },
+                    kravbeløp = it.kravbeløp,
+                    godkjentBeløp = it.godkjentBeløp,
+                    kommentar = it.kommentar,
+                    betaltAvBp = it.betaltAvBp,
+                    id = it.id,
                 ).validerUtgiftspost(behandling).isNotEmpty()
             } ?: false,
         manglerUtgifter = this == null || utgiftsposter.isEmpty(),
@@ -71,7 +73,7 @@ fun Behandling.tilUtgiftDto() =
             SærbidragUtgifterDto(
                 avslag = avslag,
                 kategori = tilSærbidragKategoriDto(),
-                notat = NotatDto(henteNotatinnhold(this, Notattype.UTGIFTER) ?: ""),
+                begrunnelse = BegrunnelseDto(henteNotatinnhold(this, Notattype.UTGIFTER) ?: ""),
                 valideringsfeil = valideringsfeil,
             )
         } else {
@@ -79,8 +81,8 @@ fun Behandling.tilUtgiftDto() =
                 avslag = avslag,
                 beregning = utgift.tilBeregningDto(),
                 kategori = tilSærbidragKategoriDto(),
-                notat =
-                    NotatDto(
+                begrunnelse =
+                    BegrunnelseDto(
                         innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
                         gjelder = this.henteRolleForNotat(Notattype.UTGIFTER, null).tilDto(),
                     ),
@@ -92,8 +94,8 @@ fun Behandling.tilUtgiftDto() =
         SærbidragUtgifterDto(
             avslag = avslag,
             kategori = tilSærbidragKategoriDto(),
-            notat =
-                NotatDto(
+            begrunnelse =
+                BegrunnelseDto(
                     innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
                     gjelder = this.henteRolleForNotat(Notattype.UTGIFTER, null).tilDto(),
                 ),
@@ -107,14 +109,14 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
     if (behandling.avslag != null) {
         OppdatereUtgiftResponse(
             avslag = behandling.avslag,
-            oppdatertNotat = henteNotatinnhold(behandling, Notattype.UTGIFTER),
+            begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
         )
     } else {
         OppdatereUtgiftResponse(
             oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
             utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
-            oppdatertNotat = henteNotatinnhold(behandling, Notattype.UTGIFTER),
+            begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             beregning = tilBeregningDto(),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
         )
@@ -125,13 +127,14 @@ fun Utgift.tilBeregningDto() =
         beløpDirekteBetaltAvBp = beløpDirekteBetaltAvBp,
         totalBeløpBetaltAvBp = totalBeløpBetaltAvBp,
         totalGodkjentBeløp = totalGodkjentBeløp,
+        totalKravbeløp = totalKravbeløp,
         totalGodkjentBeløpBp = totalGodkjentBeløpBp,
     )
 
 fun Utgiftspost.tilDto() =
     UtgiftspostDto(
         id = id!!,
-        begrunnelse = begrunnelse ?: "",
+        kommentar = kommentar ?: "",
         type = type,
         godkjentBeløp = godkjentBeløp,
         kravbeløp = kravbeløp,
@@ -142,7 +145,7 @@ fun Utgiftspost.tilDto() =
 fun OppdatereUtgift.tilUtgiftspost(utgift: Utgift) =
     Utgiftspost(
         utgift = utgift,
-        begrunnelse =
+        kommentar =
             if (utgift.behandling.erDatoForUtgiftForeldet(dato)) {
                 "Utgiften er foreldet"
             } else {

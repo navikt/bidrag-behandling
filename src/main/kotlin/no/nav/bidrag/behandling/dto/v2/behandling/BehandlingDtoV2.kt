@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.NotatDto
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
@@ -31,6 +31,8 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Periode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.domene.util.visningsnavnIntern
+import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import java.math.BigDecimal
@@ -42,6 +44,7 @@ data class BehandlingDetaljerDtoV2(
     val type: TypeBehandling,
     val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
     val vedtakstype: Vedtakstype,
+    val opprinneligVedtakstype: Vedtakstype? = null,
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
@@ -68,6 +71,7 @@ data class BehandlingDetaljerDtoV2(
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
     val kategori: SærbidragKategoriDto? = null,
+    val opprettetAv: SaksbehandlerDto,
 )
 
 data class BehandlingDtoV2(
@@ -75,6 +79,7 @@ data class BehandlingDtoV2(
     val type: TypeBehandling,
     val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
     val vedtakstype: Vedtakstype,
+    val opprinneligVedtakstype: Vedtakstype? = null,
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
@@ -104,16 +109,23 @@ data class BehandlingDtoV2(
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
     @Schema(description = "Utgiftsgrunnlag for særbidrag. Vil alltid være null for forskudd og bidrag")
     val utgift: SærbidragUtgifterDto? = null,
-)
+) {
+    val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
+}
 
 data class SærbidragUtgifterDto(
     val avslag: Resultatkode? = null,
     val kategori: SærbidragKategoriDto,
     val beregning: UtgiftBeregningDto? = null,
-    val notat: NotatDto,
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
+    val begrunnelse: BegrunnelseDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
     val valideringsfeil: UtgiftValideringsfeilDto?,
-)
+) {
+    @Deprecated("Erstattes av begrunnelse")
+    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    val notat: BegrunnelseDto = begrunnelse
+}
 
 data class SærbidragKategoriDto(
     val kategori: Særbidragskategori,
@@ -125,6 +137,8 @@ data class UtgiftBeregningDto(
     val beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val totalGodkjentBeløp: BigDecimal = BigDecimal.ZERO,
+    @Schema(description = "Summen av kravbeløp")
+    val totalKravbeløp: BigDecimal = BigDecimal.ZERO,
     @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val totalGodkjentBeløpBp: BigDecimal? = null,
     @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt plus beløp som er direkte betalt av BP")
@@ -144,7 +158,12 @@ data class UtgiftspostDto(
     @Schema(description = "Beløp som er godkjent for beregningen")
     val godkjentBeløp: BigDecimal = kravbeløp,
     @Schema(description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp")
-    val begrunnelse: String,
+    val kommentar: String,
+    @Schema(
+        description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp",
+        deprecated = true,
+    )
+    val begrunnelse: String = kommentar,
     @Schema(description = "Om utgiften er betalt av BP")
     val betaltAvBp: Boolean = false,
     val id: Long,
@@ -157,6 +176,7 @@ data class AktiveGrunnlagsdata(
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
+    @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
 }
 
@@ -168,6 +188,7 @@ data class IkkeAktiveGrunnlagsdata(
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
+    @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
 }
 
@@ -347,24 +368,31 @@ enum class Grunnlagsdatatype(
     ),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
+    @Schema(deprecated = true)
     AINNTEKT,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
+    @Schema(deprecated = true)
     SKATTEGRUNNLAG,
 
     @Deprecated("Erstattes av BOFORHOLD i kombiansjon med erBearbeidet = true")
+    @Schema(deprecated = true)
     BOFORHOLD_BEARBEIDET,
 
     @Deprecated("Erstattes av BOFORHOLD i kombinasjon med erBearbeidet = false")
+    @Schema(description = "Erstattes av BOFORHOLD i kombinasjon med erBearbeidet = false", deprecated = true)
     HUSSTANDSMEDLEMMER,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
+    @Schema(deprecated = true)
     INNTEKT_BEARBEIDET,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = false")
+    @Schema(deprecated = true)
     INNTEKTSOPPLYSNINGER,
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
+    @Schema(deprecated = true)
     SUMMERTE_ÅRSINNTEKTER,
 
     ;

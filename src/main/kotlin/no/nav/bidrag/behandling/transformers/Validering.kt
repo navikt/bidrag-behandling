@@ -440,7 +440,7 @@ fun OppdatereInntektRequest.valider() {
         this.oppdatereManuellInntekt?.validerHarInnteksttype(feilliste)
     }
 
-    this.oppdatereNotat?.let {
+    this.henteOppdatereBegrunnelse?.let {
         if (it.rolleid == null) {
             log.warn { "Rolleid skal være satt ved oppdatering av inntektsnotat. Setter rolle til bidragsmottaker" }
             // TODO: Fjerne utkommentering når front-end angir rolle ved oppdatering av inntektsnotat

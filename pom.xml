@@ -15,11 +15,11 @@
     <name>bidrag-behandling</name>
     <properties>
         <java.version>21</java.version>
-        <kotlin.version>2.0.0</kotlin.version>
-        <bidrag-felles.version>2024.08.09.145654</bidrag-felles.version>
-        <bidrag-beregn-felles.version>2024.08.09.151224</bidrag-beregn-felles.version>
+        <kotlin.version>2.0.10</kotlin.version>
+        <bidrag-felles.version>2024.08.16.110803</bidrag-felles.version>
+        <bidrag-beregn-felles.version>2024.08.14.135313</bidrag-beregn-felles.version>
         <h2.version>2.3.230</h2.version>
-        <logback-encoder.version>7.4</logback-encoder.version>
+        <logback-encoder.version>8.0</logback-encoder.version>
         <token-support.version>3.2.0</token-support.version>
         <springdoc.version>2.6.0</springdoc.version>
         <springframework-cloud.version>4.1.4</springframework-cloud.version>
@@ -32,7 +32,7 @@
         <spring-boot-testcontainers.version>3.3.2</spring-boot-testcontainers.version>
         <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
         <snakeyaml.version>2.2</snakeyaml.version>
-        <snappy-java.version>1.1.10.5</snappy-java.version>
+        <snappy-java.version>1.1.10.6</snappy-java.version>
         <skipOwasp>false</skipOwasp>
         <arrow-core.version>1.2.4</arrow-core.version>
         <checker-qual.version>3.46.0</checker-qual.version>
@@ -97,6 +97,11 @@
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
                 <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logback-encoder.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -401,7 +406,7 @@
         <dependency>
             <groupId>io.getunleash</groupId>
             <artifactId>unleash-client-java</artifactId>
-            <version>9.2.2</version>
+            <version>9.2.4</version>
         </dependency>
         <!--Logging-->
         <dependency>
@@ -420,7 +425,6 @@
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
-            <version>${logback-encoder.version}</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>

@@ -47,7 +47,7 @@ class UtgiftService(
             notatService.oppdatereNotat(
                 behandling,
                 NotatGrunnlag.NotatType.UTGIFTER,
-                it.henteNyttNotat(),
+                it.henteNyttNotat() ?: "",
                 behandling.bidragsmottaker!!.id!!,
             )
         }
@@ -117,7 +117,7 @@ class UtgiftService(
                 dato = LocalDate.parse(it[Utgiftspost::dato.name].textValue()),
                 godkjentBeløp = it[Utgiftspost::godkjentBeløp.name].decimalValue(),
                 kravbeløp = it[Utgiftspost::kravbeløp.name].decimalValue(),
-                begrunnelse = it[Utgiftspost::begrunnelse.name].textValue(),
+                kommentar = it[Utgiftspost::kommentar.name].textValue(),
                 type = it[Utgiftspost::type.name].textValue(),
             )
         }

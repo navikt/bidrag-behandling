@@ -99,11 +99,12 @@ fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): S
     return innhentetInntekter + innhentetArbeidsforhold + innhentetHusstandsmedlemmer + innhentetSivilstand + beregnetInntekt
 }
 
+fun Rolle.tilGrunnlagsreferanse() = rolletype.tilGrunnlagstype().tilPersonreferanse(fødselsdato.toCompactString(), id!!.toInt())
+
 fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
     val grunnlagstype = rolletype.tilGrunnlagstype()
     return GrunnlagDto(
-        referanse =
-            grunnlagstype.tilPersonreferanse(fødselsdato.toCompactString(), id!!.toInt()),
+        referanse = tilGrunnlagsreferanse(),
         type = grunnlagstype,
         innhold =
             POJONode(

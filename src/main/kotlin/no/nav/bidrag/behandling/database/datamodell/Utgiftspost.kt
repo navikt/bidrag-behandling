@@ -28,7 +28,7 @@ open class Utgiftspost(
     open var type: String,
     open var kravbeløp: BigDecimal,
     open var godkjentBeløp: BigDecimal,
-    open var begrunnelse: String? = null,
+    open var kommentar: String? = null,
     open var betaltAvBp: Boolean = false,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utgift_id", nullable = false)
@@ -36,5 +36,5 @@ open class Utgiftspost(
 ) {
     override fun toString(): String =
         "Utgiftspost(id=$id, dato=$dato, type=$type, kravbeløp=$kravbeløp, betaltAvBp=$betaltAvBp" +
-            "godkjentBeløp=$godkjentBeløp, begrunnelse=$begrunnelse)"
+            "godkjentBeløp=$godkjentBeløp, kommentar=$kommentar)"
 }

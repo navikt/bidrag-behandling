@@ -141,6 +141,7 @@ fun VedtakDto.tilBehandling(
     søknadId: Long? = null,
     enhet: String? = null,
     opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
+    opprinneligVedtakstype: Vedtakstype? = null,
 ): Behandling {
     val opprettetAv =
         if (lesemodus) {
@@ -161,6 +162,7 @@ fun VedtakDto.tilBehandling(
         Behandling(
             id = if (lesemodus) 1 else null,
             vedtakstype = vedtakType ?: type,
+            opprinneligVedtakstype = opprinneligVedtakstype,
             virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato,
             kategori = grunnlagListe.særbidragskategori?.kategori?.name,
             kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
@@ -179,7 +181,7 @@ fun VedtakDto.tilBehandling(
             soknadFra = soknadFra ?: hentSøknad().søktAv,
             mottattdato =
                 when (typeBehandling) {
-                    no.nav.bidrag.domene.enums.behandling.TypeBehandling.SÆRBIDRAG -> hentSøknad().mottattDato
+                    TypeBehandling.SÆRBIDRAG -> hentSøknad().mottattDato
                     else -> mottattdato ?: hentSøknad().mottattDato
                 },
             // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
@@ -205,16 +207,16 @@ fun VedtakDto.tilBehandling(
     behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
     notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.BOFORHOLD, it, null))
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.BOFORHOLD, it))
     }
     notatMedType(Notattype.UTGIFTER, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UTGIFTER, it, null))
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UTGIFTER, it))
     }
     notatMedType(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, it, null))
+        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, it))
     }
-    notatMedType(NotatGrunnlag.NotatType.INNTEKT, false)?.let {
-        behandling.roller.forEach { r ->
+    behandling.roller.forEach { r ->
+        notatMedType(NotatGrunnlag.NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
             behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.INNTEKT, it, r))
         }
     }
@@ -274,7 +276,7 @@ private fun List<GrunnlagDto>.mapUtgifter(
                     type = it.type,
                     godkjentBeløp = it.godkjentBeløp,
                     kravbeløp = it.kravbeløp,
-                    begrunnelse = it.begrunnelse,
+                    kommentar = it.kommentar,
                     betaltAvBp = it.betaltAvBp,
                 )
             }.toMutableSet()
@@ -447,7 +449,6 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                             gjelder = it.key!!,
                         )
                     }
-            // TODO: Boforhold andre voksne i husstand
         },
 ).flatten()
 
@@ -556,8 +557,10 @@ fun Behandling.opprettGrunnlag(
 private fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,
     medIVedtak: Boolean,
+    gjelderReferanse: Grunnlagsreferanse? = null,
 ) = grunnlagListe
     .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
+    .filter { gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse == gjelderReferanse }
     .map { it.innholdTilObjekt<NotatGrunnlag>() }
     .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }
     ?.innhold

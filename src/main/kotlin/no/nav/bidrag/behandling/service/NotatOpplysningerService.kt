@@ -58,31 +58,31 @@ import no.nav.bidrag.transport.dokument.OpprettDokumentDto
 import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
 import no.nav.bidrag.transport.notat.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.transport.notat.Arbeidsforhold
-import no.nav.bidrag.transport.notat.Boforhold
 import no.nav.bidrag.transport.notat.BoforholdBarn
-import no.nav.bidrag.transport.notat.Inntekter
 import no.nav.bidrag.transport.notat.InntekterPerRolle
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
-import no.nav.bidrag.transport.notat.NotatBehandlingDetaljer
+import no.nav.bidrag.transport.notat.NotatBegrunnelseDto
+import no.nav.bidrag.transport.notat.NotatBehandlingDetaljerDto
 import no.nav.bidrag.transport.notat.NotatBeregnetInntektDto
-import no.nav.bidrag.transport.notat.NotatDto
+import no.nav.bidrag.transport.notat.NotatBoforholdDto
 import no.nav.bidrag.transport.notat.NotatInntektDto
+import no.nav.bidrag.transport.notat.NotatInntekterDto
 import no.nav.bidrag.transport.notat.NotatInntektspostDto
 import no.nav.bidrag.transport.notat.NotatMalType
 import no.nav.bidrag.transport.notat.NotatResultatForskuddBeregningBarnDto
 import no.nav.bidrag.transport.notat.NotatResultatSærbidragsberegningDto
+import no.nav.bidrag.transport.notat.NotatRolleDto
 import no.nav.bidrag.transport.notat.NotatSivilstand
 import no.nav.bidrag.transport.notat.NotatSærbidragKategoriDto
 import no.nav.bidrag.transport.notat.NotatSærbidragUtgifterDto
 import no.nav.bidrag.transport.notat.NotatUtgiftBeregningDto
 import no.nav.bidrag.transport.notat.NotatUtgiftspostDto
+import no.nav.bidrag.transport.notat.NotatVedtakDetaljerDto
+import no.nav.bidrag.transport.notat.NotatVirkningstidspunktDto
 import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteretMedDetaljer
-import no.nav.bidrag.transport.notat.PersonNotatDto
-import no.nav.bidrag.transport.notat.SaksbehandlerNotat
-import no.nav.bidrag.transport.notat.Vedtak
-import no.nav.bidrag.transport.notat.Virkningstidspunkt
+import no.nav.bidrag.transport.notat.VedtakNotatDto
 import no.nav.bidrag.transport.notat.VoksenIHusstandenDetaljerDto
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
@@ -154,13 +154,13 @@ class NotatOpplysningerService(
         behandling.notatJournalpostId = journalpostId
     }
 
-    fun hentNotatOpplysninger(behandlingId: Long): NotatDto {
+    fun hentNotatOpplysninger(behandlingId: Long): VedtakNotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
         return hentNotatOpplysningerForBehandling(behandling)
     }
 
-    fun hentNotatOpplysningerForBehandling(behandling: Behandling): NotatDto {
+    fun hentNotatOpplysningerForBehandling(behandling: Behandling): VedtakNotatDto {
         val opplysningerBoforhold =
             behandling.grunnlag
                 .hentSisteAktiv()
@@ -186,7 +186,7 @@ class NotatOpplysningerService(
                     r.konvertereData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
                 }
 
-        return NotatDto(
+        return VedtakNotatDto(
             saksnummer = behandling.saksnummer,
             type =
                 when (behandling.tilType()) {
@@ -202,8 +202,8 @@ class NotatOpplysningerService(
             virkningstidspunkt = behandling.tilVirkningstidspunkt(),
             utgift = behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling),
             boforhold =
-                Boforhold(
-                    notat = behandling.tilNotatBoforhold(),
+                NotatBoforholdDto(
+                    begrunnelse = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
                     andreVoksneIHusstanden = behandling.tilAndreVoksneIHusstanden(),
                     barn =
@@ -214,7 +214,7 @@ class NotatOpplysningerService(
                 ),
             roller = behandling.roller.map(Rolle::tilNotatRolle),
             inntekter =
-                Inntekter(
+                NotatInntekterDto(
                     notat = behandling.tilNotatInntekt(behandling.bidragsmottaker!!),
                     notatPerRolle = behandling.roller.map { r -> behandling.tilNotatInntekt(r) }.toSet(),
                     inntekterPerRolle =
@@ -284,7 +284,7 @@ class NotatOpplysningerService(
                 } ?: emptyList(),
         )
 
-    private fun Behandling.hentBeregning(): Vedtak {
+    private fun Behandling.hentBeregning(): NotatVedtakDetaljerDto {
         val resultat =
             try {
                 when (tilType()) {
@@ -347,7 +347,7 @@ class NotatOpplysningerService(
             } catch (e: Exception) {
                 emptyList()
             }
-        return Vedtak(
+        return NotatVedtakDetaljerDto(
             erFattet = erVedtakFattet,
             fattetTidspunkt = vedtakstidspunkt,
             fattetAvSaksbehandler = vedtakFattetAv?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
@@ -356,24 +356,21 @@ class NotatOpplysningerService(
     }
 }
 
-private fun Behandling.tilNotatBoforhold(): SaksbehandlerNotat =
-    SaksbehandlerNotat(
-        medIVedtaket = null,
-        intern = henteNotatinnhold(this, NotatType.BOFORHOLD),
+private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
+    NotatBegrunnelseDto(
+        innhold = henteNotatinnhold(this, NotatType.BOFORHOLD),
         gjelder = this.rolleGrunnlagSkalHentesFor!!.tilNotatRolle(),
     )
 
 private fun Behandling.tilNotatVirkningstidspunkt() =
-    SaksbehandlerNotat(
-        medIVedtaket = null,
-        intern = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
+    NotatBegrunnelseDto(
+        innhold = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
         gjelder = this.bidragsmottaker!!.tilNotatRolle(),
     )
 
-private fun Behandling.tilNotatInntekt(rolle: Rolle): SaksbehandlerNotat =
-    SaksbehandlerNotat(
-        medIVedtaket = null,
-        intern = henteInntektsnotat(this, rolle.id!!),
+private fun Behandling.tilNotatInntekt(rolle: Rolle): NotatBegrunnelseDto =
+    NotatBegrunnelseDto(
+        innhold = henteInntektsnotat(this, rolle.id!!),
         gjelder = rolle.tilNotatRolle(),
     )
 
@@ -411,9 +408,9 @@ private fun Sivilstand.tilSivilstandsperiode() =
 private fun SærbidragUtgifterDto.tilNotatUtgiftDto(behandling: Behandling) =
     NotatSærbidragUtgifterDto(
         beregning = beregning?.tilNotatBeregningDto(),
-        notat =
-            SaksbehandlerNotat(
-                intern = notat.kunINotat,
+        begrunnelse =
+            NotatBegrunnelseDto(
+                innhold = begrunnelse.innhold,
                 gjelder = behandling.bidragsmottaker!!.tilNotatRolle(),
             ),
         utgifter = utgifter.map { it.tilNotatDto() },
@@ -434,6 +431,7 @@ private fun UtgiftBeregningDto.tilNotatBeregningDto() =
         beløpDirekteBetaltAvBp = beløpDirekteBetaltAvBp,
         totalBeløpBetaltAvBp = totalBeløpBetaltAvBp,
         totalGodkjentBeløp = totalGodkjentBeløp,
+        totalKravbeløp = totalKravbeløp,
         totalGodkjentBeløpBp = totalGodkjentBeløpBp,
     )
 
@@ -444,9 +442,10 @@ private fun SærbidragKategoriDto.tilNotatSærbidragKategoriDto() =
     )
 
 private fun Behandling.tilNotatBehandlingDetaljer() =
-    NotatBehandlingDetaljer(
+    NotatBehandlingDetaljerDto(
         søknadstype = vedtakstype.name,
         vedtakstype = vedtakstype,
+        opprinneligVedtakstype = opprinneligVedtakstype,
         søktAv = soknadFra,
         mottattDato = mottattdato,
         klageMottattDato = klageMottattdato,
@@ -457,7 +456,7 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
     )
 
 private fun Behandling.tilVirkningstidspunkt() =
-    Virkningstidspunkt(
+    NotatVirkningstidspunktDto(
         søknadstype = vedtakstype.name,
         vedtakstype = vedtakstype,
         søktAv = soknadFra,
@@ -466,13 +465,13 @@ private fun Behandling.tilVirkningstidspunkt() =
         mottattDato = mottattdato,
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
-        notat = tilNotatVirkningstidspunkt(),
+        begrunnelse = tilNotatVirkningstidspunkt(),
     )
 
 private fun Husstandsmedlem.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>) =
     BoforholdBarn(
         gjelder =
-            PersonNotatDto(
+            NotatRolleDto(
                 rolle = null,
                 navn = hentPersonVisningsnavn(ident) ?: navn,
                 fødselsdato = fødselsdato,
@@ -509,7 +508,7 @@ private fun Husstandsmedlem.tilBoforholdBarn(opplysningerBoforhold: List<Boforho
     )
 
 private fun Rolle.tilNotatRolle() =
-    PersonNotatDto(
+    NotatRolleDto(
         rolle = rolletype,
         navn = hentPersonVisningsnavn(ident),
         fødselsdato = fødselsdato,

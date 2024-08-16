@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereNotat
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -54,7 +54,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -85,7 +85,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -114,7 +114,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Eldste post",
+                    kommentar = "Eldste post",
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
@@ -122,7 +122,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.REISEUTGIFT.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Nyeste post",
+                    kommentar = "Nyeste post",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -135,16 +135,16 @@ class UtgiftserviceTest : TestContainerRunner() {
                         type = Utgiftstype.KLÆR.name,
                         kravbeløp = BigDecimal(1000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Ny post",
+                        kommentar = "Ny post",
                     ),
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
 
         assertSoftly(response.utgiftposter) {
             shouldHaveSize(3)
-            this[0].begrunnelse shouldBe "Eldste post"
-            this[1].begrunnelse shouldBe "Ny post"
-            this[2].begrunnelse shouldBe "Nyeste post"
+            this[0].kommentar shouldBe "Eldste post"
+            this[1].kommentar shouldBe "Ny post"
+            this[2].kommentar shouldBe "Nyeste post"
         }
 
         val forespørsel2 =
@@ -156,15 +156,15 @@ class UtgiftserviceTest : TestContainerRunner() {
                         id = response.oppdatertUtgiftspost?.id,
                         kravbeløp = BigDecimal(1000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Ny post",
+                        kommentar = "Ny post",
                     ),
             )
         val response2 = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel2)
         assertSoftly(response2.utgiftposter) {
             shouldHaveSize(3)
-            this[0].begrunnelse shouldBe "Eldste post"
-            this[1].begrunnelse shouldBe "Nyeste post"
-            this[2].begrunnelse shouldBe "Ny post"
+            this[0].kommentar shouldBe "Eldste post"
+            this[1].kommentar shouldBe "Nyeste post"
+            this[2].kommentar shouldBe "Ny post"
         }
     }
 
@@ -181,7 +181,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                         type = Utgiftstype.KLÆR.name,
                         kravbeløp = BigDecimal(1000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
@@ -200,7 +200,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             type shouldBe Utgiftstype.KLÆR.name
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
-            begrunnelse shouldBe "Test"
+            kommentar shouldBe "Test"
         }
     }
 
@@ -217,7 +217,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                         dato = LocalDate.now().minusMonths(1),
                         kravbeløp = BigDecimal(1000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
@@ -235,7 +235,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             type shouldBe Utgiftstype.OPTIKK.name
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
-            begrunnelse shouldBe "Test"
+            kommentar shouldBe "Test"
         }
     }
 
@@ -256,7 +256,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.TANNREGULERING.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -268,7 +268,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                         dato = LocalDate.now().minusMonths(1),
                         kravbeløp = BigDecimal(1000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
@@ -286,7 +286,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             type shouldBe Utgiftstype.TANNREGULERING.name
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
-            begrunnelse shouldBe "Test"
+            kommentar shouldBe "Test"
         }
     }
 
@@ -307,7 +307,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = "Kvittering for medisiner",
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -320,7 +320,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                         type = "Kvittering for medisiner 2",
                         kravbeløp = BigDecimal(1000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
@@ -338,7 +338,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             type shouldBe "Kvittering for medisiner 2"
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
-            begrunnelse shouldBe "Test"
+            kommentar shouldBe "Test"
         }
     }
 
@@ -358,7 +358,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -377,7 +377,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                         type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
@@ -397,7 +397,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
-            begrunnelse shouldBe "Test"
+            kommentar shouldBe "Test"
         }
     }
 
@@ -417,7 +417,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -430,7 +430,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                         type = Utgiftstype.REISEUTGIFT.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                         betaltAvBp = true,
                     ),
             )
@@ -451,7 +451,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             type shouldBe Utgiftstype.REISEUTGIFT.name
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
-            begrunnelse shouldBe "Test"
+            kommentar shouldBe "Test"
         }
     }
 
@@ -471,7 +471,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
@@ -479,7 +479,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     betaltAvBp = true,
                     utgift = behandling.utgift!!,
                 ),
@@ -518,7 +518,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
@@ -526,7 +526,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.REISEUTGIFT.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -573,7 +573,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
@@ -581,7 +581,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.REISEUTGIFT.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -626,7 +626,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
-                    begrunnelse = "Test",
+                    kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
             )
@@ -645,7 +645,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                         type = Utgiftstype.REISEUTGIFT.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val responseOppdater = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
@@ -655,7 +655,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             type shouldBe Utgiftstype.REISEUTGIFT.name
             kravbeløp shouldBe BigDecimal(2000)
             godkjentBeløp shouldBe BigDecimal(500)
-            begrunnelse shouldBe "Test"
+            kommentar shouldBe "Test"
         }
         val forespørselAngre =
             OppdatereUtgiftRequest(
@@ -667,7 +667,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             type shouldBe Utgiftstype.KONFIRMASJONSLEIR.name
             kravbeløp shouldBe BigDecimal(1000)
             godkjentBeløp shouldBe BigDecimal(500)
-            begrunnelse shouldBe "Test"
+            kommentar shouldBe "Test"
         }
     }
 
@@ -677,11 +677,11 @@ class UtgiftserviceTest : TestContainerRunner() {
         val behandling = oppretteBehandlingForSærbidrag()
         val forespørsel =
             OppdatereUtgiftRequest(
-                oppdatereNotat = OppdatereNotat("Nytt notat"),
+                oppdatereBegrunnelse = OppdatereBegrunnelse("Nytt notat"),
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
-        response.oppdatertNotat shouldBe "Nytt notat"
+        response.begrunnelse shouldBe "Nytt notat"
 
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)!!
         behandlingEtter.notater.first { Notattype.UTGIFTER == it.type }.innhold shouldBe "Nytt notat"
