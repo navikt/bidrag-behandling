@@ -136,12 +136,14 @@ fun Set<Bostatus>.erLik(detAndreSettet: Set<Bostatus>): Boolean {
     }
 }
 
-fun List<Grunnlag>.henteEndringerIArbeidsforhold(aktiveGrunnlag: List<Grunnlag>): Set<ArbeidsforholdGrunnlagDto> {
-    val aktiveGrunnlag =
-        aktiveGrunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }
+fun List<Grunnlag>.henteEndringerIArbeidsforhold(alleAktiveGrunnlag: List<Grunnlag>): Set<ArbeidsforholdGrunnlagDto> {
+    val aktiveArbeidsforholdsgrunnlag =
+        alleAktiveGrunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }
     val aktiveData =
-        aktiveGrunnlag.asSequence().mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }.flatten().toSet()
-    val nyeData = this.asSequence().mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }.flatten().toSet()
+        aktiveArbeidsforholdsgrunnlag.asSequence().mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }
+            .flatten().toSet()
+    val nyeData = this.asSequence().filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }
+        .mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }.flatten().toSet()
 
     if (aktiveData.isNotEmpty() && nyeData.isNotEmpty() && !nyeData.erDetSammeSom(aktiveData)) {
         return nyeData
@@ -261,16 +263,16 @@ fun Set<ArbeidsforholdGrunnlagDto>.erDetSammeSom(settB: Set<ArbeidsforholdGrunnl
 
     return this.all { settA ->
         settB.any { settB ->
-            settB.partPersonId == settA.partPersonId
-            settB.startdato == settA.startdato
-            settB.sluttdato == settA.startdato
-            settB.arbeidsgiverNavn == settA.arbeidsgiverNavn
             val detaljerA = settA.ansettelsesdetaljerListe?.get(0)
             val detaljerB = settB.ansettelsesdetaljerListe?.get(0)
-            detaljerB?.periodeFra == detaljerA?.periodeFra
-            detaljerB?.periodeTil == detaljerA?.periodeTil
-            detaljerB?.avtaltStillingsprosent == detaljerA?.avtaltStillingsprosent
-            detaljerB?.sisteLønnsendringDato == detaljerA?.sisteLønnsendringDato
+
+            settB.partPersonId == settA.partPersonId &&
+                    settB.startdato == settA.startdato &&
+                    settB.arbeidsgiverNavn == settA.arbeidsgiverNavn &&
+                    detaljerB?.periodeFra == detaljerA?.periodeFra &&
+                    detaljerB?.periodeTil == detaljerA?.periodeTil &&
+                    detaljerB?.avtaltStillingsprosent == detaljerA?.avtaltStillingsprosent &&
+                    detaljerB?.sisteLønnsendringDato == detaljerA?.sisteLønnsendringDato
         }
     }
 }

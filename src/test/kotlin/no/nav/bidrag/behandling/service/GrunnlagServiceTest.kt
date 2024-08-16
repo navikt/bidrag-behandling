@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -3400,6 +3401,40 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste differensiering av nytt mot gammelt grunnlag")
     open inner class Diffing {
+
+        @Test
+        open fun `skal returnere diff for arbeidsforhold`() {
+            // gitt
+            val b = oppretteBehandling(inkludereBp = true, inkludereArbeidsforhold = true)
+            val nyttArbeidsforhold =
+                oppretteArbeidsforhold(b.bidragspliktig!!.ident!!).copy(
+                    startdato = LocalDate.now(),
+                    arbeidsgiverNavn = "Skruer og mutrer AS",
+                )
+            b.grunnlag.add(
+                Grunnlag(
+                    b,
+                    Grunnlagsdatatype.ARBEIDSFORHOLD,
+                    false,
+                    commonObjectmapper.writeValueAsString(setOf(nyttArbeidsforhold)),
+                    LocalDateTime.now(),
+                    null,
+                    b.bidragspliktig!!,
+                ),
+            )
+
+            testdataManager.lagreBehandlingNewTransaction(b)
+
+            // hvis
+            val ikkeAktivereGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
+
+            // så
+            assertSoftly(ikkeAktivereGrunnlagsdata) { resultat ->
+                resultat.arbeidsforhold shouldNotBe null
+                resultat.arbeidsforhold shouldHaveSize  1
+            }
+        }
+
         @Test
         open fun `skal returnere diff for sivilstand`() {
             // gitt
