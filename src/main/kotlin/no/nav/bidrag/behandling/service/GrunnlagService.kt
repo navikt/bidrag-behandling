@@ -635,7 +635,7 @@ class GrunnlagService(
 
         val feilSkattepliktig = feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
 
-        if (true) {
+        if (feilSkattepliktig == null) {
             lagreGrunnlagHvisEndret(
                 behandling,
                 rolleInnhentetFor,
@@ -649,8 +649,8 @@ class GrunnlagService(
         } else {
             log.warn {
                 "Innhenting av ${Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER} for rolle ${rolleInnhentetFor.rolletype} " +
-                    "i behandling ${behandling.id} feilet for type ${feilSkattepliktig?.grunnlagstype} " +
-                    "med begrunnelse ${feilSkattepliktig?.feilmelding}. Lagrer ikke grunnlag"
+                    "i behandling ${behandling.id} feilet for type ${feilSkattepliktig.grunnlagstype} " +
+                    "med begrunnelse ${feilSkattepliktig.feilmelding}. Lagrer ikke grunnlag"
             }
         }
 
@@ -928,15 +928,15 @@ class GrunnlagService(
             val årsbaserteInntekterEllerYtelser: SummerteInntekter<*>? =
                 tilSummerteInntekter(sammenstilteInntekter, type)
 
-//            val feilrapportering = feilliste[type]
-//            if (feilrapportering != null) {
-//                log.warn {
-//                    "Feil ved innhenting av grunnlagstype $type for rolle ${rolleInhentetFor.rolletype} " +
-//                        "i behandling ${behandling.id}. Lagrer ikke sammenstilte inntekter. Feilmelding: " +
-//                        feilrapportering.feilmelding
-//                }
-//                return@forEach
-//            }
+            val feilrapportering = feilliste[type]
+            if (feilrapportering != null) {
+                log.warn {
+                    "Feil ved innhenting av grunnlagstype $type for rolle ${rolleInhentetFor.rolletype} " +
+                        "i behandling ${behandling.id}. Lagrer ikke sammenstilte inntekter. Feilmelding: " +
+                        feilrapportering.feilmelding
+                }
+                return@forEach
+            }
             @Suppress("UNCHECKED_CAST")
             if (inntekterOgYtelser.contains(type)) {
                 lagreGrunnlagHvisEndret<SummerteInntekter<SummertÅrsinntekt>>(

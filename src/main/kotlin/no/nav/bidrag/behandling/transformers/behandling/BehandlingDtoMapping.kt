@@ -75,10 +75,8 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
@@ -93,15 +91,6 @@ import java.time.ZoneOffset
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
-
-fun Vedtakstype.tilVisningsnavn(opprinneligVedtakstype: Vedtakstype? = null) =
-    opprinneligVedtakstype?.let {
-        if (it == Vedtakstype.FASTSETTELSE && this == Vedtakstype.ENDRING) {
-            it.visningsnavn.intern
-        } else {
-            "${it.visningsnavn.intern} (${this.visningsnavn.intern})"
-        }
-    } ?: this.visningsnavn.intern
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
     BehandlingDetaljerDtoV2(

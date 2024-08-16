@@ -445,6 +445,7 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
     NotatBehandlingDetaljerDto(
         søknadstype = vedtakstype.name,
         vedtakstype = vedtakstype,
+        opprinneligVedtakstype = opprinneligVedtakstype,
         søktAv = soknadFra,
         mottattDato = mottattdato,
         klageMottattDato = klageMottattdato,
