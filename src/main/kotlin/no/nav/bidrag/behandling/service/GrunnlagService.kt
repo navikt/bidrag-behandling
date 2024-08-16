@@ -33,14 +33,15 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.transformers.behandling.erLik
+import no.nav.bidrag.behandling.transformers.behandling.erDetSammeSom
 import no.nav.bidrag.behandling.transformers.behandling.filtrerPerioderEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandBeregnetEtterVirkningstidspunktV2
 import no.nav.bidrag.behandling.transformers.behandling.finnEndringerBoforhold
-import no.nav.bidrag.behandling.transformers.behandling.hentEndringerBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIAndreVoksneIBpsHusstand
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -398,7 +399,7 @@ class GrunnlagService(
     fun henteNyeGrunnlagsdataMedEndringsdiff(behandling: Behandling): IkkeAktiveGrunnlagsdata {
         val roller = behandling.roller.sortedBy { if (it.rolletype == Rolletype.BARN) 1 else -1 }
         val inntekter = behandling.inntekter
-        val nyinnhentetGrunnlag = behandling.grunnlagListe.toSet().hentSisteIkkeAktiv()
+        val sisteInnhentedeIkkeAktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteAktiv()
         return IkkeAktiveGrunnlagsdata(
             inntekter =
@@ -406,7 +407,7 @@ class GrunnlagService(
                     årsinntekter =
                         roller
                             .flatMap {
-                                nyinnhentetGrunnlag.hentEndringerInntekter(
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
                                     it,
                                     inntekter,
                                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
@@ -415,7 +416,7 @@ class GrunnlagService(
                     småbarnstillegg =
                         roller
                             .flatMap {
-                                nyinnhentetGrunnlag.hentEndringerInntekter(
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
                                     it,
                                     inntekter,
                                     Grunnlagsdatatype.SMÅBARNSTILLEGG,
@@ -424,7 +425,7 @@ class GrunnlagService(
                     utvidetBarnetrygd =
                         roller
                             .flatMap {
-                                nyinnhentetGrunnlag.hentEndringerInntekter(
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
                                     it,
                                     inntekter,
                                     Grunnlagsdatatype.UTVIDET_BARNETRYGD,
@@ -433,7 +434,7 @@ class GrunnlagService(
                     kontantstøtte =
                         roller
                             .flatMap {
-                                nyinnhentetGrunnlag.hentEndringerInntekter(
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
                                     it,
                                     inntekter,
                                     Grunnlagsdatatype.KONTANTSTØTTE,
@@ -442,23 +443,24 @@ class GrunnlagService(
                     barnetillegg =
                         roller
                             .flatMap {
-                                nyinnhentetGrunnlag.hentEndringerInntekter(
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
                                     it,
                                     inntekter,
                                     Grunnlagsdatatype.BARNETILLEGG,
                                 )
                             }.toSet(),
                 ),
+            arbeidsforhold = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIArbeidsforhold(aktiveGrunnlag),
             husstandsmedlem =
-                nyinnhentetGrunnlag.hentEndringerBoforhold(
+                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(
                     aktiveGrunnlag,
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsmedlem,
                     behandling.rolleGrunnlagSkalHentesFor!!,
                 ),
-            andreVoksneIHusstanden = nyinnhentetGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag),
+            andreVoksneIHusstanden = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag),
             sivilstand =
-                nyinnhentetGrunnlag.hentEndringerSivilstand(
+                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerSivilstand(
                     aktiveGrunnlag,
                     behandling.virkningstidspunktEllerSøktFomDato,
                 ),
@@ -850,7 +852,7 @@ class GrunnlagService(
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
         val endringerSomMåBekreftes =
-            ikkeAktiveGrunnlag.hentEndringerBoforhold(
+            ikkeAktiveGrunnlag.henteEndringerIBoforhold(
                 aktiveGrunnlag,
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.husstandsmedlem,
@@ -1237,7 +1239,7 @@ class GrunnlagService(
                     (aktivtGrunnlag as Set<Sivilstand>)
                         .toList()
                         .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(behandling.virkningstidspunktEllerSøktFomDato)
-                !nyinnhentetGrunnlag.erLik(aktiveGrunnlag)
+                !nyinnhentetGrunnlag.erDetSammeSom(aktiveGrunnlag)
             } catch (e: Exception) {
                 log.error(e) { "Det skjedde en feil ved sjekk mot sivilstand diff ved grunnlagsinnhenting" }
                 aktivtGrunnlag.toSet() != nyttGrunnlag.toSet()
