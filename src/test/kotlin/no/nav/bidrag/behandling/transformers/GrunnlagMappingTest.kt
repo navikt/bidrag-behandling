@@ -164,9 +164,19 @@ class GrunnlagMappingTest {
         @Test
         fun `skal bygge grunnlag for stønad for forskudd`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
-            behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-            behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-            behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
+            behandling.leggTilNotat(
+                "Notat inntekt BM",
+                NotatGrunnlag.NotatType.INNTEKT,
+                behandling.bidragsmottaker!!,
+            )
+            behandling.leggTilNotat(
+                "Utgift notat",
+                NotatGrunnlag.NotatType.UTGIFTER,
+            )
+            behandling.leggTilNotat(
+                "Boforhold",
+                NotatGrunnlag.NotatType.BOFORHOLD,
+            )
             behandling.stonadstype = Stønadstype.FORSKUDD
             behandling.engangsbeloptype = null
             val grunnlag = behandling.byggGrunnlagGenerelt()
