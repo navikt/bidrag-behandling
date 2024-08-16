@@ -3401,7 +3401,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste differensiering av nytt mot gammelt grunnlag")
     open inner class Diffing {
-
         @Test
         open fun `skal returnere diff for arbeidsforhold`() {
             // gitt
@@ -3431,7 +3430,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // så
             assertSoftly(ikkeAktivereGrunnlagsdata) { resultat ->
                 resultat.arbeidsforhold shouldNotBe null
-                resultat.arbeidsforhold shouldHaveSize  1
+                resultat.arbeidsforhold shouldHaveSize 1
             }
         }
 

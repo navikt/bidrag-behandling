@@ -39,6 +39,7 @@ data class OppdatereBoforholdResponse(
     @Deprecated("Erstattes av oppdatertHusstandsmedlem")
     @Schema(description = "Erstattes av oppdatertHusstandsmedlem", deprecated = true)
     val oppdatertHusstandsbarn: HusstandsmedlemDtoV2? = oppdatertHusstandsmedlem
+
     @Deprecated("Erstattes av begrunnelse")
     @Schema(description = "Saksbehandlers notat", deprecated = true)
     val oppdatertNotat: OppdatereBegrunnelse? = begrunnelse?.let { OppdatereBegrunnelse(it) }
