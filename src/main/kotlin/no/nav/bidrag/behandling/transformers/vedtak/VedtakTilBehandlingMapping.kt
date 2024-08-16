@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
+import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
@@ -127,6 +128,7 @@ fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto?
             Resultatkode.fraKode(engangsbeløp.resultatkode)!!,
             engangsbeløp.grunnlagReferanseListe,
             behandling.utgift?.tilBeregningDto() ?: UtgiftBeregningDto(),
+            behandling.utgift?.utgiftsposter?.map { it.tilDto() } ?: emptyList(),
         )
     }
 

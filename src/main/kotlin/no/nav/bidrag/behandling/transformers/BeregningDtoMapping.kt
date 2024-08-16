@@ -7,8 +7,10 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningInntekterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
+import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
+import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
@@ -70,6 +72,7 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
             periode.resultat.resultatkode,
             periode.grunnlagsreferanseListe,
             behandling.utgift?.tilBeregningDto() ?: UtgiftBeregningDto(),
+            behandling.utgift?.utgiftsposter?.map { it.tilDto() } ?: emptyList(),
         )
     }
 
@@ -94,6 +97,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     resultatkode: Resultatkode,
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
     beregning: UtgiftBeregningDto,
+    utgiftsposter: List<UtgiftspostDto>,
 ) = ResultatSærbidragsberegningDto(
     periode =
         ÅrMånedsperiode(
@@ -106,6 +110,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe),
     antallBarnIHusstanden = finnAntallBarnIHusstanden(grunnlagsreferanseListe),
     inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
+    utgiftsposter = utgiftsposter,
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
     voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
     enesteVoksenIHusstandenErEgetBarn = finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe),
