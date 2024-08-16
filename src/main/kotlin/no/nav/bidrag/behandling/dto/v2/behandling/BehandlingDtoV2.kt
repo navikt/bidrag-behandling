@@ -31,6 +31,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Periode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -167,7 +168,16 @@ data class UtgiftspostDto(
     @Schema(description = "Om utgiften er betalt av BP")
     val betaltAvBp: Boolean = false,
     val id: Long,
-)
+) {
+    @get:Schema(name = "utgiftstypeVisningsnavn")
+    val utgiftstypeVisningsnavn
+        get() =
+            try {
+                Utgiftstype.valueOf(type).visningsnavn.intern
+            } catch (e: IllegalArgumentException) {
+                type
+            }
+}
 
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
