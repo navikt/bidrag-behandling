@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
+import no.nav.bidrag.behandling.transformers.behandling.tilVisningsnavn
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -108,7 +109,9 @@ data class BehandlingDtoV2(
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
     @Schema(description = "Utgiftsgrunnlag for særbidrag. Vil alltid være null for forskudd og bidrag")
     val utgift: SærbidragUtgifterDto? = null,
-)
+) {
+    val vedtakstypeVisningsnavn get() = vedtakstype.tilVisningsnavn(opprinneligVedtakstype)
+}
 
 data class SærbidragUtgifterDto(
     val avslag: Resultatkode? = null,
