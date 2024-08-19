@@ -19,8 +19,8 @@ import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
-import no.nav.bidrag.behandling.transformers.vedtak.særbidragAvslagskoderSomInneholderUtgifter
-import no.nav.bidrag.behandling.transformers.vedtak.særbidragAvslagskoderSomKreverBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.særbidragDirekteAvslagskoderSomInneholderUtgifter
+import no.nav.bidrag.behandling.transformers.vedtak.særbidragDirekteAvslagskoderSomKreverBeregning
 import no.nav.bidrag.beregn.særbidrag.ValiderSærbidragForBeregningService
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -177,12 +177,12 @@ fun BeregnetSærbidragResultat.validerForSærbidrag() {
 
 fun Resultatkode?.erAvslagSomInneholderUtgifter(): Boolean {
     if (this == null) return false
-    return særbidragAvslagskoderSomInneholderUtgifter.contains(this)
+    return særbidragDirekteAvslagskoderSomInneholderUtgifter.contains(this)
 }
 
 fun Behandling.erDirekteAvslagUtenBeregning(): Boolean {
     if (avslag != null) return true
-    return tilSærbidragAvslagskode() != null && !særbidragAvslagskoderSomKreverBeregning.contains(tilSærbidragAvslagskode())
+    return tilSærbidragAvslagskode() != null && !særbidragDirekteAvslagskoderSomKreverBeregning.contains(tilSærbidragAvslagskode())
 }
 
 fun Behandling.tilSærbidragAvslagskode(): Resultatkode? {
