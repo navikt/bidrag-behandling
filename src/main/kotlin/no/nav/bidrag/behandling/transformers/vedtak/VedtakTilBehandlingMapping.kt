@@ -19,6 +19,8 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.tilNotat
+import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
+import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -270,7 +272,11 @@ private fun List<GrunnlagDto>.mapUtgifter(
     behandling: Behandling,
     lesemodus: Boolean,
 ): Utgift? {
-    if (behandling.tilType() !== TypeBehandling.SÆRBIDRAG || behandling.avslag != null) return null
+    if (behandling.tilType() !== TypeBehandling.SÆRBIDRAG ||
+        behandling.tilSærbidragAvslagskode()?.erAvslagSomInneholderUtgifter() == false
+    ) {
+        return null
+    }
     val utgift = Utgift(behandling, beløpDirekteBetaltAvBp = utgiftDirekteBetalt!!.beløpDirekteBetalt)
     utgift.utgiftsposter =
         utgiftsposter

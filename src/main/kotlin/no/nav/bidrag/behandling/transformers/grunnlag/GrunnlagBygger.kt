@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.transformers.grunnlag
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
+import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotaterDirekteAvslag
@@ -105,7 +107,12 @@ fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotaterDirekteAvslag() + byggGrunnlagSøknad()).toMutableSet()
     when (tilType()) {
         TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
-        TypeBehandling.SÆRBIDRAG -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
+        TypeBehandling.SÆRBIDRAG -> {
+            grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
+            if (tilSærbidragAvslagskode()?.erAvslagSomInneholderUtgifter() == true) {
+                grunnlagListe.addAll(byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt())
+            }
+        }
 
         else -> {}
     }

@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.sorter
@@ -78,7 +79,7 @@ fun Behandling.tilUtgiftDto() =
             )
         } else {
             SærbidragUtgifterDto(
-                avslag = avslag,
+                avslag = tilSærbidragAvslagskode(),
                 beregning = utgift.tilBeregningDto(),
                 kategori = tilSærbidragKategoriDto(),
                 begrunnelse =
@@ -114,6 +115,7 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
         )
     } else {
         OppdatereUtgiftResponse(
+            avslag = behandling.tilSærbidragAvslagskode(),
             oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
             utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
             begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
