@@ -1,0 +1,171 @@
+{
+  "kilde": "MANUELT",
+  "type": "FASTSETTELSE",
+  "opprettetAv": "Z994977",
+  "opprettetAvNavn": "F_Z994977 E_Z994977",
+  "kildeapplikasjon": "bidrag-behandling",
+  "vedtakstidspunkt": "2024-08-19T13:12:49.7589",
+  "enhetsnummer": "4806",
+  "innkrevingUtsattTilDato": null,
+  "fastsattILand": null,
+  "opprettetTidspunkt": "2024-08-19T13:12:50.85752",
+  "grunnlagListe": [
+    {
+      "referanse": "notat_UTGIFTER_kun_i_notat",
+      "type": "NOTAT",
+      "innhold": {
+        "type": "UTGIFTER",
+        "innhold": "Utgifter dette er en kommentar på utgifter wohoooo",
+        "erMedIVedtaksdokumentet": false
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "søknad",
+      "type": "SØKNAD",
+      "innhold": {
+        "søktAv": "BIDRAGSPLIKTIG",
+        "mottattDato": "2024-01-15",
+        "søktFraDato": "2021-01-01",
+        "klageMottattDato": null,
+        "opprinneligVedtakstype": null
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "virkningstidspunkt",
+      "type": "VIRKNINGSTIDSPUNKT",
+      "innhold": {
+        "avslag": null,
+        "årsak": null,
+        "virkningstidspunkt": "2024-08-01"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "særbidrag_kategori",
+      "type": "SÆRBIDRAG_KATEGORI",
+      "innhold": {
+        "kategori": "KONFIRMASJON",
+        "beskrivelse": null
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "utgiftsposter",
+      "type": "UTGIFTSPOSTER",
+      "innhold": [
+        {
+          "dato": "2022-12-10",
+          "type": "KLÆR",
+          "kommentar": "Fakturanr 3",
+          "betaltAvBp": false,
+          "kravbeløp": 5000,
+          "godkjentBeløp": 0
+        },
+        {
+          "dato": "2022-12-22",
+          "type": "KONFIRMASJONSAVGIFT",
+          "kommentar": "Fakturanr 2",
+          "betaltAvBp": false,
+          "kravbeløp": 8000,
+          "godkjentBeløp": 0
+        },
+        {
+          "dato": "2022-12-05",
+          "type": "KONFIRMASJONSAVGIFT",
+          "kommentar": "Fakturanr 1",
+          "betaltAvBp": false,
+          "kravbeløp": 5000,
+          "godkjentBeløp": 0
+        }
+      ],
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "utgift_direkte_betalt",
+      "type": "UTGIFT_DIREKTE_BETALT",
+      "innhold": {
+        "beløpDirekteBetalt": 500
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_BIDRAGSMOTTAKER_19720829_100",
+      "type": "PERSON_BIDRAGSMOTTAKER",
+      "innhold": {
+        "navn": null,
+        "ident": "29487249651",
+        "fødselsdato": "1972-08-29"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_BIDRAGSPLIKTIG_19781115_99",
+      "type": "PERSON_BIDRAGSPLIKTIG",
+      "innhold": {
+        "navn": null,
+        "ident": "15517829118",
+        "fødselsdato": "1978-11-15"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_SØKNADSBARN_20050916_101",
+      "type": "PERSON_SØKNADSBARN",
+      "innhold": {
+        "navn": null,
+        "ident": "16490550511",
+        "fødselsdato": "2005-09-16"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    }
+  ],
+  "stønadsendringListe": [],
+  "engangsbeløpListe": [
+    {
+      "type": "SÆRBIDRAG",
+      "sak": "2400066",
+      "skyldner": "15517829118",
+      "kravhaver": "16490550511",
+      "mottaker": "29487249651",
+      "beløp": null,
+      "valutakode": "NOK",
+      "resultatkode": "ALLE_UTGIFTER_ER_FORELDET",
+      "innkreving": "MED_INNKREVING",
+      "beslutning": "ENDRING",
+      "omgjørVedtakId": null,
+      "referanse": "83e64be0-d978-42a7-85c7-010886c3eeee",
+      "delytelseId": null,
+      "eksternReferanse": null,
+      "grunnlagReferanseListe": [
+        "notat_UTGIFTER_kun_i_notat",
+        "søknad",
+        "virkningstidspunkt",
+        "særbidrag_kategori",
+        "utgiftsposter",
+        "utgift_direkte_betalt"
+      ],
+      "betaltBeløp": null
+    }
+  ],
+  "behandlingsreferanseListe": [
+    {
+      "kilde": "BEHANDLING_ID",
+      "referanse": "31"
+    },
+    {
+      "kilde": "BISYS_SØKNAD",
+      "referanse": "55312311"
+    }
+  ]
+}

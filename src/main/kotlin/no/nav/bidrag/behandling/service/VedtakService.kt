@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.beregning.erDirekteAvslagUtenBeregning
+import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.beregning.validerForBeregning
 import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbidrag
 import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
@@ -203,7 +204,7 @@ class VedtakService(
         behandling.validerForBeregningSærbidrag()
 
         val request =
-            if (behandling.avslag != null) {
+            if (behandling.erDirekteAvslagUtenBeregning()) {
                 behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
             } else {
                 behandling.byggOpprettVedtakRequestSærbidrag()
@@ -391,7 +392,7 @@ class VedtakService(
                         OpprettEngangsbeløpRequestDto(
                             type = engangsbeloptype!!,
                             beløp = null,
-                            resultatkode = avslag!!.name,
+                            resultatkode = tilSærbidragAvslagskode()!!.name,
                             valutakode = "NOK",
                             betaltBeløp = null,
                             innkreving = innkrevingstype!!,

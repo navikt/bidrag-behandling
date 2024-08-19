@@ -155,7 +155,7 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
         feilliste.add("Dato for utgift kan ikke være senere enn eller lik dagens dato")
     }
     if (godkjentBeløp != kravbeløp &&
-        begrunnelse.isNullOrEmpty() &&
+        kommentar.isNullOrEmpty() &&
         !behandling.erDatoForUtgiftForeldet(
             dato,
         )

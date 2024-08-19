@@ -147,12 +147,7 @@ fun Utgiftspost.tilDto() =
 fun OppdatereUtgift.tilUtgiftspost(utgift: Utgift) =
     Utgiftspost(
         utgift = utgift,
-        kommentar =
-            if (utgift.behandling.erDatoForUtgiftForeldet(dato)) {
-                "Utgiften er foreldet"
-            } else {
-                begrunnelse
-            },
+        kommentar = kommentar,
         type =
             when {
                 kategorierSomKreverType.contains(utgift.behandling.særbidragKategori) -> type!!
