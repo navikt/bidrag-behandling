@@ -7,7 +7,6 @@ import io.mockk.clearAllMocks
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
-import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
