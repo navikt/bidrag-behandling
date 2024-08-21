@@ -14,10 +14,13 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,6 +37,8 @@ class UtgiftserviceTest : TestContainerRunner() {
 
     @BeforeEach
     fun initMock() {
+        stubSjablonProvider()
+        stubKodeverkProvider()
     }
 
     fun oppretteBehandlingForSærbidrag(): Behandling = oppretteBehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG, true)
@@ -179,8 +184,8 @@ class UtgiftserviceTest : TestContainerRunner() {
                     OppdatereUtgift(
                         dato = LocalDate.now().minusMonths(1),
                         type = Utgiftstype.KLÆR.name,
-                        kravbeløp = BigDecimal(1000),
-                        godkjentBeløp = BigDecimal(500),
+                        kravbeløp = BigDecimal(3000),
+                        godkjentBeløp = BigDecimal(3000),
                         kommentar = "Test",
                     ),
             )
@@ -191,15 +196,15 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.avslag shouldBe null
         assertSoftly(response.beregning!!) {
             totalBeløpBetaltAvBp shouldBe BigDecimal(0)
-            totalGodkjentBeløp shouldBe BigDecimal(500)
+            totalGodkjentBeløp shouldBe BigDecimal(3000)
             beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
         }
 
         assertSoftly(response.oppdatertUtgiftspost!!) {
             dato shouldBe LocalDate.now().minusMonths(1)
             type shouldBe Utgiftstype.KLÆR.name
-            kravbeløp shouldBe BigDecimal(1000)
-            godkjentBeløp shouldBe BigDecimal(500)
+            kravbeløp shouldBe BigDecimal(3000)
+            godkjentBeløp shouldBe BigDecimal(3000)
             kommentar shouldBe "Test"
         }
     }
@@ -354,7 +359,7 @@ class UtgiftserviceTest : TestContainerRunner() {
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
-                    dato = LocalDate.parse("2021-01-01"),
+                    dato = LocalDate.now().minusMonths(3),
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
@@ -375,8 +380,8 @@ class UtgiftserviceTest : TestContainerRunner() {
                         id = utgiftspostId,
                         dato = LocalDate.now().minusMonths(1),
                         type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
-                        kravbeløp = BigDecimal(2000),
-                        godkjentBeløp = BigDecimal(500),
+                        kravbeløp = BigDecimal(3000),
+                        godkjentBeløp = BigDecimal(2000),
                         kommentar = "Test",
                     ),
             )
@@ -384,19 +389,21 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         response shouldNotBe null
         response.oppdatertUtgiftspost shouldNotBe null
+        response.avslag shouldBe null
         assertSoftly(response.beregning!!) {
             totalBeløpBetaltAvBp shouldBe BigDecimal(0)
-            totalGodkjentBeløp shouldBe BigDecimal(500)
+            totalGodkjentBeløp shouldBe BigDecimal(2000)
             beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
             totalGodkjentBeløpBp shouldBe BigDecimal(0)
+            totalKravbeløp shouldBe BigDecimal(3000)
         }
 
         assertSoftly(response.oppdatertUtgiftspost!!) {
             id shouldBe utgiftspostId
             dato shouldBe LocalDate.now().minusMonths(1)
             type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
-            kravbeløp shouldBe BigDecimal(2000)
-            godkjentBeløp shouldBe BigDecimal(500)
+            kravbeløp shouldBe BigDecimal(3000)
+            godkjentBeløp shouldBe BigDecimal(2000)
             kommentar shouldBe "Test"
         }
     }
@@ -413,10 +420,10 @@ class UtgiftserviceTest : TestContainerRunner() {
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
-                    dato = LocalDate.parse("2021-01-01"),
+                    dato = LocalDate.now().minusMonths(3),
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
-                    kravbeløp = BigDecimal(1000),
-                    godkjentBeløp = BigDecimal(500),
+                    kravbeløp = BigDecimal(3000),
+                    godkjentBeløp = BigDecimal(3000),
                     kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
@@ -441,10 +448,12 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         assertSoftly(response.beregning!!) {
             totalBeløpBetaltAvBp shouldBe BigDecimal(500)
-            totalGodkjentBeløp shouldBe BigDecimal(1000)
+            totalGodkjentBeløp shouldBe BigDecimal(3500)
             beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
             totalGodkjentBeløpBp shouldBe BigDecimal(500)
+            totalKravbeløp shouldBe BigDecimal(5000)
         }
+        response.avslag shouldBe null
         response.utgiftposter shouldHaveSize 2
         assertSoftly(response.oppdatertUtgiftspost!!) {
             dato shouldBe LocalDate.now().minusMonths(1)
@@ -467,15 +476,15 @@ class UtgiftserviceTest : TestContainerRunner() {
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
-                    dato = LocalDate.parse("2021-01-01"),
+                    dato = LocalDate.now().minusMonths(3),
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
-                    kravbeløp = BigDecimal(1000),
-                    godkjentBeløp = BigDecimal(500),
+                    kravbeløp = BigDecimal(2000),
+                    godkjentBeløp = BigDecimal(2000),
                     kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
-                    dato = LocalDate.parse("2021-01-01"),
+                    dato = LocalDate.now().minusMonths(4),
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
                     kravbeløp = BigDecimal(1000),
                     godkjentBeløp = BigDecimal(500),
@@ -492,12 +501,14 @@ class UtgiftserviceTest : TestContainerRunner() {
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
 
         response.oppdatertUtgiftspost shouldBe null
+        response.avslag shouldBe null
 
         assertSoftly(response.beregning!!) {
             totalBeløpBetaltAvBp shouldBe BigDecimal(2000)
-            totalGodkjentBeløp shouldBe BigDecimal(1000)
+            totalGodkjentBeløp shouldBe BigDecimal(2500)
             beløpDirekteBetaltAvBp shouldBe BigDecimal(1500)
             totalGodkjentBeløpBp shouldBe BigDecimal(500)
+            totalKravbeløp shouldBe BigDecimal(3000)
         }
         response.utgiftposter shouldHaveSize 2
     }
@@ -514,18 +525,18 @@ class UtgiftserviceTest : TestContainerRunner() {
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
-                    dato = LocalDate.parse("2021-01-01"),
+                    dato = LocalDate.now().minusMonths(3),
                     type = Utgiftstype.KONFIRMASJONSLEIR.name,
-                    kravbeløp = BigDecimal(1000),
-                    godkjentBeløp = BigDecimal(500),
+                    kravbeløp = BigDecimal(2000),
+                    godkjentBeløp = BigDecimal(1600),
                     kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
                 Utgiftspost(
-                    dato = LocalDate.parse("2022-01-01"),
+                    dato = LocalDate.now().minusMonths(4),
                     type = Utgiftstype.REISEUTGIFT.name,
-                    kravbeløp = BigDecimal(1000),
-                    godkjentBeløp = BigDecimal(500),
+                    kravbeløp = BigDecimal(2000),
+                    godkjentBeløp = BigDecimal(1500),
                     kommentar = "Test",
                     utgift = behandling.utgift!!,
                 ),
@@ -534,12 +545,12 @@ class UtgiftserviceTest : TestContainerRunner() {
         val utgiftspostSlettId =
             behandling.utgift!!
                 .utgiftsposter
-                .find { it.dato == LocalDate.parse("2022-01-01") }!!
+                .find { it.dato == LocalDate.now().minusMonths(3) }!!
                 .id
         val utgiftspostId =
             behandling.utgift!!
                 .utgiftsposter
-                .find { it.dato == LocalDate.parse("2021-01-01") }!!
+                .find { it.dato == LocalDate.now().minusMonths(4) }!!
                 .id
         val forespørsel =
             OppdatereUtgiftRequest(
@@ -550,8 +561,9 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.utgiftposter shouldHaveSize 1
         assertSoftly(response.utgiftposter[0]) {
             id shouldBe utgiftspostId
-            dato shouldBe LocalDate.parse("2021-01-01")
+            dato shouldBe LocalDate.now().minusMonths(4)
         }
+        response.avslag shouldBe null
 
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
         behandlingEtter!!.utgift!!.utgiftsposter shouldHaveSize 1
@@ -682,8 +694,142 @@ class UtgiftserviceTest : TestContainerRunner() {
         testdataManager.lagreBehandlingNewTransaction(behandling)
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
         response.begrunnelse shouldBe "Nytt notat"
+        response.avslag shouldBe null
 
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)!!
         behandlingEtter.notater.first { Notattype.UTGIFTER == it.type }.innhold shouldBe "Nytt notat"
+    }
+
+    @Test
+    @Transactional
+    fun `skal returnere avslag hvis alle utgifsposter er foreldet`() {
+        val behandling = oppretteBehandlingForSærbidrag()
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+                beløpDirekteBetaltAvBp = BigDecimal(0),
+            )
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.parse("2020-01-01"),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(0),
+                    kommentar = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusYears(3),
+                        type = Utgiftstype.REISEUTGIFT.name,
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(0),
+                        kommentar = "Test",
+                    ),
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        response.utgiftposter shouldHaveSize 2
+        assertSoftly(response.utgiftposter[1]) {
+            dato shouldBe LocalDate.now().minusYears(3)
+        }
+
+        response.avslag shouldBe Resultatkode.ALLE_UTGIFTER_ER_FORELDET
+        val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
+        behandlingEtter!!.utgift!!.utgiftsposter shouldHaveSize 2
+    }
+
+    @Test
+    @Transactional
+    fun `skal returnere avslag hvis alle godkjent beløp er lavere enn forskuddsats`() {
+        val behandling = oppretteBehandlingForSærbidrag()
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+                beløpDirekteBetaltAvBp = BigDecimal(0),
+            )
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.parse("2020-01-01"),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(0),
+                    kommentar = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusMonths(3),
+                        type = Utgiftstype.REISEUTGIFT.name,
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(100),
+                        kommentar = "Test",
+                    ),
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        response.utgiftposter shouldHaveSize 2
+        assertSoftly(response.utgiftposter[1]) {
+            dato shouldBe LocalDate.now().minusMonths(3)
+        }
+
+        response.avslag shouldBe Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS
+        val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
+        behandlingEtter!!.utgift!!.utgiftsposter shouldHaveSize 2
+    }
+
+    @Test
+    @Transactional
+    fun `skal ikke returnere avslag hvis alle godkjent beløp er lavere enn forskuddsats hvis endring`() {
+        val behandling = oppretteBehandlingForSærbidrag()
+        behandling.vedtakstype = Vedtakstype.ENDRING
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+                beløpDirekteBetaltAvBp = BigDecimal(0),
+            )
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.parse("2020-01-01"),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(0),
+                    kommentar = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                nyEllerEndretUtgift =
+                    OppdatereUtgift(
+                        dato = LocalDate.now().minusMonths(3),
+                        type = Utgiftstype.REISEUTGIFT.name,
+                        kravbeløp = BigDecimal(2000),
+                        godkjentBeløp = BigDecimal(100),
+                        kommentar = "Test",
+                    ),
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        response.utgiftposter shouldHaveSize 2
+        assertSoftly(response.utgiftposter[1]) {
+            dato shouldBe LocalDate.now().minusMonths(3)
+        }
+
+        response.avslag shouldBe null
+        val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
+        behandlingEtter!!.utgift!!.utgiftsposter shouldHaveSize 2
     }
 }

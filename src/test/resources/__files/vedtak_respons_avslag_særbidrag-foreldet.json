@@ -4,23 +4,12 @@
   "opprettetAv": "Z994977",
   "opprettetAvNavn": "F_Z994977 E_Z994977",
   "kildeapplikasjon": "bidrag-behandling",
-  "vedtakstidspunkt": "2024-08-19T13:12:49.7589",
+  "vedtakstidspunkt": "2024-08-21T08:46:42.392128",
   "enhetsnummer": "4806",
   "innkrevingUtsattTilDato": null,
   "fastsattILand": null,
-  "opprettetTidspunkt": "2024-08-19T13:12:50.85752",
+  "opprettetTidspunkt": "2024-08-21T08:46:43.968594",
   "grunnlagListe": [
-    {
-      "referanse": "notat_UTGIFTER_kun_i_notat",
-      "type": "NOTAT",
-      "innhold": {
-        "type": "UTGIFTER",
-        "innhold": "Utgifter dette er en kommentar på utgifter wohoooo",
-        "erMedIVedtaksdokumentet": false
-      },
-      "grunnlagsreferanseListe": [],
-      "gjelderReferanse": null
-    },
     {
       "referanse": "søknad",
       "type": "SØKNAD",
@@ -49,7 +38,7 @@
       "referanse": "særbidrag_kategori",
       "type": "SÆRBIDRAG_KATEGORI",
       "innhold": {
-        "kategori": "KONFIRMASJON",
+        "kategori": "TANNREGULERING",
         "beskrivelse": null
       },
       "grunnlagsreferanseListe": [],
@@ -60,27 +49,19 @@
       "type": "UTGIFTSPOSTER",
       "innhold": [
         {
-          "dato": "2022-12-10",
-          "type": "KLÆR",
-          "kommentar": "Fakturanr 3",
-          "betaltAvBp": false,
-          "kravbeløp": 5000,
-          "godkjentBeløp": 0
-        },
-        {
-          "dato": "2022-12-22",
-          "type": "KONFIRMASJONSAVGIFT",
-          "kommentar": "Fakturanr 2",
-          "betaltAvBp": false,
-          "kravbeløp": 8000,
-          "godkjentBeløp": 0
-        },
-        {
-          "dato": "2022-12-05",
-          "type": "KONFIRMASJONSAVGIFT",
+          "dato": "2022-05-08",
+          "type": "TANNREGULERING",
           "kommentar": "Fakturanr 1",
           "betaltAvBp": false,
           "kravbeløp": 5000,
+          "godkjentBeløp": 0
+        },
+        {
+          "dato": "2022-07-09",
+          "type": "TANNREGULERING",
+          "kommentar": "Fakturanr 2",
+          "betaltAvBp": false,
+          "kravbeløp": 8000,
           "godkjentBeløp": 0
         }
       ],
@@ -91,40 +72,40 @@
       "referanse": "utgift_direkte_betalt",
       "type": "UTGIFT_DIREKTE_BETALT",
       "innhold": {
-        "beløpDirekteBetalt": 500
+        "beløpDirekteBetalt": 0
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
     },
     {
-      "referanse": "person_PERSON_BIDRAGSMOTTAKER_19720829_100",
+      "referanse": "person_PERSON_BIDRAGSMOTTAKER_19790213_132",
       "type": "PERSON_BIDRAGSMOTTAKER",
       "innhold": {
         "navn": null,
-        "ident": "29487249651",
-        "fødselsdato": "1972-08-29"
+        "ident": "{bmIdent}",
+        "fødselsdato": "{bmfDato}"
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
     },
     {
-      "referanse": "person_PERSON_BIDRAGSPLIKTIG_19781115_99",
+      "referanse": "person_PERSON_BIDRAGSPLIKTIG_19780420_133",
       "type": "PERSON_BIDRAGSPLIKTIG",
       "innhold": {
         "navn": null,
-        "ident": "15517829118",
-        "fødselsdato": "1978-11-15"
+        "ident": "{bpIdent}",
+        "fødselsdato": "{bpfDato}"
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
     },
     {
-      "referanse": "person_PERSON_SØKNADSBARN_20050916_101",
+      "referanse": "person_PERSON_SØKNADSBARN_20051223_134",
       "type": "PERSON_SØKNADSBARN",
       "innhold": {
         "navn": null,
-        "ident": "16490550511",
-        "fødselsdato": "2005-09-16"
+        "ident": "{barnId}",
+        "fødselsdato": "{barnfDato}"
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
@@ -134,21 +115,20 @@
   "engangsbeløpListe": [
     {
       "type": "SÆRBIDRAG",
-      "sak": "2400066",
-      "skyldner": "15517829118",
-      "kravhaver": "16490550511",
-      "mottaker": "29487249651",
+      "sak": "2400067",
+      "skyldner": "{bpIdent}",
+      "kravhaver": "{barnId}",
+      "mottaker": "{bmIdent}",
       "beløp": null,
       "valutakode": "NOK",
       "resultatkode": "ALLE_UTGIFTER_ER_FORELDET",
       "innkreving": "MED_INNKREVING",
       "beslutning": "ENDRING",
       "omgjørVedtakId": null,
-      "referanse": "83e64be0-d978-42a7-85c7-010886c3eeee",
+      "referanse": "bcb3080d-5f3b-4d58-ace4-cb6d442f5157",
       "delytelseId": null,
       "eksternReferanse": null,
       "grunnlagReferanseListe": [
-        "notat_UTGIFTER_kun_i_notat",
         "søknad",
         "virkningstidspunkt",
         "særbidrag_kategori",
@@ -161,11 +141,11 @@
   "behandlingsreferanseListe": [
     {
       "kilde": "BEHANDLING_ID",
-      "referanse": "31"
+      "referanse": "42"
     },
     {
       "kilde": "BISYS_SØKNAD",
-      "referanse": "55312311"
+      "referanse": "433434"
     }
   ]
 }

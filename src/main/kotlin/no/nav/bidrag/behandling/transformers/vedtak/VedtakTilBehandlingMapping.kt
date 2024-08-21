@@ -577,25 +577,22 @@ private fun VedtakDto.notatMedType(
     .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }
     ?.innhold
 
-private fun VedtakDto.avslagskode(): Resultatkode? =
-    if (stønadsendringListe.all { it.periodeListe.size == 1 }) {
-        val virkningstidspunkt = hentVirkningstidspunkt()
-        if (virkningstidspunkt == null) {
-            Resultatkode.fraKode(
-                stønadsendringListe
-                    .first()
-                    .periodeListe
-                    .first()
-                    .resultatkode,
-            )
-        } else if (virkningstidspunkt.avslag != null) {
-            virkningstidspunkt.avslag
-        } else {
-            null
-        }
+private fun VedtakDto.avslagskode(): Resultatkode? {
+    val virkningstidspunkt = hentVirkningstidspunkt()
+    return if (virkningstidspunkt == null && stønadsendringListe.all { it.periodeListe.size == 1 }) {
+        Resultatkode.fraKode(
+            stønadsendringListe
+                .first()
+                .periodeListe
+                .first()
+                .resultatkode,
+        )
+    } else if (virkningstidspunkt?.avslag != null) {
+        virkningstidspunkt.avslag
     } else {
         null
     }
+}
 
 private fun VedtakDto.hentVirkningstidspunkt(): VirkningstidspunktGrunnlag? =
     grunnlagListe

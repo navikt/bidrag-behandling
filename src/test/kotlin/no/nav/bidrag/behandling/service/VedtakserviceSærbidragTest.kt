@@ -421,7 +421,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
             it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
             it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
-            it.beløp shouldBe BigDecimal(0)
+            it.beløp shouldBe null
             it.valutakode shouldBe "NOK"
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_IKKE_FULL_BIDRAGSEVNE.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -440,8 +440,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 val innhold = innholdTilObjekt<SluttberegningSærbidrag>().first()
                 innhold.resultatKode shouldBe Resultatkode.SÆRBIDRAG_IKKE_FULL_BIDRAGSEVNE
                 innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
-                innhold.beregnetBeløp shouldBe BigDecimal(0)
-                innhold.resultatBeløp shouldBe BigDecimal(0)
+                innhold.beregnetBeløp shouldBe BigDecimal(2580)
+                innhold.resultatBeløp shouldBe null
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.SÆRBIDRAG_KATEGORI)) {
                 shouldHaveSize(1)
@@ -945,6 +945,16 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             withClue("Grunnlagliste skal inneholde 12 grunnlag") {
                 request.grunnlagListe shouldHaveSize 12
             }
+            val sluttberegningSærbidrag = hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG)
+
+            assertSoftly(sluttberegningSærbidrag) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<SluttberegningSærbidrag>().first()
+                innhold.resultatKode shouldBe Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS
+                innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
+                innhold.beregnetBeløp shouldBe BigDecimal(0)
+                innhold.resultatBeløp shouldBe null
+            }
         }
 
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
@@ -955,7 +965,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
             it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
             it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
-            it.beløp shouldBe BigDecimal.ZERO
+            it.beløp shouldBe null
             it.valutakode shouldBe "NOK"
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -986,7 +996,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 it.grunnlagReferanseListe,
             ) shouldHaveSize
                 1
-            it.betaltBeløp shouldBe null
+            it.betaltBeløp shouldBe BigDecimal.ZERO
         }
         assertSoftly(opprettVedtakRequest) {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.SÆRBIDRAG_KATEGORI)) {
@@ -1016,7 +1026,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 utgiftspost.dato shouldBe LocalDate.now().minusMonths(3)
                 utgiftspost.type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
                 utgiftspost.kravbeløp shouldBe BigDecimal(15000)
-                utgiftspost.godkjentBeløp shouldBe BigDecimal(100)
+                utgiftspost.godkjentBeløp shouldBe BigDecimal(500)
                 utgiftspost.kommentar shouldBe "Begrunnelse"
             }
 
@@ -1028,7 +1038,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 0
-            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 0
+            hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 0
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 0
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 0
@@ -1412,7 +1422,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             innhold.resultatKode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
             innhold.beregnetBeløp shouldBe BigDecimal(9840)
-            innhold.resultatBeløp shouldBe BigDecimal(9340)
+            innhold.resultatBeløp shouldBe BigDecimal(9840)
         }
 
         val delberegningBidragsevne =

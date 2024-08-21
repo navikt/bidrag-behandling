@@ -48,8 +48,8 @@
       "type": "PERSON_BIDRAGSMOTTAKER",
       "innhold": {
         "navn": null,
-        "ident": "313213213",
-        "fødselsdato": "1978-08-25"
+        "ident": "{bmIdent}",
+        "fødselsdato": "{bmfDato}"
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
@@ -59,8 +59,8 @@
       "type": "PERSON_BIDRAGSPLIKTIG",
       "innhold": {
         "navn": null,
-        "ident": "213244124",
-        "fødselsdato": "2000-03-01"
+        "ident": "{bpIdent}",
+        "fødselsdato": "{bpfDato}"
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
@@ -70,8 +70,8 @@
       "type": "PERSON_SØKNADSBARN",
       "innhold": {
         "navn": null,
-        "ident": "1344124",
-        "fødselsdato": "2020-03-01"
+        "ident": "{barnId}",
+        "fødselsdato": "{barnfDato}"
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
@@ -92,9 +92,9 @@
     {
       "type": "SÆRBIDRAG",
       "sak": "2400042",
-      "skyldner": "29487249651",
-      "kravhaver": "26472252274",
-      "mottaker": "15517829118",
+      "skyldner": "{bpIdent}",
+      "kravhaver": "{barnId}",
+      "mottaker": "{bmIdent}",
       "beløp": null,
       "valutakode": "NOK",
       "resultatkode": "PRIVAT_AVTALE_OM_SÆRBIDRAG",

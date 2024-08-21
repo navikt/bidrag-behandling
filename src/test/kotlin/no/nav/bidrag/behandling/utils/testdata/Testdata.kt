@@ -68,6 +68,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
@@ -1414,4 +1415,21 @@ fun Behandling.leggTilNotat(
             type = type,
         ),
     )
+}
+
+fun lagVedtaksdata(filnavn: String): VedtakDto {
+    val fil =
+        no.nav.bidrag.commons.web.mock
+            .hentFil("/__files/$filnavn.json")
+    var stringValue = fil.readText().replace("{bmIdent}", testdataBM.ident)
+    stringValue = stringValue.replace("{bmfDato}", testdataBM.fødselsdato.toString())
+    stringValue = stringValue.replace("{bpIdent}", testdataBP.ident)
+    stringValue = stringValue.replace("{bpfDato}", testdataBP.fødselsdato.toString())
+    stringValue = stringValue.replace("{barnId}", testdataBarn1.ident)
+    stringValue = stringValue.replace("{barnfDato}", testdataBarn1.fødselsdato.toString())
+    stringValue = stringValue.replace("{barnId2}", testdataBarn2.ident)
+    stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
+    stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
+    val grunnlag: VedtakDto = commonObjectmapper.readValue(stringValue)
+    return grunnlag
 }

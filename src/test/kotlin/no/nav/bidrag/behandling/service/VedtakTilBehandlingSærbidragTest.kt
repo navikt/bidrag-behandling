@@ -22,7 +22,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
-import no.nav.bidrag.behandling.utils.testdata.hentFil
+import no.nav.bidrag.behandling.utils.testdata.lagVedtaksdata
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -36,14 +36,13 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
-import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
-import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -110,7 +109,7 @@ class VedtakTilBehandlingSærbidragTest {
 
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response-særbidrag")
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -148,7 +147,7 @@ class VedtakTilBehandlingSærbidragTest {
 
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med klage mottatt dato`() {
-        val originalVedtak = filTilVedtakDto("vedtak_response-særbidrag")
+        val originalVedtak = lagVedtaksdata("vedtak_response-særbidrag")
         val vedtak1 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
@@ -208,8 +207,152 @@ class VedtakTilBehandlingSærbidragTest {
     }
 
     @Test
+    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med avslag godkjent beløp lavere enn forskuddsats`() {
+        val originalVedtak = lagVedtaksdata("vedtak_respons_avslag_særbidrag-forskuddsats")
+        val vedtak1 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
+                grunnlagListe =
+                    originalVedtak.grunnlagListe.map {
+                        if (it.type == Grunnlagstype.SØKNAD) {
+                            it.copy(
+                                innhold =
+                                    POJONode(
+                                        it.innholdTilObjekt<SøknadGrunnlag>().copy(
+                                            mottattDato = LocalDate.parse("2024-05-01"),
+                                            klageMottattDato = LocalDate.parse("2024-03-01"),
+                                        ),
+                                    ),
+                            )
+                        } else {
+                            it
+                        }
+                    },
+            )
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
+        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
+
+        assertSoftly(behandling) {
+            behandling.saksnummer shouldBe "2400067"
+            årsak shouldBe null
+            avslag shouldBe null
+            virkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
+            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
+            soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
+            stonadstype shouldBe null
+            engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            behandlerEnhet shouldBe "4806"
+            mottattdato shouldBe LocalDate.parse("2024-05-01")
+            klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            vedtakstype shouldBe Vedtakstype.FASTSETTELSE
+            vedtaksid shouldBe null
+            refVedtaksid shouldBe 1
+            kategori shouldBe Særbidragskategori.TANNREGULERING.name
+            kategoriBeskrivelse shouldBe null
+            soknadsid shouldBe 433434L
+            opprettetAv shouldBe "Z994977"
+            opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
+            sivilstand shouldHaveSize 0
+            inntekter shouldHaveSize 0
+            husstandsmedlem shouldHaveSize 0
+            roller shouldHaveSize 3
+            utgift shouldNotBe null
+            assertSoftly(utgift!!) {
+                beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
+                utgiftsposter shouldHaveSize 2
+                assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2024-05-08") }!!) {
+                    kravbeløp shouldBe BigDecimal(5000)
+                    godkjentBeløp shouldBe BigDecimal(300)
+                    type shouldBe Utgiftstype.TANNREGULERING.name
+                    betaltAvBp shouldBe false
+                    kommentar shouldBe "Fakturanr 1, delvis betalt av barnetrygd"
+                }
+                assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2024-07-09") }!!) {
+                    kravbeløp shouldBe BigDecimal(8000)
+                    godkjentBeløp shouldBe BigDecimal(800)
+                    type shouldBe Utgiftstype.TANNREGULERING.name
+                    betaltAvBp shouldBe false
+                    kommentar shouldBe "Fakturanr 2, dekket av forsikring"
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med avslag alle utgifter foreldet`() {
+        val originalVedtak = lagVedtaksdata("vedtak_respons_avslag_særbidrag-foreldet")
+        val vedtak1 =
+            originalVedtak.copy(
+                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
+                grunnlagListe =
+                    originalVedtak.grunnlagListe.map {
+                        if (it.type == Grunnlagstype.SØKNAD) {
+                            it.copy(
+                                innhold =
+                                    POJONode(
+                                        it.innholdTilObjekt<SøknadGrunnlag>().copy(
+                                            mottattDato = LocalDate.parse("2024-05-01"),
+                                            klageMottattDato = LocalDate.parse("2024-03-01"),
+                                        ),
+                                    ),
+                            )
+                        } else {
+                            it
+                        }
+                    },
+            )
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
+        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
+
+        assertSoftly(behandling) {
+            behandling.saksnummer shouldBe "2400067"
+            årsak shouldBe null
+            avslag shouldBe null
+            virkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
+            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
+            soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
+            stonadstype shouldBe null
+            engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            behandlerEnhet shouldBe "4806"
+            mottattdato shouldBe LocalDate.parse("2024-05-01")
+            klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            vedtakstype shouldBe Vedtakstype.FASTSETTELSE
+            vedtaksid shouldBe null
+            refVedtaksid shouldBe 1
+            kategori shouldBe Særbidragskategori.TANNREGULERING.name
+            kategoriBeskrivelse shouldBe null
+            soknadsid shouldBe 433434L
+            opprettetAv shouldBe "Z994977"
+            opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
+            sivilstand shouldHaveSize 0
+            inntekter shouldHaveSize 0
+            husstandsmedlem shouldHaveSize 0
+            roller shouldHaveSize 3
+            utgift shouldNotBe null
+            assertSoftly(utgift!!) {
+                beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
+                utgiftsposter shouldHaveSize 2
+                assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2022-05-08") }!!) {
+                    kravbeløp shouldBe BigDecimal(5000)
+                    godkjentBeløp shouldBe BigDecimal(0)
+                    type shouldBe Utgiftstype.TANNREGULERING.name
+                    betaltAvBp shouldBe false
+                    kommentar shouldBe "Fakturanr 1"
+                }
+                assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2022-07-09") }!!) {
+                    kravbeløp shouldBe BigDecimal(8000)
+                    godkjentBeløp shouldBe BigDecimal(0)
+                    type shouldBe Utgiftstype.TANNREGULERING.name
+                    betaltAvBp shouldBe false
+                    kommentar shouldBe "Fakturanr 2"
+                }
+            }
+        }
+    }
+
+    @Test
     fun `Skal opprette behandling og lagre vedtakstidspunkt for forrige vedtak`() {
-        val originalVedtak = filTilVedtakDto("vedtak_response-særbidrag")
+        val originalVedtak = lagVedtaksdata("vedtak_response-særbidrag")
         val vedtak1 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
@@ -268,7 +411,7 @@ class VedtakTilBehandlingSærbidragTest {
 
     @Test
     fun `Skal opprette behandling med klage mottatt dato`() {
-        val originalVedtak = filTilVedtakDto("vedtak_response-særbidrag")
+        val originalVedtak = lagVedtaksdata("vedtak_response-særbidrag")
         val vedtak1 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
@@ -313,7 +456,7 @@ class VedtakTilBehandlingSærbidragTest {
 
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus hvis direkte avslag`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_respons_avslag-særbidrag")
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_respons_avslag-særbidrag")
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -328,12 +471,6 @@ class VedtakTilBehandlingSærbidragTest {
             opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
         }
     }
-
-    fun filTilVedtakDto(filnavn: String): VedtakDto =
-        commonObjectmapper.readValue(
-            hentFil("/__files/$filnavn.json"),
-            VedtakDto::class.java,
-        )
 
     private fun Behandling.validerInntekter() {
         assertSoftly(inntekter) {
