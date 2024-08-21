@@ -57,6 +57,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
+import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
@@ -102,10 +103,17 @@ class GrunnlagService(
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
+            val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
+                tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
             behandling.grunnlagsinnhentingFeilet = null
 
             grunnlagRequestobjekter.forEach {
-                feilrapporteringer += henteOglagreGrunnlag(behandling, it)
+                feilrapporteringer +=
+                    henteOglagreGrunnlag(
+                        behandling,
+                        it,
+                        tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
+                    )
             }
 
             behandling.grunnlagSistInnhentet = LocalDateTime.now()
@@ -308,6 +316,15 @@ class GrunnlagService(
         sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterAndreVoksneIHusstandenBearbeidetGrunnlag(false)
     }
 
+    private fun tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling: Behandling) =
+        behandling.grunnlagsinnhentingFeilet?.let {
+            val t =
+                commonObjectmapper
+                    .readValue<Map<Grunnlagsdatatype, FeilrapporteringDto?>>(it)
+                    .any { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.key }
+            t
+        } ?: false
+
     private fun Grunnlag.rekalkulerOgOppdaterAndreVoksneIHusstandenBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
         val boforhold = konvertereData<Set<RelatertPersonGrunnlagDto>>()!!
         val andreVoksneIHusstandenPeriodisert =
@@ -458,7 +475,10 @@ class GrunnlagService(
                     behandling.husstandsmedlem,
                     behandling.rolleGrunnlagSkalHentesFor!!,
                 ),
-            andreVoksneIHusstanden = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag),
+            andreVoksneIHusstanden =
+                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(
+                    aktiveGrunnlag,
+                ),
             sivilstand =
                 sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerSivilstand(
                     aktiveGrunnlag,
@@ -628,43 +648,53 @@ class GrunnlagService(
     private fun henteOglagreGrunnlag(
         behandling: Behandling,
         grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
+        tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter: Boolean,
     ): Map<Grunnlagsdatatype, FeilrapporteringDto?> {
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
 
         val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
             Grunnlagsdatatype
                 .grunnlagsdatatypeobjekter(behandling.tilType())
-                .associateWith {
-                    hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, innhentetGrunnlag)
-                }.filterNot { it.value == null }
+                .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, innhentetGrunnlag) }
+                .filterNot { it.value == null }
 
         val rolleInnhentetFor = behandling.roller.find { it.ident == grunnlagsrequest.key.verdi }!!
         lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, innhentetGrunnlag, feilrapporteringer)
 
-        val feilSkattepliktig = feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
-
-        if (feilSkattepliktig == null) {
-            lagreGrunnlagHvisEndret(
-                behandling,
-                rolleInnhentetFor,
-                Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+        val feilVedHentingAvInntekter: FeilrapporteringDto? =
+            feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
+        val tekniskFeilVedHentingAvInntekter = feilVedHentingAvInntekter?.feiltype == HentGrunnlagFeiltype.TEKNISK_FEIL
+        lagreInntektsgrunnlagHvisEndret(
+            behandling = behandling,
+            rolle = rolleInnhentetFor,
+            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+            innhentetGrunnlag =
                 SkattepliktigeInntekter(
                     innhentetGrunnlag.ainntektListe,
                     innhentetGrunnlag.skattegrunnlagListe,
                 ),
-                innhentetGrunnlag.hentetTidspunkt,
-            )
-        } else {
+            hentetTidspunkt = innhentetGrunnlag.hentetTidspunkt,
+            aktiveringstidspunkt = null,
+            tekniskFeilsjekk = (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+        )
+
+        if (tekniskFeilVedHentingAvInntekter) {
             log.warn {
                 "Innhenting av ${Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER} for rolle ${rolleInnhentetFor.rolletype} " +
-                    "i behandling ${behandling.id} feilet for type ${feilSkattepliktig.grunnlagstype} " +
-                    "med begrunnelse ${feilSkattepliktig.feilmelding}. Lagrer ikke grunnlag"
+                    "i behandling ${behandling.id} feilet for type ${feilVedHentingAvInntekter!!.feiltype} " +
+                    "med begrunnelse ${feilVedHentingAvInntekter.feilmelding}."
             }
         }
 
         // Oppdatere inntektstabell med sammenstilte inntekter
         if (innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag)) {
-            sammenstilleOgLagreInntekter(behandling, innhentetGrunnlag, rolleInnhentetFor, feilrapporteringer)
+            sammenstilleOgLagreInntekter(
+                behandling,
+                innhentetGrunnlag,
+                rolleInnhentetFor,
+                feilrapporteringer,
+                (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+            )
         }
 
         val innhentingAvBoforholdFeilet =
@@ -922,6 +952,7 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
         rolleInhentetFor: Rolle,
         feilliste: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
+        tekniskFeilsjekk: Boolean,
     ) {
         val transformereInntekter = opprettTransformerInntekterRequest(behandling, innhentetGrunnlag, rolleInhentetFor)
 
@@ -937,6 +968,7 @@ class GrunnlagService(
                 tilSummerteInntekter(sammenstilteInntekter, type)
 
             val feilrapportering = feilliste[type]
+
             if (feilrapportering != null) {
                 log.warn {
                     "Feil ved innhenting av grunnlagstype $type for rolle ${rolleInhentetFor.rolletype} " +
@@ -945,22 +977,30 @@ class GrunnlagService(
                 }
                 return@forEach
             }
+
+            val tekniskFeilVedHentingAvInntekter: Boolean =
+                feilliste[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]?.feiltype == HentGrunnlagFeiltype.TEKNISK_FEIL
+
             @Suppress("UNCHECKED_CAST")
             if (inntekterOgYtelser.contains(type)) {
-                lagreGrunnlagHvisEndret<SummerteInntekter<SummertÅrsinntekt>>(
+                lagreInntektsgrunnlagHvisEndret<SummerteInntekter<SummertÅrsinntekt>>(
                     rolleInhentetFor.behandling,
                     rolleInhentetFor,
                     Grunnlagstype(type, true),
                     årsbaserteInntekterEllerYtelser as SummerteInntekter<SummertÅrsinntekt>,
                     innhentetTidspunkt,
+                    null,
+                    tekniskFeilsjekk,
                 )
             } else if (Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == type) {
-                lagreGrunnlagHvisEndret<SummerteInntekter<SummertMånedsinntekt>>(
+                lagreInntektsgrunnlagHvisEndret<SummerteInntekter<SummertMånedsinntekt>>(
                     rolleInhentetFor.behandling,
                     rolleInhentetFor,
                     Grunnlagstype(type, true),
                     årsbaserteInntekterEllerYtelser as SummerteInntekter<SummertMånedsinntekt>,
                     innhentetTidspunkt,
+                    null,
+                    tekniskFeilsjekk,
                 )
             } else {
                 log.error {
@@ -1304,13 +1344,14 @@ class GrunnlagService(
         return true
     }
 
-    private inline fun <reified T> lagreGrunnlagHvisEndret(
+    private inline fun <reified T> lagreInntektsgrunnlagHvisEndret(
         behandling: Behandling,
         rolle: Rolle,
         grunnlagstype: Grunnlagstype,
         innhentetGrunnlag: T,
         hentetTidspunkt: LocalDateTime,
         aktiveringstidspunkt: LocalDateTime? = null,
+        tekniskFeilsjekk: Boolean = false,
     ) {
         val sistInnhentedeGrunnlagAvType: T? = behandling.hentSisteInnhentetGrunnlag(grunnlagstype, rolle)
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, rolle)
@@ -1321,7 +1362,7 @@ class GrunnlagService(
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
 
-        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null) {
+        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null && tekniskFeilsjekk) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -1353,7 +1394,7 @@ class GrunnlagService(
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
                 )
             }
-        } else if (erGrunnlagEndretSidenSistInnhentet) {
+        } else if (erGrunnlagEndretSidenSistInnhentet && tekniskFeilsjekk) {
             val grunnlagSomSkalOppdateres =
                 behandling.henteUaktiverteGrunnlag(grunnlagstype, rolle).maxByOrNull { it.innhentet }
             grunnlagSomSkalOppdateres?.data = tilJson(innhentetGrunnlag)

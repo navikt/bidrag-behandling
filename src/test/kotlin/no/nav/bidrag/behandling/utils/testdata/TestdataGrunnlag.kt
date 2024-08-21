@@ -209,11 +209,12 @@ fun Behandling.opprettGrunnlag(
     type: Grunnlagsdatatype,
     grunnlag: Any,
     personId: String,
+    erBearbeidet: Boolean = false,
 ): Grunnlag =
     Grunnlag(
         behandling = this,
         type = type,
-        erBearbeidet = false,
+        erBearbeidet = erBearbeidet,
         data = commonObjectmapper.writeValueAsString(grunnlag),
         innhentet = testdataGrunnlagInnhentetTidspunkt,
         aktiv = LocalDateTime.now(),
@@ -323,7 +324,7 @@ fun Behandling.initGrunnlagRespons(stubUtils: StubUtils) {
                             if (tilType() ==
                                 TypeBehandling.FORSKUDD
                             ) {
-                                "vedtak/vedtak-grunnlagrespons-sb-bm-forskudd.json"
+                                "vedtak/vedtak-grunnlagrespons-forskudd-bm.json"
                             } else {
                                 "vedtak/vedtak-grunnlagrespons-sb-bm.json"
                             },

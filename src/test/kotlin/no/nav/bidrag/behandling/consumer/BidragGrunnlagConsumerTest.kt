@@ -29,7 +29,6 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
     @Test
     fun `skal hente grunnlag for behandling`() {
         // given
-        val personidentBmFraStub = Personident("99057812345")
         val behandling = testdataManager.oppretteBehandling(false)
         val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
 
@@ -42,7 +41,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
             // then
             assertSoftly {
                 returnertGrunnlag.arbeidsforholdListe.size shouldBe 3
-                returnertGrunnlag.arbeidsforholdListe[0].partPersonId shouldBe personidentBmFraStub.verdi
+                returnertGrunnlag.arbeidsforholdListe[0].partPersonId shouldBe behandling.bidragsmottaker!!.ident!!
             }
         }
     }
