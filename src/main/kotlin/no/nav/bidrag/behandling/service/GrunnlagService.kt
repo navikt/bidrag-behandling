@@ -1510,7 +1510,7 @@ class GrunnlagService(
                 ).contains(it)
             }.forEach {
                 val feilrapportering = feilrapporteringer[it]
-                if (feilrapportering == null) {
+                if (feilrapportering == null || HentGrunnlagFeiltype.FUNKSJONELL_FEIL == feilrapportering.feiltype) {
                     lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
                 } else {
                     log.warn {
