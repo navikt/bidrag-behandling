@@ -51,6 +51,7 @@ import stubPersonConsumer
 import stubSaksbehandlernavnProvider
 import stubTokenUtils
 import java.math.BigDecimal
+import java.math.MathContext
 import java.time.LocalDate
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -469,6 +470,30 @@ class VedtakTilBehandlingSærbidragTest {
                 "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
             virkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
             opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
+        }
+    }
+
+    @Test
+    fun `Skal konvertere vedtak for beregning`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
+        val resultat =
+            vedtakService.konverterVedtakTilBeregningResultatSærbidrag(1)
+
+        resultat shouldNotBe null
+
+        assertSoftly(resultat!!) {
+            bpsAndel!!.andelFaktor shouldBe BigDecimal(0.6444, MathContext(4))
+            bpsAndel.andelBeløp shouldBe BigDecimal(5796)
+            utgiftsposter.shouldHaveSize(3)
+            resultatKode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET
+            it.resultat shouldBe BigDecimal(5796)
+            antallBarnIHusstanden shouldBe 3.0
+            voksenIHusstanden shouldBe true
+            erDirekteAvslag shouldBe false
+            bpHarEvne shouldBe true
+            delberegningUtgift!!.sumGodkjent shouldBe BigDecimal(9000)
+            delberegningUtgift.sumBetaltAvBp shouldBe BigDecimal(2500)
+            beløpSomInnkreves shouldBe BigDecimal(3296)
         }
     }
 

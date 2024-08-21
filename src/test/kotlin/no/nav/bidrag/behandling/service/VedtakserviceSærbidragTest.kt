@@ -194,7 +194,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
             it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
             it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
-            it.beløp shouldBe BigDecimal(9840)
+            it.beløp shouldBe BigDecimal(9838)
             it.valutakode shouldBe "NOK"
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_INNVILGET.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -1130,7 +1130,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.skyldner shouldBe Personident(nyIdentBp)
             it.kravhaver shouldBe Personident(nyIdentBarn1)
             it.mottaker shouldBe Personident(nyIdentBm)
-            it.beløp shouldBe BigDecimal(9840)
+            it.beløp shouldBe BigDecimal(9836)
             it.valutakode shouldBe "NOK"
             it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_INNVILGET.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -1421,8 +1421,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             val innhold = innholdTilObjekt<SluttberegningSærbidrag>().first()
             innhold.resultatKode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
-            innhold.beregnetBeløp shouldBe BigDecimal(9840)
-            innhold.resultatBeløp shouldBe BigDecimal(9840)
+            innhold.beregnetBeløp shouldBe BigDecimal(9838)
+            innhold.resultatBeløp shouldBe BigDecimal(9838)
         }
 
         val delberegningBidragsevne =
@@ -1449,8 +1449,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         assertSoftly(delberegningBpsAndel) {
             shouldHaveSize(1)
             val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>().first()
-            innhold.andelProsent shouldBe 49.2.toBigDecimal()
-            innhold.andelBeløp shouldBe BigDecimal(9840)
+            innhold.andelFaktor shouldBe "0.4919".toBigDecimal()
+            innhold.andelProsent shouldBe "49.1900".toBigDecimal()
+            innhold.andelBeløp shouldBe BigDecimal(9838)
             innhold.barnetErSelvforsørget shouldBe false
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
         }

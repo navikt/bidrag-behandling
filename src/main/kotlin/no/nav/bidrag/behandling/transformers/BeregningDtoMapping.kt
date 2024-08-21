@@ -176,11 +176,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
                     it.referanse,
                 )
         } ?: return null
-    return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>()?.let {
-        it.copy(
-            andelProsent = if (it.andelProsent < BigDecimal.ONE) it.andelProsent.multiply(BigDecimal(100)) else it.andelProsent,
-        )
-    }
+    return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>()
 }
 
 fun List<GrunnlagDto>.finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Boolean? {
