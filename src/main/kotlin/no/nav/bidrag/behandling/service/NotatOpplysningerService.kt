@@ -50,6 +50,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
+import no.nav.bidrag.inntekt.util.InntektUtil
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -322,6 +323,7 @@ class NotatOpplysningerService(
                                                 beløpDirekteBetaltAvBp = it.beløpDirekteBetaltAvBp,
                                                 totalBeløpBetaltAvBp = it.totalBeløpBetaltAvBp,
                                                 totalGodkjentBeløp = it.totalGodkjentBeløp,
+                                                totalKravbeløp = it.totalKravbeløp,
                                                 totalGodkjentBeløpBp = it.totalGodkjentBeløpBp,
                                             )
                                         },
@@ -540,14 +542,15 @@ private fun Inntekt.tilNotatInntektDto() =
                     behandling?.roller?.find { it.ident == gjelderBarn }
                 }?.tilNotatRolle(),
         inntektsposter =
-            inntektsposter.map {
-                NotatInntektspostDto(
-                    it.kode,
-                    it.inntektstype,
-                    it.beløp.nærmesteHeltall,
-                    visningsnavn = it.inntektstype?.visningsnavn?.intern ?: finnVisningsnavn(it.kode),
-                )
-            },
+            inntektsposter
+                .map {
+                    NotatInntektspostDto(
+                        it.kode,
+                        it.inntektstype,
+                        InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp.nærmesteHeltall,
+                        visningsnavn = it.inntektstype?.visningsnavn?.intern ?: finnVisningsnavn(it.kode),
+                    )
+                }.sortedByDescending { it.beløp },
     )
 
 private fun List<Inntekt>.inntekterForIdent(ident: String) = filter { it.ident == ident }
