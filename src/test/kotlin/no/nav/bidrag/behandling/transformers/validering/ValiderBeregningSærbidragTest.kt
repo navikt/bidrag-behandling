@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregnin
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -26,6 +27,7 @@ import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
@@ -38,6 +40,11 @@ import java.time.YearMonth
 val virkningstidspunkt = YearMonth.now()
 
 class ValiderBeregningSærbidragTest {
+    @BeforeEach
+    fun initMocks() {
+        stubSjablonProvider()
+    }
+
     @Test
     fun `skal validere behandling`() {
         val behandling = opprettGyldigBehandling()
@@ -85,8 +92,8 @@ class ValiderBeregningSærbidragTest {
                         Utgiftspost(
                             kommentar = null,
                             dato = LocalDate.now().minusDays(2),
-                            godkjentBeløp = BigDecimal.valueOf(1000),
-                            kravbeløp = BigDecimal.valueOf(500),
+                            godkjentBeløp = BigDecimal.valueOf(5000),
+                            kravbeløp = BigDecimal.valueOf(2000),
                             type = Utgiftstype.KLÆR.name,
                             utgift = Utgift(behandling),
                         ),

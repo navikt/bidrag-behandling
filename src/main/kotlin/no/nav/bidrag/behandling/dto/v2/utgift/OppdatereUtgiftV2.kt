@@ -82,11 +82,6 @@ data class OppdatereUtgift(
                 " informasjon om hvorfor man ikke har godkjent hele kravbeløpet",
     )
     val kommentar: String? = null,
-    @Schema(
-        description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp",
-        deprecated = true,
-    )
-    val begrunnelse: String? = kommentar,
     @Schema(description = "Om utgiften er betalt av BP")
     val betaltAvBp: Boolean = false,
     val id: Long? = null,

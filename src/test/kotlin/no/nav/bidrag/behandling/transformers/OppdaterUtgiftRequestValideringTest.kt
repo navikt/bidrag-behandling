@@ -53,7 +53,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.OPTIKK.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
@@ -73,7 +73,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         shouldNotThrow<HttpClientErrorException> { request.valider(behandling) }
@@ -91,7 +91,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = "Utgift batteri",
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         shouldNotThrow<HttpClientErrorException> { request.valider(behandling) }
@@ -109,7 +109,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.OPTIKK.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
@@ -129,7 +129,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.TANNREGULERING.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
@@ -149,7 +149,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
 
@@ -169,7 +169,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
 
@@ -189,7 +189,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
 
@@ -209,7 +209,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(2500),
-                        begrunnelse = "Test",
+                        kommentar = "Test",
                     ),
             )
 
@@ -219,7 +219,7 @@ class OppdaterUtgiftRequestValideringTest {
     }
 
     @Test
-    fun `skal ikke kunne oppdatere utgift med ulik kravbeløp og godkjent beløp uten begrunnelse`() {
+    fun `skal ikke kunne oppdatere utgift med ulik kravbeløp og godkjent beløp uten kommentar`() {
         val behandling = opprettBehandlingSærligeUtgifter()
         val request =
             OppdatereUtgiftRequest(
@@ -250,7 +250,7 @@ class OppdaterUtgiftRequestValideringTest {
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
                         betaltAvBp = true,
-                        begrunnelse = "Begrunnelse",
+                        kommentar = "Begrunnelse",
                     ),
             )
 
@@ -290,7 +290,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "asd",
+                        kommentar = "asd",
                     ),
             )
 
@@ -311,7 +311,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = Utgiftstype.KONFIRMASJONSLEIR.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "Begrunnelse",
+                        kommentar = "Begrunnelse",
                     ),
             )
 
@@ -332,7 +332,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = "",
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "asdsad",
+                        kommentar = "asdsad",
                     ),
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
@@ -352,7 +352,7 @@ class OppdaterUtgiftRequestValideringTest {
                         type = "",
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(500),
-                        begrunnelse = "asdsad",
+                        kommentar = "asdsad",
                     ),
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }

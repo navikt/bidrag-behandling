@@ -11,18 +11,26 @@ import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagUtgift
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
+import no.nav.bidrag.behandling.transformers.vedtak.særbidragDirekteAvslagskoderSomInneholderUtgifter
+import no.nav.bidrag.behandling.transformers.vedtak.særbidragDirekteAvslagskoderSomKreverBeregning
+import no.nav.bidrag.beregn.særbidrag.ValiderSærbidragForBeregningService
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
@@ -167,9 +175,29 @@ fun BeregnetSærbidragResultat.validerForSærbidrag() {
     }
 }
 
+fun Resultatkode?.erAvslagSomInneholderUtgifter(): Boolean {
+    if (this == null) return false
+    return særbidragDirekteAvslagskoderSomInneholderUtgifter.contains(this)
+}
+
+fun Behandling.erDirekteAvslagUtenBeregning(): Boolean {
+    if (avslag != null) return true
+    return tilSærbidragAvslagskode() != null && !særbidragDirekteAvslagskoderSomKreverBeregning.contains(tilSærbidragAvslagskode())
+}
+
+fun Behandling.tilSærbidragAvslagskode(): Resultatkode? {
+    if (avslag != null || utgift == null || utgift?.utgiftsposter?.isEmpty() == true) return avslag
+    val service = ValiderSærbidragForBeregningService()
+    val delberegningUtgift = tilGrunnlagUtgift().innholdTilObjekt<DelberegningUtgift>()
+    return when {
+        utgift?.utgiftsposter?.all { erDatoForUtgiftForeldet(it.dato) } == true -> Resultatkode.ALLE_UTGIFTER_ER_FORELDET
+        else -> service.validerForBeregning(vedtakstype, delberegningUtgift)
+    }
+}
+
 fun Behandling.validerForBeregningSærbidrag() {
     val feil =
-        if (avslag == null) {
+        if (tilSærbidragAvslagskode() == null) {
             val utgiftFeil = utgift.hentValideringsfeil()
             val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
             val andreVoksneIHusstandenFeil =

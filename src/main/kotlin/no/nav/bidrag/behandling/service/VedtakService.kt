@@ -12,6 +12,8 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
+import no.nav.bidrag.behandling.transformers.beregning.erDirekteAvslagUtenBeregning
+import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.beregning.validerForBeregning
 import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbidrag
 import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
@@ -24,6 +26,8 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
+import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBetalt
+import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
@@ -35,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.util.tilVedtakDto
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
@@ -202,7 +207,7 @@ class VedtakService(
         behandling.validerForBeregningSærbidrag()
 
         val request =
-            if (behandling.avslag != null) {
+            if (behandling.erDirekteAvslagUtenBeregning()) {
                 behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
             } else {
                 behandling.byggOpprettVedtakRequestSærbidrag()
@@ -254,9 +259,7 @@ class VedtakService(
         val request =
             when (behandling.tilType()) {
                 TypeBehandling.SÆRBIDRAG ->
-                    if (behandling.avslag !=
-                        null
-                    ) {
+                    if (behandling.erDirekteAvslagUtenBeregning()) {
                         behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
                     } else {
                         behandling.byggOpprettVedtakRequestSærbidrag()
@@ -392,7 +395,7 @@ class VedtakService(
                         OpprettEngangsbeløpRequestDto(
                             type = engangsbeloptype!!,
                             beløp = null,
-                            resultatkode = avslag!!.name,
+                            resultatkode = tilSærbidragAvslagskode()!!.name,
                             valutakode = "NOK",
                             betaltBeløp = null,
                             innkreving = innkrevingstype!!,
@@ -418,9 +421,13 @@ class VedtakService(
     private fun Behandling.byggOpprettVedtakRequestSærbidrag(): OpprettVedtakRequestDto {
         val sak = sakConsumer.hentSak(saksnummer)
         val beregning = beregningService.beregneSærbidrag(id!!)
-
-        val grunnlagListeVedtak = byggGrunnlagForVedtak()
-        val grunnlaglisteGenerelt = byggGrunnlagGenerelt()
+        val resultat = beregning.beregnetSærbidragPeriodeListe.first().resultat
+        val (grunnlagListeVedtak, grunnlaglisteGenerelt) =
+            if (resultat.resultatkode == Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS) {
+                listOf(tilPersonobjekter() + byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt(), byggGrunnlagGenereltAvslag())
+            } else {
+                listOf(byggGrunnlagForVedtak(), byggGrunnlagGenerelt())
+            }
 
         val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet()
 
@@ -429,7 +436,7 @@ class VedtakService(
                 beregning.grunnlagListe.filter { it.type == Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG }
 
         val barn = søknadsbarn.first()
-        val resultat = beregning.beregnetSærbidragPeriodeListe.first().resultat
+
         return byggOpprettVedtakRequestObjekt().copy(
             engangsbeløpListe =
                 listOf(

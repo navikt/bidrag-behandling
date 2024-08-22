@@ -6,6 +6,8 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.transformers.beregning.erDirekteAvslagUtenBeregning
+import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.beregning.validerForBeregning
 import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbidrag
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
@@ -66,7 +68,7 @@ class BeregningService(
         behandling.validerTekniskForBeregningAvSærbidrag()
         behandling.validerForBeregningSærbidrag()
         val søknasdbarn = behandling.søknadsbarn.first()
-        return if (behandling.avslag != null) {
+        return if (behandling.erDirekteAvslagUtenBeregning()) {
             behandling.tilResultatAvslagSærbidrag()
         } else {
             try {
@@ -102,7 +104,7 @@ class BeregningService(
                         resultat =
                             ResultatBeregningSærbidrag(
                                 beløp = BigDecimal.ZERO,
-                                resultatkode = avslag!!,
+                                resultatkode = tilSærbidragAvslagskode()!!,
                             ),
                     ),
                 ),

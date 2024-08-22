@@ -1,0 +1,199 @@
+{
+  "kilde": "MANUELT",
+  "type": "FASTSETTELSE",
+  "opprettetAv": "Z994977",
+  "opprettetAvNavn": "F_Z994977 E_Z994977",
+  "kildeapplikasjon": "bidrag-behandling",
+  "vedtakstidspunkt": "2024-08-21T08:17:09.344767",
+  "enhetsnummer": "4806",
+  "innkrevingUtsattTilDato": null,
+  "fastsattILand": null,
+  "opprettetTidspunkt": "2024-08-21T08:17:10.729087",
+  "grunnlagListe": [
+    {
+      "referanse": "person_PERSON_BIDRAGSMOTTAKER_19790213_132",
+      "type": "PERSON_BIDRAGSMOTTAKER",
+      "innhold": {
+        "navn": null,
+        "ident": "{bmIdent}",
+        "fødselsdato": "{bmfDato}"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_BIDRAGSPLIKTIG_19780420_133",
+      "type": "PERSON_BIDRAGSPLIKTIG",
+      "innhold": {
+        "navn": null,
+        "ident": "{bpIdent}",
+        "fødselsdato": "{bpfDato}"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_SØKNADSBARN_20051223_134",
+      "type": "PERSON_SØKNADSBARN",
+      "innhold": {
+        "navn": null,
+        "ident": "{barnId}",
+        "fødselsdato": "{barnfDato}"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "utgiftsposter",
+      "type": "UTGIFTSPOSTER",
+      "innhold": [
+        {
+          "dato": "2024-05-08",
+          "type": "TANNREGULERING",
+          "kommentar": "Fakturanr 1, delvis betalt av barnetrygd",
+          "betaltAvBp": false,
+          "kravbeløp": 5000,
+          "godkjentBeløp": 300
+        },
+        {
+          "dato": "2024-07-09",
+          "type": "TANNREGULERING",
+          "kommentar": "Fakturanr 2, dekket av forsikring",
+          "betaltAvBp": false,
+          "kravbeløp": 8000,
+          "godkjentBeløp": 800
+        }
+      ],
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "utgift_direkte_betalt",
+      "type": "UTGIFT_DIREKTE_BETALT",
+      "innhold": {
+        "beløpDirekteBetalt": 0
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "søknad",
+      "type": "SØKNAD",
+      "innhold": {
+        "søktAv": "BIDRAGSPLIKTIG",
+        "mottattDato": "2024-01-15",
+        "søktFraDato": "2021-01-01",
+        "klageMottattDato": null,
+        "opprinneligVedtakstype": null
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "virkningstidspunkt",
+      "type": "VIRKNINGSTIDSPUNKT",
+      "innhold": {
+        "avslag": null,
+        "årsak": null,
+        "virkningstidspunkt": "2024-08-01"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "særbidrag_kategori",
+      "type": "SÆRBIDRAG_KATEGORI",
+      "innhold": {
+        "kategori": "TANNREGULERING",
+        "beskrivelse": null
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "delberegning_utgift",
+      "type": "DELBEREGNING_UTGIFT",
+      "innhold": {
+        "periode": {
+          "fom": "2024-08",
+          "til": "2024-09"
+        },
+        "sumGodkjent": 1100,
+        "sumBetaltAvBp": 0
+      },
+      "grunnlagsreferanseListe": [
+        "utgiftsposter",
+        "utgift_direkte_betalt"
+      ],
+      "gjelderReferanse": null
+    },
+    {
+      "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20051223_134_202408_202409",
+      "type": "SLUTTBEREGNING_SÆRBIDRAG",
+      "innhold": {
+        "periode": {
+          "fom": "2024-08",
+          "til": "2024-09"
+        },
+        "resultatKode": "GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS",
+        "beregnetBeløp": 0,
+        "resultatBeløp": null
+      },
+      "grunnlagsreferanseListe": [
+        "sjablon_ForskuddssatsBeløp_200301_200405",
+        "delberegning_utgift"
+      ],
+      "gjelderReferanse": "person_PERSON_SØKNADSBARN_20051223_134"
+    },
+    {
+      "referanse": "sjablon_ForskuddssatsBeløp_200301_200405",
+      "type": "SJABLON",
+      "innhold": {
+        "verdi": 1240.0,
+        "periode": {
+          "fom": "2003-01",
+          "til": "2004-05"
+        },
+        "sjablon": "FORSKUDDSSATS_BELØP"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null
+    }
+  ],
+  "stønadsendringListe": [],
+  "engangsbeløpListe": [
+    {
+      "type": "SÆRBIDRAG",
+      "sak": "2400067",
+      "skyldner": "{bpIdent}",
+      "kravhaver": "{barnId}",
+      "mottaker": "{bmIdent}",
+      "beløp": null,
+      "valutakode": "NOK",
+      "resultatkode": "GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS",
+      "innkreving": "MED_INNKREVING",
+      "beslutning": "ENDRING",
+      "omgjørVedtakId": null,
+      "referanse": "01d8a95a-1075-410a-a9da-684ca5c43175",
+      "delytelseId": null,
+      "eksternReferanse": null,
+      "grunnlagReferanseListe": [
+        "søknad",
+        "virkningstidspunkt",
+        "særbidrag_kategori",
+        "sluttberegning_person_PERSON_SØKNADSBARN_20051223_134_202408_202409"
+      ],
+      "betaltBeløp": 0
+    }
+  ],
+  "behandlingsreferanseListe": [
+    {
+      "kilde": "BEHANDLING_ID",
+      "referanse": "42"
+    },
+    {
+      "kilde": "BISYS_SØKNAD",
+      "referanse": "433434"
+    }
+  ]
+}

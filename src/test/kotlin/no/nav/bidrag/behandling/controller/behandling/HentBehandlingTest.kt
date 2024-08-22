@@ -8,10 +8,13 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
+import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
+import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
 import no.nav.bidrag.behandling.utils.testdata.opprettSivilstand
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
@@ -19,11 +22,15 @@ import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -104,6 +111,82 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 summertInntektListe[0].barnetillegg shouldBe BigDecimal(5000)
                 summertInntektListe[0].kontantstøtte shouldBe null
             }
+        }
+    }
+
+    @Test
+    fun `skal hente behandling særbidrag med avslag når alle utgifter er foreldet`() {
+        // gitt
+
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusYears(3),
+                    type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(15000),
+                    godkjentBeløp = BigDecimal(500),
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
+                ),
+            )
+        testdataManager.lagreBehandling(behandling)
+        behandling.initGrunnlagRespons(stubUtils)
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/" + behandling.id,
+                HttpMethod.GET,
+                null,
+                BehandlingDtoV2::class.java,
+            )
+
+        // så
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+
+        assertSoftly(behandlingRes.body!!) {
+            it.utgift!!.avslag shouldBe Resultatkode.ALLE_UTGIFTER_ER_FORELDET
+        }
+    }
+
+    @Test
+    fun `skal hente behandling særbidrag med avslag godkjent beløp lavere enn forskuddsats`() {
+        // gitt
+
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal.ZERO
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(15000),
+                    godkjentBeløp = BigDecimal(0),
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
+                ),
+            )
+        testdataManager.lagreBehandling(behandling)
+        behandling.initGrunnlagRespons(stubUtils)
+
+        // hvis
+        val behandlingRes =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/" + behandling.id,
+                HttpMethod.GET,
+                null,
+                BehandlingDtoV2::class.java,
+            )
+
+        // så
+        Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
+
+        assertSoftly(behandlingRes.body!!) {
+            it.utgift!!.avslag shouldBe Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS
         }
     }
 
