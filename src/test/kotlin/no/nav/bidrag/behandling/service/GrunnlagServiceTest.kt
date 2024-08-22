@@ -281,7 +281,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     skattegrunnlag.skattegrunnlag
                     skattegrunnlag.skattegrunnlag shouldNotBe emptySet<SkattegrunnlagspostDto>()
                     skattegrunnlag.skattegrunnlag.size shouldBe 1
-                    skattegrunnlag.skattegrunnlag.filter { it.personId == "99057812345" }.size shouldBe 1
+                    skattegrunnlag.skattegrunnlag.filter { it.personId == behandling.bidragsmottaker!!.ident!! }.size shouldBe 1
                 }
             }
 
@@ -1354,7 +1354,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     arbeidsforhold.size shouldBe 3
                     arbeidsforhold
                         .filter { a ->
-                            a.partPersonId == "99057812345" &&
+                            a.partPersonId == behandling.bidragsmottaker!!.ident!! &&
                                 a.sluttdato == null &&
                                 a.startdato ==
                                 LocalDate.of(
@@ -1372,6 +1372,59 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Nested
         open inner class Særbidrag {
+            @Test
+            fun `skal lagre innhentede inntekter selv om innhenting feiler for enkelte år i en periode`() {
+                // gitt
+                val behandling = testdataManager.oppretteBehandling(true, false, false, true, TypeBehandling.SÆRBIDRAG)
+                stubbeHentingAvPersoninfoForTestpersoner()
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
+                            )
+
+                        Rolletype.BIDRAGSPLIKTIG ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bp-feil-for-skattegrunnlag.json",
+                            )
+
+                        Rolletype.BARN ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                            )
+
+                        else -> throw Exception()
+                    }
+                }
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+                assertSoftly(
+                    behandling.grunnlag
+                        .filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
+                        .filter {
+                            it.rolle ==
+                                behandling.bidragspliktig!!
+                        }.toSet(),
+                ) { g ->
+                    g shouldHaveSize 1
+                    assertSoftly(g.first().konvertereData<SkattepliktigeInntekter>()?.skattegrunnlag) {
+                        it?.shouldHaveSize(2)
+                        it?.filter { LocalDate.of(2022, 1, 1) == it.periodeFra }?.shouldHaveSize(1)
+                        it?.filter { LocalDate.of(2023, 1, 1) == it.periodeTil }?.shouldHaveSize(1)
+                        it?.filter { LocalDate.of(2024, 1, 1) == it.periodeFra }?.shouldHaveSize(1)
+                        it?.filter { LocalDate.of(2025, 1, 1) == it.periodeTil }?.shouldHaveSize(1)
+                    }
+                }
+            }
+
             @Test
             @Transactional
             open fun `skal hente grunnlag for behandling av særbidrag`() {
@@ -3670,6 +3723,418 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 b.grunnlagsinnhentingFeilet shouldBe null
             }
         }
+
+        @Test
+        @Transactional
+        open fun `skal ikke lagre ny innhenting av arbeidsforhold med teknisk feil dersom forrige innhenting var OK`() {
+            // gitt
+            val behandling =
+                oppretteBehandling(
+                    true,
+                    inkludereArbeidsforhold = true,
+                    setteDatabaseider = true,
+                    inkludereInntektsgrunnlag = true,
+                )
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito
+                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val arbeidsforhold =
+                behandling.grunnlag
+                    .first { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
+                    .konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
+                    ?.first()
+
+            val navnNyArbeidsgiver = "Syn & bedrag AS"
+            val nyttArbeidsforhold = arbeidsforhold?.copy(arbeidsgiverNavn = navnNyArbeidsgiver)
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    arbeidsforholdListe = listOf(nyttArbeidsforhold!!),
+                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            behandling.grunnlagsinnhentingFeilet shouldBe null
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlagsinnhentingFeilet shouldNotBe null
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }) { si ->
+                si shouldHaveSize 1
+                si[0]
+                    .konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
+                    ?.filter { it.arbeidsgiverNavn == navnNyArbeidsgiver }
+                    ?.shouldHaveSize(0)
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal lagre ny innhenting av arbeidsforhold med funksjonell feil dersom forrige innhenting var OK`() {
+            // gitt
+            val behandling =
+                oppretteBehandling(
+                    true,
+                    inkludereArbeidsforhold = true,
+                    setteDatabaseider = true,
+                    inkludereInntektsgrunnlag = true,
+                )
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito
+                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val arbeidsforhold =
+                behandling.grunnlag
+                    .first { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
+                    .konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
+                    ?.first()
+
+            val navnNyArbeidsgiver = "Syn & bedrag AS"
+            val nyttArbeidsforhold = arbeidsforhold?.copy(arbeidsgiverNavn = navnNyArbeidsgiver)
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    arbeidsforholdListe = listOf(nyttArbeidsforhold!!),
+                    feilrapporteringListe =
+                        oppretteFeilrapporteringer(
+                            behandling.bidragsmottaker!!.ident!!,
+                            HentGrunnlagFeiltype.FUNKSJONELL_FEIL,
+                        ),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            behandling.grunnlagsinnhentingFeilet shouldBe null
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlagsinnhentingFeilet shouldNotBe null
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }) { si ->
+                si shouldHaveSize 2
+                assertSoftly(si.maxBy { it.innhentet }) {
+                    it.aktiv shouldBe null
+                    it
+                        .konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
+                        ?.filter {
+                            it.arbeidsgiverNavn == navnNyArbeidsgiver
+                        }?.shouldHaveSize(1)
+                }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke lagre ny innhenting av skattegrunnlag med teknisk feil dersom forrige innhenting var OK`() {
+            // gitt
+            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito
+                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val skattegrunnlag =
+                behandling.grunnlag
+                    .first { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
+                    .konvertereData<SkattepliktigeInntekter>()
+                    ?.skattegrunnlag!!
+                    .filter { it.skattegrunnlagspostListe.isNotEmpty() }
+                    .first()
+
+            val skattegrunnlagspost = skattegrunnlag.skattegrunnlagspostListe.first()
+
+            val nyPost = skattegrunnlagspost.copy(beløp = BigDecimal(550000), kode = "Seiling")
+            val nyttSkattegrunnlagselement = skattegrunnlag.copy(skattegrunnlagspostListe = listOf(nyPost))
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
+                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            behandling.grunnlagsinnhentingFeilet shouldBe null
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlagsinnhentingFeilet shouldNotBe null
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type && !it.erBearbeidet }) { si ->
+                si shouldHaveSize 1
+                si[0]
+                    .konvertereData<SkattepliktigeInntekter>()
+                    ?.skattegrunnlag
+                    ?.filter { s ->
+                        s.skattegrunnlagspostListe.filter { it.kode == "Seiling" }.isNotEmpty()
+                    }?.shouldHaveSize(0)
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal lagre ny innhenting av skattegrunnlag med funksjonell feil dersom forrige innhenting var OK`() {
+            // gitt
+            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito
+                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val skattegrunnlag =
+                behandling.grunnlag
+                    .first { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
+                    .konvertereData<SkattepliktigeInntekter>()
+                    ?.skattegrunnlag!!
+                    .filter { it.skattegrunnlagspostListe.isNotEmpty() }
+                    .first()
+
+            val skattegrunnlagspost = skattegrunnlag.skattegrunnlagspostListe.first()
+
+            val nyPost = skattegrunnlagspost.copy(beløp = BigDecimal(550000), kode = "Seiling")
+            val nyttSkattegrunnlagselement = skattegrunnlag.copy(skattegrunnlagspostListe = listOf(nyPost))
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
+                    feilrapporteringListe =
+                        oppretteFeilrapporteringer(
+                            behandling.bidragsmottaker!!.ident!!,
+                            HentGrunnlagFeiltype.FUNKSJONELL_FEIL,
+                        ),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            behandling.grunnlagsinnhentingFeilet shouldBe null
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlagsinnhentingFeilet shouldNotBe null
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type && !it.erBearbeidet }) { si ->
+                si shouldHaveSize 2
+                assertSoftly(si.maxBy { it.innhentet }) { siste ->
+                    siste.aktiv shouldBe null
+                    siste
+                        .konvertereData<SkattepliktigeInntekter>()
+                        ?.skattegrunnlag
+                        ?.filter { s ->
+                            s.skattegrunnlagspostListe.filter { it.kode == "Seiling" }.isNotEmpty()
+                        }?.shouldHaveSize(1)
+                }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal lagre endret skattegrunnlag med teknisk feil dersom forrige innhenting hadde teknisk feil`() {
+            // gitt
+            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito
+                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val skattegrunnlag =
+                behandling.grunnlag
+                    .first { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
+                    .konvertereData<SkattepliktigeInntekter>()
+                    ?.skattegrunnlag!!
+                    .filter { it.skattegrunnlagspostListe.isNotEmpty() }
+                    .first()
+
+            val skattegrunnlagspost = skattegrunnlag.skattegrunnlagspostListe.first()
+
+            val nyPost = skattegrunnlagspost.copy(beløp = BigDecimal(550000), kode = "Seiling")
+            val nyttSkattegrunnlagselement = skattegrunnlag.copy(skattegrunnlagspostListe = listOf(nyPost))
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
+                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            behandling.grunnlagsinnhentingFeilet =
+                "{\"SKATTEPLIKTIGE_INNTEKTER\":{\"grunnlagstype\":\"SKATTEGRUNNLAG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"},\n" +
+                "\"SUMMERTE_MÅNEDSINNTEKTER\":{\"grunnlagstype\":\"SKATTEGRUNNLAG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"}}"
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlagsinnhentingFeilet shouldNotBe null
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type && !it.erBearbeidet }) { si ->
+                si shouldHaveSize 2
+                assertSoftly(si.maxBy { it.innhentet }) { siste ->
+                    siste.aktiv shouldBe null
+                    siste
+                        .konvertereData<SkattepliktigeInntekter>()
+                        ?.skattegrunnlag
+                        ?.filter { s ->
+                            s.skattegrunnlagspostListe.filter { it.kode == "Seiling" }.isNotEmpty()
+                        }?.shouldHaveSize(1)
+                }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal lagre endret skattegrunnlag med funksjonell feil dersom forrige innhenting hadde teknisk feil`() {
+            // gitt
+            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito
+                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val skattegrunnlag =
+                behandling.grunnlag
+                    .first { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
+                    .konvertereData<SkattepliktigeInntekter>()
+                    ?.skattegrunnlag!!
+                    .filter { it.skattegrunnlagspostListe.isNotEmpty() }
+                    .first()
+
+            val skattegrunnlagspost = skattegrunnlag.skattegrunnlagspostListe.first()
+
+            val nyPost = skattegrunnlagspost.copy(beløp = BigDecimal(550000), kode = "Seiling")
+            val nyttSkattegrunnlagselement = skattegrunnlag.copy(skattegrunnlagspostListe = listOf(nyPost))
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
+                    feilrapporteringListe =
+                        oppretteFeilrapporteringer(
+                            behandling.bidragsmottaker!!.ident!!,
+                            HentGrunnlagFeiltype.FUNKSJONELL_FEIL,
+                        ),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            behandling.grunnlagsinnhentingFeilet =
+                "{\"SKATTEPLIKTIGE_INNTEKTER\":{\"grunnlagstype\":\"SKATTEGRUNNLAG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"},\n" +
+                "\"SUMMERTE_MÅNEDSINNTEKTER\":{\"grunnlagstype\":\"SKATTEGRUNNLAG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"}}"
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlagsinnhentingFeilet shouldNotBe null
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type && !it.erBearbeidet }) { si ->
+                si shouldHaveSize 2
+                assertSoftly(si.maxBy { it.innhentet }) { siste ->
+                    siste.aktiv shouldBe null
+                    siste
+                        .konvertereData<SkattepliktigeInntekter>()
+                        ?.skattegrunnlag
+                        ?.filter { s ->
+                            s.skattegrunnlagspostListe.filter { it.kode == "Seiling" }.isNotEmpty()
+                        }?.shouldHaveSize(1)
+                }
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal lagre endret skattegrunnlag med funksjonell feil dersom forrige innhenting ikke hadde feil`() {
+            // gitt
+            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+
+            val mockRequest =
+                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
+
+            Mockito
+                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
+                .thenReturn(mockRequest)
+
+            val skattegrunnlag =
+                behandling.grunnlag
+                    .first { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
+                    .konvertereData<SkattepliktigeInntekter>()
+                    ?.skattegrunnlag!!
+                    .filter { it.skattegrunnlagspostListe.isNotEmpty() }
+                    .first()
+
+            val skattegrunnlagspost = skattegrunnlag.skattegrunnlagspostListe.first()
+
+            val nyPost = skattegrunnlagspost.copy(beløp = BigDecimal(550000), kode = "Seiling")
+            val nyttSkattegrunnlagselement = skattegrunnlag.copy(skattegrunnlagspostListe = listOf(nyPost))
+
+            val innhentingMedFeil =
+                opprettHentGrunnlagDto().copy(
+                    skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
+                    feilrapporteringListe =
+                        oppretteFeilrapporteringer(
+                            behandling.bidragsmottaker!!.ident!!,
+                            HentGrunnlagFeiltype.FUNKSJONELL_FEIL,
+                        ),
+                )
+
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            behandling.grunnlagsinnhentingFeilet shouldNotBe null
+
+            assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type && !it.erBearbeidet }) { si ->
+                si shouldHaveSize 2
+                assertSoftly(si.maxBy { it.innhentet }) { siste ->
+                    siste.aktiv shouldBe null
+                    siste
+                        .konvertereData<SkattepliktigeInntekter>()
+                        ?.skattegrunnlag
+                        ?.filter { s ->
+                            s.skattegrunnlagspostListe.filter { it.kode == "Seiling" }.isNotEmpty()
+                        }?.shouldHaveSize(1)
+                }
+            }
+        }
     }
 
     companion object {
@@ -3809,7 +4274,10 @@ fun opprettHentGrunnlagDto() =
         hentetTidspunkt = LocalDateTime.now(),
     )
 
-fun oppretteFeilrapporteringer(personident: String): List<FeilrapporteringDto> {
+fun oppretteFeilrapporteringer(
+    personident: String,
+    feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+): List<FeilrapporteringDto> {
     val feilrapporteringer = mutableListOf<FeilrapporteringDto>()
 
     GrunnlagRequestType.entries.filter { GrunnlagRequestType.BARNETILSYN != it }.forEach {
@@ -3817,7 +4285,7 @@ fun oppretteFeilrapporteringer(personident: String): List<FeilrapporteringDto> {
             FeilrapporteringDto(
                 feilmelding = "Ouups!",
                 grunnlagstype = it,
-                feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+                feiltype = feiltype,
                 periodeFra =
                     LocalDate
                         .now()
