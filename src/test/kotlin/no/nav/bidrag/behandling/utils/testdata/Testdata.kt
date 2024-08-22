@@ -17,10 +17,12 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.service.tilSummerteInntekter
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
@@ -29,10 +31,10 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
-import no.nav.bidrag.commons.service.sjablon.Sjablontall
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -825,11 +827,6 @@ fun TransformerInntekterResponse.tilGrunnlag(
     rolle = person.tilRolle(behandling),
 )
 
-fun sjablonResponse(): List<Sjablontall> {
-    val fil = hentFil("/__files/sjablon.json")
-    return commonObjectmapper.readValue(fil)
-}
-
 fun hentFil(filsti: String) =
     TestdataManager::class.java.getResource(
         filsti,
@@ -1015,6 +1012,7 @@ fun oppretteBehandling(
     inkludereVoksneIBpsHusstand: Boolean = false,
     setteDatabaseider: Boolean = false,
     inkludereArbeidsforhold: Boolean = false,
+    inkludereInntektsgrunnlag: Boolean = false,
 ): Behandling {
     val behandlingsid = if (setteDatabaseider) 1L else null
     val behandling = oppretteBehandling(behandlingsid)
@@ -1058,9 +1056,47 @@ fun oppretteBehandling(
     }
 
     if (inkludereInntekter) {
-        behandling.inntekter = opprettInntekter(behandling, testdataBM)
-        behandling.inntekter.forEach {
-            it.inntektsposter = opprettInntektsposter(it)
+        if (inkludereInntektsgrunnlag) {
+            val innhentaGrunnlag =
+                lagGrunnlagsdata(
+                    "vedtak/vedtak-grunnlagrespons-sb-bm.json",
+                    YearMonth.from(behandling.virkningstidspunktEllerSøktFomDato),
+                    behandling.bidragsmottaker!!.ident!!,
+                    behandling.søknadsbarn.first().ident!!,
+                )
+
+            behandling.grunnlag.add(
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                    SkattepliktigeInntekter(innhentaGrunnlag.ainntektListe, innhentaGrunnlag.skattegrunnlagListe),
+                    behandling.bidragsmottaker!!.ident!!,
+                ),
+            )
+
+            val bearbeidaGrunnlag = innhentaGrunnlag.tilSummerteInntekter(behandling.bidragsmottaker!!)
+            behandling.grunnlag.add(
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                    bearbeidaGrunnlag,
+                    behandling.bidragsmottaker!!.ident!!,
+                    true,
+                ),
+            )
+
+            val inntekt = bearbeidaGrunnlag.inntekter.tilInntekt(behandling, Personident(behandling.bidragsmottaker!!.ident!!))
+            val ytelser =
+                setOf(
+                    Inntektsrapportering.KONTANTSTØTTE,
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    Inntektsrapportering.BARNETILLEGG,
+                )
+            behandling.inntekter.addAll(inntekt.filter { !ytelser.contains(it.type) })
+        } else {
+            behandling.inntekter = opprettInntekter(behandling, testdataBM)
+            behandling.inntekter.forEach {
+                it.inntektsposter = opprettInntektsposter(it)
+            }
         }
     }
 

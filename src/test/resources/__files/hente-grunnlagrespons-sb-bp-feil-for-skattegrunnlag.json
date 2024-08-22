@@ -1,7 +1,7 @@
 {
   "ainntektListe": [
     {
-      "personId": "313213213",
+      "personId": "213244124",
       "periodeFra": "2021-01-01",
       "periodeTil": "2021-02-01",
       "aktiv": true,
@@ -28,7 +28,7 @@
   ],
   "arbeidsforholdListe": [
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "startdato": "2002-11-03",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -52,7 +52,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.087233848"
     },
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "startdato": "2022-12-07",
       "sluttdato": null,
       "arbeidsgiverNavn": "SAUEFABRIKK",
@@ -76,7 +76,7 @@
       "hentetTidspunkt": "2024-01-08T13:39:06.119823886"
     },
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "startdato": "2003-12-08",
       "sluttdato": null,
       "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
@@ -103,7 +103,7 @@
   "barnetilleggListe": [
     {
       "barnPersonId": "01057812300",
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "periodeFra": "2021-01-01",
       "periodeTil": "2021-02-01",
       "barnetilleggType": "PENSJON",
@@ -112,19 +112,11 @@
       "hentetTidspunkt": "2023-12-20T15:03:29.888769"
     }
   ],
-  "barnetilsynListe": [
-    {
-      "partPersonId": "313213213",
-      "barnPersonId": "01057812300",
-      "beløp": 2700,
-      "periodeFra": "2020-06-01",
-      "periodeTil": "2023-07-01"
-    }
-  ],
+  "barnetilsynListe": [],
   "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
   "husstandsmedlemmerOgEgneBarnListe": [
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "relatertPersonPersonId": "1344124",
       "navn": "Småstein Nilsen",
       "fødselsdato": "2020-01-24",
@@ -136,7 +128,7 @@
       ]
     },
     {
-      "partPersonId": "313213213",
+      "partPersonId": "213244124",
       "relatertPersonPersonId": "54545454545",
       "navn": "Brostein Nilsen",
       "fødselsdato": "2022-01-24",
@@ -146,40 +138,37 @@
           "periodeFra": "2022-01-24"
         }
       ]
-    }
-  ],
-  "kontantstøtteListe": [
-    {
-      "partPersonId": "313213213",
-      "barnPersonId": "01057812300",
-      "periodeFra": "2020-06-01",
-      "periodeTil": "2023-07-01",
-      "beløp": 4000
-    }
-  ],
-  "sivilstandListe": [
-    {
-      "personId": "313213213",
-      "type": "GIFT",
-      "gyldigFom": "2021-01-01",
-      "bekreftelsesdato": "2021-01-01",
-      "master": "FREG",
-      "registrert": "2022-01-01T10:03:57.285Z",
-      "historisk": true
     },
     {
-      "personId": "313213213",
-      "type": "SKILT",
-      "gyldigFom": "2023-01-01",
-      "bekreftelsesdato": "2023-01-01",
-      "master": "FREG",
-      "registrert": "2023-01-01T10:03:57.285Z",
-      "historisk": false
+      "partPersonId": "213244124",
+      "relatertPersonPersonId": "01010012345",
+      "navn": "Niidjmir Mugabee",
+      "fødselsdato": "2000-01-01",
+      "erBarnAvBmBp": false,
+      "borISammeHusstandDtoListe": [
+        {
+          "periodeFra": "2023-01-01"
+        }
+      ]
     }
   ],
+  "kontantstøtteListe": [],
+  "sivilstandListe": [],
   "skattegrunnlagListe": [
     {
-      "personId": "313213213",
+      "personId": "213244124",
+      "periodeFra": "2022-01-01",
+      "periodeTil": "2023-01-01",
+      "skattegrunnlagspostListe": [
+        {
+          "skattegrunnlagType": "ORDINÆR",
+          "inntektType": "LØNNSINNTEKT",
+          "belop": 616000
+        }
+      ]
+    },
+    {
+      "personId": "213244124",
       "periodeFra": "2024-01-01",
       "periodeTil": "2025-01-01",
       "skattegrunnlagspostListe": [
@@ -191,24 +180,16 @@
       ]
     }
   ],
-  "småbarnstilleggListe": [
+  "småbarnstilleggListe": [],
+  "utvidetBarnetrygdListe": [],
+  "feilrapporteringListe": [
     {
-      "personId": "313213213",
-      "type": "UTVIDET_BARNETRYGD",
-      "periodeFra": "2020-06-01",
-      "periodeTil": "2023-07-01",
-      "beløp": 3000,
-      "manueltBeregnet": false
+      "feiltype": "TEKNISK_FEIL",
+      "feilmelding": "En av tjenestene vi benytter er utilgjengelig: 500.",
+      "grunnlagstype": "SKATTEGRUNNLAG",
+      "periodeFra": "2023-01-01",
+      "periodeTil": "2024-01-01",
+      "personId": "213244124"
     }
-  ],
-  "utvidetBarnetrygdListe": [
-    {
-      "personId": "313213213",
-      "beløp": 2500,
-      "periodeFra": "2020-06-01",
-      "periodeTil": "2023-07-01",
-      "manueltBeregnet": false
-    }
-  ],
-  "feilrapporteringListe": []
+  ]
 }
