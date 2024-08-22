@@ -20,6 +20,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.inntekt.util.InntektUtil
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -79,12 +80,12 @@ fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
     } ?: false
 
 fun Set<Inntektspost>.tilInntektspostDtoV2() =
-    this.map {
+    this.map { inntekt ->
         InntektspostDtoV2(
-            kode = it.kode,
-            visningsnavn = finnVisningsnavn(it.kode),
-            inntektstype = it.inntektstype,
-            beløp = it.beløp.nærmesteHeltall,
+            kode = inntekt.kode,
+            visningsnavn = finnVisningsnavn(inntekt.kode),
+            inntektstype = inntekt.inntektstype,
+            beløp = InntektUtil.kapitalinntektFaktor(inntekt.kode) * inntekt.beløp.nærmesteHeltall,
         )
     }
 

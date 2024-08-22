@@ -9,6 +9,7 @@ import io.mockk.mockkObject
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -77,6 +78,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"
         stubSjablonProvider()
         stubPersonConsumer()
+        stubKodeverkProvider()
         stubUtils.stubUnleash()
         stubUtils.stubHentSaksbehandler()
         stubUtils.stubOpprettForsendelse()
