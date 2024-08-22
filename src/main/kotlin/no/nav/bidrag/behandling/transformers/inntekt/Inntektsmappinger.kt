@@ -80,14 +80,15 @@ fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
     } ?: false
 
 fun Set<Inntektspost>.tilInntektspostDtoV2() =
-    this.map { inntekt ->
-        InntektspostDtoV2(
-            kode = inntekt.kode,
-            visningsnavn = finnVisningsnavn(inntekt.kode),
-            inntektstype = inntekt.inntektstype,
-            beløp = InntektUtil.kapitalinntektFaktor(inntekt.kode) * inntekt.beløp.nærmesteHeltall,
-        )
-    }
+    this
+        .map { inntekt ->
+            InntektspostDtoV2(
+                kode = inntekt.kode,
+                visningsnavn = finnVisningsnavn(inntekt.kode),
+                inntektstype = inntekt.inntektstype,
+                beløp = InntektUtil.kapitalinntektFaktor(inntekt.kode) * inntekt.beløp.nærmesteHeltall,
+            )
+        }.sortedByDescending { it.beløp }
 
 fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
     InntektDtoV2(
@@ -104,9 +105,10 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
                         kode = it.kode,
                         visningsnavn = finnVisningsnavn(it.kode),
                         inntektstype = it.inntekstype,
-                        beløp = it.beløp,
+                        beløp = InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp,
                     )
-                }.toSet(),
+                }.sortedByDescending { it.beløp }
+                .toSet(),
         inntektstyper = emptySet(),
         datoFom = gjelderÅrMåned.atDay(1),
         datoTom = gjelderÅrMåned.atEndOfMonth(),
