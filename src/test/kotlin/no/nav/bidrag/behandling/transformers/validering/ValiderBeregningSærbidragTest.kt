@@ -58,7 +58,7 @@ class ValiderBeregningSærbidragTest {
         behandling.husstandsmedlem = mutableSetOf()
         behandling.inntekter = mutableSetOf()
         behandling.utgift = Utgift(behandling)
-        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+        behandling.avslag = Resultatkode.PRIVAT_AVTALE
 
         assertDoesNotThrow { behandling.validerForBeregningSærbidrag() }
     }

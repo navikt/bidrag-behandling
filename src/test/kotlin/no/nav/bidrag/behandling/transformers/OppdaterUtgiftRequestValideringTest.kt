@@ -140,7 +140,7 @@ class OppdaterUtgiftRequestValideringTest {
     @Test
     fun `skal ikke kunne oppdatere utgift hvis avslag er satt`() {
         val behandling = opprettBehandlingSærligeUtgifter()
-        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+        behandling.avslag = Resultatkode.PRIVAT_AVTALE
         val request =
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =

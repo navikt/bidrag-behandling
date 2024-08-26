@@ -36,7 +36,7 @@
       "referanse": "virkningstidspunkt",
       "type": "VIRKNINGSTIDSPUNKT",
       "innhold": {
-        "avslag": "PRIVAT_AVTALE_OM_SÆRBIDRAG",
+        "avslag": "PRIVAT_AVTALE",
         "årsak": null,
         "virkningstidspunkt": "2024-07-01"
       },
@@ -97,7 +97,7 @@
       "mottaker": "{bmIdent}",
       "beløp": null,
       "valutakode": "NOK",
-      "resultatkode": "PRIVAT_AVTALE_OM_SÆRBIDRAG",
+      "resultatkode": "PRIVAT_AVTALE",
       "innkreving": "MED_INNKREVING",
       "beslutning": "ENDRING",
       "omgjørVedtakId": null,

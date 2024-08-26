@@ -1186,7 +1186,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
-        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+        behandling.avslag = Resultatkode.PRIVAT_AVTALE
         testdataManager.lagreBehandling(behandling)
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         behandling.utgift = null
@@ -1217,7 +1217,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.mottaker shouldBe Personident(nyIdentBm)
             it.beløp shouldBe null
             it.valutakode shouldBe "NOK"
-            it.resultatkode shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG.name
+            it.resultatkode shouldBe Resultatkode.PRIVAT_AVTALE.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
             it.grunnlagReferanseListe shouldHaveSize 4
@@ -1242,7 +1242,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
-        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+        behandling.avslag = Resultatkode.PRIVAT_AVTALE
         behandling.klageMottattdato = LocalDate.now()
         testdataManager.lagreBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -1313,7 +1313,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
             it.beløp shouldBe null
             it.valutakode shouldBe "NOK"
-            it.resultatkode shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG.name
+            it.resultatkode shouldBe Resultatkode.PRIVAT_AVTALE.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             it.beslutning shouldBe Beslutningstype.ENDRING
             it.grunnlagReferanseListe shouldHaveSize 4
