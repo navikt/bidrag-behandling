@@ -63,7 +63,7 @@ class BehandlingBeregnController(
                 "Behandling $behandlingsid er ikke en forskudd behandling",
             )
         }
-        return beregningService.beregneForskudd(behandling.id!!).tilDto()
+        return beregningService.beregneForskudd(behandling.id!!).tilDto(behandling.vedtakstype)
     }
 
     @Suppress("unused")
