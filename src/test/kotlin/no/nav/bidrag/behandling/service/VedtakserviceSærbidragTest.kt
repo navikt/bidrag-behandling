@@ -1450,7 +1450,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             shouldHaveSize(1)
             val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>().first()
             innhold.andelFaktor shouldBe "0.4919".toBigDecimal()
-            innhold.andelProsent shouldBe "49.1900".toBigDecimal()
+            innhold.andelProsent shouldBe "49.19".toBigDecimal()
             innhold.andelBeløp shouldBe BigDecimal(9838)
             innhold.barnetErSelvforsørget shouldBe false
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
