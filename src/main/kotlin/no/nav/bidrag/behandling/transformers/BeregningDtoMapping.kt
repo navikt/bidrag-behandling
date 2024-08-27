@@ -18,6 +18,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
@@ -120,7 +121,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     erDirekteAvslag = resultatkode.erDirekteAvslag(),
 )
 
-fun List<ResultatForskuddsberegningBarn>.tilDto() =
+fun List<ResultatForskuddsberegningBarn>.tilDto(vedtakstype: Vedtakstype? = null) =
     map { resultat ->
         val grunnlagsListe = resultat.resultat.grunnlagListe.toList()
         ResultatBeregningBarnDto(
@@ -130,6 +131,7 @@ fun List<ResultatForskuddsberegningBarn>.tilDto() =
                     ResultatBeregningBarnDto.ResultatPeriodeDto(
                         periode = periode.periode,
                         beløp = periode.resultat.belop,
+                        vedtakstype = vedtakstype,
                         resultatKode = periode.resultat.kode,
                         regel = periode.resultat.regel,
                         sivilstand = grunnlagsListe.finnSivilstandForPeriode(periode.grunnlagsreferanseListe),

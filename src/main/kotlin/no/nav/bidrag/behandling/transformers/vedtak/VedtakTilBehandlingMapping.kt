@@ -112,6 +112,7 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
                     ResultatBeregningBarnDto.ResultatPeriodeDto(
                         periode = it.periode,
                         resultatKode = Resultatkode.fraKode(it.resultatkode)!!,
+                        vedtakstype = type,
                         regel = "",
                         beløp = it.beløp ?: BigDecimal.ZERO,
                         sivilstand = grunnlagListe.finnSivilstandForPeriode(it.grunnlagReferanseListe),

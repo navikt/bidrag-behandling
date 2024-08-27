@@ -463,7 +463,7 @@ class VedtakTilBehandlingSærbidragTest {
         assertSoftly(behandling) {
             behandling.saksnummer shouldBe "2400042"
             årsak shouldBe null
-            avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+            avslag shouldBe Resultatkode.PRIVAT_AVTALE
             kategori shouldBe Særbidragskategori.ANNET.name
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe

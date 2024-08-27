@@ -180,7 +180,7 @@ class BehandlingDtoMappingTest {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
         behandling.stonadstype = null
-        behandling.avslag = Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+        behandling.avslag = Resultatkode.PRIVAT_AVTALE
         behandling.kategori = Særbidragskategori.ANNET.name
         behandling.kategoriBeskrivelse = "Høreapparat"
         behandling.notater.add(
@@ -220,7 +220,7 @@ class BehandlingDtoMappingTest {
 
         assertSoftly(utgiftDto!!) {
             beregning shouldBe null
-            avslag shouldBe Resultatkode.PRIVAT_AVTALE_OM_SÆRBIDRAG
+            avslag shouldBe Resultatkode.PRIVAT_AVTALE
             kategori.kategori shouldBe Særbidragskategori.ANNET
             kategori.beskrivelse shouldBe "Høreapparat"
             notat.innhold shouldBe "Notat utgift"

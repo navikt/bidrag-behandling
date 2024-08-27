@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import no.nav.bidrag.behandling.BeregningAvResultatForBehandlingFeilet
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.security.token.support.spring.validation.interceptor.JwtTokenUnauthorizedException
 import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -79,6 +80,14 @@ class DefaultExceptionHandler {
         val response = ResponseEntity.status(exception.statusCode)
         exception.feilmeldinger.forEach { response.header(HttpHeaders.WARNING, it) }
         return response.build<Any>()
+    }
+
+    @ResponseBody
+    @ExceptionHandler(JwtTokenUnauthorizedException::class)
+    fun tilgangsfeil(exception: JwtTokenUnauthorizedException): ResponseEntity<*> {
+        LOGGER.warn("Sakbehandler eller applikasjon mangler tilgang: ${exception.cause?.message ?: exception.message}", exception)
+        val response = ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        return response.body("Ingen tilgang")
     }
 
     @ResponseBody
