@@ -130,7 +130,7 @@ data class BoforholdPeriodeseringsfeil(
                 HusstandsmedlemPeriodiseringsfeilDto(
                     hentPersonVisningsnavn(husstandsmedlem.ident) ?: husstandsmedlem.navn ?: husstandsmedlem.rolle?.navn,
                     husstandsmedlem.ident ?: husstandsmedlem.rolle?.ident,
-                    husstandsmedlem.fødselsdato ?: husstandsmedlem.rolle!!.fødselsdato,
+                    husstandsmedlem.fødselsdato ?: husstandsmedlem.rolle?.fødselsdato ?: LocalDate.now(),
                     husstandsmedlem.id ?: -1,
                     husstandsmedlem.erSøknadsbarn(),
                 )
