@@ -272,6 +272,18 @@ fun Set<Husstandsmedlem>.validerBoforhold(virkniningstidspunkt: LocalDate): Set<
         it.validereBoforhold(virkniningstidspunkt, valideringsfeil)
     }
 
+    firstOrNull()?.behandling?.let { b ->
+        b.roller.forEach { rolle ->
+            if (this.none { it.ident == rolle.ident }) {
+                valideringsfeil.add(
+                    BoforholdPeriodeseringsfeil(
+                        manglerPerioder = true,
+                        husstandsmedlem = Husstandsmedlem(b, ident = rolle.ident, kilde = Kilde.OFFENTLIG),
+                    ),
+                )
+            }
+        }
+    }
     return valideringsfeil.toSet()
 }
 
