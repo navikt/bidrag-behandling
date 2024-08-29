@@ -365,7 +365,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null
-                it.body?.valideringsfeil?.husstandsmedlem shouldBe emptyList()
+                it.body
+                    ?.valideringsfeil
+                    ?.husstandsmedlem
+                    .shouldNotBeEmpty()
                 it.body?.oppdatertHusstandsmedlem shouldNotBe null
             }
 
