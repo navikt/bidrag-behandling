@@ -8,6 +8,8 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -25,44 +27,58 @@ class SorteringTest {
                     opprinneligFom = YearMonth.parse("2022-01"),
                     opprinneligTom = YearMonth.parse("2022-12"),
                     type = Inntektsrapportering.AINNTEKT,
+                    ident = testdataBM.ident,
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2023-01"),
                     opprinneligTom = YearMonth.parse("2023-12"),
                     type = Inntektsrapportering.AINNTEKT,
+                    ident = testdataBM.ident,
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2022-01"),
                     opprinneligTom = YearMonth.parse("2022-12"),
                     type = Inntektsrapportering.LIGNINGSINNTEKT,
+                    ident = testdataBM.ident,
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2023-01"),
                     opprinneligTom = YearMonth.parse("2023-12"),
                     type = Inntektsrapportering.LIGNINGSINNTEKT,
+                    ident = testdataBM.ident,
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2021-01"),
                     opprinneligTom = YearMonth.parse("2021-12"),
                     type = Inntektsrapportering.LIGNINGSINNTEKT,
+                    ident = testdataBM.ident,
                     taMed = true,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2022-01"),
                     opprinneligTom = YearMonth.parse("2022-12"),
                     type = Inntektsrapportering.KAPITALINNTEKT,
+                    ident = testdataBM.ident,
+                    taMed = false,
+                ),
+                opprettInntekt(
+                    opprinneligFom = YearMonth.parse("2022-01"),
+                    opprinneligTom = YearMonth.parse("2022-12"),
+                    type = Inntektsrapportering.LIGNINGSINNTEKT,
+                    ident = testdataBarn1.ident,
                     taMed = false,
                 ),
             )
 
         val filtrertInntekter = inntekter.filtrerUtHistoriskeInntekter()
 
-        filtrertInntekter shouldHaveSize 4
-        assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.LIGNINGSINNTEKT }) {
+        filtrertInntekter shouldHaveSize 5
+        val filtrertInntekterBm = filtrertInntekter.filter { it.ident == testdataBM.ident }
+        assertSoftly(filtrertInntekterBm.filter { it.type == Inntektsrapportering.LIGNINGSINNTEKT }) {
             this shouldHaveSize 2
             this[0].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
             this[0].opprinneligTom shouldBe LocalDate.parse("2023-12-31")
@@ -70,13 +86,18 @@ class SorteringTest {
             this[1].opprinneligFom shouldBe LocalDate.parse("2021-01-01")
             this[1].opprinneligTom shouldBe LocalDate.parse("2021-12-31")
         }
-        assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.AINNTEKT }) {
+        assertSoftly(filtrertInntekterBm.filter { it.type == Inntektsrapportering.AINNTEKT }) {
             this shouldHaveSize 1
             this[0].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
             this[0].opprinneligTom shouldBe LocalDate.parse("2023-12-31")
         }
-        assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.KAPITALINNTEKT }) {
+        assertSoftly(filtrertInntekterBm.filter { it.type == Inntektsrapportering.KAPITALINNTEKT }) {
             this shouldHaveSize 1
+            this[0].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
+            this[0].opprinneligTom shouldBe LocalDate.parse("2022-12-31")
+        }
+        assertSoftly(filtrertInntekter.filter { it.ident == testdataBarn1.ident }) {
+            shouldHaveSize(1)
             this[0].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
             this[0].opprinneligTom shouldBe LocalDate.parse("2022-12-31")
         }
