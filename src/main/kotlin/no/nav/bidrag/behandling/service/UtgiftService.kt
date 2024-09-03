@@ -43,6 +43,8 @@ class UtgiftService(
         request.valider(behandling)
         val utgift = behandling.utgift ?: Utgift(behandling = behandling)
         utgift.beløpDirekteBetaltAvBp = request.beløpDirekteBetaltAvBp ?: utgift.beløpDirekteBetaltAvBp
+        utgift.maksGodkjentBeløp = request.maksGodkjentBeløp?.beløp ?: utgift.maksGodkjentBeløp
+        utgift.maksGodkjentBeløpKommentar = request.maksGodkjentBeløp?.kommentar ?: utgift.maksGodkjentBeløpKommentar
         request.henteOppdatereNotat()?.let {
             notatService.oppdatereNotat(
                 behandling,

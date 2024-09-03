@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.ressursHarFeilKildeException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
+import no.nav.bidrag.behandling.transformers.utgift.totalGodkjentBeløp
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -138,6 +139,10 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
 
     if (nyEllerEndretUtgift != null) {
         feilliste.addAll(nyEllerEndretUtgift.validerUtgiftspost(behandling))
+    }
+
+    if (maksGodkjentBeløp != null && utgift != null && (maksGodkjentBeløp.beløp ?: BigDecimal.ZERO) > utgift.totalGodkjentBeløp) {
+        feilliste.add("Maks godkjent beløp kan ikke være større enn total godkjent beløp")
     }
 
     if (feilliste.isNotEmpty()) {

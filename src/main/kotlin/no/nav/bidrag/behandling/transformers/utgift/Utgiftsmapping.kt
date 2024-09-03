@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
+import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
@@ -82,6 +83,7 @@ fun Behandling.tilUtgiftDto() =
                 avslag = tilSærbidragAvslagskode(),
                 beregning = utgift.tilBeregningDto(),
                 kategori = tilSærbidragKategoriDto(),
+                maksGodkjentBeløp = utgift.tilMaksGodkjentBeløpDto(),
                 begrunnelse =
                     BegrunnelseDto(
                         innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
@@ -106,6 +108,12 @@ fun Behandling.tilUtgiftDto() =
         null
     }
 
+fun Utgift.tilMaksGodkjentBeløpDto() =
+    MaksGodkjentBeløpDto(
+        beløp = maksGodkjentBeløp,
+        kommentar = maksGodkjentBeløpKommentar,
+    )
+
 fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
     if (behandling.avslag != null) {
         OppdatereUtgiftResponse(
@@ -118,6 +126,7 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
             avslag = behandling.tilSærbidragAvslagskode(),
             oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
             utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
+            maksGodkjentBeløp = tilMaksGodkjentBeløpDto(),
             begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             beregning = tilBeregningDto(),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
