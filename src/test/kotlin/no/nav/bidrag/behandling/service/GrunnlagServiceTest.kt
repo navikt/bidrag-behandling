@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -948,6 +949,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 // så
                 entityManager.refresh(behandling)
+
+                assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }) {
+                    it.shouldNotBeEmpty()
+                }
 
                 assertSoftly(behandling.grunnlag) { g ->
                     g.size shouldBe 21
@@ -3758,7 +3763,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly(behandling) { b ->
-                b.grunnlag shouldHaveSize 0
+                b.grunnlag shouldHaveSize 2
                 b.grunnlagsinnhentingFeilet shouldBe null
             }
         }
