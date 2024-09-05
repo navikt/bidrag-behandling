@@ -189,7 +189,6 @@ class BoforholdServiceTest : TestContainerRunner() {
     open inner class Husstandsmedlemstester {
         @Nested
         open inner class Førstegangsinnhenting {
-
             @Test
             @Transactional
             open fun `skal lagre periodisert boforhold basert på førstegangsinnhenting av grunnlag`() {

@@ -28,7 +28,7 @@ private val log = KotlinLogging.logger {}
 
 fun Set<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
     behandling: Behandling,
-    leggeTilManglendeSøknadsbarn: Boolean = false
+    leggeTilManglendeSøknadsbarn: Boolean = false,
 ) = this.toList().tilBoforholdBarnRequest(behandling, leggeTilManglendeSøknadsbarn)
 
 fun Set<RelatertPersonGrunnlagDto>.tilBoforholdVoksneRequest(): BoforholdVoksneRequest =
@@ -73,12 +73,13 @@ private fun Behandling.leggeInnManglendeSøknadsbarnSomHusstandsbarn(
 
 fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
     behandling: Behandling,
-    leggeTilManglendeSøknadsbarn: Boolean = false
+    leggeTilManglendeSøknadsbarn: Boolean = false,
 ): List<BoforholdBarnRequestV3> {
-    val grunnlag: List<RelatertPersonGrunnlagDto> = when (leggeTilManglendeSøknadsbarn) {
-        true -> behandling.leggeInnManglendeSøknadsbarnSomHusstandsbarn(this.toMutableList())
-        false -> this
-    }
+    val grunnlag: List<RelatertPersonGrunnlagDto> =
+        when (leggeTilManglendeSøknadsbarn) {
+            true -> behandling.leggeInnManglendeSøknadsbarnSomHusstandsbarn(this.toMutableList())
+            false -> this
+        }
     val barnAvBmBpManglerFødselsdato = grunnlag.filter { it.erBarn }.filter { it.fødselsdato == null }
     if (barnAvBmBpManglerFødselsdato.isNotEmpty()) {
         secureLogger.warn {
@@ -89,32 +90,32 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
     return grunnlag.filter { it.erBarn }.filter { it.fødselsdato != null }.map { g ->
         BoforholdBarnRequestV3(
             innhentedeOffentligeOpplysninger =
-            when (g.borISammeHusstandDtoListe.isNotEmpty()) {
-                true ->
-                    g.borISammeHusstandDtoListe.tilBostatus(
-                        Bostatuskode.MED_FORELDER,
-                        Kilde.OFFENTLIG,
-                    )
+                when (g.borISammeHusstandDtoListe.isNotEmpty()) {
+                    true ->
+                        g.borISammeHusstandDtoListe.tilBostatus(
+                            Bostatuskode.MED_FORELDER,
+                            Kilde.OFFENTLIG,
+                        )
 
-                false ->
-                    listOf(
-                        Bostatus(
-                            bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                            kilde = Kilde.OFFENTLIG,
-                            periodeFom = maxOf(g.fødselsdato!!, behandling.virkningstidspunktEllerSøktFomDato),
-                            periodeTom = null,
-                        ),
-                    )
-            },
+                    false ->
+                        listOf(
+                            Bostatus(
+                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = maxOf(g.fødselsdato!!, behandling.virkningstidspunktEllerSøktFomDato),
+                                periodeTom = null,
+                            ),
+                        )
+                },
             relasjon =
-            if (behandling.husstandsmedlem.find {
-                    it.ident != null && it.ident == g.gjelderPersonId
-                } != null
-            ) {
-                Familierelasjon.BARN
-            } else {
-                g.relasjon
-            },
+                if (behandling.husstandsmedlem.find {
+                        it.ident != null && it.ident == g.gjelderPersonId
+                    } != null
+                ) {
+                    Familierelasjon.BARN
+                } else {
+                    g.relasjon
+                },
             fødselsdato = g.fødselsdato!!,
             gjelderPersonId = g.gjelderPersonId,
             behandledeBostatusopplysninger = emptyList(),
@@ -129,7 +130,7 @@ fun Husstandsmedlem.tilBoforholdBarnRequest(endreBostatus: EndreBostatus? = null
         fødselsdato = fødselsdato ?: rolle!!.fødselsdato,
         relasjon = Familierelasjon.BARN,
         innhentedeOffentligeOpplysninger =
-        henteOffentligePerioder().map { it.tilBostatus() }.sortedBy { it.periodeFom },
+            henteOffentligePerioder().map { it.tilBostatus() }.sortedBy { it.periodeFom },
         behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
         endreBostatus = endreBostatus,
     )
