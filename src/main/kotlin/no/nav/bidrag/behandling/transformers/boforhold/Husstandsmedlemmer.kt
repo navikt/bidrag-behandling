@@ -26,7 +26,10 @@ import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
-fun Set<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandling) = this.toList().tilBoforholdBarnRequest(behandling)
+fun Set<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
+    behandling: Behandling,
+    leggeTilManglendeSøknadsbarn: Boolean = false
+) = this.toList().tilBoforholdBarnRequest(behandling, leggeTilManglendeSøknadsbarn)
 
 fun Set<RelatertPersonGrunnlagDto>.tilBoforholdVoksneRequest(): BoforholdVoksneRequest =
     BoforholdVoksneRequest(
@@ -45,43 +48,73 @@ fun List<RelatertPersonGrunnlagDto>.tilHusstandsmedlemmer() =
         )
     }
 
-fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(behandling: Behandling): List<BoforholdBarnRequestV3> {
-    val barnAvBmBpManglerFødselsdato = this.filter { it.erBarn }.filter { it.fødselsdato == null }
+private fun Behandling.leggeInnManglendeSøknadsbarnSomHusstandsbarn(
+    grunnlag: MutableList<RelatertPersonGrunnlagDto>,
+): List<RelatertPersonGrunnlagDto> {
+    this.søknadsbarn.forEach { søknadsbarn ->
+        søknadsbarn.ident?.let { identSøknadsbarn ->
+            if (!grunnlag.map { it.gjelderPersonId }.contains(identSøknadsbarn)) {
+                grunnlag.add(
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = this.rolleGrunnlagSkalHentesFor?.ident,
+                        gjelderPersonId = identSøknadsbarn,
+                        borISammeHusstandDtoListe = emptyList(),
+                        fødselsdato = søknadsbarn.fødselsdato,
+                        navn = søknadsbarn.navn,
+                        erBarnAvBmBp = true,
+                    ),
+                )
+            }
+        }
+    }
+
+    return grunnlag
+}
+
+fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
+    behandling: Behandling,
+    leggeTilManglendeSøknadsbarn: Boolean = false
+): List<BoforholdBarnRequestV3> {
+    val grunnlag: List<RelatertPersonGrunnlagDto> = when (leggeTilManglendeSøknadsbarn) {
+        true -> behandling.leggeInnManglendeSøknadsbarnSomHusstandsbarn(this.toMutableList())
+        false -> this
+    }
+    val barnAvBmBpManglerFødselsdato = grunnlag.filter { it.erBarn }.filter { it.fødselsdato == null }
     if (barnAvBmBpManglerFødselsdato.isNotEmpty()) {
         secureLogger.warn {
             "Husstandsmedlem som er barn av BM eller BP (personident forelder: ${barnAvBmBpManglerFødselsdato.first().partPersonId}) mangler fødselsdato."
         }
     }
 
-    return this.filter { it.erBarn }.filter { it.fødselsdato != null }.map { g ->
+    return grunnlag.filter { it.erBarn }.filter { it.fødselsdato != null }.map { g ->
         BoforholdBarnRequestV3(
             innhentedeOffentligeOpplysninger =
-                when (g.borISammeHusstandDtoListe.isNotEmpty()) {
-                    true ->
-                        g.borISammeHusstandDtoListe.tilBostatus(
-                            Bostatuskode.MED_FORELDER,
-                            Kilde.OFFENTLIG,
-                        )
+            when (g.borISammeHusstandDtoListe.isNotEmpty()) {
+                true ->
+                    g.borISammeHusstandDtoListe.tilBostatus(
+                        Bostatuskode.MED_FORELDER,
+                        Kilde.OFFENTLIG,
+                    )
 
-                    false ->
-                        listOf(
-                            Bostatus(
-                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = maxOf(g.fødselsdato!!, behandling.virkningstidspunktEllerSøktFomDato),
-                                periodeTom = null,
-                            ),
-                        )
-                },
+                false ->
+                    listOf(
+                        Bostatus(
+                            bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                            kilde = Kilde.OFFENTLIG,
+                            periodeFom = maxOf(g.fødselsdato!!, behandling.virkningstidspunktEllerSøktFomDato),
+                            periodeTom = null,
+                        ),
+                    )
+            },
             relasjon =
-                if (behandling.husstandsmedlem.find {
-                        it.ident != null && it.ident == g.gjelderPersonId
-                    } != null
-                ) {
-                    Familierelasjon.BARN
-                } else {
-                    g.relasjon
-                },
+            if (behandling.husstandsmedlem.find {
+                    it.ident != null && it.ident == g.gjelderPersonId
+                } != null
+            ) {
+                Familierelasjon.BARN
+            } else {
+                g.relasjon
+            },
             fødselsdato = g.fødselsdato!!,
             gjelderPersonId = g.gjelderPersonId,
             behandledeBostatusopplysninger = emptyList(),
@@ -96,7 +129,7 @@ fun Husstandsmedlem.tilBoforholdBarnRequest(endreBostatus: EndreBostatus? = null
         fødselsdato = fødselsdato ?: rolle!!.fødselsdato,
         relasjon = Familierelasjon.BARN,
         innhentedeOffentligeOpplysninger =
-            henteOffentligePerioder().map { it.tilBostatus() }.sortedBy { it.periodeFom },
+        henteOffentligePerioder().map { it.tilBostatus() }.sortedBy { it.periodeFom },
         behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
         endreBostatus = endreBostatus,
     )

@@ -813,7 +813,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.tilType(),
-                husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling),
+                husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )
 
         val nyesteBearbeidaBoforholdFørLagring =
