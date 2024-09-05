@@ -701,7 +701,10 @@ class GrunnlagService(
             feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
 
         // Husstandsmedlem og bostedsperiode
-        if (innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.isNotEmpty() && !innhentingAvBoforholdFeilet) {
+        if (behandling.søknadsbarn.isNotEmpty() &&
+            behandling.rolleGrunnlagSkalHentesFor?.ident == grunnlagsrequest.key.verdi &&
+            !innhentingAvBoforholdFeilet
+        ) {
             periodisereOgLagreBoforhold(
                 behandling,
                 innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
@@ -813,7 +816,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.tilType(),
-                husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling),
+                husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )
 
         val nyesteBearbeidaBoforholdFørLagring =

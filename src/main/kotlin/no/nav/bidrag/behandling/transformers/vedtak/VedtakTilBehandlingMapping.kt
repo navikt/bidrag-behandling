@@ -437,7 +437,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.tilType(),
-                    grunnlag.tilBoforholdBarnRequest(behandling),
+                    grunnlag.tilBoforholdBarnRequest(behandling, true),
                 )
             listOf(
                 behandling.opprettGrunnlag(

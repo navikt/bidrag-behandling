@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -405,7 +406,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlag.size shouldBe 9
+                    oppdatertBehandling.get().grunnlag.size shouldBe 11
                 }
 
                 val grunnlag =
@@ -527,8 +528,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
                     val grunnlagListe = oppdatertBehandling.get().grunnlag
-                    grunnlagListe.size shouldBe 10
-                    grunnlagListe.filter { it.aktiv == null } shouldHaveSize 2
+                    grunnlagListe.size shouldBe 12
+                    grunnlagListe.filter { it.aktiv == null } shouldHaveSize 3
                     grunnlagListe
                         .filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet } shouldHaveSize 2
                 }
@@ -629,9 +630,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.grunnlag) { g ->
-                    g.size shouldBe 10
+                    g.size shouldBe 12
                     g.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 3
-                    g.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 1
+                    g.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 3
                     g.filter { !it.erBearbeidet } shouldHaveSize 5
                 }
             }
@@ -693,7 +694,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlag.size shouldBe 9
+                    oppdatertBehandling.get().grunnlag.size shouldBe 11
                     oppdatertBehandling
                         .get()
                         .grunnlag
@@ -772,7 +773,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlag.size shouldBe 2
+                    oppdatertBehandling.get().grunnlag.size shouldBe 4
                 }
 
                 val grunnlag =
@@ -791,7 +792,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val gjeldendeAktiveGrunnlag =
                     grunnlagRepository.findAll().filter { g -> g.aktiv != null }
 
-                gjeldendeAktiveGrunnlag.size shouldBe 1
+                gjeldendeAktiveGrunnlag.size shouldBe 3
 
                 val småbarnstilleggGrunnlagDto =
                     jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(gjeldendeAktiveGrunnlag.first().data)
@@ -920,7 +921,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlag.size shouldBe 0
+                    oppdatertBehandling.get().grunnlag.size shouldBe 2
                 }
 
                 val grunnlag =
@@ -948,6 +949,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 // så
                 entityManager.refresh(behandling)
+
+                assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }) {
+                    it.shouldNotBeEmpty()
+                }
 
                 assertSoftly(behandling.grunnlag) { g ->
                     g.size shouldBe 21
@@ -1057,6 +1062,45 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         it.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 2
                         it.filter { Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == it.type }.size shouldBe 1
                     }
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal legge inn søknadsbarn som husstandsmedlemmer dersom grunnlagsdata mangler`() {
+                // gitt
+                val behandling = oppretteBehandling(false)
+                val personidentBarnSomIkkeErInkludertIGrunnlag = "01010112345"
+                behandling.roller.add(
+                    Rolle(
+                        behandling,
+                        Rolletype.BARN,
+                        personidentBarnSomIkkeErInkludertIGrunnlag,
+                        LocalDate.now().minusYears(6),
+                        navn = "Pelle Parafin",
+                    ),
+                )
+                behandling.husstandsmedlem.clear()
+                behandling.grunnlag.clear()
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                assertSoftly(behandling) {
+                    grunnlag.size shouldBe 22
+                    grunnlag
+                        .filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
+                        .size shouldBe 4
+                    grunnlag
+                        .filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
+                        .filter { g -> g.erBearbeidet }
+                        .size shouldBe 3
+                    husstandsmedlem.size shouldBe 3
                 }
             }
 
@@ -1242,7 +1286,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 entityManager.refresh(behandling)
 
-                behandling.grunnlag.size shouldBe totaltAntallGrunnlag
+                behandling.grunnlag.size shouldBe totaltAntallGrunnlag + 1
 
                 val grunnlagBarnetillegg =
                     behandling.grunnlag
@@ -1990,7 +2034,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.tilType(),
-                        endretBoforhold.tilBoforholdBarnRequest(behandling),
+                        endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
 
                 bearbeidaBoforhold.groupBy { it.gjelderPersonId }.forEach {
@@ -2119,7 +2163,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.tilType(),
-                        endretBoforhold.tilBoforholdBarnRequest(behandling),
+                        endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling, true),
                     )
 
                 bearbeidaBoforhold.groupBy { it.gjelderPersonId }.forEach {
@@ -2142,10 +2186,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandlingRepository.save(behandling)
 
                 assertSoftly(behandling.grunnlag) { g ->
-                    g shouldHaveSize 3
-                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 3
-                    g.filter { it.aktiv != null } shouldHaveSize 1
-                    g.filter { it.erBearbeidet } shouldHaveSize 1
+                    g shouldHaveSize 4
+                    g.filter { behandling.bidragspliktig == it.rolle } shouldHaveSize 4
+                    g.filter { it.aktiv != null } shouldHaveSize 2
+                    g.filter { it.erBearbeidet } shouldHaveSize 2
                     g.filter { !it.erBearbeidet && it.gjelder == null && it.aktiv === null } shouldHaveSize 1
                     g.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet && it.aktiv != null } shouldHaveSize 0
                 }
@@ -2164,9 +2208,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
                 assertSoftly(boforhold) { b ->
-                    b.size shouldBe 3
-                    b.filter { it.aktiv != null } shouldHaveSize 3
-                    b.filter { it.erBearbeidet } shouldHaveSize 1
+                    b.size shouldBe 4
+                    b.filter { it.aktiv != null } shouldHaveSize 4
+                    b.filter { it.erBearbeidet } shouldHaveSize 2
                     b.filter { testdataBarn1.ident == it.gjelder && it.erBearbeidet && it.aktiv == null } shouldHaveSize 0
                 }
             }
@@ -3210,7 +3254,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.tilType(),
-                        endretBoforhold.tilBoforholdBarnRequest(behandling),
+                        endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
 
                 bearbeidaBoforhold.groupBy { it.gjelderPersonId }.forEach {
@@ -3719,7 +3763,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly(behandling) { b ->
-                b.grunnlag shouldHaveSize 0
+                b.grunnlag shouldHaveSize 2
                 b.grunnlagsinnhentingFeilet shouldBe null
             }
         }
