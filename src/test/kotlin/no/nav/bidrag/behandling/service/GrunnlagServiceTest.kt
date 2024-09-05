@@ -529,9 +529,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     oppdatertBehandling.isPresent shouldBe true
                     val grunnlagListe = oppdatertBehandling.get().grunnlag
                     grunnlagListe.size shouldBe 12
-                    grunnlagListe.filter { it.aktiv == null } shouldHaveSize 2
+                    grunnlagListe.filter { it.aktiv == null } shouldHaveSize 3
                     grunnlagListe
-                        .filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet } shouldHaveSize 3
+                        .filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet } shouldHaveSize 2
                 }
             }
 
@@ -792,7 +792,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val gjeldendeAktiveGrunnlag =
                     grunnlagRepository.findAll().filter { g -> g.aktiv != null }
 
-                gjeldendeAktiveGrunnlag.size shouldBe 1
+                gjeldendeAktiveGrunnlag.size shouldBe 3
 
                 val småbarnstilleggGrunnlagDto =
                     jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(gjeldendeAktiveGrunnlag.first().data)
