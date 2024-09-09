@@ -292,7 +292,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         LocalDate.now(),
                         behandling.tilType(),
-                        grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
+                        grunnlagBoforhold.tilBoforholdBarnRequest(behandling, true),
                     )
 
                 behandling.husstandsmedlem.size shouldBe 2
@@ -306,8 +306,15 @@ class BoforholdServiceTest : TestContainerRunner() {
                 // så
                 entityManager.refresh(behandling)
 
-                assertSoftly {
-                    behandling.husstandsmedlem.size shouldBe 1
+                assertSoftly(behandling.husstandsmedlem) { h ->
+                    h.find { testdataBarn2.ident == it.ident }.shouldNotBeNull()
+                    h.find { testdataBarn2.ident == it.ident }?.perioder?.shouldHaveSize(1)
+                    h
+                        .find { testdataBarn2.ident == it.ident }
+                        ?.perioder
+                        ?.first()
+                        ?.bostatus
+                        .shouldBe(Bostatuskode.IKKE_MED_FORELDER)
                 }
             }
         }
