@@ -46,8 +46,8 @@ data class OppdatereUtgiftRequest(
 }
 
 data class MaksGodkjentBeløpDto(
-    val beløp: BigDecimal?,
-    val kommentar: String?,
+    val beløp: BigDecimal? = null,
+    val kommentar: String? = null,
 )
 
 data class OppdatereUtgiftResponse(

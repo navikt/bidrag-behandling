@@ -6,6 +6,7 @@ import io.kotest.matchers.string.shouldContain
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
@@ -358,5 +359,65 @@ class OppdaterUtgiftRequestValideringTest {
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
         exception.message shouldContain "Type må settes hvis behandling har kategori KONFIRMASJON"
+    }
+
+    @Test
+    fun `skal validere at maks godkjent beløp ikke er høyere enn total godkjent beløp`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift = Utgift(behandling = behandling)
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    id = 1,
+                    dato = LocalDate.now().minusDays(3),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(3000),
+                    godkjentBeløp = BigDecimal(2500),
+                    kommentar = "Trekker fra alkohol",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        val request =
+            OppdatereUtgiftRequest(
+                maksGodkjentBeløp =
+                    MaksGodkjentBeløpDto(
+                        beløp = BigDecimal(10000),
+                        kommentar = "Test",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Maks godkjent beløp kan ikke være større enn total godkjent beløp"
+    }
+
+    @Test
+    fun `skal validere at maks godkjent beløp ikke kan være negativ`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift = Utgift(behandling = behandling)
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    id = 1,
+                    dato = LocalDate.now().minusDays(3),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(3000),
+                    godkjentBeløp = BigDecimal(2500),
+                    kommentar = "Trekker fra alkohol",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        val request =
+            OppdatereUtgiftRequest(
+                maksGodkjentBeløp =
+                    MaksGodkjentBeløpDto(
+                        beløp = BigDecimal(-100),
+                        kommentar = "Test",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Maks godkjent beløp kan ikke være negativ"
     }
 }

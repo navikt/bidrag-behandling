@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
+import no.nav.bidrag.behandling.dto.v2.validering.MaksGodkjentBeløpValiderignsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
@@ -66,7 +67,18 @@ fun Utgift?.hentValideringsfeil() =
                 ).validerUtgiftspost(behandling).isNotEmpty()
             } ?: false,
         manglerUtgifter = this == null || utgiftsposter.isEmpty(),
+//        maksGodkjentBeløp = this?.validerMaksGodkjentBeløp(),
     ).takeIf { it.harFeil }
+
+fun Utgift.validerMaksGodkjentBeløp() =
+    if (maksGodkjentBeløp == null || maksGodkjentBeløpKommentar.isNullOrEmpty()) {
+        MaksGodkjentBeløpValiderignsfeil(
+            manglerBeløp = maksGodkjentBeløp == null,
+            manglerKommentar = maksGodkjentBeløpKommentar.isNullOrEmpty(),
+        )
+    } else {
+        null
+    }
 
 fun Behandling.tilUtgiftDto() =
     utgift?.let { utgift ->

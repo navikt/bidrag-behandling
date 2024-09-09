@@ -141,8 +141,14 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
         feilliste.addAll(nyEllerEndretUtgift.validerUtgiftspost(behandling))
     }
 
-    if (maksGodkjentBeløp != null && utgift != null && (maksGodkjentBeløp.beløp ?: BigDecimal.ZERO) > utgift.totalGodkjentBeløp) {
-        feilliste.add("Maks godkjent beløp kan ikke være større enn total godkjent beløp")
+    if (maksGodkjentBeløp != null && utgift != null) {
+        val maksGodkjentBeløpVerdi = maksGodkjentBeløp.beløp ?: BigDecimal.ZERO
+        if (maksGodkjentBeløpVerdi > utgift.totalGodkjentBeløp) {
+            feilliste.add("Maks godkjent beløp kan ikke være større enn total godkjent beløp")
+        }
+        if (maksGodkjentBeløpVerdi < BigDecimal.ZERO) {
+            feilliste.add("Maks godkjent beløp kan ikke være negativ")
+        }
     }
 
     if (feilliste.isNotEmpty()) {

@@ -28,13 +28,19 @@ data class VirkningstidspunktFeilDto(
 }
 
 data class UtgiftValideringsfeilDto(
+    val maksGodkjentBeløp: MaksGodkjentBeløpValiderignsfeil? = null,
     val manglerUtgifter: Boolean,
     val ugyldigUtgiftspost: Boolean,
 ) {
     @get:JsonIgnore
     val harFeil
-        get() = manglerUtgifter || ugyldigUtgiftspost
+        get() = manglerUtgifter || ugyldigUtgiftspost || maksGodkjentBeløp != null
 }
+
+data class MaksGodkjentBeløpValiderignsfeil(
+    val manglerBeløp: Boolean,
+    val manglerKommentar: Boolean,
+)
 
 data class InntektValideringsfeilDto(
     val barnetillegg: Set<InntektValideringsfeil>?,
