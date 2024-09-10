@@ -28,7 +28,7 @@ data class VirkningstidspunktFeilDto(
 }
 
 data class UtgiftValideringsfeilDto(
-    val maksGodkjentBeløp: MaksGodkjentBeløpValiderignsfeil? = null,
+    val maksGodkjentBeløp: MaksGodkjentBeløpValideringsfeil? = null,
     val manglerUtgifter: Boolean,
     val ugyldigUtgiftspost: Boolean,
 ) {
@@ -37,8 +37,7 @@ data class UtgiftValideringsfeilDto(
         get() = manglerUtgifter || ugyldigUtgiftspost || maksGodkjentBeløp != null
 }
 
-data class MaksGodkjentBeløpValiderignsfeil(
-    val manglerBeløp: Boolean,
+data class MaksGodkjentBeløpValideringsfeil(
     val manglerKommentar: Boolean,
 )
 

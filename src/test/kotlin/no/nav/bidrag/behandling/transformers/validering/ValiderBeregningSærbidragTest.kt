@@ -117,7 +117,7 @@ class ValiderBeregningSærbidragTest {
     @Test
     fun `skal feile validering hvis utgift maks godkjent beløp ikke er satt`() {
         val behandling = opprettGyldigBehandling()
-        behandling.utgift!!.maksGodkjentBeløp = null
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(10000)
         behandling.utgift!!.maksGodkjentBeløpKommentar = null
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningSærbidrag() }
 
@@ -127,8 +127,7 @@ class ValiderBeregningSærbidragTest {
         assertSoftly(responseBody) {
             utgift.shouldNotBe(null)
             utgift!!.maksGodkjentBeløp shouldNotBe null
-            utgift.maksGodkjentBeløp!!.manglerBeløp shouldBe true
-            utgift.maksGodkjentBeløp.manglerKommentar shouldBe true
+            utgift.maksGodkjentBeløp!!.manglerKommentar shouldBe true
         }
     }
 
