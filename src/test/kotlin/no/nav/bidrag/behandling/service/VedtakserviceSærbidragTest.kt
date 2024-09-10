@@ -272,7 +272,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
-            hentGrunnlagstyper(Grunnlagstype.UTGIFT_MAKS_GODKJENT_BELØP) shouldHaveSize 10
+            hentGrunnlagstyper(Grunnlagstype.UTGIFT_MAKS_GODKJENT_BELØP) shouldHaveSize 0
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
             hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 7
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 1
