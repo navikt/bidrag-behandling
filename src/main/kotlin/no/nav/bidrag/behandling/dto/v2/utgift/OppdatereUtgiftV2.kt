@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.PositiveOrZero
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
+import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
@@ -61,6 +62,7 @@ data class OppdatereUtgiftResponse(
     val maksGodkjentBeløp: MaksGodkjentBeløpDto? = null,
     val avslag: Resultatkode? = null,
     val valideringsfeil: UtgiftValideringsfeilDto?,
+    val totalBeregning: List<TotalBeregningUtgifterDto> = emptyList(),
 ) {
     @Deprecated("Erstattes av begrunnelse")
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)

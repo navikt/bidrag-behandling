@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
+import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
@@ -126,7 +127,7 @@ fun Utgift.tilTotalBeregningDto() =
         .groupBy {
             it.type
         }.map { (type, utgifter) ->
-            SærbidragUtgifterDto.TotalBeregningUtgifter(
+            TotalBeregningUtgifterDto(
                 type,
                 utgifter.sumOf {
                     it.kravbeløp
@@ -157,6 +158,7 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
             begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             beregning = tilBeregningDto(),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
+            totalBeregning = behandling.utgift?.tilTotalBeregningDto() ?: emptyList(),
         )
     }
 
