@@ -1097,16 +1097,6 @@
       "gjelderReferanse": null
     },
     {
-      "referanse": "utgift_maks_godkjent_beløp",
-      "type": "UTGIFT_MAKS_GODKJENT_BELØP",
-      "innhold": {
-        "beløp": 2500,
-        "kommentar": "Maks godkjent beløp for utgifter"
-      },
-      "grunnlagsreferanseListe": [],
-      "gjelderReferanse": null
-    },
-    {
       "referanse": "utgiftsposter",
       "type": "UTGIFTSPOSTER",
       "innhold": [
@@ -1539,7 +1529,6 @@
         "søknad",
         "virkningstidspunkt",
         "utgift_direkte_betalt",
-        "utgift_maks_godkjent_beløp",
         "utgiftsposter",
         "særbidrag_kategori",
         "delberegning_DELBEREGNING_BARN_I_HUSSTAND_person_PERSON_SØKNADSBARN_20220726_40_202407",

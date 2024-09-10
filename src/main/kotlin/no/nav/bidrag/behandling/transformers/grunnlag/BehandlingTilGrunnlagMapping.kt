@@ -173,10 +173,10 @@ fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
                 ),
             ),
         grunnlagsreferanseListe =
-            listOf(
+            listOfNotNull(
                 grunnlagsreferanse_utgiftsposter,
                 grunnlagsreferanse_utgift_direkte_betalt,
-                grunnlagsreferanse_utgift_maks_godkjent_beløp,
+                utgift!!.maksGodkjentBeløp?.let { grunnlagsreferanse_utgift_maks_godkjent_beløp },
             ),
     )
 }

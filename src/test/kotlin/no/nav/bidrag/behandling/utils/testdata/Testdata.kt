@@ -987,8 +987,6 @@ fun oppretteUtgift(
             id = if (medId) 1 else null,
             behandling = behandling,
             beløpDirekteBetaltAvBp = BigDecimal(0),
-            maksGodkjentBeløp = BigDecimal(5000),
-            maksGodkjentBeløpKommentar = "Maksbeløp",
         )
     utgift.utgiftsposter =
         mutableSetOf(
