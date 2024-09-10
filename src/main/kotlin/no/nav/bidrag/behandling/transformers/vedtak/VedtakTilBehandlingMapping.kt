@@ -65,6 +65,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.særbidragskategori
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftDirekteBetalt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftMaksGodkjentBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
@@ -136,6 +137,7 @@ fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto?
                 ?.utgiftsposter
                 ?.sorter()
                 ?.map { it.tilDto() } ?: emptyList(),
+            behandling.utgift?.maksGodkjentBeløp,
         )
     }
 
@@ -278,7 +280,13 @@ private fun List<GrunnlagDto>.mapUtgifter(
     ) {
         return null
     }
-    val utgift = Utgift(behandling, beløpDirekteBetaltAvBp = utgiftDirekteBetalt!!.beløpDirekteBetalt)
+    val utgift =
+        Utgift(
+            behandling,
+            beløpDirekteBetaltAvBp = utgiftDirekteBetalt!!.beløpDirekteBetalt,
+            maksGodkjentBeløp = utgiftMaksGodkjentBeløp?.beløp,
+            maksGodkjentBeløpKommentar = utgiftMaksGodkjentBeløp?.kommentar,
+        )
     utgift.utgiftsposter =
         utgiftsposter
             .mapIndexed { index, it ->

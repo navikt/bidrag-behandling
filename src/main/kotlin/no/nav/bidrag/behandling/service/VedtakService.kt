@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBetalt
+import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftMaksGodkjentBeløp
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
@@ -424,7 +425,12 @@ class VedtakService(
         val resultat = beregning.beregnetSærbidragPeriodeListe.first().resultat
         val (grunnlagListeVedtak, grunnlaglisteGenerelt) =
             if (resultat.resultatkode == Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS) {
-                listOf(tilPersonobjekter() + byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt(), byggGrunnlagGenereltAvslag())
+                listOf(
+                    tilPersonobjekter() + byggGrunnlagUtgiftsposter() +
+                        byggGrunnlagUtgiftDirekteBetalt() +
+                        byggGrunnlagUtgiftMaksGodkjentBeløp(),
+                    byggGrunnlagGenereltAvslag(),
+                )
             } else {
                 listOf(byggGrunnlagForVedtak(), byggGrunnlagGenerelt())
             }

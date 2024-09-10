@@ -547,7 +547,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             OppdatereUtgiftRequest(
                 maksGodkjentBeløp =
                     MaksGodkjentBeløpDto(
-                        beløp = BigDecimal(100),
+                        beløp = BigDecimal(6000),
                         kommentar = "Kommentar maks godkjent",
                     ),
             )
@@ -557,12 +557,113 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.avslag shouldBe null
 
         assertSoftly(response.maksGodkjentBeløp!!) {
-            beløp shouldBe BigDecimal(100)
+            beløp shouldBe BigDecimal(6000)
             kommentar shouldBe "Kommentar maks godkjent"
         }
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
-        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(100)
+        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(6000)
         behandlingEtter!!.utgift!!.maksGodkjentBeløpKommentar shouldBe "Kommentar maks godkjent"
+    }
+
+    @Test
+    @Transactional
+    fun `skal slette maks godkjent beløp`() {
+        val behandling = oppretteBehandlingForSærbidrag()
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+            )
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(100)
+        behandling.utgift!!.maksGodkjentBeløpKommentar = "Dette er kommentar"
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(2000),
+                    godkjentBeløp = BigDecimal(2000),
+                    kommentar = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(4),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(500),
+                    kommentar = "Test",
+                    betaltAvBp = true,
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                maksGodkjentBeløp =
+                    MaksGodkjentBeløpDto(
+                        taMed = false,
+                    ),
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        response.oppdatertUtgiftspost shouldBe null
+        response.avslag shouldBe null
+
+        assertSoftly(response.maksGodkjentBeløp!!) {
+            beløp shouldBe null
+            kommentar shouldBe null
+        }
+        val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
+        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe null
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpKommentar shouldBe null
+    }
+
+    @Test
+    @Transactional
+    fun `skal ikke oppdatere maks godkjent beløp hvis ikke satt i forespørsel`() {
+        val behandling = oppretteBehandlingForSærbidrag()
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+            )
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(6000)
+        behandling.utgift!!.maksGodkjentBeløpKommentar = "Dette er kommentar"
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(2000),
+                    godkjentBeløp = BigDecimal(2000),
+                    kommentar = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(4),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(500),
+                    kommentar = "Test",
+                    betaltAvBp = true,
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                maksGodkjentBeløp = null,
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        response.oppdatertUtgiftspost shouldBe null
+        response.avslag shouldBe null
+
+        assertSoftly(response.maksGodkjentBeløp!!) {
+            beløp shouldBe BigDecimal(6000)
+            kommentar shouldBe "Dette er kommentar"
+        }
+        val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
+        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(6000)
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpKommentar shouldBe "Dette er kommentar"
     }
 
     @Test

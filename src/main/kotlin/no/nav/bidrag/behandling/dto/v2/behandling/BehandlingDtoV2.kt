@@ -124,10 +124,17 @@ data class SærbidragUtgifterDto(
     val begrunnelse: BegrunnelseDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
     val valideringsfeil: UtgiftValideringsfeilDto?,
+    val totalBeregning: List<TotalBeregningUtgifter> = emptyList(),
 ) {
     @Deprecated("Erstattes av begrunnelse")
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
     val notat: BegrunnelseDto = begrunnelse
+
+    data class TotalBeregningUtgifter(
+        val utgiftstype: String,
+        val totalKravbeløp: BigDecimal,
+        val totalGodkjentBeløp: BigDecimal,
+    )
 }
 
 data class SærbidragKategoriDto(

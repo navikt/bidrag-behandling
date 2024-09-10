@@ -19,6 +19,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SærbidragskategoriGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftDirekteBetaltGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftMaksGodkjentBeløpGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftspostGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
@@ -28,6 +29,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 val grunnlagsreferanse_delberegning_utgift = "delberegning_utgift"
 val grunnlagsreferanse_utgiftsposter = "utgiftsposter"
 val grunnlagsreferanse_utgift_direkte_betalt = "utgift_direkte_betalt"
+val grunnlagsreferanse_utgift_maks_godkjent_beløp = "utgift_maks_godkjent_beløp"
 
 fun GrunnlagDto.tilOpprettRequestDto() =
     OpprettGrunnlagRequestDto(
@@ -126,6 +128,23 @@ fun Behandling.byggGrunnlagUtgiftsposter() =
                 ),
         ),
     )
+
+fun Behandling.byggGrunnlagUtgiftMaksGodkjentBeløp() =
+    utgift!!.maksGodkjentBeløp?.let {
+        setOf(
+            GrunnlagDto(
+                referanse = grunnlagsreferanse_utgift_maks_godkjent_beløp,
+                type = Grunnlagstype.UTGIFT_MAKS_GODKJENT_BELØP,
+                innhold =
+                    POJONode(
+                        UtgiftMaksGodkjentBeløpGrunnlag(
+                            beløp = it,
+                            kommentar = utgift!!.maksGodkjentBeløpKommentar!!,
+                        ),
+                    ),
+            ),
+        )
+    } ?: emptySet()
 
 fun Behandling.byggGrunnlagUtgiftDirekteBetalt() =
     setOf(

@@ -67,7 +67,7 @@ fun Utgift?.hentValideringsfeil() =
                 ).validerUtgiftspost(behandling).isNotEmpty()
             } ?: false,
         manglerUtgifter = this == null || utgiftsposter.isEmpty(),
-//        maksGodkjentBeløp = this?.validerMaksGodkjentBeløp(),
+        maksGodkjentBeløp = this?.validerMaksGodkjentBeløp(),
     ).takeIf { it.harFeil }
 
 fun Utgift.validerMaksGodkjentBeløp() =
@@ -89,6 +89,7 @@ fun Behandling.tilUtgiftDto() =
                 kategori = tilSærbidragKategoriDto(),
                 begrunnelse = BegrunnelseDto(henteNotatinnhold(this, Notattype.UTGIFTER) ?: ""),
                 valideringsfeil = valideringsfeil,
+                totalBeregning = utgift.tilTotalBeregningDto(),
             )
         } else {
             SærbidragUtgifterDto(
@@ -103,6 +104,7 @@ fun Behandling.tilUtgiftDto() =
                     ),
                 utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
                 valideringsfeil = valideringsfeil,
+                totalBeregning = utgift.tilTotalBeregningDto(),
             )
         }
     } ?: if (erSærbidrag()) {
@@ -119,6 +121,20 @@ fun Behandling.tilUtgiftDto() =
     } else {
         null
     }
+
+fun Utgift.tilTotalBeregningDto() =
+    utgiftsposter
+        .groupBy {
+            it.type
+        }.map { (type, utgifter) ->
+            SærbidragUtgifterDto.TotalBeregningUtgifter(
+                type,
+                utgifter.sumOf {
+                    it.kravbeløp
+                },
+                utgifter.sumOf { it.godkjentBeløp },
+            )
+        }
 
 fun Utgift.tilMaksGodkjentBeløpDto() =
     MaksGodkjentBeløpDto(

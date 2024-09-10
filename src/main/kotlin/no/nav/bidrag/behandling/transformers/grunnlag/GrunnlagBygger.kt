@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotaterDirekteAv
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSærbidragKategori
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBetalt
+import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftMaksGodkjentBeløp
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -85,7 +86,10 @@ fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
                 ),
             )
 
-        TypeBehandling.SÆRBIDRAG -> grunnlagListe.addAll(byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt())
+        TypeBehandling.SÆRBIDRAG ->
+            grunnlagListe.addAll(
+                byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt() + byggGrunnlagUtgiftMaksGodkjentBeløp(),
+            )
         else -> {}
     }
     return grunnlagListe.toSet()

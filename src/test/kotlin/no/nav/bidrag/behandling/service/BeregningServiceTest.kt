@@ -42,6 +42,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -129,6 +130,72 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.vedtakstype = Vedtakstype.FASTSETTELSE
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
+        mockkConstructor(BeregnSærbidragApi::class)
+        every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
+        val resultat = BeregningService(behandlingService).beregneSærbidrag(1)
+        val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
+
+        verify(exactly = 1) {
+            BeregnSærbidragApi().beregn(any(), any())
+        }
+        resultat shouldNotBe null
+        vedtaksTypeCapture.captured shouldBe Vedtakstype.FASTSETTELSE
+        resultat.grunnlagListe shouldHaveSize 27
+        beregnGrunnlagList shouldHaveSize 1
+        assertSoftly(beregnGrunnlagList[0]) {
+            it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
+            it.periode.til shouldBe YearMonth.now().plusMonths(1)
+            it.grunnlagListe shouldHaveSize 10
+
+            val personer =
+                it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
+            personer shouldHaveSize 4
+            personer.hentPerson(testdataBarn1.ident) shouldNotBe null
+            personer.map { it.type } shouldContainAll
+                listOf(
+                    Grunnlagstype.PERSON_SØKNADSBARN,
+                    Grunnlagstype.PERSON_BIDRAGSPLIKTIG,
+                    Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
+                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM,
+                )
+
+            val bostatuser =
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
+            bostatuser shouldHaveSize 3
+            val barnStatus = bostatuser.find { it.gjelderReferanse == grunnlagListe.søknadsbarn.first().referanse }
+            barnStatus!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.MED_FORELDER
+
+            val andreVoksneIHusstanden = bostatuser.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse }
+            andreVoksneIHusstanden!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.BOR_MED_ANDRE_VOKSNE
+
+            val sivilstand =
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE)
+            sivilstand shouldHaveSize 0
+
+            val inntekter =
+                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+            inntekter shouldHaveSize 2
+            inntekter.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse } shouldNotBe null
+            inntekter.find { it.gjelderReferanse == grunnlagListe.bidragsmottaker!!.referanse } shouldNotBe null
+        }
+    }
+
+    @Test
+    fun `skal bygge grunnlag for særbidrag beregning med maks godkjent beløp`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(6000)
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.grunnlag =

@@ -494,6 +494,7 @@ class VedtakTilBehandlingSærbidragTest {
             delberegningUtgift!!.sumGodkjent shouldBe BigDecimal(9000)
             delberegningUtgift.sumBetaltAvBp shouldBe BigDecimal(2500)
             beløpSomInnkreves shouldBe BigDecimal(3296)
+            maksGodkjentBeløp shouldBe BigDecimal(2500)
         }
     }
 
@@ -578,6 +579,8 @@ class VedtakTilBehandlingSærbidragTest {
         utgift shouldNotBe null
         assertSoftly(utgift!!) {
             beløpDirekteBetaltAvBp shouldBe BigDecimal(2500)
+            maksGodkjentBeløp shouldBe BigDecimal(2500)
+            maksGodkjentBeløpKommentar shouldBe "Maks godkjent beløp for utgifter"
             utgiftsposter shouldHaveSize 3
             assertSoftly(utgiftsposter.find { it.type == "Ny høreapparat" }!!) {
                 kravbeløp shouldBe BigDecimal(9000)

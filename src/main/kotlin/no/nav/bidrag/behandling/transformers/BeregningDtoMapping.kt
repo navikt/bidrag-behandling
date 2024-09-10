@@ -77,6 +77,7 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
                 ?.utgiftsposter
                 ?.sorter()
                 ?.map { it.tilDto() } ?: emptyList(),
+            behandling.utgift?.maksGodkjentBeløp,
         )
     }
 
@@ -102,6 +103,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
     beregning: UtgiftBeregningDto,
     utgiftsposter: List<UtgiftspostDto>,
+    maksGodkjentBeløp: BigDecimal?,
 ) = ResultatSærbidragsberegningDto(
     periode =
         ÅrMånedsperiode(
@@ -115,6 +117,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     antallBarnIHusstanden = finnAntallBarnIHusstanden(grunnlagsreferanseListe),
     inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
     utgiftsposter = utgiftsposter,
+    maksGodkjentBeløp = maksGodkjentBeløp,
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
     voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
     enesteVoksenIHusstandenErEgetBarn = finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe),

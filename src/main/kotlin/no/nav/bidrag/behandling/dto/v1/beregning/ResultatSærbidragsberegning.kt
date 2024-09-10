@@ -17,6 +17,7 @@ data class ResultatSærbidragsberegningDto(
     val inntekter: ResultatSærbidragsberegningInntekterDto? = null,
     val utgiftsposter: List<UtgiftspostDto> = emptyList(),
     val delberegningUtgift: DelberegningUtgift? = null,
+    val maksGodkjentBeløp: BigDecimal? = null,
     val resultat: BigDecimal,
     val resultatKode: Resultatkode,
     val antallBarnIHusstanden: Double? = null,

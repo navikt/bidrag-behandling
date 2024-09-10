@@ -55,6 +55,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningSærbidr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SærbidragskategoriGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftDirekteBetaltGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftMaksGodkjentBeløpGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftspostGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
@@ -175,8 +176,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 103 grunnlag") {
-                request.grunnlagListe shouldHaveSize 103
+            withClue("Grunnlagliste skal inneholde 104 grunnlag") {
+                request.grunnlagListe shouldHaveSize 104
             }
         }
 
@@ -236,6 +237,12 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 val innhold = innholdTilObjekt<SærbidragskategoriGrunnlag>().first()
                 innhold.kategori shouldBe Særbidragskategori.KONFIRMASJON
                 innhold.beskrivelse shouldBe null
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.UTGIFT_MAKS_GODKJENT_BELØP)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<UtgiftMaksGodkjentBeløpGrunnlag>().first()
+                innhold.beløp shouldBe BigDecimal(100)
+                innhold.kommentar shouldBe "Maksbeløp"
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.UTGIFT_DIREKTE_BETALT)) {
                 shouldHaveSize(1)
@@ -407,8 +414,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 104 grunnlag") {
-                request.grunnlagListe shouldHaveSize 104
+            withClue("Grunnlagliste skal inneholde 105 grunnlag") {
+                request.grunnlagListe shouldHaveSize 105
             }
         }
 
@@ -942,8 +949,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 12 grunnlag") {
-                request.grunnlagListe shouldHaveSize 12
+            withClue("Grunnlagliste skal inneholde 13 grunnlag") {
+                request.grunnlagListe shouldHaveSize 13
             }
             val sluttberegningSærbidrag = hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG)
 
