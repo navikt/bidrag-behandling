@@ -11,6 +11,7 @@ import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
+import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
@@ -27,6 +28,7 @@ import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
@@ -130,6 +132,17 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.utgift!!.maksGodkjentBeløp = null
+        behandling.utgift!!.utgiftsposter.add(
+            Utgiftspost(
+                dato = LocalDate.now().minusDays(3),
+                type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                kravbeløp = BigDecimal(3000),
+                godkjentBeløp = BigDecimal(2500),
+                kommentar = "Trekker fra alkohol",
+                utgift = behandling.utgift!!,
+            ),
+        )
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.grunnlag =
@@ -188,6 +201,9 @@ class BeregningServiceTest {
             inntekter shouldHaveSize 2
             inntekter.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse } shouldNotBe null
             inntekter.find { it.gjelderReferanse == grunnlagListe.bidragsmottaker!!.referanse } shouldNotBe null
+
+            val delberegningUtgift = it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_UTGIFT).first()
+            delberegningUtgift.innholdTilObjekt<DelberegningUtgift>().sumGodkjent shouldBe BigDecimal(5000)
         }
     }
 
@@ -195,7 +211,17 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning med maks godkjent beløp`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
-        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(6000)
+        behandling.utgift!!.utgiftsposter.add(
+            Utgiftspost(
+                dato = LocalDate.now().minusDays(3),
+                type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                kravbeløp = BigDecimal(3000),
+                godkjentBeløp = BigDecimal(2500),
+                kommentar = "Trekker fra alkohol",
+                utgift = behandling.utgift!!,
+            ),
+        )
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(3000)
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.grunnlag =
@@ -220,40 +246,8 @@ class BeregningServiceTest {
         resultat.grunnlagListe shouldHaveSize 27
         beregnGrunnlagList shouldHaveSize 1
         assertSoftly(beregnGrunnlagList[0]) {
-            it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
-            it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 10
-
-            val personer =
-                it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
-            personer shouldHaveSize 4
-            personer.hentPerson(testdataBarn1.ident) shouldNotBe null
-            personer.map { it.type } shouldContainAll
-                listOf(
-                    Grunnlagstype.PERSON_SØKNADSBARN,
-                    Grunnlagstype.PERSON_BIDRAGSPLIKTIG,
-                    Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
-                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM,
-                )
-
-            val bostatuser =
-                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
-            bostatuser shouldHaveSize 3
-            val barnStatus = bostatuser.find { it.gjelderReferanse == grunnlagListe.søknadsbarn.first().referanse }
-            barnStatus!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.MED_FORELDER
-
-            val andreVoksneIHusstanden = bostatuser.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse }
-            andreVoksneIHusstanden!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.BOR_MED_ANDRE_VOKSNE
-
-            val sivilstand =
-                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE)
-            sivilstand shouldHaveSize 0
-
-            val inntekter =
-                it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
-            inntekter shouldHaveSize 2
-            inntekter.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse } shouldNotBe null
-            inntekter.find { it.gjelderReferanse == grunnlagListe.bidragsmottaker!!.referanse } shouldNotBe null
+            val delberegningUtgift = it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_UTGIFT).first()
+            delberegningUtgift.innholdTilObjekt<DelberegningUtgift>().sumGodkjent shouldBe BigDecimal(3000)
         }
     }
 
