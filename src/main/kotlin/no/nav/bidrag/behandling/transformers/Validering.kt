@@ -191,25 +191,15 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
         feilliste.add("Type kan ikke settes hvis behandling har kategori ${behandling.særbidragKategori}")
     }
 
-    when (behandling.særbidragKategori) {
-        Særbidragskategori.KONFIRMASJON -> {
-            if (type?.tilUtgiftstype()?.kategori != Særbidragskategori.KONFIRMASJON) {
-                feilliste.add(
-                    "Type $type er ikke gyldig for" +
-                        " behandling med kategori ${Særbidragskategori.KONFIRMASJON}",
-                )
-            }
-        }
-
-        else -> {
-            if (betaltAvBp) {
-                feilliste.add(
-                    "Kan ikke legge til utgift betalt av BP for " +
-                        "særbidrag behandling som ikke har kategori ${Særbidragskategori.KONFIRMASJON}",
-                )
-            }
+    if (behandling.særbidragKategori == Særbidragskategori.KONFIRMASJON) {
+        if (type?.tilUtgiftstype()?.kategori != Særbidragskategori.KONFIRMASJON) {
+            feilliste.add(
+                "Type $type er ikke gyldig for" +
+                    " behandling med kategori ${Særbidragskategori.KONFIRMASJON}",
+            )
         }
     }
+
     return feilliste
 }
 

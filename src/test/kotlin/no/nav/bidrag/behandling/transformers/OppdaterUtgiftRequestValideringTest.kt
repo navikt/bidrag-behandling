@@ -15,6 +15,7 @@ import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
@@ -239,6 +240,7 @@ class OppdaterUtgiftRequestValideringTest {
     }
 
     @Test
+    @Disabled("Denne valideringen er fjernet da det skal være mulig å sette betalt av BP for alle kategorier")
     fun `skal ikke kunne legge til utgift for bp hvis kategori ikke er konfirmasjon`() {
         val behandling = opprettBehandlingSærligeUtgifter()
         behandling.kategori = Særbidragskategori.OPTIKK.name

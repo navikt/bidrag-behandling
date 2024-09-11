@@ -138,6 +138,7 @@ fun Utgift.tilTotalBeregningDto() =
 
 fun Utgift.tilMaksGodkjentBeløpDto() =
     MaksGodkjentBeløpDto(
+        taMed = maksGodkjentBeløp != null,
         beløp = maksGodkjentBeløp,
         kommentar = maksGodkjentBeløpKommentar,
     )
