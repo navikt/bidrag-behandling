@@ -139,7 +139,7 @@ fun Behandling.byggGrunnlagUtgiftMaksGodkjentBeløp() =
                     POJONode(
                         UtgiftMaksGodkjentBeløpGrunnlag(
                             beløp = it,
-                            kommentar = utgift!!.maksGodkjentBeløpKommentar!!,
+                            begrunnelse = utgift!!.maksGodkjentBeløpBegrunnelse!!,
                         ),
                     ),
             ),

@@ -156,7 +156,7 @@ class VedtakTilBehandlingSærbidragTest {
             assertSoftly(utgift!!) {
                 beløpDirekteBetaltAvBp shouldBe BigDecimal(500)
                 maksGodkjentBeløp shouldBe BigDecimal(15000)
-                maksGodkjentBeløpKommentar shouldBe "Dette er kommentar"
+                maksGodkjentBeløpBegrunnelse shouldBe "Dette er kommentar"
                 utgiftsposter shouldHaveSize 3
             }
         }
@@ -277,7 +277,7 @@ class VedtakTilBehandlingSærbidragTest {
             assertSoftly(utgift!!) {
                 beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
                 maksGodkjentBeløp shouldBe null
-                maksGodkjentBeløpKommentar shouldBe null
+                maksGodkjentBeløpBegrunnelse shouldBe null
                 utgiftsposter shouldHaveSize 2
                 assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2024-05-08") }!!) {
                     kravbeløp shouldBe BigDecimal(5000)
@@ -598,7 +598,7 @@ class VedtakTilBehandlingSærbidragTest {
         assertSoftly(utgift!!) {
             beløpDirekteBetaltAvBp shouldBe BigDecimal(2500)
             maksGodkjentBeløp shouldBe null
-            maksGodkjentBeløpKommentar shouldBe null
+            maksGodkjentBeløpBegrunnelse shouldBe null
             utgiftsposter shouldHaveSize 3
             assertSoftly(utgiftsposter.find { it.type == "Ny høreapparat" }!!) {
                 kravbeløp shouldBe BigDecimal(9000)

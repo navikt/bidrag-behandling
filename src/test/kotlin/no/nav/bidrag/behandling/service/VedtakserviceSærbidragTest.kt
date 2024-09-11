@@ -340,7 +340,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
         behandling.utgift!!.maksGodkjentBeløp = BigDecimal(4000)
-        behandling.utgift!!.maksGodkjentBeløpKommentar = "Maks godkjent beløp"
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
@@ -429,7 +429,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 shouldHaveSize(1)
                 val innhold = innholdTilObjekt<UtgiftMaksGodkjentBeløpGrunnlag>().first()
                 innhold.beløp shouldBe BigDecimal(4000)
-                innhold.kommentar shouldBe "Maks godkjent beløp"
+                innhold.begrunnelse shouldBe "Maks godkjent beløp"
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_UTGIFT)) {
                 shouldHaveSize(1)

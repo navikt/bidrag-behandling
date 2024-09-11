@@ -98,10 +98,10 @@ class UtgiftService(
         if (request.maksGodkjentBeløp == null) return
         if (request.maksGodkjentBeløp.taMed) {
             maksGodkjentBeløp = request.maksGodkjentBeløp.beløp
-            maksGodkjentBeløpKommentar = request.maksGodkjentBeløp.kommentar
+            maksGodkjentBeløpBegrunnelse = request.maksGodkjentBeløp.begrunnelse
         } else {
             maksGodkjentBeløp = null
-            maksGodkjentBeløpKommentar = null
+            maksGodkjentBeløpBegrunnelse = null
         }
     }
 

@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
+import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
@@ -69,6 +70,7 @@ import no.nav.bidrag.transport.notat.NotatBoforholdDto
 import no.nav.bidrag.transport.notat.NotatInntektDto
 import no.nav.bidrag.transport.notat.NotatInntekterDto
 import no.nav.bidrag.transport.notat.NotatInntektspostDto
+import no.nav.bidrag.transport.notat.NotatMaksGodkjentBeløpDto
 import no.nav.bidrag.transport.notat.NotatMalType
 import no.nav.bidrag.transport.notat.NotatResultatForskuddBeregningBarnDto
 import no.nav.bidrag.transport.notat.NotatResultatSærbidragsberegningDto
@@ -76,6 +78,7 @@ import no.nav.bidrag.transport.notat.NotatRolleDto
 import no.nav.bidrag.transport.notat.NotatSivilstand
 import no.nav.bidrag.transport.notat.NotatSærbidragKategoriDto
 import no.nav.bidrag.transport.notat.NotatSærbidragUtgifterDto
+import no.nav.bidrag.transport.notat.NotatTotalBeregningUtgifterDto
 import no.nav.bidrag.transport.notat.NotatUtgiftBeregningDto
 import no.nav.bidrag.transport.notat.NotatUtgiftspostDto
 import no.nav.bidrag.transport.notat.NotatVedtakDetaljerDto
@@ -416,6 +419,22 @@ private fun SærbidragUtgifterDto.tilNotatUtgiftDto(behandling: Behandling) =
                 gjelder = behandling.bidragsmottaker!!.tilNotatRolle(),
             ),
         utgifter = utgifter.map { it.tilNotatDto() },
+        maksGodkjentBeløp =
+            maksGodkjentBeløp?.let {
+                NotatMaksGodkjentBeløpDto(
+                    taMed = it.taMed,
+                    beløp = it.beløp,
+                    begrunnelse = it.begrunnelse,
+                )
+            },
+        totalBeregning = totalBeregning.map { it.tilNotatDto() },
+    )
+
+private fun TotalBeregningUtgifterDto.tilNotatDto() =
+    NotatTotalBeregningUtgifterDto(
+        utgiftstype,
+        totalKravbeløp,
+        totalGodkjentBeløp,
     )
 
 private fun UtgiftspostDto.tilNotatDto() =

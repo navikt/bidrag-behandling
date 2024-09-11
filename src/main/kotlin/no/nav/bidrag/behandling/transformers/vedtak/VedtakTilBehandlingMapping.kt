@@ -285,7 +285,7 @@ private fun List<GrunnlagDto>.mapUtgifter(
             behandling,
             beløpDirekteBetaltAvBp = utgiftDirekteBetalt!!.beløpDirekteBetalt,
             maksGodkjentBeløp = utgiftMaksGodkjentBeløp?.beløp,
-            maksGodkjentBeløpKommentar = utgiftMaksGodkjentBeløp?.kommentar,
+            maksGodkjentBeløpBegrunnelse = utgiftMaksGodkjentBeløp?.begrunnelse,
         )
     utgift.utgiftsposter =
         utgiftsposter

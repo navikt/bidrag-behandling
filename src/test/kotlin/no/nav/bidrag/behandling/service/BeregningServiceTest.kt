@@ -222,7 +222,7 @@ class BeregningServiceTest {
             ),
         )
         behandling.utgift!!.maksGodkjentBeløp = BigDecimal(3000)
-        behandling.utgift!!.maksGodkjentBeløpKommentar = "Maks godkjent beløp"
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.grunnlag =

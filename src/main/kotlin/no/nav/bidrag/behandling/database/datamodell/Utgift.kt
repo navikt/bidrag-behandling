@@ -32,7 +32,7 @@ open class Utgift(
     open var utgiftsposter: MutableSet<Utgiftspost> = mutableSetOf(),
     open var beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
     open var maksGodkjentBeløp: BigDecimal? = null,
-    open var maksGodkjentBeløpKommentar: String? = null,
+    open var maksGodkjentBeløpBegrunnelse: String? = null,
     @Column(name = "forrige_historikk", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var forrigeUtgiftsposterHistorikk: String? = null,
@@ -45,7 +45,7 @@ open class Utgift(
             ) ?: ""
         return "Utgift(id=$id, behandlingId=${behandling.id}, beløpBetaltAvBp=$beløpDirekteBetaltAvBp, " +
             " utgiftsposter(size)=${utgiftsposter.size}, maksGodkjentBeløp=$maksGodkjentBeløp, " +
-            "maksGodkjentBeløpKommentar=$maksGodkjentBeløpKommentar" +
+            "maksGodkjentBeløpBegrunnelse=$maksGodkjentBeløpBegrunnelse" +
             "forrigeUtgiftsposterHistorikk=$forrigeHistorikkString...)"
     }
 }

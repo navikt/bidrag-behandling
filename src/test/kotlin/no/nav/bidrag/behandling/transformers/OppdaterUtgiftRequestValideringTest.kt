@@ -385,7 +385,7 @@ class OppdaterUtgiftRequestValideringTest {
                 maksGodkjentBeløp =
                     MaksGodkjentBeløpDto(
                         beløp = BigDecimal(-100),
-                        kommentar = "Test",
+                        begrunnelse = "Test",
                     ),
             )
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }

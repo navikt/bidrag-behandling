@@ -548,7 +548,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 maksGodkjentBeløp =
                     MaksGodkjentBeløpDto(
                         beløp = BigDecimal(6000),
-                        kommentar = "Kommentar maks godkjent",
+                        begrunnelse = "Kommentar maks godkjent",
                     ),
             )
         val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
@@ -558,11 +558,11 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         assertSoftly(response.maksGodkjentBeløp!!) {
             beløp shouldBe BigDecimal(6000)
-            kommentar shouldBe "Kommentar maks godkjent"
+            begrunnelse shouldBe "Kommentar maks godkjent"
         }
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
         behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(6000)
-        behandlingEtter!!.utgift!!.maksGodkjentBeløpKommentar shouldBe "Kommentar maks godkjent"
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe "Kommentar maks godkjent"
     }
 
     @Test
@@ -574,7 +574,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 behandling = behandling,
             )
         behandling.utgift!!.maksGodkjentBeløp = BigDecimal(100)
-        behandling.utgift!!.maksGodkjentBeløpKommentar = "Dette er kommentar"
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Dette er kommentar"
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
@@ -610,11 +610,11 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         assertSoftly(response.maksGodkjentBeløp!!) {
             beløp shouldBe null
-            kommentar shouldBe null
+            begrunnelse shouldBe null
         }
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
         behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe null
-        behandlingEtter!!.utgift!!.maksGodkjentBeløpKommentar shouldBe null
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe null
     }
 
     @Test
@@ -626,7 +626,7 @@ class UtgiftserviceTest : TestContainerRunner() {
                 behandling = behandling,
             )
         behandling.utgift!!.maksGodkjentBeløp = BigDecimal(6000)
-        behandling.utgift!!.maksGodkjentBeløpKommentar = "Dette er kommentar"
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Dette er kommentar"
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
@@ -659,11 +659,11 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         assertSoftly(response.maksGodkjentBeløp!!) {
             beløp shouldBe BigDecimal(6000)
-            kommentar shouldBe "Dette er kommentar"
+            begrunnelse shouldBe "Dette er kommentar"
         }
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
         behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(6000)
-        behandlingEtter!!.utgift!!.maksGodkjentBeløpKommentar shouldBe "Dette er kommentar"
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe "Dette er kommentar"
     }
 
     @Test

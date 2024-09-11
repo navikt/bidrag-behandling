@@ -118,7 +118,7 @@ class ValiderBeregningSærbidragTest {
     fun `skal feile validering hvis utgift maks godkjent beløp ikke er satt`() {
         val behandling = opprettGyldigBehandling()
         behandling.utgift!!.maksGodkjentBeløp = BigDecimal(10000)
-        behandling.utgift!!.maksGodkjentBeløpKommentar = null
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = null
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningSærbidrag() }
 
         resultat.message shouldContain "Feil ved validering av behandling for beregning av særbidrag"
