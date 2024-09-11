@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
@@ -13,11 +14,13 @@ import no.nav.bidrag.behandling.database.repository.UtgiftRepository
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.web.client.HttpClientErrorException
@@ -40,6 +43,7 @@ class UtgiftserviceMockTest {
 
     @BeforeEach
     fun initMock() {
+        stubSjablonProvider()
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository)
         every { utgiftRepository.save<Utgift>(any()) } answers {
             val utgift = firstArg<Utgift>()
@@ -54,11 +58,12 @@ class UtgiftserviceMockTest {
     fun opprettBehandlingSærbidrag(): Behandling {
         val behandling = oppretteBehandling(1)
         behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
+        behandling.roller.addAll(oppretteBehandlingRoller(behandling, typeBehandling = TypeBehandling.SÆRBIDRAG))
         return behandling
     }
 
     @Test
-    fun `skal ikke kunne sette utgiftspost betalt av BP hvis engangsbeløptype ikke er av typen konfirmasjon `() {
+    fun `skal kunne sette utgiftspost betalt av BP hvis engangsbeløptype ikke er av typen konfirmasjon `() {
         val behandling = opprettBehandlingSærbidrag()
         behandling.kategori = Særbidragskategori.OPTIKK.name
         behandling.utgift =
@@ -91,11 +96,7 @@ class UtgiftserviceMockTest {
                         betaltAvBp = true,
                     ),
             )
-        val exception =
-            shouldThrow<HttpClientErrorException> { utgiftService.oppdatereUtgift(behandling.id!!, forespørsel) }
-
-        exception.message shouldContain
-            "Kan ikke legge til utgift betalt av BP for særbidrag behandling som ikke har kategori KONFIRMASJON"
+        shouldNotThrow<HttpClientErrorException> { utgiftService.oppdatereUtgift(behandling.id!!, forespørsel) }
     }
 
     @Test
@@ -137,7 +138,4 @@ class UtgiftserviceMockTest {
 
         exception.message shouldContain "Type kan ikke settes hvis behandling har kategori OPTIKK"
     }
-
-    @Nested
-    inner class OppdaterUtgiftRequestValideringTest
 }

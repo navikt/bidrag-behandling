@@ -3255,7 +3255,7 @@
       "type": "UTGIFT_MAKS_GODKJENT_BELØP",
       "innhold": {
         "beløp": 15000,
-        "kommentar": "Dette er kommentar"
+        "begrunnelse": "Dette er kommentar"
       },
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null
