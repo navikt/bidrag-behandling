@@ -125,10 +125,11 @@ fun Behandling.tilUtgiftDto() =
 fun Utgift.tilTotalBeregningDto() =
     utgiftsposter
         .groupBy {
-            it.type
-        }.map { (type, utgifter) ->
+            Pair(it.type, it.betaltAvBp)
+        }.map { (gruppe, utgifter) ->
             TotalBeregningUtgifterDto(
-                type,
+                betaltAvBp = gruppe.second,
+                utgiftstype = gruppe.first,
                 utgifter.sumOf {
                     it.kravbeløp
                 },

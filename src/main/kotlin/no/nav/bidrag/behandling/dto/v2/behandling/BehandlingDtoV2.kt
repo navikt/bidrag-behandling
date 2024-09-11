@@ -132,6 +132,7 @@ data class SærbidragUtgifterDto(
 }
 
 data class TotalBeregningUtgifterDto(
+    val betaltAvBp: Boolean,
     val utgiftstype: String,
     val totalKravbeløp: BigDecimal,
     val totalGodkjentBeløp: BigDecimal,
