@@ -973,16 +973,22 @@ class GrunnlagService(
             val feilrapportering = feilliste[type]
 
             if (feilrapportering != null) {
-                log.warn {
-                    "Feil ved innhenting av grunnlagstype $type for rolle ${rolleInhentetFor.rolletype} " +
-                        "i behandling ${behandling.id}. Lagrer ikke sammenstilte inntekter. Feilmelding: " +
+                if (feilrapportering.feiltype != HentGrunnlagFeiltype.FUNKSJONELL_FEIL &&
+                    årsbaserteInntekterEllerYtelser?.inntekter?.isEmpty() != false
+                ) {
+                    log.warn {
+                        "Feil ved innhenting av grunnlagstype $type for rolle ${rolleInhentetFor.rolletype} " +
+                            "i behandling ${behandling.id}. Lagrer ikke sammenstilte inntekter. Feilmelding: " +
+                            feilrapportering.feilmelding
+                    }
+                    return@forEach
+                }
+                log.info {
+                    "Ignorerer funksjonell feil ved grunnlagsinnhenting av grunnlag $type for rolle " +
+                        "${rolleInhentetFor.rolletype} i behandling ${behandling.id}. Feilmelding: " +
                         feilrapportering.feilmelding
                 }
-                return@forEach
             }
-
-            val tekniskFeilVedHentingAvInntekter: Boolean =
-                feilliste[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]?.feiltype == HentGrunnlagFeiltype.TEKNISK_FEIL
 
             @Suppress("UNCHECKED_CAST")
             if (inntekterOgYtelser.contains(type)) {
@@ -1356,12 +1362,11 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime? = null,
         tekniskFeilsjekk: Boolean = false,
     ) {
-        val sistInnhentedeGrunnlagAvType: T? = behandling.hentSisteInnhentetGrunnlag(grunnlagstype, rolle)
+        val sistInnhentedeGrunnlagAvType: T? = behandling.hentSisteInnhentaGrunnlag(grunnlagstype, rolle)
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, rolle)
 
-        val erAvTypeBearbeidetSivilstand = Grunnlagstype(Grunnlagsdatatype.SIVILSTAND, true) == grunnlagstype
         val erFørstegangsinnhentingAvInntekter =
-            sistInnhentedeGrunnlagAvType == null && (inneholderInntekter(innhentetGrunnlag) || erAvTypeBearbeidetSivilstand)
+            sistInnhentedeGrunnlagAvType == null && inneholderInntekter(innhentetGrunnlag)
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
 
@@ -1382,7 +1387,7 @@ class GrunnlagService(
                     },
                 idTilRolleInnhentetFor = rolle.id!!,
             )
-            if (grunnlagstype.erBearbeidet) {
+            if (grunnlagstype.erBearbeidet && aktiveringstidspunkt != null) {
                 aktivereSisteInnhentedeRådata(grunnlagstype.type, rolle, behandling)
             }
             // Oppdatere inntektstabell med sammenstilte offentlige inntekter
@@ -1486,7 +1491,7 @@ class GrunnlagService(
             }?.let { commonObjectmapper.readValue<Set<T>>(it.data) }
             ?.toSet() ?: emptySet()
 
-    private inline fun <reified T> Behandling.hentSisteInnhentetGrunnlag(
+    private inline fun <reified T> Behandling.hentSisteInnhentaGrunnlag(
         grunnlagstype: Grunnlagstype,
         rolle: Rolle,
     ): T? =

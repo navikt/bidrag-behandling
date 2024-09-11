@@ -5,14 +5,20 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.validering.barnIdent
 import no.nav.bidrag.behandling.transformers.validering.bmIdent
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
+import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -215,6 +221,44 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
             resultatBarn.shouldHaveSize(5)
+        }
+
+        @Test
+        fun `skal vise endring dersom beløp oppdateres`() {
+            // gitt
+            val behandling = byggBehandling()
+
+            val bmsInntektsgrunnlag =
+                behandling.grunnlag
+                    .filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet }
+                    .filter { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }
+
+            val ligningsinntekt =
+                bmsInntektsgrunnlag
+                    .first()
+                    .konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
+                    ?.inntekter
+                    ?.filter {
+                        Inntektsrapportering.LIGNINGSINNTEKT ==
+                            it.inntektRapportering
+                    }?.maxBy { it.periode.fom }
+
+            val endretInntekt =
+                ligningsinntekt
+                    ?.copy(sumInntekt = BigDecimal(800000))
+                    ?.tilInntekt(behandling, Personident(behandling.bidragsmottaker!!.ident!!))
+
+            // hvis
+            val resultat =
+                behandling.grunnlag.toList().hentEndringerInntekter(
+                    behandling.bidragsmottaker!!,
+                    setOf(endretInntekt!!),
+                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                )
+
+            // så
+            resultat.shouldHaveSize(5)
+            resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }.shouldHaveSize(1)
         }
 
         @Test
