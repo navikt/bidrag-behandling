@@ -432,6 +432,7 @@ private fun SærbidragUtgifterDto.tilNotatUtgiftDto(behandling: Behandling) =
 
 private fun TotalBeregningUtgifterDto.tilNotatDto() =
     NotatTotalBeregningUtgifterDto(
+        betaltAvBp,
         utgiftstype,
         totalKravbeløp,
         totalGodkjentBeløp,
