@@ -7,10 +7,13 @@ import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
+import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
+import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
+import no.nav.bidrag.behandling.dto.v2.validering.MaksGodkjentBeløpValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
@@ -65,7 +68,17 @@ fun Utgift?.hentValideringsfeil() =
                 ).validerUtgiftspost(behandling).isNotEmpty()
             } ?: false,
         manglerUtgifter = this == null || utgiftsposter.isEmpty(),
+        maksGodkjentBeløp = this?.validerMaksGodkjentBeløp(),
     ).takeIf { it.harFeil }
+
+fun Utgift.validerMaksGodkjentBeløp() =
+    if (maksGodkjentBeløp != null && maksGodkjentBeløpBegrunnelse.isNullOrEmpty()) {
+        MaksGodkjentBeløpValideringsfeil(
+            manglerKommentar = maksGodkjentBeløpBegrunnelse.isNullOrEmpty(),
+        )
+    } else {
+        null
+    }
 
 fun Behandling.tilUtgiftDto() =
     utgift?.let { utgift ->
@@ -76,12 +89,14 @@ fun Behandling.tilUtgiftDto() =
                 kategori = tilSærbidragKategoriDto(),
                 begrunnelse = BegrunnelseDto(henteNotatinnhold(this, Notattype.UTGIFTER) ?: ""),
                 valideringsfeil = valideringsfeil,
+                totalBeregning = utgift.tilTotalBeregningDto(),
             )
         } else {
             SærbidragUtgifterDto(
                 avslag = tilSærbidragAvslagskode(),
                 beregning = utgift.tilBeregningDto(),
                 kategori = tilSærbidragKategoriDto(),
+                maksGodkjentBeløp = utgift.tilMaksGodkjentBeløpDto(),
                 begrunnelse =
                     BegrunnelseDto(
                         innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
@@ -89,6 +104,7 @@ fun Behandling.tilUtgiftDto() =
                     ),
                 utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
                 valideringsfeil = valideringsfeil,
+                totalBeregning = utgift.tilTotalBeregningDto(),
             )
         }
     } ?: if (erSærbidrag()) {
@@ -106,6 +122,28 @@ fun Behandling.tilUtgiftDto() =
         null
     }
 
+fun Utgift.tilTotalBeregningDto() =
+    utgiftsposter
+        .groupBy {
+            Pair(it.type, it.betaltAvBp)
+        }.map { (gruppe, utgifter) ->
+            TotalBeregningUtgifterDto(
+                betaltAvBp = gruppe.second,
+                utgiftstype = gruppe.first,
+                utgifter.sumOf {
+                    it.kravbeløp
+                },
+                utgifter.sumOf { it.godkjentBeløp },
+            )
+        }
+
+fun Utgift.tilMaksGodkjentBeløpDto() =
+    MaksGodkjentBeløpDto(
+        taMed = maksGodkjentBeløp != null,
+        beløp = maksGodkjentBeløp,
+        begrunnelse = maksGodkjentBeløpBegrunnelse,
+    )
+
 fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
     if (behandling.avslag != null) {
         OppdatereUtgiftResponse(
@@ -118,9 +156,11 @@ fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
             avslag = behandling.tilSærbidragAvslagskode(),
             oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
             utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
+            maksGodkjentBeløp = tilMaksGodkjentBeløpDto(),
             begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
             beregning = tilBeregningDto(),
             valideringsfeil = behandling.utgift.hentValideringsfeil(),
+            totalBeregning = behandling.utgift?.tilTotalBeregningDto() ?: emptyList(),
         )
     }
 

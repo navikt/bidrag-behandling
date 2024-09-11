@@ -147,6 +147,22 @@ class VedtakTilBehandlingSærbidragTest {
     }
 
     @Test
+    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG maks godkjent beløp`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag_maksbeløp")
+        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
+
+        assertSoftly(behandling) {
+            utgift shouldNotBe null
+            assertSoftly(utgift!!) {
+                beløpDirekteBetaltAvBp shouldBe BigDecimal(500)
+                maksGodkjentBeløp shouldBe BigDecimal(15000)
+                maksGodkjentBeløpBegrunnelse shouldBe "Dette er kommentar"
+                utgiftsposter shouldHaveSize 3
+            }
+        }
+    }
+
+    @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med klage mottatt dato`() {
         val originalVedtak = lagVedtaksdata("vedtak_response-særbidrag")
         val vedtak1 =
@@ -260,6 +276,8 @@ class VedtakTilBehandlingSærbidragTest {
             utgift shouldNotBe null
             assertSoftly(utgift!!) {
                 beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
+                maksGodkjentBeløp shouldBe null
+                maksGodkjentBeløpBegrunnelse shouldBe null
                 utgiftsposter shouldHaveSize 2
                 assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2024-05-08") }!!) {
                     kravbeløp shouldBe BigDecimal(5000)
@@ -494,6 +512,7 @@ class VedtakTilBehandlingSærbidragTest {
             delberegningUtgift!!.sumGodkjent shouldBe BigDecimal(9000)
             delberegningUtgift.sumBetaltAvBp shouldBe BigDecimal(2500)
             beløpSomInnkreves shouldBe BigDecimal(3296)
+            maksGodkjentBeløp shouldBe null
         }
     }
 
@@ -578,6 +597,8 @@ class VedtakTilBehandlingSærbidragTest {
         utgift shouldNotBe null
         assertSoftly(utgift!!) {
             beløpDirekteBetaltAvBp shouldBe BigDecimal(2500)
+            maksGodkjentBeløp shouldBe null
+            maksGodkjentBeløpBegrunnelse shouldBe null
             utgiftsposter shouldHaveSize 3
             assertSoftly(utgiftsposter.find { it.type == "Ny høreapparat" }!!) {
                 kravbeløp shouldBe BigDecimal(9000)

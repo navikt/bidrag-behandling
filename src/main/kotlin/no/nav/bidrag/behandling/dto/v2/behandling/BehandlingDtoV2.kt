@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
+import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -118,15 +119,24 @@ data class SærbidragUtgifterDto(
     val avslag: Resultatkode? = null,
     val kategori: SærbidragKategoriDto,
     val beregning: UtgiftBeregningDto? = null,
+    val maksGodkjentBeløp: MaksGodkjentBeløpDto? = null,
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
     val begrunnelse: BegrunnelseDto,
     val utgifter: List<UtgiftspostDto> = emptyList(),
     val valideringsfeil: UtgiftValideringsfeilDto?,
+    val totalBeregning: List<TotalBeregningUtgifterDto> = emptyList(),
 ) {
     @Deprecated("Erstattes av begrunnelse")
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
     val notat: BegrunnelseDto = begrunnelse
 }
+
+data class TotalBeregningUtgifterDto(
+    val betaltAvBp: Boolean,
+    val utgiftstype: String,
+    val totalKravbeløp: BigDecimal,
+    val totalGodkjentBeløp: BigDecimal,
+)
 
 data class SærbidragKategoriDto(
     val kategori: Særbidragskategori,

@@ -11,6 +11,7 @@ import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
+import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
@@ -27,6 +28,7 @@ import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
@@ -42,6 +44,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -129,6 +132,17 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.utgift!!.maksGodkjentBeløp = null
+        behandling.utgift!!.utgiftsposter.add(
+            Utgiftspost(
+                dato = LocalDate.now().minusDays(3),
+                type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                kravbeløp = BigDecimal(3000),
+                godkjentBeløp = BigDecimal(2500),
+                kommentar = "Trekker fra alkohol",
+                utgift = behandling.utgift!!,
+            ),
+        )
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.grunnlag =
@@ -187,6 +201,54 @@ class BeregningServiceTest {
             inntekter shouldHaveSize 2
             inntekter.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse } shouldNotBe null
             inntekter.find { it.gjelderReferanse == grunnlagListe.bidragsmottaker!!.referanse } shouldNotBe null
+
+            val delberegningUtgift = it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_UTGIFT).first()
+            delberegningUtgift.innholdTilObjekt<DelberegningUtgift>().sumGodkjent shouldBe BigDecimal(5000)
+        }
+    }
+
+    @Test
+    fun `skal bygge grunnlag for særbidrag beregning med maks godkjent beløp`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
+        behandling.utgift!!.utgiftsposter.add(
+            Utgiftspost(
+                dato = LocalDate.now().minusDays(3),
+                type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                kravbeløp = BigDecimal(3000),
+                godkjentBeløp = BigDecimal(2500),
+                kommentar = "Trekker fra alkohol",
+                utgift = behandling.utgift!!,
+            ),
+        )
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(3000)
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
+        behandling.vedtakstype = Vedtakstype.FASTSETTELSE
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
+        mockkConstructor(BeregnSærbidragApi::class)
+        every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
+        val resultat = BeregningService(behandlingService).beregneSærbidrag(1)
+        val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
+
+        verify(exactly = 1) {
+            BeregnSærbidragApi().beregn(any(), any())
+        }
+        resultat shouldNotBe null
+        vedtaksTypeCapture.captured shouldBe Vedtakstype.FASTSETTELSE
+        resultat.grunnlagListe shouldHaveSize 27
+        beregnGrunnlagList shouldHaveSize 1
+        assertSoftly(beregnGrunnlagList[0]) {
+            val delberegningUtgift = it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_UTGIFT).first()
+            delberegningUtgift.innholdTilObjekt<DelberegningUtgift>().sumGodkjent shouldBe BigDecimal(3000)
         }
     }
 

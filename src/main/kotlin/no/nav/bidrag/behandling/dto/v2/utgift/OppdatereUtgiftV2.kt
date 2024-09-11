@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.PositiveOrZero
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
+import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
@@ -20,6 +21,7 @@ data class OppdatereUtgiftRequest(
     )
     val avslag: Resultatkode? = null,
     val beløpDirekteBetaltAvBp: BigDecimal? = null,
+    val maksGodkjentBeløp: MaksGodkjentBeløpDto? = null,
     @Schema(
         description =
             "Legg til eller endre en utgift. Utgift kan ikke endres eller oppdateres hvis avslag er satt",
@@ -44,6 +46,12 @@ data class OppdatereUtgiftRequest(
     fun henteOppdatereNotat(): OppdatereBegrunnelse? = oppdatereBegrunnelse ?: notat
 }
 
+data class MaksGodkjentBeløpDto(
+    val taMed: Boolean = true,
+    val beløp: BigDecimal? = null,
+    val begrunnelse: String? = null,
+)
+
 data class OppdatereUtgiftResponse(
     @Schema(description = "Utgiftspost som ble oppdatert")
     val oppdatertUtgiftspost: UtgiftspostDto? = null,
@@ -51,8 +59,10 @@ data class OppdatereUtgiftResponse(
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
     val begrunnelse: String? = null,
     val beregning: UtgiftBeregningDto? = null,
+    val maksGodkjentBeløp: MaksGodkjentBeløpDto? = null,
     val avslag: Resultatkode? = null,
     val valideringsfeil: UtgiftValideringsfeilDto?,
+    val totalBeregning: List<TotalBeregningUtgifterDto> = emptyList(),
 ) {
     @Deprecated("Erstattes av begrunnelse")
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)

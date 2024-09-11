@@ -43,6 +43,7 @@ class UtgiftService(
         request.valider(behandling)
         val utgift = behandling.utgift ?: Utgift(behandling = behandling)
         utgift.beløpDirekteBetaltAvBp = request.beløpDirekteBetaltAvBp ?: utgift.beløpDirekteBetaltAvBp
+        utgift.oppdaterMaksGodkjentBeløp(request)
         request.henteOppdatereNotat()?.let {
             notatService.oppdatereNotat(
                 behandling,
@@ -91,6 +92,17 @@ class UtgiftService(
         }
 
         return utgift.tilUtgiftResponse()
+    }
+
+    private fun Utgift.oppdaterMaksGodkjentBeløp(request: OppdatereUtgiftRequest) {
+        if (request.maksGodkjentBeløp == null) return
+        if (request.maksGodkjentBeløp.taMed) {
+            maksGodkjentBeløp = request.maksGodkjentBeløp.beløp
+            maksGodkjentBeløpBegrunnelse = request.maksGodkjentBeløp.begrunnelse
+        } else {
+            maksGodkjentBeløp = null
+            maksGodkjentBeløpBegrunnelse = null
+        }
     }
 
     private fun Utgift.lagreHistorikk() {

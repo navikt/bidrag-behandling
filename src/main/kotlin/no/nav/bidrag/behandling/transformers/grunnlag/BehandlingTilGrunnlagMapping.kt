@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_delberegning_utgift
 import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_direkte_betalt
+import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_maks_godkjent_beløp
 import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
@@ -166,10 +167,17 @@ fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
                             finnBeregnTilDato(virkningstidspunkt!!),
                         ),
                     sumBetaltAvBp = beregningUtgifter.totalBeløpBetaltAvBp,
-                    sumGodkjent = beregningUtgifter.totalGodkjentBeløp,
+                    sumGodkjent =
+                        utgift!!.maksGodkjentBeløp?.let { minOf(beregningUtgifter.totalGodkjentBeløp, it) }
+                            ?: beregningUtgifter.totalGodkjentBeløp,
                 ),
             ),
-        grunnlagsreferanseListe = listOf(grunnlagsreferanse_utgiftsposter, grunnlagsreferanse_utgift_direkte_betalt),
+        grunnlagsreferanseListe =
+            listOfNotNull(
+                grunnlagsreferanse_utgiftsposter,
+                grunnlagsreferanse_utgift_direkte_betalt,
+                utgift!!.maksGodkjentBeløp?.let { grunnlagsreferanse_utgift_maks_godkjent_beløp },
+            ),
     )
 }
 
