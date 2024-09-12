@@ -97,11 +97,11 @@ class UtgiftService(
     private fun Utgift.oppdaterMaksGodkjentBeløp(request: OppdatereUtgiftRequest) {
         if (request.maksGodkjentBeløp == null) return
         if (request.maksGodkjentBeløp.taMed) {
+            maksGodkjentBeløpTaMed = true
             maksGodkjentBeløp = request.maksGodkjentBeløp.beløp
             maksGodkjentBeløpBegrunnelse = request.maksGodkjentBeløp.begrunnelse
         } else {
-            maksGodkjentBeløp = null
-            maksGodkjentBeløpBegrunnelse = null
+            maksGodkjentBeløpTaMed = false
         }
     }
 

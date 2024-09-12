@@ -557,12 +557,14 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.avslag shouldBe null
 
         assertSoftly(response.maksGodkjentBeløp!!) {
+            taMed shouldBe true
             beløp shouldBe BigDecimal(6000)
             begrunnelse shouldBe "Kommentar maks godkjent"
         }
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
         behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(6000)
         behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe "Kommentar maks godkjent"
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpTaMed shouldBe true
     }
 
     @Test
@@ -609,12 +611,14 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.avslag shouldBe null
 
         assertSoftly(response.maksGodkjentBeløp!!) {
-            beløp shouldBe null
-            begrunnelse shouldBe null
+            taMed shouldBe false
+            beløp shouldBe BigDecimal(100)
+            begrunnelse shouldBe "Dette er kommentar"
         }
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
-        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe null
-        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe null
+        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(100)
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe "Dette er kommentar"
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpTaMed shouldBe false
     }
 
     @Test

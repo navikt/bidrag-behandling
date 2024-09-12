@@ -72,10 +72,11 @@ fun Utgift?.hentValideringsfeil() =
     ).takeIf { it.harFeil }
 
 fun Utgift.validerMaksGodkjentBeløp() =
-    if (maksGodkjentBeløp != null && maksGodkjentBeløpBegrunnelse.isNullOrEmpty()) {
+    if (maksGodkjentBeløpTaMed) {
         MaksGodkjentBeløpValideringsfeil(
+            manglerBeløp = maksGodkjentBeløp == null || maksGodkjentBeløp == BigDecimal.ZERO,
             manglerKommentar = maksGodkjentBeløpBegrunnelse.isNullOrEmpty(),
-        )
+        ).takeIf { it.harFeil }
     } else {
         null
     }
@@ -139,7 +140,7 @@ fun Utgift.tilTotalBeregningDto() =
 
 fun Utgift.tilMaksGodkjentBeløpDto() =
     MaksGodkjentBeløpDto(
-        taMed = maksGodkjentBeløp != null,
+        taMed = maksGodkjentBeløpTaMed,
         beløp = maksGodkjentBeløp,
         begrunnelse = maksGodkjentBeløpBegrunnelse,
     )

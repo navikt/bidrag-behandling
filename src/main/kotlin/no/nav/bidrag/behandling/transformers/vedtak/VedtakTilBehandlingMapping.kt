@@ -284,6 +284,7 @@ private fun List<GrunnlagDto>.mapUtgifter(
         Utgift(
             behandling,
             beløpDirekteBetaltAvBp = utgiftDirekteBetalt!!.beløpDirekteBetalt,
+            maksGodkjentBeløpTaMed = utgiftMaksGodkjentBeløp != null,
             maksGodkjentBeløp = utgiftMaksGodkjentBeløp?.beløp,
             maksGodkjentBeløpBegrunnelse = utgiftMaksGodkjentBeløp?.begrunnelse,
         )

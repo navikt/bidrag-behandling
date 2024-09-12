@@ -157,6 +157,7 @@ class VedtakTilBehandlingSærbidragTest {
                 beløpDirekteBetaltAvBp shouldBe BigDecimal(500)
                 maksGodkjentBeløp shouldBe BigDecimal(15000)
                 maksGodkjentBeløpBegrunnelse shouldBe "Dette er kommentar"
+                maksGodkjentBeløpTaMed shouldBe true
                 utgiftsposter shouldHaveSize 3
             }
         }

@@ -130,7 +130,7 @@ fun Behandling.byggGrunnlagUtgiftsposter() =
     )
 
 fun Behandling.byggGrunnlagUtgiftMaksGodkjentBeløp() =
-    utgift!!.maksGodkjentBeløp?.let {
+    utgift!!.maksGodkjentBeløpTaMed.ifTrue {
         setOf(
             GrunnlagDto(
                 referanse = grunnlagsreferanse_utgift_maks_godkjent_beløp,
@@ -138,7 +138,7 @@ fun Behandling.byggGrunnlagUtgiftMaksGodkjentBeløp() =
                 innhold =
                     POJONode(
                         UtgiftMaksGodkjentBeløpGrunnlag(
-                            beløp = it,
+                            beløp = utgift!!.maksGodkjentBeløp!!,
                             begrunnelse = utgift!!.maksGodkjentBeløpBegrunnelse!!,
                         ),
                     ),

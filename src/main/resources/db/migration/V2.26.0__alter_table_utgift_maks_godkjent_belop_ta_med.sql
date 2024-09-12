@@ -1,0 +1,1 @@
+alter table utgift add column if not exists maks_godkjent_beløp_ta_med boolean default false;
