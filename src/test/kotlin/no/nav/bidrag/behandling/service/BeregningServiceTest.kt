@@ -132,7 +132,9 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
-        behandling.utgift!!.maksGodkjentBeløp = null
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(3000)
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
+        behandling.utgift!!.maksGodkjentBeløpTaMed = false
         behandling.utgift!!.utgiftsposter.add(
             Utgiftspost(
                 dato = LocalDate.now().minusDays(3),
@@ -223,6 +225,7 @@ class BeregningServiceTest {
         )
         behandling.utgift!!.maksGodkjentBeløp = BigDecimal(3000)
         behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
+        behandling.utgift!!.maksGodkjentBeløpTaMed = true
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.grunnlag =

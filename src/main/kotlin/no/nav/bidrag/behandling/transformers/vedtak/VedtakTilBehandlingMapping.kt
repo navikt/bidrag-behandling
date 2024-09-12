@@ -137,7 +137,7 @@ fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto?
                 ?.utgiftsposter
                 ?.sorter()
                 ?.map { it.tilDto() } ?: emptyList(),
-            behandling.utgift?.maksGodkjentBeløp,
+            behandling.utgift?.maksGodkjentBeløpTaMed.ifTrue { behandling.utgift?.maksGodkjentBeløp },
         )
     }
 
