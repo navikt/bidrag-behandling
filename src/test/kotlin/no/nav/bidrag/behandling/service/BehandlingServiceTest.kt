@@ -672,7 +672,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandlingAfter.soknadsid shouldBe søknadsid
             opprettetBehandlingAfter.saksnummer shouldBe "12312"
             opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
-            opprettetBehandlingAfter.utgift shouldBe null
+            opprettetBehandlingAfter.utgift shouldNotBe null
         }
 
         @Test
@@ -734,7 +734,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandlingAfter.soknadsid shouldBe søknadsid
             opprettetBehandlingAfter.saksnummer shouldBe "12312"
             opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
-            opprettetBehandlingAfter.utgift shouldBe null
+            opprettetBehandlingAfter.utgift shouldNotBe null
         }
 
         @Test
