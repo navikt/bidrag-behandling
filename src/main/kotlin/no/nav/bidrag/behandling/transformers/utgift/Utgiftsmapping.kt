@@ -75,7 +75,7 @@ fun Utgift.validerMaksGodkjentBeløp() =
     if (maksGodkjentBeløpTaMed) {
         MaksGodkjentBeløpValideringsfeil(
             manglerBeløp = maksGodkjentBeløp == null || maksGodkjentBeløp == BigDecimal.ZERO,
-            manglerKommentar = maksGodkjentBeløpBegrunnelse.isNullOrEmpty(),
+            manglerBegrunnelse = maksGodkjentBeløpBegrunnelse.isNullOrEmpty(),
         ).takeIf { it.harFeil }
     } else {
         null
