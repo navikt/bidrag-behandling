@@ -86,7 +86,15 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
                 kode = inntekt.kode,
                 visningsnavn = finnVisningsnavn(inntekt.kode),
                 inntektstype = inntekt.inntektstype,
-                beløp = InntektUtil.kapitalinntektFaktor(inntekt.kode) * inntekt.beløp.nærmesteHeltall,
+                beløp =
+                    inntekt.beløp.nærmesteHeltall *
+                        if (inntekt.inntekt?.type ==
+                            Inntektsrapportering.KAPITALINNTEKT
+                        ) {
+                            InntektUtil.kapitalinntektFaktor(inntekt.kode)
+                        } else {
+                            BigDecimal.ONE
+                        },
             )
         }.sortedByDescending { it.beløp }
 
