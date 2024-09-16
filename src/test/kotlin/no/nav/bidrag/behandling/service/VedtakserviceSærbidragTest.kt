@@ -115,6 +115,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(4000)
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
+        behandling.utgift!!.maksGodkjentBeløpTaMed = false
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
@@ -341,6 +344,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
         behandling.utgift!!.maksGodkjentBeløp = BigDecimal(4000)
         behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
+        behandling.utgift!!.maksGodkjentBeløpTaMed = true
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(

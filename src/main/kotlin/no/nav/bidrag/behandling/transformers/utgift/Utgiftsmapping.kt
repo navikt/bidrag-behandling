@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.sorter
+import no.nav.bidrag.behandling.transformers.sorterBeregnetUtgifter
 import no.nav.bidrag.behandling.transformers.validerUtgiftspost
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -72,10 +73,11 @@ fun Utgift?.hentValideringsfeil() =
     ).takeIf { it.harFeil }
 
 fun Utgift.validerMaksGodkjentBeløp() =
-    if (maksGodkjentBeløp != null && maksGodkjentBeløpBegrunnelse.isNullOrEmpty()) {
+    if (maksGodkjentBeløpTaMed) {
         MaksGodkjentBeløpValideringsfeil(
-            manglerKommentar = maksGodkjentBeløpBegrunnelse.isNullOrEmpty(),
-        )
+            manglerBeløp = maksGodkjentBeløp == null || maksGodkjentBeløp == BigDecimal.ZERO,
+            manglerBegrunnelse = maksGodkjentBeløpBegrunnelse.isNullOrEmpty(),
+        ).takeIf { it.harFeil }
     } else {
         null
     }
@@ -135,11 +137,11 @@ fun Utgift.tilTotalBeregningDto() =
                 },
                 utgifter.sumOf { it.godkjentBeløp },
             )
-        }
+        }.sorterBeregnetUtgifter()
 
 fun Utgift.tilMaksGodkjentBeløpDto() =
     MaksGodkjentBeløpDto(
-        taMed = maksGodkjentBeløp != null,
+        taMed = maksGodkjentBeløpTaMed,
         beløp = maksGodkjentBeløp,
         begrunnelse = maksGodkjentBeløpBegrunnelse,
     )

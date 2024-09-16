@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -151,6 +152,10 @@ class BehandlingService(
                 kategori = opprettBehandling.kategori?.kategori,
                 kategoriBeskrivelse = opprettBehandling.kategori?.beskrivelse,
             )
+
+        if (opprettBehandling.tilType() == TypeBehandling.SÆRBIDRAG) {
+            behandling.utgift = Utgift(behandling = behandling)
+        }
 
         val roller =
             HashSet(

@@ -5,12 +5,19 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
+import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.transformers.inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 
 fun Set<Utgiftspost>.sorter() = sortedBy { it.dato }
+
+fun List<TotalBeregningUtgifterDto>.sorterBeregnetUtgifter() =
+    sortedWith(
+        compareByDescending<TotalBeregningUtgifterDto> { it.totalGodkjentBeløp }
+            .thenBy { it.utgiftstypeVisningsnavn },
+    )
 
 val årsinntekterPrioriteringsliste =
     listOf(

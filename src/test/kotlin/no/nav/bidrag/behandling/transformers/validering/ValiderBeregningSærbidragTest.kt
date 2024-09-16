@@ -117,6 +117,26 @@ class ValiderBeregningSærbidragTest {
     @Test
     fun `skal feile validering hvis utgift maks godkjent beløp ikke er satt`() {
         val behandling = opprettGyldigBehandling()
+        behandling.utgift!!.maksGodkjentBeløpTaMed = true
+        behandling.utgift!!.maksGodkjentBeløp = null
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = null
+        val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningSærbidrag() }
+
+        resultat.message shouldContain "Feil ved validering av behandling for beregning av særbidrag"
+        val responseBody =
+            commonObjectmapper.readValue(resultat.responseBodyAsString, BeregningValideringsfeil::class.java)
+        assertSoftly(responseBody) {
+            utgift.shouldNotBe(null)
+            utgift!!.maksGodkjentBeløp shouldNotBe null
+            utgift.maksGodkjentBeløp!!.manglerBegrunnelse shouldBe true
+            utgift.maksGodkjentBeløp!!.manglerBeløp shouldBe true
+        }
+    }
+
+    @Test
+    fun `skal feile validering hvis utgift maks godkjent beløp begrunnelse ikke er satt`() {
+        val behandling = opprettGyldigBehandling()
+        behandling.utgift!!.maksGodkjentBeløpTaMed = true
         behandling.utgift!!.maksGodkjentBeløp = BigDecimal(10000)
         behandling.utgift!!.maksGodkjentBeløpBegrunnelse = null
         val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningSærbidrag() }
@@ -127,8 +147,17 @@ class ValiderBeregningSærbidragTest {
         assertSoftly(responseBody) {
             utgift.shouldNotBe(null)
             utgift!!.maksGodkjentBeløp shouldNotBe null
-            utgift.maksGodkjentBeløp!!.manglerKommentar shouldBe true
+            utgift.maksGodkjentBeløp!!.manglerBegrunnelse shouldBe true
         }
+    }
+
+    @Test
+    fun `skal ikke feile validering hvis utgift maks godkjent beløp ikke er tatt med`() {
+        val behandling = opprettGyldigBehandling()
+        behandling.utgift!!.maksGodkjentBeløpTaMed = false
+        behandling.utgift!!.maksGodkjentBeløp = null
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = null
+        assertDoesNotThrow { behandling.validerForBeregningSærbidrag() }
     }
 
     @Test

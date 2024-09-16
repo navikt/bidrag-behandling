@@ -38,8 +38,11 @@ data class UtgiftValideringsfeilDto(
 }
 
 data class MaksGodkjentBeløpValideringsfeil(
-    val manglerKommentar: Boolean,
-)
+    val manglerBeløp: Boolean,
+    val manglerBegrunnelse: Boolean,
+) {
+    val harFeil get() = manglerBeløp || manglerBegrunnelse
+}
 
 data class InntektValideringsfeilDto(
     val barnetillegg: Set<InntektValideringsfeil>?,

@@ -672,7 +672,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandlingAfter.soknadsid shouldBe søknadsid
             opprettetBehandlingAfter.saksnummer shouldBe "12312"
             opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
-            opprettetBehandlingAfter.utgift shouldBe null
+            opprettetBehandlingAfter.utgift shouldNotBe null
+            opprettetBehandlingAfter.utgift!!.maksGodkjentBeløpTaMed shouldBe false
+            opprettetBehandlingAfter.utgift!!.beløpDirekteBetaltAvBp shouldBe BigDecimal.ZERO
+            opprettetBehandlingAfter.utgift!!.utgiftsposter shouldHaveSize 0
         }
 
         @Test
@@ -734,7 +737,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandlingAfter.soknadsid shouldBe søknadsid
             opprettetBehandlingAfter.saksnummer shouldBe "12312"
             opprettetBehandlingAfter.behandlerEnhet shouldBe "1233"
-            opprettetBehandlingAfter.utgift shouldBe null
+            opprettetBehandlingAfter.utgift shouldNotBe null
+            opprettetBehandlingAfter.utgift!!.maksGodkjentBeløpTaMed shouldBe false
+            opprettetBehandlingAfter.utgift!!.beløpDirekteBetaltAvBp shouldBe BigDecimal.ZERO
+            opprettetBehandlingAfter.utgift!!.utgiftsposter shouldHaveSize 0
         }
 
         @Test

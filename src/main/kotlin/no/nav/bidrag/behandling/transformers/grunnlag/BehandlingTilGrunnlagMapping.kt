@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_di
 import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_maks_godkjent_beløp
 import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
-import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -40,9 +39,11 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivils
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
+import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.time.LocalDate
 
 fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> =
@@ -168,15 +169,24 @@ fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
                         ),
                     sumBetaltAvBp = beregningUtgifter.totalBeløpBetaltAvBp,
                     sumGodkjent =
-                        utgift!!.maksGodkjentBeløp?.let { minOf(beregningUtgifter.totalGodkjentBeløp, it) }
-                            ?: beregningUtgifter.totalGodkjentBeløp,
+                        run {
+                            val maksGodkjentBeløp = utgift!!.maksGodkjentBeløp
+                            if (utgift!!.maksGodkjentBeløpTaMed && maksGodkjentBeløp != null && maksGodkjentBeløp > BigDecimal.ZERO) {
+                                minOf(
+                                    beregningUtgifter.totalGodkjentBeløp,
+                                    maksGodkjentBeløp,
+                                )
+                            } else {
+                                beregningUtgifter.totalGodkjentBeløp
+                            }
+                        },
                 ),
             ),
         grunnlagsreferanseListe =
             listOfNotNull(
                 grunnlagsreferanse_utgiftsposter,
                 grunnlagsreferanse_utgift_direkte_betalt,
-                utgift!!.maksGodkjentBeløp?.let { grunnlagsreferanse_utgift_maks_godkjent_beløp },
+                utgift!!.maksGodkjentBeløpTaMed.ifTrue { grunnlagsreferanse_utgift_maks_godkjent_beløp },
             ),
     )
 }

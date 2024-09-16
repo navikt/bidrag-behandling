@@ -516,6 +516,58 @@ class UtgiftserviceTest : TestContainerRunner() {
 
     @Test
     @Transactional
+    fun `skal ta med maks godkjent beløp`() {
+        val behandling = oppretteBehandlingForSærbidrag()
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+            )
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(2000),
+                    godkjentBeløp = BigDecimal(2000),
+                    kommentar = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(4),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(1000),
+                    godkjentBeløp = BigDecimal(500),
+                    kommentar = "Test",
+                    betaltAvBp = true,
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                maksGodkjentBeløp =
+                    MaksGodkjentBeløpDto(
+                        taMed = true,
+                    ),
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        response.oppdatertUtgiftspost shouldBe null
+        response.avslag shouldBe null
+
+        assertSoftly(response.maksGodkjentBeløp!!) {
+            taMed shouldBe true
+            beløp shouldBe null
+            begrunnelse shouldBe null
+        }
+        val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
+        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe null
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe null
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpTaMed shouldBe true
+    }
+
+    @Test
+    @Transactional
     fun `skal oppdatere maks godkjent beløp`() {
         val behandling = oppretteBehandlingForSærbidrag()
         behandling.utgift =
@@ -557,12 +609,14 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.avslag shouldBe null
 
         assertSoftly(response.maksGodkjentBeløp!!) {
+            taMed shouldBe true
             beløp shouldBe BigDecimal(6000)
             begrunnelse shouldBe "Kommentar maks godkjent"
         }
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
         behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(6000)
         behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe "Kommentar maks godkjent"
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpTaMed shouldBe true
     }
 
     @Test
@@ -609,12 +663,14 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.avslag shouldBe null
 
         assertSoftly(response.maksGodkjentBeløp!!) {
-            beløp shouldBe null
-            begrunnelse shouldBe null
+            taMed shouldBe false
+            beløp shouldBe BigDecimal(100)
+            begrunnelse shouldBe "Dette er kommentar"
         }
         val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
-        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe null
-        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe null
+        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe BigDecimal(100)
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe "Dette er kommentar"
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpTaMed shouldBe false
     }
 
     @Test
