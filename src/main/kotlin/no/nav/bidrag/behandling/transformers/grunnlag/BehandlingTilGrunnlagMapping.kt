@@ -43,6 +43,7 @@ import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.time.LocalDate
 
 fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> =
@@ -168,13 +169,16 @@ fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
                         ),
                     sumBetaltAvBp = beregningUtgifter.totalBeløpBetaltAvBp,
                     sumGodkjent =
-                        if (utgift!!.maksGodkjentBeløpTaMed && utgift!!.maksGodkjentBeløp != null) {
-                            minOf(
-                                beregningUtgifter.totalGodkjentBeløp,
-                                utgift!!.maksGodkjentBeløp!!,
-                            )
-                        } else {
-                            beregningUtgifter.totalGodkjentBeløp
+                        run {
+                            val maksGodkjentBeløp = utgift!!.maksGodkjentBeløp
+                            if (utgift!!.maksGodkjentBeløpTaMed && maksGodkjentBeløp != null && maksGodkjentBeløp > BigDecimal.ZERO) {
+                                minOf(
+                                    beregningUtgifter.totalGodkjentBeløp,
+                                    maksGodkjentBeløp,
+                                )
+                            } else {
+                                beregningUtgifter.totalGodkjentBeløp
+                            }
                         },
                 ),
             ),

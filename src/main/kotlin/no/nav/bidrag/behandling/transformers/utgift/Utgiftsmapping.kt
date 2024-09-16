@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.sorter
+import no.nav.bidrag.behandling.transformers.sorterBeregnetUtgifter
 import no.nav.bidrag.behandling.transformers.validerUtgiftspost
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -136,7 +137,7 @@ fun Utgift.tilTotalBeregningDto() =
                 },
                 utgifter.sumOf { it.godkjentBeløp },
             )
-        }
+        }.sorterBeregnetUtgifter()
 
 fun Utgift.tilMaksGodkjentBeløpDto() =
     MaksGodkjentBeløpDto(
