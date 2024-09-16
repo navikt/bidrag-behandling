@@ -25,7 +25,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.test.Test
 
-class ValiderBeregningTest {
+class ValiderBeregningForskuddTest {
     @Test
     fun `skal validere behandling`() {
         val behandling = opprettGyldigBehandling()

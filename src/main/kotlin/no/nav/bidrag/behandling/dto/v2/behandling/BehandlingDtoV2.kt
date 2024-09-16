@@ -136,7 +136,16 @@ data class TotalBeregningUtgifterDto(
     val utgiftstype: String,
     val totalKravbeløp: BigDecimal,
     val totalGodkjentBeløp: BigDecimal,
-)
+) {
+    @get:Schema(name = "utgiftstypeVisningsnavn")
+    val utgiftstypeVisningsnavn
+        get() =
+            try {
+                Utgiftstype.valueOf(utgiftstype).visningsnavn.intern
+            } catch (e: IllegalArgumentException) {
+                utgiftstype
+            }
+}
 
 data class SærbidragKategoriDto(
     val kategori: Særbidragskategori,

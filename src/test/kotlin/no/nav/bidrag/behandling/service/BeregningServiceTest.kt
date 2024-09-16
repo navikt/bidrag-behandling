@@ -132,7 +132,7 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
-        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(3000)
+        behandling.utgift!!.maksGodkjentBeløp = null
         behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
         behandling.utgift!!.maksGodkjentBeløpTaMed = false
         behandling.utgift!!.utgiftsposter.add(
@@ -210,7 +210,7 @@ class BeregningServiceTest {
     }
 
     @Test
-    fun `skal bygge grunnlag for særbidrag beregning med maks godkjent beløp`() {
+    fun `skal bygge grunnlag for særbidrag beregning med maks godkjent beløp tatt med`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
         behandling.utgift!!.utgiftsposter.add(

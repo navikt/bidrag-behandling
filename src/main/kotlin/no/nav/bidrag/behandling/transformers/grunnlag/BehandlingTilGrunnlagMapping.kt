@@ -168,15 +168,14 @@ fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
                         ),
                     sumBetaltAvBp = beregningUtgifter.totalBeløpBetaltAvBp,
                     sumGodkjent =
-                        utgift!!.maksGodkjentBeløpTaMed.ifTrue {
-                            utgift!!.maksGodkjentBeløp?.let {
-                                minOf(
-                                    beregningUtgifter.totalGodkjentBeløp,
-                                    it,
-                                )
-                            }
-                        }
-                            ?: beregningUtgifter.totalGodkjentBeløp,
+                        if (utgift!!.maksGodkjentBeløpTaMed && utgift!!.maksGodkjentBeløp != null) {
+                            minOf(
+                                beregningUtgifter.totalGodkjentBeløp,
+                                utgift!!.maksGodkjentBeløp!!,
+                            )
+                        } else {
+                            beregningUtgifter.totalGodkjentBeløp
+                        },
                 ),
             ),
         grunnlagsreferanseListe =
