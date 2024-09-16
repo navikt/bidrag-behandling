@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
@@ -160,7 +161,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             behandling.særbidragKategori shouldBe Særbidragskategori.KONFIRMASJON
             behandling.stonadstype shouldBe null
             behandling.innkrevingstype shouldBe Innkrevingstype.UTEN_INNKREVING
-            behandling.utgift shouldBe null
+            behandling.utgift shouldNotBe null
         }
 
         @Test
@@ -217,7 +218,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             behandling.særbidragKategori shouldBe Særbidragskategori.ANNET
             behandling.stonadstype shouldBe null
             behandling.kategoriBeskrivelse shouldBe "Batteri til høreapparat"
-            behandling.utgift shouldBe null
+            behandling.utgift shouldNotBe null
         }
 
         @Test
