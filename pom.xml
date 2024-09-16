@@ -39,7 +39,7 @@
         <asm.version>9.7</asm.version>
         <swagger.version>2.2.23</swagger.version>
         <jetbrains.annotations.version>24.1.0</jetbrains.annotations.version>
-        <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>9.41.1</nimbus-jose-jwt.version>
     </properties>
 
     <repositories>
