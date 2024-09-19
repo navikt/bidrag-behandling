@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
+import no.nav.bidrag.behandling.utils.testdata.opprettUtgifstpost
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -117,6 +118,43 @@ class OppdaterUtgiftRequestValideringTest {
         val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
 
         exception.message shouldContain "Type kan ikke settes hvis behandling har kategori OPTIKK"
+    }
+
+    @Test
+    fun `skal validere at maks godkjent beløp ikke kan settes hvis utgiftsposter er tom`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift = Utgift(behandling)
+        val request =
+            OppdatereUtgiftRequest(
+                maksGodkjentBeløp =
+                    MaksGodkjentBeløpDto(
+                        beløp = BigDecimal(2000),
+                        begrunnelse = "Test",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Kan ikke sette maks godkjent beløp for behandling uten utgiftsposter"
+    }
+
+    @Test
+    fun `skal validere at maks godkjent beløp ikke kan settes for kategori OPTIKK`() {
+        val behandling = opprettBehandlingSærligeUtgifter()
+        behandling.kategori = Særbidragskategori.OPTIKK.name
+        behandling.utgift = Utgift(behandling)
+        behandling.utgift!!.utgiftsposter.add(behandling.utgift!!.opprettUtgifstpost(Utgiftstype.KONFIRMASJONSLEIR.name))
+        val request =
+            OppdatereUtgiftRequest(
+                maksGodkjentBeløp =
+                    MaksGodkjentBeløpDto(
+                        beløp = BigDecimal(2000),
+                        begrunnelse = "Test",
+                    ),
+            )
+        val exception = shouldThrow<HttpClientErrorException> { request.valider(behandling) }
+
+        exception.message shouldContain "Kan ikke sette maks godkjent beløp for behandling som ikke er av kategori KONFIRMASJON"
     }
 
     @Test
