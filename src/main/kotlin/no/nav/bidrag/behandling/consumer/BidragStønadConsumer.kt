@@ -14,7 +14,7 @@ import java.net.URI
 
 @Component
 class BidragStønadConsumer(
-    @Value("\${BIDRAG_STØNAD_URL}") private val bidragStønadUrl: URI,
+    @Value("\${BIDRAG_STONAD_URL}") private val bidragStønadUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-stønad") {
     private val bidragsStønadUri

@@ -10,8 +10,8 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll
-  BIDRAG_STØNAD_URL: http://bidrag-stonad-syntetisk
-  BIDRAG_STØNAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-syntetisk
+  BIDRAG_STONAD_URL: http://bidrag-stonad-syntetisk
+  BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-syntetisk
   BIDRAG_VEDTAK_URL: http://bidrag-vedtak-syntetisk
   BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-syntetisk
   BIDRAG_BBM_URL: https://bidrag-bbm.dev-fss-pub.nais.io
