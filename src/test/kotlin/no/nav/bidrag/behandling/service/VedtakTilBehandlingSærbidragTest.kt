@@ -70,6 +70,9 @@ class VedtakTilBehandlingSærbidragTest {
     lateinit var tilgangskontrollService: TilgangskontrollService
 
     @MockkBean
+    lateinit var evnevurderingService: BeregningEvnevurderingService
+
+    @MockkBean
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
@@ -84,6 +87,7 @@ class VedtakTilBehandlingSærbidragTest {
         beregningService =
             BeregningService(
                 behandlingService,
+                evnevurderingService,
             )
         vedtakService =
             VedtakService(

@@ -10,8 +10,12 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
+  BIDRAG_STØNAD_URL: http://bidrag-stonad-feature
+  BIDRAG_STØNAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-feature
   BIDRAG_VEDTAK_URL: http://bidrag-vedtak-feature
   BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-feature
+  BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
+  BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
   BIDRAG_DOKUMENT_PRODUKSJON_URL: http://bidrag-dokument-produksjon
   BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
   BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
@@ -19,7 +23,7 @@ env:
   BIDRAG_SAK_URL: https://bidrag-sak-feature.dev-fss-pub.nais.io/bidrag-sak
   BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-feature
   TOPIC_VEDTAK: bidrag.vedtak-feature
-  BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon
+  BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon-feature
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt-q1.dev-fss-pub.nais.io/api/v2
@@ -47,6 +51,7 @@ database:
   tier: db-f1-micro
 outbound-access-apps:
   - bidrag-grunnlag-feature
+  - bidrag-stonad-feature
   - bidrag-dokument-forsendelse-feature
   - bidrag-tilgangskontroll-feature
   - bidrag-vedtak-feature
@@ -59,6 +64,7 @@ outbound-access-hosts:
   - arbeid-og-inntekt-q1.dev-fss-pub.nais.io
   - kodeverk-api.nav.no
   - bidrag-unleash-api.nav.cloud.nais.io
+  - bidrag-bbm-feature.dev-fss-pub.nais.io
 unleash:
   env: development
   secret_name: bidrag-behandling-unleash-api-token

@@ -53,6 +53,9 @@ class BeregningServiceTest {
     @MockkBean
     lateinit var behandlingService: BehandlingService
 
+    @MockkBean
+    lateinit var evnevurderingService: BeregningEvnevurderingService
+
     @BeforeEach
     fun initMocks() {
         stubSjablonProvider()
@@ -73,7 +76,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnForskuddApi::class)
         every { BeregnForskuddApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService).beregneForskudd(1)
+        val resultat = BeregningService(behandlingService, evnevurderingService).beregneForskudd(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 2) {
@@ -158,7 +161,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, evnevurderingService).beregneSærbidrag(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 1) {
@@ -239,7 +242,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, evnevurderingService).beregneSærbidrag(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 1) {
@@ -273,7 +276,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, evnevurderingService).beregneSærbidrag(1)
 
         verify(exactly = 1) {
             BeregnSærbidragApi().beregn(any(), any())
@@ -301,7 +304,8 @@ class BeregningServiceTest {
 
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
 
-        val exception = assertThrows<HttpClientErrorException> { BeregningService(behandlingService).beregneSærbidrag(1) }
+        val exception =
+            assertThrows<HttpClientErrorException> { BeregningService(behandlingService, evnevurderingService).beregneSærbidrag(1) }
         verify(exactly = 0) {
             BeregnSærbidragApi().beregn(any(), any())
         }

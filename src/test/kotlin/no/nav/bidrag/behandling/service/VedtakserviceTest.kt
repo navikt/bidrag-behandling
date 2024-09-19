@@ -82,6 +82,9 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
+    @MockBean
+    lateinit var evnevurderingService: BeregningEvnevurderingService
+
     @Autowired
     lateinit var entityManager: EntityManager
 
@@ -98,6 +101,7 @@ class VedtakserviceTest : TestContainerRunner() {
         beregningService =
             BeregningService(
                 behandlingService,
+                evnevurderingService,
             )
         vedtakService =
             VedtakService(

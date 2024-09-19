@@ -141,6 +141,9 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
     }
 
     if (maksGodkjentBeløp != null && utgift != null) {
+        if (behandling.kategori != Særbidragskategori.KONFIRMASJON.name) {
+            feilliste.add("Kan ikke sette maks godkjent beløp for behandling som ikke er av kategori ${Særbidragskategori.KONFIRMASJON}")
+        }
         val maksGodkjentBeløpVerdi = maksGodkjentBeløp.beløp ?: BigDecimal.ZERO
         if (maksGodkjentBeløpVerdi < BigDecimal.ZERO) {
             feilliste.add("Maks godkjent beløp kan ikke være negativ")
