@@ -86,6 +86,10 @@ class UtgiftService(
                 secureLogger.info { "Sletter utgift $it fra behandling $behandlingsid" }
                 utgift.utgiftsposter.remove(it)
             }
+            if (utgift.utgiftsposter.isEmpty()) {
+                log.info { "Alle utgifter er slettet. Sletter utgift maks godkjent beløp" }
+                utgift.slettMaksGodkjentBeløp()
+            }
         } else if (request.angreSisteEndring == true) {
             log.info { "Angrer siste endring i utgiftsposter for behandling $behandlingsid" }
             behandling.utgift = utgift.gjenopprettHistorikk()
@@ -103,6 +107,12 @@ class UtgiftService(
         } else {
             maksGodkjentBeløpTaMed = false
         }
+    }
+
+    private fun Utgift.slettMaksGodkjentBeløp() {
+        maksGodkjentBeløpTaMed = false
+        maksGodkjentBeløp = null
+        maksGodkjentBeløpBegrunnelse = null
     }
 
     private fun Utgift.lagreHistorikk() {

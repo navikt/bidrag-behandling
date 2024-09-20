@@ -988,20 +988,22 @@ fun oppretteUtgift(
             behandling = behandling,
             beløpDirekteBetaltAvBp = BigDecimal(0),
         )
-    utgift.utgiftsposter =
-        mutableSetOf(
-            Utgiftspost(
-                id = if (medId) 1 else null,
-                dato = LocalDate.now().minusDays(3),
-                type = utgiftstype,
-                kravbeløp = BigDecimal(3000),
-                godkjentBeløp = BigDecimal(2500),
-                kommentar = "Trekker fra alkohol",
-                utgift = utgift,
-            ),
-        )
+    utgift.utgiftsposter.add(utgift.opprettUtgifstpost(utgiftstype, medId))
     return utgift
 }
+
+fun Utgift.opprettUtgifstpost(
+    utgiftstype: String,
+    medId: Boolean = false,
+) = Utgiftspost(
+    id = if (medId) 1 else null,
+    dato = LocalDate.now().minusDays(3),
+    type = utgiftstype,
+    kravbeløp = BigDecimal(3000),
+    godkjentBeløp = BigDecimal(2500),
+    kommentar = "Trekker fra alkohol",
+    utgift = this,
+)
 
 fun oppretteBehandling(
     inkludereInntekter: Boolean = false,
