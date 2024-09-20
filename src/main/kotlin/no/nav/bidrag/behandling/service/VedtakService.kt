@@ -51,6 +51,8 @@ import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
@@ -435,7 +437,7 @@ class VedtakService(
                 listOf(byggGrunnlagForVedtak(), byggGrunnlagGenerelt())
             }
 
-        val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet()
+        val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet().fjernPersonobjektDuplikater()
 
         val grunnlagslisteEngangsbeløp =
             grunnlaglisteGenerelt +
@@ -470,6 +472,19 @@ class VedtakService(
                 ),
             grunnlagListe = grunnlagliste.map(GrunnlagDto::tilOpprettRequestDto),
         )
+    }
+
+    private fun Set<GrunnlagDto>.fjernPersonobjektDuplikater(): Set<GrunnlagDto> {
+        val personerIkkeBarnBidragspliktig = this.hentAllePersoner().filter { it.type != Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG }
+        return fold<GrunnlagDto, MutableList<GrunnlagDto>>(mutableListOf()) { acc, grunnlagDto ->
+            if (grunnlagDto.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG) {
+                val finnesDuplikat = personerIkkeBarnBidragspliktig.any { it.personObjekt.ident == grunnlagDto.personObjekt.ident }
+                if (finnesDuplikat.not()) acc.add(grunnlagDto)
+            } else {
+                acc.add(grunnlagDto)
+            }
+            acc
+        }.toSet()
     }
 
     private fun Behandling.validerKanFatteVedtak() {
