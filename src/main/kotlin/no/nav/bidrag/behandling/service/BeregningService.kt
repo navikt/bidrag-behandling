@@ -82,7 +82,9 @@ class BeregningService(
                 val grunnlagliste = grunnlagBeregning + grunnlagLøpendeBidrag
                 beregnSærbidragApi.beregn(grunnlagliste, behandling.opprinneligVedtakstype ?: behandling.vedtakstype).let {
                     it.validerForSærbidrag()
-                    it
+                    it.copy(
+                        grunnlagListe = it.grunnlagListe + grunnlagLøpendeBidrag, // .filter { it.erPerson() },
+                    )
                 }
             } catch (e: Exception) {
                 LOGGER.warn(e) { "Det skjedde en feil ved beregning av særbidrag: ${e.message}" }

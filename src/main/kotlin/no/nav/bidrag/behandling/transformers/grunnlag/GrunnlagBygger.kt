@@ -141,7 +141,7 @@ fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
 fun opprettLøpendeBidragGrunnlag(
     beregnetBeløpListe: BidragBeregningResponsDto,
     løpendeBidragsaker: List<LøpendeBidragssak>,
-    grunnlagsliste: List<GrunnlagDto>,
+    personGrunnlagListe: List<GrunnlagDto>,
 ): List<GrunnlagDto> {
     val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
@@ -153,7 +153,7 @@ fun opprettLøpendeBidragGrunnlag(
     val grunnlag =
         GrunnlagDto(
             referanse = grunnlagsreferanse_løpende_bidrag,
-            gjelderReferanse = grunnlagsliste.bidragspliktig!!.referanse,
+            gjelderReferanse = personGrunnlagListe.bidragspliktig!!.referanse,
             type = Grunnlagstype.LØPENDE_BIDRAG,
             innhold =
                 POJONode(
@@ -162,7 +162,7 @@ fun opprettLøpendeBidragGrunnlag(
                             beregnetBeløpListe.beregningListe.map { beregning ->
                                 val løpendeBeløp = løpendeBidragsaker.find { it.kravhaver == beregning.personidentBarn }!!.løpendeBeløp
                                 val personObjekt =
-                                    grunnlagsliste.hentPerson(beregning.personidentBarn.verdi) ?: beregning.opprettPersonGrunnlag()
+                                    personGrunnlagListe.hentPerson(beregning.personidentBarn.verdi) ?: beregning.opprettPersonGrunnlag()
                                 LøpendeBidrag(
                                     faktiskBeløp = beregning.faktiskBeløp,
                                     samværsklasse = beregning.samværsklasse!!,

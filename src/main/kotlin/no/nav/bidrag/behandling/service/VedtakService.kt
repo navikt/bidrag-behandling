@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.fasterxml.jackson.databind.node.POJONode
 import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
@@ -51,7 +52,9 @@ import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
@@ -437,7 +440,7 @@ class VedtakService(
                 listOf(byggGrunnlagForVedtak(), byggGrunnlagGenerelt())
             }
 
-        val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet().fjernPersonobjektDuplikater()
+        val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet().slåSammenPersonobjekter()
 
         val grunnlagslisteEngangsbeløp =
             grunnlaglisteGenerelt +
@@ -474,17 +477,52 @@ class VedtakService(
         )
     }
 
-    private fun Set<GrunnlagDto>.fjernPersonobjektDuplikater(): Set<GrunnlagDto> {
+    private fun Set<GrunnlagDto>.slåSammenPersonobjekter(): Set<GrunnlagDto> {
         val personerIkkeBarnBidragspliktig = this.hentAllePersoner().filter { it.type != Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG }
-        return fold<GrunnlagDto, MutableList<GrunnlagDto>>(mutableListOf()) { acc, grunnlagDto ->
-            if (grunnlagDto.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG) {
-                val finnesDuplikat = personerIkkeBarnBidragspliktig.any { it.personObjekt.ident == grunnlagDto.personObjekt.ident }
-                if (finnesDuplikat.not()) acc.add(grunnlagDto)
-            } else {
-                acc.add(grunnlagDto)
-            }
-            acc
-        }.toSet()
+        val referanserErstattet = mutableListOf<Pair<String, String>>()
+        val grunnlagsobjekter =
+            fold<GrunnlagDto, MutableList<GrunnlagDto>>(mutableListOf()) { acc, grunnlagDto ->
+                if (grunnlagDto.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG) {
+                    val duplikatPersonobjekt =
+                        personerIkkeBarnBidragspliktig.find {
+                            it.personObjekt.ident == grunnlagDto.personObjekt.ident
+                        }
+                    if (duplikatPersonobjekt == null) {
+                        acc.add(grunnlagDto)
+                    } else {
+                        referanserErstattet.add(Pair(grunnlagDto.referanse, duplikatPersonobjekt.referanse))
+                    }
+                } else {
+                    acc.add(grunnlagDto)
+                }
+                acc
+            }.toSet()
+
+        return grunnlagsobjekter
+            .map { grunnlagDto ->
+                if (grunnlagDto.type == Grunnlagstype.LØPENDE_BIDRAG) {
+                    grunnlagDto.copy(
+                        innhold =
+                            POJONode(
+                                grunnlagDto.innholdTilObjekt<LøpendeBidragGrunnlag>().copy(
+                                    løpendeBidragListe =
+                                        grunnlagDto.innholdTilObjekt<LøpendeBidragGrunnlag>().løpendeBidragListe.map { lb ->
+                                            val referanseErstattet = referanserErstattet.find { it.first == lb.gjelderBarn }
+                                            if (referanseErstattet != null) {
+                                                lb.copy(
+                                                    gjelderBarn = referanseErstattet.second,
+                                                )
+                                            } else {
+                                                lb
+                                            }
+                                        },
+                                ),
+                            ),
+                    )
+                } else {
+                    grunnlagDto
+                }
+            }.toSet()
     }
 
     private fun Behandling.validerKanFatteVedtak() {

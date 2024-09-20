@@ -28,13 +28,13 @@ class BeregningEvnevurderingService(
 ) {
     fun opprettGrunnlagLøpendeBidrag(
         behandling: Behandling,
-        grunnlagsliste: List<GrunnlagDto> = behandling.tilPersonobjekter().toList(),
+        personGrunnlagListe: List<GrunnlagDto> = behandling.tilPersonobjekter().toList(),
     ): List<GrunnlagDto> {
         val bpIdent = Personident(behandling.bidragspliktig!!.ident!!)
         val løpendeStønader = hentSisteLøpendeStønader(bpIdent)
         val sisteLøpendeVedtak = løpendeStønader.hentLøpendeVedtak(bpIdent)
         val beregnetBeløpListe = sisteLøpendeVedtak.hentBeregning()
-        return opprettLøpendeBidragGrunnlag(beregnetBeløpListe, løpendeStønader, grunnlagsliste)
+        return opprettLøpendeBidragGrunnlag(beregnetBeløpListe, løpendeStønader, personGrunnlagListe)
     }
 
     private fun List<VedtakForStønad>.hentBeregning() =

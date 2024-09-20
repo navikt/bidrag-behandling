@@ -24,6 +24,8 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
+import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -81,6 +83,7 @@ fun stubPersonConsumer(): BidragPersonConsumer {
             listOf(testdataBM, testdataBarn1, testdataBarn2, testdataBP, testdataHusstandsmedlem1)
         personer.find { it.ident == personId }?.tilPersonDto() ?: PersonDto(
             Personident(firstArg<String>()),
+            fødselsdato = LocalDate.parse("2015-05-01"),
         )
     }
     mockkObject(AppContext)
@@ -197,24 +200,71 @@ class StubUtils {
                         .withBodyFile("vedtak/vedtak-for-stønad-barn3.json"),
                 ),
         )
+
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
+                .andMatching {
+                    try {
+                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
+                        if (request.kravhaver.verdi == BP_BARN_ANNEN_IDENT) {
+                            MatchResult.exactMatch()
+                        } else {
+                            MatchResult.noMatch()
+                        }
+                    } catch (e: Exception) {
+                        MatchResult.noMatch()
+                    }
+                }.willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(status.value())
+                        .withBodyFile("vedtak/vedtak-for-stønad-barn_annen.json"),
+                ),
+        )
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
+                .andMatching {
+                    try {
+                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
+                        if (request.kravhaver.verdi == BP_BARN_ANNEN_IDENT_2) {
+                            MatchResult.exactMatch()
+                        } else {
+                            MatchResult.noMatch()
+                        }
+                    } catch (e: Exception) {
+                        MatchResult.noMatch()
+                    }
+                }.willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(status.value())
+                        .withBodyFile("vedtak/vedtak-for-stønad-barn_annen_2.json"),
+                ),
+        )
     }
 
-    fun stubBidragStonadLøpendeSaker(status: HttpStatus = HttpStatus.OK) {
+    fun stubBidragStonadLøpendeSaker(
+        filnavn: String = "løpende-bidragssaker-bp.json",
+        status: HttpStatus = HttpStatus.OK,
+    ) {
         WireMock.stubFor(
             WireMock.post(urlMatching("/stonad/hent-lopende-bidragssaker-for-skyldner")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBodyFile("stonad/løpende-bidragssaker-bp.json"),
+                    .withBodyFile("stonad/$filnavn"),
             ),
         )
     }
 
-    fun stubBidraBBMHentBeregning(status: HttpStatus = HttpStatus.OK) {
+    fun stubBidraBBMHentBeregning(
+        filnavn: String = "bbm-beregning.json",
+        status: HttpStatus = HttpStatus.OK,
+    ) {
         WireMock.stubFor(
             WireMock.post(urlMatching("/bbm/api/beregning")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBodyFile("bidragbbm/bbm-beregning.json"),
+                    .withBodyFile("bidragbbm/$filnavn"),
             ),
         )
     }

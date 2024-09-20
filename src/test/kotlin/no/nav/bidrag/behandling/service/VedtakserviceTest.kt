@@ -58,7 +58,7 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockkBean
     lateinit var tilgangskontrollService: TilgangskontrollService
 
-    @MockkBean
+    @MockkBean(relaxed = true)
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
@@ -82,7 +82,7 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
-    @MockBean
+    @Autowired
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
     @Autowired
@@ -121,6 +121,9 @@ class VedtakserviceTest : TestContainerRunner() {
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
+        stubUtils.stubBidragVedtakForStønad()
+        stubUtils.stubBidraBBMHentBeregning()
+        stubUtils.stubBidragStonadLøpendeSaker()
     }
 
     @Test

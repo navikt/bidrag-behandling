@@ -199,7 +199,7 @@ class BeregningServiceTest {
         }
         resultat shouldNotBe null
         vedtaksTypeCapture.captured shouldBe Vedtakstype.FASTSETTELSE
-        resultat.grunnlagListe shouldHaveSize 27
+        resultat.grunnlagListe shouldHaveSize 29
         beregnGrunnlagList shouldHaveSize 1
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
@@ -280,7 +280,7 @@ class BeregningServiceTest {
         }
         resultat shouldNotBe null
         vedtaksTypeCapture.captured shouldBe Vedtakstype.FASTSETTELSE
-        resultat.grunnlagListe shouldHaveSize 27
+        resultat.grunnlagListe shouldHaveSize 29
         beregnGrunnlagList shouldHaveSize 1
         assertSoftly(beregnGrunnlagList[0]) {
             val delberegningUtgift = it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_UTGIFT).first()
