@@ -56,6 +56,9 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
+        stubUtils.stubBidragVedtakForStønad()
+        stubUtils.stubBidraBBMHentBeregning()
+        stubUtils.stubBidragStonadLøpendeSaker()
     }
 
     @Test

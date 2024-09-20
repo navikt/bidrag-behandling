@@ -31,11 +31,13 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -61,6 +63,7 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
@@ -1471,3 +1474,16 @@ fun lagVedtaksdata(filnavn: String): VedtakDto {
     val grunnlag: VedtakDto = commonObjectmapper.readValue(stringValue)
     return grunnlag
 }
+
+fun opprettLøpendeBidragGrunnlag(
+    gjelderBarn: TestDataPerson,
+    stønadstype: Stønadstype,
+) = LøpendeBidrag(
+    gjelderBarn = gjelderBarn.tilRolle().tilGrunnlagPerson().referanse,
+    type = stønadstype,
+    løpendeBeløp = BigDecimal(5123),
+    faktiskBeløp = BigDecimal(6555),
+    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
+    beregnetBeløp = BigDecimal(6334),
+    saksnummer = Saksnummer(SAKSNUMMER),
+)

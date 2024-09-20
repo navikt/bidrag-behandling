@@ -81,7 +81,7 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
 
 operator fun BeregnGrunnlag.plus(grunnlag: List<GrunnlagDto>) =
     copy(
-        grunnlagListe = grunnlagListe + grunnlag,
+        grunnlagListe = (grunnlagListe + grunnlag).toSet().toList(),
     )
 
 fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {

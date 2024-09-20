@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.fasterxml.jackson.databind.node.POJONode
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainAll
@@ -12,8 +13,11 @@ import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
+import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_løpende_bidrag
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.opprettLøpendeBidragGrunnlag
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -25,11 +29,13 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
@@ -61,6 +67,29 @@ class BeregningServiceTest {
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
+        val behandling =
+            opprettGyldigBehandlingForBeregningOgVedtak(
+                true,
+                typeBehandling = TypeBehandling.SÆRBIDRAG,
+            )
+        val grunnlag = behandling.søknadsbarn.map { it.tilGrunnlagPerson() }.toMutableList()
+        grunnlag.add(
+            GrunnlagDto(
+                referanse = grunnlagsreferanse_løpende_bidrag,
+                type = Grunnlagstype.LØPENDE_BIDRAG,
+                innhold =
+                    POJONode(
+                        LøpendeBidragGrunnlag(
+                            løpendeBidragListe =
+                                listOf(
+                                    opprettLøpendeBidragGrunnlag(testdataBarn1, Stønadstype.BIDRAG),
+                                    opprettLøpendeBidragGrunnlag(testdataBarn2, Stønadstype.BIDRAG),
+                                ),
+                        ),
+                    ),
+            ),
+        )
+        every { evnevurderingService.opprettGrunnlagLøpendeBidrag(any(), any()) } returns grunnlag
     }
 
     @Test
@@ -73,6 +102,7 @@ class BeregningServiceTest {
             ).toMutableSet()
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
+
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnForskuddApi::class)
         every { BeregnForskuddApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
@@ -174,7 +204,7 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 10
+            it.grunnlagListe shouldHaveSize 11
 
             val personer =
                 it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>

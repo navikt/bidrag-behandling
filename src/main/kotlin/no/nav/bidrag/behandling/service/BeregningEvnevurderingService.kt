@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.transformers.grunnlag.opprettLøpendeBidragGrunnlag
+import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
@@ -27,7 +28,7 @@ class BeregningEvnevurderingService(
 ) {
     fun opprettGrunnlagLøpendeBidrag(
         behandling: Behandling,
-        grunnlagsliste: List<GrunnlagDto>,
+        grunnlagsliste: List<GrunnlagDto> = behandling.tilPersonobjekter().toList(),
     ): List<GrunnlagDto> {
         val bpIdent = Personident(behandling.bidragspliktig!!.ident!!)
         val løpendeStønader = hentSisteLøpendeStønader(bpIdent)

@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.findAll
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
+import com.github.tomakehurst.wiremock.matching.MatchResult
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
@@ -38,6 +39,7 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -134,12 +136,95 @@ class StubUtils {
         )
     }
 
+    fun stubBidragVedtakForStønad(status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
+                .andMatching {
+                    try {
+                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
+                        if (request.kravhaver.verdi == testdataBarn1.ident) {
+                            MatchResult.exactMatch()
+                        } else {
+                            MatchResult.noMatch()
+                        }
+                    } catch (e: Exception) {
+                        MatchResult.noMatch()
+                    }
+                }.willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(status.value())
+                        .withBodyFile("vedtak/vedtak-for-stønad-barn1.json"),
+                ),
+        )
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
+                .andMatching {
+                    try {
+                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
+                        if (request.kravhaver.verdi == testdataBarn2.ident) {
+                            MatchResult.exactMatch()
+                        } else {
+                            MatchResult.noMatch()
+                        }
+                    } catch (e: Exception) {
+                        MatchResult.noMatch()
+                    }
+                }.willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(status.value())
+                        .withBodyFile("vedtak/vedtak-for-stønad-barn2.json"),
+                ),
+        )
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
+                .andMatching {
+                    try {
+                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
+                        if (request.kravhaver.verdi == testdataHusstandsmedlem1.ident) {
+                            MatchResult.exactMatch()
+                        } else {
+                            MatchResult.noMatch()
+                        }
+                    } catch (e: Exception) {
+                        MatchResult.noMatch()
+                    }
+                }.willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(status.value())
+                        .withBodyFile("vedtak/vedtak-for-stønad-barn3.json"),
+                ),
+        )
+    }
+
+    fun stubBidragStonadLøpendeSaker(status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/stonad/hent-lopende-bidragssaker-for-skyldner")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBodyFile("stonad/løpende-bidragssaker-bp.json"),
+            ),
+        )
+    }
+
+    fun stubBidraBBMHentBeregning(status: HttpStatus = HttpStatus.OK) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/bbm/api/beregning")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBodyFile("bidragbbm/bbm-beregning.json"),
+            ),
+        )
+    }
+
     fun stubTilgangskontrollSak(
         result: Boolean = true,
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/sak")).willReturn(
+            WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/sak")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(result.toString()),
@@ -152,7 +237,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
         personIdent: String? = null,
     ) {
-        val stub = WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/person"))
+        val stub = WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/person"))
         if (!personIdent.isNullOrEmpty()) {
             stub.withRequestBody(ContainsPattern(personIdent))
         }
@@ -235,7 +320,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlMatching("/forsendelse/api/forsendelse/sak/(.*)")).willReturn(
+            WireMock.get(urlMatching("/forsendelse/api/forsendelse/sak/(.*)")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(response)),
@@ -245,7 +330,7 @@ class StubUtils {
 
     fun stubOpprettNotat(status: HttpStatus = HttpStatus.OK) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/dokumentproduksjon/api/v2/notat/pdf")).willReturn(
+            WireMock.post(urlMatching("/dokumentproduksjon/api/v2/notat/pdf")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
@@ -260,7 +345,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/dokument/journalpost/JOARK")).willReturn(
+            WireMock.post(urlMatching("/dokument/journalpost/JOARK")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(nyOpprettJournalpostResponse(nyJournalpostId, dokumenter))),
@@ -627,13 +712,13 @@ class StubUtils {
         }
 
         fun opprettNotatKalt() {
-            WireMock.verify(postRequestedFor(WireMock.urlMatching("/dokumentproduksjon/api/v2/notat/pdf")))
+            WireMock.verify(postRequestedFor(urlMatching("/dokumentproduksjon/api/v2/notat/pdf")))
         }
 
         fun opprettJournalpostKaltMed(vararg contains: String) {
             val verify =
                 WireMock.postRequestedFor(
-                    WireMock.urlMatching("/dokument/journalpost/JOARK"),
+                    urlMatching("/dokument/journalpost/JOARK"),
                 )
             verifyContains(verify, *contains)
         }
