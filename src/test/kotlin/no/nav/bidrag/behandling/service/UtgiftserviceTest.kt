@@ -724,6 +724,56 @@ class UtgiftserviceTest : TestContainerRunner() {
 
     @Test
     @Transactional
+    fun `skal slette maks godkjent beløp hvis ingen utgiftsposter`() {
+        val behandling = oppretteBehandlingForSærbidrag()
+
+        behandling.utgift =
+            Utgift(
+                behandling = behandling,
+                beløpDirekteBetaltAvBp = BigDecimal(0),
+            )
+        behandling.utgift!!.maksGodkjentBeløpTaMed = true
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(100)
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "DEtte er test"
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSLEIR.name,
+                    kravbeløp = BigDecimal(2000),
+                    godkjentBeløp = BigDecimal(1600),
+                    kommentar = "Test",
+                    utgift = behandling.utgift!!,
+                ),
+            )
+        testdataManager.lagreBehandlingNewTransaction(behandling)
+        val utgiftspostSlettId =
+            behandling.utgift!!
+                .utgiftsposter
+                .first()
+                .id
+        val forespørsel =
+            OppdatereUtgiftRequest(
+                sletteUtgift = utgiftspostSlettId,
+            )
+        val response = utgiftService.oppdatereUtgift(behandling.id!!, forespørsel)
+
+        response.utgiftposter shouldHaveSize 0
+        response.maksGodkjentBeløp!!.beløp shouldBe null
+        response.maksGodkjentBeløp!!.taMed shouldBe false
+        response.maksGodkjentBeløp!!.begrunnelse shouldBe null
+
+        response.avslag shouldBe null
+
+        val behandlingEtter = testdataManager.hentBehandling(behandling.id!!)
+        behandlingEtter!!.utgift!!.utgiftsposter shouldHaveSize 0
+        behandlingEtter!!.utgift!!.maksGodkjentBeløp shouldBe null
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpBegrunnelse shouldBe null
+        behandlingEtter!!.utgift!!.maksGodkjentBeløpTaMed shouldBe false
+    }
+
+    @Test
+    @Transactional
     fun `skal slette utgiftspost`() {
         val behandling = oppretteBehandlingForSærbidrag()
         behandling.utgift =
