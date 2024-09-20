@@ -98,7 +98,7 @@ class VedtakTilBehandlingForskuddTest {
                 unleash,
             )
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
-        every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
+        every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())

@@ -57,7 +57,6 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringR
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
-import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -81,7 +80,15 @@ class VedtakService(
         try {
             LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
             val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-            tilgangskontrollService.sjekkTilgangSak(vedtak.saksnummer!!)
+
+            vedtak.behandlingId?.let {
+                tilgangskontrollService.sjekkTilgangBehandling(
+                    behandlingService.hentBehandlingById(
+                        it
+                    )
+                )
+            }
+
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
             return vedtak.tilBehandling(vedtakId, lesemodus = true)
         } catch (e: Exception) {
@@ -123,19 +130,19 @@ class VedtakService(
         try {
             LOGGER.info {
                 "Oppretter behandling fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
-                    "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+                        "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
             }
             val konvertertBehandling =
                 konverterVedtakTilBehandling(request, refVedtaksid)
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
-            tilgangskontrollService.sjekkTilgangSak(konvertertBehandling.saksnummer)
-            val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
 
+            tilgangskontrollService.sjekkTilgangBehandling(konvertertBehandling)
+            val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
             grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
             LOGGER.info {
                 "Opprettet behandling ${behandlingDo.id} fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
-                    "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
+                        "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
             }
             return OpprettBehandlingResponse(behandlingDo.id!!)
         } catch (e: Exception) {
@@ -265,6 +272,7 @@ class VedtakService(
                     } else {
                         behandling.byggOpprettVedtakRequestSærbidrag()
                     }
+
                 TypeBehandling.FORSKUDD ->
                     if (behandling.avslag !=
                         null
@@ -273,6 +281,7 @@ class VedtakService(
                     } else {
                         behandling.byggOpprettVedtakRequestForskudd()
                     }
+
                 else -> throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
                     "Behandlingstype ${behandling.tilType()} støttes ikke",
@@ -305,35 +314,35 @@ class VedtakService(
         return byggOpprettVedtakRequestObjekt()
             .copy(
                 stønadsendringListe =
-                    søknadsbarn.map {
-                        OpprettStønadsendringRequestDto(
-                            innkreving = Innkrevingstype.MED_INNKREVING,
-                            skyldner = tilSkyldner(),
-                            omgjørVedtakId = refVedtaksid?.toInt(),
-                            kravhaver =
-                                it.tilNyestePersonident()
-                                    ?: rolleManglerIdent(Rolletype.BARN, id!!),
-                            mottaker =
-                                roller
-                                    .reelMottakerEllerBidragsmottaker(
-                                        sak.hentRolleMedFnr(it.ident!!),
-                                    ),
-                            sak = Saksnummer(saksnummer),
-                            type = stonadstype!!,
-                            beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = grunnlagListe.map { it.referanse },
-                            periodeListe =
-                                listOf(
-                                    OpprettPeriodeRequestDto(
-                                        periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
-                                        beløp = null,
-                                        resultatkode = avslag!!.name,
-                                        valutakode = "NOK",
-                                        grunnlagReferanseListe = emptyList(),
-                                    ),
-                                ),
-                        )
-                    },
+                søknadsbarn.map {
+                    OpprettStønadsendringRequestDto(
+                        innkreving = Innkrevingstype.MED_INNKREVING,
+                        skyldner = tilSkyldner(),
+                        omgjørVedtakId = refVedtaksid?.toInt(),
+                        kravhaver =
+                        it.tilNyestePersonident()
+                            ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                        mottaker =
+                        roller
+                            .reelMottakerEllerBidragsmottaker(
+                                sak.hentRolleMedFnr(it.ident!!),
+                            ),
+                        sak = Saksnummer(saksnummer),
+                        type = stonadstype!!,
+                        beslutning = Beslutningstype.ENDRING,
+                        grunnlagReferanseListe = grunnlagListe.map { it.referanse },
+                        periodeListe =
+                        listOf(
+                            OpprettPeriodeRequestDto(
+                                periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
+                                beløp = null,
+                                resultatkode = avslag!!.name,
+                                valutakode = "NOK",
+                                grunnlagReferanseListe = emptyList(),
+                            ),
+                        ),
+                    )
+                },
                 grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
             )
     }
@@ -350,36 +359,36 @@ class VedtakService(
 
         val grunnlagListe =
             (
-                grunnlagListeVedtak +
-                    stønadsendringPerioder.flatMap(
-                        StønadsendringPeriode::grunnlag,
-                    ) + stønadsendringGrunnlagListe
-            ).toSet()
+                    grunnlagListeVedtak +
+                            stønadsendringPerioder.flatMap(
+                                StønadsendringPeriode::grunnlag,
+                            ) + stønadsendringGrunnlagListe
+                    ).toSet()
 
         return byggOpprettVedtakRequestObjekt().copy(
             stønadsendringListe =
-                stønadsendringPerioder.map {
-                    OpprettStønadsendringRequestDto(
-                        innkreving = Innkrevingstype.MED_INNKREVING,
-                        skyldner = tilSkyldner(),
-                        omgjørVedtakId = refVedtaksid?.toInt(),
-                        kravhaver =
-                            it.barn.tilNyestePersonident()
-                                ?: rolleManglerIdent(Rolletype.BARN, id!!),
-                        mottaker =
-                            roller
-                                .reelMottakerEllerBidragsmottaker(
-                                    sak.hentRolleMedFnr(it.barn.ident!!),
-                                ),
-                        sak = Saksnummer(saksnummer),
-                        type = stonadstype!!,
-                        beslutning = Beslutningstype.ENDRING,
-                        grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
-                        periodeListe = it.perioder,
-                        // Settes null for forskudd men skal settes til riktig verdi for bidrag
-                        førsteIndeksreguleringsår = null,
-                    )
-                },
+            stønadsendringPerioder.map {
+                OpprettStønadsendringRequestDto(
+                    innkreving = Innkrevingstype.MED_INNKREVING,
+                    skyldner = tilSkyldner(),
+                    omgjørVedtakId = refVedtaksid?.toInt(),
+                    kravhaver =
+                    it.barn.tilNyestePersonident()
+                        ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                    mottaker =
+                    roller
+                        .reelMottakerEllerBidragsmottaker(
+                            sak.hentRolleMedFnr(it.barn.ident!!),
+                        ),
+                    sak = Saksnummer(saksnummer),
+                    type = stonadstype!!,
+                    beslutning = Beslutningstype.ENDRING,
+                    grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
+                    periodeListe = it.perioder,
+                    // Settes null for forskudd men skal settes til riktig verdi for bidrag
+                    førsteIndeksreguleringsår = null,
+                )
+            },
             grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
         )
     }
@@ -392,29 +401,29 @@ class VedtakService(
         return byggOpprettVedtakRequestObjekt()
             .copy(
                 engangsbeløpListe =
-                    listOf(
-                        OpprettEngangsbeløpRequestDto(
-                            type = engangsbeloptype!!,
-                            beløp = null,
-                            resultatkode = tilSærbidragAvslagskode()!!.name,
-                            valutakode = "NOK",
-                            betaltBeløp = null,
-                            innkreving = innkrevingstype!!,
-                            skyldner = tilSkyldner(),
-                            omgjørVedtakId = refVedtaksid?.toInt(),
-                            kravhaver =
-                                barn.tilNyestePersonident()
-                                    ?: rolleManglerIdent(Rolletype.BARN, id!!),
-                            mottaker =
-                                roller
-                                    .reelMottakerEllerBidragsmottaker(
-                                        sak.hentRolleMedFnr(barn.ident!!),
-                                    ),
-                            sak = Saksnummer(saksnummer),
-                            beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = grunnlagListe.map(GrunnlagDto::referanse),
-                        ),
+                listOf(
+                    OpprettEngangsbeløpRequestDto(
+                        type = engangsbeloptype!!,
+                        beløp = null,
+                        resultatkode = tilSærbidragAvslagskode()!!.name,
+                        valutakode = "NOK",
+                        betaltBeløp = null,
+                        innkreving = innkrevingstype!!,
+                        skyldner = tilSkyldner(),
+                        omgjørVedtakId = refVedtaksid?.toInt(),
+                        kravhaver =
+                        barn.tilNyestePersonident()
+                            ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                        mottaker =
+                        roller
+                            .reelMottakerEllerBidragsmottaker(
+                                sak.hentRolleMedFnr(barn.ident!!),
+                            ),
+                        sak = Saksnummer(saksnummer),
+                        beslutning = Beslutningstype.ENDRING,
+                        grunnlagReferanseListe = grunnlagListe.map(GrunnlagDto::referanse),
                     ),
+                ),
                 grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
             )
     }
@@ -427,8 +436,8 @@ class VedtakService(
             if (resultat.resultatkode == Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS) {
                 listOf(
                     tilPersonobjekter() + byggGrunnlagUtgiftsposter() +
-                        byggGrunnlagUtgiftDirekteBetalt() +
-                        byggGrunnlagUtgiftMaksGodkjentBeløp(),
+                            byggGrunnlagUtgiftDirekteBetalt() +
+                            byggGrunnlagUtgiftMaksGodkjentBeløp(),
                     byggGrunnlagGenereltAvslag(),
                 )
             } else {
@@ -439,35 +448,35 @@ class VedtakService(
 
         val grunnlagslisteEngangsbeløp =
             grunnlaglisteGenerelt +
-                beregning.grunnlagListe.filter { it.type == Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG }
+                    beregning.grunnlagListe.filter { it.type == Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG }
 
         val barn = søknadsbarn.first()
 
         return byggOpprettVedtakRequestObjekt().copy(
             engangsbeløpListe =
-                listOf(
-                    OpprettEngangsbeløpRequestDto(
-                        type = engangsbeloptype!!,
-                        beløp = resultat.beløp,
-                        resultatkode = resultat.resultatkode.name,
-                        valutakode = "NOK",
-                        betaltBeløp = utgift!!.totalBeløpBetaltAvBp,
-                        innkreving = innkrevingstype!!,
-                        skyldner = tilSkyldner(),
-                        omgjørVedtakId = refVedtaksid?.toInt(),
-                        kravhaver =
-                            barn.tilNyestePersonident()
-                                ?: rolleManglerIdent(Rolletype.BARN, id!!),
-                        mottaker =
-                            roller
-                                .reelMottakerEllerBidragsmottaker(
-                                    sak.hentRolleMedFnr(barn.ident!!),
-                                ),
-                        sak = Saksnummer(saksnummer),
-                        beslutning = Beslutningstype.ENDRING,
-                        grunnlagReferanseListe = grunnlagslisteEngangsbeløp.map(GrunnlagDto::referanse),
-                    ),
+            listOf(
+                OpprettEngangsbeløpRequestDto(
+                    type = engangsbeloptype!!,
+                    beløp = resultat.beløp,
+                    resultatkode = resultat.resultatkode.name,
+                    valutakode = "NOK",
+                    betaltBeløp = utgift!!.totalBeløpBetaltAvBp,
+                    innkreving = innkrevingstype!!,
+                    skyldner = tilSkyldner(),
+                    omgjørVedtakId = refVedtaksid?.toInt(),
+                    kravhaver =
+                    barn.tilNyestePersonident()
+                        ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                    mottaker =
+                    roller
+                        .reelMottakerEllerBidragsmottaker(
+                            sak.hentRolleMedFnr(barn.ident!!),
+                        ),
+                    sak = Saksnummer(saksnummer),
+                    beslutning = Beslutningstype.ENDRING,
+                    grunnlagReferanseListe = grunnlagslisteEngangsbeløp.map(GrunnlagDto::referanse),
                 ),
+            ),
             grunnlagListe = grunnlagliste.map(GrunnlagDto::tilOpprettRequestDto),
         )
     }
@@ -480,8 +489,8 @@ class VedtakService(
 
         val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
             erKlageEllerOmgjøring &&
-                opprinneligVirkningstidspunkt != null &&
-                virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
+                    opprinneligVirkningstidspunkt != null &&
+                    virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
         if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
