@@ -110,6 +110,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     fun initMock() {
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPerson()
+        stubUtils.stubTilgangskontrollPersonISak()
         stubKodeverkProvider()
         stubSjablonProvider()
     }
@@ -209,10 +210,9 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
 
             // hvis
-            val oppdatertBehandlingDto =
-                behandlingService.henteBehandling(
-                    behandling.id!!,
-                )
+            behandlingService.henteBehandling(
+                behandling.id!!,
+            )
 
             val nyVirkningsdato = LocalDate.now().withDayOfMonth(1)
 
@@ -1049,7 +1049,10 @@ class BehandlingServiceTest : TestContainerRunner() {
                 val svar =
                     behandlingService.aktivereGrunnlag(
                         b.id!!,
-                        AktivereGrunnlagRequestV2(Personident(b.bidragspliktig!!.ident!!), Grunnlagsdatatype.ARBEIDSFORHOLD),
+                        AktivereGrunnlagRequestV2(
+                            Personident(b.bidragspliktig!!.ident!!),
+                            Grunnlagsdatatype.ARBEIDSFORHOLD,
+                        ),
                     )
 
                 // så

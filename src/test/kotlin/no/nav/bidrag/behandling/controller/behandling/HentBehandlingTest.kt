@@ -195,6 +195,8 @@ class HentBehandlingTest : BehandlingControllerTest() {
         val behandling = testdataManager.lagreBehandling(opprettBehandling())
 
         stubUtils.stubTilgangskontrollSak(false)
+        stubUtils.stubTilgangskontrollPersonISak(false)
+
         // hvis
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
@@ -212,6 +214,8 @@ class HentBehandlingTest : BehandlingControllerTest() {
         val behandling = testdataManager.lagreBehandling(opprettBehandling())
 
         stubUtils.stubTilgangskontrollSak(true)
+        stubUtils.stubTilgangskontrollPersonISak(false)
+
         behandling.roller.forEachIndexed { index, rolle ->
             stubUtils.stubTilgangskontrollPerson(index == 0, personIdent = rolle.ident)
         }

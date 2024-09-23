@@ -141,7 +141,7 @@
   "behandlingsreferanseListe": [
     {
       "kilde": "BEHANDLING_ID",
-      "referanse": "42"
+      "referanse": "1"
     },
     {
       "kilde": "BISYS_SØKNAD",

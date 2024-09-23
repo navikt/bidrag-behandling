@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.hentFil
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -112,6 +113,7 @@ class VedtakTilBehandlingForskuddTest {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for FORSKUDD`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
+        every { behandlingService.hentBehandlingById(1) } returns oppretteBehandling()
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -143,6 +145,7 @@ class VedtakTilBehandlingForskuddTest {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus hvis resultat er avslag`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_respons_resultat_avslag")
+        every { behandlingService.hentBehandlingById(1) } returns oppretteBehandling()
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -471,6 +474,7 @@ class VedtakTilBehandlingForskuddTest {
     @Test
     fun `skal konvertere vedtak avslag til behandling`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response_avslag")
+        every { behandlingService.hentBehandlingById(1) } returns oppretteBehandling()
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {

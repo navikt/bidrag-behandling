@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
 import no.nav.bidrag.behandling.utils.testdata.lagVedtaksdata
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -111,6 +112,7 @@ class VedtakTilBehandlingSærbidragTest {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG`() {
         every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
+        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -149,6 +151,8 @@ class VedtakTilBehandlingSærbidragTest {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG maks godkjent beløp`() {
         every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag_maksbeløp")
+        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
+
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -186,6 +190,7 @@ class VedtakTilBehandlingSærbidragTest {
                         }
                     },
             )
+        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
         every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
@@ -227,6 +232,8 @@ class VedtakTilBehandlingSærbidragTest {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med avslag godkjent beløp lavere enn forskuddsats`() {
         val originalVedtak = lagVedtaksdata("vedtak_respons_avslag_særbidrag-forskuddsats")
+        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
+
         val vedtak1 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
@@ -322,6 +329,7 @@ class VedtakTilBehandlingSærbidragTest {
                     },
             )
         every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
+        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -477,6 +485,8 @@ class VedtakTilBehandlingSærbidragTest {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus hvis direkte avslag`() {
         every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_respons_avslag-særbidrag")
+        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
+
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
