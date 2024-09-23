@@ -12,9 +12,18 @@ import org.springframework.stereotype.Service
 class TilgangskontrollService(
     private val tIlgangskontrollConsumer: BidragTilgangskontrollConsumer,
 ) {
-    fun sjekkTilgangPersonISak(personident: Personident, saksnummer: Saksnummer) {
+    fun sjekkTilgangPersonISak(
+        personident: Personident,
+        saksnummer: Saksnummer,
+    ) {
         if (SikkerhetsKontekst.erIApplikasjonKontekst()) return
-        if (!tIlgangskontrollConsumer.sjekkTilgangPersonISak(personident, saksnummer)) ingenTilgang("Ingen tilgang til saksnummer $saksnummer")
+        if (!tIlgangskontrollConsumer.sjekkTilgangPersonISak(
+                personident,
+                saksnummer,
+            )
+        ) {
+            ingenTilgang("Ingen tilgang til saksnummer $saksnummer")
+        }
     }
 
     fun sjekkTilgangBehandling(behandling: Behandling) {

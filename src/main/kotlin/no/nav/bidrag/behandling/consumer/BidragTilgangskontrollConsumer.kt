@@ -39,7 +39,10 @@ class BidragTilgangskontrollConsumer(
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
     @BrukerCacheable(TILGANG_SAK_CACHE)
-    fun sjekkTilgangPersonISak(personident: Personident, saksnummer: Saksnummer): Boolean {
+    fun sjekkTilgangPersonISak(
+        personident: Personident,
+        saksnummer: Saksnummer,
+    ): Boolean {
         return try {
             val headers = HttpHeaders()
             headers.contentType = MediaType.APPLICATION_JSON

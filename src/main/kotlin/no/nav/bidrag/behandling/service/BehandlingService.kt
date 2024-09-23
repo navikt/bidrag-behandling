@@ -85,12 +85,11 @@ class BehandlingService(
         }
 
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
-
         opprettBehandling.roller.forEach { rolle ->
             rolle.ident?.let {
                 tilgangskontrollService.sjekkTilgangPersonISak(
                     it,
-                    Saksnummer(opprettBehandling.saksnummer)
+                    Saksnummer(opprettBehandling.saksnummer),
                 )
             }
         }
@@ -113,41 +112,41 @@ class BehandlingService(
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
                 innkrevingstype =
-                when (opprettBehandling.tilType()) {
-                    TypeBehandling.FORSKUDD -> Innkrevingstype.MED_INNKREVING
-                    else -> opprettBehandling.innkrevingstype
-                },
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD -> Innkrevingstype.MED_INNKREVING
+                        else -> opprettBehandling.innkrevingstype
+                    },
                 virkningstidspunkt =
-                when (opprettBehandling.tilType()) {
-                    TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> opprettBehandling.søktFomDato
-                    TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
-                },
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> opprettBehandling.søktFomDato
+                        TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
+                    },
                 årsak =
-                when (opprettBehandling.tilType()) {
-                    TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
-                        if (opprettBehandling.vedtakstype !=
-                            Vedtakstype.OPPHØR
-                        ) {
-                            VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-                        } else {
-                            null
-                        }
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
+                            if (opprettBehandling.vedtakstype !=
+                                Vedtakstype.OPPHØR
+                            ) {
+                                VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+                            } else {
+                                null
+                            }
 
-                    TypeBehandling.SÆRBIDRAG -> null
-                },
+                        TypeBehandling.SÆRBIDRAG -> null
+                    },
                 avslag =
-                when (opprettBehandling.tilType()) {
-                    TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
-                        if (opprettBehandling.vedtakstype ==
-                            Vedtakstype.OPPHØR
-                        ) {
-                            Resultatkode.IKKE_OMSORG
-                        } else {
-                            null
-                        }
+                    when (opprettBehandling.tilType()) {
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
+                            if (opprettBehandling.vedtakstype ==
+                                Vedtakstype.OPPHØR
+                            ) {
+                                Resultatkode.IKKE_OMSORG
+                            } else {
+                                null
+                            }
 
-                    TypeBehandling.SÆRBIDRAG -> null
-                },
+                        TypeBehandling.SÆRBIDRAG -> null
+                    },
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
@@ -181,8 +180,8 @@ class BehandlingService(
 
         log.info {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
-                    "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
-                    "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
+                "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
+                "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
         }
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
@@ -194,15 +193,15 @@ class BehandlingService(
                 enhet = behandling.behandlerEnhet,
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
-                BehandlingInfoDto(
-                    behandlingId = behandling.id,
-                    soknadId = behandling.soknadsid,
-                    soknadFra = behandling.soknadFra,
-                    behandlingType = behandling.tilBehandlingstype(),
-                    stonadType = behandling.stonadstype,
-                    engangsBelopType = behandling.engangsbeloptype,
-                    vedtakType = behandling.vedtakstype,
-                ),
+                    BehandlingInfoDto(
+                        behandlingId = behandling.id,
+                        soknadId = behandling.soknadsid,
+                        soknadFra = behandling.soknadFra,
+                        behandlingType = behandling.tilBehandlingstype(),
+                        stonadType = behandling.stonadstype,
+                        engangsBelopType = behandling.engangsbeloptype,
+                        vedtakType = behandling.vedtakstype,
+                    ),
             ),
         )
     }
@@ -219,7 +218,7 @@ class BehandlingService(
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
                 secureLogger.info {
                     "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
-                            "for person ${request.personident}: $request"
+                        "for person ${request.personident}: $request"
                 }
                 grunnlagService.aktivereGrunnlag(it, request)
                 val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.toSet().hentSisteAktiv()
@@ -332,7 +331,7 @@ class BehandlingService(
                 it.vedtaksid = vedtaksid
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()
                 it.vedtakFattetAv = it.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
-                        ?: TokenUtils.hentApplikasjonsnavn()
+                    ?: TokenUtils.hentApplikasjonsnavn()
             }
     }
 
@@ -383,7 +382,7 @@ class BehandlingService(
         if (virkningstidspunkt != nyVirkningstidspunkt && !erKlageEllerOmgjøring) {
             log.info {
                 "Virkningstidspunkt $virkningstidspunkt på særbidrag er ikke riktig som følge av ny kalendermåned." +
-                        " Endrer virkningstidspunkt til starten av nåværende kalendermåned $nyVirkningstidspunkt"
+                    " Endrer virkningstidspunkt til starten av nåværende kalendermåned $nyVirkningstidspunkt"
             }
             oppdaterVirkningstidspunkt(OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt), this)
         }
