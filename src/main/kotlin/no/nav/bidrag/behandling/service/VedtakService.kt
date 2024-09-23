@@ -479,49 +479,29 @@ class VedtakService(
 
     private fun Set<GrunnlagDto>.slåSammenPersonobjekter(): Set<GrunnlagDto> {
         val personerIkkeBarnBidragspliktig = this.hentAllePersoner().filter { it.type != Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG }
-        val referanserErstattet = mutableListOf<Pair<String, String>>()
-        val grunnlagsobjekter =
-            fold<GrunnlagDto, MutableList<GrunnlagDto>>(mutableListOf()) { acc, grunnlagDto ->
-                if (grunnlagDto.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG) {
-                    val duplikatPersonobjekt =
-                        personerIkkeBarnBidragspliktig.find {
-                            it.personObjekt.ident == grunnlagDto.personObjekt.ident
-                        }
-                    if (duplikatPersonobjekt == null) {
-                        acc.add(grunnlagDto)
-                    } else {
-                        referanserErstattet.add(Pair(grunnlagDto.referanse, duplikatPersonobjekt.referanse))
-                    }
-                } else {
-                    acc.add(grunnlagDto)
-                }
-                acc
-            }.toSet()
+        val duplikatPersonBarnBidragspliktig =
+            this
+                .filter { it.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG }
+                .mapNotNull { grunnlagDto ->
+                    personerIkkeBarnBidragspliktig
+                        .find { it.personObjekt.ident == grunnlagDto.personObjekt.ident }
+                        ?.referanse
+                        ?.let { grunnlagDto.referanse to it }
+                }.toMap()
 
-        return grunnlagsobjekter
-            .map { grunnlagDto ->
-                if (grunnlagDto.type == Grunnlagstype.LØPENDE_BIDRAG) {
-                    grunnlagDto.copy(
-                        innhold =
-                            POJONode(
-                                grunnlagDto.innholdTilObjekt<LøpendeBidragGrunnlag>().copy(
-                                    løpendeBidragListe =
-                                        grunnlagDto.innholdTilObjekt<LøpendeBidragGrunnlag>().løpendeBidragListe.map { lb ->
-                                            val referanseErstattet = referanserErstattet.find { it.first == lb.gjelderBarn }
-                                            if (referanseErstattet != null) {
-                                                lb.copy(
-                                                    gjelderBarn = referanseErstattet.second,
-                                                )
-                                            } else {
-                                                lb
-                                            }
-                                        },
-                                ),
-                            ),
-                    )
-                } else {
-                    grunnlagDto
-                }
+        return this
+            .filterNot {
+                it.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG &&
+                    duplikatPersonBarnBidragspliktig.containsKey(it.referanse)
+            }.map { grunnlagDto ->
+                if (grunnlagDto.type != Grunnlagstype.LØPENDE_BIDRAG) return@map grunnlagDto
+
+                val løpendeBidragGrunnlag = grunnlagDto.innholdTilObjekt<LøpendeBidragGrunnlag>()
+                val oppdatertLøpendeBidragListe =
+                    løpendeBidragGrunnlag.løpendeBidragListe.map { lb ->
+                        lb.copy(gjelderBarn = duplikatPersonBarnBidragspliktig[lb.gjelderBarn] ?: lb.gjelderBarn)
+                    }
+                grunnlagDto.copy(innhold = POJONode(løpendeBidragGrunnlag.copy(løpendeBidragListe = oppdatertLøpendeBidragListe)))
             }.toSet()
     }
 

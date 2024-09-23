@@ -10,10 +10,10 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
-  BIDRAG_STONAD_URL: http://bidrag-stonad-feature
-  BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-feature
-  BIDRAG_VEDTAK_URL: http://bidrag-vedtak-feature
-  BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-feature
+  BIDRAG_STONAD_URL: http://bidrag-stonad
+  BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad
+  BIDRAG_VEDTAK_URL: http://bidrag-vedtak
+  BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak
   BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
   BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
   BIDRAG_DOKUMENT_PRODUKSJON_URL: http://bidrag-dokument-produksjon
