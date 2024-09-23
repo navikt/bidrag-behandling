@@ -82,7 +82,7 @@ fun Inntekt.erHistorisk(inntekter: Collection<Inntekt>): Boolean {
 
 fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
     this.filter { inntekt ->
-        !inntekt.erHistorisk(this)
+        inntekt.taMed || !inntekt.erHistorisk(this)
     }
 
 fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirkningstidspunkt: Boolean = true) =
