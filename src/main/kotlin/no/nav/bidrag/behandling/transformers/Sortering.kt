@@ -67,7 +67,7 @@ fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
     )
 
 fun Inntekt.erHistorisk(inntekter: Collection<Inntekt>): Boolean {
-    if (!ligningsinntekter.contains(type) || taMed || opprinneligFom == null) return false
+    if (!ligningsinntekter.contains(type) || opprinneligFom == null) return false
     val gjelderIdent = ident
     val sisteLigningsår =
         inntekter
