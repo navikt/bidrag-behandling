@@ -24,9 +24,8 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
-import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
-import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
+import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -139,14 +138,17 @@ class StubUtils {
         )
     }
 
-    fun stubBidragVedtakForStønad(status: HttpStatus = HttpStatus.OK) {
+    fun stubBidragVedtakForStønad(
+        kravhaverIdent: String,
+        filnavn: String,
+    ) {
         WireMock.stubFor(
             WireMock
                 .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
                 .andMatching {
                     try {
                         val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
-                        if (request.kravhaver.verdi == testdataBarn1.ident) {
+                        if (request.kravhaver.verdi == kravhaverIdent) {
                             MatchResult.exactMatch()
                         } else {
                             MatchResult.noMatch()
@@ -156,115 +158,42 @@ class StubUtils {
                     }
                 }.willReturn(
                     aClosedJsonResponse()
-                        .withStatus(status.value())
-                        .withBodyFile("vedtak/vedtak-for-stønad-barn1.json"),
-                ),
-        )
-        WireMock.stubFor(
-            WireMock
-                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
-                .andMatching {
-                    try {
-                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
-                        if (request.kravhaver.verdi == testdataBarn2.ident) {
-                            MatchResult.exactMatch()
-                        } else {
-                            MatchResult.noMatch()
-                        }
-                    } catch (e: Exception) {
-                        MatchResult.noMatch()
-                    }
-                }.willReturn(
-                    aClosedJsonResponse()
-                        .withStatus(status.value())
-                        .withBodyFile("vedtak/vedtak-for-stønad-barn2.json"),
-                ),
-        )
-        WireMock.stubFor(
-            WireMock
-                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
-                .andMatching {
-                    try {
-                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
-                        if (request.kravhaver.verdi == testdataHusstandsmedlem1.ident) {
-                            MatchResult.exactMatch()
-                        } else {
-                            MatchResult.noMatch()
-                        }
-                    } catch (e: Exception) {
-                        MatchResult.noMatch()
-                    }
-                }.willReturn(
-                    aClosedJsonResponse()
-                        .withStatus(status.value())
-                        .withBodyFile("vedtak/vedtak-for-stønad-barn3.json"),
-                ),
-        )
-
-        WireMock.stubFor(
-            WireMock
-                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
-                .andMatching {
-                    try {
-                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
-                        if (request.kravhaver.verdi == BP_BARN_ANNEN_IDENT) {
-                            MatchResult.exactMatch()
-                        } else {
-                            MatchResult.noMatch()
-                        }
-                    } catch (e: Exception) {
-                        MatchResult.noMatch()
-                    }
-                }.willReturn(
-                    aClosedJsonResponse()
-                        .withStatus(status.value())
-                        .withBodyFile("vedtak/vedtak-for-stønad-barn_annen.json"),
-                ),
-        )
-        WireMock.stubFor(
-            WireMock
-                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
-                .andMatching {
-                    try {
-                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
-                        if (request.kravhaver.verdi == BP_BARN_ANNEN_IDENT_2) {
-                            MatchResult.exactMatch()
-                        } else {
-                            MatchResult.noMatch()
-                        }
-                    } catch (e: Exception) {
-                        MatchResult.noMatch()
-                    }
-                }.willReturn(
-                    aClosedJsonResponse()
-                        .withStatus(status.value())
-                        .withBodyFile("vedtak/vedtak-for-stønad-barn_annen_2.json"),
+                        .withStatus(HttpStatus.OK.value())
+                        .withBody(erstattVariablerITestFil("vedtak/$filnavn")),
                 ),
         )
     }
 
+    fun stubAlleBidragVedtakForStønad() {
+        /**stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1")
+         stubBidragVedtakForStønad(testdataBarn2.ident, "vedtak-for-stønad-barn2")
+         stubBidragVedtakForStønad(testdataHusstandsmedlem1.ident, "vedtak-for-stønad-barn3")
+         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT, "vedtak-for-stønad-barn_annen")
+         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT_2, "vedtak-for-stønad-barn_annen_2")**/
+    }
+
     fun stubBidragStonadLøpendeSaker(
-        filnavn: String = "løpende-bidragssaker-bp.json",
+        filnavn: String = "løpende-bidragssaker-bp",
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
             WireMock.post(urlMatching("/stonad/hent-lopende-bidragssaker-for-skyldner")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBodyFile("stonad/$filnavn"),
+                    .withBody(erstattVariablerITestFil("stonad/$filnavn")),
             ),
         )
     }
 
     fun stubBidraBBMHentBeregning(
-        filnavn: String = "bbm-beregning.json",
+        filnavn: String = "bbm-beregning",
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
             WireMock.post(urlMatching("/bbm/api/beregning")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBodyFile("bidragbbm/$filnavn"),
+                    .withBody(erstattVariablerITestFil("bidragbbm/$filnavn")),
             ),
         )
     }
@@ -325,12 +254,12 @@ class StubUtils {
         )
     }
 
-    fun stubFatteVedtak(status: HttpStatus = HttpStatus.OK) {
+    fun stubFatteVedtak(vedtaksid: Int = 1) {
         WireMock.stubFor(
             WireMock.post(urlMatching("/vedtak/vedtak")).willReturn(
                 aClosedJsonResponse()
-                    .withStatus(status.value())
-                    .withBody(toJsonString(OpprettVedtakResponseDto(1, emptyList()))),
+                    .withStatus(HttpStatus.OK.value())
+                    .withBody(toJsonString(OpprettVedtakResponseDto(vedtaksid, emptyList()))),
             ),
         )
     }

@@ -1,5 +1,10 @@
 package no.nav.bidrag.behandling.service
 
+import StubUtils.Companion.aClosedJsonResponse
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
+import com.github.tomakehurst.wiremock.matching.MatchResult
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -20,6 +25,7 @@ import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
+import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -68,12 +74,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
-import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
+import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.http.HttpStatus
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.transaction.annotation.Transactional
 import stubHentPersonNyIdent
@@ -332,8 +340,122 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     @Transactional
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag og personobjekter`() {
         stubPersonConsumer()
-        stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_annen_barn.json")
-        stubUtils.stubBidraBBMHentBeregning("bbm-beregning_annen_barn.json")
+        stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_annen_barn")
+        stubUtils.stubBidraBBMHentBeregning("bbm-beregning_annen_barn")
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.refVedtaksid = 553
+        behandling.klageMottattdato = LocalDate.now()
+        behandling.inntekter = mutableSetOf()
+        behandling.grunnlag = mutableSetOf()
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(15000),
+                    godkjentBeløp = BigDecimal(5000),
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(8),
+                    type = Utgiftstype.KLÆR.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(10000),
+                    godkjentBeløp = BigDecimal(10000),
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(5),
+                    type = Utgiftstype.SELSKAP.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(10000),
+                    godkjentBeløp = BigDecimal(5000),
+                    kommentar = "Inneholder utgifter til mat og drikke",
+                ),
+            )
+        testdataManager.lagreBehandling(behandling)
+        stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+        behandling.initGrunnlagRespons(stubUtils)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+        behandling.taMedInntekt(behandling.bidragsmottaker!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
+        behandling.taMedInntekt(behandling.bidragspliktig!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        val grunnlagsliste = opprettVedtakRequest.grunnlagListe
+
+        assertSoftly(opprettVedtakRequest) {
+            grunnlagsliste shouldHaveSize 101
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
+                it.shouldHaveSize(1)
+                val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
+                innhold.løpendeBidragListe shouldHaveSize 4
+                innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[0].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_SØKNADSBARN
+                innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                innhold.løpendeBidragListe[2].type shouldBe Stønadstype.BIDRAG18AAR
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[2].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
+                innhold.løpendeBidragListe[3].type shouldBe Stønadstype.BIDRAG
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[3].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
+            }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
+    @Transactional
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag 2`() {
+        stubPersonConsumer()
+        // stubUtils.stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1_2")
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
+                .andMatching {
+                    try {
+                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
+                        if (request.kravhaver.verdi == testdataBarn1.ident) {
+                            MatchResult.exactMatch()
+                        } else {
+                            MatchResult.noMatch()
+                        }
+                    } catch (e: Exception) {
+                        MatchResult.noMatch()
+                    }
+                }.willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(HttpStatus.OK.value())
+                        .withBody(erstattVariablerITestFil("vedtak/vedtak-for-stønad-barn1_2")),
+                ),
+        )
+        stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_2")
+        stubUtils.stubBidraBBMHentBeregning("bbm-beregning_2")
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.refVedtaksid = 553
         behandling.klageMottattdato = LocalDate.now()

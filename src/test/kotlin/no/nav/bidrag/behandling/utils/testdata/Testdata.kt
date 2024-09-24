@@ -1463,7 +1463,7 @@ fun Behandling.leggTilNotat(
     )
 }
 
-fun lagVedtaksdata(filnavn: String): VedtakDto {
+fun erstattVariablerITestFil(filnavn: String): String {
     val fil =
         no.nav.bidrag.commons.web.mock
             .hentFil("/__files/$filnavn.json")
@@ -1472,11 +1472,17 @@ fun lagVedtaksdata(filnavn: String): VedtakDto {
     stringValue = stringValue.replace("{bpIdent}", testdataBP.ident)
     stringValue = stringValue.replace("{bpfDato}", testdataBP.fødselsdato.toString())
     stringValue = stringValue.replace("{barnId}", testdataBarn1.ident)
+    stringValue = stringValue.replace("{barnIdent}", testdataBarn1.ident)
     stringValue = stringValue.replace("{barnfDato}", testdataBarn1.fødselsdato.toString())
     stringValue = stringValue.replace("{barnId2}", testdataBarn2.ident)
     stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
     stringValue = stringValue.replace("{saksnummer}", SAKSNUMMER)
     stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
+    return stringValue
+}
+
+fun lagVedtaksdata(filnavn: String): VedtakDto {
+    val stringValue = erstattVariablerITestFil(filnavn)
     val grunnlag: VedtakDto = commonObjectmapper.readValue(stringValue)
     return grunnlag
 }

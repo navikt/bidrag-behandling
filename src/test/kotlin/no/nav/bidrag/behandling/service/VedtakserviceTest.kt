@@ -118,10 +118,12 @@ class VedtakserviceTest : TestContainerRunner() {
         every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(testVedtakResponsId, emptyList())
-        stubSjablonProvider()
+        every { vedtakConsumer.hentVedtakForStønad(any()) }
+            .stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
-        stubUtils.stubBidragVedtakForStønad()
+        stubUtils.stubFatteVedtak()
+        stubUtils.stubAlleBidragVedtakForStønad()
         stubUtils.stubBidraBBMHentBeregning()
         stubUtils.stubBidragStonadLøpendeSaker()
     }
