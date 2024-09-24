@@ -10,14 +10,14 @@ import org.springframework.stereotype.Service
 
 @Service
 class TilgangskontrollService(
-    private val tIlgangskontrollConsumer: BidragTilgangskontrollConsumer,
+    private val tilgangskontrollConsumer: BidragTilgangskontrollConsumer,
 ) {
     fun sjekkTilgangPersonISak(
         personident: Personident,
         saksnummer: Saksnummer,
     ) {
         if (SikkerhetsKontekst.erIApplikasjonKontekst()) return
-        if (!tIlgangskontrollConsumer.sjekkTilgangPersonISak(
+        if (!tilgangskontrollConsumer.sjekkTilgangPersonISak(
                 personident,
                 saksnummer,
             )

@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
-import no.nav.bidrag.behandling.config.CacheConfig.Companion.TILGANG_PERSON_CACHE
-import no.nav.bidrag.behandling.config.CacheConfig.Companion.TILGANG_SAK_CACHE
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.TILGANG_PERSON_I_SAK_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.TILGANG_TEMA_CACHE
 import no.nav.bidrag.behandling.fantIkkeSak
 import no.nav.bidrag.commons.cache.BrukerCacheable
@@ -38,7 +37,7 @@ class BidragTilgangskontrollConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    @BrukerCacheable(TILGANG_SAK_CACHE)
+    @BrukerCacheable(TILGANG_PERSON_I_SAK_CACHE)
     fun sjekkTilgangPersonISak(
         personident: Personident,
         saksnummer: Saksnummer,
@@ -50,23 +49,6 @@ class BidragTilgangskontrollConsumer(
         } catch (e: HttpStatusCodeException) {
             if (e.statusCode == HttpStatus.FORBIDDEN) return false
             if (e.statusCode == HttpStatus.NOT_FOUND) fantIkkeSak(saksnummer.verdi)
-            throw e
-        }
-    }
-
-    @Retryable(
-        value = [Exception::class],
-        maxAttempts = 3,
-        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
-    )
-    @BrukerCacheable(TILGANG_PERSON_CACHE)
-    fun sjekkTilgangPerson(personnummer: String): Boolean {
-        return try {
-            val headers = HttpHeaders()
-            headers.contentType = MediaType.TEXT_PLAIN
-            postForEntity(createUri("/api/tilgang/person"), personnummer, headers) ?: false
-        } catch (e: HttpStatusCodeException) {
-            if (e.statusCode == HttpStatus.FORBIDDEN) return false
             throw e
         }
     }
