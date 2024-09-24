@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
@@ -23,6 +24,8 @@ import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
@@ -116,7 +119,25 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
     @Test
     fun `skal beregne særbidrag for validert behandling`() {
         // given
-        val behandling = lagreBehandling(opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.SÆRBIDRAG))
+        val behandling =
+            lagreBehandling(
+                opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.SÆRBIDRAG).let { behandling ->
+                    behandling.inntekter.add(
+                        Inntekt(
+                            belop = BigDecimal(6000000),
+                            datoFom = behandling.virkningstidspunkt,
+                            datoTom = null,
+                            ident = behandling.bidragspliktig!!.ident!!,
+                            taMed = true,
+                            kilde = Kilde.MANUELL,
+                            behandling = behandling,
+                            type = Inntektsrapportering.KAPITALINNTEKT,
+                            id = null,
+                        ),
+                    )
+                    behandling
+                },
+            )
 
         // when
         val returnert =

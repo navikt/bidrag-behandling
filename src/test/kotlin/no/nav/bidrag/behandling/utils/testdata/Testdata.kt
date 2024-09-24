@@ -145,16 +145,18 @@ data class TestDataPerson(
     val fødselsdato: LocalDate,
     val rolletype: Rolletype,
 ) {
-    fun tilRolle(behandling: Behandling = oppretteBehandling()) =
-        Rolle(
-            id = behandling.roller.find { it.ident == ident }?.id ?: 1,
-            ident = ident,
-            navn = navn,
-            fødselsdato = fødselsdato,
-            rolletype = rolletype,
-            opprettet = LocalDateTime.now(),
-            behandling = behandling,
-        )
+    fun tilRolle(
+        behandling: Behandling = oppretteBehandling(),
+        id: Long = 1,
+    ) = Rolle(
+        id = behandling.roller.find { it.ident == ident }?.id ?: id,
+        ident = ident,
+        navn = navn,
+        fødselsdato = fødselsdato,
+        rolletype = rolletype,
+        opprettet = LocalDateTime.now(),
+        behandling = behandling,
+    )
 
     fun tilPersonDto() =
         PersonDto(
@@ -1473,6 +1475,7 @@ fun lagVedtaksdata(filnavn: String): VedtakDto {
     stringValue = stringValue.replace("{barnfDato}", testdataBarn1.fødselsdato.toString())
     stringValue = stringValue.replace("{barnId2}", testdataBarn2.ident)
     stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
+    stringValue = stringValue.replace("{saksnummer}", SAKSNUMMER)
     stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
     val grunnlag: VedtakDto = commonObjectmapper.readValue(stringValue)
     return grunnlag
@@ -1481,8 +1484,9 @@ fun lagVedtaksdata(filnavn: String): VedtakDto {
 fun opprettLøpendeBidragGrunnlag(
     gjelderBarn: TestDataPerson,
     stønadstype: Stønadstype,
+    barnId: Long,
 ) = LøpendeBidrag(
-    gjelderBarn = gjelderBarn.tilRolle().tilGrunnlagPerson().referanse,
+    gjelderBarn = gjelderBarn.tilRolle(id = barnId).tilGrunnlagPerson().referanse,
     type = stønadstype,
     løpendeBeløp = BigDecimal(5123),
     faktiskBeløp = BigDecimal(6555),

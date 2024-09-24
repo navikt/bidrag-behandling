@@ -437,10 +437,11 @@ class VedtakService(
                     byggGrunnlagGenereltAvslag(),
                 )
             } else {
-                listOf(byggGrunnlagForVedtak(), byggGrunnlagGenerelt())
+                val personobjekterFraBeregning = beregning.grunnlagListe.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>
+                listOf(byggGrunnlagForVedtak(personobjekterFraBeregning), byggGrunnlagGenerelt())
             }
 
-        val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet().slåSammenPersonobjekter()
+        val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet()
 
         val grunnlagslisteEngangsbeløp =
             grunnlaglisteGenerelt +
@@ -477,6 +478,11 @@ class VedtakService(
         )
     }
 
+    /**
+     * Slå sammen personobjekter hvor grunnlagstypen er ulik men referer til samme person.
+     * LØPENDE_BIDRAG grunnlaget opprettes før INNHENTET_HUSSTANDSMEDLEM grunnlaget opprettes. Derfor kan det hende at begge har opprette grunnlag for samme person
+     * det er mest beskrivende å bruke PERSON_HUSSTANDSMEDLEM istedenfor PERSON_BARN_BIDRAGSPLIKTIG. Derfor ersattes grunnlag og referansen til PERSON_HUSSTANDSMEDLEM
+     */
     private fun Set<GrunnlagDto>.slåSammenPersonobjekter(): Set<GrunnlagDto> {
         val personerIkkeBarnBidragspliktig = this.hentAllePersoner().filter { it.type != Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG }
         val duplikatPersonBarnBidragspliktig =

@@ -84,8 +84,8 @@ operator fun BeregnGrunnlag.plus(grunnlag: List<GrunnlagDto>) =
         grunnlagListe = (grunnlagListe + grunnlag).toSet().toList(),
     )
 
-fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
-    val personobjekter = tilPersonobjekter()
+fun Behandling.byggGrunnlagForVedtak(personobjekterFraBeregning: MutableSet<GrunnlagDto> = mutableSetOf()): Set<GrunnlagDto> {
+    val personobjekter = (tilPersonobjekter() + personobjekterFraBeregning).toSet()
     val bostatus = tilGrunnlagBostatus(personobjekter)
     val personobjekterMedHusstandsmedlemmer =
         (personobjekter + bostatus.husstandsmedlemmer()).toMutableSet()

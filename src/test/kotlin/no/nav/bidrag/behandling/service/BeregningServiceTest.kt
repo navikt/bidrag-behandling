@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettLøpendeBidragGrunnlag
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -74,6 +75,9 @@ class BeregningServiceTest {
             )
         val grunnlag = behandling.søknadsbarn.map { it.tilGrunnlagPerson() }.toMutableList()
         grunnlag.add(
+            testdataHusstandsmedlem1.tilRolle(behandling, 1).tilGrunnlagPerson(),
+        )
+        grunnlag.add(
             GrunnlagDto(
                 referanse = grunnlagsreferanse_løpende_bidrag,
                 type = Grunnlagstype.LØPENDE_BIDRAG,
@@ -82,13 +86,14 @@ class BeregningServiceTest {
                         LøpendeBidragGrunnlag(
                             løpendeBidragListe =
                                 listOf(
-                                    opprettLøpendeBidragGrunnlag(testdataBarn1, Stønadstype.BIDRAG),
-                                    opprettLøpendeBidragGrunnlag(testdataBarn2, Stønadstype.BIDRAG),
+                                    opprettLøpendeBidragGrunnlag(testdataBarn1, Stønadstype.BIDRAG, 2),
+                                    opprettLøpendeBidragGrunnlag(testdataHusstandsmedlem1, Stønadstype.BIDRAG, 1),
                                 ),
                         ),
                     ),
             ),
         )
+
         every { evnevurderingService.opprettGrunnlagLøpendeBidrag(any(), any()) } returns grunnlag
     }
 
@@ -204,11 +209,11 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 11
+            it.grunnlagListe shouldHaveSize 12
 
             val personer =
                 it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
-            personer shouldHaveSize 4
+            personer shouldHaveSize 5
             personer.hentPerson(testdataBarn1.ident) shouldNotBe null
             personer.map { it.type } shouldContainAll
                 listOf(
