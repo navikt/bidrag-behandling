@@ -756,7 +756,7 @@ class GrunnlagMappingTest {
                 it.type shouldBe Grunnlagstype.PERSON_HUSSTANDSMEDLEM
                 it.referanse.shouldStartWith("person")
                 val personGrunnlag: Person = it.innholdTilObjekt()
-                personGrunnlag.ident?.verdi shouldBe "1231232131"
+                personGrunnlag.ident?.verdi shouldBe "12345678901"
                 personGrunnlag.navn shouldBe null
                 personGrunnlag.fødselsdato shouldBe fødslesdato
             }
