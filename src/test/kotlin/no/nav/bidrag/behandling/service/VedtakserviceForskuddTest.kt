@@ -371,7 +371,7 @@ class VedtakserviceForskuddTest {
         val husstandsmedlemmer =
             opprettVedtakRequest.grunnlagListe.hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)
         husstandsmedlemmer shouldHaveSize 4
-        husstandsmedlemmer[0].personIdent shouldBe nyIdentHusstandsmedlem
+        husstandsmedlemmer[0].personIdent shouldBe testdataHusstandsmedlem1.ident
         assertSoftly(husstandsmedlemmer[1].innholdTilObjekt<Person>()) {
             ident shouldBe null
             navn shouldBe "Mr Hansen"
