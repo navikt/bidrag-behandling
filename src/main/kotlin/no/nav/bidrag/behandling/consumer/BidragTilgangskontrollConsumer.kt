@@ -45,7 +45,9 @@ class BidragTilgangskontrollConsumer(
         return try {
             val headers = HttpHeaders()
             headers.contentType = MediaType.APPLICATION_JSON
-            postForEntity(createUri("/api/tilgang/person/sak"), SjekkTilgangPersonISakRequest(personident, saksnummer), headers) ?: false
+            val harTilgangTilPersonISak: Boolean? =
+                postForEntity(createUri("/api/tilgang/person/sak"), SjekkTilgangPersonISakRequest(personident, saksnummer), headers)
+            harTilgangTilPersonISak ?: false
         } catch (e: HttpStatusCodeException) {
             if (e.statusCode == HttpStatus.FORBIDDEN) return false
             if (e.statusCode == HttpStatus.NOT_FOUND) fantIkkeSak(saksnummer.verdi)
