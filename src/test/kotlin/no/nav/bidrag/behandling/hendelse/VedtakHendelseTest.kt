@@ -49,6 +49,7 @@ class VedtakHendelseTest : TestContainerRunner() {
         stubUtils.stubOpprettJournalpost("12333")
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPerson()
+        stubUtils.stubTilgangskontrollPersonISak()
     }
 
     @Test

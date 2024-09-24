@@ -97,9 +97,12 @@ class LesBehandlingTest : BehandlingControllerTest() {
 
     @Test
     fun `skal ikke hente vedtak hvis ingen tilgang til sak`() {
+        // gitt
         stubUtils.stubHenteVedtak()
-
         stubUtils.stubTilgangskontrollSak(false)
+        stubUtils.stubTilgangskontrollPersonISak(false)
+        testdataManager.oppretteBehandling(true)
+
         // hvis
         val behandlingRes =
             httpHeaderTestRestTemplate.exchange(
@@ -109,6 +112,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
                 Void::class.java,
             )
 
+        // så
         Assertions.assertEquals(HttpStatus.FORBIDDEN, behandlingRes.statusCode)
     }
 }

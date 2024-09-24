@@ -57,7 +57,6 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringR
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
-import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -81,7 +80,15 @@ class VedtakService(
         try {
             LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
             val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-            tilgangskontrollService.sjekkTilgangSak(vedtak.saksnummer!!)
+
+            vedtak.behandlingId?.let {
+                tilgangskontrollService.sjekkTilgangBehandling(
+                    behandlingService.hentBehandlingById(
+                        it,
+                    ),
+                )
+            }
+
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
             return vedtak.tilBehandling(vedtakId, lesemodus = true)
         } catch (e: Exception) {
@@ -128,9 +135,9 @@ class VedtakService(
             val konvertertBehandling =
                 konverterVedtakTilBehandling(request, refVedtaksid)
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
-            tilgangskontrollService.sjekkTilgangSak(konvertertBehandling.saksnummer)
-            val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
 
+            tilgangskontrollService.sjekkTilgangBehandling(konvertertBehandling)
+            val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
             grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
             LOGGER.info {
@@ -265,6 +272,7 @@ class VedtakService(
                     } else {
                         behandling.byggOpprettVedtakRequestSærbidrag()
                     }
+
                 TypeBehandling.FORSKUDD ->
                     if (behandling.avslag !=
                         null
@@ -273,6 +281,7 @@ class VedtakService(
                     } else {
                         behandling.byggOpprettVedtakRequestForskudd()
                     }
+
                 else -> throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
                     "Behandlingstype ${behandling.tilType()} støttes ikke",
