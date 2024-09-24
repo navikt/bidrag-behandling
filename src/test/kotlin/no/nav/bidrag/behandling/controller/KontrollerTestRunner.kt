@@ -94,5 +94,6 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPerson()
+        stubUtils.stubTilgangskontrollPersonISak()
     }
 }

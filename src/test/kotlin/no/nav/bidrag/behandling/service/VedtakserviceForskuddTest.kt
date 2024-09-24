@@ -122,7 +122,7 @@ class VedtakserviceForskuddTest {
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
-        every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
+        every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every {
             behandlingService.oppdaterVedtakFattetStatus(
@@ -371,7 +371,7 @@ class VedtakserviceForskuddTest {
         val husstandsmedlemmer =
             opprettVedtakRequest.grunnlagListe.hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)
         husstandsmedlemmer shouldHaveSize 4
-        husstandsmedlemmer[0].personIdent shouldBe nyIdentHusstandsmedlem
+        husstandsmedlemmer[0].personIdent shouldBe testdataHusstandsmedlem1.ident
         assertSoftly(husstandsmedlemmer[1].innholdTilObjekt<Person>()) {
             ident shouldBe null
             navn shouldBe "Mr Hansen"

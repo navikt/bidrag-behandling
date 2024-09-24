@@ -24,6 +24,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
@@ -240,7 +241,7 @@ fun Husstandsmedlem.tilGrunnlagPerson(): GrunnlagDto {
         innhold =
             POJONode(
                 Person(
-                    ident = ident.takeIf { !it.isNullOrEmpty() }?.let { hentNyesteIdent(it) },
+                    ident = if (!ident.isNullOrEmpty()) Personident(ident!!) else null,
                     navn = if (ident.isNullOrEmpty()) navn ?: hentPersonVisningsnavn(ident) else null,
                     fødselsdato =
                         finnFødselsdato(
