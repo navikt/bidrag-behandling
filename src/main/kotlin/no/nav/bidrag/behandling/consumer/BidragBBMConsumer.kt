@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_BEREGNING_CACHE
+import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
@@ -25,6 +27,7 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
+    @BrukerCacheable(BBM_BEREGNING_CACHE)
     fun hentBeregning(request: BidragBeregningRequestDto): BidragBeregningResponsDto =
         postForNonNullEntity(
             bidragBBMUri.build().toUri(),
