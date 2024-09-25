@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
-import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
@@ -26,11 +25,10 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
-import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.VedtakService
-import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
+import no.nav.bidrag.behandling.transformers.Behandlingsmapper
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -47,9 +45,9 @@ class BehandlingControllerV2(
     private val vedtakService: VedtakService,
     private val behandlingService: BehandlingService,
     private val boforholdService: BoforholdService,
-    private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
     private val utgiftService: UtgiftService,
+    private val behandlingsmapper: Behandlingsmapper,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -73,7 +71,7 @@ class BehandlingControllerV2(
         val resultat =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return resultat.tilBehandlingDtoV2(resultat.grunnlagListe, inkluderHistoriskeInntekter = inkluderHistoriskeInntekter)
+        return behandlingsmapper.tilDto(resultat)
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")
@@ -164,10 +162,7 @@ class BehandlingControllerV2(
 
         val behandling = behandlingService.oppdatereVirkningstidspunkt(behandlingsid, request)
 
-        return behandling.tilBehandlingDtoV2(
-            behandling.grunnlag.hentSisteAktiv(),
-            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling),
-        )
+        return behandlingsmapper.tilDto(behandling, true)
     }
 
     @PutMapping("/behandling/{behandlingsid}/boforhold")

@@ -44,6 +44,7 @@ data class BoforholdDtoV2(
     val notat: BegrunnelseDto = begrunnelse
 }
 
+// TODO: bd-1958
 data class HusstandsmedlemDtoV2(
     val id: Long?,
     @Schema(required = true)
