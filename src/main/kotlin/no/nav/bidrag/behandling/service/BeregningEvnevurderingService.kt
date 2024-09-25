@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
@@ -18,6 +19,8 @@ import no.nav.bidrag.transport.behandling.vedtak.response.søknadsid
 import org.springframework.context.annotation.Import
 import org.springframework.stereotype.Service
 
+private val log = KotlinLogging.logger {}
+
 @Service
 @Import(Vedtaksfiltrering::class)
 class BeregningEvnevurderingService(
@@ -30,11 +33,16 @@ class BeregningEvnevurderingService(
         behandling: Behandling,
         personGrunnlagListe: List<GrunnlagDto> = behandling.tilPersonobjekter().toList(),
     ): List<GrunnlagDto> {
-        val bpIdent = Personident(behandling.bidragspliktig!!.ident!!)
-        val løpendeStønader = hentSisteLøpendeStønader(bpIdent)
-        val sisteLøpendeVedtak = løpendeStønader.hentLøpendeVedtak(bpIdent)
-        val beregnetBeløpListe = sisteLøpendeVedtak.hentBeregning()
-        return opprettLøpendeBidragGrunnlag(beregnetBeløpListe, løpendeStønader, personGrunnlagListe)
+        try {
+            val bpIdent = Personident(behandling.bidragspliktig!!.ident!!)
+            val løpendeStønader = hentSisteLøpendeStønader(bpIdent)
+            val sisteLøpendeVedtak = løpendeStønader.hentLøpendeVedtak(bpIdent)
+            val beregnetBeløpListe = sisteLøpendeVedtak.hentBeregning()
+            return opprettLøpendeBidragGrunnlag(beregnetBeløpListe, løpendeStønader, personGrunnlagListe)
+        } catch (e: Exception) {
+            log.error(e) { "Det skjedden en feil ved opprettelse av grunnlag for løpende bidrag for BP evnevurdering: ${e.message}" }
+            throw e
+        }
     }
 
     private fun List<VedtakForStønad>.hentBeregning() =
