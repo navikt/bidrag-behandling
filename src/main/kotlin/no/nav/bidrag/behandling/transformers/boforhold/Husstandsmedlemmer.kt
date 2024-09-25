@@ -42,9 +42,9 @@ fun List<RelatertPersonGrunnlagDto>.tilHusstandsmedlemmer() =
     this.map {
         Husstandsmedlemmer(
             gjelderPersonId = it.gjelderPersonId,
-            fødselsdato = it.fødselsdato!!,
+            fødselsdato = it.fødselsdato ?: LocalDate.now(),
             relasjon = it.relasjon,
-            borISammeHusstandListe = it.borISammeHusstandDtoListe.tilBostatus(it.relasjon, it.fødselsdato!!),
+            borISammeHusstandListe = it.borISammeHusstandDtoListe.tilBostatus(it.relasjon, it.fødselsdato ?: LocalDate.now()),
         )
     }
 
