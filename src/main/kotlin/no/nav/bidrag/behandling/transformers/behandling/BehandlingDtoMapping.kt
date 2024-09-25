@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
-import com.fasterxml.jackson.core.type.TypeReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -18,16 +17,12 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
-import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
-import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
@@ -36,7 +31,6 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
-import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.begrensAntallPersoner
@@ -59,7 +53,6 @@ import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toSivilstandDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
-import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.transformers.validereSivilstand
@@ -80,7 +73,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
-import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -137,71 +129,9 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
             },
     )
 
-// TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
-@Suppress("ktlint:standard:value-argument-comment")
-fun Behandling.tilBehandlingDtoV2(
-    gjeldendeAktiveGrunnlagsdata: List<Grunnlag>,
-    ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata? = null,
-    inkluderHistoriskeInntekter: Boolean = false,
-) = BehandlingDtoV2(
-    id = id!!,
-    type = tilType(),
-    vedtakstype = vedtakstype,
-    opprinneligVedtakstype = opprinneligVedtakstype,
-    stønadstype = stonadstype,
-    engangsbeløptype = engangsbeloptype,
-    erKlageEllerOmgjøring = erKlageEllerOmgjøring,
-    opprettetTidspunkt = opprettetTidspunkt,
-    erVedtakFattet = vedtaksid != null,
-    søktFomDato = søktFomDato,
-    mottattdato = mottattdato,
-    klageMottattdato = klageMottattdato,
-    søktAv = soknadFra,
-    saksnummer = saksnummer,
-    søknadsid = soknadsid,
-    behandlerenhet = behandlerEnhet,
-    roller =
-        roller.map { it.tilDto() }.toSet(),
-    søknadRefId = soknadRefId,
-    vedtakRefId = refVedtaksid,
-    virkningstidspunkt =
-        VirkningstidspunktDto(
-            virkningstidspunkt = virkningstidspunkt,
-            opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-            årsak = årsak,
-            avslag = avslag,
-            begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT) ?: ""),
-        ),
-    boforhold = tilBoforholdV2(),
-    inntekter =
-        tilInntektDtoV2(
-            gjeldendeAktiveGrunnlagsdata,
-            inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
-        ),
-    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktiveGrunnlagsdata(),
-    utgift = tilUtgiftDto(),
-    ikkeAktiverteEndringerIGrunnlagsdata =
-        ikkeAktiverteEndringerIGrunnlagsdata
-            ?: IkkeAktiveGrunnlagsdata(),
-    feilOppståttVedSisteGrunnlagsinnhenting =
-        grunnlagsinnhentingFeilet?.let {
-            val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
-                object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
+fun Rolle.tilDto() = RolleDto(id!!, rolletype, ident, navn ?: hentPersonVisningsnavn(ident), fødselsdato)
 
-            objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
-        },
-)
-
-fun Rolle.tilDto() =
-    RolleDto(
-        id!!,
-        rolletype,
-        ident,
-        navn ?: hentPersonVisningsnavn(ident),
-        fødselsdato,
-    )
-
-private fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
+fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this
         .map { feil ->
             Grunnlagsinnhentingsfeil(
@@ -401,20 +331,6 @@ fun Behandling.tilInntektDtoV2(
             }.toSet(),
     valideringsfeil = hentInntekterValideringsfeil(),
 )
-
-fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
-    AktiveGrunnlagsdata(
-        arbeidsforhold =
-            filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
-                .mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }
-                .flatten()
-                .toSet(),
-        husstandsmedlem =
-            filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
-        andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
-        sivilstand =
-            find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
-    )
 
 fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
     InntektValideringsfeilDto(

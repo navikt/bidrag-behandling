@@ -19,9 +19,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.transformers.behandling.tilAktiveGrunnlagsdata
+import no.nav.bidrag.behandling.transformers.Behandlingsmapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
-import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
@@ -58,6 +57,7 @@ class BehandlingService(
     private val tilgangskontrollService: TilgangskontrollService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
+    private val mapper: Behandlingsmapper,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -226,7 +226,7 @@ class BehandlingService(
                 return AktivereGrunnlagResponseV2(
                     boforhold = it.tilBoforholdV2(),
                     inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
-                    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktiveGrunnlagsdata(),
+                    aktiveGrunnlagsdata = mapper.tilAktiveGrunnlagsdata(gjeldendeAktiveGrunnlagsdata),
                     ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
                 )
             }
@@ -363,14 +363,8 @@ class BehandlingService(
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         behandling.oppdatereVirkningstidspunktSærbidrag()
-        val grunnlagsdataEndretEtterAktivering =
-            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
 
-        return behandling.tilBehandlingDtoV2(
-            behandling.grunnlagListe.toSet().hentSisteAktiv(),
-            grunnlagsdataEndretEtterAktivering,
-            inkluderHistoriskeInntekter,
-        )
+        return mapper.tilDto(behandling, true, true)
     }
 
     @Transactional

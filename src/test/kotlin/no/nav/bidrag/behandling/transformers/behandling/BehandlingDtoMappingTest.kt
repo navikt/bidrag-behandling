@@ -3,14 +3,14 @@ package no.nav.bidrag.behandling.transformers.behandling
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
-import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
+import no.nav.bidrag.behandling.service.GrunnlagService
+import no.nav.bidrag.behandling.transformers.Behandlingsmapper
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -32,19 +32,26 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import stubPersonConsumer
 import stubSaksbehandlernavnProvider
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class BehandlingDtoMappingTest {
+class BehandlingDtoMappingTest : TestContainerRunner() {
+    @Autowired
+    lateinit var grunnlagsservice: GrunnlagService
+
+    lateinit var mapper: Behandlingsmapper
+
     @BeforeEach
     fun initMocks() {
         stubPersonConsumer()
         stubKodeverkProvider()
         stubSjablonProvider()
         stubSaksbehandlernavnProvider()
+        mapper = Behandlingsmapper(grunnlagsservice)
     }
 
     @Test
@@ -285,13 +292,7 @@ class BehandlingDtoMappingTest {
         )
 
         // hvis
-        val behandlingDto =
-            behandling.tilBehandlingDtoV2(
-                behandling.grunnlag.hentSisteAktiv(),
-                IkkeAktiveGrunnlagsdata(
-                    andreVoksneIHusstanden = behandling.grunnlag.hentSisteIkkeAktiv().tilAndreVoksneIHusstanden(false),
-                ),
-            )
+        val behandlingDto = mapper.tilDto(behandling, true)
 
         // så
         assertSoftly(behandlingDto) { b ->
