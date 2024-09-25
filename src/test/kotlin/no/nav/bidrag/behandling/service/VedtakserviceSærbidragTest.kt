@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -187,7 +188,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 105
+                request.grunnlagListe shouldHaveSize 106
             }
         }
 
@@ -395,7 +396,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 101
+            grunnlagsliste shouldHaveSize 102
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
@@ -489,18 +490,17 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 100
+            grunnlagsliste shouldHaveSize 101
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
                 shouldHaveSize(1)
                 val grunnlag = it.first()
                 val innhold = grunnlag.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
                 innhold.sum shouldBe BigDecimal("4207.00")
-                // TODO: Fjern kommentar når dette er fikset
-//                grunnlagsliste
-//                    .finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
-//                        Grunnlagstype.SJABLON_SAMVARSFRADRAG,
-//                        grunnlag.grunnlagsreferanseListe,
-//                    ).shouldNotBeEmpty()
+                grunnlagsliste
+                    .finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                        Grunnlagstype.SJABLON_SAMVARSFRADRAG,
+                        grunnlag.grunnlagsreferanseListe,
+                    ).shouldNotBeEmpty()
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE)) {
                 shouldHaveSize(1)
@@ -638,7 +638,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 106
+                request.grunnlagListe shouldHaveSize 107
             }
         }
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
@@ -784,7 +784,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 106
+                request.grunnlagListe shouldHaveSize 107
             }
         }
 
