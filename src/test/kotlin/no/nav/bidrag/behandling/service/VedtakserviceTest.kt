@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
+import com.ninjasquad.springmockk.SpykBean
 import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -58,7 +59,7 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockkBean
     lateinit var tilgangskontrollService: TilgangskontrollService
 
-    @MockkBean(relaxed = true)
+    @SpykBean
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
@@ -117,9 +118,7 @@ class VedtakserviceTest : TestContainerRunner() {
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
-        every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(testVedtakResponsId, emptyList())
-        every { vedtakConsumer.hentVedtakForStønad(any()) }
-            .stubSjablonProvider()
+        stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
         stubUtils.stubFatteVedtak()

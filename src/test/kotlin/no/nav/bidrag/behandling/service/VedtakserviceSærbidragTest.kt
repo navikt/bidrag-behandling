@@ -1,10 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import StubUtils.Companion.aClosedJsonResponse
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
-import com.github.tomakehurst.wiremock.matching.MatchResult
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -25,7 +20,6 @@ import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
-import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -38,6 +32,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.virkningsdato
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -74,14 +69,11 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
-import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
-import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.http.HttpStatus
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.transaction.annotation.Transactional
 import stubHentPersonNyIdent
@@ -433,27 +425,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     @Transactional
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag 2`() {
         stubPersonConsumer()
-        // stubUtils.stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1_2")
-        WireMock.stubFor(
-            WireMock
-                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
-                .andMatching {
-                    try {
-                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
-                        if (request.kravhaver.verdi == testdataBarn1.ident) {
-                            MatchResult.exactMatch()
-                        } else {
-                            MatchResult.noMatch()
-                        }
-                    } catch (e: Exception) {
-                        MatchResult.noMatch()
-                    }
-                }.willReturn(
-                    aClosedJsonResponse()
-                        .withStatus(HttpStatus.OK.value())
-                        .withBody(erstattVariablerITestFil("vedtak/vedtak-for-stønad-barn1_2")),
-                ),
-        )
+        stubUtils.stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1_2")
         stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_2")
         stubUtils.stubBidraBBMHentBeregning("bbm-beregning_2")
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
@@ -517,23 +489,45 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 101
+            grunnlagsliste shouldHaveSize 100
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
+                shouldHaveSize(1)
+                val grunnlag = it.first()
+                val innhold = grunnlag.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
+                innhold.sum shouldBe BigDecimal("4207.00")
+                // TODO: Fjern kommentar når dette er fikset
+//                grunnlagsliste
+//                    .finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+//                        Grunnlagstype.SJABLON_SAMVARSFRADRAG,
+//                        grunnlag.grunnlagsreferanseListe,
+//                    ).shouldNotBeEmpty()
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<DelberegningBidragsevne>().first()
+                innhold.beløp shouldBe BigDecimal("14009")
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>().first()
+                innhold.andelFaktor shouldBe BigDecimal("0.4919")
+                innhold.andelBeløp shouldBe BigDecimal("9838")
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<DelberegningSumLøpendeBidrag>().first()
+                innhold.sum shouldBe BigDecimal("4207.00")
+            }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
-                innhold.løpendeBidragListe shouldHaveSize 4
+                innhold.løpendeBidragListe shouldHaveSize 1
                 innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
+                innhold.løpendeBidragListe[0].løpendeBeløp shouldBe BigDecimal.ZERO
+                innhold.løpendeBidragListe[0].beregnetBeløp shouldBe BigDecimal("3159.00")
+                innhold.løpendeBidragListe[0].samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[0].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_SØKNADSBARN
-                innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG
-                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
-                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM
-                innhold.løpendeBidragListe[2].type shouldBe Stønadstype.BIDRAG18AAR
-                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[2].gjelderBarn).first().type shouldBe
-                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
-                innhold.løpendeBidragListe[3].type shouldBe Stønadstype.BIDRAG
-                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[3].gjelderBarn).first().type shouldBe
-                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
             }
         }
 

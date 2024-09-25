@@ -24,6 +24,8 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
+import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
@@ -165,11 +167,11 @@ class StubUtils {
     }
 
     fun stubAlleBidragVedtakForStønad() {
-        /**stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1")
-         stubBidragVedtakForStønad(testdataBarn2.ident, "vedtak-for-stønad-barn2")
-         stubBidragVedtakForStønad(testdataHusstandsmedlem1.ident, "vedtak-for-stønad-barn3")
-         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT, "vedtak-for-stønad-barn_annen")
-         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT_2, "vedtak-for-stønad-barn_annen_2")**/
+        stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1")
+        stubBidragVedtakForStønad(testdataBarn2.ident, "vedtak-for-stønad-barn2")
+        stubBidragVedtakForStønad(testdataHusstandsmedlem1.ident, "vedtak-for-stønad-barn3")
+        stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT, "vedtak-for-stønad-barn_annen")
+        stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT_2, "vedtak-for-stønad-barn_annen_2")
     }
 
     fun stubBidragStonadLøpendeSaker(
