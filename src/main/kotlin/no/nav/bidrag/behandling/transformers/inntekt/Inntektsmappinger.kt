@@ -125,9 +125,9 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         gjelderBarn = null,
     )
 
-fun List<Inntekt>.tilInntektDtoV2() = this.map { it.tilInntektDtoV2(it.erHistorisk(this)) }
+fun List<Inntekt>.tilInntektDtoV2() = this.map { it.tilInntektDtoV2() }
 
-fun Inntekt.tilInntektDtoV2(erHistorisk: Boolean = false) =
+fun Inntekt.tilInntektDtoV2() =
     InntektDtoV2(
         id = this.id,
         taMed = this.taMed,
@@ -147,7 +147,7 @@ fun Inntekt.tilInntektDtoV2(erHistorisk: Boolean = false) =
         inntektstyper = this.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
         opprinneligFom = this.opprinneligFom,
         opprinneligTom = bestemOpprinneligTomVisningsverdi(),
-        historisk = erHistorisk,
+        historisk = erHistorisk(behandling!!.inntekter),
     )
 
 fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Inntekt {

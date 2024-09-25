@@ -230,6 +230,23 @@ class StubUtils {
         WireMock.stubFor(stub)
     }
 
+    fun stubTilgangskontrollPersonISak(
+        result: Boolean = true,
+        status: HttpStatus = HttpStatus.OK,
+        personIdent: String? = null,
+    ) {
+        val stub = WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/person/sak"))
+        if (!personIdent.isNullOrEmpty()) {
+            stub.withRequestBody(ContainsPattern(personIdent))
+        }
+        stub.willReturn(
+            aClosedJsonResponse()
+                .withStatus(status.value())
+                .withBody(result.toString()),
+        )
+        WireMock.stubFor(stub)
+    }
+
     fun stubOpprettForsendelse(
         forsendelseId: String = "12312321",
         status: HttpStatus = HttpStatus.OK,

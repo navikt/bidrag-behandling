@@ -3705,7 +3705,7 @@
   "behandlingsreferanseListe": [
     {
       "kilde": "BEHANDLING_ID",
-      "referanse": "31"
+      "referanse": "1"
     },
     {
       "kilde": "BISYS_SØKNAD",

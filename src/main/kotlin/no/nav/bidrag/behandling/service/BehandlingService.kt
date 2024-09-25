@@ -38,6 +38,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -84,7 +85,15 @@ class BehandlingService(
         }
 
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
-        tilgangskontrollService.sjekkTilgangSak(opprettBehandling.saksnummer)
+        opprettBehandling.roller.forEach { rolle ->
+            rolle.ident?.let {
+                tilgangskontrollService.sjekkTilgangPersonISak(
+                    it,
+                    Saksnummer(opprettBehandling.saksnummer),
+                )
+            }
+        }
+
         behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
             log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
             return OpprettBehandlingResponse(it.id!!)

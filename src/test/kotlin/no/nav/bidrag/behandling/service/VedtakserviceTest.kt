@@ -116,7 +116,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 unleash,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
-        every { tilgangskontrollService.sjekkTilgangSak(any()) } returns Unit
+        every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         stubSjablonProvider()
         stubKodeverkProvider()
