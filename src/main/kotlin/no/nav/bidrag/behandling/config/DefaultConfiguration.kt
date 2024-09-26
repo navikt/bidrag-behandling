@@ -5,6 +5,8 @@ import io.getunleash.UnleashContext
 import io.getunleash.UnleashContextProvider
 import io.getunleash.strategy.DefaultStrategy
 import io.getunleash.util.UnleashConfig
+import io.micrometer.core.aop.TimedAspect
+import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
 import io.swagger.v3.oas.annotations.info.Info
@@ -66,6 +68,9 @@ class DefaultConfiguration {
     @Bean
     @Scope("prototype")
     fun unleashInstance(unleashConfig: UnleashConfig) = DefaultUnleash(unleashConfig, DefaultStrategy())
+
+    @Bean
+    fun timedAspect(registry: MeterRegistry): TimedAspect = TimedAspect(registry)
 }
 
 class DefaultUnleashContextProvider : UnleashContextProvider {

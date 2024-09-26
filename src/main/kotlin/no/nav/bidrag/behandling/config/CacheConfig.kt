@@ -34,14 +34,14 @@ class CacheConfig {
             Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
         )
         caffeineCacheManager.registerCustomCache(TILGANG_TEMA_CACHE, Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build())
-        caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build())
+        caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build())
         caffeineCacheManager.registerCustomCache(
             STØNAD_LØPENDE_BIDRAG_CACHE,
-            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build(),
+            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build(),
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_FOR_STØNAD_CACHE,
-            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build(),
+            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build(),
         )
         caffeineCacheManager.registerCustomCache(
             TILGANG_PERSON_I_SAK_CACHE,
