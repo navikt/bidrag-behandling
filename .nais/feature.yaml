@@ -10,8 +10,12 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
-  BIDRAG_VEDTAK_URL: http://bidrag-vedtak-feature
-  BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-feature
+  BIDRAG_STONAD_URL: http://bidrag-stonad
+  BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad
+  BIDRAG_VEDTAK_URL: http://bidrag-vedtak
+  BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak
+  BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
+  BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
   BIDRAG_DOKUMENT_PRODUKSJON_URL: http://bidrag-dokument-produksjon
   BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
   BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
@@ -47,9 +51,10 @@ database:
   tier: db-f1-micro
 outbound-access-apps:
   - bidrag-grunnlag-feature
+  - bidrag-stonad
   - bidrag-dokument-forsendelse-feature
   - bidrag-tilgangskontroll-feature
-  - bidrag-vedtak-feature
+  - bidrag-vedtak
   - bidrag-dokument-produksjon-feature
 outbound-access-hosts:
   - bidrag-dokument-feature.dev-fss-pub.nais.io
@@ -59,6 +64,7 @@ outbound-access-hosts:
   - arbeid-og-inntekt-q1.dev-fss-pub.nais.io
   - kodeverk-api.nav.no
   - bidrag-unleash-api.nav.cloud.nais.io
+  - bidrag-bbm-feature.dev-fss-pub.nais.io
 unleash:
   env: development
   secret_name: bidrag-behandling-unleash-api-token

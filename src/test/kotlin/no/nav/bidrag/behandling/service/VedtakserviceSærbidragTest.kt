@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -32,6 +33,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.virkningsdato
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -41,6 +43,7 @@ import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -49,8 +52,10 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndelSærbidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningSærbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SærbidragskategoriGrunnlag
@@ -59,6 +64,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftDirekteBetaltGru
 import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftMaksGodkjentBeløpGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftspostGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
@@ -74,6 +80,7 @@ import org.springframework.transaction.annotation.Transactional
 import stubHentPersonNyIdent
 import stubPersonConsumer
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -180,8 +187,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 103 grunnlag") {
-                request.grunnlagListe shouldHaveSize 103
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
+                request.grunnlagListe shouldHaveSize 106
             }
         }
 
@@ -259,6 +266,20 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 utgiftspost.kommentar shouldBe "Inneholder avgifter for alkohol og pynt"
             }
 
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
+                it.shouldHaveSize(1)
+                val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
+                innhold.løpendeBidragListe shouldHaveSize 3
+                innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[0].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_SØKNADSBARN
+                innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                innhold.løpendeBidragListe[2].type shouldBe Stønadstype.BIDRAG18AAR
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+            }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
                 shouldHaveSize(5)
                 val innholdListe = innholdTilObjekt<NotatGrunnlag>()
@@ -300,6 +321,214 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 11
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 0
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
+    @Transactional
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag og personobjekter`() {
+        stubPersonConsumer()
+        stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_annen_barn")
+        stubUtils.stubBidraBBMHentBeregning("bbm-beregning_annen_barn")
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.refVedtaksid = 553
+        behandling.klageMottattdato = LocalDate.now()
+        behandling.inntekter = mutableSetOf()
+        behandling.grunnlag = mutableSetOf()
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(15000),
+                    godkjentBeløp = BigDecimal(5000),
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(8),
+                    type = Utgiftstype.KLÆR.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(10000),
+                    godkjentBeløp = BigDecimal(10000),
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(5),
+                    type = Utgiftstype.SELSKAP.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(10000),
+                    godkjentBeløp = BigDecimal(5000),
+                    kommentar = "Inneholder utgifter til mat og drikke",
+                ),
+            )
+        testdataManager.lagreBehandling(behandling)
+        stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+        behandling.initGrunnlagRespons(stubUtils)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+        behandling.taMedInntekt(behandling.bidragsmottaker!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
+        behandling.taMedInntekt(behandling.bidragspliktig!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        val grunnlagsliste = opprettVedtakRequest.grunnlagListe
+
+        assertSoftly(opprettVedtakRequest) {
+            grunnlagsliste shouldHaveSize 102
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
+                it.shouldHaveSize(1)
+                val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
+                innhold.løpendeBidragListe shouldHaveSize 4
+                innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[0].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_SØKNADSBARN
+                innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                innhold.løpendeBidragListe[2].type shouldBe Stønadstype.BIDRAG18AAR
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[2].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
+                innhold.løpendeBidragListe[3].type shouldBe Stønadstype.BIDRAG
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[3].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
+            }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
+    @Transactional
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag 2`() {
+        stubPersonConsumer()
+        stubUtils.stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1_2")
+        stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_2")
+        stubUtils.stubBidraBBMHentBeregning("bbm-beregning_2")
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.refVedtaksid = 553
+        behandling.klageMottattdato = LocalDate.now()
+        behandling.inntekter = mutableSetOf()
+        behandling.grunnlag = mutableSetOf()
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(15000),
+                    godkjentBeløp = BigDecimal(5000),
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(8),
+                    type = Utgiftstype.KLÆR.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(10000),
+                    godkjentBeløp = BigDecimal(10000),
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(5),
+                    type = Utgiftstype.SELSKAP.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(10000),
+                    godkjentBeløp = BigDecimal(5000),
+                    kommentar = "Inneholder utgifter til mat og drikke",
+                ),
+            )
+        testdataManager.lagreBehandling(behandling)
+        stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+        behandling.initGrunnlagRespons(stubUtils)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+        behandling.taMedInntekt(behandling.bidragsmottaker!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
+        behandling.taMedInntekt(behandling.bidragspliktig!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        val grunnlagsliste = opprettVedtakRequest.grunnlagListe
+
+        assertSoftly(opprettVedtakRequest) {
+            grunnlagsliste shouldHaveSize 101
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
+                shouldHaveSize(1)
+                val grunnlag = it.first()
+                val innhold = grunnlag.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
+                innhold.sum shouldBe BigDecimal("4207.00")
+                grunnlagsliste
+                    .finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                        Grunnlagstype.SJABLON_SAMVARSFRADRAG,
+                        grunnlag.grunnlagsreferanseListe,
+                    ).shouldNotBeEmpty()
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<DelberegningBidragsevne>().first()
+                innhold.beløp shouldBe BigDecimal("14009")
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>().first()
+                innhold.andelFaktor shouldBe BigDecimal("0.4919")
+                innhold.andelBeløp shouldBe BigDecimal("9838")
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
+                shouldHaveSize(1)
+                val innhold = innholdTilObjekt<DelberegningSumLøpendeBidrag>().first()
+                innhold.sum shouldBe BigDecimal("4207.00")
+            }
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
+                it.shouldHaveSize(1)
+                val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
+                innhold.løpendeBidragListe shouldHaveSize 1
+                innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
+                innhold.løpendeBidragListe[0].løpendeBeløp shouldBe BigDecimal.ZERO
+                innhold.løpendeBidragListe[0].beregnetBeløp shouldBe BigDecimal("3159.00")
+                innhold.løpendeBidragListe[0].samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
+                grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[0].gjelderBarn).first().type shouldBe
+                    Grunnlagstype.PERSON_SØKNADSBARN
+            }
         }
 
         verify(exactly = 1) {
@@ -408,8 +637,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 104 grunnlag") {
-                request.grunnlagListe shouldHaveSize 104
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
+                request.grunnlagListe shouldHaveSize 107
             }
         }
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
@@ -554,8 +783,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 104 grunnlag") {
-                request.grunnlagListe shouldHaveSize 104
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
+                request.grunnlagListe shouldHaveSize 107
             }
         }
 
@@ -628,6 +857,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             }
 
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
             hentGrunnlagstyper(Grunnlagstype.SJABLON) shouldHaveSize 7
@@ -1089,7 +1319,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-            withClue("Grunnlagliste skal inneholde 12 grunnlag") {
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
                 request.grunnlagListe shouldHaveSize 12
             }
             val sluttberegningSærbidrag = hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG)
@@ -1586,12 +1816,25 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
         }
 
+        val delberegningSumLøpendeBidragGrunnlag =
+            grunnlagListe
+                .finnGrunnlagSomErReferertAv(
+                    Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG,
+                    sluttberegningSærbidrag.first(),
+                ).first()
+
+        assertSoftly(delberegningSumLøpendeBidragGrunnlag) {
+            val innhold = it.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
+            innhold.sum.setScale(0, RoundingMode.HALF_UP) shouldBe BigDecimal(9261)
+            innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
+        }
+
         val delberegningBpsAndel =
             grunnlagListe
                 .finnGrunnlagSomErReferertAv(
                     Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG,
                     sluttberegningSærbidrag.first(),
-                ).toList() as List<OpprettGrunnlagRequestDto>
+                ).toList()
 
         assertSoftly(delberegningBpsAndel) {
             shouldHaveSize(1)

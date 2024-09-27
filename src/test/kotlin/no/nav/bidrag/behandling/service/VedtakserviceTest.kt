@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
+import com.ninjasquad.springmockk.SpykBean
 import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -58,7 +59,7 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockkBean
     lateinit var tilgangskontrollService: TilgangskontrollService
 
-    @MockkBean
+    @SpykBean
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
@@ -83,6 +84,9 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
     @Autowired
+    lateinit var evnevurderingService: BeregningEvnevurderingService
+
+    @Autowired
     lateinit var entityManager: EntityManager
 
     lateinit var vedtakService: VedtakService
@@ -98,6 +102,7 @@ class VedtakserviceTest : TestContainerRunner() {
         beregningService =
             BeregningService(
                 behandlingService,
+                evnevurderingService,
             )
         vedtakService =
             VedtakService(
@@ -113,10 +118,13 @@ class VedtakserviceTest : TestContainerRunner() {
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
-        every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(testVedtakResponsId, emptyList())
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
+        stubUtils.stubFatteVedtak()
+        stubUtils.stubAlleBidragVedtakForStønad()
+        stubUtils.stubBidraBBMHentBeregning()
+        stubUtils.stubBidragStonadLøpendeSaker()
     }
 
     @Test
