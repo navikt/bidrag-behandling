@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -9,10 +10,12 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeEmpty
+import io.mockk.every
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -57,6 +60,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import org.junit.experimental.runners.Enclosed
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -86,6 +90,11 @@ class BoforholdServiceTest : TestContainerRunner() {
 
     @Autowired
     lateinit var entityManager: EntityManager
+
+    @BeforeEach
+    fun initStubs() {
+        stubUtils.stubTilgangskontrollPersonISak()
+    }
 
     @Nested
     open inner class AndreVoksneIHusstandentester {
@@ -714,6 +723,7 @@ class BoforholdServiceTest : TestContainerRunner() {
 
         @Nested
         open inner class OppdatereManuelt {
+
             @Test
             @Transactional
             open fun `skal bruke offentlig bostedsinformasjon for manuelt barn som bor på samme adresse som BM`() {
