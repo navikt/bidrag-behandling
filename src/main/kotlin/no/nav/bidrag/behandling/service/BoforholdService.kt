@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.boforhold.Sivilstandsperiode
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveAndreVoksneIHusstandMedBearbeidaPerioder
@@ -90,6 +91,7 @@ class BoforholdService(
     private val husstandsmedlemRepository: HusstandsmedlemRepository,
     private val notatService: NotatService,
     private val sivilstandRepository: SivilstandRepository,
+    private val dtomapper: Dtomapper,
 ) {
     @Transactional
     fun oppdatereNotat(
@@ -285,7 +287,7 @@ class BoforholdService(
             if (Kilde.MANUELL == husstandsmedlemSomSkalSlettes?.kilde) {
                 behandling.husstandsmedlem.remove(husstandsmedlemSomSkalSlettes)
                 loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsmedlemSomSkalSlettes)
-                return husstandsmedlemSomSkalSlettes.tilOppdatereBoforholdResponse(behandling)
+                return dtomapper.tilOppdatereBoforholdResponse(husstandsmedlemSomSkalSlettes)
             }
         }
 
@@ -331,7 +333,7 @@ class BoforholdService(
             }
             behandling.husstandsmedlem.add(husstandsmedlem)
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
-            return husstandsmedlemRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(husstandsmedlemRepository.save(husstandsmedlem))
         }
 
         oppdatereHusstandsmedlem.slettPeriode?.let { idHusstansmedlemsperiode ->
@@ -342,7 +344,7 @@ class BoforholdService(
             husstandsmedlem.oppdaterePerioder(sletteHusstandsmedlemsperiode = idHusstansmedlemsperiode)
 
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
-            return husstandsmedlemRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(husstandsmedlemRepository.save(husstandsmedlem))
         }
 
         oppdatereHusstandsmedlem.oppdaterPeriode?.let { bostatusperiode ->
@@ -366,7 +368,9 @@ class BoforholdService(
             )
 
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, eksisterendeHusstandsmedlem)
-            return husstandsmedlemRepository.save(eksisterendeHusstandsmedlem).tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(
+                husstandsmedlemRepository.save(eksisterendeHusstandsmedlem),
+            )
         }
 
         oppdatereHusstandsmedlem.tilbakestillPerioderForHusstandsmedlem?.let { husstandsmedlemId ->
@@ -376,7 +380,7 @@ class BoforholdService(
             husstandsmedlem.lagreEksisterendePerioder()
             husstandsmedlem.resetTilOffentligePerioder()
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
-            return husstandsmedlemRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(husstandsmedlemRepository.save(husstandsmedlem))
         }
 
         oppdatereHusstandsmedlem.angreSisteStegForHusstandsmedlem?.let { husstandsmedlemId ->
@@ -385,7 +389,7 @@ class BoforholdService(
                     ?: oppdateringAvBoforholdFeiletException(behandlingsid)
             husstandsmedlem.oppdaterTilForrigeLagredePerioder()
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
-            return husstandsmedlemRepository.save(husstandsmedlem).tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(husstandsmedlemRepository.save(husstandsmedlem))
         }
         oppdateringAvBoforholdFeilet("Oppdatering av boforhold feilet. Forespørsel mangler informasjon om hva som skal oppdateres")
     }
@@ -419,9 +423,9 @@ class BoforholdService(
                 oppdatereAndreVoksneIHusstanden,
                 husstandsmedlemSomSkalOppdateres,
             )
-            return husstandsmedlemRepository
-                .save(husstandsmedlemSomSkalOppdateres)
-                .tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(
+                husstandsmedlemRepository.save(husstandsmedlemSomSkalOppdateres),
+            )
         }
 
         oppdatereAndreVoksneIHusstanden.oppdaterePeriode?.let { oppdatereStatus ->
@@ -453,9 +457,9 @@ class BoforholdService(
                 oppdatereAndreVoksneIHusstanden,
                 husstandsmedlemSomSkalOppdateres,
             )
-            return husstandsmedlemRepository
-                .save(husstandsmedlemSomSkalOppdateres)
-                .tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(
+                husstandsmedlemRepository.save(husstandsmedlemSomSkalOppdateres),
+            )
         }
 
         if (oppdatereAndreVoksneIHusstanden.angreSisteEndring) {
@@ -465,9 +469,9 @@ class BoforholdService(
                 oppdatereAndreVoksneIHusstanden,
                 husstandsmedlemSomSkalOppdateres,
             )
-            return husstandsmedlemRepository
-                .save(husstandsmedlemSomSkalOppdateres)
-                .tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(
+                husstandsmedlemRepository.save(husstandsmedlemSomSkalOppdateres),
+            )
         }
 
         if (oppdatereAndreVoksneIHusstanden.tilbakestilleHistorikk) {
@@ -479,9 +483,9 @@ class BoforholdService(
                 husstandsmedlemSomSkalOppdateres,
             )
 
-            return husstandsmedlemRepository
-                .save(husstandsmedlemSomSkalOppdateres)
-                .tilOppdatereBoforholdResponse(behandling)
+            return dtomapper.tilOppdatereBoforholdResponse(
+                husstandsmedlemRepository.save(husstandsmedlemSomSkalOppdateres),
+            )
         }
 
         oppdateringAvBoforholdFeilet("Oppdatering av boforhold andre-voksne-i-husstanden feilet.")

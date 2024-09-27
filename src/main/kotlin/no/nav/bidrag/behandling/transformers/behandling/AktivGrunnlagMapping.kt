@@ -1,20 +1,18 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
-import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
-import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
@@ -28,7 +26,6 @@ import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -87,42 +84,6 @@ fun mapTilInntektspostEndringer(
 
 fun InntektPost.erDetSammeSom(inntektPost: Inntektspost): Boolean = kode == inntektPost.kode && inntekstype == inntektPost.inntektstype
 
-fun List<Grunnlag>.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag: List<Grunnlag>): AndreVoksneIHusstandenGrunnlagDto? {
-    val aktivtGrunnlag =
-        aktiveGrunnlag.find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
-    val nyttGrunnlag = find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
-    val aktiveData = aktivtGrunnlag.konvertereData<Set<Bostatus>>()?.toSet()
-    val nyeData = nyttGrunnlag.konvertereData<Set<Bostatus>>()?.toSet()
-    if (aktiveData != null && nyeData != null && !nyeData.erLik(aktiveData)) {
-        return AndreVoksneIHusstandenGrunnlagDto(
-            perioder =
-                nyeData
-                    .asSequence()
-                    .filter { it.bostatus != null }
-                    .map {
-                        PeriodeAndreVoksneIHusstanden(
-                            periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-                            status = it.bostatus!!,
-                            totalAntallHusstandsmedlemmer =
-                                toSet()
-                                    .hentAlleAndreVoksneHusstandForPeriode(
-                                        ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-                                        false,
-                                    ).size,
-                            husstandsmedlemmer =
-                                toSet()
-                                    .hentBegrensetAndreVoksneHusstandForPeriode(
-                                        ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-                                        false,
-                                    ),
-                        )
-                    }.toSet(),
-            innhentet = nyttGrunnlag?.innhentet ?: LocalDateTime.now(),
-        )
-    }
-    return null
-}
-
 fun Set<Bostatus>.erLik(detAndreSettet: Set<Bostatus>): Boolean {
     if (size != detAndreSettet.size) return false
     return asSequence().sortedBy { it.periodeFom }.all { gjeldendeData ->
@@ -159,15 +120,17 @@ fun List<Grunnlag>.henteEndringerIArbeidsforhold(alleAktiveGrunnlag: List<Grunnl
 
 fun List<Grunnlag>.henteEndringerIBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
-    virkniningstidspunkt: LocalDate,
-    husstandsmedlem: Set<Husstandsmedlem>,
-    rolle: Rolle,
+    behandling: Behandling,
 ): Set<HusstandsmedlemGrunnlagDto> {
+    val virkniningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+    val husstandsmedlemmer = behandling.husstandsmedlem
+    val rolle = behandling.rolleGrunnlagSkalHentesFor!!
+
     val aktiveBoforholdsdata =
-        aktiveGrunnlag.hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlem, rolle).toSet()
+        aktiveGrunnlag.hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlemmer, rolle).toSet()
     // Hent første for å finne innhentet tidspunkt
     val nyeBoforholdsgrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }
-    val nyeBoforholdsdata = hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlem, rolle).toSet()
+    val nyeBoforholdsdata = hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlemmer, rolle).toSet()
 
     return nyeBoforholdsdata.finnEndringerBoforhold(
         virkniningstidspunkt,

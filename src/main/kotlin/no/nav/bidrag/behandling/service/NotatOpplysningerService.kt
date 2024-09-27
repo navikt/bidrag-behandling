@@ -20,10 +20,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
-import no.nav.bidrag.behandling.transformers.behandling.hentAlleAndreVoksneHusstandForPeriode
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforhold
-import no.nav.bidrag.behandling.transformers.behandling.hentBegrensetAndreVoksneHusstandForPeriode
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
@@ -104,6 +103,7 @@ class NotatOpplysningerService(
     private val beregningService: BeregningService,
     private val bidragDokumentProduksjonConsumer: BidragDokumentProduksjonConsumer,
     private val bidragDokumentConsumer: BidragDokumentConsumer,
+    private val mapper: Dtomapper,
 ) {
     @Retryable(
         value = [Exception::class],
@@ -257,14 +257,9 @@ class NotatOpplysningerService(
                             status = it.bostatus!!,
                             detaljer =
                                 AndreVoksneIHusstandenDetaljerDto(
-                                    totalAntallHusstandsmedlemmer =
-                                        grunnlag
-                                            .hentAlleAndreVoksneHusstandForPeriode(
-                                                periode,
-                                                true,
-                                            ).size,
+                                    mapper.henteAndreVoksneIHusstanden(grunnlag, periode, true).size,
                                     husstandsmedlemmer =
-                                        grunnlag.hentBegrensetAndreVoksneHusstandForPeriode(periode, true).map { hm ->
+                                        mapper.henteBegrensetAntallAndreVoksne(grunnlag, periode, true).map { hm ->
                                             VoksenIHusstandenDetaljerDto(
                                                 navn = hm.navn,
                                                 fødselsdato = hm.fødselsdato,
