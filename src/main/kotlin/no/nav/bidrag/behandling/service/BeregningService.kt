@@ -16,7 +16,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.plus
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
-import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
@@ -83,10 +82,7 @@ class BeregningService(
                 val grunnlagliste = grunnlagBeregning + grunnlagLøpendeBidrag
                 beregnSærbidragApi.beregn(grunnlagliste, behandling.opprinneligVedtakstype ?: behandling.vedtakstype).let { resultat ->
                     resultat.validerForSærbidrag()
-                    resultat.copy(
-                        grunnlagListe =
-                            resultat.grunnlagListe + grunnlagLøpendeBidrag.filter { it.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG },
-                    )
+                    resultat
                 }
             } catch (e: Exception) {
                 LOGGER.warn(e) { "Det skjedde en feil ved beregning av særbidrag: ${e.message}" }
