@@ -28,7 +28,6 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.experimental.runners.Enclosed
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -109,7 +108,6 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
     @Nested
     open inner class OppdatereBoforhold {
-
         @Test
         fun `skal kunne legge til ny manuell periode`() {
             // gitt
@@ -122,15 +120,15 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
-                    OppdatereHusstandsmedlem(
-                        oppdaterPeriode =
-                        OppdatereBostatusperiode(
-                            idHusstandsmedlem = eksisterendeHusstandsmedlem.id!!,
-                            bostatus = Bostatuskode.MED_FORELDER,
-                            datoFom = sistePeriode.datoFom!!.plusMonths(2),
-                            datoTom = null,
+                        OppdatereHusstandsmedlem(
+                            oppdaterPeriode =
+                                OppdatereBostatusperiode(
+                                    idHusstandsmedlem = eksisterendeHusstandsmedlem.id!!,
+                                    bostatus = Bostatuskode.MED_FORELDER,
+                                    datoFom = sistePeriode.datoFom!!.plusMonths(2),
+                                    datoTom = null,
+                                ),
                         ),
-                    ),
                 )
 
             // hvis
@@ -179,16 +177,16 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
-                    OppdatereHusstandsmedlem(
-                        oppdaterPeriode =
-                        OppdatereBostatusperiode(
-                            idHusstandsmedlem = eksisterendeHusstandsmedlem.id!!,
-                            idPeriode = manuellPeriode.id,
-                            bostatus = Bostatuskode.MED_FORELDER,
-                            datoFom = manuellPeriode.datoFom!!.plusMonths(1),
-                            datoTom = null,
+                        OppdatereHusstandsmedlem(
+                            oppdaterPeriode =
+                                OppdatereBostatusperiode(
+                                    idHusstandsmedlem = eksisterendeHusstandsmedlem.id!!,
+                                    idPeriode = manuellPeriode.id,
+                                    bostatus = Bostatuskode.MED_FORELDER,
+                                    datoFom = manuellPeriode.datoFom!!.plusMonths(1),
+                                    datoTom = null,
+                                ),
                         ),
-                    ),
                 )
 
             // hvis
@@ -238,9 +236,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
-                    OppdatereHusstandsmedlem(
-                        slettPeriode = eksisterendeHusstandsmedlem!!.perioder.first { Kilde.MANUELL == it.kilde }.id,
-                    ),
+                        OppdatereHusstandsmedlem(
+                            slettPeriode = eksisterendeHusstandsmedlem!!.perioder.first { Kilde.MANUELL == it.kilde }.id,
+                        ),
                 )
 
             // hvis
@@ -281,14 +279,14 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
-                    OppdatereHusstandsmedlem(
-                        opprettHusstandsmedlem =
-                        OpprettHusstandsstandsmedlem(
-                            personident = Personident("1234"),
-                            fødselsdato = LocalDate.now().minusMonths(156),
-                            navn = "Per Spelemann",
+                        OppdatereHusstandsmedlem(
+                            opprettHusstandsmedlem =
+                                OpprettHusstandsstandsmedlem(
+                                    personident = Personident("1234"),
+                                    fødselsdato = LocalDate.now().minusMonths(156),
+                                    navn = "Per Spelemann",
+                                ),
                         ),
-                    ),
                 )
 
             // hvis
@@ -314,9 +312,12 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
                 oppdatertHusstandsmedlem!!.kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.ident shouldBe
-                        request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.personident!!.verdi
+                    request.oppdatereHusstandsmedlem!!
+                        .opprettHusstandsmedlem!!
+                        .personident!!
+                        .verdi
                 oppdatertHusstandsmedlem.navn shouldBe
-                        request.oppdatereHusstandsmedlem.opprettHusstandsmedlem!!.navn
+                    request.oppdatereHusstandsmedlem.opprettHusstandsmedlem!!.navn
                 oppdatertHusstandsmedlem.perioder.shouldHaveSize(1)
                 oppdatertHusstandsmedlem.perioder.first().kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
@@ -330,10 +331,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 it.size shouldBe 3
                 it.find { nyttBarn ->
                     nyttBarn.ident ==
-                            request.oppdatereHusstandsmedlem!!
-                                .opprettHusstandsmedlem!!
-                                .personident!!
-                                .verdi
+                        request.oppdatereHusstandsmedlem!!
+                            .opprettHusstandsmedlem!!
+                            .personident!!
+                            .verdi
                 } shouldNotBe null
             }
         }
@@ -351,9 +352,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
-                    OppdatereHusstandsmedlem(
-                        slettHusstandsmedlem = behandling.husstandsmedlem.first { Kilde.MANUELL == it.kilde }.id,
-                    ),
+                        OppdatereHusstandsmedlem(
+                            slettHusstandsmedlem = behandling.husstandsmedlem.first { Kilde.MANUELL == it.kilde }.id,
+                        ),
                 )
 
             // hvis
@@ -427,9 +428,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
-                    OppdatereHusstandsmedlem(
-                        tilbakestillPerioderForHusstandsmedlem = oppdaterHusstandsmedlem.id,
-                    ),
+                        OppdatereHusstandsmedlem(
+                            tilbakestillPerioderForHusstandsmedlem = oppdaterHusstandsmedlem.id,
+                        ),
                 )
 
             // hvis
@@ -472,15 +473,15 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             val nyPeriodeRequest =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
-                    OppdatereHusstandsmedlem(
-                        oppdaterPeriode =
-                        OppdatereBostatusperiode(
-                            idHusstandsmedlem = oppdaterHusstandsmedlem.id!!,
-                            bostatus = Bostatuskode.MED_FORELDER,
-                            datoFom = LocalDate.parse("2024-01-01"),
-                            datoTom = null,
+                        OppdatereHusstandsmedlem(
+                            oppdaterPeriode =
+                                OppdatereBostatusperiode(
+                                    idHusstandsmedlem = oppdaterHusstandsmedlem.id!!,
+                                    bostatus = Bostatuskode.MED_FORELDER,
+                                    datoFom = LocalDate.parse("2024-01-01"),
+                                    datoTom = null,
+                                ),
                         ),
-                    ),
                 )
 
             val responsNyPeriode =
@@ -507,9 +508,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         OppdatereBoforholdRequestV2(
                             oppdatereHusstandsmedlem =
-                            OppdatereHusstandsmedlem(
-                                angreSisteStegForHusstandsmedlem = oppdaterHusstandsmedlem.id,
-                            ),
+                                OppdatereHusstandsmedlem(
+                                    angreSisteStegForHusstandsmedlem = oppdaterHusstandsmedlem.id,
+                                ),
                         ),
                     ),
                     OppdatereBoforholdResponse::class.java,
@@ -540,9 +541,9 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     HttpEntity(
                         OppdatereBoforholdRequestV2(
                             oppdatereHusstandsmedlem =
-                            OppdatereHusstandsmedlem(
-                                angreSisteStegForHusstandsmedlem = oppdaterHusstandsmedlem.id,
-                            ),
+                                OppdatereHusstandsmedlem(
+                                    angreSisteStegForHusstandsmedlem = oppdaterHusstandsmedlem.id,
+                                ),
                         ),
                     ),
                     OppdatereBoforholdResponse::class.java,
@@ -577,14 +578,14 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             val request =
                 OppdatereBoforholdRequestV2(
                     oppdatereHusstandsmedlem =
-                    OppdatereHusstandsmedlem(
-                        opprettHusstandsmedlem =
-                        OpprettHusstandsstandsmedlem(
-                            personident = Personident("1234"),
-                            fødselsdato = LocalDate.now().minusMonths(156),
-                            navn = "Per Spelemann",
+                        OppdatereHusstandsmedlem(
+                            opprettHusstandsmedlem =
+                                OpprettHusstandsstandsmedlem(
+                                    personident = Personident("1234"),
+                                    fødselsdato = LocalDate.now().minusMonths(156),
+                                    navn = "Per Spelemann",
+                                ),
                         ),
-                    ),
                 )
 
             // hvis
@@ -610,7 +611,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
             assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
                 oppdatertHusstandsmedlem!!.kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.ident shouldBe null
-                oppdatertHusstandsmedlem.navn shouldBe "Person med skjult identitet, født ${request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.fødselsdato.year}"
+                oppdatertHusstandsmedlem.navn shouldBe
+                    "Person med skjult identitet, født ${request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.fødselsdato.year}"
                 oppdatertHusstandsmedlem.perioder.shouldHaveSize(1)
                 oppdatertHusstandsmedlem.perioder.first().kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
@@ -624,10 +626,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 it.size shouldBe 3
                 it.find { nyttBarn ->
                     nyttBarn.ident ==
-                            request.oppdatereHusstandsmedlem!!
-                                .opprettHusstandsmedlem!!
-                                .personident!!
-                                .verdi
+                        request.oppdatereHusstandsmedlem!!
+                            .opprettHusstandsmedlem!!
+                            .personident!!
+                            .verdi
                 } shouldNotBe null
             }
         }
