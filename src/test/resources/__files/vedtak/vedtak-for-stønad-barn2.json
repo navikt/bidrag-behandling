@@ -1,0 +1,66 @@
+{
+  "vedtakListe" : [ {
+    "vedtaksid" : 466,
+    "vedtakstidspunkt" : "2024-09-19T06:21:18.000266",
+    "type" : "FASTSETTELSE",
+    "kilde" : "MANUELT",
+    "stønadsendring" : {
+      "type" : "BIDRAG",
+      "sak" : "2400101",
+      "skyldner" : "213244124",
+      "kravhaver" : "54545454545",
+      "mottaker" : "313213213",
+      "førsteIndeksreguleringsår" : 2025,
+      "innkreving" : "MED_INNKREVING",
+      "beslutning" : "ENDRING",
+      "omgjørVedtakId" : null,
+      "eksternReferanse" : null,
+      "grunnlagReferanseListe" : [ ],
+      "periodeListe" : [ {
+        "periode" : {
+          "fom" : "2023-01",
+          "til" : "2023-07"
+        },
+        "beløp" : 3160,
+        "valutakode" : "NOK",
+        "resultatkode" : "KBB",
+        "delytelseId" : "11054984",
+        "grunnlagReferanseListe" : [ ]
+      }, {
+        "periode" : {
+          "fom" : "2023-07",
+          "til" : "2024-01"
+        },
+        "beløp" : 4600,
+        "valutakode" : "NOK",
+        "resultatkode" : "KBB",
+        "delytelseId" : "11054986",
+        "grunnlagReferanseListe" : [ ]
+      }, {
+        "periode" : {
+          "fom" : "2024-01",
+          "til" : "2024-07"
+        },
+        "beløp" : 4600,
+        "valutakode" : "NOK",
+        "resultatkode" : "KBB",
+        "delytelseId" : "11054988",
+        "grunnlagReferanseListe" : [ ]
+      }, {
+        "periode" : {
+          "fom" : "2024-07",
+          "til" : null
+        },
+        "beløp" : 4720,
+        "valutakode" : "NOK",
+        "resultatkode" : "KBB",
+        "delytelseId" : "11054990",
+        "grunnlagReferanseListe" : [ ]
+      } ]
+    },
+    "behandlingsreferanser" : [ {
+      "kilde" : "BISYS_SØKNAD",
+      "referanse" : "50003975"
+    } ]
+  } ]
+}

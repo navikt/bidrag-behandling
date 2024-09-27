@@ -18,6 +18,9 @@ import java.util.concurrent.TimeUnit
 class CacheConfig {
     companion object {
         const val PERSON_CACHE = "PERSON_CACHE"
+        const val BBM_BEREGNING_CACHE = "BBM_BEREGNING_CACHE"
+        const val VEDTAK_FOR_STØNAD_CACHE = "VEDTAK_FOR_STØNAD_CACHE"
+        const val STØNAD_LØPENDE_BIDRAG_CACHE = "STØNAD_LØPENDE_BIDRAG_CACHE"
         const val SAK_CACHE = "SAK_CACHE"
         const val TILGANG_TEMA_CACHE = "TILGANG_TEMA_CACHE"
         const val TILGANG_PERSON_I_SAK_CACHE = "TILGANG_SAK_CACHE"
@@ -31,6 +34,15 @@ class CacheConfig {
             Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
         )
         caffeineCacheManager.registerCustomCache(TILGANG_TEMA_CACHE, Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build())
+        caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build())
+        caffeineCacheManager.registerCustomCache(
+            STØNAD_LØPENDE_BIDRAG_CACHE,
+            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build(),
+        )
+        caffeineCacheManager.registerCustomCache(
+            VEDTAK_FOR_STØNAD_CACHE,
+            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build(),
+        )
         caffeineCacheManager.registerCustomCache(
             TILGANG_PERSON_I_SAK_CACHE,
             Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build(),

@@ -1,0 +1,8 @@
+{
+  "bidragssakerListe" : [ {
+    "sak" : "{saksnummer}",
+    "type" : "BIDRAG",
+    "kravhaver" : "{barnIdent}",
+    "løpendeBeløp" : 0
+  } ]
+}

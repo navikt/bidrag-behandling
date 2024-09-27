@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.findAll
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
+import com.github.tomakehurst.wiremock.matching.MatchResult
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
@@ -23,7 +24,10 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
+import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
+import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -38,6 +42,7 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -79,6 +84,7 @@ fun stubPersonConsumer(): BidragPersonConsumer {
             listOf(testdataBM, testdataBarn1, testdataBarn2, testdataBP, testdataHusstandsmedlem1)
         personer.find { it.ident == personId }?.tilPersonDto() ?: PersonDto(
             Personident(firstArg<String>()),
+            fødselsdato = LocalDate.parse("2015-05-01"),
         )
     }
     mockkObject(AppContext)
@@ -134,12 +140,72 @@ class StubUtils {
         )
     }
 
+    fun stubBidragVedtakForStønad(
+        kravhaverIdent: String,
+        filnavn: String,
+    ) {
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
+                .andMatching {
+                    try {
+                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
+                        if (request.kravhaver.verdi == kravhaverIdent) {
+                            MatchResult.exactMatch()
+                        } else {
+                            MatchResult.noMatch()
+                        }
+                    } catch (e: Exception) {
+                        MatchResult.noMatch()
+                    }
+                }.willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(HttpStatus.OK.value())
+                        .withBody(erstattVariablerITestFil("vedtak/$filnavn")),
+                ),
+        )
+    }
+
+    fun stubAlleBidragVedtakForStønad() {
+        stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1")
+        stubBidragVedtakForStønad(testdataBarn2.ident, "vedtak-for-stønad-barn2")
+        stubBidragVedtakForStønad(testdataHusstandsmedlem1.ident, "vedtak-for-stønad-barn3")
+        stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT, "vedtak-for-stønad-barn_annen")
+        stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT_2, "vedtak-for-stønad-barn_annen_2")
+    }
+
+    fun stubBidragStonadLøpendeSaker(
+        filnavn: String = "løpende-bidragssaker-bp",
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/stonad/hent-lopende-bidragssaker-for-skyldner")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(erstattVariablerITestFil("stonad/$filnavn")),
+            ),
+        )
+    }
+
+    fun stubBidraBBMHentBeregning(
+        filnavn: String = "bbm-beregning",
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/bbm/api/beregning")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(erstattVariablerITestFil("bidragbbm/$filnavn")),
+            ),
+        )
+    }
+
     fun stubTilgangskontrollSak(
         result: Boolean = true,
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/sak")).willReturn(
+            WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/sak")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(result.toString()),
@@ -152,7 +218,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
         personIdent: String? = null,
     ) {
-        val stub = WireMock.post(WireMock.urlMatching("/tilgangskontroll/api/tilgang/person"))
+        val stub = WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/person"))
         if (!personIdent.isNullOrEmpty()) {
             stub.withRequestBody(ContainsPattern(personIdent))
         }
@@ -207,12 +273,12 @@ class StubUtils {
         )
     }
 
-    fun stubFatteVedtak(status: HttpStatus = HttpStatus.OK) {
+    fun stubFatteVedtak(vedtaksid: Int = 1) {
         WireMock.stubFor(
             WireMock.post(urlMatching("/vedtak/vedtak")).willReturn(
                 aClosedJsonResponse()
-                    .withStatus(status.value())
-                    .withBody(toJsonString(OpprettVedtakResponseDto(1, emptyList()))),
+                    .withStatus(HttpStatus.OK.value())
+                    .withBody(toJsonString(OpprettVedtakResponseDto(vedtaksid, emptyList()))),
             ),
         )
     }
@@ -252,7 +318,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlMatching("/forsendelse/api/forsendelse/sak/(.*)")).willReturn(
+            WireMock.get(urlMatching("/forsendelse/api/forsendelse/sak/(.*)")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(response)),
@@ -262,7 +328,7 @@ class StubUtils {
 
     fun stubOpprettNotat(status: HttpStatus = HttpStatus.OK) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/dokumentproduksjon/api/v2/notat/pdf")).willReturn(
+            WireMock.post(urlMatching("/dokumentproduksjon/api/v2/notat/pdf")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
@@ -277,7 +343,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.post(WireMock.urlMatching("/dokument/journalpost/JOARK")).willReturn(
+            WireMock.post(urlMatching("/dokument/journalpost/JOARK")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(toJsonString(nyOpprettJournalpostResponse(nyJournalpostId, dokumenter))),
@@ -644,13 +710,13 @@ class StubUtils {
         }
 
         fun opprettNotatKalt() {
-            WireMock.verify(postRequestedFor(WireMock.urlMatching("/dokumentproduksjon/api/v2/notat/pdf")))
+            WireMock.verify(postRequestedFor(urlMatching("/dokumentproduksjon/api/v2/notat/pdf")))
         }
 
         fun opprettJournalpostKaltMed(vararg contains: String) {
             val verify =
                 WireMock.postRequestedFor(
-                    WireMock.urlMatching("/dokument/journalpost/JOARK"),
+                    urlMatching("/dokument/journalpost/JOARK"),
                 )
             verifyContains(verify, *contains)
         }
