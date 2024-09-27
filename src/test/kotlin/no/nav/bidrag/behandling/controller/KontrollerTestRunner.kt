@@ -3,14 +3,17 @@ package no.nav.bidrag.behandling.controller
 import StubUtils
 import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.Unleash
+import io.mockk.clearAllMocks
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockkObject
+import io.mockk.unmockkAll
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate

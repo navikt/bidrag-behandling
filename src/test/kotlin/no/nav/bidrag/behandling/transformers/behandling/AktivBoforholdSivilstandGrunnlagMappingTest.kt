@@ -46,7 +46,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                         gjelderPersonId = testdataBarn1.ident,
                     ),
                 )
-            val aktivBoforholdGrunnlagListe2 =
+            val aktivtBoforholdGrunnlagListe2 =
                 listOf(
                     BoforholdResponseV2(
                         bostatus = Bostatuskode.IKKE_MED_FORELDER,
@@ -56,7 +56,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                         gjelderPersonId = testdataBarn2.ident,
                     ),
                 )
-            val aktivGrunnlagBoforhold =
+            val aktivtGrunnlagBoforhold =
                 listOf(
                     Grunnlag(
                         erBearbeidet = true,
@@ -71,7 +71,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                         erBearbeidet = true,
                         rolle = behandling.bidragsmottaker!!,
                         type = Grunnlagsdatatype.BOFORHOLD,
-                        data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe2),
+                        data = commonObjectmapper.writeValueAsString(aktivtBoforholdGrunnlagListe2),
                         behandling = behandling,
                         gjelder = testdataBarn2.ident,
                         innhentet = LocalDateTime.now(),
@@ -98,7 +98,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                         gjelderPersonId = testdataBarn2.ident,
                     ),
                 )
-            val nyGrunnlagBoforhold =
+            val nyttGrunnlagBoforhold =
                 listOf(
                     Grunnlag(
                         erBearbeidet = true,
@@ -120,18 +120,12 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                     ),
                 )
 
-            val resultat =
-                nyGrunnlagBoforhold.henteEndringerIBoforhold(
-                    aktivGrunnlagBoforhold,
-                    LocalDate.parse("2020-01-01"),
-                    opprettHusstandsmedlemmer(behandling),
-                    behandling.bidragsmottaker!!,
-                )
+            val resultat = nyttGrunnlagBoforhold.henteEndringerIBoforhold(aktivtGrunnlagBoforhold, behandling)
 
             resultat shouldHaveSize 2
             val resultatBarn1 = resultat.find { it.ident == testdataBarn1.ident }
             resultatBarn1!!.perioder shouldHaveSize 1
-            resultatBarn1.perioder.toList()[0].datoFom shouldBe LocalDate.parse("2020-01-01")
+            resultatBarn1.perioder.toList()[0].datoFom shouldBe behandling.virkningstidspunkt
             resultatBarn1.perioder.toList()[0].datoTom shouldBe null
             resultatBarn1.perioder.toList()[0].bostatus shouldBe Bostatuskode.MED_FORELDER
 
@@ -208,17 +202,12 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
             val resultat =
                 listOf(
                     nyGrunnlagBoforhold,
-                ).henteEndringerIBoforhold(
-                    listOf(aktivGrunnlagBoforhold),
-                    LocalDate.parse("2020-01-01"),
-                    opprettHusstandsmedlemmer(behandling),
-                    behandling.bidragsmottaker!!,
-                )
+                ).henteEndringerIBoforhold(listOf(aktivGrunnlagBoforhold), behandling)
 
             resultat shouldHaveSize 1
             val resultatBarn1 = resultat.find { it.ident == testdataBarn1.ident }
             resultatBarn1!!.perioder shouldHaveSize 3
-            resultatBarn1.perioder.toList()[0].datoFom shouldBe LocalDate.parse("2020-01-01")
+            resultatBarn1.perioder.toList()[0].datoFom shouldBe behandling.virkningstidspunkt
             resultatBarn1.perioder.toList()[0].datoTom shouldBe LocalDate.parse("2023-11-30")
             resultatBarn1.perioder.toList()[0].bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
         }
@@ -294,14 +283,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                 )
 
             val resultat =
-                listOf(
-                    nyttGrunnlagBoforhold,
-                ).henteEndringerIBoforhold(
-                    listOf(aktivGrunnlagBoforhold),
-                    LocalDate.parse("2022-12-01"),
-                    opprettHusstandsmedlemmer(behandling),
-                    behandling.bidragsmottaker!!,
-                )
+                listOf(nyttGrunnlagBoforhold).henteEndringerIBoforhold(listOf(aktivGrunnlagBoforhold), behandling)
 
             resultat shouldHaveSize 0
         }
@@ -380,13 +362,7 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
                     ),
                 )
 
-            val resultat =
-                nyGrunnlagBoforhold.henteEndringerIBoforhold(
-                    aktivGrunnlagBoforhold,
-                    LocalDate.parse("2020-01-01"),
-                    opprettHusstandsmedlemmer(behandling),
-                    behandling.bidragsmottaker!!,
-                )
+            val resultat = nyGrunnlagBoforhold.henteEndringerIBoforhold(aktivGrunnlagBoforhold, behandling)
 
             resultat shouldHaveSize 0
         }

@@ -25,10 +25,11 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
+import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.VedtakService
-import no.nav.bidrag.behandling.transformers.Behandlingsmapper
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -47,7 +48,7 @@ class BehandlingControllerV2(
     private val boforholdService: BoforholdService,
     private val inntektService: InntektService,
     private val utgiftService: UtgiftService,
-    private val behandlingsmapper: Behandlingsmapper,
+    private val dtomapper: Dtomapper,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -71,7 +72,7 @@ class BehandlingControllerV2(
         val resultat =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return behandlingsmapper.tilDto(resultat)
+        return dtomapper.tilDto(resultat)
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")
@@ -162,7 +163,7 @@ class BehandlingControllerV2(
 
         val behandling = behandlingService.oppdatereVirkningstidspunkt(behandlingsid, request)
 
-        return behandlingsmapper.tilDto(behandling, true)
+        return dtomapper.tilDto(behandling)
     }
 
     @PutMapping("/behandling/{behandlingsid}/boforhold")

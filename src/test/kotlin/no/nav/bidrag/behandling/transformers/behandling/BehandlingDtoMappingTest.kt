@@ -9,8 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.service.GrunnlagService
-import no.nav.bidrag.behandling.transformers.Behandlingsmapper
+import no.nav.bidrag.behandling.service.TilgangskontrollService
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -41,9 +41,9 @@ import java.time.LocalDateTime
 
 class BehandlingDtoMappingTest : TestContainerRunner() {
     @Autowired
-    lateinit var grunnlagsservice: GrunnlagService
+    lateinit var tilgangskontrollService: TilgangskontrollService
 
-    lateinit var mapper: Behandlingsmapper
+    lateinit var mapper: Dtomapper
 
     @BeforeEach
     fun initMocks() {
@@ -51,7 +51,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         stubKodeverkProvider()
         stubSjablonProvider()
         stubSaksbehandlernavnProvider()
-        mapper = Behandlingsmapper(grunnlagsservice)
+        mapper = Dtomapper(tilgangskontrollService)
     }
 
     @Test

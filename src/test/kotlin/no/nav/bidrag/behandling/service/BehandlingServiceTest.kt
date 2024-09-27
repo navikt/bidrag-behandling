@@ -17,6 +17,8 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
@@ -30,6 +32,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -883,9 +887,15 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                 )
 
-                val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
+                val sisteInnhentedeIkkeAktiveGrunnlag = b.grunnlagListe.toSet().hentSisteIkkeAktiv()
+                val aktiveGrunnlag = b.grunnlagListe.toSet().hentSisteAktiv()
 
-                assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.sivilstand) {
+                assertSoftly(
+                    sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerSivilstand(
+                        aktiveGrunnlag,
+                        b.virkningstidspunktEllerSøktFomDato,
+                    ),
+                ) {
                     it shouldNotBe null
                     it!!.grunnlag shouldHaveSize 1
                     it.sivilstand shouldHaveSize 1
@@ -987,9 +997,12 @@ class BehandlingServiceTest : TestContainerRunner() {
                         )
                     }
 
-                val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(b)
+                val sisteInnhentedeIkkeAktiveGrunnlag = b.grunnlagListe.toSet().hentSisteIkkeAktiv()
+                val aktiveGrunnlag = b.grunnlagListe.toSet().hentSisteAktiv()
 
-                assertSoftly(ikkeAktiverteEndringerIGrunnlagsdata.husstandsmedlem) {
+                assertSoftly(
+                    sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(aktiveGrunnlag, b),
+                ) {
                     it shouldHaveSize 1
                     it.first().perioder shouldHaveSize 3
                 }
