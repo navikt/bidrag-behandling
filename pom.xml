@@ -38,7 +38,7 @@
         <checker-qual.version>3.47.0</checker-qual.version>
         <asm.version>9.7</asm.version>
         <swagger.version>2.2.23</swagger.version>
-        <jetbrains.annotations.version>24.1.0</jetbrains.annotations.version>
+        <jetbrains.annotations.version>25.0.0</jetbrains.annotations.version>
         <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
     </properties>
 
