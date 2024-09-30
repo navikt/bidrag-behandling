@@ -333,6 +333,7 @@ data class PeriodeAndreVoksneIHusstanden(
     val husstandsmedlemmer: List<AndreVoksneIHusstandenDetaljerDto> = emptyList(),
 )
 
+// TODO: bd-1958
 data class AndreVoksneIHusstandenDetaljerDto(
     val navn: String,
     val fødselsdato: LocalDate?,
