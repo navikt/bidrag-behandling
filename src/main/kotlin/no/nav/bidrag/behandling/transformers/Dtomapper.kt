@@ -79,10 +79,10 @@ class Dtomapper(
             boforhold = behandling.tilBoforholdV2(),
             inntekter = behandling.tilInntektDtoV2(behandling.grunnlagListe.toSet().hentSisteAktiv()),
             aktiveGrunnlagsdata =
-            behandling.grunnlagListe
-                .toSet()
-                .hentSisteAktiv()
-                .tilAktiveGrunnlagsdata(),
+                behandling.grunnlagListe
+                    .toSet()
+                    .hentSisteAktiv()
+                    .tilAktiveGrunnlagsdata(),
             ikkeAktiverteEndringerIGrunnlagsdata = behandling.ikkeAktiveGrunnlagsdata(),
         )
 
@@ -97,8 +97,10 @@ class Dtomapper(
 
     fun tilAndreVoksneIHusstanden(behandling: Behandling) = behandling.andreVoksneIHusstanden()
 
-    fun tilBoforholdBarn(husstandsmedlem: Husstandsmedlem, boforhold: List<BoforholdResponseV2>) =
-        husstandsmedlem.tilBoforholdBarn(boforhold)
+    fun tilBoforholdBarn(
+        husstandsmedlem: Husstandsmedlem,
+        boforhold: List<BoforholdResponseV2>,
+    ) = husstandsmedlem.boforholdBarn(boforhold)
 
     fun henteBegrensetAntallAndreVoksne(
         grunnlag: Set<Grunnlag>,
@@ -137,96 +139,95 @@ class Dtomapper(
         )
     }
 
-    private fun Husstandsmedlem.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>): BoforholdBarn {
+    private fun Husstandsmedlem.boforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>): BoforholdBarn {
         val tilgangskontrollertPersoninfo =
             tilgangskontrollerePersoninfo(
                 this.tilPersoninfo(),
-                Saksnummer(this.behandling.saksnummer)
+                Saksnummer(this.behandling.saksnummer),
             )
         return BoforholdBarn(
             gjelder =
-            NotatRolleDto(
-                rolle = null,
-                navn = tilgangskontrollertPersoninfo.navn,
-                fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
-                ident = tilgangskontrollertPersoninfo.ident,
-            ),
+                NotatRolleDto(
+                    rolle = null,
+                    navn = tilgangskontrollertPersoninfo.navn,
+                    fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
+                    ident = tilgangskontrollertPersoninfo.ident,
+                ),
             kilde = kilde,
             medIBehandling = behandling.roller.any { it.ident == this.ident },
             opplysningerFraFolkeregisteret =
-            opplysningerBoforhold
-                .filter {
-                    it.gjelderPersonId == this.ident
-                }.map {
-                    OpplysningerFraFolkeregisteret(
+                opplysningerBoforhold
+                    .filter {
+                        it.gjelderPersonId == this.ident
+                    }.map {
+                        OpplysningerFraFolkeregisteret(
+                            periode =
+                                ÅrMånedsperiode(
+                                    it.periodeFom,
+                                    it.periodeTom,
+                                ),
+                            status = it.bostatus,
+                        )
+                    },
+            opplysningerBruktTilBeregning =
+                perioder.sortedBy { it.datoFom }.map { periode ->
+                    OpplysningerBruktTilBeregning(
                         periode =
-                        ÅrMånedsperiode(
-                            it.periodeFom,
-                            it.periodeTom,
-                        ),
-                        status = it.bostatus,
+                            ÅrMånedsperiode(
+                                periode.datoFom!!,
+                                periode.datoTom,
+                            ),
+                        status = periode.bostatus,
+                        kilde = periode.kilde,
                     )
                 },
-            opplysningerBruktTilBeregning =
-            perioder.sortedBy { it.datoFom }.map { periode ->
-                OpplysningerBruktTilBeregning(
-                    periode =
-                    ÅrMånedsperiode(
-                        periode.datoFom!!,
-                        periode.datoTom,
-                    ),
-                    status = periode.bostatus,
-                    kilde = periode.kilde,
-                )
-            },
         )
     }
 
-    private fun Behandling.andreVoksneIHusstanden(): NotatAndreVoksneIHusstanden {
-        return NotatAndreVoksneIHusstanden(
+    private fun Behandling.andreVoksneIHusstanden(): NotatAndreVoksneIHusstanden =
+        NotatAndreVoksneIHusstanden(
             opplysningerFraFolkeregisteret =
-            grunnlag
-                .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
-                .konvertereData<Set<Bostatus>>()
-                ?.map {
-                    val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
-                    OpplysningerFraFolkeregisteretMedDetaljer(
-                        periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-                        status = it.bostatus!!,
-                        detaljer =
-                        no.nav.bidrag.transport.notat.AndreVoksneIHusstandenDetaljerDto(
-                            henteAndreVoksneIHusstanden(grunnlag, periode, true).size,
-                            husstandsmedlemmer =
-                            henteBegrensetAntallAndreVoksne(grunnlag, periode, true).map { voksne ->
-                                val tilgangskontrollertPersoninfo =
-                                    tilgangskontrollerePersoninfo(
-                                        voksne.tilPersoninfo(),
-                                        Saksnummer(this.saksnummer)
-                                    )
+                grunnlag
+                    .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
+                    .konvertereData<Set<Bostatus>>()
+                    ?.map {
+                        val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
+                        OpplysningerFraFolkeregisteretMedDetaljer(
+                            periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                            status = it.bostatus!!,
+                            detaljer =
+                                no.nav.bidrag.transport.notat.AndreVoksneIHusstandenDetaljerDto(
+                                    henteAndreVoksneIHusstanden(grunnlag, periode, true).size,
+                                    husstandsmedlemmer =
+                                        henteBegrensetAntallAndreVoksne(grunnlag, periode, true).map { voksne ->
+                                            val tilgangskontrollertPersoninfo =
+                                                tilgangskontrollerePersoninfo(
+                                                    voksne.tilPersoninfo(),
+                                                    Saksnummer(this.saksnummer),
+                                                )
 
-                                VoksenIHusstandenDetaljerDto(
-                                    navn = tilgangskontrollertPersoninfo.navn!!,
-                                    fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
-                                    harRelasjonTilBp = voksne.harRelasjonTilBp,
-                                )
-                            },
-                        ),
-                    )
-                }?.toList() ?: emptyList(),
+                                            VoksenIHusstandenDetaljerDto(
+                                                navn = tilgangskontrollertPersoninfo.navn!!,
+                                                fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
+                                                harRelasjonTilBp = voksne.harRelasjonTilBp,
+                                            )
+                                        },
+                                ),
+                        )
+                    }?.toList() ?: emptyList(),
             opplysningerBruktTilBeregning =
-            husstandsmedlem.voksneIHusstanden?.perioder?.sortedBy { it.datoFom }?.map { periode ->
-                OpplysningerBruktTilBeregning(
-                    periode =
-                    ÅrMånedsperiode(
-                        periode.datoFom!!,
-                        periode.datoTom,
-                    ),
-                    status = periode.bostatus,
-                    kilde = periode.kilde,
-                )
-            } ?: emptyList(),
+                husstandsmedlem.voksneIHusstanden?.perioder?.sortedBy { it.datoFom }?.map { periode ->
+                    OpplysningerBruktTilBeregning(
+                        periode =
+                            ÅrMånedsperiode(
+                                periode.datoFom!!,
+                                periode.datoTom,
+                            ),
+                        status = periode.bostatus,
+                        kilde = periode.kilde,
+                    )
+                } ?: emptyList(),
         )
-    }
 
     private fun Behandling.ikkeAktiveGrunnlagsdata(): IkkeAktiveGrunnlagsdata {
         val behandling = this
@@ -236,63 +237,63 @@ class Dtomapper(
         val aktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteAktiv()
         return IkkeAktiveGrunnlagsdata(
             inntekter =
-            IkkeAktiveInntekter(
-                årsinntekter =
-                roller
-                    .flatMap {
-                        sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                            it,
-                            inntekter,
-                            Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-                        )
-                    }.toSet(),
-                småbarnstillegg =
-                roller
-                    .flatMap {
-                        sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                            it,
-                            inntekter,
-                            Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                        )
-                    }.toSet(),
-                utvidetBarnetrygd =
-                roller
-                    .flatMap {
-                        sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                            it,
-                            inntekter,
-                            Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                        )
-                    }.toSet(),
-                kontantstøtte =
-                roller
-                    .flatMap {
-                        sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                            it,
-                            inntekter,
-                            Grunnlagsdatatype.KONTANTSTØTTE,
-                        )
-                    }.toSet(),
-                barnetillegg =
-                roller
-                    .flatMap {
-                        sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                            it,
-                            inntekter,
-                            Grunnlagsdatatype.BARNETILLEGG,
-                        )
-                    }.toSet(),
-            ),
+                IkkeAktiveInntekter(
+                    årsinntekter =
+                        roller
+                            .flatMap {
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
+                                    it,
+                                    inntekter,
+                                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                                )
+                            }.toSet(),
+                    småbarnstillegg =
+                        roller
+                            .flatMap {
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
+                                    it,
+                                    inntekter,
+                                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                                )
+                            }.toSet(),
+                    utvidetBarnetrygd =
+                        roller
+                            .flatMap {
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
+                                    it,
+                                    inntekter,
+                                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                                )
+                            }.toSet(),
+                    kontantstøtte =
+                        roller
+                            .flatMap {
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
+                                    it,
+                                    inntekter,
+                                    Grunnlagsdatatype.KONTANTSTØTTE,
+                                )
+                            }.toSet(),
+                    barnetillegg =
+                        roller
+                            .flatMap {
+                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
+                                    it,
+                                    inntekter,
+                                    Grunnlagsdatatype.BARNETILLEGG,
+                                )
+                            }.toSet(),
+                ),
             arbeidsforhold = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIArbeidsforhold(aktiveGrunnlag),
             husstandsmedlem =
-            sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(aktiveGrunnlag, behandling),
+                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(aktiveGrunnlag, behandling),
             andreVoksneIHusstanden =
-            sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag),
+                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag),
             sivilstand =
-            sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerSivilstand(
-                aktiveGrunnlag,
-                behandling.virkningstidspunktEllerSøktFomDato,
-            ),
+                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerSivilstand(
+                    aktiveGrunnlag,
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                ),
         )
     }
 
@@ -305,27 +306,27 @@ class Dtomapper(
         if (aktiveData != null && nyeData != null && !nyeData.erLik(aktiveData)) {
             return AndreVoksneIHusstandenGrunnlagDto(
                 perioder =
-                nyeData
-                    .asSequence()
-                    .filter { it.bostatus != null }
-                    .map {
-                        PeriodeAndreVoksneIHusstanden(
-                            periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-                            status = it.bostatus!!,
-                            totalAntallHusstandsmedlemmer =
-                            toSet()
-                                .hentAlleAndreVoksneHusstandForPeriode(
-                                    ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-                                    false,
-                                ).size,
-                            husstandsmedlemmer =
-                            toSet()
-                                .hentBegrensetAndreVoksneHusstandForPeriode(
-                                    ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-                                    false,
-                                ),
-                        )
-                    }.toSet(),
+                    nyeData
+                        .asSequence()
+                        .filter { it.bostatus != null }
+                        .map {
+                            PeriodeAndreVoksneIHusstanden(
+                                periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                                status = it.bostatus!!,
+                                totalAntallHusstandsmedlemmer =
+                                    toSet()
+                                        .hentAlleAndreVoksneHusstandForPeriode(
+                                            ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                                            false,
+                                        ).size,
+                                husstandsmedlemmer =
+                                    toSet()
+                                        .hentBegrensetAndreVoksneHusstandForPeriode(
+                                            ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                                            false,
+                                        ),
+                            )
+                        }.toSet(),
                 innhentet = nyttGrunnlag?.innhentet ?: LocalDateTime.now(),
             )
         }
@@ -355,87 +356,87 @@ class Dtomapper(
         søknadsid = soknadsid,
         behandlerenhet = behandlerEnhet,
         roller =
-        roller.map { it.tilDto() }.toSet(),
+            roller.map { it.tilDto() }.toSet(),
         søknadRefId = soknadRefId,
         vedtakRefId = refVedtaksid,
         virkningstidspunkt =
-        VirkningstidspunktDto(
-            virkningstidspunkt = virkningstidspunkt,
-            opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-            årsak = årsak,
-            avslag = avslag,
-            begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-        ),
+            VirkningstidspunktDto(
+                virkningstidspunkt = virkningstidspunkt,
+                opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+                årsak = årsak,
+                avslag = avslag,
+                begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+            ),
         boforhold = tilBoforholdV2(),
         inntekter =
-        tilInntektDtoV2(
-            grunnlag.hentSisteAktiv(),
-            inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
-        ),
+            tilInntektDtoV2(
+                grunnlag.hentSisteAktiv(),
+                inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
+            ),
         aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
         utgift = tilUtgiftDto(),
         ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
         feilOppståttVedSisteGrunnlagsinnhenting =
-        grunnlagsinnhentingFeilet?.let {
-            val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
-                object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
+            grunnlagsinnhentingFeilet?.let {
+                val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
+                    object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
 
-            objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
-        },
+                objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
+            },
     )
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
         OppdatereBoforholdResponse(
             oppdatertePerioderMedAndreVoksne =
-            (rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG).ifTrue { perioder.tilBostatusperiode() } ?: emptySet(),
+                (rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG).ifTrue { perioder.tilBostatusperiode() } ?: emptySet(),
             oppdatertHusstandsmedlem =
-            (rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG).ifTrue {
-                tilBostatusperiode()
-            },
+                (rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG).ifTrue {
+                    tilBostatusperiode()
+                },
             egetBarnErEnesteVoksenIHusstanden = behandling.egetBarnErEnesteVoksenIHusstanden,
             valideringsfeil =
-            BoforholdValideringsfeil(
-                andreVoksneIHusstanden =
-                behandling.husstandsmedlem.voksneIHusstanden
-                    ?.validereAndreVoksneIHusstanden(behandling.virkningstidspunktEllerSøktFomDato),
-                husstandsmedlem =
-                behandling.husstandsmedlem.barn
-                    .toSet()
-                    .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
-                    .filter { it.harFeil },
-            ),
+                BoforholdValideringsfeil(
+                    andreVoksneIHusstanden =
+                        behandling.husstandsmedlem.voksneIHusstanden
+                            ?.validereAndreVoksneIHusstanden(behandling.virkningstidspunktEllerSøktFomDato),
+                    husstandsmedlem =
+                        behandling.husstandsmedlem.barn
+                            .toSet()
+                            .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                            .filter { it.harFeil },
+                ),
         )
 
     private fun Behandling.tilBoforholdV2() =
         BoforholdDtoV2(
             husstandsmedlem =
-            husstandsmedlem.barn
-                .toSet()
-                .sortert()
-                .map { it.tilBostatusperiode() }
-                .toSet(),
+                husstandsmedlem.barn
+                    .toSet()
+                    .sortert()
+                    .map { it.tilBostatusperiode() }
+                    .toSet(),
             andreVoksneIHusstanden = husstandsmedlem.voksneIHusstanden?.perioder?.tilBostatusperiode() ?: emptySet(),
             sivilstand = sivilstand.toSivilstandDto(),
             begrunnelse =
-            BegrunnelseDto(
-                innhold = NotatService.henteNotatinnhold(this, NotatType.BOFORHOLD),
-                gjelder = this.henteRolleForNotat(NotatType.BOFORHOLD, null).tilDto(),
-            ),
+                BegrunnelseDto(
+                    innhold = NotatService.henteNotatinnhold(this, NotatType.BOFORHOLD),
+                    gjelder = this.henteRolleForNotat(NotatType.BOFORHOLD, null).tilDto(),
+                ),
             egetBarnErEnesteVoksenIHusstanden = egetBarnErEnesteVoksenIHusstanden,
             valideringsfeil =
-            BoforholdValideringsfeil(
-                andreVoksneIHusstanden =
-                husstandsmedlem.voksneIHusstanden
-                    ?.validereAndreVoksneIHusstanden(
-                        virkningstidspunkt!!,
-                    )?.takeIf { it.harFeil },
-                husstandsmedlem =
-                husstandsmedlem.barn
-                    .toSet()
-                    .validerBoforhold(virkningstidspunktEllerSøktFomDato)
-                    .filter { it.harFeil },
-                sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
-            ),
+                BoforholdValideringsfeil(
+                    andreVoksneIHusstanden =
+                        husstandsmedlem.voksneIHusstanden
+                            ?.validereAndreVoksneIHusstanden(
+                                virkningstidspunkt!!,
+                            )?.takeIf { it.harFeil },
+                    husstandsmedlem =
+                        husstandsmedlem.barn
+                            .toSet()
+                            .validerBoforhold(virkningstidspunktEllerSøktFomDato)
+                            .filter { it.harFeil },
+                    sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
+                ),
         )
 
     private fun Husstandsmedlem.tilBostatusperiode(): HusstandsmedlemDtoV2 {
@@ -446,15 +447,15 @@ class Dtomapper(
             id = this.id,
             kilde = this.kilde,
             medIBehandling =
-            !this.ident.isNullOrBlank() &&
+                !this.ident.isNullOrBlank() &&
                     behandling.søknadsbarn
                         .map { it.ident }
                         .contains(this.ident),
             perioder =
-            this.perioder
-                .sortedBy { it.datoFom }
-                .toSet()
-                .tilBostatusperiode(),
+                this.perioder
+                    .sortedBy { it.datoFom }
+                    .toSet()
+                    .tilBostatusperiode(),
             ident = tilgangskontrollertPersoninfo.ident?.verdi,
             navn = tilgangskontrollertPersoninfo.navn,
             fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
@@ -478,8 +479,7 @@ class Dtomapper(
                     val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!, p.periodeTil?.plusMonths(1))
                     periodeBorHosBP.fom <= periode.fom && periodeBorHosBP.tilEllerMax() <= periode.tilEllerMax()
                 }
-            }
-            ?.map { it.tilAndreVoksneIHusstandenDetaljerDto(Saksnummer(boforholdAndreVoksneIHusstanden?.behandling?.saksnummer!!)) }
+            }?.map { it.tilAndreVoksneIHusstandenDetaljerDto(Saksnummer(boforholdAndreVoksneIHusstanden?.behandling?.saksnummer!!)) }
             ?.sorter() ?: emptyList()
     }
 
@@ -494,21 +494,20 @@ class Dtomapper(
     private fun Set<Grunnlag>.hentBegrensetAndreVoksneHusstandForPeriode(
         periode: ÅrMånedsperiode,
         erAktivert: Boolean = true,
-    ): List<AndreVoksneIHusstandenDetaljerDto> =
-        hentAlleAndreVoksneHusstandForPeriode(periode, erAktivert).begrensAntallPersoner()
+    ): List<AndreVoksneIHusstandenDetaljerDto> = hentAlleAndreVoksneHusstandForPeriode(periode, erAktivert).begrensAntallPersoner()
 
     private fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
         AktiveGrunnlagsdata(
             arbeidsforhold =
-            filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
-                .mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }
-                .flatten()
-                .toSet(),
+                filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
+                    .mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }
+                    .flatten()
+                    .toSet(),
             husstandsmedlem =
-            filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
+                filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
             andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
             sivilstand =
-            find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
+                find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
         )
 
     private fun List<Grunnlag>.tilAndreVoksneIHusstanden(erAktivert: Boolean) =
@@ -526,11 +525,11 @@ class Dtomapper(
                     periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
                     status = it.bostatus!!,
                     totalAntallHusstandsmedlemmer =
-                    toSet()
-                        .hentAlleAndreVoksneHusstandForPeriode(
-                            periode,
-                            erAktivert,
-                        ).size,
+                        toSet()
+                            .hentAlleAndreVoksneHusstandForPeriode(
+                                periode,
+                                erAktivert,
+                            ).size,
                     husstandsmedlemmer = toSet().hentBegrensetAndreVoksneHusstandForPeriode(periode, erAktivert),
                 )
             }?.toSet() ?: emptySet()
@@ -543,15 +542,15 @@ private fun List<Grunnlag>.tilHusstandsmedlem() =
                 innhentetTidspunkt = it.innhentet,
                 ident = it.gjelder,
                 perioder =
-                it
-                    .konvertereData<List<BoforholdResponseV2>>()
-                    ?.map { boforholdrespons ->
-                        HusstandsmedlemGrunnlagDto.BostatusperiodeGrunnlagDto(
-                            boforholdrespons.periodeFom,
-                            boforholdrespons.periodeTom,
-                            boforholdrespons.bostatus,
-                        )
-                    }?.toSet() ?: emptySet(),
+                    it
+                        .konvertereData<List<BoforholdResponseV2>>()
+                        ?.map { boforholdrespons ->
+                            HusstandsmedlemGrunnlagDto.BostatusperiodeGrunnlagDto(
+                                boforholdrespons.periodeFom,
+                                boforholdrespons.periodeTom,
+                                boforholdrespons.bostatus,
+                            )
+                        }?.toSet() ?: emptySet(),
             )
         }.toSet()
 
@@ -559,7 +558,7 @@ private fun AndreVoksneIHusstandenDetaljerDto.tilPersoninfo() =
     Personinfo(
         null,
         this.navn,
-        this.fødselsdato
+        this.fødselsdato,
     )
 
 private fun Husstandsmedlem.tilPersoninfo() =
