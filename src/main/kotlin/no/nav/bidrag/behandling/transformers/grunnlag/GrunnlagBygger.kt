@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.grunnlag
 
+import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
@@ -12,15 +13,23 @@ import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBet
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftMaksGodkjentBeløp
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
+import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_løpende_bidrag
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
+import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import java.time.LocalDate
 import java.time.YearMonth
@@ -51,8 +60,9 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
                 ),
             )
 
-        TypeBehandling.SÆRBIDRAG ->
+        TypeBehandling.SÆRBIDRAG -> {
             grunnlagsliste.add(tilGrunnlagUtgift())
+        }
 
         else -> {}
     }
@@ -69,8 +79,13 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
     )
 }
 
-fun Behandling.byggGrunnlagForVedtak(): Set<GrunnlagDto> {
-    val personobjekter = tilPersonobjekter()
+operator fun BeregnGrunnlag.plus(grunnlag: List<GrunnlagDto>) =
+    copy(
+        grunnlagListe = (grunnlagListe + grunnlag).toSet().toList(),
+    )
+
+fun Behandling.byggGrunnlagForVedtak(personobjekterFraBeregning: MutableSet<GrunnlagDto> = mutableSetOf()): Set<GrunnlagDto> {
+    val personobjekter = (tilPersonobjekter() + personobjekterFraBeregning).toSet()
     val bostatus = tilGrunnlagBostatus(personobjekter)
     val personobjekterMedHusstandsmedlemmer =
         (personobjekter + bostatus.husstandsmedlemmer()).toMutableSet()
@@ -121,4 +136,45 @@ fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
         else -> {}
     }
     return grunnlagListe
+}
+
+fun opprettLøpendeBidragGrunnlag(
+    beregnetBeløpListe: BidragBeregningResponsDto,
+    løpendeBidragsaker: List<LøpendeBidragssak>,
+    personGrunnlagListe: List<GrunnlagDto>,
+): List<GrunnlagDto> {
+    val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
+
+    fun BidragBeregningResponsDto.BidragBeregning.opprettPersonGrunnlag(): GrunnlagDto {
+        val relatertPersonGrunnlag = tilPersonGrunnlag()
+        grunnlagslistePersoner.add(relatertPersonGrunnlag)
+        return relatertPersonGrunnlag
+    }
+    val grunnlag =
+        GrunnlagDto(
+            referanse = grunnlagsreferanse_løpende_bidrag,
+            gjelderReferanse = personGrunnlagListe.bidragspliktig!!.referanse,
+            type = Grunnlagstype.LØPENDE_BIDRAG,
+            innhold =
+                POJONode(
+                    LøpendeBidragGrunnlag(
+                        løpendeBidragListe =
+                            beregnetBeløpListe.beregningListe.map { beregning ->
+                                val løpendeBeløp = løpendeBidragsaker.find { it.kravhaver == beregning.personidentBarn }!!.løpendeBeløp
+                                val personObjekt =
+                                    personGrunnlagListe.hentPerson(beregning.personidentBarn.verdi) ?: beregning.opprettPersonGrunnlag()
+                                LøpendeBidrag(
+                                    faktiskBeløp = beregning.faktiskBeløp,
+                                    samværsklasse = beregning.samværsklasse!!,
+                                    beregnetBeløp = beregning.beregnetBeløp,
+                                    løpendeBeløp = løpendeBeløp,
+                                    type = beregning.stønadstype,
+                                    gjelderBarn = personObjekt.referanse,
+                                    saksnummer = Saksnummer(beregning.saksnummer),
+                                )
+                            },
+                    ),
+                ),
+        )
+    return grunnlagslistePersoner + mutableListOf(grunnlag)
 }

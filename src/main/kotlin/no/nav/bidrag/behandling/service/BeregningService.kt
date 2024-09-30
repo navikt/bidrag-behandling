@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbi
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
+import no.nav.bidrag.behandling.transformers.grunnlag.plus
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.domene.ident.Personident
@@ -37,6 +38,7 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 @Service
 class BeregningService(
     private val behandlingService: BehandlingService,
+    private val beregningEvnevurderingService: BeregningEvnevurderingService,
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
@@ -72,10 +74,15 @@ class BeregningService(
             behandling.tilResultatAvslagSærbidrag()
         } else {
             try {
-                val grunnlagBeregning = behandling.byggGrunnlagForBeregning(søknasdbarn)
-                beregnSærbidragApi.beregn(grunnlagBeregning, behandling.opprinneligVedtakstype ?: behandling.vedtakstype).let {
-                    it.validerForSærbidrag()
-                    it
+                val grunnlagBeregning =
+                    behandling
+                        .byggGrunnlagForBeregning(søknasdbarn)
+                val grunnlagLøpendeBidrag =
+                    beregningEvnevurderingService.opprettGrunnlagLøpendeBidrag(behandling, grunnlagBeregning.grunnlagListe)
+                val grunnlagliste = grunnlagBeregning + grunnlagLøpendeBidrag
+                beregnSærbidragApi.beregn(grunnlagliste, behandling.opprinneligVedtakstype ?: behandling.vedtakstype).let { resultat ->
+                    resultat.validerForSærbidrag()
+                    resultat
                 }
             } catch (e: Exception) {
                 LOGGER.warn(e) { "Det skjedde en feil ved beregning av særbidrag: ${e.message}" }

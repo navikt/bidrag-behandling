@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.fasterxml.jackson.databind.node.POJONode
 import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
@@ -51,6 +52,10 @@ import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
@@ -441,7 +446,8 @@ class VedtakService(
                     byggGrunnlagGenereltAvslag(),
                 )
             } else {
-                listOf(byggGrunnlagForVedtak(), byggGrunnlagGenerelt())
+                val personobjekterFraBeregning = beregning.grunnlagListe.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>
+                listOf(byggGrunnlagForVedtak(personobjekterFraBeregning), byggGrunnlagGenerelt())
             }
 
         val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet()
@@ -479,6 +485,39 @@ class VedtakService(
                 ),
             grunnlagListe = grunnlagliste.map(GrunnlagDto::tilOpprettRequestDto),
         )
+    }
+
+    /**
+     * Slå sammen personobjekter hvor grunnlagstypen er ulik men referer til samme person.
+     * LØPENDE_BIDRAG grunnlaget opprettes før INNHENTET_HUSSTANDSMEDLEM grunnlaget opprettes. Derfor kan det hende at begge har opprette grunnlag for samme person
+     * det er mest beskrivende å bruke PERSON_HUSSTANDSMEDLEM istedenfor PERSON_BARN_BIDRAGSPLIKTIG. Derfor ersattes grunnlag og referansen til PERSON_HUSSTANDSMEDLEM
+     */
+    private fun Set<GrunnlagDto>.slåSammenPersonobjekter(): Set<GrunnlagDto> {
+        val personerIkkeBarnBidragspliktig = this.hentAllePersoner().filter { it.type != Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG }
+        val duplikatPersonBarnBidragspliktig =
+            this
+                .filter { it.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG }
+                .mapNotNull { grunnlagDto ->
+                    personerIkkeBarnBidragspliktig
+                        .find { it.personObjekt.ident == grunnlagDto.personObjekt.ident }
+                        ?.referanse
+                        ?.let { grunnlagDto.referanse to it }
+                }.toMap()
+
+        return this
+            .filterNot {
+                it.type == Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG &&
+                    duplikatPersonBarnBidragspliktig.containsKey(it.referanse)
+            }.map { grunnlagDto ->
+                if (grunnlagDto.type != Grunnlagstype.LØPENDE_BIDRAG) return@map grunnlagDto
+
+                val løpendeBidragGrunnlag = grunnlagDto.innholdTilObjekt<LøpendeBidragGrunnlag>()
+                val oppdatertLøpendeBidragListe =
+                    løpendeBidragGrunnlag.løpendeBidragListe.map { lb ->
+                        lb.copy(gjelderBarn = duplikatPersonBarnBidragspliktig[lb.gjelderBarn] ?: lb.gjelderBarn)
+                    }
+                grunnlagDto.copy(innhold = POJONode(løpendeBidragGrunnlag.copy(løpendeBidragListe = oppdatertLøpendeBidragListe)))
+            }.toSet()
     }
 
     private fun Behandling.validerKanFatteVedtak() {

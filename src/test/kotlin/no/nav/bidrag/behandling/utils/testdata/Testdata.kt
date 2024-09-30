@@ -31,11 +31,13 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -61,6 +63,7 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
@@ -84,8 +87,11 @@ import kotlin.random.Random
 
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = 12412421414L
+val SOKNAD_ID_2 = 1241552421414L
+val SOKNAD_ID_3 = 124152421414L
 val SAKSBEHANDLER_IDENT = "Z999999"
-
+val BP_BARN_ANNEN_IDENT = "24417901910"
+val BP_BARN_ANNEN_IDENT_2 = "24417901912"
 val testdataBP =
     TestDataPerson(
         navn = "Kor Mappe",
@@ -139,16 +145,18 @@ data class TestDataPerson(
     val fødselsdato: LocalDate,
     val rolletype: Rolletype,
 ) {
-    fun tilRolle(behandling: Behandling = oppretteBehandling()) =
-        Rolle(
-            id = behandling.roller.find { it.ident == ident }?.id ?: 1,
-            ident = ident,
-            navn = navn,
-            fødselsdato = fødselsdato,
-            rolletype = rolletype,
-            opprettet = LocalDateTime.now(),
-            behandling = behandling,
-        )
+    fun tilRolle(
+        behandling: Behandling = oppretteBehandling(),
+        id: Long = 1,
+    ) = Rolle(
+        id = behandling.roller.find { it.ident == ident }?.id ?: id,
+        ident = ident,
+        navn = navn,
+        fødselsdato = fødselsdato,
+        rolletype = rolletype,
+        opprettet = LocalDateTime.now(),
+        behandling = behandling,
+    )
 
     fun tilPersonDto() =
         PersonDto(
@@ -1455,7 +1463,7 @@ fun Behandling.leggTilNotat(
     )
 }
 
-fun lagVedtaksdata(filnavn: String): VedtakDto {
+fun erstattVariablerITestFil(filnavn: String): String {
     val fil =
         no.nav.bidrag.commons.web.mock
             .hentFil("/__files/$filnavn.json")
@@ -1464,10 +1472,31 @@ fun lagVedtaksdata(filnavn: String): VedtakDto {
     stringValue = stringValue.replace("{bpIdent}", testdataBP.ident)
     stringValue = stringValue.replace("{bpfDato}", testdataBP.fødselsdato.toString())
     stringValue = stringValue.replace("{barnId}", testdataBarn1.ident)
+    stringValue = stringValue.replace("{barnIdent}", testdataBarn1.ident)
     stringValue = stringValue.replace("{barnfDato}", testdataBarn1.fødselsdato.toString())
     stringValue = stringValue.replace("{barnId2}", testdataBarn2.ident)
     stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
+    stringValue = stringValue.replace("{saksnummer}", SAKSNUMMER)
     stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
+    return stringValue
+}
+
+fun lagVedtaksdata(filnavn: String): VedtakDto {
+    val stringValue = erstattVariablerITestFil(filnavn)
     val grunnlag: VedtakDto = commonObjectmapper.readValue(stringValue)
     return grunnlag
 }
+
+fun opprettLøpendeBidragGrunnlag(
+    gjelderBarn: TestDataPerson,
+    stønadstype: Stønadstype,
+    barnId: Long,
+) = LøpendeBidrag(
+    gjelderBarn = gjelderBarn.tilRolle(id = barnId).tilGrunnlagPerson().referanse,
+    type = stønadstype,
+    løpendeBeløp = BigDecimal(5123),
+    faktiskBeløp = BigDecimal(6555),
+    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
+    beregnetBeløp = BigDecimal(6334),
+    saksnummer = Saksnummer(SAKSNUMMER),
+)

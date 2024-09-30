@@ -44,7 +44,7 @@ fun List<RelatertPersonGrunnlagDto>.tilHusstandsmedlemmer() =
             gjelderPersonId = it.gjelderPersonId,
             fødselsdato = it.fødselsdato!!,
             relasjon = it.relasjon,
-            borISammeHusstandListe = it.borISammeHusstandDtoListe.tilBostatus(it.relasjon, it.fødselsdato!!),
+            borISammeHusstandListe = it.borISammeHusstandDtoListe.tilBostatus(it.relasjon, it.fødselsdato ?: LocalDate.now()),
         )
     }
 

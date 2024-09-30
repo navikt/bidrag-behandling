@@ -1,0 +1,23 @@
+{
+  "bidragssakerListe" : [ {
+    "sak" : "2400101",
+    "type" : "BIDRAG",
+    "kravhaver" : "1344124",
+    "løpendeBeløp" : 5160
+  }, {
+    "sak" : "2400101",
+    "type" : "BIDRAG",
+    "kravhaver" : "54545454545",
+    "løpendeBeløp" : 4720
+  }, {
+    "sak" : "2400101",
+    "type" : "BIDRAG18AAR",
+    "kravhaver" : "24417901910",
+    "løpendeBeløp" : 6380
+  } , {
+    "sak" : "2400101",
+    "type" : "BIDRAG",
+    "kravhaver" : "24417901912",
+    "løpendeBeløp" : 6380
+  } ]
+}
