@@ -293,6 +293,77 @@ class VedtakInnhentetGrunnlagTest {
         }
 
         @Test
+        fun `skal mappe innhentet grunnlag for husstandsmedlemmer hvis innhentet grunnlag for søknadsbarn mangler`() {
+            val behandling = oppretteBehandling()
+            behandling.roller =
+                mutableSetOf(
+                    opprettRolle(behandling, testdataBM),
+                    opprettRolle(behandling, testdataBarn1),
+                    opprettRolle(behandling, testdataBarn2),
+                )
+            val grunnlagListe =
+                listOf(
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = testdataBM.ident,
+                        relatertPersonPersonId = testdataBarn2.ident,
+                        navn = testdataBarn2.navn,
+                        fødselsdato = testdataBarn2.fødselsdato,
+                        erBarnAvBmBp = true,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2023-07-01"),
+                                    null,
+                                ),
+                            ),
+                    ),
+                    RelatertPersonGrunnlagDto(
+                        partPersonId = testdataBM.ident,
+                        relatertPersonPersonId = "12312312",
+                        navn = "Voksen i husstand",
+                        fødselsdato = LocalDate.parse("1999-01-01"),
+                        erBarnAvBmBp = false,
+                        borISammeHusstandDtoListe =
+                            listOf(
+                                BorISammeHusstandDto(
+                                    LocalDate.parse("2020-07-01"),
+                                    null,
+                                ),
+                            ),
+                    ),
+                ).tilGrunnlagEntity(behandling)
+            val grunnlagHusstandsmedlemmer =
+                grunnlagListe.tilInnhentetHusstandsmedlemmer(personobjekter).toList()
+            assertSoftly(grunnlagHusstandsmedlemmer) {
+                it.hentAllePersoner().shouldHaveSize(1)
+                val husstandGrunnlag = it.hentGrunnlagHusstand()
+                husstandGrunnlag shouldHaveSize 3
+                husstandGrunnlag
+                    .hentHusstandsmedlemMedReferanse(søknadsbarnGrunnlag2.referanse)
+                    .shouldHaveSize(1)
+                husstandGrunnlag
+                    .hentHusstandsmedlemMedReferanse(søknadsbarnGrunnlag1.referanse)
+                    .shouldHaveSize(1)
+
+                assertSoftly(
+                    husstandGrunnlag
+                        .hentHusstandsmedlemMedReferanse(søknadsbarnGrunnlag1.referanse)
+                        .hentGrunnlagHusstand()
+                        .first(),
+                ) {
+                    this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
+                    it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
+                    val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
+                    grunnlag.grunnlag.relatertPerson shouldBe søknadsbarnGrunnlag1.referanse
+                    grunnlag.grunnlag.navn shouldBe testdataBarn1.navn
+                    grunnlag.grunnlag.fødselsdato shouldBe testdataBarn1.fødselsdato
+                    grunnlag.grunnlag.erBarnAvBmBp shouldBe true
+                    grunnlag.grunnlag.perioder shouldHaveSize 0
+                }
+            }
+        }
+
+        @Test
         fun `skal mappe innhentet grunnlag for husstandsmedlemmer med null periode`() {
             val behandling = oppretteBehandling()
             behandling.roller =
