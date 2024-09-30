@@ -331,6 +331,121 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
     @Test
     @Transactional
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling hvor betalt av BP og direkte betalt av BP er satt`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
+        behandling.leggTilNotat(
+            "Notat inntekt BM",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragsmottaker!!,
+        )
+        behandling.leggTilNotat(
+            "Notat inntekt BP",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragspliktig!!,
+        )
+        behandling.leggTilNotat(
+            "Notat inntekt BA",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.søknadsbarn.first()!!,
+        )
+        behandling.leggTilNotat(
+            "Utgiftsbegrunnelse",
+            NotatGrunnlag.NotatType.UTGIFTER,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatGrunnlag.NotatType.BOFORHOLD,
+        )
+        behandling.refVedtaksid = 553
+        behandling.klageMottattdato = LocalDate.now()
+        behandling.inntekter = mutableSetOf()
+        behandling.grunnlag = mutableSetOf()
+        behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)
+        behandling.kategori = Særbidragskategori.KONFIRMASJON.name
+        behandling.utgift!!.maksGodkjentBeløp = BigDecimal(4000)
+        behandling.utgift!!.maksGodkjentBeløpBegrunnelse = "Maks godkjent beløp"
+        behandling.utgift!!.maksGodkjentBeløpTaMed = false
+        behandling.utgift!!.utgiftsposter =
+            mutableSetOf(
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(3),
+                    type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(15000),
+                    godkjentBeløp = BigDecimal(5000),
+                    kommentar = "Inneholder avgifter for alkohol og pynt",
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(8),
+                    type = Utgiftstype.KLÆR.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(10000),
+                    godkjentBeløp = BigDecimal(10000),
+                ),
+                Utgiftspost(
+                    dato = LocalDate.now().minusMonths(5),
+                    type = Utgiftstype.SELSKAP.name,
+                    utgift = behandling.utgift!!,
+                    kravbeløp = BigDecimal(10000),
+                    godkjentBeløp = BigDecimal(5000),
+                    kommentar = "Inneholder utgifter til mat og drikke",
+                    betaltAvBp = true,
+                ),
+            )
+        testdataManager.lagreBehandling(behandling)
+        stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+        behandling.initGrunnlagRespons(stubUtils)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+        behandling.taMedInntekt(behandling.bidragsmottaker!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
+        behandling.taMedInntekt(behandling.bidragspliktig!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+        entityManager.flush()
+        entityManager.refresh(behandling)
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(behandling) {
+            vedtaksid shouldBe testVedtakResponsId
+            vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
+            vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
+        }
+
+        assertSoftly(opprettVedtakRequest.engangsbeløpListe[0]) {
+            it.type shouldBe Engangsbeløptype.SÆRBIDRAG
+            it.sak shouldBe Saksnummer(behandling.saksnummer)
+            it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
+            it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
+            it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
+            it.beløp shouldBe BigDecimal(9838)
+            it.betaltBeløp shouldBe BigDecimal(5500)
+            it.valutakode shouldBe "NOK"
+            it.resultatkode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.SÆRBIDRAG_INNVILGET.name
+            it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+            it.beslutning shouldBe Beslutningstype.ENDRING
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
+    @Transactional
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag og personobjekter`() {
         stubPersonConsumer()
         stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_annen_barn")
@@ -424,7 +539,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
     @Test
     @Transactional
-    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag 2`() {
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag med flere vedtak`() {
         stubPersonConsumer()
         stubUtils.stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1_2")
         stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_2")

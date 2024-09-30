@@ -20,6 +20,8 @@ import no.nav.bidrag.domene.util.trimToNull
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
@@ -27,6 +29,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteG
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
@@ -37,6 +40,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrun
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import java.time.LocalDateTime
 
 fun List<Grunnlag>.tilInnhentetArbeidsforhold(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
     filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD }
@@ -123,7 +127,31 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDt
                         ),
                 )
             }?.let { setOf(it) } ?: emptySet()
-    return innhentetHusstandsmedlemGrunnlagListe + personobjekterInnhentetHusstandsmedlem + innhentetAndreVoksneIHusstandenGrunnlagListe
+
+    val behandling = first().behandling
+    val søknadsbarnSomManglerInnhentet =
+        first().behandling.søknadsbarn.filter { sb ->
+            innhentetHusstandsmedlemGrunnlagListe.none {
+                personobjekter.hentPersonMedReferanse(it.gjelderReferanse)?.personIdent == sb.ident
+            }
+        }
+    val innhentetHusstandsmedlemGrunnlagListeSøknadsbarn =
+        søknadsbarnSomManglerInnhentet.map {
+            RelatertPersonGrunnlagDto(
+                fødselsdato = it.fødselsdato,
+                gjelderPersonId = it.ident,
+                partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
+                navn = it.navn,
+                relasjon = Familierelasjon.BARN,
+                borISammeHusstandDtoListe = emptyList(),
+            ).tilGrunnlagsobjekt(
+                LocalDateTime.now(),
+                personobjekter.hentPerson(behandling.rolleGrunnlagSkalHentesFor!!.ident)!!.referanse,
+                personobjekter.hentPerson(it.ident)!!.referanse,
+            )
+        }
+    return innhentetHusstandsmedlemGrunnlagListe + personobjekterInnhentetHusstandsmedlem + innhentetAndreVoksneIHusstandenGrunnlagListe +
+        innhentetHusstandsmedlemGrunnlagListeSøknadsbarn
 }
 
 fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =

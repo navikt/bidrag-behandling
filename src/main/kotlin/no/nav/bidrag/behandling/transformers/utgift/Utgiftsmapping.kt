@@ -24,7 +24,6 @@ import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.sorterBeregnetUtgifter
 import no.nav.bidrag.behandling.transformers.validerUtgiftspost
-import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import org.springframework.http.HttpStatus
@@ -33,16 +32,12 @@ import java.math.BigDecimal
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 val kategorierSomKreverType = listOf(Særbidragskategori.ANNET, Særbidragskategori.KONFIRMASJON)
-val Behandling.kanInneholdeUtgiftBetaltAvBp get() = særbidragKategori == Særbidragskategori.KONFIRMASJON
 val Utgift.totalGodkjentBeløpBp
-    get() =
-        behandling.kanInneholdeUtgiftBetaltAvBp.ifTrue {
-            utgiftsposter.filter { it.betaltAvBp }.sumOf { it.godkjentBeløp }
-        }
+    get() = utgiftsposter.filter { it.betaltAvBp }.sumOf { it.godkjentBeløp }
 val Utgift.totalGodkjentBeløp get() = utgiftsposter.sumOf { it.godkjentBeløp }
 val Utgift.totalKravbeløp get() = utgiftsposter.sumOf { it.kravbeløp }
 val Utgift.totalBeløpBetaltAvBp
-    get() = utgiftsposter.filter { it.betaltAvBp }.sumOf { it.godkjentBeløp } + beløpDirekteBetaltAvBp
+    get() = totalGodkjentBeløpBp + beløpDirekteBetaltAvBp
 
 fun Behandling.tilSærbidragKategoriDto() =
     SærbidragKategoriDto(
