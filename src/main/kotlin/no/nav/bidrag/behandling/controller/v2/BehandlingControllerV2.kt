@@ -25,7 +25,6 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
-import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.VedtakService
