@@ -612,7 +612,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 oppdatertHusstandsmedlem!!.kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.ident shouldBe null
                 oppdatertHusstandsmedlem.navn shouldBe
-                    "Person med skjult identitet, født ${request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.fødselsdato.year}"
+                    "Person skjermet, født ${request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.fødselsdato.year}"
                 oppdatertHusstandsmedlem.perioder.shouldHaveSize(1)
                 oppdatertHusstandsmedlem.perioder.first().kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
