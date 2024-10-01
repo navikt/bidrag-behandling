@@ -124,7 +124,7 @@ class Dtomapper(
                 return Personinfo(
                     null,
                     "Person skjermet, født ${personinfo.fødselsdato?.year}",
-                    personinfo.fødselsdato?.withMonth(1)?.withDayOfMonth(1),
+                    null,
                     erBeskyttet = true,
                 )
             }
