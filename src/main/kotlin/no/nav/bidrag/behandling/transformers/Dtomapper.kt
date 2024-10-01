@@ -56,11 +56,12 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
+import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.transport.notat.NotatRolleDto
+import no.nav.bidrag.transport.notat.NotatVoksenIHusstandenDetaljerDto
 import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteretMedDetaljer
-import no.nav.bidrag.transport.notat.VoksenIHusstandenDetaljerDto
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -77,7 +78,7 @@ class Dtomapper(
     fun tilAktivereGrunnlagResponseV2(behandling: Behandling) =
         AktivereGrunnlagResponseV2(
             boforhold = behandling.tilBoforholdV2(),
-            inntekter = behandling.tilInntektDtoV2(behandling.grunnlagListe.toSet().hentSisteAktiv()),
+            inntekter = behandling.tilInntektDtoV2(behandling.grunnlagListe.toSet().hentSisteAktiv(), true),
             aktiveGrunnlagsdata =
                 behandling.grunnlagListe
                     .toSet()
@@ -123,15 +124,15 @@ class Dtomapper(
                 return Personinfo(
                     null,
                     "Person skjermet, født ${personinfo.fødselsdato?.year}",
-                    null,
-                    true,
+                    personinfo.fødselsdato?.withMonth(1)?.withDayOfMonth(1),
+                    erBeskyttet = true,
                 )
             }
         }
 
         return Personinfo(
             personinfo.ident,
-            personinfo.navn ?: hentPersonVisningsnavn(personinfo.ident?.verdi)!!,
+            personinfo.navn ?: hentPersonVisningsnavn(personinfo.ident?.verdi),
             personinfo.fødselsdato,
         )
     }
@@ -149,6 +150,7 @@ class Dtomapper(
                     navn = tilgangskontrollertPersoninfo.navn,
                     fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
                     ident = tilgangskontrollertPersoninfo.ident,
+                    erBeskyttet = tilgangskontrollertPersoninfo.erBeskyttet,
                 ),
             kilde = kilde,
             medIBehandling = behandling.roller.any { it.ident == this.ident },
@@ -193,20 +195,15 @@ class Dtomapper(
                             periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
                             status = it.bostatus!!,
                             detaljer =
-                                no.nav.bidrag.transport.notat.AndreVoksneIHusstandenDetaljerDto(
+                                NotatAndreVoksneIHusstandenDetaljerDto(
                                     henteAndreVoksneIHusstanden(grunnlag, periode, true).size,
                                     husstandsmedlemmer =
                                         henteBegrensetAntallAndreVoksne(grunnlag, periode, true).map { voksne ->
-                                            val tilgangskontrollertPersoninfo =
-                                                tilgangskontrollerePersoninfo(
-                                                    voksne.tilPersoninfo(),
-                                                    Saksnummer(this.saksnummer),
-                                                )
-
-                                            VoksenIHusstandenDetaljerDto(
-                                                navn = tilgangskontrollertPersoninfo.navn!!,
-                                                fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
+                                            NotatVoksenIHusstandenDetaljerDto(
+                                                navn = voksne.navn!!,
+                                                fødselsdato = voksne.fødselsdato,
                                                 harRelasjonTilBp = voksne.harRelasjonTilBp,
+                                                erBeskyttet = voksne.erBeskyttet,
                                             )
                                         },
                                 ),
@@ -480,13 +477,16 @@ class Dtomapper(
             ?.sorter() ?: emptyList()
     }
 
-    private fun RelatertPersonGrunnlagDto.tilAndreVoksneIHusstandenDetaljerDto(saksnummer: Saksnummer) =
-        AndreVoksneIHusstandenDetaljerDto(
-            tilgangskontrollerePersoninfo(this.tilPersoninfo(), saksnummer).navn!!,
-            tilgangskontrollerePersoninfo(this.tilPersoninfo(), saksnummer).fødselsdato,
+    private fun RelatertPersonGrunnlagDto.tilAndreVoksneIHusstandenDetaljerDto(saksnummer: Saksnummer): AndreVoksneIHusstandenDetaljerDto {
+        val tilgangskontrollPersoninfo = tilgangskontrollerePersoninfo(this.tilPersoninfo(), saksnummer)
+        return AndreVoksneIHusstandenDetaljerDto(
+            tilgangskontrollPersoninfo.navn!!,
+            tilgangskontrollPersoninfo.fødselsdato,
             this.relasjon != Familierelasjon.INGEN && this.relasjon != Familierelasjon.UKJENT,
             relasjon = this.relasjon,
+            erBeskyttet = tilgangskontrollPersoninfo.erBeskyttet,
         )
+    }
 
     private fun Set<Grunnlag>.hentBegrensetAndreVoksneHusstandForPeriode(
         periode: ÅrMånedsperiode,
@@ -567,7 +567,7 @@ private fun Husstandsmedlem.tilPersoninfo() =
 
 private fun RelatertPersonGrunnlagDto.tilPersoninfo() =
     Personinfo(
-        this.partPersonId?.let { Personident(it) },
+        this.gjelderPersonId?.let { Personident(it) },
         this.navn,
         this.fødselsdato,
     )

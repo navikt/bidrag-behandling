@@ -340,6 +340,7 @@ data class AndreVoksneIHusstandenDetaljerDto(
     val harRelasjonTilBp: Boolean,
     @Schema(description = "Relasjon til BP. Brukes for debugging", deprecated = true)
     val relasjon: Familierelasjon,
+    val erBeskyttet: Boolean = false,
 )
 
 @Schema(enumAsRef = true, name = "OpplysningerType")
