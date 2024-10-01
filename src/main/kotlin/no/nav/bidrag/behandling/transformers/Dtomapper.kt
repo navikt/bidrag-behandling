@@ -116,16 +116,13 @@ class Dtomapper(
     private fun tilgangskontrollerePersoninfo(
         personinfo: Personinfo,
         saksnummer: Saksnummer,
+        skjuleIdentitietHvisBeskyttet: Boolean = false,
     ): Personinfo {
         personinfo.ident?.let {
-            if (!tilgangskontrollService.harTilgang(
-                    it,
-                    saksnummer,
-                )
-            ) {
+            if (!tilgangskontrollService.harTilgang(it, saksnummer) || skjuleIdentitietHvisBeskyttet) {
                 return Personinfo(
                     null,
-                    "Person med skjult identitet, født ${personinfo.fødselsdato?.year}",
+                    "Person skjermet, født ${personinfo.fødselsdato?.year}",
                     null,
                     true,
                 )
@@ -486,7 +483,7 @@ class Dtomapper(
     private fun RelatertPersonGrunnlagDto.tilAndreVoksneIHusstandenDetaljerDto(saksnummer: Saksnummer) =
         AndreVoksneIHusstandenDetaljerDto(
             tilgangskontrollerePersoninfo(this.tilPersoninfo(), saksnummer).navn!!,
-            this.fødselsdato,
+            tilgangskontrollerePersoninfo(this.tilPersoninfo(), saksnummer).fødselsdato,
             this.relasjon != Familierelasjon.INGEN && this.relasjon != Familierelasjon.UKJENT,
             relasjon = this.relasjon,
         )
@@ -579,5 +576,5 @@ data class Personinfo(
     val ident: Personident?,
     val navn: String?,
     val fødselsdato: LocalDate?,
-    val erMasktert: Boolean = false,
+    val erBeskyttet: Boolean = false,
 )
