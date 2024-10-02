@@ -4,14 +4,12 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragDokumentConsumer
 import no.nav.bidrag.behandling.consumer.BidragDokumentProduksjonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
-import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
@@ -20,10 +18,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
-import no.nav.bidrag.behandling.transformers.behandling.hentAlleAndreVoksneHusstandForPeriode
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforhold
-import no.nav.bidrag.behandling.transformers.behandling.hentBegrensetAndreVoksneHusstandForPeriode
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
@@ -39,8 +36,6 @@ import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
 import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
-import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
-import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -58,11 +53,8 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.dokument.JournalpostType
 import no.nav.bidrag.transport.dokument.OpprettDokumentDto
 import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
-import no.nav.bidrag.transport.notat.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.transport.notat.Arbeidsforhold
-import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.InntekterPerRolle
-import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
 import no.nav.bidrag.transport.notat.NotatBegrunnelseDto
 import no.nav.bidrag.transport.notat.NotatBehandlingDetaljerDto
 import no.nav.bidrag.transport.notat.NotatBeregnetInntektDto
@@ -85,9 +77,7 @@ import no.nav.bidrag.transport.notat.NotatVedtakDetaljerDto
 import no.nav.bidrag.transport.notat.NotatVirkningstidspunktDto
 import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
-import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteretMedDetaljer
 import no.nav.bidrag.transport.notat.VedtakNotatDto
-import no.nav.bidrag.transport.notat.VoksenIHusstandenDetaljerDto
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
@@ -104,6 +94,7 @@ class NotatOpplysningerService(
     private val beregningService: BeregningService,
     private val bidragDokumentProduksjonConsumer: BidragDokumentProduksjonConsumer,
     private val bidragDokumentConsumer: BidragDokumentConsumer,
+    private val mapper: Dtomapper,
 ) {
     @Retryable(
         value = [Exception::class],
@@ -209,12 +200,12 @@ class NotatOpplysningerService(
                 NotatBoforholdDto(
                     begrunnelse = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
-                    andreVoksneIHusstanden = behandling.tilAndreVoksneIHusstanden(),
+                    andreVoksneIHusstanden = mapper.tilAndreVoksneIHusstanden(behandling),
                     barn =
                         behandling.husstandsmedlem.barn
                             .toSet()
                             .sortert()
-                            .map { it.tilBoforholdBarn(opplysningerBoforhold) },
+                            .map { mapper.tilBoforholdBarn(it, opplysningerBoforhold) },
                 ),
             roller = behandling.roller.map(Rolle::tilNotatRolle),
             inntekter =
@@ -243,50 +234,6 @@ class NotatOpplysningerService(
             vedtak = behandling.hentBeregning(),
         )
     }
-
-    private fun Behandling.tilAndreVoksneIHusstanden() =
-        NotatAndreVoksneIHusstanden(
-            opplysningerFraFolkeregisteret =
-                grunnlag
-                    .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
-                    .konvertereData<Set<Bostatus>>()
-                    ?.map {
-                        val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
-                        OpplysningerFraFolkeregisteretMedDetaljer(
-                            periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
-                            status = it.bostatus!!,
-                            detaljer =
-                                AndreVoksneIHusstandenDetaljerDto(
-                                    totalAntallHusstandsmedlemmer =
-                                        grunnlag
-                                            .hentAlleAndreVoksneHusstandForPeriode(
-                                                periode,
-                                                true,
-                                            ).size,
-                                    husstandsmedlemmer =
-                                        grunnlag.hentBegrensetAndreVoksneHusstandForPeriode(periode, true).map { hm ->
-                                            VoksenIHusstandenDetaljerDto(
-                                                navn = hm.navn,
-                                                fødselsdato = hm.fødselsdato,
-                                                harRelasjonTilBp = hm.harRelasjonTilBp,
-                                            )
-                                        },
-                                ),
-                        )
-                    }?.toList() ?: emptyList(),
-            opplysningerBruktTilBeregning =
-                husstandsmedlem.voksneIHusstanden?.perioder?.sortedBy { it.datoFom }?.map { periode ->
-                    OpplysningerBruktTilBeregning(
-                        periode =
-                            ÅrMånedsperiode(
-                                periode.datoFom!!,
-                                periode.datoTom,
-                            ),
-                        status = periode.bostatus,
-                        kilde = periode.kilde,
-                    )
-                } ?: emptyList(),
-        )
 
     private fun Behandling.hentBeregning(): NotatVedtakDetaljerDto {
         val resultat =
@@ -403,7 +350,7 @@ private fun Sivilstand.tilSivilstandsperiode() =
     OpplysningerBruktTilBeregning(
         periode =
             ÅrMånedsperiode(
-                datoFom!!,
+                datoFom,
                 datoTom,
             ),
         status = sivilstand,
@@ -488,45 +435,6 @@ private fun Behandling.tilVirkningstidspunkt() =
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         begrunnelse = tilNotatVirkningstidspunkt(),
-    )
-
-private fun Husstandsmedlem.tilBoforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>) =
-    BoforholdBarn(
-        gjelder =
-            NotatRolleDto(
-                rolle = null,
-                navn = hentPersonVisningsnavn(ident) ?: navn,
-                fødselsdato = fødselsdato,
-                ident = ident?.let { Personident(it) },
-            ),
-        kilde = kilde,
-        medIBehandling = behandling.roller.any { it.ident == this.ident },
-        opplysningerFraFolkeregisteret =
-            opplysningerBoforhold
-                .filter {
-                    it.gjelderPersonId == this.ident
-                }.map {
-                    OpplysningerFraFolkeregisteret(
-                        periode =
-                            ÅrMånedsperiode(
-                                it.periodeFom,
-                                it.periodeTom,
-                            ),
-                        status = it.bostatus,
-                    )
-                },
-        opplysningerBruktTilBeregning =
-            perioder.sortedBy { it.datoFom }.map { periode ->
-                OpplysningerBruktTilBeregning(
-                    periode =
-                        ÅrMånedsperiode(
-                            periode.datoFom!!,
-                            periode.datoTom,
-                        ),
-                    status = periode.bostatus,
-                    kilde = periode.kilde,
-                )
-            },
     )
 
 private fun Rolle.tilNotatRolle() =

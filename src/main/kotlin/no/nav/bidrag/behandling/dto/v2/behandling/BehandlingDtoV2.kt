@@ -294,6 +294,7 @@ data class SivilstandIkkeAktivGrunnlagDto(
 
 data class HusstandsmedlemGrunnlagDto(
     val perioder: Set<BostatusperiodeGrunnlagDto>,
+    // TODO: bd-1958
     val ident: String? = null,
     val innhentetTidspunkt: LocalDateTime,
 ) {
@@ -332,12 +333,14 @@ data class PeriodeAndreVoksneIHusstanden(
     val husstandsmedlemmer: List<AndreVoksneIHusstandenDetaljerDto> = emptyList(),
 )
 
+// TODO: bd-1958
 data class AndreVoksneIHusstandenDetaljerDto(
     val navn: String,
     val fødselsdato: LocalDate?,
     val harRelasjonTilBp: Boolean,
     @Schema(description = "Relasjon til BP. Brukes for debugging", deprecated = true)
     val relasjon: Familierelasjon,
+    val erBeskyttet: Boolean = false,
 )
 
 @Schema(enumAsRef = true, name = "OpplysningerType")

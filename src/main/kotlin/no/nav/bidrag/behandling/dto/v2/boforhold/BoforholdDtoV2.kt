@@ -44,6 +44,7 @@ data class BoforholdDtoV2(
     val notat: BegrunnelseDto = begrunnelse
 }
 
+// TODO: bd-1958
 data class HusstandsmedlemDtoV2(
     val id: Long?,
     @Schema(required = true)
@@ -55,5 +56,5 @@ data class HusstandsmedlemDtoV2(
     val navn: String? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    val fødselsdato: LocalDate,
+    val fødselsdato: LocalDate?,
 )

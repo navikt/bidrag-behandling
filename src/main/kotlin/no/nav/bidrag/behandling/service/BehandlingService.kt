@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
-import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
@@ -19,11 +18,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.transformers.behandling.tilAktiveGrunnlagsdata
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
-import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDtoV2
-import no.nav.bidrag.behandling.transformers.behandling.tilBoforholdV2
-import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
@@ -58,6 +54,7 @@ class BehandlingService(
     private val tilgangskontrollService: TilgangskontrollService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
+    private val mapper: Dtomapper,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -221,14 +218,7 @@ class BehandlingService(
                         "for person ${request.personident}: $request"
                 }
                 grunnlagService.aktivereGrunnlag(it, request)
-                val gjeldendeAktiveGrunnlagsdata = it.grunnlagListe.toSet().hentSisteAktiv()
-                val ikkeAktiverteEndringerIGrunnlagsdata = grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(it)
-                return AktivereGrunnlagResponseV2(
-                    boforhold = it.tilBoforholdV2(),
-                    inntekter = it.tilInntektDtoV2(gjeldendeAktiveGrunnlagsdata),
-                    aktiveGrunnlagsdata = gjeldendeAktiveGrunnlagsdata.tilAktiveGrunnlagsdata(),
-                    ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
-                )
+                return mapper.tilAktivereGrunnlagResponseV2(it)
             }
     }
 
@@ -363,14 +353,8 @@ class BehandlingService(
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         behandling.oppdatereVirkningstidspunktSærbidrag()
-        val grunnlagsdataEndretEtterAktivering =
-            grunnlagService.henteNyeGrunnlagsdataMedEndringsdiff(behandling)
 
-        return behandling.tilBehandlingDtoV2(
-            behandling.grunnlagListe.toSet().hentSisteAktiv(),
-            grunnlagsdataEndretEtterAktivering,
-            inkluderHistoriskeInntekter,
-        )
+        return mapper.tilDto(behandling, true)
     }
 
     @Transactional

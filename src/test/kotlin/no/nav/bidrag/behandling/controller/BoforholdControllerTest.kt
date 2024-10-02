@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -8,6 +9,8 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.every
+import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -25,6 +28,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.ident.Personident
 import org.junit.experimental.runners.Enclosed
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
@@ -39,71 +43,71 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var behandlingRepository: BehandlingRepository
 
+    private fun opprettBehandling(): Behandling {
+        val behandling = testdataManager.oppretteBehandling()
+        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.husstandsmedlem.clear()
+        behandling.husstandsmedlem.addAll(
+            setOf(
+                oppretteHusstandsmedlem(behandling, testdataBarn1).let {
+                    it.perioder =
+                        mutableSetOf(
+                            Bostatusperiode(
+                                datoFom = LocalDate.parse("2023-01-01"),
+                                datoTom = LocalDate.parse("2023-05-31"),
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                kilde = Kilde.OFFENTLIG,
+                                husstandsmedlem = it,
+                            ),
+                            Bostatusperiode(
+                                datoFom = LocalDate.parse("2023-06-01"),
+                                datoTom = null,
+                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                kilde = Kilde.OFFENTLIG,
+                                husstandsmedlem = it,
+                            ),
+                        )
+                    it
+                },
+                oppretteHusstandsmedlem(behandling, testdataBarn2).let {
+                    it.perioder =
+                        mutableSetOf(
+                            Bostatusperiode(
+                                datoFom = LocalDate.parse("2023-01-01"),
+                                datoTom = LocalDate.parse("2023-10-31"),
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                kilde = Kilde.OFFENTLIG,
+                                husstandsmedlem = it,
+                            ),
+                            Bostatusperiode(
+                                datoFom = LocalDate.parse("2023-11-01"),
+                                datoTom = LocalDate.parse("2023-12-31"),
+                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                kilde = Kilde.OFFENTLIG,
+                                husstandsmedlem = it,
+                            ),
+                            Bostatusperiode(
+                                datoFom = LocalDate.parse("2024-01-01"),
+                                datoTom = null,
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                kilde = Kilde.MANUELL,
+                                husstandsmedlem = it,
+                            ),
+                        )
+                    it
+                },
+            ),
+        )
+        behandling.grunnlag.addAll(
+            oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
+                oppretteHusstandsmedlemMedOffentligePerioder(behandling),
+            ),
+        )
+        return testdataManager.lagreBehandlingNewTransaction(behandling)
+    }
+
     @Nested
     open inner class OppdatereBoforhold {
-        private fun opprettBehandling(): Behandling {
-            val behandling = testdataManager.oppretteBehandling()
-            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
-            behandling.husstandsmedlem.clear()
-            behandling.husstandsmedlem.addAll(
-                setOf(
-                    oppretteHusstandsmedlem(behandling, testdataBarn1).let {
-                        it.perioder =
-                            mutableSetOf(
-                                Bostatusperiode(
-                                    datoFom = LocalDate.parse("2023-01-01"),
-                                    datoTom = LocalDate.parse("2023-05-31"),
-                                    bostatus = Bostatuskode.MED_FORELDER,
-                                    kilde = Kilde.OFFENTLIG,
-                                    husstandsmedlem = it,
-                                ),
-                                Bostatusperiode(
-                                    datoFom = LocalDate.parse("2023-06-01"),
-                                    datoTom = null,
-                                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                                    kilde = Kilde.OFFENTLIG,
-                                    husstandsmedlem = it,
-                                ),
-                            )
-                        it
-                    },
-                    oppretteHusstandsmedlem(behandling, testdataBarn2).let {
-                        it.perioder =
-                            mutableSetOf(
-                                Bostatusperiode(
-                                    datoFom = LocalDate.parse("2023-01-01"),
-                                    datoTom = LocalDate.parse("2023-10-31"),
-                                    bostatus = Bostatuskode.MED_FORELDER,
-                                    kilde = Kilde.OFFENTLIG,
-                                    husstandsmedlem = it,
-                                ),
-                                Bostatusperiode(
-                                    datoFom = LocalDate.parse("2023-11-01"),
-                                    datoTom = LocalDate.parse("2023-12-31"),
-                                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                                    kilde = Kilde.OFFENTLIG,
-                                    husstandsmedlem = it,
-                                ),
-                                Bostatusperiode(
-                                    datoFom = LocalDate.parse("2024-01-01"),
-                                    datoTom = null,
-                                    bostatus = Bostatuskode.MED_FORELDER,
-                                    kilde = Kilde.MANUELL,
-                                    husstandsmedlem = it,
-                                ),
-                            )
-                        it
-                    },
-                ),
-            )
-            behandling.grunnlag.addAll(
-                oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
-                    oppretteHusstandsmedlemMedOffentligePerioder(behandling),
-                ),
-            )
-            return testdataManager.lagreBehandlingNewTransaction(behandling)
-        }
-
         @Test
         fun `skal kunne legge til ny manuell periode`() {
             // gitt
@@ -268,7 +272,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
         }
 
         @Test
-        open fun `skal kunne legge til et nytt husstandsmedlem`() {
+        open fun `skal kunne legge til et nytt husstandsmedlem som saksbehandler har tilgang til`() {
             // gitt
             val behandling = opprettBehandling()
             behandling.husstandsmedlem.shouldHaveSize(2)
@@ -312,7 +316,8 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                         .opprettHusstandsmedlem!!
                         .personident!!
                         .verdi
-                oppdatertHusstandsmedlem.navn shouldBe request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.navn
+                oppdatertHusstandsmedlem.navn shouldBe
+                    request.oppdatereHusstandsmedlem.opprettHusstandsmedlem!!.navn
                 oppdatertHusstandsmedlem.perioder.shouldHaveSize(1)
                 oppdatertHusstandsmedlem.perioder.first().kilde shouldBe Kilde.MANUELL
                 oppdatertHusstandsmedlem.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
@@ -551,6 +556,81 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                     oppdatertHusstandsmedlem!!.perioder.filter { it.kilde == Kilde.MANUELL }.shouldHaveSize(1)
                     oppdatertHusstandsmedlem.perioder.shouldHaveSize(3)
                 }
+            }
+        }
+    }
+
+    @Nested
+    open inner class OppdatereBoforholdVerifisereTilgangskontroll {
+        @MockkBean
+        lateinit var bidragTilgangskontrollConsumer: BidragTilgangskontrollConsumer
+
+        @BeforeEach
+        fun setup() {
+            every { bidragTilgangskontrollConsumer.sjekkTilgangPersonISak(any(), any()) } returns false
+        }
+
+        @Test
+        open fun `skal kunne legge til et nytt husstandsmedlem som saksbehandler ikke har tilgang til`() {
+            // gitts
+            val behandling = opprettBehandling()
+            behandling.husstandsmedlem.shouldHaveSize(2)
+            val request =
+                OppdatereBoforholdRequestV2(
+                    oppdatereHusstandsmedlem =
+                        OppdatereHusstandsmedlem(
+                            opprettHusstandsmedlem =
+                                OpprettHusstandsstandsmedlem(
+                                    personident = Personident("1234"),
+                                    fødselsdato = LocalDate.now().minusMonths(156),
+                                    navn = "Per Spelemann",
+                                ),
+                        ),
+                )
+
+            // hvis
+            val boforholdResponse =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUriV2()}/behandling/${behandling.id}/boforhold",
+                    HttpMethod.PUT,
+                    HttpEntity(request),
+                    OppdatereBoforholdResponse::class.java,
+                )
+
+            // så
+            assertSoftly(boforholdResponse) {
+                it.statusCode shouldBe HttpStatus.OK
+                it.body shouldNotBe null
+                it.body
+                    ?.valideringsfeil
+                    ?.husstandsmedlem
+                    .shouldBeEmpty()
+                it.body?.oppdatertHusstandsmedlem shouldNotBe null
+            }
+
+            assertSoftly(boforholdResponse.body!!.oppdatertHusstandsmedlem) { oppdatertHusstandsmedlem ->
+                oppdatertHusstandsmedlem!!.kilde shouldBe Kilde.MANUELL
+                oppdatertHusstandsmedlem.ident shouldBe null
+                oppdatertHusstandsmedlem.navn shouldBe
+                    "Person skjermet, født ${request.oppdatereHusstandsmedlem!!.opprettHusstandsmedlem!!.fødselsdato.year}"
+                oppdatertHusstandsmedlem.perioder.shouldHaveSize(1)
+                oppdatertHusstandsmedlem.perioder.first().kilde shouldBe Kilde.MANUELL
+                oppdatertHusstandsmedlem.perioder.first().datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
+                oppdatertHusstandsmedlem.perioder
+                    .first()
+                    .datoTom
+                    .shouldBeNull()
+            }
+
+            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get().husstandsmedlem) {
+                it.size shouldBe 3
+                it.find { nyttBarn ->
+                    nyttBarn.ident ==
+                        request.oppdatereHusstandsmedlem!!
+                            .opprettHusstandsmedlem!!
+                            .personident!!
+                            .verdi
+                } shouldNotBe null
             }
         }
     }

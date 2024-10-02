@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
-import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -23,7 +22,6 @@ import java.time.LocalDateTime
 @Component
 class TestdataManager(
     private val behandlingRepository: BehandlingRepository,
-    private val grunnlagService: GrunnlagService,
     private val entityManager: EntityManager,
 ) {
     @Transactional
@@ -31,9 +29,6 @@ class TestdataManager(
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
-
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun oppdatereGrunnlagForBehandling(behandling: Behandling) = grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun oppretteBehandlingINyTransaksjon(

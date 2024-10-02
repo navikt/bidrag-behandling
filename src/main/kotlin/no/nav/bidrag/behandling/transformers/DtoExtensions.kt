@@ -13,17 +13,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 
 fun Set<Sivilstand>.toSivilstandDto() =
-    this
-        .map {
-            SivilstandDto(
-                it.id,
-                it.datoFom,
-                it.datoTom,
-                it.sivilstand,
-                it.kilde,
-            )
-        }.sortedBy { it.datoFom }
-        .toSet()
+    this.map { SivilstandDto(it.id, it.datoFom, it.datoTom, it.sivilstand, it.kilde) }.sortedBy { it.datoFom }.toSet()
 
 fun Behandling.tilForsendelseRolleDto() =
     roller.filter { r -> !(r.rolletype == Rolletype.BARN && r.ident == null) }.map {
