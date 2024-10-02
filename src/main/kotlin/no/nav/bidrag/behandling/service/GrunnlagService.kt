@@ -24,12 +24,11 @@ import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
-import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
@@ -39,8 +38,6 @@ import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandBeregne
 import no.nav.bidrag.behandling.transformers.behandling.finnEndringerBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
-import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIAndreVoksneIBpsHusstand
-import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
@@ -94,6 +91,7 @@ class GrunnlagService(
     private val grunnlagRepository: GrunnlagRepository,
     private val inntektApi: InntektApi,
     private val inntektService: InntektService,
+    private val mapper: Dtomapper,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
     private lateinit var grenseInnhenting: String
@@ -412,80 +410,6 @@ class GrunnlagService(
             grunnlagstype.type.getOrMigrate(),
             grunnlagstype.erBearbeidet,
         )
-
-    fun henteNyeGrunnlagsdataMedEndringsdiff(behandling: Behandling): IkkeAktiveGrunnlagsdata {
-        val roller = behandling.roller.sortedBy { if (it.rolletype == Rolletype.BARN) 1 else -1 }
-        val inntekter = behandling.inntekter
-        val sisteInnhentedeIkkeAktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteIkkeAktiv()
-        val aktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteAktiv()
-        return IkkeAktiveGrunnlagsdata(
-            inntekter =
-                IkkeAktiveInntekter(
-                    årsinntekter =
-                        roller
-                            .flatMap {
-                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                                    it,
-                                    inntekter,
-                                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-                                )
-                            }.toSet(),
-                    småbarnstillegg =
-                        roller
-                            .flatMap {
-                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                                    it,
-                                    inntekter,
-                                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                                )
-                            }.toSet(),
-                    utvidetBarnetrygd =
-                        roller
-                            .flatMap {
-                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                                    it,
-                                    inntekter,
-                                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                                )
-                            }.toSet(),
-                    kontantstøtte =
-                        roller
-                            .flatMap {
-                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                                    it,
-                                    inntekter,
-                                    Grunnlagsdatatype.KONTANTSTØTTE,
-                                )
-                            }.toSet(),
-                    barnetillegg =
-                        roller
-                            .flatMap {
-                                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerInntekter(
-                                    it,
-                                    inntekter,
-                                    Grunnlagsdatatype.BARNETILLEGG,
-                                )
-                            }.toSet(),
-                ),
-            arbeidsforhold = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIArbeidsforhold(aktiveGrunnlag),
-            husstandsmedlem =
-                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(
-                    aktiveGrunnlag,
-                    behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.husstandsmedlem,
-                    behandling.rolleGrunnlagSkalHentesFor!!,
-                ),
-            andreVoksneIHusstanden =
-                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(
-                    aktiveGrunnlag,
-                ),
-            sivilstand =
-                sisteInnhentedeIkkeAktiveGrunnlag.hentEndringerSivilstand(
-                    aktiveGrunnlag,
-                    behandling.virkningstidspunktEllerSøktFomDato,
-                ),
-        )
-    }
 
     private fun aktivereYtelserOgInntekter(
         behandling: Behandling,
@@ -860,7 +784,7 @@ class GrunnlagService(
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
 
-        val endringerSomMåBekreftes = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
+        val endringerSomMåBekreftes = mapper.endringerIAndreVoksneIBpsHusstand(ikkeAktiveGrunnlag, aktiveGrunnlag)
 
         if (endringerSomMåBekreftes == null || endringerSomMåBekreftes.perioder.isEmpty()) {
             log.info {
@@ -880,17 +804,11 @@ class GrunnlagService(
     }
 
     fun aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling: Behandling) {
-        val rolleInhentetFor = behandling.rolleGrunnlagSkalHentesFor
+        val rolleInhentetFor = behandling.rolleGrunnlagSkalHentesFor!!
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
-        val endringerSomMåBekreftes =
-            ikkeAktiveGrunnlag.henteEndringerIBoforhold(
-                aktiveGrunnlag,
-                behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.husstandsmedlem,
-                rolleInhentetFor!!,
-            )
+        val endringerSomMåBekreftes = ikkeAktiveGrunnlag.henteEndringerIBoforhold(aktiveGrunnlag, behandling)
 
         behandling.husstandsmedlem
             .barn

@@ -213,15 +213,21 @@ fun List<GrunnlagDto>.finnBorMedAndreVoksne(grunnlagsreferanseListe: List<Grunnl
 
 fun List<GrunnlagDto>.finnDelberegningUtgift(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUtgift? {
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
-
-    val delberegningBidragspliktigesAndel =
+    val delberegningBidragspliktigesAndelReferanser =
         find {
-            it.type == Grunnlagstype.DELBEREGNING_UTGIFT &&
+            it.type == Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG &&
                 sluttberegning.grunnlagsreferanseListe.contains(
                     it.referanse,
                 )
         } ?: return null
-    return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningUtgift>()
+    val delberegningUtgift =
+        find {
+            it.type == Grunnlagstype.DELBEREGNING_UTGIFT &&
+                delberegningBidragspliktigesAndelReferanser.grunnlagsreferanseListe.contains(
+                    it.referanse,
+                )
+        } ?: return null
+    return delberegningUtgift.innholdTilObjekt<DelberegningUtgift>()
 }
 
 fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningBidragsevne? {

@@ -57,6 +57,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import org.junit.experimental.runners.Enclosed
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -86,6 +87,11 @@ class BoforholdServiceTest : TestContainerRunner() {
 
     @Autowired
     lateinit var entityManager: EntityManager
+
+    @BeforeEach
+    fun initStubs() {
+        stubUtils.stubTilgangskontrollPersonISak()
+    }
 
     @Nested
     open inner class AndreVoksneIHusstandentester {

@@ -7,6 +7,7 @@ import no.nav.bidrag.commons.security.SikkerhetsKontekst
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpClientErrorException
 
 @Service
 class TilgangskontrollService(
@@ -31,4 +32,15 @@ class TilgangskontrollService(
             sjekkTilgangPersonISak(Personident(it.ident!!), Saksnummer(behandling.saksnummer))
         }
     }
+
+    fun harTilgang(
+        personident: Personident,
+        saksnummer: Saksnummer,
+    ): Boolean =
+        try {
+            sjekkTilgangPersonISak(personident, saksnummer)
+            true
+        } catch (hcee: HttpClientErrorException) {
+            false
+        }
 }
