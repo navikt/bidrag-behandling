@@ -1,7 +1,5 @@
 package no.nav.bidrag.behandling.consumer
 
-import no.nav.bidrag.behandling.config.CacheConfig.Companion.VEDTAK_FOR_STØNAD_CACHE
-import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
@@ -36,12 +34,12 @@ class BidragVedtakConsumer(
             bidragVedtakUri.pathSegment(vedtakId.toString()).build().toUri(),
         )
 
+    //    @BrukerCacheable(VEDTAK_FOR_STØNAD_CACHE)
     @Retryable(
         value = [Exception::class],
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    @BrukerCacheable(VEDTAK_FOR_STØNAD_CACHE)
     fun hentVedtakForStønad(request: HentVedtakForStønadRequest): HentVedtakForStønadResponse =
         postForNonNullEntity(
             bidragVedtakUri.pathSegment("hent-vedtak").build().toUri(),

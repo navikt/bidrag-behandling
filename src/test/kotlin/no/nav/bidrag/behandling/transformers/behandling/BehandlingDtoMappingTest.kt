@@ -100,7 +100,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
             beløpDirekteBetaltAvBp shouldBe BigDecimal(1000)
             totalBeløpBetaltAvBp shouldBe BigDecimal(1000)
             totalGodkjentBeløp shouldBe BigDecimal(2100)
-            totalGodkjentBeløpBp shouldBe null
+            totalGodkjentBeløpBp shouldBe BigDecimal.ZERO
         }
         assertSoftly(utgiftDto) {
             avslag shouldBe null
