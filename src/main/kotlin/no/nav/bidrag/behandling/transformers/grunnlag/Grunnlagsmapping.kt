@@ -17,6 +17,8 @@ val summertAinntektstyper =
         Inntektsrapportering.AINNTEKT,
         Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
+        Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+        Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
     )
 
 val summertYtelsetyper =
