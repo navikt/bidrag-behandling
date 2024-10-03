@@ -86,13 +86,13 @@ class VedtakService(
             LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
             val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
 
-            vedtak.behandlingId?.let {
-                tilgangskontrollService.sjekkTilgangBehandling(
-                    behandlingService.hentBehandlingById(
-                        it,
-                    ),
-                )
-            }
+//            vedtak.behandlingId?.let {
+//                tilgangskontrollService.sjekkTilgangBehandling(
+//                    behandlingService.hentBehandlingById(
+//                        it,
+//                    ),
+//                )
+//            }
 
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
             return vedtak.tilBehandling(vedtakId, lesemodus = true)
