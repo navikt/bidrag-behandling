@@ -21,7 +21,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetHusstandsmedlem
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
@@ -156,8 +155,8 @@ fun List<Grunnlag>.opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMan
             borISammeHusstandDtoListe = emptyList(),
         ).tilGrunnlagsobjekt(
             LocalDateTime.now(),
-            personobjekter.hentPerson(behandling.rolleGrunnlagSkalHentesFor!!.ident)!!.referanse,
-            personobjekter.hentPerson(it.ident)!!.referanse,
+            personobjekter.hentPersonNyesteIdent(behandling.rolleGrunnlagSkalHentesFor!!.ident)!!.referanse,
+            personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
         )
     }
 }

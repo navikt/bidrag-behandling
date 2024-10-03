@@ -3393,15 +3393,17 @@
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19781115_99"
     },
     {
-      "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG_person_PERSON_SØKNADSBARN_20050916_101_202409_202410",
-      "type": "DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG",
+      "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_SØKNADSBARN_20050916_101_202409_202410",
+      "type": "DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL",
       "innhold": {
         "periode": {
           "fom": "2024-09",
           "til": "2024-10"
         },
         "andelBeløp": 9185,
-        "andelFaktor": 0.6123,
+        "endeligAndelFaktor": 0.6123,
+        "beregnetAndelFaktor": 0.6123,
+        "barnEndeligInntekt": 0,
         "barnetErSelvforsørget": false
       },
       "grunnlagsreferanseListe": [
@@ -3665,7 +3667,7 @@
       },
       "grunnlagsreferanseListe": [
         "delberegning_DELBEREGNING_BIDRAGSEVNE_person_PERSON_SØKNADSBARN_20050916_101_202409_202410",
-        "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG_person_PERSON_SØKNADSBARN_20050916_101_202409_202410",
+        "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_SØKNADSBARN_20050916_101_202409_202410",
         "delberegning_utgift"
       ],
       "gjelderReferanse": "person_PERSON_SØKNADSBARN_20050916_101"

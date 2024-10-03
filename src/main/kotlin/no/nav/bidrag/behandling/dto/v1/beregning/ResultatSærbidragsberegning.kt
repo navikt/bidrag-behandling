@@ -6,13 +6,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndelSærbidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import java.math.BigDecimal
 
 data class ResultatSærbidragsberegningDto(
     val periode: ÅrMånedsperiode,
-    val bpsAndel: DelberegningBidragspliktigesAndelSærbidrag? = null,
+    val bpsAndel: DelberegningBidragspliktigesAndel? = null,
     val beregning: UtgiftBeregningDto? = null,
     val inntekter: ResultatSærbidragsberegningInntekterDto? = null,
     val utgiftsposter: List<UtgiftspostDto> = emptyList(),

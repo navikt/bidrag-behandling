@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -257,7 +258,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                 )
 
             // så
-            resultat.shouldHaveSize(5)
+            resultat.shouldHaveSize(7)
             resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }.shouldHaveSize(1)
         }
 
@@ -307,12 +308,12 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
             resultat.shouldHaveSize(4)
             resultat.none { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldBe true
             resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2023 } shouldBe true
-            resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2022 } shouldBe false
+            resultat.none { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom.year == 2022 } shouldBe true
             val resultatNy = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.NY }
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_3MND } shouldHaveSize 1
             resultatNy.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
-            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 1
+            resultatNy.filter { it.rapporteringstype == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 2
         }
 
         @Test
@@ -366,18 +367,18 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(6)
+            resultat.shouldHaveSize(7)
 
             val resultatSlettet = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.SLETTET }
-            resultatSlettet shouldHaveSize 2
+            resultatSlettet shouldHaveSize 1
             resultatSlettet.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
 
             val resultatEndring = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.ENDRING }
-            resultatEndring shouldHaveSize 1
-            resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 1
+            resultatEndring shouldHaveSize 2
+            resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 2
             resultatEndring.find {
                 it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom == YearMonth.parse("2022-01")
-            } shouldBe null
+            } shouldNotBe null
             assertSoftly(
                 resultatEndring.find {
                     it.rapporteringstype == Inntektsrapportering.LIGNINGSINNTEKT && it.periode.fom == YearMonth.parse("2023-01")
@@ -390,7 +391,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
             resultatEndring.filter { it.rapporteringstype == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 0
 
             val resultatNy = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.NY }
-            resultatNy shouldHaveSize 3
+            resultatNy shouldHaveSize 4
         }
 
         @Test
@@ -484,7 +485,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
                     inntekter,
                     Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 )
-            resultat.shouldHaveSize(5)
+            resultat.shouldHaveSize(7)
 
             val resultatSlettet = resultat.filter { it.endringstype == GrunnlagInntektEndringstype.SLETTET }
             resultatSlettet shouldHaveSize 0
