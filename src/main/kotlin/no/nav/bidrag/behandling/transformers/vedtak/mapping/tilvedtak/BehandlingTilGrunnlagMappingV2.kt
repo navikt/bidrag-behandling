@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.transformers.grunnlag
+package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -10,11 +10,16 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
+import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
+import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_delberegning_utgift
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_direkte_betalt
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_maks_godkjent_beløp
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -50,20 +55,6 @@ import java.time.LocalDate
 class BehandlingTilGrunnlagMappingV2(
     val personService: PersonService,
 ) {
-    fun rolleTilGrunnlagPerson(rolle: Rolle) = rolle.tilGrunnlagPerson()
-
-    fun opprettGrunnlagInntekt(
-        behandling: Behandling,
-        personobjekter: Set<GrunnlagDto>,
-        søknadsbarn: GrunnlagDto? = null,
-        inkluderAlle: Boolean = true,
-    ) = behandling.tilGrunnlagInntekt(personobjekter, søknadsbarn, inkluderAlle)
-
-    fun opprettPersonobjekter(
-        behandling: Behandling,
-        søknadsbarnRolle: Rolle? = null,
-    ) = behandling.tilPersonobjekter(søknadsbarnRolle)
-
     fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<GrunnlagDto> {
         val søknadsbarnListe =
             søknadsbarnRolle?.let { listOf(it.tilGrunnlagPerson()) }
@@ -76,12 +67,7 @@ class BehandlingTilGrunnlagMappingV2(
         ).filterNotNull().toMutableSet()
     }
 
-    fun opprettGrunnlagSivilstand(
-        behandling: Behandling,
-        gjelder: BaseGrunnlag,
-    ) = behandling.tilGrunnlagSivilstand(gjelder)
-
-    private fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> =
+    fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> =
         if (engangsbeloptype == Engangsbeløptype.SÆRBIDRAG) {
             emptySet()
         } else {
@@ -111,12 +97,7 @@ class BehandlingTilGrunnlagMappingV2(
                 }.toSet()
         }
 
-    fun opprettInnhentetGrunnlag(
-        behandling: Behandling,
-        personobjekter: MutableSet<GrunnlagDto>,
-    ) = behandling.byggInnhentetGrunnlag(personobjekter)
-
-    private fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
+    fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
         val sortertGrunnlagsListe = grunnlag.hentSisteAktiv()
         val sortertGrunnlagsListeBearbeidet = sortertGrunnlagsListe.filter { it.erBearbeidet }
         val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
@@ -152,11 +133,6 @@ class BehandlingTilGrunnlagMappingV2(
         )
     }
 
-    fun opprettGrunnlagBostatus(
-        behandling: Behandling,
-        personobjekter: Set<GrunnlagDto>,
-    ) = behandling.tilGrunnlagBostatus(personobjekter)
-
     fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
         val personobjekterHusstandsmedlem = mutableSetOf<GrunnlagDto>()
 
@@ -187,9 +163,7 @@ class BehandlingTilGrunnlagMappingV2(
         return grunnlagBosstatus + personobjekterHusstandsmedlem
     }
 
-    fun opprettGrunnlagUtgift(behandling: Behandling) = behandling.tilGrunnlagUtgift()
-
-    private fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
+    fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
         val beregningUtgifter = utgift!!.tilBeregningDto()
         return GrunnlagDto(
             referanse = grunnlagsreferanse_delberegning_utgift,
@@ -226,7 +200,7 @@ class BehandlingTilGrunnlagMappingV2(
         )
     }
 
-    private fun Behandling.tilGrunnlagInntekt(
+    fun Behandling.tilGrunnlagInntekt(
         personobjekter: Set<GrunnlagDto>,
         søknadsbarn: GrunnlagDto? = null,
         inkluderAlle: Boolean = true,

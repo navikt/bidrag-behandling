@@ -27,16 +27,14 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBetalt
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftMaksGodkjentBeløp
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftsposter
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultat
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatSærbidrag
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilBehandlingreferanseListe
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilOpprettRequestDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
-import no.nav.bidrag.behandling.transformers.vedtak.tilBehandling
-import no.nav.bidrag.behandling.transformers.vedtak.tilBehandlingreferanseListe
-import no.nav.bidrag.behandling.transformers.vedtak.tilBeregningResultat
-import no.nav.bidrag.behandling.transformers.vedtak.tilBeregningResultatSærbidrag
-import no.nav.bidrag.behandling.transformers.vedtak.tilOpprettRequestDto
-import no.nav.bidrag.behandling.transformers.vedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.util.tilVedtakDto
@@ -80,6 +78,7 @@ class VedtakService(
     private val vedtakConsumer: BidragVedtakConsumer,
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
+    private val mapper: VedtakGrunnlagMapper,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
         try {
@@ -434,57 +433,54 @@ class VedtakService(
     }
 
     private fun Behandling.byggOpprettVedtakRequestSærbidrag(): OpprettVedtakRequestDto {
-        val sak = sakConsumer.hentSak(saksnummer)
-        val beregning = beregningService.beregneSærbidrag(id!!)
-        val resultat = beregning.beregnetSærbidragPeriodeListe.first().resultat
-        val (grunnlagListeVedtak, grunnlaglisteGenerelt) =
-            if (resultat.resultatkode == Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS) {
-                listOf(
-                    tilPersonobjekter() + byggGrunnlagUtgiftsposter() +
-                        byggGrunnlagUtgiftDirekteBetalt() +
-                        byggGrunnlagUtgiftMaksGodkjentBeløp(),
-                    byggGrunnlagGenereltAvslag(),
-                )
-            } else {
-                val personobjekterFraBeregning = beregning.grunnlagListe.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>
-                listOf(byggGrunnlagForVedtak(personobjekterFraBeregning), byggGrunnlagGenerelt())
-            }
+        mapper.run {
+            val sak = sakConsumer.hentSak(saksnummer)
+            val beregning = beregningService.beregneSærbidrag(id!!)
+            val resultat = beregning.beregnetSærbidragPeriodeListe.first().resultat
+            val (grunnlagListeVedtak, grunnlaglisteGenerelt) =
+                if (resultat.resultatkode == Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS) {
+                    byggGrunnlagForAvslagUgyldigUtgifter()
+                } else {
+                    val personobjekterFraBeregning = beregning.grunnlagListe.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>
+                    listOf(byggGrunnlagForVedtak(personobjekterFraBeregning), byggGrunnlagGenerelt())
+                }
 
-        val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet()
+            val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet()
 
-        val grunnlagslisteEngangsbeløp =
-            grunnlaglisteGenerelt +
-                beregning.grunnlagListe.filter { it.type == Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG }
+            val grunnlagslisteEngangsbeløp =
+                grunnlaglisteGenerelt +
+                    beregning.grunnlagListe.filter { it.type == Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG }
 
-        val barn = søknadsbarn.first()
+            val barn = søknadsbarn.first()
 
-        return byggOpprettVedtakRequestObjekt().copy(
-            engangsbeløpListe =
-                listOf(
-                    OpprettEngangsbeløpRequestDto(
-                        type = engangsbeloptype!!,
-                        beløp = resultat.beløp,
-                        resultatkode = resultat.resultatkode.name,
-                        valutakode = "NOK",
-                        betaltBeløp = utgift!!.totalBeløpBetaltAvBp,
-                        innkreving = innkrevingstype!!,
-                        skyldner = tilSkyldner(),
-                        omgjørVedtakId = refVedtaksid?.toInt(),
-                        kravhaver =
-                            barn.tilNyestePersonident()
-                                ?: rolleManglerIdent(Rolletype.BARN, id!!),
-                        mottaker =
-                            roller
-                                .reelMottakerEllerBidragsmottaker(
-                                    sak.hentRolleMedFnr(barn.ident!!),
-                                ),
-                        sak = Saksnummer(saksnummer),
-                        beslutning = Beslutningstype.ENDRING,
-                        grunnlagReferanseListe = grunnlagslisteEngangsbeløp.map(GrunnlagDto::referanse),
+            return byggOpprettVedtakRequestObjekt().copy(
+                engangsbeløpListe =
+                    listOf(
+                        OpprettEngangsbeløpRequestDto(
+                            type = engangsbeloptype!!,
+                            beløp = resultat.beløp,
+                            resultatkode = resultat.resultatkode.name,
+                            valutakode = "NOK",
+                            betaltBeløp = utgift!!.totalBeløpBetaltAvBp,
+                            innkreving = innkrevingstype!!,
+                            skyldner = tilSkyldner(),
+                            omgjørVedtakId = refVedtaksid?.toInt(),
+                            kravhaver =
+                                barn.tilNyestePersonident()
+                                    ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                            mottaker =
+                                roller
+                                    .reelMottakerEllerBidragsmottaker(
+                                        sak.hentRolleMedFnr(barn.ident!!),
+                                    ),
+                            sak = Saksnummer(saksnummer),
+                            beslutning = Beslutningstype.ENDRING,
+                            grunnlagReferanseListe = grunnlagslisteEngangsbeløp.map(GrunnlagDto::referanse),
+                        ),
                     ),
-                ),
-            grunnlagListe = grunnlagliste.map(GrunnlagDto::tilOpprettRequestDto),
-        )
+                grunnlagListe = grunnlagliste.map(GrunnlagDto::tilOpprettRequestDto),
+            )
+        }
     }
 
     /**

@@ -13,12 +13,12 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_delberegning_utgift
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_direkte_betalt
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgift_maks_godkjent_beløp
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_utgiftsposter
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_delberegning_utgift
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_utgift_direkte_betalt
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_utgift_maks_godkjent_beløp
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_utgiftsposter
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype

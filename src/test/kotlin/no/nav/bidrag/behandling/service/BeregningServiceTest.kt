@@ -14,7 +14,7 @@ import io.mockk.mockkConstructor
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_løpende_bidrag
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_løpende_bidrag
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettLøpendeBidragGrunnlag

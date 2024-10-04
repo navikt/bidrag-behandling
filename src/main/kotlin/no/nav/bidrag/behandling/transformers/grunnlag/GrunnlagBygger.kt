@@ -5,15 +5,16 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotater
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagNotaterDirekteAvslag
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSærbidragKategori
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagSøknad
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftDirekteBetalt
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftMaksGodkjentBeløp
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagUtgiftsposter
-import no.nav.bidrag.behandling.transformers.vedtak.byggGrunnlagVirkningsttidspunkt
-import no.nav.bidrag.behandling.transformers.vedtak.grunnlagsreferanse_løpende_bidrag
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagNotater
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagNotaterDirekteAvslag
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSærbidragKategori
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSøknad
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagUtgiftDirekteBetalt
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagUtgiftMaksGodkjentBeløp
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagUtgiftsposter
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagVirkningsttidspunkt
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_løpende_bidrag
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonGrunnlag
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -78,11 +79,6 @@ fun Behandling.byggGrunnlagForBeregning(søknadsbarnRolle: Rolle): BeregnGrunnla
         grunnlagListe = grunnlagsliste.toList(),
     )
 }
-
-operator fun BeregnGrunnlag.plus(grunnlag: List<GrunnlagDto>) =
-    copy(
-        grunnlagListe = (grunnlagListe + grunnlag).toSet().toList(),
-    )
 
 fun Behandling.byggGrunnlagForVedtak(personobjekterFraBeregning: MutableSet<GrunnlagDto> = mutableSetOf()): Set<GrunnlagDto> {
     val personobjekter = (tilPersonobjekter() + personobjekterFraBeregning).toSet()

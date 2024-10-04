@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.plus
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.domene.ident.Personident
@@ -39,6 +40,7 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 class BeregningService(
     private val behandlingService: BehandlingService,
     private val beregningEvnevurderingService: BeregningEvnevurderingService,
+    private val mapper: VedtakGrunnlagMapper,
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
@@ -75,8 +77,7 @@ class BeregningService(
         } else {
             try {
                 val grunnlagBeregning =
-                    behandling
-                        .byggGrunnlagForBeregning(søknasdbarn)
+                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
                 val grunnlagLøpendeBidrag =
                     beregningEvnevurderingService.opprettGrunnlagLøpendeBidrag(behandling, grunnlagBeregning.grunnlagListe)
                 val grunnlagliste = grunnlagBeregning + grunnlagLøpendeBidrag

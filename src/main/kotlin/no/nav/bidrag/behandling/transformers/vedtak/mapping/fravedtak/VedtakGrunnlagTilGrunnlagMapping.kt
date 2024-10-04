@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.transformers.vedtak
+package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag

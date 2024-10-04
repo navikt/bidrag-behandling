@@ -363,6 +363,29 @@ class StubUtils {
         )
     }
 
+    fun stubPerson(
+        status: HttpStatus = HttpStatus.OK,
+        personident: String,
+        navn: String = "Navn Navnesen",
+        shouldContaintPersonIdent: Boolean = false,
+    ) {
+        var postRequest = WireMock.post(urlMatching("/bidrag-person/informasjon"))
+
+        if (shouldContaintPersonIdent) {
+            postRequest = postRequest.withRequestBody(ContainsPattern(personident))
+        }
+
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/bidrag-person/informasjon"))
+                .willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(HttpStatus.OK.value())
+                        .withTransformers("example"),
+                ),
+        )
+    }
+
     fun stubHentePersoninfo(
         status: HttpStatus = HttpStatus.OK,
         personident: String,

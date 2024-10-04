@@ -9,6 +9,8 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 
@@ -121,3 +123,8 @@ fun Inntektsrapportering.tilGrunnlagsdataType() =
         Inntektsrapportering.KONTANTSTØTTE -> Grunnlagsdatatype.KONTANTSTØTTE
         else -> Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER
     }
+
+operator fun BeregnGrunnlag.plus(grunnlag: List<GrunnlagDto>) =
+    copy(
+        grunnlagListe = (grunnlagListe + grunnlag).toSet().toList(),
+    )

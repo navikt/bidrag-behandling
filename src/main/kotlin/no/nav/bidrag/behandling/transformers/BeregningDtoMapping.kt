@@ -120,6 +120,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     utgiftsposter = utgiftsposter,
     maksGodkjentBeløp = maksGodkjentBeløp,
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
+    delberegningBidragsevne = finnDelberegningBidragsevne(grunnlagsreferanseListe),
     voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
     enesteVoksenIHusstandenErEgetBarn = finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe),
     erDirekteAvslag = resultatkode.erDirekteAvslag(),
