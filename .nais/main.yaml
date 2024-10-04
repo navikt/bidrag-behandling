@@ -1,6 +1,7 @@
 name: bidrag-behandling
 ingresses:
   - https://bidrag-behandling.intern.dev.nav.no
+min_replicas: 2
 env:
   SPRING_PROFILES_ACTIVE: live,nais,database-legacy
   BIDRAG_PERSON_URL: https://bidrag-person.dev-fss-pub.nais.io/bidrag-person
