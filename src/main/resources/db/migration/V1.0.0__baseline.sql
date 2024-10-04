@@ -454,3 +454,4 @@ ALTER TABLE ONLY public.inntektspost
 --
 -- PostgreSQL database dump complete
 --
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cloudsqliamuser;
