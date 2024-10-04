@@ -515,7 +515,7 @@ class VedtakTilBehandlingSærbidragTest {
         resultat shouldNotBe null
 
         assertSoftly(resultat!!) {
-            bpsAndel!!.andelFaktor shouldBe BigDecimal(0.6444, MathContext(4))
+            bpsAndel!!.endeligAndelFaktor shouldBe BigDecimal(0.6444, MathContext(4))
             bpsAndel.andelBeløp shouldBe BigDecimal(5796)
             utgiftsposter.shouldHaveSize(3)
             resultatKode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET

@@ -51,7 +51,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndelSærbidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
@@ -622,10 +622,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 val innhold = innholdTilObjekt<DelberegningBidragsevne>().first()
                 innhold.beløp shouldBe BigDecimal("14009")
             }
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG)) {
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL)) {
                 shouldHaveSize(1)
-                val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>().first()
-                innhold.andelFaktor shouldBe BigDecimal("0.4919")
+                val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndel>().first()
+                innhold.endeligAndelFaktor shouldBe BigDecimal("0.4919")
                 innhold.andelBeløp shouldBe BigDecimal("9838")
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
@@ -1947,14 +1947,14 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val delberegningBpsAndel =
             grunnlagListe
                 .finnGrunnlagSomErReferertAv(
-                    Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG,
+                    Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL,
                     sluttberegningSærbidrag.first(),
                 ).toList()
 
         assertSoftly(delberegningBpsAndel) {
             shouldHaveSize(1)
-            val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndelSærbidrag>().first()
-            innhold.andelFaktor shouldBe "0.4919".toBigDecimal()
+            val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndel>().first()
+            innhold.endeligAndelFaktor shouldBe "0.4919".toBigDecimal()
             innhold.andelProsent shouldBe "49.19".toBigDecimal()
             innhold.andelBeløp shouldBe BigDecimal(9838)
             innhold.barnetErSelvforsørget shouldBe false

@@ -1182,15 +1182,17 @@
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19720829_39"
     },
     {
-      "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG_person_PERSON_SØKNADSBARN_20220726_40_202407_202408",
-      "type": "DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG",
+      "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_SØKNADSBARN_20220726_40_202407_202408",
+      "type": "DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL",
       "innhold": {
         "periode": {
           "fom": "2024-07",
           "til": "2024-08"
         },
         "andelBeløp": 5796,
-        "andelFaktor": 0.6444,
+        "endeligAndelFaktor": 0.6444,
+        "beregnetAndelFaktor": 0.6444,
+        "barnEndeligInntekt": 0,
         "barnetErSelvforsørget": false
       },
       "grunnlagsreferanseListe": [
@@ -1454,7 +1456,7 @@
       },
       "grunnlagsreferanseListe": [
         "delberegning_DELBEREGNING_BIDRAGSEVNE_person_PERSON_SØKNADSBARN_20220726_40_202407_202408",
-        "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG_person_PERSON_SØKNADSBARN_20220726_40_202407_202408",
+        "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_SØKNADSBARN_20220726_40_202407_202408",
         "delberegning_utgift"
       ],
       "gjelderReferanse": "person_PERSON_SØKNADSBARN_20220726_40"
@@ -1533,7 +1535,7 @@
         "særbidrag_kategori",
         "delberegning_DELBEREGNING_BARN_I_HUSSTAND_person_PERSON_SØKNADSBARN_20220726_40_202407",
         "delberegning_DELBEREGNING_BIDRAGSEVNE_person_PERSON_SØKNADSBARN_20220726_40_202407_202408",
-        "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_SÆRBIDRAG_person_PERSON_SØKNADSBARN_20220726_40_202407_202408",
+        "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_SØKNADSBARN_20220726_40_202407_202408",
         "delberegning_DELBEREGNING_SUM_INNTEKT_person_PERSON_BIDRAGSMOTTAKER_19781115_41_202407",
         "delberegning_DELBEREGNING_SUM_INNTEKT_person_PERSON_BIDRAGSPLIKTIG_19720829_39_202407",
         "delberegning_DELBEREGNING_SUM_INNTEKT_person_PERSON_SØKNADSBARN_20220726_40_202407",

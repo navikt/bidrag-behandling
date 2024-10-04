@@ -3524,7 +3524,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             // hvis
@@ -3557,7 +3557,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             // hvis
@@ -3618,7 +3618,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
@@ -3676,7 +3676,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         ),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
@@ -3732,7 +3732,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
@@ -3790,7 +3790,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         ),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
@@ -3847,7 +3847,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             behandling.grunnlagsinnhentingFeilet =
@@ -3910,7 +3910,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         ),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             behandling.grunnlagsinnhentingFeilet =
@@ -3973,7 +3973,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         ),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 9
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
 
             // hvis
@@ -4024,6 +4024,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             skattegrunnlagListe = skattegrunnlag,
             småbarnstilleggListe = småbarnstillegg,
             utvidetBarnetrygdListe = utvidetBarnetrygd,
+            tilleggsstønadBarnetilsynListe = emptyList(),
         )
 
         fun tilAinntektspostDto(
@@ -4132,6 +4133,7 @@ fun opprettHentGrunnlagDto() =
         husstandsmedlemmerOgEgneBarnListe = emptyList(),
         feilrapporteringListe = emptyList(),
         hentetTidspunkt = LocalDateTime.now(),
+        tilleggsstønadBarnetilsynListe = emptyList(),
     )
 
 fun oppretteFeilrapporteringer(

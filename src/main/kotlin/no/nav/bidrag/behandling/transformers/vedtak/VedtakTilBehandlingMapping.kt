@@ -322,28 +322,33 @@ private fun List<GrunnlagDto>.mapInntekter(
     val erForskuddOmgjøring =
         behandling.soknadFra == SøktAvType.NAV_BIDRAG && behandling.vedtakstype == Vedtakstype.ENDRING
     if (!lesemodus && !erForskuddOmgjøring) {
-        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }?.let { originalInntekt ->
-            originalInntekt
-                .copy(
-                    type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
-                ).run {
-                    inntekter.add(this)
-                    originalInntekt.taMed = false
-                    originalInntekt.datoFom = null
-                    originalInntekt.datoTom = null
+        inntekter.groupBy { it.ident }.forEach { (_, inntekterRolle) ->
+            inntekterRolle
+                .find {
+                    it.type ==
+                        Inntektsrapportering.AINNTEKT_BEREGNET_12MND
+                }?.let { originalInntekt ->
+                    originalInntekt
+                        .copy(
+                            type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                        ).run {
+                            inntekter.add(this)
+                            originalInntekt.taMed = false
+                            originalInntekt.datoFom = null
+                            originalInntekt.datoTom = null
+                        }
                 }
-        }
-
-        inntekter.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }?.let { originalInntekt ->
-            originalInntekt
-                .copy(
-                    type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
-                ).run {
-                    inntekter.add(this)
-                    originalInntekt.taMed = false
-                    originalInntekt.datoFom = null
-                    originalInntekt.datoTom = null
-                }
+            inntekterRolle.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND }?.let { originalInntekt ->
+                originalInntekt
+                    .copy(
+                        type = Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                    ).run {
+                        inntekter.add(this)
+                        originalInntekt.taMed = false
+                        originalInntekt.datoFom = null
+                        originalInntekt.datoTom = null
+                    }
+            }
         }
     }
     val inntekterBeregnet =
