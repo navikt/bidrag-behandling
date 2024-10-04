@@ -45,7 +45,7 @@ spec:
     failureThreshold: 10
   readiness:
     path: /actuator/health
-    initialDelay: 160
+    initialDelay: 60
     timeout: 1
   prometheus:
     enabled: true
