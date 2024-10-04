@@ -1,31 +1,31 @@
-name: bidrag-behandling
+name: bidrag-behandling-q2
 ingresses:
-  - https://bidrag-behandling.intern.dev.nav.no
+  - https://bidrag-behandling-q2.intern.dev.nav.no
 env:
   SPRING_PROFILES_ACTIVE: live,nais,database-new
-  BIDRAG_PERSON_URL: https://bidrag-person-feature.dev-fss-pub.nais.io/bidrag-person
-  BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
-  BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag-feature
-  BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
-  BIDRAG_FORSENDELSE_URL: http://bidrag-dokument-forsendelse-feature
-  BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
-  BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
-  BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
+  BIDRAG_PERSON_URL: https://bidrag-person.dev-fss-pub.nais.io/bidrag-person
+  BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person
+  BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag
+  BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag
+  BIDRAG_FORSENDELSE_URL: http://bidrag-dokument-forsendelse
+  BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
+  BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll
+  BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll
   BIDRAG_STONAD_URL: http://bidrag-stonad-q2
   BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-q2
   BIDRAG_VEDTAK_URL: http://bidrag-vedtak-q2
   BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-q2
-  BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
-  BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
+  BIDRAG_BBM_URL: https://bidrag-bbm.dev-fss-pub.nais.io
+  BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm
   BIDRAG_DOKUMENT_PRODUKSJON_URL: http://bidrag-dokument-produksjon
   BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
-  BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
-  BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument-feature
-  BIDRAG_SAK_URL: https://bidrag-sak-feature.dev-fss-pub.nais.io/bidrag-sak
-  BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-feature
+  BIDRAG_DOKUMENT_URL: https://bidrag-dokument.dev-fss-pub.nais.io/bidrag-dokument
+  BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument
+  BIDRAG_SAK_URL: https://bidrag-sak.dev-fss-pub.nais.io/bidrag-sak
+  BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak
   TOPIC_VEDTAK: bidrag.vedtak-q2
-  BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon-feature
-  BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
+  BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon
+  BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon.dev-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt-q1.dev-fss-pub.nais.io/api/v2
   GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 1

@@ -1,6 +1,6 @@
-name: bidrag-behandling
+name: bidrag-behandling-q4
 ingresses:
-  - https://bidrag-behandling.intern.dev.nav.no
+  - https://bidrag-behandling-q4.intern.dev.nav.no
 env:
   SPRING_PROFILES_ACTIVE: live,nais,database-new
   BIDRAG_PERSON_URL: https://bidrag-person-feature.dev-fss-pub.nais.io/bidrag-person
