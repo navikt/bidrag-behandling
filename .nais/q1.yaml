@@ -47,7 +47,7 @@ azure_access_inbound:
     namespace: bidrag
     cluster: dev-gcp
 database:
-  dbname: bidrag-behandling-main
+  dbname: bidrag-behandling-q1
   autoResize: true
   tier: db-f1-micro
 outbound-access-apps:
