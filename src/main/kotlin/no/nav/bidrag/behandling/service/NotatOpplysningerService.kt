@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterFor
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -469,6 +470,7 @@ private fun Inntekt.tilNotatInntektDto() =
                 ?.let { gjelderBarn ->
                     behandling?.roller?.find { it.ident == gjelderBarn }
                 }?.tilNotatRolle(),
+        historisk = erHistorisk(behandling!!.inntekter),
         inntektsposter =
             inntektsposter
                 .map {
@@ -509,7 +511,7 @@ private fun Behandling.hentInntekterForIdent(
         },
     årsinntekter =
         inntekter
-            .årsinntekterSortert(!filtrerBareOffentlige)
+            .årsinntekterSortert(!filtrerBareOffentlige, true)
             .inntekterForIdent(ident)
             .ekskluderYtelserFørVirkningstidspunkt()
             .filtrerKilde(filtrerBareOffentlige)
