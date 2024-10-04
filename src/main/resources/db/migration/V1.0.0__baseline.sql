@@ -339,15 +339,6 @@ ALTER TABLE ONLY public.barn_i_husstand
 ALTER TABLE ONLY public.behandling
     ADD CONSTRAINT behandling_pkey PRIMARY KEY (id);
 
-
---
--- Name: flyway_schema_history flyway_schema_history_pk; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.flyway_schema_history
-    ADD CONSTRAINT flyway_schema_history_pk PRIMARY KEY (installed_rank);
-
-
 --
 -- Name: inntekt inntekt_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
@@ -386,13 +377,6 @@ ALTER TABLE ONLY public.rolle
 
 ALTER TABLE ONLY public.sivilstand
     ADD CONSTRAINT sivilstand_pkey PRIMARY KEY (id);
-
-
---
--- Name: flyway_schema_history_s_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX flyway_schema_history_s_idx ON public.flyway_schema_history USING btree (success);
 
 
 --
