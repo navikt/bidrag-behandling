@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
         WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort().dynamicHttpsPort())
     wireMockServer.start()
     val app = SpringApplication(BehandlingAppTest::class.java)
-    app.setAdditionalProfiles("test")
+    app.setAdditionalProfiles("test", "database-legacy")
     app.run(*args)
 
     wireMockServer.resetAll()
