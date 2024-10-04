@@ -162,7 +162,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
             it.delberegningUtgift!!.sumGodkjent shouldBe BigDecimal(2500)
             it.beregning!!.totalKravbeløp shouldBe BigDecimal(3000)
             it.bpsAndel!!.andelBeløp shouldBe BigDecimal(2083)
-            it.bpsAndel.andelFaktor.round(MathContext(3)) shouldBe BigDecimal(0.8333).round(MathContext(3))
+            it.bpsAndel.endeligAndelFaktor.round(MathContext(3)) shouldBe BigDecimal(0.8333).round(MathContext(3))
         }
     }
 

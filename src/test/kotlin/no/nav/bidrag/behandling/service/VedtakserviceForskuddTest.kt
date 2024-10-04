@@ -361,7 +361,7 @@ class VedtakserviceForskuddTest {
             mottaker.verdi shouldBe nyIdentBm
         }
         opprettVedtakRequest.engangsbeløpListe.shouldBeEmpty()
-        opprettVedtakRequest.grunnlagListe.shouldHaveSize(76)
+        opprettVedtakRequest.grunnlagListe.shouldHaveSize(78)
 
         opprettVedtakRequest.grunnlagListe.hentAllePersoner() shouldHaveSize 7
         opprettVedtakRequest.grunnlagListe.søknadsbarn
