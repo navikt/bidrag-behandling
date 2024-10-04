@@ -144,7 +144,11 @@ spring.kafka:
     enableAutoCommit: false
   listener:
     ackMode: RECORD
+
+
+---
 spring:
+  config.activate.on-profile: database-legacy
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}?user=${DB_USERNAME}&password=${DB_PASSWORD}
@@ -154,6 +158,30 @@ spring:
       connectionTimeout: 1000
       maximum-pool-size: 10
       minimum-idle: 1
+  flyway:
+    enabled: true
+    locations: classpath:/db/migration
+  jpa:
+    database: postgresql
+
+---
+spring:
+  config.activate.on-profile: database-new
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: ${DB_JDBC_URL}
+    hikari:
+      idle-timeout: 10001
+      max-lifetime: 30001
+      connectionTimeout: 1000
+      maximum-pool-size: 10
+      minimum-idle: 1
+      data-source-properties:
+        ssl: true
+        sslmode: ${DB_SSLMODE}
+        sslcert: ${DB_SSLCERT}
+        sslkey: ${DB_SSLKEY_PK8}
+        sslrootcert: ${DB_SSLROOTCERT}
   flyway:
     enabled: true
     locations: classpath:/db/migration

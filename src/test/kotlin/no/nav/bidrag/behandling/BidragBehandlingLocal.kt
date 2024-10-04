@@ -14,6 +14,6 @@ class BidragBehandlingLocal
 
 fun main(args: Array<String>) {
     val app = SpringApplication(BidragBehandlingLocal::class.java)
-    app.setAdditionalProfiles("local", "nais", "Lokal-nais-secrets")
+    app.setAdditionalProfiles("local", "nais", "Lokal-nais-secrets", "database-legacy")
     app.run(*args)
 }
