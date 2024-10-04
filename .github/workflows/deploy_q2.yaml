@@ -1,0 +1,19 @@
+name: Deploy q2
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'q2/**'
+      - 'Q2/**'
+
+jobs:
+  build_and_deploy:
+    name: "Build and deploy to q2"
+    permissions:
+      contents: "read"
+      id-token: "write"
+    uses: navikt/bidrag-workflow/.github/workflows/deploy.yaml@main
+    secrets: inherit
+    with:
+      nais_variabler_filnavn: q2.yaml
+

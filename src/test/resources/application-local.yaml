@@ -1,11 +1,4 @@
 
-BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
-BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
-BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
-BIDRAG_GRUNNLAG_URL: https://bidrag-grunnlag-feature.intern.dev.nav.no
-BIDRAG_PERSON_URL: https://bidrag-person.dev.adeo.no
-BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll-feature.intern.dev.nav.no
-GRUNNLAG_INNHENTE_SIVILSTAND_AUTOMATISK: true
 GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 1
 AZURE_APP_TENANT_ID: 966ac572-f5b7-4bbe-aa88-c76419c0f851
 AZURE_APP_CLIENT_ID: <app_client_id>
@@ -13,8 +6,31 @@ AZURE_APP_CLIENT_SECRET: unset
 server.port: 8990
 NAIS_APP_NAME: bidrag-behandling
 DB_HOST: localhost
-DB_PORT: 5432
+#DB_PORT: 5432
 DB_DATABASE: bidrag-behandling
+
+DB_PORT: 5454
+DB_USERNAME: cloudsqliamuser
+DB_PASSWORD: admin
+
+#  jpa:
+#    properties:
+#      hibernate:
+#        format_sql: true
+#    show-sql: true
+
+
+KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+KAFKA_GROUP_ID: bidrag-behandling
+KAFKA_BROKERS: localhost:9092
+TOPIC_VEDTAK: bidrag.vedtak-lokal
+UNLEASH_SERVER_API_ENV: development
+UNLEASH_SERVER_API_PROJECTS: default
+UNLEASH_SERVER_API_TYPE: CLIENT
+KODEVERK_URL: https://kodeverk-api.nav.no
+
+UNLEASH_SERVER_API_URL: https://bidrag-unleash-api.nav.cloud.nais.io
+
 spring:
   kafka:
     bootstrap-servers: ${KAFKA_BROKERS}
@@ -25,18 +41,86 @@ spring:
     listener:
       ackMode: RECORD
 
+---
+spring:
+  config:
+    activate:
+      on-profile: localdev
 
-KAFKA_BOOTSTRAP_SERVERS: localhost:9092
-KAFKA_GROUP_ID: bidrag-behandling
-KAFKA_BROKERS: localhost:9092
-TOPIC_VEDTAK: bidrag.vedtak-lokal
-UNLEASH_SERVER_API_ENV: development
-UNLEASH_SERVER_API_PROJECTS: default
-UNLEASH_SERVER_API_TYPE: CLIENT
+#PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
+BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
+#BIDRAG_PERSON_URL: https://bidrag-person-feature.dev.adeo.no
+#BIDRAG_FORSENDELSE_URL: http://localhost:8999
+BIDRAG_STONAD_URL: https://bidrag-stonad-syntetisk.intern.dev.nav.no
+BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-syntetisk
+BIDRAG_BBM_URL: https://bidrag-bbm.dev-fss-pub.nais.io
+BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm
+BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
+BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll.intern.dev.nav.no
+BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll
+BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag
+BIDRAG_GRUNNLAG_URL: https://bidrag-grunnlag.intern.dev.nav.no
 BIDRAG_SAK_URL: https://bidrag-sak.dev.intern.nav.no/bidrag-sak
+BIDRAG_DOKUMENT_PRODUKSJON_URL2: https://bidrag-dokument-produksjon.intern.dev.nav.no
+BIDRAG_DOKUMENT_PRODUKSJON_URL: http://localhost:8183
+BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
+BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-syntetisk
 BIDRAG_VEDTAK_URL: http://localhost:8889
-BIDRAG_VEDTAK_URL2: https://bidrag-vedtak.intern.dev.nav.no
-BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak
+BIDRAG_VEDTAK_SCOP2E: dev-gcp.bidrag.bidrag-vedtak
 BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak
-UNLEASH_SERVER_API_URL: https://bidrag-unleash-api.nav.cloud.nais.io
-KODEVERK_URL: https://kodeverk-api.nav.no
+BIDRAG_DOKUMENT_URL: https://bidrag-dokument.dev-fss-pub.nais.io/bidrag-dokument
+BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument
+---
+spring:
+  config:
+    activate:
+      on-profile: q2
+BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
+BIDRAG_STONAD_URL: https://bidrag-stonad-syntetisk.intern.dev.nav.no
+BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-syntetisk
+BIDRAG_BBM_URL: https://bidrag-bbm.dev-fss-pub.nais.io
+BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm
+BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
+BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll.intern.dev.nav.no
+BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll
+BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag
+BIDRAG_GRUNNLAG_URL: https://bidrag-grunnlag.intern.dev.nav.no
+BIDRAG_SAK_URL: https://bidrag-sak.dev.intern.nav.no/bidrag-sak
+BIDRAG_DOKUMENT_PRODUKSJON_URL: https://bidrag-dokument-produksjon.intern.dev.nav.no
+BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
+BIDRAG_VEDTAK_URL: https://bidrag-vedtak-syntetisk.intern.dev.nav.no
+BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-syntetisk
+BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak
+BIDRAG_DOKUMENT_URL: https://bidrag-dokument.dev-fss-pub.nais.io/bidrag-dokument
+BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument
+---
+spring:
+  config:
+    activate:
+      on-profile: q1
+BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
+BIDRAG_STONAD_URL: https://bidrag-stonad.intern.dev.nav.no
+BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad
+BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
+BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
+BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse-feature.intern.dev.nav.no
+BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll-feature.intern.dev.nav.no
+BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
+BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
+BIDRAG_GRUNNLAG_URL: https://bidrag-grunnlag-feature.intern.dev.nav.no
+BIDRAG_SAK_URL: https://bidrag-sak-feature.dev.intern.nav.no/bidrag-sak
+BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-feature
+BIDRAG_DOKUMENT_PRODUKSJON_URL: https://bidrag-dokument-produksjon.intern.dev.nav.no
+BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
+BIDRAG_VEDTAK_URL: https://bidrag-vedtak.intern.dev.nav.no
+BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak
+BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
+BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument-feature
+#logging:
+#  level:
+#    org:
+#      hibernate:
+#        type:
+#          descriptor:
+#            sql: trace
+#      flywaydb: debug
