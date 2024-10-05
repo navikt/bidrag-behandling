@@ -3,6 +3,10 @@ package no.nav.bidrag.behandling.transformers.grunnlag
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
+import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagNotater
@@ -27,11 +31,13 @@ import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRespon
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
-import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
+import no.nav.bidrag.transport.felles.toCompactString
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -134,18 +140,36 @@ fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
     return grunnlagListe
 }
 
-fun opprettLøpendeBidragGrunnlag(
-    beregnetBeløpListe: BidragBeregningResponsDto,
-    løpendeBidragsaker: List<LøpendeBidragssak>,
-    personGrunnlagListe: List<GrunnlagDto>,
-): List<GrunnlagDto> {
+fun EvnevurderingBeregningResultat.tilGrunnlagDto(personGrunnlagListe: List<GrunnlagDto>): List<GrunnlagDto> {
     val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
+
+    fun BidragBeregningResponsDto.BidragBeregning.tilPersonGrunnlag(): GrunnlagDto {
+        val fødselsdato = hentPersonFødselsdato(personidentBarn.verdi) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
+        val nyesteIdent = (hentNyesteIdent(personidentBarn.verdi) ?: personidentBarn)
+
+        return GrunnlagDto(
+            referanse =
+                Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
+                    fødselsdato.toCompactString(),
+                    (personidentBarn.verdi + 1).hashCode(),
+                ),
+            type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
+            innhold =
+                POJONode(
+                    Person(
+                        ident = nyesteIdent,
+                        fødselsdato = fødselsdato,
+                    ).valider(),
+                ),
+        )
+    }
 
     fun BidragBeregningResponsDto.BidragBeregning.opprettPersonGrunnlag(): GrunnlagDto {
         val relatertPersonGrunnlag = tilPersonGrunnlag()
         grunnlagslistePersoner.add(relatertPersonGrunnlag)
         return relatertPersonGrunnlag
     }
+
     val grunnlag =
         GrunnlagDto(
             referanse = grunnlagsreferanse_løpende_bidrag,

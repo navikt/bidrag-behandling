@@ -376,7 +376,7 @@ class BehandlingTilGrunnlagMappingV2(
         }
     }
 
-    fun Person.valider(rolle: Rolletype? = null): Person {
+    private fun Person.valider(rolle: Rolletype? = null): Person {
         if ((ident == null || ident!!.verdi.isEmpty()) && navn.isNullOrEmpty()) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,

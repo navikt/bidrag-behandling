@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbi
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
-import no.nav.bidrag.behandling.transformers.grunnlag.plus
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
@@ -39,30 +38,33 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 @Service
 class BeregningService(
     private val behandlingService: BehandlingService,
-    private val beregningEvnevurderingService: BeregningEvnevurderingService,
     private val mapper: VedtakGrunnlagMapper,
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
 
     fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
-        behandling.validerForBeregning()
-        return if (behandling.avslag != null) {
-            behandling.søknadsbarn.map {
-                behandling.tilResultatAvslag(it)
-            }
-        } else {
-            behandling.søknadsbarn.map {
-                val beregnForskudd = behandling.byggGrunnlagForBeregning(it)
+        mapper.run {
+            behandling.run {
+                validerForBeregning()
+                return if (avslag != null) {
+                    søknadsbarn.map {
+                        tilResultatAvslag(it)
+                    }
+                } else {
+                    søknadsbarn.map { rolle ->
+                        val beregnForskudd = byggGrunnlagForBeregning(behandling, rolle)
 
-                try {
-                    ResultatForskuddsberegningBarn(
-                        it.mapTilResultatBarn(),
-                        beregnApi.beregn(beregnForskudd),
-                    )
-                } catch (e: Exception) {
-                    LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
-                    throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
+                        try {
+                            ResultatForskuddsberegningBarn(
+                                rolle.mapTilResultatBarn(),
+                                beregnApi.beregn(beregnForskudd),
+                            )
+                        } catch (e: Exception) {
+                            LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
+                            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
+                        }
+                    }
                 }
             }
         }
@@ -78,10 +80,7 @@ class BeregningService(
             try {
                 val grunnlagBeregning =
                     mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
-                val grunnlagLøpendeBidrag =
-                    beregningEvnevurderingService.opprettGrunnlagLøpendeBidrag(behandling, grunnlagBeregning.grunnlagListe)
-                val grunnlagliste = grunnlagBeregning + grunnlagLøpendeBidrag
-                beregnSærbidragApi.beregn(grunnlagliste, behandling.opprinneligVedtakstype ?: behandling.vedtakstype).let { resultat ->
+                beregnSærbidragApi.beregn(grunnlagBeregning, behandling.opprinneligVedtakstype ?: behandling.vedtakstype).let { resultat ->
                     resultat.validerForSærbidrag()
                     resultat
                 }

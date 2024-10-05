@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.fantIkkeRolleISak
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
 import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
@@ -31,7 +32,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
-import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
@@ -80,7 +80,9 @@ class VedtakGrunnlagMapper(
 
                     TypeBehandling.SÆRBIDRAG -> {
                         val grunnlagLøpendeBidrag =
-                            beregningEvnevurderingService.opprettGrunnlagLøpendeBidrag(behandling, grunnlagsliste.toList())
+                            beregningEvnevurderingService
+                                .hentLøpendeBidragForBehandling(behandling)
+                                .tilGrunnlagDto(grunnlagsliste)
                         grunnlagsliste.add(tilGrunnlagUtgift())
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
@@ -159,11 +161,7 @@ class VedtakGrunnlagMapper(
         return grunnlagListe
     }
 
-    fun opprettLøpendeBidragGrunnlag(
-        beregnetBeløpListe: BidragBeregningResponsDto,
-        løpendeBidragsaker: List<LøpendeBidragssak>,
-        personGrunnlagListe: List<GrunnlagDto>,
-    ): List<GrunnlagDto> {
+    private fun EvnevurderingBeregningResultat.tilGrunnlagDto(personGrunnlagListe: MutableSet<GrunnlagDto>): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
         fun BidragBeregningResponsDto.BidragBeregning.tilPersonGrunnlag(): GrunnlagDto {
@@ -190,6 +188,7 @@ class VedtakGrunnlagMapper(
         fun BidragBeregningResponsDto.BidragBeregning.opprettPersonGrunnlag(): GrunnlagDto {
             val relatertPersonGrunnlag = tilPersonGrunnlag()
             grunnlagslistePersoner.add(relatertPersonGrunnlag)
+//            personGrunnlagListe.add(relatertPersonGrunnlag)
             return relatertPersonGrunnlag
         }
 

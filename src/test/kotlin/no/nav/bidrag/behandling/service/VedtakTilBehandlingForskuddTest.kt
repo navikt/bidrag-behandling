@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
+import createPersonServiceMock
 import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContain
@@ -18,8 +19,11 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequ
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
@@ -86,10 +90,19 @@ class VedtakTilBehandlingForskuddTest {
 
     @BeforeEach
     fun initMocks() {
+        val personService = createPersonServiceMock()
+
+        val vedtakGrunnlagMapper =
+            VedtakGrunnlagMapper(
+                BehandlingTilGrunnlagMappingV2(personService),
+                ValiderBeregningV2(),
+                evnevurderingService,
+                personService,
+            )
         beregningService =
             BeregningService(
                 behandlingService,
-                evnevurderingService,
+                vedtakGrunnlagMapper,
             )
         vedtakService =
             VedtakService(
@@ -101,6 +114,7 @@ class VedtakTilBehandlingForskuddTest {
                 vedtakConsumer,
                 sakConsumer,
                 unleash,
+                vedtakGrunnlagMapper,
             )
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

@@ -21,6 +21,9 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -99,10 +102,20 @@ class VedtakserviceTest : TestContainerRunner() {
         clearAllMocks()
         stubTokenUtils()
         unleash.enableAll()
+        bidragPersonConsumer = stubPersonConsumer()
+        val personService = PersonService(bidragPersonConsumer)
+
+        val vedtakGrunnlagMapper =
+            VedtakGrunnlagMapper(
+                BehandlingTilGrunnlagMappingV2(personService),
+                ValiderBeregningV2(),
+                evnevurderingService,
+                personService,
+            )
         beregningService =
             BeregningService(
                 behandlingService,
-                evnevurderingService,
+                vedtakGrunnlagMapper,
             )
         vedtakService =
             VedtakService(
@@ -114,6 +127,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 vedtakConsumer,
                 sakConsumer,
                 unleash,
+                vedtakGrunnlagMapper,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

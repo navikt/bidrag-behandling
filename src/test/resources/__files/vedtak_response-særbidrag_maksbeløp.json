@@ -3372,6 +3372,14 @@
       "type": "DELBEREGNING_BIDRAGSEVNE",
       "innhold": {
         "beløp": 9796,
+        "skatt": {
+          "minstefradrag": 86250,
+          "skattAlminneligInntekt": 69365,
+          "trinnskatt": 9319,
+          "trygdeavgift": 38204,
+          "sumSkatt": 116888
+        },
+        "underholdBarnEgenHusstand": 0,
         "periode": {
           "fom": "2024-09",
           "til": "2024-10"

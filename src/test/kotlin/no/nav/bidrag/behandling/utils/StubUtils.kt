@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
@@ -70,6 +71,8 @@ fun stubTokenUtils() {
     every { TokenUtils.hentApplikasjonsnavn() } returns "bidrag-behandling"
     every { TokenUtils.hentSaksbehandlerIdent() } returns SAKSBEHANDLER_IDENT
 }
+
+fun createPersonServiceMock(): PersonService = PersonService(stubPersonConsumer())
 
 fun stubPersonConsumer(): BidragPersonConsumer {
     try {
